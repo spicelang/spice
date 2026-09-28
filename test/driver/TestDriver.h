@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <string>
+
 #include <CLI/CLI.hpp>
 
 // Undef conflicting macros (only problematic on Windows)
@@ -20,6 +22,8 @@ struct TestDriverCliOptions {
   bool skipSanitizerTests = false;
   bool isVerbose = false;
   bool enableCoverage = false;
+  bool bootstrapMode = false;
+  std::string bootstrapCompilerPath;
 };
 
 /**

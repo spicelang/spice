@@ -1,0 +1,181 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+#include "BootstrapUtil.h"
+
+#include <algorithm>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <regex>
+
+#include <SourceFile.h>
+#include <driver/Driver.h>
+#include <exception/CliError.h>
+#include <exception/CompilerError.h>
+#include <exception/LexerError.h>
+#include <exception/LinkerError.h>
+#include <exception/ParserError.h>
+#include <exception/SemanticError.h>
+#include <global/GlobalResourceManager.h>
+#include <util/CommonUtil.h>
+#include <util/FileUtil.h>
+
+#include "../driver/TestDriver.h"
+#include "TestUtil.h"
+
+namespace spice::testing {
+
+using namespace spice::compiler;
+
+extern TestDriverCliOptions testDriverCliOptions;
+
+/**
+ * Build the bootstrap compiler with the host compiler, like 'spice build src-bootstrap/main.spice' would do.
+ * On success, the path of the built executable is stored in the test driver cli options.
+ *
+ * @return Successful or not
+ */
+bool BootstrapUtil::buildBootstrapCompiler() {
+  // Check the required environment variables
+  for (const char *envVar : {"SPICE_STD_DIR", "SPICE_BOOTSTRAP_DIR", "LLVM_LIB_DIR"}) {
+    if (std::getenv(envVar) == nullptr) {
+      std::cerr << "Building the bootstrap compiler requires the environment variable " << envVar << " to be set\n";
+      return false;
+    }
+  }
+  const std::filesystem::path mainSourceFilePath = std::filesystem::path(std::getenv("SPICE_BOOTSTRAP_DIR")) / "main.spice";
+
+  // Prepare a clean output directory
+  const std::filesystem::path outputDir = std::filesystem::absolute(PATH_BOOTSTRAP_COMPILER_ARTIFACTS);
+  std::error_code ec;
+  std::filesystem::remove_all(outputDir, ec);
+  std::filesystem::create_directories(outputDir);
+#if OS_WINDOWS
+  std::filesystem::path executablePath = outputDir / "spice.exe";
+#else
+  std::filesystem::path executablePath = outputDir / "spice";
+#endif
+  executablePath.make_preferred();
+
+  std::cout << "Building the bootstrap compiler from " << mainSourceFilePath.string() << " ..." << std::endl;
+  try {
+    const std::string outputPath = executablePath.string();
+    const std::string mainSourceFile = mainSourceFilePath.string();
+    std::array<const char *, 8> argv = {
+        "spice", "build", "-O0", "-g", "--ignore-cache", "--output", outputPath.c_str(), mainSourceFile.c_str()};
+    CliOptions cliOptions;
+    Driver driver(cliOptions);
+    if (driver.parse(argv.size(), argv.data()) != EXIT_SUCCESS)
+      return false;
+    driver.enrich();
+
+    // Run the compile pipeline, mirroring compileProject() of the host compiler
+    GlobalResourceManager resourceManager(cliOptions);
+    SourceFile *sourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
+    sourceFile->runFrontEnd();
+    sourceFile->runMiddleEnd();
+    sourceFile->runBackEnd();
+    resourceManager.linker.prepare();
+    resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);
+    resourceManager.linker.cleanup();
+    // The bootstrap compiler is still incomplete, so its sources emit huge amounts of unused-symbol warnings. Do not print them
+  } catch (CliError &error) {
+    std::cerr << error.what() << "\n";
+    return false;
+  } catch (LexerError &error) {
+    std::cerr << error.what() << "\n";
+    return false;
+  } catch (ParserError &error) {
+    std::cerr << error.what() << "\n";
+    return false;
+  } catch (SemanticError &error) {
+    std::cerr << error.what() << "\n";
+    return false;
+  } catch (CompilerError &error) {
+    std::cerr << error.what() << "\n";
+    return false;
+  } catch (LinkerError &error) {
+    std::cerr << error.what() << "\n";
+    return false;
+  }
+
+  if (!exists(executablePath)) {
+    std::cerr << "Building the bootstrap compiler did not produce an executable at " << executablePath.string() << "\n";
+    return false;
+  }
+  std::cout << "Built the bootstrap compiler: " << executablePath.string() << std::endl;
+  testDriverCliOptions.bootstrapCompilerPath = executablePath.string();
+  return true;
+}
+
+/**
+ * The bootstrap compiler has no exceptions, so it reports compile errors via a panic:
+ *
+ *   Program panicked at <file>:<line>:<col>: <error message>
+ *   <line>  <source code line of the panic>
+ *   ...
+ *
+ * Extract the error message and make it comparable to the one of the host compiler, which prints file paths relative to
+ * the directory of the main source file.
+ *
+ * @param output Combined stdout and stderr output of the bootstrap compiler
+ * @param testPath Directory of the test case
+ * @return Error message, if the bootstrap compiler reported an error
+ */
+std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string &output, const std::filesystem::path &testPath) {
+  static const std::regex PANIC_HEADER_REGEX(R"(Program panicked at [^\n]*?:(\d+):\d+: )");
+  std::smatch match;
+  if (!std::regex_search(output, match, PANIC_HEADER_REGEX))
+    return std::nullopt;
+  const size_t messageStart = match.position(0) + match.length(0);
+
+  // The message ends where the source code snippet of the panic location begins (its line number, followed by two spaces)
+  const std::string snippetStart = "\n" + match[1].str() + "  ";
+  size_t messageEnd = output.find(snippetStart, messageStart);
+  if (messageEnd == std::string::npos)
+    messageEnd = output.find('\n', messageStart);
+  std::string message =
+      output.substr(messageStart, messageEnd == std::string::npos ? std::string::npos : messageEnd - messageStart);
+
+  // Make paths relative to the test directory, like the host compiler prints them
+  CommonUtil::replaceAll(message, "\\", "/");
+  CommonUtil::replaceAll(message, testPath.generic_string() + "/", "./");
+  return message;
+}
+
+/**
+ * Extract the serialized AST from the '--dump-ast' console output of the bootstrap compiler
+ *
+ * @param output Output of the bootstrap compiler
+ * @return Serialized AST, if found
+ */
+std::optional<std::string> BootstrapUtil::extractSerializedAST(const std::string &output) {
+  size_t start = output.find(BOOTSTRAP_SERIALIZED_AST_CAPTION);
+  if (start == std::string::npos)
+    return std::nullopt;
+  start += std::strlen(BOOTSTRAP_SERIALIZED_AST_CAPTION);
+  // All lines of the dot code are indented, except the first one and the closing brace
+  const size_t end = output.find("\n}", start);
+  if (end == std::string::npos)
+    return std::nullopt;
+  return output.substr(start, end + 2 - start);
+}
+
+/**
+ * Check if the bootstrap compiler is already able to raise the error, expected by the given error ref file
+ *
+ * @param errorRefPath Path to the error ref file
+ * @return Supported or not
+ */
+bool BootstrapUtil::isErrorSupported(const std::filesystem::path &errorRefPath) {
+  for (const std::filesystem::path &refPath : TestUtil::expandRefPaths(errorRefPath)) {
+    if (!exists(refPath))
+      continue;
+    const std::string expectedError = FileUtil::getFileContent(refPath);
+    const auto pred = [&](const char *prefix) { return expectedError.starts_with(prefix); };
+    return std::ranges::any_of(BOOTSTRAP_SUPPORTED_ERROR_PREFIXES, pred);
+  }
+  return false;
+}
+
+} // namespace spice::testing

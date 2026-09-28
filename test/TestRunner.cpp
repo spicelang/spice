@@ -28,6 +28,7 @@
 #include <util/SystemUtil.h>
 
 #include "driver/TestDriver.h"
+#include "util/BootstrapUtil.h"
 #include "util/TestUtil.h"
 
 using namespace spice::compiler;
@@ -425,6 +426,75 @@ static void execTestCase(const TestCase &testCase) {
 }
 
 /**
+ * Runs a test case against the bootstrap compiler, built at the start of the test run. The bootstrap compiler is invoked
+ * like the host compiler would be invoked by a user, since it cannot be driven stage by stage from here.
+ *
+ * The bootstrap compiler is still incomplete, so only the reference outputs it can already produce are checked: the
+ * serialized AST and the raised error. A missing error only fails the test for the error kinds listed in
+ * BOOTSTRAP_SUPPORTED_ERROR_PREFIXES. Beyond that, each test case checks that the bootstrap compiler runs through all of
+ * its implemented stages without crashing or raising an unexpected error.
+ */
+static void execBootstrapTestCase(const TestCase &testCase) {
+  // Check if test is disabled
+  if (TestUtil::isDisabled(testCase))
+    GTEST_SKIP();
+
+  const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
+  const std::filesystem::path artifactDir = TestUtil::prepareArtifactDir(testCase);
+  const bool checkAST = TestUtil::doesRefExist(testCase.testPath / REF_NAME_SYNTAX_TREE);
+
+  // Assemble the command line, mirroring the one the test runner passes to the host compiler
+  std::vector<std::string> args = {"build"};
+  TestUtil::parseTestArgs(mainSourceFilePath, args);
+  if (exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS))
+    args.emplace_back("--no-entry");
+  if (checkAST)
+    args.emplace_back("--dump-ast");
+  args.emplace_back("--output");
+  args.push_back(TestUtil::getExecutablePath(artifactDir).string());
+  args.push_back(mainSourceFilePath.string());
+
+  // Run the bootstrap compiler
+  const auto [output, exitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
+  if (testDriverCliOptions.isVerbose)                      // GCOV_EXCL_LINE
+    std::cout << "Bootstrap compiler output:\n" << output; // GCOV_EXCL_LINE
+
+  // Check if the bootstrap compiler raised an error
+  const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
+  if (const std::optional<std::string> errorMessage = BootstrapUtil::extractErrorMessage(output, testCase.testPath)) {
+    if (!TestUtil::doesRefExist(errorRefPath))
+      FAIL() << "Expected no error, but got: " << *errorMessage;
+    TestUtil::checkRefMatch(errorRefPath, [&] { return *errorMessage; });
+    return;
+  }
+  if (exitCode != 0)
+    FAIL() << "Bootstrap compiler exited with code " << exitCode << ":\n" << output;
+
+  // Check AST
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYNTAX_TREE, [&] {
+    const std::optional<std::string> astString = BootstrapUtil::extractSerializedAST(output);
+    EXPECT_TRUE(astString.has_value()) << "Bootstrap compiler did not dump the AST:\n" << output;
+    return astString.value_or("");
+  });
+
+  // Fail if an error was expected, that the bootstrap compiler is already able to raise
+  if (TestUtil::doesRefExist(errorRefPath) && BootstrapUtil::isErrorSupported(errorRefPath))
+    FAIL() << "Expected error, but got no error";
+
+  SUCCEED();
+}
+
+/**
+ * Runs a test case against the host compiler or, in bootstrap mode, against the bootstrap compiler
+ */
+static void runTestCase(const TestCase &testCase) {
+  if (testDriverCliOptions.bootstrapMode)
+    execBootstrapTestCase(testCase);
+  else
+    execTestCase(testCase);
+}
+
+/**
  * Runs a lint test case: front end + type checker + LintPass, checked against lint.out. Deliberately does not reuse
  * execTestCase's shared pipeline (codegen, optimization, linking, execution) - lint rules only need a type-checked AST,
  * and adding another opt-in check to the function that drives every other suite is more blast radius than warranted.
@@ -484,55 +554,65 @@ static void execLinterTestCase(const TestCase &testCase) {
 }
 
 class CommonTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(CommonTests, ) { execTestCase(GetParam()); }
+TEST_P(CommonTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, CommonTests, ::testing::ValuesIn(TestUtil::collectTestCases("common", false)),
                          TestUtil::NameResolver());
 
 class LexerTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(LexerTests, ) { execTestCase(GetParam()); }
+TEST_P(LexerTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, LexerTests, ::testing::ValuesIn(TestUtil::collectTestCases("lexer", false)), TestUtil::NameResolver());
 
 class ParserTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(ParserTests, ) { execTestCase(GetParam()); }
+TEST_P(ParserTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, ParserTests, ::testing::ValuesIn(TestUtil::collectTestCases("parser", false)),
                          TestUtil::NameResolver());
 
 class SymbolTableBuilderTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(SymbolTableBuilderTests, ) { execTestCase(GetParam()); }
+TEST_P(SymbolTableBuilderTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, SymbolTableBuilderTests, ::testing::ValuesIn(TestUtil::collectTestCases("symboltablebuilder", true)),
                          TestUtil::NameResolver());
 
 class TypeCheckerTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(TypeCheckerTests, ) { execTestCase(GetParam()); }
+TEST_P(TypeCheckerTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, TypeCheckerTests, ::testing::ValuesIn(TestUtil::collectTestCases("typechecker", true)),
                          TestUtil::NameResolver());
 
 class IRGeneratorTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(IRGeneratorTests, ) { execTestCase(GetParam()); }
+TEST_P(IRGeneratorTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, IRGeneratorTests, ::testing::ValuesIn(TestUtil::collectTestCases("irgenerator", true)),
                          TestUtil::NameResolver());
 
 class StdTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(StdTests, ) { execTestCase(GetParam()); }
+TEST_P(StdTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, StdTests, ::testing::ValuesIn(TestUtil::collectTestCases("std", true)), TestUtil::NameResolver());
 
 class BenchmarkTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(BenchmarkTests, ) { execTestCase(GetParam()); }
+TEST_P(BenchmarkTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, BenchmarkTests, ::testing::ValuesIn(TestUtil::collectTestCases("benchmark", false)),
                          TestUtil::NameResolver());
 
 class ExampleTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(ExampleTests, ) { execTestCase(GetParam()); }
+TEST_P(ExampleTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, ExampleTests, ::testing::ValuesIn(TestUtil::collectTestCases("examples", false)),
                          TestUtil::NameResolver());
 
 class BootstrapCompilerTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(BootstrapCompilerTests, ) { execTestCase(GetParam()); }
+TEST_P(BootstrapCompilerTests, ) {
+  // These test cases compile parts of the bootstrap compiler, which the bootstrap compiler cannot do yet
+  if (testDriverCliOptions.bootstrapMode)
+    GTEST_SKIP() << "Not supported in bootstrap mode";
+  execTestCase(GetParam());
+}
 INSTANTIATE_TEST_SUITE_P(, BootstrapCompilerTests, ::testing::ValuesIn(TestUtil::collectTestCases("bootstrap-compiler", false)),
                          TestUtil::NameResolver());
 
 class LinterTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(LinterTests, ) { execLinterTestCase(GetParam()); }
+TEST_P(LinterTests, ) {
+  // The bootstrap compiler has no linter yet
+  if (testDriverCliOptions.bootstrapMode)
+    GTEST_SKIP() << "Not supported in bootstrap mode";
+  execLinterTestCase(GetParam());
+}
 INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTestCases("linter", false)),
                          TestUtil::NameResolver());
 
