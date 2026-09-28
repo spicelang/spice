@@ -186,9 +186,10 @@ public p ASTNode.ctor(const CodeLoc& codeLoc) {
 }
 
 // Explicit destructor. AST nodes only ever live inside the BlockAllocator pool and are released via
-// sDestruct(ASTNode*), so their destructor is never reached through normal value destruction. Defining
-// it explicitly makes sure it is generated. The composed 'children' vector only holds non-owning
-// pointers, so it is enough to let the implicitly appended member destruction free the vector storage.
+// destructASTNode(), which destructs them as their concrete node type. This destructor then runs as part of
+// the destruction of the composed node base. Defining it explicitly makes sure it is generated. The composed
+// 'children' vector only holds non-owning pointers, so it is enough to let the implicitly appended member
+// destruction free the vector storage.
 public p ASTNode.dtor() {}
 
 public f<Any> ASTNode.accept(IAbstractAstVisitor* _) {
@@ -2338,6 +2339,106 @@ public f<ConcreteNode*> downcast<ConcreteNode>(IVisitable* node) {
         concreteNode = cast<ConcreteNode*>(node);
     }
     return concreteNode;
+}
+
+/**
+ * Destruct an AST node as the given concrete node type, so that the members of the concrete node are destructed as well
+ *
+ * @param node AST node, which must be of the given concrete node type
+ */
+p destructAs<ConcreteNode>(ASTNode* node) {
+    ConcreteNode* concreteNode = downcast<ConcreteNode>(node);
+    sDestruct(*concreteNode);
+}
+
+/**
+ * Destruct an AST node as its concrete node type. The node pool only knows the nodes as ASTNode, so destructing them as such
+ * would leak the members of the concrete nodes (e.g. operand lists and names). Mirrors the host's virtual ASTNode destructor.
+ *
+ * @param node AST node to destruct
+ */
+public p destructASTNode(ASTNode* node) {
+    switch node.kind {
+        case ASTNodeKind::ENTRY: { destructAs<ASTEntryNode>(node); }
+        case ASTNodeKind::CONSTANT: { destructAs<ASTConstantNode>(node); }
+        case ASTNodeKind::ATTR: { destructAs<ASTAttrNode>(node); }
+        case ASTNodeKind::ATTR_LST: { destructAs<ASTAttrLstNode>(node); }
+        case ASTNodeKind::QUALIFIER: { destructAs<ASTQualifierNode>(node); }
+        case ASTNodeKind::QUALIFIER_LST: { destructAs<ASTQualifierLstNode>(node); }
+        case ASTNodeKind::CUSTOM_DATA_TYPE: { destructAs<ASTCustomDataTypeNode>(node); }
+        case ASTNodeKind::BASE_DATA_TYPE: { destructAs<ASTBaseDataTypeNode>(node); }
+        case ASTNodeKind::DATA_TYPE: { destructAs<ASTDataTypeNode>(node); }
+        case ASTNodeKind::TYPE_LST: { destructAs<ASTTypeLstNode>(node); }
+        case ASTNodeKind::MAIN_FCT_DEF: { destructAs<ASTMainFctDefNode>(node); }
+        case ASTNodeKind::FCT_NAME: { destructAs<ASTFctNameNode>(node); }
+        case ASTNodeKind::FCT_DEF: { destructAs<ASTFctDefNode>(node); }
+        case ASTNodeKind::PROC_DEF: { destructAs<ASTProcDefNode>(node); }
+        case ASTNodeKind::STRUCT_DEF: { destructAs<ASTStructDefNode>(node); }
+        case ASTNodeKind::INTERFACE_DEF: { destructAs<ASTInterfaceDefNode>(node); }
+        case ASTNodeKind::UNION_DEF: { destructAs<ASTUnionDefNode>(node); }
+        case ASTNodeKind::ENUM_DEF: { destructAs<ASTEnumDefNode>(node); }
+        case ASTNodeKind::GENERIC_TYPE_DEF: { destructAs<ASTGenericTypeDefNode>(node); }
+        case ASTNodeKind::ALIAS_DEF: { destructAs<ASTAliasDefNode>(node); }
+        case ASTNodeKind::GLOBAL_VAR_DEF: { destructAs<ASTGlobalVarDefNode>(node); }
+        case ASTNodeKind::EXT_DECL: { destructAs<ASTExtDeclNode>(node); }
+        case ASTNodeKind::IMPORT_DEF: { destructAs<ASTImportDefNode>(node); }
+        case ASTNodeKind::UNSAFE_BLOCK: { destructAs<ASTUnsafeBlockNode>(node); }
+        case ASTNodeKind::FOR_LOOP: { destructAs<ASTForLoopNode>(node); }
+        case ASTNodeKind::FOREACH_LOOP: { destructAs<ASTForeachLoopNode>(node); }
+        case ASTNodeKind::WHILE_LOOP: { destructAs<ASTWhileLoopNode>(node); }
+        case ASTNodeKind::DO_WHILE_LOOP: { destructAs<ASTDoWhileLoopNode>(node); }
+        case ASTNodeKind::IF_STMT: { destructAs<ASTIfStmtNode>(node); }
+        case ASTNodeKind::ELSE_STMT: { destructAs<ASTElseStmtNode>(node); }
+        case ASTNodeKind::SWITCH_STMT: { destructAs<ASTSwitchStmtNode>(node); }
+        case ASTNodeKind::CASE_BRANCH: { destructAs<ASTCaseBranchNode>(node); }
+        case ASTNodeKind::DEFAULT_BRANCH: { destructAs<ASTDefaultBranchNode>(node); }
+        case ASTNodeKind::ANONYMOUS_BLOCK_STMT: { destructAs<ASTAnonymousBlockStmtNode>(node); }
+        case ASTNodeKind::STMT_LST: { destructAs<ASTStmtLstNode>(node); }
+        case ASTNodeKind::TYPE_LST_WITH_ELLIPSIS: { destructAs<ASTTypeLstWithEllipsisNode>(node); }
+        case ASTNodeKind::TYPE_ALTS_LST: { destructAs<ASTTypeAltsLstNode>(node); }
+        case ASTNodeKind::DECL_STMT: { destructAs<ASTDeclStmtNode>(node); }
+        case ASTNodeKind::PARAM_LST: { destructAs<ASTParamLstNode>(node); }
+        case ASTNodeKind::ARG_LST: { destructAs<ASTArgLstNode>(node); }
+        case ASTNodeKind::ENUM_ITEM: { destructAs<ASTEnumItemNode>(node); }
+        case ASTNodeKind::ENUM_ITEM_LST: { destructAs<ASTEnumItemLstNode>(node); }
+        case ASTNodeKind::FIELD: { destructAs<ASTFieldNode>(node); }
+        case ASTNodeKind::SIGNATURE: { destructAs<ASTSignatureNode>(node); }
+        case ASTNodeKind::EXPR_STMT: { destructAs<ASTExprStmtNode>(node); }
+        case ASTNodeKind::MOD_ATTR: { destructAs<ASTModAttrNode>(node); }
+        case ASTNodeKind::TOP_LEVEL_DEF_ATTR: { destructAs<ASTTopLevelDefAttrNode>(node); }
+        case ASTNodeKind::LAMBDA_ATTR: { destructAs<ASTLambdaAttrNode>(node); }
+        case ASTNodeKind::CASE_CONSTANT: { destructAs<ASTCaseConstantNode>(node); }
+        case ASTNodeKind::RETURN_STMT: { destructAs<ASTReturnStmtNode>(node); }
+        case ASTNodeKind::BREAK_STMT: { destructAs<ASTBreakStmtNode>(node); }
+        case ASTNodeKind::CONTINUE_STMT: { destructAs<ASTContinueStmtNode>(node); }
+        case ASTNodeKind::FALLTHROUGH_STMT: { destructAs<ASTFallthroughStmtNode>(node); }
+        case ASTNodeKind::ASSERT_STMT: { destructAs<ASTAssertStmtNode>(node); }
+        case ASTNodeKind::ASSIGN_EXPR: { destructAs<ASTAssignExprNode>(node); }
+        case ASTNodeKind::TERNARY_EXPR: { destructAs<ASTTernaryExprNode>(node); }
+        case ASTNodeKind::LOGICAL_OR_EXPR: { destructAs<ASTLogicalOrExprNode>(node); }
+        case ASTNodeKind::LOGICAL_AND_EXPR: { destructAs<ASTLogicalAndExprNode>(node); }
+        case ASTNodeKind::BITWISE_OR_EXPR: { destructAs<ASTBitwiseOrExprNode>(node); }
+        case ASTNodeKind::BITWISE_XOR_EXPR: { destructAs<ASTBitwiseXorExprNode>(node); }
+        case ASTNodeKind::BITWISE_AND_EXPR: { destructAs<ASTBitwiseAndExprNode>(node); }
+        case ASTNodeKind::EQUALITY_EXPR: { destructAs<ASTEqualityExprNode>(node); }
+        case ASTNodeKind::RELATIONAL_EXPR: { destructAs<ASTRelationalExprNode>(node); }
+        case ASTNodeKind::SHIFT_EXPR: { destructAs<ASTShiftExprNode>(node); }
+        case ASTNodeKind::ADDITIVE_EXPR: { destructAs<ASTAdditiveExprNode>(node); }
+        case ASTNodeKind::MULTIPLICATIVE_EXPR: { destructAs<ASTMultiplicativeExprNode>(node); }
+        case ASTNodeKind::CAST_EXPR: { destructAs<ASTCastExprNode>(node); }
+        case ASTNodeKind::PREFIX_UNARY_EXPR: { destructAs<ASTPrefixUnaryExprNode>(node); }
+        case ASTNodeKind::POSTFIX_UNARY_EXPR: { destructAs<ASTPostfixUnaryExprNode>(node); }
+        case ASTNodeKind::ATOMIC_EXPR: { destructAs<ASTAtomicExprNode>(node); }
+        case ASTNodeKind::VALUE: { destructAs<ASTValueNode>(node); }
+        case ASTNodeKind::FCT_CALL: { destructAs<ASTFctCallNode>(node); }
+        case ASTNodeKind::ARRAY_INITIALIZATION: { destructAs<ASTArrayInitializationNode>(node); }
+        case ASTNodeKind::STRUCT_INSTANTIATION: { destructAs<ASTStructInstantiationNode>(node); }
+        case ASTNodeKind::LAMBDA_FUNC: { destructAs<ASTLambdaFuncNode>(node); }
+        case ASTNodeKind::LAMBDA_PROC: { destructAs<ASTLambdaProcNode>(node); }
+        case ASTNodeKind::LAMBDA_EXPR: { destructAs<ASTLambdaExprNode>(node); }
+        case ASTNodeKind::FUNCTION_DATA_TYPE: { destructAs<ASTFunctionDataTypeNode>(node); }
+        default: { sDestruct(*node); } // Not constructed as a concrete node
+    }
 }
 
 /**
