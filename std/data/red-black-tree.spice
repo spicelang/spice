@@ -228,11 +228,11 @@ public p RedBlackTree.remove(const K& key) {
         y.color = z.color;
     }
 
-    // Use dealloc, because we don't want to call the destructor.
-    // The destructor would delete children and parent.
-    unsafe {
-        sDealloc(cast<byte*>(z));
-    }
+    // Detach the children, which are now owned by other nodes, so that the node's destructor does not free them.
+    // Then delete the node, so that its key and value get destructed as well.
+    z.childLeft = nil<heap Node<K, V>*>;
+    z.childRight = nil<heap Node<K, V>*>;
+    sDelete(z);
 
     // Do a fixup if required
     if wasYBlack && x != nil<Node<K, V>*> {
