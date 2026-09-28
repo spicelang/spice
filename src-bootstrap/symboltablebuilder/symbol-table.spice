@@ -227,9 +227,41 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrict(const String& name) {
  * @param indexPath How to index the found symbol using order indices (e.g. for GEP)
  * @return Desired symbol / nullptr if the symbol was not found
  */
-public f<SymbolTableEntry*> SymbolTable.lookupInComposedFields(const String& name, Vector<unsigned long> indexPath) {
+public f<SymbolTableEntry*> SymbolTable.lookupInComposedFields(const String& name, Vector<unsigned long>& indexPath) {
     assert this.scope.getScopeType() == ScopeType::STRUCT;
-    // ToDo
+
+    // Check if we have a symbol with this name in the current scope
+    SymbolTableEntry* strictResult = this.lookupStrict(name);
+    if strictResult != nil<SymbolTableEntry*> {
+        indexPath.pushBack(strictResult.orderIndex);
+        return strictResult;
+    }
+
+    // If it was not found in the current scope, loop through all composed fields in this scope
+    const unsigned long fieldCount = this.scope.getFieldCount();
+    for unsigned long i = 0l; i < fieldCount; i++ {
+        const SymbolTableEntry* fieldEntry = this.lookupStrictByIndex(cast<unsigned int>(i));
+        const QualType fieldType = fieldEntry.getQualType();
+
+        // Skip all fields that are not composition fields
+        if !fieldType.isComposition() {
+            continue;
+        }
+
+        // Add the current field's order index to the index path
+        indexPath.pushBack(fieldEntry.orderIndex);
+
+        // Search in the composed field's body scope
+        Scope* searchScope = fieldType.getBodyScope();
+        assert searchScope != nil<Scope*>;
+        SymbolTableEntry* composedResult = searchScope.symbolTable.lookupInComposedFields(name, indexPath);
+        if composedResult != nil<SymbolTableEntry*> {
+            return composedResult;
+        }
+
+        // Remove the current field's order index from the index path
+        indexPath.popBack();
+    }
 
     // Symbol was not found in current scope, return nullptr
     return nil<SymbolTableEntry*>;

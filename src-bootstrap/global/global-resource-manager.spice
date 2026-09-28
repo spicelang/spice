@@ -36,6 +36,7 @@ public type GlobalResourceManager struct {
     public DefaultMemoryManager memoryManager
     public Vector<String> compileTimeStringValues
     public BlockAllocator<ASTNode> astNodeAlloc // Used to allocate all AST nodes
+    public UnorderedMap<long, unsigned long> nodeToNodeId // Maps the address of each AST node to its node id
     // The GlobalResourceManager owns all source files. They live in this pool (like the scopes in their parent scope), because
     // a map of owning 'heap' pointers cannot be instantiated: its iterator needs a reference to a heap pointer as field type
     BlockAllocator<SourceFile> sourceFileAlloc

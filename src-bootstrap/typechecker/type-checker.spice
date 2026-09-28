@@ -10,6 +10,7 @@ import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/compiler-pass";
+import "bootstrap/driver";
 import "bootstrap/source-file";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/ast/attributes";
@@ -26,8 +27,10 @@ import "bootstrap/model/struct";
 import "bootstrap/model/union";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/capture";
 import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/scope-handle";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type";
@@ -43,6 +46,7 @@ import "bootstrap/typechecker/union-manager";
 import "bootstrap/util/compiler-warning";
 
 // Constants
+const string FCT_NAME_DEALLOC = "sDealloc";
 const unsigned long UNION_NO_DEFAULT_FIELD_INDEX = 18446744073709551615ul; // SIZE_MAX in the host
 
 public type TypeCheckerMode enum {
@@ -121,6 +125,17 @@ f<Any> TypeChecker.softErrorQT(const ASTNode* node, SemanticErrorType errorType,
     return Any(QualType(SuperType::TY_UNRESOLVED));
 }
 
+// Return value of a visit method, that evaluates to an expression result, after a soft error (SOFT_ERROR_ER in the host)
+f<Any> TypeChecker.softErrorER(const ASTNode* node, SemanticErrorType errorType, const String& message) {
+    this.softError(node, errorType, message);
+    return unresolvedER();
+}
+
+// Return value of a visit method, that evaluates to an unresolved expression result (HANDLE_UNRESOLVED_TYPE_ER in the host)
+f<Any> unresolvedER() {
+    return Any(ExprResult{QualType(SuperType::TY_UNRESOLVED), nil<SymbolTableEntry*>});
+}
+
 // Visit method of a node, that is only visited by the check pass, which is not ported yet
 f<Any> TypeChecker.notPortedYet(ASTNode* node) {
     const String message = String("The type checker does not support this node yet: ") + node.codeLoc.toPrettyString();
@@ -149,6 +164,44 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     // ported together with TypeCheckerImplicit.cpp.
 
     return Any();
+}
+
+/**
+ * Match the copy ctor of the given struct type
+ *
+ * @param thisType Struct type
+ * @param node Current AST node
+ * @return Copy ctor, or nil if there is none
+ */
+f<Function*> TypeChecker.matchCopyCtor(const QualType& thisType, const ASTNode* node) {
+    Scope* matchScope = thisType.getBodyScope();
+    assert matchScope != nil<Scope*>;
+    const QualType argType = thisType.toConstRef(node);
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(argType, false));
+    // The new instance being constructed is never const, regardless of whether the copy source (thisType) is const
+    const QualType nonConstThisType = thisType.toNonConst();
+    const QualTypeList noTemplateTypeHints;
+    return matchFunction(matchScope, String(CTOR_FUNCTION_NAME), nonConstThisType, args, noTemplateTypeHints, true, node);
+}
+
+/**
+ * Match the move ctor of the given struct type
+ *
+ * @param thisType Struct type
+ * @param node Current AST node
+ * @return Move ctor, or nil if there is none
+ */
+f<Function*> TypeChecker.matchMoveCtor(const QualType& thisType, const ASTNode* node) {
+    Scope* matchScope = thisType.getBodyScope();
+    assert matchScope != nil<Scope*>;
+    const QualType nonConstThisType = thisType.toNonConst();
+    const QualType argType = nonConstThisType.toRef(node);
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(argType, false));
+    // The new instance being constructed is never const, regardless of whether the move source (thisType) is const
+    const QualTypeList noTemplateTypeHints;
+    return matchFunction(matchScope, String(CTOR_FUNCTION_NAME), nonConstThisType, args, noTemplateTypeHints, true, node);
 }
 
 /**
@@ -2009,6 +2062,28 @@ public f<Any> TypeChecker.visitFunctionDataType(ASTFunctionDataTypeNode* node) {
 
 // ============================================================ TypeCheckerStatements.cpp =========================================
 
+public f<Any> TypeChecker.visitStmtLst(ASTStmtLstNode* node) {
+    // Visit nodes in this scope
+    foreach IVisitable* stmt : node.statements {
+        if stmt == nil<IVisitable*> {
+            continue;
+        }
+        // Print warning if statement is unreachable
+        ASTStmtNode* stmtNode = asStmtNode(getASTNode(stmt));
+        if stmtNode.unreachable {
+            this.addWarning(stmtNode.codeLoc, CompilerWarningType::UNREACHABLE_CODE, String("This statement is unreachable"));
+            continue;
+        }
+        // Visit the statement
+        this.visit(stmt);
+    }
+
+    // Do cleanup of this scope, e.g. dtor calls for struct instances
+    this.doScopeCleanup(node);
+
+    return Any();
+}
+
 public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
@@ -2018,8 +2093,50 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
 
     QualType localVarType = QualType(SuperType::TY_INVALID);
     if node.hasAssignment {
-        // ToDo: Port the assignment path together with the expression visitors and the OpRuleManager
-        return this.notPortedYet(baseNode);
+        // Visit the right side
+        const ExprResult rhs = this.visitExpr(node.assignExpr);
+        const QualType rhsTy = rhs.ty;
+        SymbolTableEntry* rhsEntry = rhs.entry;
+
+        // Capture anonymous info up front: getAssignResultType may delete the anonymous entry (temp stealing
+        // in performStructAssign), turning rhsEntry into a dangling pointer.
+        const bool rhsIsAnonymous = rhsEntry != nil<SymbolTableEntry*> && rhsEntry.anonymous;
+        String rhsEntryName = String("");
+        if rhsIsAnonymous {
+            rhsEntryName = rhsEntry.name;
+        }
+
+        // Visit data type
+        localVarType = this.getDataType(node.dataType);
+
+        // Check if type has to be inferred or both types are fixed
+        if !localVarType.is(SuperType::TY_UNRESOLVED) && !rhsTy.is(SuperType::TY_UNRESOLVED) {
+            const ExprResult lhsResult = ExprResult{localVarType, localVarEntry};
+            Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhsResult, rhs, true);
+            localVarType = assignResult.getFirst();
+            node.calledCopyCtor = assignResult.getSecond();
+
+            // If this is a struct type, check if the type is known. If not, error out. A type that already carries a
+            // body scope is genuinely resolved (e.g. it reached here through a generic substantiation or a deep
+            // transitive import); only its unqualified name happens to be absent from this file's name registry, which
+            // is not an error.
+            if localVarType.isBase(SuperType::TY_STRUCT) {
+                const QualType localVarBaseType = localVarType.getBase();
+                const String structName = localVarBaseType.getSubType();
+                if this.sourceFile.getNameRegistryEntry(structName) == nil<const NameRegistryEntry*> && localVarBaseType.getBodyScope() == nil<Scope*> {
+                    this.softError(cast<ASTNode*>(node.dataType), SemanticErrorType::UNKNOWN_DATATYPE, String("Unknown struct type '") + structName + "'. Forgot to import?");
+                    localVarType = QualType(SuperType::TY_UNRESOLVED);
+                }
+            }
+        } else {
+            localVarType = QualType(SuperType::TY_UNRESOLVED);
+        }
+
+        // If there is an anonymous entry attached (e.g. for struct instantiation) and we take over ownership, delete it.
+        // Safe to call even if performStructAssign already deleted it: erasing by key is a no-op when absent.
+        if !localVarType.isRef() && rhsIsAnonymous {
+            this.currentScope.symbolTable.deleteAnonymous(rhsEntryName);
+        }
     } else {
         // Visit data type
         localVarType = this.getDataType(node.dataType);
@@ -2056,6 +2173,1515 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
     localVarEntry.updateState(LifecycleState::INITIALIZED, baseNode);
 
     return Any(localVarType);
+}
+
+public f<Any> TypeChecker.visitReturnStmt(ASTReturnStmtNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Retrieve return variable entry
+    SymbolTableEntry* returnVar = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
+    const bool isFunction = returnVar != nil<SymbolTableEntry*>;
+    QualType returnType = QualType(SuperType::TY_DYN);
+    if isFunction {
+        returnType = returnVar.getQualType();
+    }
+
+    // Check if procedure with return value
+    if !isFunction {
+        if node.hasReturnValue {
+            return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::RETURN_WITH_VALUE_IN_PROCEDURE, String("Return with value in procedure is not allowed"));
+        }
+        return Any();
+    }
+
+    if !node.hasReturnValue && !returnVar.isInitialized() {
+        return this.softErrorQT(baseNode, SemanticErrorType::RETURN_WITHOUT_VALUE_RESULT, String("Return without value, but result variable is not initialized yet"));
+    }
+
+    if !node.hasReturnValue {
+        return Any();
+    }
+
+    // Visit right side
+    const ExprResult rhs = this.visitExpr(node.assignExpr);
+    if rhs.ty.is(SuperType::TY_UNRESOLVED) { return Any(rhs.ty); }
+
+    // A native lambda stores its captures in this frame, so returning a capturing lambda would let it outlive its
+    // captures. Direct the user to the owning std Lambda wrapper. Non-capturing lambdas (plain function pointers)
+    // are safe to return. The std Lambda wrapper hands its captures-flagged lambda back from get(), so std is exempt.
+    const QualType rhsBaseType = rhs.ty.getBase();
+    const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    if rhsBaseType.isOneOf(fctOptions, len(fctOptions)) && rhs.ty.hasLambdaCaptures() && !this.sourceFile.isStdFile {
+        const QualType nonCapturingType = rhsBaseType.getWithLambdaCaptures(false);
+        const String message = String("A capturing lambda cannot be returned, because its captures live in this frame and would dangle. Wrap it in 'Lambda<") + nonCapturingType.getName(false) + ">' from std/type/lambda instead.";
+        return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::LAMBDA_CAPTURE_ESCAPE, message);
+    }
+
+    // Capture anonymous info up front: getAssignResultType may delete the anonymous entry (temp stealing
+    // in performStructAssign), turning rhs.entry into a dangling pointer.
+    SymbolTableEntry* rhsEntry = rhs.entry;
+    const bool rhsIsAnonymous = rhsEntry != nil<SymbolTableEntry*> && rhsEntry.anonymous;
+    String rhsEntryName = String("");
+    if rhsIsAnonymous {
+        rhsEntryName = rhsEntry.name;
+    }
+
+    // Check if types match
+    const ExprResult returnResult = ExprResult{returnType, returnVar};
+    Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(getASTNode(node.assignExpr), returnResult, rhs, false, true, ERROR_MSG_RETURN);
+    node.calledCopyCtor = assignResult.getSecond();
+
+    // Check if the dtor call on the return value can be skipped
+    if rhsEntry != nil<SymbolTableEntry*> {
+        if rhsIsAnonymous {
+            // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
+            // Safe even if performStructAssign already deleted it: erasing by key is a no-op when absent.
+            this.currentScope.symbolTable.deleteAnonymous(rhsEntryName);
+        } else {
+            // Otherwise omit the destructor call, because the caller destructs the value
+            rhsEntry.omitDtorCall = true;
+        }
+    }
+
+    node.returnType = returnType;
+    return Any(returnType);
+}
+
+public f<Any> TypeChecker.visitBreakStmt(ASTBreakStmtNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if the stated number is valid
+    if node.breakTimes < 1 {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_BREAK_NUMBER, String("Break count must be >= 1, you provided ") + toString(node.breakTimes));
+    }
+
+    // Check if we can break this often
+    const unsigned int maxBreaks = this.currentScope.getLoopNestingDepth();
+    if cast<unsigned int>(node.breakTimes) > maxBreaks {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_BREAK_NUMBER, String("We can only break ") + toString(cast<long>(maxBreaks)) + " time(s) here");
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitContinueStmt(ASTContinueStmtNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if the stated number is valid
+    if node.continueTimes < 1 {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_CONTINUE_NUMBER, String("Continue count must be >= 1, you provided ") + toString(node.continueTimes));
+    }
+
+    // Check if we can continue this often
+    const unsigned int maxContinues = this.currentScope.getLoopNestingDepth();
+    if cast<unsigned int>(node.continueTimes) > maxContinues {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_CONTINUE_NUMBER, String("We can only continue ") + toString(cast<long>(maxContinues)) + " time(s) here");
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitFallthroughStmt(ASTFallthroughStmtNode* node) {
+    // Check if we can do a fallthrough here
+    if !this.currentScope.isInCaseBranch() {
+        return this.softErrorER(cast<ASTNode*>(node), SemanticErrorType::FALLTHROUGH_NOT_ALLOWED, String("Fallthrough is only allowed in case branches"));
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitAssertStmt(ASTAssertStmtNode* node) {
+    // Visit condition
+    const ExprResult condition = this.visitExpr(node.assignExpr);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::ASSERTION_CONDITION_BOOL, String("The asserted condition must be of type bool"));
+    }
+
+    // A failed assertion prints the stack trace, so the runtime that does that has to be loaded. Assertions are not
+    // generated in release builds, so nothing needs to be loaded for them there
+    if this.cliOptions.printsStackTraceOnAbort() && this.cliOptions.buildMode != BuildMode::RELEASE && !this.sourceFile.isRT(RuntimeModule::STACK_TRACE_RT) {
+        this.sourceFile.requestRuntimeModule(RuntimeModule::STACK_TRACE_RT);
+    }
+
+    return Any();
+}
+
+// ======================================================= TypeCheckerControlStructures.cpp ========================================
+
+public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
+    // Change to unsafe block body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::UNSAFE_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
+    // Change to for body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
+
+    // Visit loop variable declaration
+    this.visit(node.initDecl);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condAssign);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.condAssign), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("For loop condition must be of type bool"));
+    }
+
+    // Visit incrementer
+    this.visit(node.incAssign);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit iterator assignment
+    IVisitable* iteratorNode = node.iteratorAssign;
+    ASTNode* iteratorBaseNode = getASTNode(iteratorNode);
+    const ExprResult iteratorResult = this.visitExpr(iteratorNode);
+    QualType iteratorOrIterableType = iteratorResult.ty;
+    if iteratorOrIterableType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
+
+    // Retrieve iterator type
+    QualType iteratorType = iteratorOrIterableType;
+
+    const ArgList noArgs;
+    const QualTypeList noTemplateTypeHints;
+    if iteratorOrIterableType.isIterable(baseNode) {
+        const QualType& iterableType = iteratorOrIterableType;
+        if iteratorOrIterableType.isArray() { // Array
+            const NameRegistryEntry* nameRegistryEntry = this.sourceFile.getNameRegistryEntry(String(ARRAY_ITERATOR_NAME));
+            if nameRegistryEntry == nil<const NameRegistryEntry*> {
+                this.softError(baseNode, SemanticErrorType::UNKNOWN_DATATYPE, String("Forgot to import \"std/iterator/array-iterator\"?"));
+                return Any();
+            }
+            nameRegistryEntry.targetEntry.used = true;
+            nameRegistryEntry.importEntry.used = true;
+            Scope* arrayIteratorScope = nameRegistryEntry.targetScope;
+            Scope* matchScope = arrayIteratorScope.parent;
+            assert matchScope.scopeType == ScopeType::GLOBAL;
+            QualType unsignedLongType = QualType(SuperType::TY_LONG);
+            unsignedLongType.makeUnsigned(true);
+            ArgList argTypes;
+            argTypes.pushBack(Pair<QualType, bool>(iterableType, false));
+            argTypes.pushBack(Pair<QualType, bool>(unsignedLongType, false));
+            const QualType thisType = QualType(SuperType::TY_DYN);
+            node.getIteratorFct = matchFunction(matchScope, String("iterate"), thisType, argTypes, noTemplateTypeHints, true, iteratorBaseNode);
+        } else { // Struct, implementing Iterator interface
+            Scope* matchScope = iterableType.getBodyScope();
+            node.getIteratorFct = matchFunction(matchScope, String("getIterator"), iterableType, noArgs, noTemplateTypeHints, true, iteratorBaseNode);
+        }
+        if node.getIteratorFct == nil<Function*> {
+            // The host throws a SemanticError here
+            this.softError(iteratorBaseNode, SemanticErrorType::INVALID_ITERATOR, String("No getIterator() function found for the given iterable type"));
+            return Any();
+        }
+
+        const Function* getIteratorFct = node.getIteratorFct;
+        iteratorType = getIteratorFct.returnType;
+        // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
+        if !iteratorType.isTriviallyDestructible(iteratorBaseNode) {
+            this.currentScope.symbolTable.insertAnonymous(iteratorType, iteratorBaseNode);
+        }
+    }
+
+    // Change to foreach body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOREACH_BODY);
+
+    // Check iterator type
+    if !iteratorType.isIterator(baseNode) {
+        const String errMsg = String("Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided ") + iteratorType.getName(false, true);
+        this.softError(getASTNode(node.iteratorAssign), SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, errMsg);
+        return Any();
+    }
+    const QualTypeList iteratorTemplateTypes = iteratorType.getTemplateTypes();
+    if iteratorTemplateTypes.isEmpty() {
+        return this.softErrorER(getASTNode(node.iteratorAssign), SemanticErrorType::INVALID_ITERATOR, String("Iterator has no generic arguments so that the item type could not be inferred"));
+    }
+
+    const bool hasIdx = node.idxVarDecl != nil<IVisitable*>;
+    if hasIdx {
+        // Visit index declaration or assignment
+        const QualType indexType = this.visitType(node.idxVarDecl);
+        if indexType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+        // Check if index type is int
+        if !indexType.is(SuperType::TY_LONG) {
+            const String message = String("Index in foreach loop must be of type long. You provided ") + indexType.getName(false);
+            return this.softErrorER(getASTNode(node.idxVarDecl), SemanticErrorType::FOREACH_IDX_NOT_LONG, message);
+        }
+    }
+
+    // Retrieve .get(), .getIdx(), .isValid() and .next() functions
+    Scope* matchScope = iteratorType.getBodyScope();
+    QualType iteratorItemType = QualType(SuperType::TY_INVALID);
+    if hasIdx {
+        node.getIdxFct = matchFunction(matchScope, String("getIdx"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+        if node.getIdxFct == nil<Function*> { return Any(); }
+        const Function* getIdxFct = node.getIdxFct;
+        const QualTypeList idxTemplateTypes = getIdxFct.returnType.getTemplateTypes();
+        iteratorItemType = idxTemplateTypes.back();
+    } else {
+        node.getFct = matchFunction(matchScope, String("get"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+        if node.getFct == nil<Function*> { return Any(); }
+        const Function* getFct = node.getFct;
+        iteratorItemType = getFct.returnType;
+    }
+    node.isValidFct = matchFunction(matchScope, String("isValid"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+    if node.isValidFct == nil<Function*> { return Any(); }
+    node.nextFct = matchFunction(matchScope, String("next"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+    if node.nextFct == nil<Function*> { return Any(); }
+
+    // Retrieve item variable entry
+    ASTDeclStmtNode* itemVarDecl = downcast<ASTDeclStmtNode>(node.itemVarDecl);
+    SymbolTableEntry* itemVarSymbol = this.currentScope.lookupStrict(itemVarDecl.varName);
+    assert itemVarSymbol != nil<SymbolTableEntry*>;
+
+    // Check type of the item
+    QualType itemType = this.visitType(node.itemVarDecl);
+    if itemType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    if itemType.is(SuperType::TY_DYN) { // Perform type inference
+        // Update evaluated symbol type of the declaration data type
+        itemVarDecl.dataType.node.setEvaluatedSymbolType(iteratorItemType, this.manIdx);
+        // Update item type
+        itemType = iteratorItemType;
+    }
+
+    // Check result type. This is important, also for copy ctor calls, etc.
+    const ExprResult itemResult = ExprResult{itemType, itemVarSymbol};
+    const ExprResult iteratorItemResult = ExprResult{iteratorItemType, nil<SymbolTableEntry*> /* always a temporary */};
+    Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(cast<ASTNode*>(itemVarDecl), itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
+    node.calledItemCopyCtor = assignResult.getSecond();
+
+    // Update type of item
+    itemVarSymbol.updateType(itemType, true);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitWhileLoop(ASTWhileLoopNode* node) {
+    // Change to while body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condition);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.condition), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("While loop condition must be of type bool"));
+    }
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
+    // Change to while body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condition);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.condition), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("Do-While loop condition must be of type bool"));
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitIfStmt(ASTIfStmtNode* node) {
+    // Change to then body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::IF_ELSE_BODY);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condition);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    ASTNode* conditionNode = getASTNode(node.condition);
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(conditionNode, SemanticErrorType::CONDITION_MUST_BE_BOOL, String("If condition must be of type bool"));
+    }
+
+    // Warning for bool assignment
+    if conditionNode.kind == ASTNodeKind::ASSIGN_EXPR {
+        ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(conditionNode);
+        if assignExprNode.op == AssignOp::OP_ASSIGN {
+            this.addWarning(conditionNode.codeLoc, CompilerWarningType::BOOL_ASSIGN_AS_CONDITION, String("If you want to compare the values, use '=='"));
+        }
+    }
+
+    // Update the information, if one of the branches should be skipped.
+    // This is important to check again here, because the constness of the condition can have changed after type checking.
+    const bool constantCondition = conditionNode.hasCompileTimeValue(this.manIdx);
+    bool compileThenBranch = true;
+    bool compileElseBranch = true;
+    if constantCondition {
+        const CompileTimeValue compileTimeValue = conditionNode.getCompileTimeValue(this.manIdx);
+        compileThenBranch = compileTimeValue.boolValue;
+        compileElseBranch = !compileTimeValue.boolValue;
+    }
+    bool& compileThenBranchSlot = node.compileThenBranch.get(this.manIdx);
+    compileThenBranchSlot = compileThenBranch;
+    bool& compileElseBranchSlot = node.compileElseBranch.get(this.manIdx);
+    compileElseBranchSlot = compileElseBranch;
+
+    // Visit body
+    if compileThenBranch {
+        this.visit(node.thenBody);
+    }
+
+    // Leave then body scope
+    scopeHandle.leaveScopeEarly();
+
+    // Visit else statement if existing
+    if compileElseBranch && node.elseStmt != nil<IVisitable*> {
+        this.visit(node.elseStmt);
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitElseStmt(ASTElseStmtNode* node) {
+    // Visit if statement in the case of an else if branch
+    if node.isElseIf {
+        this.visit(node.ifStmt);
+        return Any();
+    }
+
+    // Change to else body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::IF_ELSE_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitSwitchStmt(ASTSwitchStmtNode* node) {
+    // Check expression type
+    const ExprResult switchExpr = this.visitExpr(node.assignExpr);
+    const QualType exprType = switchExpr.ty;
+    if exprType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    const dyn switchOptions = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
+    if !exprType.isOneOf(switchOptions, len(switchOptions)) {
+        return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::SWITCH_EXPR_MUST_BE_PRIMITIVE, String("Switch expression must be of int, short, long, byte, char or bool type"));
+    }
+
+    // Visit children
+    this.visitChildren(cast<ASTNode*>(node));
+
+    // Check if case constant types match switch expression type
+    foreach IVisitable* caseBranch : node.caseBranches {
+        ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(caseBranch);
+        foreach IVisitable* constantNode : caseBranchNode.caseConstants {
+            const ExprResult constantResult = this.visitExpr(constantNode);
+            const QualType constantType = constantResult.ty;
+            if !constantType.matches(exprType, false, true, true) {
+                return this.softErrorER(getASTNode(constantNode), SemanticErrorType::SWITCH_CASE_TYPE_MISMATCH, String("Case value type does not match the switch expression type"));
+            }
+        }
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitCaseBranch(ASTCaseBranchNode* node) {
+    // Change to case body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::CASE_BODY);
+
+    // Visit constant list
+    foreach IVisitable* constant : node.caseConstants {
+        this.visit(constant);
+    }
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) {
+    // If we have a normal constant, we can take the symbol type from there
+    if node.constant != nil<ASTConstantNode*> {
+        return this.visitConstant(node.constant);
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if a local or global variable can be found by searching for the name
+    if node.identifierFragments.getSize() == 1l {
+        node.entry = this.currentScope.lookup(node.identifierFragments.back());
+    }
+
+    // If no local or global was found, search in the name registry
+    if node.entry == nil<const SymbolTableEntry*> {
+        const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(node.fqIdentifier);
+        if registryEntry == nil<const NameRegistryEntry*> {
+            const String message = String("The variable '") + node.fqIdentifier + "' could not be found";
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+        }
+        node.entry = registryEntry.targetEntry;
+    }
+    assert node.entry != nil<const SymbolTableEntry*>;
+
+    // Check for the correct type
+    const QualType qualType = node.entry.getQualType();
+    const dyn caseConstantOptions = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
+    if !qualType.isOneOf(caseConstantOptions, len(caseConstantOptions)) {
+        return this.softErrorER(baseNode, SemanticErrorType::CASE_CONSTANT_INVALID_TYPE, String("Case constants must be of type int, short, long, byte, char, bool or enum"));
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(qualType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+public f<Any> TypeChecker.visitDefaultBranch(ASTDefaultBranchNode* node) {
+    // Change to default body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::DEFAULT_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) {
+    // Change to anonymous scope body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+// ========================================================== TypeCheckerExpressions.cpp ==========================================
+
+public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if ternary
+    if node.ternaryExpr != nil<IVisitable*> {
+        const ExprResult ternaryResult = this.visitExpr(node.ternaryExpr);
+        node.node.setEvaluatedSymbolType(ternaryResult.ty, this.manIdx);
+        return Any(ternaryResult);
+    }
+
+    // Check if assignment
+    if node.op == AssignOp::OP_NONE {
+        panic(Error("AssignExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+    }
+
+    // Visit the right side first
+    const ExprResult rhs = this.visitExpr(node.rhs);
+    QualType rhsType = rhs.ty;
+    if rhsType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    // Then visit the left side
+    const ExprResult lhs = this.visitExpr(node.lhs);
+    const QualType lhsType = lhs.ty;
+    SymbolTableEntry* lhsVar = lhs.entry;
+    if lhsType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // A native lambda stores its captures in the stack frame that created it. Storing a capturing lambda in a
+    // struct field lets it outlive those captures, so the captures would dangle. Reject this and direct the user
+    // to the owning std Lambda wrapper. Non-capturing lambdas (plain function pointers) are safe to store and are
+    // not affected. The std Lambda wrapper itself stores the captures-flagged lambda in its own field, so std
+    // files are exempt.
+    if node.op == AssignOp::OP_ASSIGN && lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isField() {
+        const QualType rhsBaseType = rhsType.getBase();
+        const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+        if rhsBaseType.isOneOf(fctOptions, len(fctOptions)) && rhsType.hasLambdaCaptures() && !this.sourceFile.isStdFile {
+            const QualType nonCapturingType = rhsBaseType.getWithLambdaCaptures(false);
+            const String typeName = nonCapturingType.getName(false);
+            const String message = String("A capturing lambda cannot be stored in a field, because its captures live in the frame that created it and would dangle. Wrap it in 'Lambda<") + typeName + ">' from std/type/lambda instead.";
+            return this.softErrorER(getASTNode(node.rhs), SemanticErrorType::LAMBDA_CAPTURE_ESCAPE, message);
+        }
+    }
+
+    // Take a look at the operator
+    if node.op == AssignOp::OP_ASSIGN {
+        const bool isDecl = lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isField() && !lhs.entry.isInitialized();
+        Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhs, rhs, isDecl);
+        rhsType = assignResult.getFirst();
+        const Function* copyCtor = assignResult.getSecond();
+        // If the assignment overwrites an already initialized struct by copying a new value into it, the old value
+        // of the lhs must be destructed first. Otherwise its owning members (heap pointers, strings, ...) would leak.
+        // A non-null copy ctor signals that a real copy (not a move/temporary steal or ref assignment) takes place.
+        // 'isInitialized()' is false for declarations, uninitialized fields and moved-from values, so those are skipped.
+        // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
+        // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
+        if copyCtor != nil<const Function*> && !isDecl && lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isInitialized() && !this.currentScope.doesAllowUnsafeOperations() {
+            const QualType lhsUnwrappedType = lhs.ty.removeReferenceWrapper();
+            const QualType lhsSType = lhsUnwrappedType.toNonConst();
+            if lhsSType.is(SuperType::TY_STRUCT) && !lhsSType.isTriviallyDestructible(baseNode) {
+                const ArgList noArgs;
+                const Function*& lhsDtorFct = node.lhsDtorFct.get(this.manIdx);
+                lhsDtorFct = this.implicitlyCallStructMethod(lhsSType, String(DTOR_FUNCTION_NAME), noArgs, baseNode);
+            }
+        }
+    } else if node.op == AssignOp::OP_PLUS_EQUAL {
+        const ExprResult plusEqualResult = this.opRuleManager.getPlusEqualResultType(baseNode, lhs, rhs);
+        rhsType = plusEqualResult.ty;
+    } else if node.op == AssignOp::OP_MINUS_EQUAL {
+        const ExprResult minusEqualResult = this.opRuleManager.getMinusEqualResultType(baseNode, lhs, rhs);
+        rhsType = minusEqualResult.ty;
+    } else if node.op == AssignOp::OP_MUL_EQUAL {
+        const ExprResult mulEqualResult = this.opRuleManager.getMulEqualResultType(baseNode, lhs, rhs);
+        rhsType = mulEqualResult.ty;
+    } else if node.op == AssignOp::OP_DIV_EQUAL {
+        const ExprResult divEqualResult = this.opRuleManager.getDivEqualResultType(baseNode, lhs, rhs);
+        rhsType = divEqualResult.ty;
+    } else if node.op == AssignOp::OP_REM_EQUAL {
+        rhsType = this.opRuleManager.getRemEqualResultType(baseNode, lhs, rhs);
+    } else if node.op == AssignOp::OP_SHL_EQUAL {
+        rhsType = this.opRuleManager.getSHLEqualResultType(baseNode, lhs, rhs);
+    } else if node.op == AssignOp::OP_SHR_EQUAL {
+        rhsType = this.opRuleManager.getSHREqualResultType(baseNode, lhs, rhs);
+    } else if node.op == AssignOp::OP_AND_EQUAL {
+        rhsType = this.opRuleManager.getAndEqualResultType(baseNode, lhs, rhs);
+    } else if node.op == AssignOp::OP_OR_EQUAL {
+        rhsType = this.opRuleManager.getOrEqualResultType(baseNode, lhs, rhs);
+    } else if node.op == AssignOp::OP_XOR_EQUAL {
+        rhsType = this.opRuleManager.getXorEqualResultType(baseNode, lhs, rhs);
+    }
+
+    if lhsVar != nil<SymbolTableEntry*> { // Variable is involved on the left side
+        // Perform type inference
+        if lhsType.is(SuperType::TY_DYN) {
+            lhsVar.updateType(rhsType, false);
+        }
+
+        // In case the lhs variable is captured, notify the capture about the write access
+        Capture* lhsCapture = this.currentScope.symbolTable.lookupCapture(lhsVar.name);
+        if lhsCapture != nil<Capture*> {
+            lhsCapture.setAccessType(CaptureAccessType::READ_WRITE);
+        }
+
+        // Update the state of the variable
+        lhsVar.updateState(LifecycleState::INITIALIZED, baseNode);
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(rhsType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
+    // Check if there is a ternary operator applied
+    if node.falseExpr == nil<IVisitable*> {
+        return this.visit(node.condition);
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit condition
+    const ExprResult condition = this.visitExpr(node.condition);
+    if condition.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    // Visit the branches. Only one of them is evaluated, so each one has a scope of its own for its temporaries. The dtor calls for
+    // those are considered further down, once it is clear which temporaries the result takes over.
+    Pair<ExprResult, Scope*> trueBranch = Pair<ExprResult, Scope*>(condition, nil<Scope*>);
+    if !node.isShortened {
+        trueBranch = this.visitTernaryBranch(node.trueExpr);
+    }
+    const ExprResult trueExpr = trueBranch.getFirst();
+    Scope* trueScope = trueBranch.getSecond();
+    const QualType trueType = trueExpr.ty;
+    SymbolTableEntry* trueEntry = trueExpr.entry;
+    if trueType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    Pair<ExprResult, Scope*> falseBranch = this.visitTernaryBranch(node.falseExpr);
+    const ExprResult falseExpr = falseBranch.getFirst();
+    Scope* falseScope = falseBranch.getSecond();
+    const QualType falseType = falseExpr.ty;
+    SymbolTableEntry* falseEntry = falseExpr.entry;
+    if falseType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Check if the condition evaluates to bool
+    if !condition.ty.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.condition), SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, String("Condition operand in ternary must be a bool"));
+    }
+
+    // Check if trueType and falseType are matching
+    const QualType trueTypeModified = trueType.removeReferenceWrapper();
+    const QualType falseTypeModified = falseType.removeReferenceWrapper();
+    if !trueTypeModified.matches(falseTypeModified, false, true, false) {
+        const String message = String("True and false operands in ternary must be of same data type. Got ") + trueType.getName(true) + " and " + falseType.getName(true);
+        return this.softErrorER(baseNode, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, message);
+    }
+
+    // An anonymous entry marks a temporary (e.g. a fresh struct instantiation or a non-trivial function-call
+    // result), whose storage does not outlive this expression. The only exception is an anonymous entry of reference type. It
+    // belongs to a nested ternary with a reference result, which just refers to the storage of one of its operands.
+    const bool trueIsTemporary = isTemporaryTernaryOperand(trueEntry);
+    const bool falseIsTemporary = isTemporaryTernaryOperand(falseEntry);
+
+    // The result type must be a reference if one of true/false branch is of reference type. Otherwise,
+    // the copy ctor is not called correctly. This can only be done if neither branch is a temporary though:
+    // a temporary's storage ends with this expression, so the result must take a copy of it instead of
+    // referencing it, or the copy ctor call for the temporary would end up being skipped further down,
+    // leaking it.
+    QualType resultType = trueTypeModified;
+    // If both branches are lvalues, the result is one as well, so it can be bound to a non-const reference.
+    const bool bothLvalues = trueEntry != nil<SymbolTableEntry*> && falseEntry != nil<SymbolTableEntry*> && !trueIsTemporary && !falseIsTemporary;
+    if !trueIsTemporary && !falseIsTemporary && (trueType.isRef() || falseType.isRef()) {
+        resultType = trueType.isRef() ? trueType : falseType;
+    } else if bothLvalues {
+        resultType = trueTypeModified.toRef(baseNode);
+    }
+    // Infer the const-ness from the more restrictive operand
+    resultType.makeConst(trueType.isConst() || falseType.isConst());
+
+    // If there is an anonymous symbol attached to left or right, remove it,
+    // since the result takes over the ownership of any destructible object.
+    // The symbol lives in the scope of its branch, or in the current scope if the branch has no scope of its own.
+    bool removedAnonymousSymbols = false;
+    if trueEntry != nil<SymbolTableEntry*> {
+        if trueIsTemporary {
+            Scope* anonymousSymbolScope = trueScope != nil<Scope*> ? trueScope : this.currentScope;
+            const String anonymousSymbolName = trueEntry.name;
+            anonymousSymbolScope.symbolTable.deleteAnonymous(anonymousSymbolName);
+            removedAnonymousSymbols = true;
+        } else if !resultType.isRef() && !trueTypeModified.isTriviallyCopyable(baseNode) {
+            node.trueSideCallsCopyCtor = true;
+        }
+    }
+    if falseEntry != nil<SymbolTableEntry*> {
+        if falseIsTemporary {
+            Scope* anonymousSymbolScope = falseScope != nil<Scope*> ? falseScope : this.currentScope;
+            const String anonymousSymbolName = falseEntry.name;
+            anonymousSymbolScope.symbolTable.deleteAnonymous(anonymousSymbolName);
+            removedAnonymousSymbols = true;
+        } else if !resultType.isRef() && !falseTypeModified.isTriviallyCopyable(baseNode) {
+            node.falseSideCallsCopyCtor = true;
+        }
+    }
+
+    // Create a new anonymous symbol for the result if required
+    SymbolTableEntry* anonymousSymbol = nil<SymbolTableEntry*>;
+    const bool calledCopyCtor = node.trueSideCallsCopyCtor || node.falseSideCallsCopyCtor;
+    if removedAnonymousSymbols || calledCopyCtor || resultType.isRef() {
+        anonymousSymbol = this.currentScope.symbolTable.insertAnonymous(resultType, baseNode);
+    }
+
+    // Look up the copy ctor if at least one side needs it
+    if node.trueSideCallsCopyCtor || node.falseSideCallsCopyCtor {
+        node.calledCopyCtor = this.matchCopyCtor(trueTypeModified, baseNode);
+    }
+
+    // Consider the dtor calls for the temporaries of the branches. A result of reference type may refer to a temporary of its
+    // branch, so those must not be destructed. Not destructing them is the safe choice here, as it only leaks the temporary.
+    const bool resultIsRef = resultType.isRef();
+    if !node.isShortened {
+        this.doTernaryBranchCleanup(node.trueExpr, trueScope, resultIsRef);
+    }
+    this.doTernaryBranchCleanup(node.falseExpr, falseScope, resultIsRef);
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(resultType, this.manIdx), anonymousSymbol});
+}
+
+// Visit a ternary branch in its expression scope (visitBranch lambda in the host's visitTernaryExpr)
+f<Pair<ExprResult, Scope*>> TypeChecker.visitTernaryBranch(IVisitable* branch) {
+    ExprScopeHandle exprScopeHandle = ExprScopeHandle(&this.compilerPass, branch);
+    const ExprResult branchResult = this.visitExpr(branch);
+    return Pair<ExprResult, Scope*>(branchResult, exprScopeHandle.getExprScope());
+}
+
+// Consider the dtor calls for the temporaries of a ternary branch (doBranchCleanup lambda in the host's visitTernaryExpr)
+p TypeChecker.doTernaryBranchCleanup(IVisitable* branch, const Scope* branchScope, bool resultIsRef) {
+    if branchScope == nil<const Scope*> {
+        return;
+    }
+    ExprScopeHandle exprScopeHandle = ExprScopeHandle(&this.compilerPass, branch);
+    if resultIsRef {
+        Scope* exprScope = exprScopeHandle.getExprScope();
+        exprScope.temporaryDtorsToCall.clear();
+    } else {
+        this.doExprScopeCleanup(branch);
+    }
+}
+
+// Check if a ternary operand is a temporary (isTemporary lambda in the host's visitTernaryExpr)
+f<bool> isTemporaryTernaryOperand(const SymbolTableEntry* entry) {
+    if entry == nil<const SymbolTableEntry*> || !entry.anonymous {
+        return false;
+    }
+    const QualType entryType = entry.getQualType();
+    return !entryType.isRef();
+}
+
+public f<Any> TypeChecker.visitLogicalOrExpr(ASTLogicalOrExprNode* node) {
+    // Check if a logical or operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentOperand = this.visitExpr(node.operands.get(0));
+    if currentOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Loop through all remaining operands
+    for unsigned long i = 1l; i < node.operands.getSize(); i++ {
+        // The operand is only evaluated if the ones before did not short-circuit, so it gets its temporaries destructed on its own
+        const ExprResult rhsOperand = this.visitInExprScope(node.operands.get(i));
+        if rhsOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        currentOperand = ExprResult{this.opRuleManager.getLogicalOrResultType(baseNode, currentOperand, rhsOperand), nil<SymbolTableEntry*>};
+    }
+
+    node.node.setEvaluatedSymbolType(currentOperand.ty, this.manIdx);
+    return Any(currentOperand);
+}
+
+public f<Any> TypeChecker.visitLogicalAndExpr(ASTLogicalAndExprNode* node) {
+    // Check if a logical and operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentOperand = this.visitExpr(node.operands.get(0));
+    if currentOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Loop through all remaining operands
+    for unsigned long i = 1l; i < node.operands.getSize(); i++ {
+        // The operand is only evaluated if the ones before did not short-circuit, so it gets its temporaries destructed on its own
+        const ExprResult rhsOperand = this.visitInExprScope(node.operands.get(i));
+        if rhsOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        currentOperand = ExprResult{this.opRuleManager.getLogicalAndResultType(baseNode, currentOperand, rhsOperand), nil<SymbolTableEntry*>};
+    }
+
+    node.node.setEvaluatedSymbolType(currentOperand.ty, this.manIdx);
+    return Any(currentOperand);
+}
+
+public f<Any> TypeChecker.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) {
+    // Check if a bitwise or operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentOperand = this.visitExpr(node.operands.get(0));
+    if currentOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Loop through all remaining operands
+    for unsigned long i = 1l; i < node.operands.getSize(); i++ {
+        const ExprResult rhsOperand = this.visitExpr(node.operands.get(i));
+        if rhsOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        currentOperand = this.opRuleManager.getBitwiseOrResultType(baseNode, currentOperand, rhsOperand, i - 1l);
+    }
+
+    node.node.setEvaluatedSymbolType(currentOperand.ty, this.manIdx);
+    return Any(currentOperand);
+}
+
+public f<Any> TypeChecker.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) {
+    // Check if a bitwise xor operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentOperand = this.visitExpr(node.operands.get(0));
+    if currentOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Loop through all remaining operands
+    for unsigned long i = 1l; i < node.operands.getSize(); i++ {
+        const ExprResult rhsOperand = this.visitExpr(node.operands.get(i));
+        if rhsOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        currentOperand = this.opRuleManager.getBitwiseXorResultType(baseNode, currentOperand, rhsOperand, i - 1l);
+    }
+
+    node.node.setEvaluatedSymbolType(currentOperand.ty, this.manIdx);
+    return Any(currentOperand);
+}
+
+public f<Any> TypeChecker.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) {
+    // Check if a bitwise and operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentOperand = this.visitExpr(node.operands.get(0));
+    if currentOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Loop through all remaining operands
+    for unsigned long i = 1l; i < node.operands.getSize(); i++ {
+        const ExprResult rhsOperand = this.visitExpr(node.operands.get(i));
+        if rhsOperand.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        currentOperand = this.opRuleManager.getBitwiseAndResultType(baseNode, currentOperand, rhsOperand, i - 1l);
+    }
+
+    node.node.setEvaluatedSymbolType(currentOperand.ty, this.manIdx);
+    return Any(currentOperand);
+}
+
+public f<Any> TypeChecker.visitEqualityExpr(ASTEqualityExprNode* node) {
+    // Check if at least one equality operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit right side first, then left side
+    const ExprResult rhs = this.visitExpr(node.operands.get(1));
+    if rhs.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    const ExprResult lhs = this.visitExpr(node.operands.get(0));
+    if lhs.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Check if we need the string runtime to perform a string comparison
+    if lhs.ty.is(SuperType::TY_STRING) && rhs.ty.is(SuperType::TY_STRING) && !this.sourceFile.isStringRT() {
+        this.sourceFile.requestRuntimeModule(RuntimeModule::STRING_RT);
+    }
+
+    // Check operator
+    ExprResult equalityResult = ExprResult{QualType(SuperType::TY_INVALID), nil<SymbolTableEntry*>};
+    if node.op == EqualityOp::OP_EQUAL { // Operator was equal
+        equalityResult = this.opRuleManager.getEqualResultType(baseNode, lhs, rhs);
+    } else if node.op == EqualityOp::OP_NOT_EQUAL { // Operator was not equal
+        equalityResult = this.opRuleManager.getNotEqualResultType(baseNode, lhs, rhs);
+    } else {
+        panic(Error("EqualityExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+    }
+
+    node.node.setEvaluatedSymbolType(equalityResult.ty, this.manIdx);
+    return Any(equalityResult);
+}
+
+public f<Any> TypeChecker.visitRelationalExpr(ASTRelationalExprNode* node) {
+    // Check if a relational operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit right side first, then left side
+    const ExprResult rhs = this.visitExpr(node.operands.get(1));
+    if rhs.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    const ExprResult lhs = this.visitExpr(node.operands.get(0));
+    if lhs.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Check operator
+    QualType resultType = QualType(SuperType::TY_INVALID);
+    if node.op == RelationalOp::OP_LESS { // Operator was less
+        resultType = this.opRuleManager.getLessResultType(baseNode, lhs, rhs);
+    } else if node.op == RelationalOp::OP_GREATER { // Operator was greater
+        resultType = this.opRuleManager.getGreaterResultType(baseNode, lhs, rhs);
+    } else if node.op == RelationalOp::OP_LESS_EQUAL { // Operator was less equal
+        resultType = this.opRuleManager.getLessEqualResultType(baseNode, lhs, rhs);
+    } else if node.op == RelationalOp::OP_GREATER_EQUAL { // Operator was greater equal
+        resultType = this.opRuleManager.getGreaterEqualResultType(baseNode, lhs, rhs);
+    } else {
+        panic(Error("RelationalExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(resultType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+public f<Any> TypeChecker.visitShiftExpr(ASTShiftExprNode* node) {
+    // Check if at least one shift operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentResult = this.visitExpr(node.operands.get(0));
+    if currentResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Loop through remaining operands
+    for unsigned long i = 0l; i < node.opQueue.getSize(); i++ {
+        const ExprResult operandResult = this.visitExpr(node.operands.get(i + 1l));
+        if operandResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+        // Check operator
+        Pair<ShiftOp, QualType>& queueFront = node.opQueue.front();
+        const ShiftOp op = queueFront.getFirst();
+        if op == ShiftOp::OP_SHIFT_LEFT {
+            currentResult = this.opRuleManager.getShiftLeftResultType(baseNode, currentResult, operandResult, i);
+        } else if op == ShiftOp::OP_SHIFT_RIGHT {
+            currentResult = this.opRuleManager.getShiftRightResultType(baseNode, currentResult, operandResult, i);
+        } else {
+            panic(Error("ShiftExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        }
+
+        // Push the new item and pop the old one on the other side of the queue
+        node.opQueue.push(Pair<ShiftOp, QualType>(op, currentResult.ty));
+        node.opQueue.pop();
+    }
+
+    node.node.setEvaluatedSymbolType(currentResult.ty, this.manIdx);
+    return Any(currentResult);
+}
+
+public f<Any> TypeChecker.visitAdditiveExpr(ASTAdditiveExprNode* node) {
+    // Check if at least one additive operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentResult = this.visitExpr(node.operands.get(0));
+    if currentResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Loop through remaining operands
+    for unsigned long i = 0l; i < node.opQueue.getSize(); i++ {
+        const ExprResult operandResult = this.visitExpr(node.operands.get(i + 1l));
+        if operandResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+        // Check operator
+        Pair<AdditiveOp, QualType>& queueFront = node.opQueue.front();
+        const AdditiveOp op = queueFront.getFirst();
+        if op == AdditiveOp::OP_PLUS {
+            currentResult = this.opRuleManager.getPlusResultType(baseNode, currentResult, operandResult, i);
+        } else if op == AdditiveOp::OP_MINUS {
+            currentResult = this.opRuleManager.getMinusResultType(baseNode, currentResult, operandResult, i);
+        } else {
+            panic(Error("AdditiveExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        }
+
+        // Push the new item and pop the old one on the other side of the queue
+        node.opQueue.push(Pair<AdditiveOp, QualType>(op, currentResult.ty));
+        node.opQueue.pop();
+    }
+
+    node.node.setEvaluatedSymbolType(currentResult.ty, this.manIdx);
+    return Any(currentResult);
+}
+
+public f<Any> TypeChecker.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) {
+    // Check if at least one multiplicative operator is applied
+    if node.operands.getSize() == 1l {
+        return this.visit(node.operands.front());
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit leftmost operand
+    ExprResult currentResult = this.visitExpr(node.operands.get(0));
+    if currentResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    // Loop through remaining operands
+    for unsigned long i = 0l; i < node.opQueue.getSize(); i++ {
+        const ExprResult operandResult = this.visitExpr(node.operands.get(i + 1l));
+        if operandResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+        // Check operator
+        Pair<MultiplicativeOp, QualType>& queueFront = node.opQueue.front();
+        const MultiplicativeOp op = queueFront.getFirst();
+        if op == MultiplicativeOp::OP_MUL {
+            currentResult = this.opRuleManager.getMulResultType(baseNode, currentResult, operandResult, i);
+        } else if op == MultiplicativeOp::OP_DIV {
+            currentResult = this.opRuleManager.getDivResultType(baseNode, currentResult, operandResult, i);
+        } else if op == MultiplicativeOp::OP_REM {
+            currentResult = this.opRuleManager.getRemResultType(baseNode, currentResult, operandResult);
+        } else {
+            panic(Error("Multiplicative fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        }
+
+        // Push the new item and pop the old one on the other side of the queue
+        node.opQueue.push(Pair<MultiplicativeOp, QualType>(op, currentResult.ty));
+        node.opQueue.pop();
+    }
+
+    node.node.setEvaluatedSymbolType(currentResult.ty, this.manIdx);
+    return Any(currentResult);
+}
+
+public f<Any> TypeChecker.visitCastExpr(ASTCastExprNode* node) {
+    // Check if cast is applied
+    if !node.isCast {
+        return this.visit(node.prefixUnaryExpr);
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit destination type
+    const QualType dstType = this.getDataType(node.dataType);
+    if dstType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    // Visit source type
+    const ExprResult src = this.visitExpr(node.assignExpr);
+    if src.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Check for identity cast
+    if src.ty == dstType {
+        this.addWarning(baseNode.codeLoc, CompilerWarningType::IDENTITY_CAST, String("You cast from a type to itself. Thus, this can be simplified."));
+    }
+
+    // Get result type
+    const QualType resultType = this.opRuleManager.getCastResultType(baseNode, dstType, src);
+
+    const bool typesMatch = dstType.matches(src.ty, false, true, true);
+    const bool sameContainerType = src.ty.isSameContainerTypeAs(dstType);
+    SymbolTableEntry* entry = typesMatch || sameContainerType ? src.entry : nil<SymbolTableEntry*>;
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(resultType, this.manIdx), entry});
+}
+
+public f<Any> TypeChecker.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) {
+    // If no operator is applied, simply visit the postfix unary expression
+    if node.op == PrefixUnaryOp::OP_NONE {
+        return this.visit(node.postfixUnaryExpr);
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit the right side
+    const ExprResult operand = this.visitExpr(node.prefixUnaryExpr);
+    QualType operandType = operand.ty;
+    SymbolTableEntry* operandEntry = operand.entry;
+    if operandType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    // Determine action, based on the given operator
+    switch node.op {
+        case PrefixUnaryOp::OP_MINUS: {
+            operandType = this.opRuleManager.getPrefixMinusResultType(baseNode, operand);
+        }
+        case PrefixUnaryOp::OP_PLUS_PLUS: {
+            operandType = this.opRuleManager.getPrefixPlusPlusResultType(baseNode, operand);
+
+            if operandEntry != nil<SymbolTableEntry*> {
+                // In case the lhs is captured, notify the capture about the write access
+                Capture* lhsCapture = this.currentScope.symbolTable.lookupCapture(operandEntry.name);
+                if lhsCapture != nil<Capture*> {
+                    lhsCapture.setAccessType(CaptureAccessType::READ_WRITE);
+                }
+
+                // Update the state of the variable
+                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+            }
+        }
+        case PrefixUnaryOp::OP_MINUS_MINUS: {
+            operandType = this.opRuleManager.getPrefixMinusMinusResultType(baseNode, operand);
+
+            if operandEntry != nil<SymbolTableEntry*> {
+                // In case the lhs is captured, notify the capture about the write access
+                Capture* lhsCapture = this.currentScope.symbolTable.lookupCapture(operandEntry.name);
+                if lhsCapture != nil<Capture*> {
+                    lhsCapture.setAccessType(CaptureAccessType::READ_WRITE);
+                }
+
+                // Update the state of the variable
+                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+            }
+        }
+        case PrefixUnaryOp::OP_NOT: {
+            operandType = this.opRuleManager.getPrefixNotResultType(baseNode, operand);
+        }
+        case PrefixUnaryOp::OP_BITWISE_NOT: {
+            const ExprResult bitwiseNotResult = this.opRuleManager.getPrefixBitwiseNotResultType(baseNode, operand);
+            operandType = bitwiseNotResult.ty;
+            operandEntry = bitwiseNotResult.entry;
+        }
+        case PrefixUnaryOp::OP_DEREFERENCE: {
+            operandType = this.opRuleManager.getPrefixMulResultType(baseNode, operand);
+        }
+        case PrefixUnaryOp::OP_ADDRESS_OF: {
+            operandType = this.opRuleManager.getPrefixBitwiseAndResultType(baseNode, operand);
+        }
+        default: {
+            panic(Error("PrefixUnaryExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        }
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(operandType, this.manIdx), operandEntry});
+}
+
+public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
+    // If no operator is applied, simply visit the atomic expression
+    if node.op == PostfixUnaryOp::OP_NONE {
+        return this.visit(node.atomicExpr);
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit left side
+    const ExprResult operand = this.visitExpr(node.postfixUnaryExpr);
+    QualType operandType = operand.ty;
+    SymbolTableEntry* operandEntry = operand.entry;
+    if operandType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    switch node.op {
+        case PostfixUnaryOp::OP_SUBSCRIPT: {
+            // Visit index assignment
+            IVisitable* indexAssignExpr = node.subscriptIndexExpr;
+            const ExprResult index = this.visitExpr(indexAssignExpr);
+            if index.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+            // Check is there is an overloaded operator function available, if yes accept it
+            Vector<ExprResult> operatorOperands;
+            operatorOperands.pushBack(operand);
+            operatorOperands.pushBack(index);
+            const ExprResult overloadResult = this.opRuleManager.isOperatorOverloadingFctAvailable(baseNode, OP_FCT_SUBSCRIPT, operatorOperands, 0l);
+            if !overloadResult.ty.is(SuperType::TY_INVALID) {
+                operandType = overloadResult.ty;
+            } else {
+                operandType = operandType.removeReferenceWrapper();
+
+                // Check if the index is of the right type
+                const dyn indexOptions = [SuperType::TY_INT, SuperType::TY_LONG];
+                if !index.ty.isOneOf(indexOptions, len(indexOptions)) {
+                    return this.softErrorER(baseNode, SemanticErrorType::ARRAY_INDEX_NOT_INT_OR_LONG, String("Array index must be of type int or long"));
+                }
+
+                // Check if we can apply the subscript operator on the lhs type
+                const dyn subscriptOptions = [SuperType::TY_ARRAY, SuperType::TY_PTR, SuperType::TY_STRING];
+                if !operandType.isOneOf(subscriptOptions, len(subscriptOptions)) {
+                    const String message = String("Can only apply subscript operator on array type, got ") + operandType.getName(true);
+                    return this.softErrorER(baseNode, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, message);
+                }
+
+                // Check if we have an unsafe operation
+                if operandType.isPtr() && !this.currentScope.doesAllowUnsafeOperations() {
+                    return this.softErrorER(baseNode, SemanticErrorType::UNSAFE_OPERATION_IN_SAFE_CONTEXT, String("The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing."));
+                }
+
+                // In case of compile time index value and known array size, perform a compile time out-of-bounds check
+                ASTNode* indexNode = getASTNode(indexAssignExpr);
+                if operandType.isArray() && cast<unsigned long>(operandType.getArraySize()) != ARRAY_SIZE_UNKNOWN && indexNode.hasCompileTimeValue(this.manIdx) {
+                    const CompileTimeValue compileTimeValue = indexNode.getCompileTimeValue(this.manIdx);
+                    const int constIndex = compileTimeValue.intValue;
+                    const unsigned int constSize = operandType.getArraySize();
+                    // Check if we are accessing out-of-bounds memory
+                    if constIndex >= cast<int>(constSize) {
+                        const String idxStr = toString(constIndex);
+                        const String sizeStr = toString(cast<long>(constSize));
+                        const String message = String("You are trying to access element with index ") + idxStr + " of an array with size " + sizeStr;
+                        return this.softErrorER(baseNode, SemanticErrorType::ARRAY_INDEX_OUT_OF_BOUNDS, message);
+                    }
+                }
+
+                // Get item type
+                operandType = operandType.getContained();
+
+                // Remove heap qualifier
+                TypeQualifiers& qualifiers = operandType.getQualifiers();
+                qualifiers.isHeap = false;
+            }
+        }
+        case PostfixUnaryOp::OP_MEMBER_ACCESS: {
+            const String& fieldName = node.identifier;
+
+            // Check if lhs is enum or strobj
+            const QualType lhsBaseTy = operandType.autoDereference();
+
+            // Union field access is handled separately: a union field is always a direct, non-composed lookup by name
+            // (unlike struct fields, union fields never nest/compose), and reading/writing it requires a runtime tag
+            // check/update in the IR generator, which relies on the field entry resolved here.
+            if lhsBaseTy.is(SuperType::TY_UNION) {
+                const String unionName = lhsBaseTy.getSubType();
+                Scope* unionScope = lhsBaseTy.getBodyScope();
+
+                // If we only have the generic union scope, lookup the concrete manifestation scope
+                if unionScope.isGenericScope {
+                    const Union* spiceUnion = lhsBaseTy.getUnion(baseNode);
+                    assert spiceUnion != nil<const Union*>;
+                    unionScope = spiceUnion.scope;
+                }
+                assert !unionScope.isGenericScope; // At this point we always expect a substantiation scope
+
+                // Get accessed field
+                SymbolTableEntry* memberEntry = unionScope.symbolTable.lookupStrict(fieldName);
+                if memberEntry == nil<SymbolTableEntry*> {
+                    const String message = String("Field '") + node.identifier + "' not found in union " + unionName;
+                    return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+                }
+                const QualType memberType = memberEntry.getQualType();
+
+                // Check for insufficient visibility
+                const QualType memberBaseType = memberType.getBase();
+                if unionScope.isImportedBy(this.rootScope) && !memberBaseType.isPublic() {
+                    const String message = String("Cannot access field '") + fieldName + "' due to its private visibility";
+                    return this.softErrorER(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, message);
+                }
+
+                // Set field to used
+                memberEntry.used = true;
+
+                // A read of an inactive field panics, which prints the stack trace, so the runtime that does that has to be loaded
+                if this.cliOptions.printsStackTraceOnAbort() && !this.sourceFile.isRT(RuntimeModule::STACK_TRACE_RT) {
+                    this.sourceFile.requestRuntimeModule(RuntimeModule::STACK_TRACE_RT);
+                }
+
+                // Overwrite type and entry of left side with member type and entry
+                operandType = memberType;
+                operandEntry = memberEntry;
+            } else {
+                if !lhsBaseTy.is(SuperType::TY_STRUCT) {
+                    const String message = String("Cannot apply member access operator on ") + operandType.getName(false);
+                    return this.softErrorER(baseNode, SemanticErrorType::INVALID_MEMBER_ACCESS, message);
+                }
+
+                // Retrieve registry entry
+                const String structName = lhsBaseTy.getSubType();
+                Scope* structScope = lhsBaseTy.getBodyScope();
+
+                // If we only have the generic struct scope, lookup the concrete manifestation scope
+                if structScope.isGenericScope {
+                    const Struct* spiceStruct = lhsBaseTy.getStruct(baseNode);
+                    assert spiceStruct != nil<const Struct*>;
+                    structScope = spiceStruct.scope;
+                }
+                assert !structScope.isGenericScope; // At this point we always expect a substantiation scope
+
+                // Get accessed field
+                Vector<unsigned long> indexPath;
+                SymbolTableEntry* memberEntry = structScope.symbolTable.lookupInComposedFields(fieldName, indexPath);
+                if memberEntry == nil<SymbolTableEntry*> {
+                    const String message = String("Field '") + node.identifier + "' not found in struct " + structName;
+                    return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+                }
+                const QualType memberType = memberEntry.getQualType();
+
+                // Check for insufficient visibility
+                const QualType memberBaseType = memberType.getBase();
+                if structScope.isImportedBy(this.rootScope) && !memberBaseType.isPublic() {
+                    const String message = String("Cannot access field '") + fieldName + "' due to its private visibility";
+                    return this.softErrorER(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, message);
+                }
+
+                // Set field to used
+                memberEntry.used = true;
+
+                // Overwrite type and entry of left side with member type and entry
+                operandType = memberType;
+                operandEntry = memberEntry;
+            }
+        }
+        case PostfixUnaryOp::OP_PLUS_PLUS: {
+            const ExprResult plusPlusResult = this.opRuleManager.getPostfixPlusPlusResultType(baseNode, operand);
+            operandType = plusPlusResult.ty;
+
+            if operandEntry != nil<SymbolTableEntry*> {
+                // In case the lhs is captured, notify the capture about the write access
+                Capture* lhsCapture = this.currentScope.symbolTable.lookupCapture(operandEntry.name);
+                if lhsCapture != nil<Capture*> {
+                    lhsCapture.setAccessType(CaptureAccessType::READ_WRITE);
+                }
+
+                // Update the state of the variable
+                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+            }
+        }
+        case PostfixUnaryOp::OP_MINUS_MINUS: {
+            const ExprResult minusMinusResult = this.opRuleManager.getPostfixMinusMinusResultType(baseNode, operand);
+            operandType = minusMinusResult.ty;
+
+            if operandEntry != nil<SymbolTableEntry*> {
+                // In case the lhs is captured, notify the capture about the write access
+                Capture* lhsCapture = this.currentScope.symbolTable.lookupCapture(operandEntry.name);
+                if lhsCapture != nil<Capture*> {
+                    lhsCapture.setAccessType(CaptureAccessType::READ_WRITE);
+                }
+
+                // Update the state of the variable
+                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+            }
+        }
+        case PostfixUnaryOp::OP_ERR_PROPAGATION: {
+            // Check if the operand is of type Result<T>
+            const QualType resultType = operandType.removeReferenceWrapper();
+            if !resultType.isResultObj() {
+                const String message = String("The error propagation operator '!' can only be applied to a value of type Result<T>, got ") + operandType.getName(false);
+                return this.softErrorER(baseNode, SemanticErrorType::ERR_PROPAGATION_INVALID_OPERAND, message);
+            }
+
+            // Check if the enclosing function/procedure/lambda itself returns Result<U>
+            const SymbolTableEntry* enclosingReturnVar = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
+            QualType enclosingReturnType = QualType(SuperType::TY_DYN);
+            if enclosingReturnVar != nil<const SymbolTableEntry*> {
+                enclosingReturnType = enclosingReturnVar.getQualType();
+            }
+            if enclosingReturnVar == nil<const SymbolTableEntry*> || !enclosingReturnType.isResultObj() {
+                return this.softErrorER(baseNode, SemanticErrorType::ERR_PROPAGATION_INVALID_CONTEXT, String("The error propagation operator '!' can only be used inside a function that itself returns Result<U>"));
+            }
+
+            // Retrieve the substantiation scope of the operand's Result<T>
+            Scope* resultScope = resultType.getBodyScope();
+            if resultScope.isGenericScope {
+                const Struct* resultStruct = resultType.getStruct(baseNode);
+                assert resultStruct != nil<const Struct*>;
+                resultScope = resultStruct.scope;
+            }
+            assert !resultScope.isGenericScope;
+
+            // Resolve Result<T>.isErr(), Result<T>.unwrap() and Result<T>.getErr()
+            const ArgList noArgs;
+            const QualTypeList noTemplateTypeHints;
+            node.errPropIsErrFct = matchFunction(resultScope, String("isErr"), resultType, noArgs, noTemplateTypeHints, false, baseNode);
+            node.errPropUnwrapFct = matchFunction(resultScope, String("unwrap"), resultType, noArgs, noTemplateTypeHints, false, baseNode);
+            node.errPropGetErrFct = matchFunction(resultScope, String("getErr"), resultType, noArgs, noTemplateTypeHints, false, baseNode);
+            if node.errPropIsErrFct == nil<const Function*> || node.errPropUnwrapFct == nil<const Function*> || node.errPropGetErrFct == nil<const Function*> {
+                return this.softErrorER(baseNode, SemanticErrorType::ERR_PROPAGATION_INVALID_CONTEXT, String("Failed to resolve the Result<T> helper methods required for the error propagation operator"));
+            }
+
+            // Resolve err<U>(const Error&), located next to Result in the same module
+            const NameRegistryEntry* resultRegistryEntry = this.sourceFile.getNameRegistryEntry(String(RESULTOBJ_NAME));
+            assert resultRegistryEntry != nil<const NameRegistryEntry*>;
+            Scope* resultStructScope = resultRegistryEntry.targetScope;
+            Scope* resultModuleScope = resultStructScope.parent;
+            const QualTypeList enclosingTemplateTypes = enclosingReturnType.getTemplateTypes();
+            const Function* getErrFct = node.errPropGetErrFct;
+            ArgList errArgs;
+            errArgs.pushBack(Pair<QualType, bool>(getErrFct.returnType, false));
+            node.errPropCtorFct = matchFunction(resultModuleScope, String("err"), QualType(SuperType::TY_DYN), errArgs, enclosingTemplateTypes, false, baseNode);
+            if node.errPropCtorFct == nil<const Function*> {
+                return this.softErrorER(baseNode, SemanticErrorType::ERR_PROPAGATION_INVALID_CONTEXT, String("Failed to resolve 'err<U>(const Error&)' required for the error propagation operator"));
+            }
+
+            // The whole expression evaluates to the unwrapped payload
+            const Function* unwrapFct = node.errPropUnwrapFct;
+            operandType = unwrapFct.returnType;
+            operandEntry = nil<SymbolTableEntry*>;
+        }
+        default: {
+            panic(Error("PostfixUnaryExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        }
+    }
+
+    if operandType.is(SuperType::TY_INVALID) {
+        String varName = String("");
+        if operandEntry != nil<SymbolTableEntry*> {
+            varName = operandEntry.name;
+        }
+        const String message = String("Variable '") + varName + "' was referenced before declared";
+        return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(operandType, this.manIdx), operandEntry});
+}
+
+public f<Any> TypeChecker.visitAtomicExpr(ASTAtomicExprNode* node) {
+    // Check if constant
+    if node.constant != nil<ASTConstantNode*> {
+        return this.visitConstant(node.constant);
+    }
+
+    // Check if value
+    if node.value != nil<IVisitable*> {
+        return this.visit(node.value);
+    }
+
+    // Check for assign expression within parentheses
+    if node.assignExpr != nil<IVisitable*> {
+        return this.visit(node.assignExpr);
+    }
+
+    // Identifier (local or global variable access)
+    assert !node.fqIdentifier.isEmpty();
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    VarAccessData& accessData = node.data.get(this.manIdx);
+    accessData.accessScope = this.currentScope;
+
+    // Check if a local or global variable can be found by searching for the name
+    if node.identifierFragments.getSize() == 1l {
+        accessData.entry = accessData.accessScope.lookup(node.identifierFragments.back());
+    }
+
+    // If no local or global was found, search in the name registry
+    if accessData.entry == nil<SymbolTableEntry*> {
+        const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(node.fqIdentifier);
+        if registryEntry == nil<const NameRegistryEntry*> {
+            const String message = String("The variable '") + node.fqIdentifier + "' could not be found";
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+        }
+        accessData.entry = registryEntry.targetEntry;
+        accessData.accessScope = registryEntry.targetScope;
+    }
+    assert accessData.entry != nil<SymbolTableEntry*>;
+    SymbolTableEntry* entry = accessData.entry;
+    entry.used = true;
+    accessData.capture = accessData.accessScope.symbolTable.lookupCapture(entry.name);
+
+    const QualType varType = entry.getQualType();
+    if varType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    if varType.is(SuperType::TY_INVALID) {
+        const String message = String("Symbol '") + entry.name + "' was used before declared.";
+        return this.softErrorER(baseNode, SemanticErrorType::USED_BEFORE_DECLARED, message);
+    }
+
+    const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    if varType.isOneOf(fctOptions, len(fctOptions)) && entry.global {
+        // Check if overloaded function was referenced
+        Vector<Function*>* manifestations = entry.declNode.getFctManifestations(entry.name);
+        if manifestations.getSize() > 1l {
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_OVERLOADED_FCT, String("Overloaded functions / functions with optional params cannot be referenced"));
+        }
+        // Set referenced function to used
+        Function* referencedFunction = manifestations.front();
+        if !referencedFunction.templateTypes.isEmpty() {
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_OVERLOADED_FCT, String("Generic functions cannot be referenced"));
+        }
+        referencedFunction.used = true;
+        referencedFunction.entry.used = true;
+    }
+
+    // The base type should be an extended primitive
+    const QualType baseType = varType.getBase();
+    if !baseType.isExtendedPrimitive() && !baseType.is(SuperType::TY_DYN) {
+        const String message = String("A symbol of type ") + varType.getName(false) + " cannot be accessed here";
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_SYMBOL_ACCESS, message);
+    }
+
+    // Check if we have seen a 'this.' prefix, because the generator needs that
+    const String& firstFragment = node.identifierFragments.front();
+    if entry.scope.scopeType == ScopeType::STRUCT && firstFragment != THIS_VARIABLE_NAME {
+        const String message = String("The symbol '") + node.fqIdentifier + "' could not be found. Missing 'this.' prefix?";
+        return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+    }
+
+    // Ensure that the entry is public, if the symbol is imported.
+    // An exception are enum items. There it is sufficient, that the enum itself is public.
+    if accessData.accessScope.isImportedBy(this.rootScope) && accessData.accessScope.scopeType != ScopeType::ENUM {
+        if !baseType.isPublic() {
+            const String message = String("Cannot access '") + entry.name + "' due to its private visibility";
+            return this.softErrorER(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, message);
+        }
+    }
+
+    // For enum item access, use access scope of the enum
+    if entry.scope.scopeType == ScopeType::ENUM {
+        accessData.accessScope = entry.scope;
+    }
+
+    // For struct access, use access scope of the struct
+    if baseType.is(SuperType::TY_STRUCT) {
+        const String structName = baseType.getSubType();
+        const NameRegistryEntry* nameRegistryEntry = this.sourceFile.getNameRegistryEntry(structName);
+        // The struct may only be reachable transitively (i.e. it is not present in this file's name registry under
+        // its unqualified name). In that case, fall back to the struct's body scope, which is exactly what the
+        // registry entry's targetScope would point to (see SymbolTableBuilder struct registration). This keeps
+        // member access working across deep transitive imports instead of crashing.
+        if nameRegistryEntry != nil<const NameRegistryEntry*> {
+            accessData.accessScope = nameRegistryEntry.targetScope;
+        } else {
+            accessData.accessScope = baseType.getBodyScope();
+        }
+        assert accessData.accessScope != nil<Scope*>;
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(varType, this.manIdx), entry});
 }
 
 // ============================================================== TypeCheckerValues.cpp ===========================================
@@ -2112,43 +3738,9 @@ public f<Any> TypeChecker.visitAttr(ASTAttrNode* node) { return this.visitChildr
 
 // ============================================================= Not ported yet ==================================================
 
-// ToDo: Port these visit methods together with the check pass (TypeCheckerStatements.cpp, TypeCheckerExpressions.cpp,
-// TypeCheckerValues.cpp, TypeCheckerCheck.cpp, TypeCheckerBuiltinFunctions.cpp). They are only reached from function bodies,
+// ToDo: Port these visit methods together with the check pass (TypeCheckerValues.cpp, TypeCheckerTopLevelDefinitionsCheck.cpp,
+// TypeCheckerBuiltinFunctions.cpp). They are only reached from function bodies,
 // which the prepare pass does not visit.
-public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitWhileLoop(ASTWhileLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitDoWhileLoop(ASTDoWhileLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitIfStmt(ASTIfStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitElseStmt(ASTElseStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitSwitchStmt(ASTSwitchStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitCaseBranch(ASTCaseBranchNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitDefaultBranch(ASTDefaultBranchNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitStmtLst(ASTStmtLstNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitReturnStmt(ASTReturnStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitBreakStmt(ASTBreakStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitContinueStmt(ASTContinueStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAssertStmt(ASTAssertStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitLogicalOrExpr(ASTLogicalOrExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitLogicalAndExpr(ASTLogicalAndExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitEqualityExpr(ASTEqualityExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitRelationalExpr(ASTRelationalExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitShiftExpr(ASTShiftExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAdditiveExpr(ASTAdditiveExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitCastExpr(ASTCastExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAtomicExpr(ASTAtomicExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitValue(ASTValueNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
@@ -2159,7 +3751,7 @@ public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) { return this
 
 // ============================================================== TypeCheckerImplicit.cpp ========================================
 
-// ToDo: Port the rest of TypeCheckerImplicit.cpp (implicit default ctors/dtors, dtor calls, ...)
+// ToDo: Port the rest of TypeCheckerImplicit.cpp (implicit default ctors/dtors, body preambles)
 
 /**
  * Prepare the generation of a call to a method of a given struct
@@ -2254,4 +3846,173 @@ public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const QualType& thi
     ArgList args;
     args.pushBack(Pair<QualType, bool>(argType, false /* we always have an entry here */));
     return this.implicitlyCallStructMethod(thisType, String(CTOR_FUNCTION_NAME), args, node);
+}
+
+/**
+ * Prepare the generation of a call to the dtor of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the dtor call
+ * @param node StmtLstNode for the current scope
+ */
+p TypeChecker.implicitlyCallStructDtor(SymbolTableEntry* entry, ASTStmtLstNode* node) {
+    // Add the dtor to the stmt list node to call it later in codegen
+    const ArgList noArgs;
+    Function* dtor = this.implicitlyCallStructMethod(entry, String(DTOR_FUNCTION_NAME), noArgs, cast<ASTNode*>(node));
+    if dtor != nil<Function*> {
+        ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
+        resources.dtorFunctionsToCall.pushBack(Pair<SymbolTableEntry*, Function*>(entry, dtor));
+    }
+}
+
+/**
+ * Prepare the generation of a call to the deallocate function for a heap-allocated variable
+ *
+ * @param node Current AST node for error messages
+ */
+p TypeChecker.implicitlyCallDeallocate(const ASTNode* node) {
+    SourceFile* memoryRT = this.sourceFile.requestRuntimeModule(RuntimeModule::MEMORY_RT);
+    assert memoryRT != nil<SourceFile*>;
+    Scope* matchScope = memoryRT.getGlobalScope();
+    // Set dealloc function to used
+    const QualType thisType = QualType(SuperType::TY_DYN);
+    const QualType byteType = QualType(SuperType::TY_BYTE);
+    const QualType bytePtrType = byteType.toPtr(node);
+    QualType bytePtrRefType = bytePtrType.toRef(node);
+    bytePtrRefType.makeHeap();
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(bytePtrRefType, false /* we always have the field as storage */));
+    const QualTypeList noTemplateTypeHints;
+    Function* deallocFct = matchFunction(matchScope, String(FCT_NAME_DEALLOC), thisType, args, noTemplateTypeHints, true, node);
+    assert deallocFct != nil<Function*>;
+    deallocFct.used = true;
+}
+
+/**
+ * Sort the given variables in reverse declaration order. This is the order in which their dtors are called.
+ *
+ * @param vars Variables to sort
+ */
+p TypeChecker.sortByReverseDeclarationOrder(Vector<SymbolTableEntry*>& vars) {
+    // Stable insertion sort (std::ranges::stable_sort in the host)
+    for unsigned long i = 1l; i < vars.getSize(); i++ {
+        SymbolTableEntry* current = vars.get(i);
+        unsigned long j = i;
+        while j > 0l && this.isDeclaredAfter(current, vars.get(j - 1l)) {
+            SymbolTableEntry*& slot = vars.get(j);
+            slot = vars.get(j - 1l);
+            j--;
+        }
+        SymbolTableEntry*& targetSlot = vars.get(j);
+        targetSlot = current;
+    }
+}
+
+// Comparator of sortByReverseDeclarationOrder (comp lambda in the host)
+f<bool> TypeChecker.isDeclaredAfter(const SymbolTableEntry* a, const SymbolTableEntry* b) {
+    const ASTNode* aDeclNode = a.declNode;
+    const ASTNode* bDeclNode = b.declNode;
+    // Primary sort criteria is the code location
+    if !(aDeclNode.codeLoc == bDeclNode.codeLoc) {
+        return aDeclNode.codeLoc.isAfter(bDeclNode.codeLoc);
+    }
+    // Secondary sort criteria is the node id
+    return this.getNodeId(aDeclNode) > this.getNodeId(bDeclNode);
+}
+
+// Node id of the given AST node. Like the host's nodeToNodeId[node], nodes that were not created by the parser get the id 0
+f<unsigned long> TypeChecker.getNodeId(const ASTNode* node) {
+    const long nodeAddress = getNodeAddress(node);
+    if !this.resourceManager.nodeToNodeId.contains(nodeAddress) {
+        return 0l;
+    }
+    return this.resourceManager.nodeToNodeId.get(nodeAddress);
+}
+
+/**
+ * Consider calls to destructors for the given scope
+ *
+ * @param node StmtLstNode for the current scope
+ */
+p TypeChecker.doScopeCleanup(ASTStmtLstNode* node) {
+    // Get all variables, that are approved for de-allocation
+    Vector<SymbolTableEntry*> vars = this.currentScope.getVarsGoingOutOfScope();
+    // Sort by reverse declaration order
+    this.sortByReverseDeclarationOrder(vars);
+    // Call the dtor of each variable. We call the dtor in reverse declaration order
+    foreach SymbolTableEntry* varEntry : vars {
+        const QualType varType = varEntry.getQualType();
+        // Check if we have a heap-allocated pointer
+        const dyn heapOptions = [SuperType::TY_PTR, SuperType::TY_STRING, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+        if varType.isHeap() && varType.isOneOf(heapOptions, len(heapOptions)) {
+            // The memory runtime is ignored, because it manually allocates to avoid circular dependencies.
+            // Same goes for the string runtime.
+            if this.sourceFile.isMemoryRT() || this.sourceFile.isStringRT() {
+                continue;
+            }
+            // If the local variable currently does not have the ownership, we must not deallocate its memory
+            const Lifecycle& lifecycle = varEntry.getLifecycle();
+            if !lifecycle.isInOwningState() {
+                continue;
+            }
+
+            this.implicitlyCallDeallocate(cast<ASTNode*>(node)); // Required to request the memory runtime
+            ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
+            resources.heapVarsToFree.pushBack(varEntry);
+        }
+        // Only generate dtor call for structs and if not omitted
+        if !varType.is(SuperType::TY_STRUCT) || varEntry.omitDtorCall {
+            continue;
+        }
+        // Variable must be either initialized or a struct field
+        if !varEntry.isInitialized() && varEntry.scope.scopeType != ScopeType::STRUCT {
+            continue;
+        }
+        // Call dtor
+        this.implicitlyCallStructDtor(varEntry, node);
+    }
+}
+
+/**
+ * Consider calls to the destructors of the temporaries of the current expression scope
+ *
+ * @param node Expression, that owns the current expression scope
+ */
+p TypeChecker.doExprScopeCleanup(IVisitable* node) {
+    assert this.currentScope.scopeType == ScopeType::EXPR_BODY;
+
+    // Get all temporaries that go out of scope. This is executed again if the expression is type-checked again
+    Vector<SymbolTableEntry*> temporaries = this.currentScope.getVarsGoingOutOfScope();
+    this.sortByReverseDeclarationOrder(temporaries);
+    this.currentScope.temporaryDtorsToCall.clear();
+
+    // Call the dtor of each temporary. We call the dtor in reverse declaration order
+    ASTNode* baseNode = getASTNode(node);
+    foreach SymbolTableEntry* temporary : temporaries {
+        // Only generate dtor call for initialized structs and if not omitted
+        const QualType temporaryType = temporary.getQualType();
+        if !temporaryType.is(SuperType::TY_STRUCT) || temporary.omitDtorCall || !temporary.isInitialized() {
+            continue;
+        }
+        const ArgList noArgs;
+        Function* dtor = this.implicitlyCallStructMethod(temporary, String(DTOR_FUNCTION_NAME), noArgs, baseNode);
+        if dtor != nil<Function*> {
+            this.currentScope.temporaryDtorsToCall.pushBack(Pair<SymbolTableEntry*, Function*>(temporary, dtor));
+        }
+    }
+}
+
+/**
+ * Visit an expression in its expression scope, if it has one, and consider calls to the destructors of its temporaries
+ *
+ * @param expr Expression to visit
+ * @return Result of the expression
+ */
+f<ExprResult> TypeChecker.visitInExprScope(IVisitable* expr) {
+    ExprScopeHandle exprScopeHandle = ExprScopeHandle(&this.compilerPass, expr);
+    const ExprResult exprResult = this.visitExpr(expr);
+    // If the expression is not resolved yet, it is visited again later on, which is when the temporaries are known
+    if exprScopeHandle.getExprScope() != nil<Scope*> && !exprResult.ty.is(SuperType::TY_UNRESOLVED) {
+        this.doExprScopeCleanup(expr);
+    }
+    return exprResult;
 }

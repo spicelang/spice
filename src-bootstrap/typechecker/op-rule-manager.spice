@@ -97,9 +97,9 @@ public type OpRuleManager struct {
     BinaryOpRules castOpRules
 }
 
-public p OpRuleManager.ctor() {
-    this.initRules();
-}
+// Only default-initializes the field of the TypeChecker, whose ctor replaces it with a manager created by the ctor below. It does
+// not fill the rule tables, because those would be leaked by that replacement.
+public p OpRuleManager.ctor() {}
 
 public p OpRuleManager.ctor(TypeChecker* typeChecker) {
     this.typeChecker = typeChecker;

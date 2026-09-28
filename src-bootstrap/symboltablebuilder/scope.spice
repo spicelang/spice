@@ -9,6 +9,7 @@ import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
 import "bootstrap/typechecker/function-manager";
@@ -71,6 +72,8 @@ public type Scope struct {
     public bool isGenericScope = false
     public bool isAsyncScope = false
     public bool isDtorScope = false
+    // Only for expression scopes: dtor calls for the temporaries of the expression, in the order they are to be generated
+    public Vector<Pair<SymbolTableEntry*, Function*>> temporaryDtorsToCall
     // Private members
     FunctionRegistry functions
     StructRegistry structs
@@ -132,6 +135,16 @@ public f<unsigned long> Scope.getFieldCount() {
  */
 public f<SymbolTableEntry*> Scope.insert(const String& name, const ASTNode* declNode) {
     return this.symbolTable.insert(name, declNode);
+}
+
+/**
+ * Check if a symbol exists in the current or any parent scope
+ *
+ * @param name Name of the symbol
+ * @return Entry, or nil if not found
+ */
+public f<SymbolTableEntry*> Scope.lookup(const String& name) {
+    return this.symbolTable.lookup(name);
 }
 
 /**
@@ -221,6 +234,39 @@ public f<Vector<Struct*>> Scope.getAllStructManifestationsInDeclarationOrder() {
  */
 public f<bool> Scope.isRootScope() {
     return this.parent == nil<Scope*>;
+}
+
+/**
+ * Get the number of nested loops, which enclose this scope
+ *
+ * @return Loop nesting depth
+ */
+public f<unsigned int> Scope.getLoopNestingDepth() {
+    assert !this.isRootScope();
+    if this.parent.parent == nil<Scope*> {
+        return 0u;
+    }
+    unsigned int loopCount = this.parent.getLoopNestingDepth();
+    if this.scopeType == ScopeType::WHILE_BODY || this.scopeType == ScopeType::FOR_BODY || this.scopeType == ScopeType::FOREACH_BODY {
+        loopCount++;
+    }
+    return loopCount;
+}
+
+/**
+ * Check if this scope is within a case branch
+ *
+ * @return Within a case branch or not
+ */
+public f<bool> Scope.isInCaseBranch() {
+    assert !this.isRootScope();
+    if this.parent.parent == nil<Scope*> {
+        return false;
+    }
+    if this.scopeType == ScopeType::CASE_BODY {
+        return true;
+    }
+    return this.parent.isInCaseBranch();
 }
 
 /**

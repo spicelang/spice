@@ -48,6 +48,7 @@ public type Parser struct {
     unsigned int pendingGreaters = 0
     // Whether a field data type is currently parsed. Its template types are field types as well
     bool isParsingFieldType = false
+    unsigned long currentNodeId = 0l
 }
 
 public p Parser.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile, Lexer& lexer) {
@@ -70,6 +71,7 @@ f<T*> Parser.createNode<T>() {
     unsafe {
         __placement_new<T>(node, this.lexer.getCodeLoc());
     }
+    this.resourceManager.nodeToNodeId.upsert(getNodeAddress(cast<ASTNode*>(node)), this.currentNodeId++);
     // Upcast to the composed ASTNode base. This is what the parent/child book-keeping operates on.
     ASTNode* nodeBase = cast<ASTNode*>(node);
     // Remember the node as IVisitable*, so generic child traversal can dispatch to its concrete type
