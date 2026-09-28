@@ -105,10 +105,10 @@ public f<QualTypeList> Type.getFunctionParamTypes() {
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     assert this.isOneOf(options, len(options));
     const TypeChainElement& front = this.typeChain.front();
-    assert !front.paramTypes.isEmpty();
     QualTypeList paramTypes;
-    foreach unsigned long i = 1ul, const QualType& paramType : front.paramTypes {
-        paramTypes.pushBack(paramType);
+    // The first element is the return type, the params follow
+    for unsigned long i = 1ul; i < front.paramTypes.getSize(); i++ {
+        paramTypes.pushBack(front.paramTypes.get(i));
     }
     return paramTypes;
 }

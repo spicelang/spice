@@ -199,9 +199,10 @@ public p TypeChainElement.getName(StringStream& name, bool withSize, bool ignore
                 name << ">";
             }
             name << "(";
-            foreach unsigned long i = 1ul, const QualType& templateType : this.paramTypes {
-                if i > 1 { name << ","; }
-                templateType.getName(name, true, ignorePublic);
+            for unsigned long i = 1ul; i < this.paramTypes.getSize(); i++ {
+                if i > 1ul { name << ","; }
+                const QualType& paramType = this.paramTypes.get(i);
+                paramType.getName(name, true, ignorePublic);
             }
             name << ")";
         }
@@ -209,9 +210,10 @@ public p TypeChainElement.getName(StringStream& name, bool withSize, bool ignore
             name << "p";
             if this.data.hasCaptures { name << "[]"; }
             name << "(";
-            foreach unsigned long i = 1ul, const QualType& templateType : this.paramTypes {
-                if i > 1 { name << ","; }
-                templateType.getName(name, true, ignorePublic);
+            for unsigned long i = 1ul; i < this.paramTypes.getSize(); i++ {
+                if i > 1ul { name << ","; }
+                const QualType& paramType = this.paramTypes.get(i);
+                paramType.getName(name, true, ignorePublic);
             }
             name << ")";
         }

@@ -49,7 +49,7 @@ public f<String> Union.getScopeName() {
  * @return Name of the union scope
  */
 public f<String> Union.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
-    return String(UNION_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
+    return String(UNION_SCOPE_PREFIX) + getStructSignature(name, concreteTemplateTypes);
 }
 
 /**

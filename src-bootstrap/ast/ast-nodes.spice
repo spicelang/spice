@@ -20,7 +20,9 @@ import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/exception/semantic-error";
 import "bootstrap/typechecker/builtin-functions";
+import "bootstrap/typechecker/function-manager";
 import "bootstrap/model/function";
+import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/model/union";
@@ -1319,10 +1321,15 @@ public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
 
 // =========================================================== ArgLstNode ========================================================
 
+public type ArgInfo struct {
+    public Function* copyCtor = nil<Function*>
+}
+
 public type ASTArgLstNode struct : IVisitable {
     compose public ASTNode node
 
     public Vector<IVisitable*> args
+    public Vector<ArgInfo> argInfos
 }
 
 public p ASTArgLstNode.ctor(CodeLoc codeLoc) {
@@ -2009,6 +2016,42 @@ public f<Any> ASTValueNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================== FctCallNode ========================================================
 
+public type FctCallType enum {
+    TYPE_ORDINARY,
+    TYPE_METHOD,
+    TYPE_CTOR,
+    TYPE_FCT_PTR
+}
+
+public type FctCallData struct {
+    public FctCallType callType = FctCallType::TYPE_ORDINARY
+    public bool isImported = false
+    public QualTypeList templateTypes
+    public QualType thisType // Is filled if method or ctor call
+    public ArgList args
+    public const Function* callee = nil<const Function*> // Stays nil if function pointer call
+    public Scope* calleeParentScope = nil<Scope*>
+    public CompileTimeValue compileTimeValue
+    public bool compileTimeValueSet = false
+}
+
+public p FctCallData.ctor() {
+    this.thisType = QualType(SuperType::TY_DYN);
+}
+
+public f<bool> FctCallData.isOrdinaryCall() { return this.callType == FctCallType::TYPE_ORDINARY; }
+public f<bool> FctCallData.isMethodCall() { return this.callType == FctCallType::TYPE_METHOD; }
+public f<bool> FctCallData.isVirtualMethodCall() { return this.isMethodCall() && this.thisType.isBase(SuperType::TY_INTERFACE); }
+public f<bool> FctCallData.isCtorCall() { return this.callType == FctCallType::TYPE_CTOR; }
+public f<bool> FctCallData.isFctPtrCall() { return this.callType == FctCallType::TYPE_FCT_PTR; }
+
+public p FctCallData.setCompileTimeValue(const CompileTimeValue& value) {
+    this.compileTimeValue = value;
+    this.compileTimeValueSet = true;
+}
+
+public f<bool> FctCallData.hasCompileTimeValue() { return this.compileTimeValueSet; }
+
 public type ASTFctCallNode struct : IVisitable {
     compose public ASTExprNode node
 
@@ -2018,6 +2061,8 @@ public type ASTFctCallNode struct : IVisitable {
     public bool hasTemplateTypes = false
     public String fqFunctionName
     public Vector<String> functionNameFragments
+    public Vector<FctCallData> data
+    public bool isErrorTraceOrigin = false // Set if this is a direct call to err<T>(...), and error return tracing is enabled
 }
 
 public p ASTFctCallNode.ctor(CodeLoc codeLoc) {
@@ -2028,6 +2073,28 @@ public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFctCall(this);
 }
 
+/**
+ * Check if right above the closest assign expression ancestor is a statement node
+ *
+ * @return Has return value receiver or not
+ */
+public f<bool> ASTFctCallNode.hasReturnValueReceiver() {
+    const ASTNode* current = this.parent;
+    while current.kind != ASTNodeKind::ASSIGN_EXPR {
+        if current.kind == ASTNodeKind::EXPR_STMT {
+            return false;
+        }
+        // As soon as we have a node with more than one child, we know that the return value is used
+        if current.children.getSize() > 1l {
+            return true;
+        }
+        current = current.parent;
+    }
+    // Also check the condition of the assign expression
+    const ASTNode* assignExprParent = current.parent;
+    return current.children.getSize() > 1l || assignExprParent.kind != ASTNodeKind::EXPR_STMT;
+}
+
 
 // ==================================================== ArrayInitializationNode ==================================================
 
@@ -2035,6 +2102,7 @@ public type ASTArrayInitializationNode struct : IVisitable {
     compose public ASTExprNode node
 
     public ASTArgLstNode* itemLst = nil<ASTArgLstNode*>
+    public unsigned long actualSize = 0l
 }
 
 public p ASTArrayInitializationNode.ctor(CodeLoc codeLoc) {
@@ -2056,6 +2124,12 @@ public type ASTStructInstantiationNode struct : IVisitable {
     public bool hasTemplateTypes = false
     public String fqStructName
     public Vector<String> structNameFragments
+    public Vector<Struct*> instantiatedStructs
+    // Per-manifestation (the struct itself may be/depend on a generic type, e.g. inside a generic function), per-field
+    // copy ctor to call for a field value that needs to be deep-copied instead of raw-stored. Kept here rather than on
+    // the (manifestation-unaware) shared fieldLst.argInfos, since a struct literal inside a generic function is
+    // re-type-checked once per manifestation and each needs its own copy-ctor set.
+    public Vector<Vector<Function*>> fieldCopyCtors
 }
 
 public p ASTStructInstantiationNode.ctor(CodeLoc codeLoc) {
@@ -2071,6 +2145,26 @@ public f<Any> ASTStructInstantiationNode.accept(IAbstractAstVisitor* visitor) {
 
 public type ASTLambdaBaseNode struct/*: IVisitable*/ {
     compose public ASTExprNode node
+    public IVisitable* paramLst = nil<IVisitable*>
+    public bool hasParams = false
+    public Scope* bodyScope = nil<Scope*>
+    public Vector<Function> manifestations
+}
+
+/**
+ * Get the lambda base of a lambda node. All lambda nodes compose ASTLambdaBaseNode as their first member, which composes
+ * ASTExprNode and therefore ASTNode as its first member, so they all share the same address.
+ *
+ * @param node AST node, which must be a lambda node
+ * @return Lambda base node
+ */
+public f<ASTLambdaBaseNode*> asLambdaBaseNode(ASTNode* node) {
+    assert node.kind == ASTNodeKind::LAMBDA_FUNC || node.kind == ASTNodeKind::LAMBDA_PROC || node.kind == ASTNodeKind::LAMBDA_EXPR;
+    ASTLambdaBaseNode* lambdaBaseNode = nil<ASTLambdaBaseNode*>;
+    unsafe {
+        lambdaBaseNode = cast<ASTLambdaBaseNode*>(node);
+    }
+    return lambdaBaseNode;
 }
 
 public p ASTLambdaBaseNode.ctor(CodeLoc codeLoc) {
@@ -2084,10 +2178,7 @@ public type ASTLambdaFuncNode struct : IVisitable {
 
     public ASTDataTypeNode* returnType = nil<ASTDataTypeNode*>
     public ASTLambdaAttrNode* lambdaAttr = nil<ASTLambdaAttrNode*>
-    public bool hasParams = false
-    public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTLambdaFuncNode.ctor(CodeLoc codeLoc) {
@@ -2109,10 +2200,7 @@ public type ASTLambdaProcNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
     public ASTLambdaAttrNode* lambdaAttr = nil<ASTLambdaAttrNode*>
-    public bool hasParams = false
-    public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTLambdaProcNode.ctor(CodeLoc codeLoc) {
@@ -2133,10 +2221,7 @@ public f<String> ASTLambdaProcNode.getScopeId() {
 public type ASTLambdaExprNode struct : IVisitable {
     compose public ASTLambdaBaseNode node
 
-    public bool hasParams = false
-    public IVisitable* paramLst = nil<IVisitable*>
     public IVisitable* lambdaExpr = nil<IVisitable*>
-    public Scope* bodyScope = nil<Scope*>
 }
 
 public p ASTLambdaExprNode.ctor(CodeLoc codeLoc) {
@@ -2388,6 +2473,31 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
         while declStmtNode.entries.getSize() < manifestationCount {
             declStmtNode.entries.pushBack(nil<SymbolTableEntry*>);
+        }
+    }
+    if node.kind == ASTNodeKind::FCT_CALL {
+        ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(node);
+        while fctCallNode.data.getSize() < manifestationCount {
+            fctCallNode.data.pushBack(FctCallData());
+        }
+    }
+    if node.kind == ASTNodeKind::STRUCT_INSTANTIATION {
+        ASTStructInstantiationNode* structInstantiationNode = downcast<ASTStructInstantiationNode>(node);
+        while structInstantiationNode.instantiatedStructs.getSize() < manifestationCount {
+            structInstantiationNode.instantiatedStructs.pushBack(nil<Struct*>);
+        }
+        while structInstantiationNode.fieldCopyCtors.getSize() < manifestationCount {
+            structInstantiationNode.fieldCopyCtors.pushBack(Vector<Function*>());
+        }
+    }
+    if node.kind == ASTNodeKind::LAMBDA_FUNC || node.kind == ASTNodeKind::LAMBDA_PROC || node.kind == ASTNodeKind::LAMBDA_EXPR {
+        // All lambda nodes compose ASTLambdaBaseNode as their first member, so they share the address of their lambda base
+        ASTLambdaBaseNode* lambdaBaseNode = asLambdaBaseNode(node);
+        const ParamList noParams;
+        const Vector<GenericType> noTemplateTypes;
+        while lambdaBaseNode.manifestations.getSize() < manifestationCount {
+            // Placeholder for the host's default constructed Function. The type checker replaces it
+            lambdaBaseNode.manifestations.pushBack(Function(String(""), nil<SymbolTableEntry*>, QualType(SuperType::TY_INVALID), QualType(SuperType::TY_INVALID), noParams, noTemplateTypes, node));
         }
     }
     if node.kind == ASTNodeKind::STMT_LST {
@@ -2646,7 +2756,15 @@ public f<bool> ASTNode.hasCompileTimeValue(unsigned long manIdx) {
             }
         }
         case ASTNodeKind::FCT_CALL: {
-            // ToDo: Return true for builtin function calls with a compile time value, once FctCallNode.data is ported
+            ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(this);
+            BuiltinFunctionInfo builtinFunctionInfo;
+            if !lookupBuiltinFunction(fctCallNode.fqFunctionName, builtinFunctionInfo) {
+                return false;
+            }
+            const FctCallData& fctCallData = fctCallNode.data.get(manIdx);
+            return fctCallData.compileTimeValueSet;
+        }
+        case ASTNodeKind::LAMBDA_FUNC, ASTNodeKind::LAMBDA_PROC, ASTNodeKind::LAMBDA_EXPR: {
             return false;
         }
     }
@@ -2913,6 +3031,11 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 compileTimeValue.longValue = 0l;
                 return compileTimeValue;
             }
+        }
+        case ASTNodeKind::FCT_CALL: {
+            ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(this);
+            const FctCallData& fctCallData = fctCallNode.data.get(manIdx);
+            return fctCallData.compileTimeValue;
         }
     }
     // Default behavior: Take the compile time value of the only child

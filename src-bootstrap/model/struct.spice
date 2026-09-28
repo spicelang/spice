@@ -51,7 +51,7 @@ public f<String> Struct.getScopeName() {
  * @return Name of the struct scope
  */
 public f<String> Struct.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
-    return String(STRUCT_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
+    return String(STRUCT_SCOPE_PREFIX) + getStructSignature(name, concreteTemplateTypes);
 }
 
 /**

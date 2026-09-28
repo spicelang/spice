@@ -49,7 +49,7 @@ public f<String> Interface.getScopeName() {
  * @return Name of the interface scope
  */
 public f<String> Interface.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
-    return String(INTERFACE_SCOPE_PREFIX) + this.structBase.getSignature(name, concreteTemplateTypes);
+    return String(INTERFACE_SCOPE_PREFIX) + getStructSignature(name, concreteTemplateTypes);
 }
 
 /**

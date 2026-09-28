@@ -104,11 +104,12 @@ public f<String> Function.getSignature(bool withThisType = true, bool withTempla
         }
     }
 
-    return this.getSignature(this.name, this.thisType, this.returnType, this.paramList, concreteTemplateTypes, true, withThisType, true, withTypeAliases, withSize);
+    return getFunctionSignature(this.name, this.thisType, this.returnType, this.paramList, concreteTemplateTypes, true, withThisType, true, withTypeAliases, withSize);
 }
 
 /**
- * Get a string representation of the current function.
+ * Get a string representation of a function. This is the equivalent of the host's static Function::getSignature(), since
+ * Spice has no static methods.
  *
  * @param name Function name
  * @param thisType This symbol type
@@ -122,7 +123,7 @@ public f<String> Function.getSignature(bool withThisType = true, bool withTempla
  * @param withSize Print array sizes
  * @return Function signature
  */
-public f<String> Function.getSignature(const String& name, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const QualTypeList& concreteTemplateTypes, bool withReturnType = true, bool withThisType = true, bool ignorePublic = false, bool withTypeAliases = true, bool withSize = false) {
+public f<String> getFunctionSignature(const String& name, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const QualTypeList& concreteTemplateTypes, bool withReturnType = true, bool withThisType = true, bool ignorePublic = false, bool withTypeAliases = true, bool withSize = false) {
     StringStream signature;
 
     // Build return type string
