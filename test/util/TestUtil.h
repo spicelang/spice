@@ -84,9 +84,6 @@ public:
   static bool isDisabled(const TestCase &testCase);
   static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
-
-private:
-  // Private methods
   static std::array<std::filesystem::path, 3> expandRefPaths(const std::filesystem::path &refPath);
 };
 

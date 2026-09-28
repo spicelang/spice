@@ -2,7 +2,7 @@
 import "std/os/os";
 
 // Own imports
-//import "bootstrap/source-file";
+import "bootstrap/source-file";
 import "bootstrap/driver";
 import "bootstrap/global/global-resource-manager";
 
@@ -12,25 +12,38 @@ import "bootstrap/global/global-resource-manager";
  * @param cliOptions Command line options
  * @return Successful or not
  */
-f<bool> compileProject(const CliOptions& cliOptions) {
+f<bool> compileProject(CliOptions& cliOptions) {
     // Instantiate GlobalResourceManager
-    /*dyn resourceManager = GlobalResourceManager(cliOptions);
+    GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
 
     // Create source file instance for main source file
-    heap SourceFile* mainSourceFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), cliOptions.mainSourceFile, false);
+    SourceFile* mainSourceFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), cliOptions.mainSourceFile, false);
 
     // Run compile pipeline for main source file. All dependent source files are triggered by their parents
     mainSourceFile.runFrontEnd();
+    if resourceManager.abortCompilation { return true; }
     mainSourceFile.runMiddleEnd();
-    mainSourceFile.runBackEnd();
+    if resourceManager.abortCompilation { return true; }
 
-    // Link the target executable (link object files to executable)
-    resourceManager.linker.prepare();
-    resourceManager.linker.run();
-    resourceManager.linker.cleanup();
+    // Lint-only mode stops here and reports findings without generating any code
+    if cliOptions.lintOnly {
+        // ToDo: Port the LintPass (collectAndPrintLintFindings)
+        return true;
+    }
+
+    mainSourceFile.runBackEnd();
+    if resourceManager.abortCompilation { return true; }
+
+    // Link the target executable (link object files to executable/library)
+    // ToDo: Enable as soon as the back end emits object files
+    /*if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
+        resourceManager.linker.prepare();
+        resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);
+        resourceManager.linker.cleanup();
+    }*/
 
     // Print compiler warnings
-    mainSourceFile.collectAndPrintWarnings();*/
+    mainSourceFile.collectAndPrintWarnings();
 
     return true;
 }

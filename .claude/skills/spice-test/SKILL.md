@@ -49,6 +49,38 @@ These are `spicetest`'s own flags (not GoogleTest):
 - `--skip-sanitizer-tests` — skip tests exercising language sanitizers.
 - `--is-github-actions` — skip cases unsupported on CI.
 - `--verbose` — extra runner debug output.
+- `--bootstrap` — bootstrap mode: first build the bootstrap compiler
+  (`src-bootstrap/main.spice`) with the in-process host compiler into
+  `test-tmp/bootstrap-compiler/`, then run the reference-test suites against it
+  (see below).
+- `--bootstrap-compiler=<path>` — bootstrap mode with an already built bootstrap
+  compiler, skipping the build.
+
+## Bootstrap mode
+
+`--bootstrap` runs each reference test case by invoking the bootstrap compiler
+like a user would (`build [// TEST: args] --output ... source.spice`), run from
+`test/` like the normal mode. It needs `SPICE_STD_DIR`, `SPICE_BOOTSTRAP_DIR`
+and `LLVM_LIB_DIR` (the build links the LLVM bindings); the
+`spicetest_bootstrap` CMake target sets them. Building takes about a minute.
+
+The bootstrap compiler is incomplete, so only what it can already produce is
+checked: `syntax-tree.dot` (via `--dump-ast`) and `exception.out`. It reports
+errors via a panic, so the message is taken from the panic output, with test
+paths rewritten to `./` like the host prints them. A missing expected error
+fails only for the kinds listed in `BOOTSTRAP_SUPPORTED_ERROR_PREFIXES`
+(`test/util/BootstrapUtil.h`); extend that list as stages get ported. Other
+cases pass if the bootstrap compiler finishes without crashing or raising an
+unexpected error. `BootstrapCompilerTests` and `LinterTests` are skipped.
+`--update-refs` and `--coverage` are rejected, so host refs are never
+overwritten with bootstrap output.
+
+```sh
+cmake --build cmake-build-debug --target spicetest_bootstrap
+# or, iterating on a pre-built bootstrap compiler:
+cd test && SPICE_STD_DIR=$PWD/../std ../cmake-build-debug/test/spicetest \
+  --bootstrap-compiler=$PWD/test-tmp/bootstrap-compiler/spice --gtest_filter='ParserTests*'
+```
 
 ```sh
 # Update refs for one suite after an intended change, then inspect git diff

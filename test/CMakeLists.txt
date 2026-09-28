@@ -9,6 +9,7 @@ set(SOURCES
         TestRunner.cpp
         driver/TestDriver.cpp
         util/TestUtil.cpp
+        util/BootstrapUtil.cpp
         # Unit tests
         unittest/UnitBlockAllocator.cpp
         unittest/UnitCommonUtil.cpp
@@ -62,3 +63,17 @@ if (PYTHON3_EXECUTABLE)
             USES_TERMINAL
             COMMENT "Running spicetest in parallel via gtest-parallel")
 endif ()
+
+################# spicetest_bootstrap ################
+
+# Build the bootstrap compiler with the host compiler, then run the reference test suites against it
+add_custom_target(spicetest_bootstrap
+        COMMAND ${CMAKE_COMMAND} -E env
+        SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
+        SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
+        LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
+        $<TARGET_FILE:spicetest> --bootstrap ${SPICE_TEST_ARGS}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        DEPENDS spicetest
+        USES_TERMINAL
+        COMMENT "Running spicetest against the bootstrap compiler")
