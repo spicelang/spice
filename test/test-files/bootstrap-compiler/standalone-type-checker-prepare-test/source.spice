@@ -170,7 +170,10 @@ f<int> main() {
     assert boxTemplateTypes.getSize() == 1l;
     const QualType& boxTemplateType = boxTemplateTypes.front();
     assert boxTemplateType.is(SuperType::TY_GENERIC);
-    assert box.structManifestations.getSize() == 1l;
+    // Generic preset + Box<int>, which gets substantiated by the signature of sumBox
+    assert box.structManifestations.getSize() == 2l;
+    Struct* boxIntStruct = box.structManifestations.back();
+    assert boxIntStruct.structBase.isFullySubstantiated();
     const QualType valueType = typeOf(box.structScope, "value");
     assert valueType.is(SuperType::TY_GENERIC);
     const QualType slotsType = typeOf(box.structScope, "slots");

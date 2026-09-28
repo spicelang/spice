@@ -387,7 +387,10 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
     Function* matchedFunction = matches.front();
     matchedFunction.isNewlyInserted = false;
 
-    // ToDo: Trigger revisit in type checker once TypeChecker::requestRevisitIfRequired is ported.
+    // ToDo: Trigger revisit in type checker (requestRevisitIfRequired) once the lookup cache of the host is ported. The host
+    // only reaches this point on a cache miss, so it requests the revisit once per call site. Without the cache, every
+    // match of a function that is never checked itself (e.g. an implicit default member) would request another revisit and
+    // the type checker post loop would not converge.
 
     // Return the very match
     return matchedFunction;

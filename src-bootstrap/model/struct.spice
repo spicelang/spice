@@ -99,7 +99,14 @@ public f<bool> Struct.hasReferenceFields() {
  * @return nullptr if all fields are in this state, otherwise the first mismatched field symbol
  */
 public f<SymbolTableEntry*> Struct.areAllFieldsInState(const LifecycleState state) {
-    // ToDo: Iterate the fields via scope.lookupField(i) once Scope exposes it. For now, assume all fields are in state.
+    for unsigned long i = 0l; i < this.fieldTypes.getSize(); i++ {
+        SymbolTableEntry* fieldSymbol = this.scope.lookupField(cast<unsigned int>(i));
+        assert fieldSymbol != nil<SymbolTableEntry*>;
+        const Lifecycle& lifecycle = fieldSymbol.getLifecycle();
+        if !fieldSymbol.isImplicitField && lifecycle.getCurrentState() != state {
+            return fieldSymbol;
+        }
+    }
     return nil<SymbolTableEntry*>;
 }
 
@@ -118,7 +125,14 @@ public f<SymbolTableEntry*> Struct.areAllFieldsInitialized() {
  * @param node AST node to associate with the update
  */
 public p Struct.resetFieldSymbolsToDeclared(const ASTNode* node) {
-    // ToDo: Reset field symbols via scope.lookupField(i).updateState(DECLARED, node) once Scope exposes lookupField.
+    // Reset every explicit field
+    const unsigned long fieldCount = this.scope.getFieldCount();
+    for unsigned long i = 0l; i < fieldCount; i++ {
+        SymbolTableEntry* fieldSymbol = this.scope.lookupField(cast<unsigned int>(i));
+        if !fieldSymbol.isImplicitField {
+            fieldSymbol.updateState(LifecycleState::DECLARED, cast<ASTNode*>(node));
+        }
+    }
 }
 
 #[test, test.name="Struct Smoke test"]

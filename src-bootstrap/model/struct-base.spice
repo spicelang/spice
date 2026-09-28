@@ -36,6 +36,9 @@ public type StructBase struct {
     public VTableData vTableData
     public bool used = false
     public bool isNewlyInserted = false
+    // Whether it was already decided which compiler-generated default members (ctor, copy ctor, move ctor, dtor) this
+    // manifestation needs. The decision is taken exactly once per manifestation, as soon as it comes into existence.
+    public bool implicitDefaultMembersDecided = false
 }
 
 public p StructBase.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const Vector<GenericType>& templateTypes, ASTNode* declNode) {

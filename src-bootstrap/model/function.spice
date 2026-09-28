@@ -226,7 +226,7 @@ public f<String> Function.getSymbolTableEntryName(const String& functionName, co
  * @param structCodeLoc Code location of the struct
  * @return Symbol table entry name
  */
-public f<String> Function.getSymbolTableEntryNameDefaultCtor(const CodeLoc& structCodeLoc) {
+public f<String> getSymbolTableEntryNameDefaultCtor(const CodeLoc& structCodeLoc) {
     return "default_" + CTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
 }
 
@@ -236,7 +236,7 @@ public f<String> Function.getSymbolTableEntryNameDefaultCtor(const CodeLoc& stru
  * @param structCodeLoc Code location of the struct
  * @return Symbol table entry name
  */
-public f<String> Function.getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc& structCodeLoc) {
+public f<String> getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc& structCodeLoc) {
     return "default_copy" + CTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
 }
 
@@ -246,7 +246,7 @@ public f<String> Function.getSymbolTableEntryNameDefaultCopyCtor(const CodeLoc& 
  * @param structCodeLoc Code location of the struct
  * @return Symbol table entry name
  */
-public f<String> Function.getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc& structCodeLoc) {
+public f<String> getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc& structCodeLoc) {
     return "default_move" + CTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
 }
 
@@ -256,7 +256,7 @@ public f<String> Function.getSymbolTableEntryNameDefaultMoveCtor(const CodeLoc& 
  * @param structCodeLoc Code location of the struct
  * @return Symbol table entry name
  */
-public f<String> Function.getSymbolTableEntryNameDefaultDtor(const CodeLoc& structCodeLoc) {
+public f<String> getSymbolTableEntryNameDefaultDtor(const CodeLoc& structCodeLoc) {
     return "default_" + DTOR_FUNCTION_NAME + ":" + structCodeLoc.toString();
 }
 

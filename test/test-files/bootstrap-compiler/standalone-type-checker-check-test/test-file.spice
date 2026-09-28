@@ -1,0 +1,59 @@
+// Input program for the standalone type checker test (check stage). It contains structs, that need compiler-generated
+// default members, a struct implementing an interface, a generic struct and a generic function, whose bodies and
+// implicit members the check stage of the type checker handles.
+
+type Shape interface {
+    f<int> area();
+}
+
+// Gets a default ctor (field with default value), but no default dtor, since it has a user-defined one
+type Inner struct {
+    int value = 3
+}
+
+p Inner.dtor() {}
+
+// Gets a default ctor (Inner needs to be constructed), a default copy ctor (Inner has one) and a default dtor (Inner has one)
+type Outer struct {
+    Inner inner
+    bool flag = true
+}
+
+// Implements the interface and has a user-defined ctor, so it gets no default members
+type Square struct : Shape {
+    int side
+}
+
+p Square.ctor(int side) {
+    this.side = side;
+}
+
+f<int> Square.area() {
+    return this.side * this.side;
+}
+
+// Generic struct, whose manifestation Box<Inner> gets substantiated while checking the body of main
+type T dyn;
+
+type Box<T> struct {
+    T content
+}
+
+f<T> identity<T>(T value) {
+    return value;
+}
+
+type Number union {
+    int integer = 1
+    double floating
+}
+
+f<int> main() {
+    Outer outer;
+    Square square = Square(4);
+    int a = square.area();
+    int b = identity<int>(a);
+    Box<Inner> box;
+    Number number;
+    return b;
+}
