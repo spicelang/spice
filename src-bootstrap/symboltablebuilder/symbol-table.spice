@@ -33,7 +33,7 @@ public type SymbolTable struct {
     SymbolTable* parent
     Scope* scope
     SymbolMap symbols
-    CaptureMap captures
+    public CaptureMap captures
     bool capturingRequired = false
 }
 
@@ -294,6 +294,32 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrictByIndex(const unsigned int o
 public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const ASTNode* declNode, unsigned long numericSuffix = 0l) {
     const String name = getAnonymousSymbolName(declNode, numericSuffix);
     return this.lookup(name);
+}
+
+/**
+ * Check if a symbol exists in the current or any parent scope and return it if possible.
+ * If the target symbol is an alias symbol, resolve the alias container entry.
+ *
+ * @param name Name of the desired symbol
+ * @return Desired symbol / nil if the symbol was not found + alias or not
+ */
+public f<Pair<SymbolTableEntry*, bool>> SymbolTable.lookupWithAliasResolution(const String& name) {
+    SymbolTableEntry* entry = this.lookup(name);
+    if entry == nil<SymbolTableEntry*> {
+        return Pair<SymbolTableEntry*, bool>(entry, false);
+    }
+    const QualType entryType = entry.getQualType();
+    if !entryType.is(SuperType::TY_ALIAS) {
+        return Pair<SymbolTableEntry*, bool>(entry, false);
+    }
+
+    // We have an alias type here, resolve it
+    assert entry.scope.isRootScope();
+    entry.used = true;
+    const String aliasedContainerEntryName = entry.name + ALIAS_CONTAINER_SUFFIX;
+    SymbolTableEntry* aliasedTypeContainerEntry = entry.scope.lookupStrict(aliasedContainerEntryName);
+    assert aliasedTypeContainerEntry != nil<SymbolTableEntry*>;
+    return Pair<SymbolTableEntry*, bool>(aliasedTypeContainerEntry, true);
 }
 
 /**

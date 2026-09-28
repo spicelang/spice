@@ -24,6 +24,7 @@ import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/interface";
 import "bootstrap/model/struct";
+import "bootstrap/model/struct-base";
 import "bootstrap/model/union";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/qual-type";
@@ -32,10 +33,12 @@ import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/scope-handle";
 import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/symbol-table";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type";
 import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/symboltablebuilder/type-qualifiers";
+import "bootstrap/typechecker/builtin-functions";
 import "bootstrap/typechecker/expr-result";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/interface-manager";
@@ -48,6 +51,7 @@ import "bootstrap/util/compiler-warning";
 // Constants
 const string FCT_NAME_DEALLOC = "sDealloc";
 const unsigned long UNION_NO_DEFAULT_FIELD_INDEX = 18446744073709551615ul; // SIZE_MAX in the host
+const unsigned long SIZE_MAX = 18446744073709551615ul;
 
 public type TypeCheckerMode enum {
     TC_MODE_PRE,
@@ -164,6 +168,55 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     // ported together with TypeCheckerImplicit.cpp.
 
     return Any();
+}
+
+/**
+ * Check if the capture rules for async lambdas are enforced if the async attribute is set
+ *
+ * Only one capture with pointer type, pass-by-val is allowed, since only then we can store it in the second field of the
+ * fat pointer and can ensure, that no stack variable is referenced inside the lambda.
+ *
+ * @param node Lambda node
+ * @param attrs Lambda attributes
+ * @return False if the rules are violated, true otherwise
+ */
+f<bool> TypeChecker.checkAsyncLambdaCaptureRules(ASTNode* node, const ASTLambdaAttrNode* attrs) {
+    // If the async attribute is not set, we can return early
+    if attrs == nil<const ASTLambdaAttrNode*> {
+        return true; // Not violated
+    }
+    ASTAttrLstNode* attrLst = attrs.attrLst;
+    if !attrLst.hasAttr(String(ATTR_ASYNC)) {
+        return true; // Not violated
+    }
+    const CompileTimeValue asyncValue = attrLst.getAttrValueByName(String(ATTR_ASYNC));
+    if !asyncValue.boolValue {
+        return true; // Not violated
+    }
+
+    // If we don't have any captures, we can return early
+    ASTLambdaBaseNode* lambdaBaseNode = asLambdaBaseNode(node);
+    Scope* bodyScope = lambdaBaseNode.bodyScope;
+    CaptureMap& captures = bodyScope.symbolTable.captures;
+    if captures.isEmpty() {
+        return true; // Not violated
+    }
+
+    // Check for the capture rules
+    bool violated = captures.getSize() > 1ul;
+    foreach Pair<const String&, Capture&> captureEntry : captures {
+        // Only the first capture is inspected
+        Capture& capture = captureEntry.getSecond();
+        const QualType capturedType = capture.capturedSymbol.getQualType();
+        violated = violated || !capturedType.isPtr() || capture.getMode() != CapturePassMode::BY_VALUE;
+        break;
+    }
+    if violated {
+        const String warningMessage = String("Async lambdas can only capture one pointer by value without storing captures in the caller stack frame, which can lead to bugs due to references, outliving the validity scope of the referenced variable.");
+        this.addWarning(node.codeLoc, CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION, warningMessage);
+    }
+
+    return false; // Violated
 }
 
 /**
@@ -3686,6 +3739,51 @@ public f<Any> TypeChecker.visitAtomicExpr(ASTAtomicExprNode* node) {
 
 // ============================================================== TypeCheckerValues.cpp ===========================================
 
+public f<Any> TypeChecker.visitValue(ASTValueNode* node) {
+    // Function call
+    if node.fctCall != nil<IVisitable*> {
+        return this.visit(node.fctCall);
+    }
+
+    // Array initialization
+    if node.arrayInitialization != nil<IVisitable*> {
+        return this.visit(node.arrayInitialization);
+    }
+
+    // Struct instantiation
+    if node.structInstantiation != nil<IVisitable*> {
+        return this.visit(node.structInstantiation);
+    }
+
+    // Lambda function
+    if node.lambdaFunc != nil<IVisitable*> {
+        return this.visit(node.lambdaFunc);
+    }
+
+    // Lambda procedure
+    if node.lambdaProc != nil<IVisitable*> {
+        return this.visit(node.lambdaProc);
+    }
+
+    // Lambda expression
+    if node.lambdaExpr != nil<IVisitable*> {
+        return this.visit(node.lambdaExpr);
+    }
+
+    // Typed nil
+    if node.isNil {
+        const QualType nilType = this.getDataType(node.nilType);
+        if nilType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        if nilType.is(SuperType::TY_DYN) {
+            return this.softErrorER(cast<ASTNode*>(node.nilType), SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Nil must have an explicit type"));
+        }
+        return Any(ExprResult{node.node.setEvaluatedSymbolType(nilType, this.manIdx), nil<SymbolTableEntry*>});
+    }
+
+    panic(Error("Value fall-through")); // UNHANDLED_BRANCH compiler error in the host
+    return Any();
+}
+
 public f<Any> TypeChecker.visitConstant(ASTConstantNode* node) {
     SuperType superType = SuperType::TY_INVALID;
     switch node.primitiveValueType {
@@ -3717,6 +3815,816 @@ public f<Any> TypeChecker.visitConstant(ASTConstantNode* node) {
     return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(superType), this.manIdx), nil<SymbolTableEntry*>});
 }
 
+public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    FctCallData& data = node.data.get(this.manIdx);
+
+    // Retrieve arg types
+    data.args.clear();
+    if node.hasArgs {
+        ASTArgLstNode* argLst = node.argLst;
+        data.args.reserve(cast<unsigned long>(argLst.args.getSize()));
+        foreach IVisitable* arg : argLst.args {
+            // Visit argument
+            const ExprResult argResult = this.visitExpr(arg);
+            if argResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+            assert !argResult.ty.hasAnyGenericParts();
+            // Save arg type to arg types list
+            data.args.pushBack(Pair<QualType, bool>(argResult.ty, argResult.isTemporary()));
+        }
+    }
+
+    // Retrieve template types
+    data.templateTypes.clear();
+    if node.hasTemplateTypes {
+        foreach ASTDataTypeNode* templateTypeNode : node.templateTypeLst.dataTypes {
+            const QualType templateType = this.getDataType(templateTypeNode);
+            assert !templateType.is(SuperType::TY_INVALID);
+
+            // Abort if the type is unresolved
+            if templateType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+            // Check if the given type is generic
+            if templateType.is(SuperType::TY_GENERIC) {
+                return this.softErrorER(cast<ASTNode*>(templateTypeNode), SemanticErrorType::EXPECTED_NON_GENERIC_TYPE, String("You must specify a concrete type here"));
+            }
+
+            data.templateTypes.pushBack(templateType);
+        }
+    }
+
+    // Check if this is a builtin call
+    BuiltinFunctionInfo builtinFunctionInfo;
+    if lookupBuiltinFunction(node.fqFunctionName, builtinFunctionInfo) {
+        return this.visitBuiltinCall(node);
+    }
+
+    // Retrieve entry of the first fragment
+    const dyn structOrInterface = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    const dyn fctOrProc = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    const String& firstFrag = node.functionNameFragments.front();
+    SymbolTableEntry* firstFragEntry = this.currentScope.lookup(firstFrag);
+    if firstFragEntry != nil<SymbolTableEntry*> {
+        // Check if we have seen a 'this.' prefix, because the generator needs that
+        if firstFragEntry.scope.scopeType == ScopeType::STRUCT && firstFrag != THIS_VARIABLE_NAME {
+            const String message = String("The symbol '") + firstFrag + "' could not be found. Missing 'this.' prefix?";
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+        }
+
+        firstFragEntry.used = true;
+        // Decide of which type the function call is
+        const QualType firstFragType = firstFragEntry.getQualType();
+        const QualType baseType = firstFragType.getBase();
+        if baseType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        if baseType.isOneOf(structOrInterface, len(structOrInterface)) {
+            if firstFragEntry.scope.scopeType == ScopeType::GLOBAL {
+                data.callType = FctCallType::TYPE_CTOR;
+            } else {
+                data.callType = FctCallType::TYPE_METHOD;
+            }
+        } else if baseType.isOneOf(fctOrProc, len(fctOrProc)) && firstFragEntry.scope.scopeType != ScopeType::GLOBAL {
+            data.callType = FctCallType::TYPE_FCT_PTR;
+        }
+    }
+
+    // Get struct name. Retrieve it from alias if required
+    Pair<SymbolTableEntry*, bool> aliasResolution = this.rootScope.symbolTable.lookupWithAliasResolution(node.fqFunctionName);
+    SymbolTableEntry* structEntry = aliasResolution.getFirst();
+    const bool isAlias = aliasResolution.getSecond();
+    String fqFunctionName = node.fqFunctionName;
+
+    // Get the concrete template types
+    if isAlias {
+        const QualType aliasedType = structEntry.getQualType();
+        fqFunctionName = aliasedType.getSubType();
+        // Retrieve concrete template types from type alias
+        data.templateTypes = aliasedType.getTemplateTypes();
+        // Check if the aliased type specified template types and the struct instantiation does
+        if !data.templateTypes.isEmpty() && node.hasTemplateTypes {
+            return this.softErrorER(cast<ASTNode*>(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, String("The aliased type already has a template list"));
+        }
+    }
+
+    // Check if this is a method call or a normal function call
+    if data.isMethodCall() {
+        // This is a method call
+        data.thisType = firstFragEntry.getQualType();
+        const QualType thisBaseType = data.thisType.getBase();
+        Scope* structBodyScope = thisBaseType.getBodyScope();
+        assert structBodyScope != nil<Scope*>;
+        if !this.visitMethodCall(node, structBodyScope) { // Check if soft errors occurred
+            return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(SuperType::TY_UNRESOLVED), this.manIdx), nil<SymbolTableEntry*>});
+        }
+        assert data.calleeParentScope != nil<Scope*>;
+    } else if data.isFctPtrCall() {
+        // This is a function pointer call
+        const QualType firstFragType = firstFragEntry.getQualType();
+        const QualType functionType = firstFragType.getBase();
+        assert functionType.isOneOf(fctOrProc, len(fctOrProc));
+        if !this.visitFctPtrCall(node, functionType) { // Check if soft errors occurred
+            return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(SuperType::TY_UNRESOLVED), this.manIdx), nil<SymbolTableEntry*>});
+        }
+    } else {
+        // This is an ordinary function call
+        assert data.isOrdinaryCall() || data.isCtorCall();
+        if !this.visitOrdinaryFctCall(node, fqFunctionName) { // Check if soft errors occurred
+            return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(SuperType::TY_UNRESOLVED), this.manIdx), nil<SymbolTableEntry*>});
+        }
+        assert data.calleeParentScope != nil<Scope*>;
+
+        // If the call is no ordinary call, it must be a constructor, which takes a struct as this type.
+        assert data.isOrdinaryCall() || data.thisType.is(SuperType::TY_STRUCT);
+    }
+
+    const Function* callee = data.callee;
+    if !data.isFctPtrCall() {
+        // Check if we were able to find a function
+        if callee == nil<const Function*> {
+            // Build error message
+            String functionName = node.functionNameFragments.back();
+            if data.isCtorCall() {
+                functionName = String(CTOR_FUNCTION_NAME);
+            }
+            ParamList errArgTypes;
+            errArgTypes.reserve(cast<unsigned long>(data.args.getSize()));
+            foreach const Arg& arg : data.args {
+                // The host compiler aborts on a struct literal field, initialized with a reference to a type with an
+                // overloaded assign operator, so the arg type is copied into a local first
+                const QualType argType = arg.getFirst();
+                errArgTypes.pushBack(Param{argType, false});
+            }
+            const QualTypeList noTemplateTypes;
+            const String signature = getFunctionSignature(functionName, data.thisType, QualType(SuperType::TY_DYN), errArgTypes, noTemplateTypes, false);
+            // Throw error
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION, String("Function/procedure '") + signature + "' could not be found");
+        }
+
+        // Check if we need to request a re-visit, because the function body was not type-checked yet
+        requestRevisitIfRequired(callee);
+
+        // Get function entry from function object
+        SymbolTableEntry* functionEntry = callee.entry;
+
+        // Check if the called function has sufficient visibility
+        data.isImported = data.calleeParentScope.isImportedBy(this.rootScope);
+        const QualType functionEntryType = functionEntry.getQualType();
+        if data.isImported && !functionEntryType.isPublic() {
+            const String signature = callee.getSignature();
+            if functionEntryType.is(SuperType::TY_FUNCTION) {
+                return this.softErrorER(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, String("Function '") + signature + "' has insufficient visibility");
+            } else {
+                return this.softErrorER(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, String("Procedure '") + signature + "' has insufficient visibility");
+            }
+        }
+
+        // Mark direct calls to err<T>(...) as an error-return-trace origin site when tracing is enabled for this file.
+        // err<T>'s own internal delegation to Result<T>'s error ctor is a distinct ctor call and is never matched here,
+        // so this only ever fires for the user's own call site, not for that nested one.
+        if this.sourceFile.errorReturnTracing && callee.bodyScope != nil<Scope*> && callee.name == "err" {
+            Scope* calleeBodyScope = callee.bodyScope;
+            SourceFile* calleeSourceFile = calleeBodyScope.sourceFile;
+            if calleeSourceFile.isResultRT() {
+                node.isErrorTraceOrigin = true;
+            }
+        }
+    }
+
+    // Generate arg infos
+    if node.hasArgs {
+        QualTypeList paramTypes;
+        if data.isFctPtrCall() {
+            const QualType firstFragType = firstFragEntry.getQualType();
+            const QualType functionType = firstFragType.getBase();
+            paramTypes = functionType.getFunctionParamTypes();
+        } else {
+            assert callee != nil<const Function*>;
+            paramTypes = callee.getParamTypes();
+        }
+
+        ASTArgLstNode* argLst = node.argLst;
+        argLst.argInfos.clear();
+        for unsigned long argIdx = 0l; argIdx < data.args.getSize(); argIdx++ {
+            const QualType& expectedType = paramTypes.get(argIdx);
+            const Arg& arg = data.args.get(argIdx);
+            const QualType& actualType = arg.getFirst();
+
+            Function* copyCtor = nil<Function*>;
+            if expectedType.is(SuperType::TY_STRUCT) && actualType.is(SuperType::TY_STRUCT) && !actualType.isTriviallyCopyable(baseNode) {
+                copyCtor = this.matchCopyCtor(actualType, baseNode);
+                // Insert anonymous symbol to track the dtor call of the copy
+                ASTNode* argNode = getASTNode(argLst.args.get(argIdx));
+                this.currentScope.symbolTable.insertAnonymous(actualType, argNode, SIZE_MAX);
+            }
+
+            argLst.argInfos.pushBack(ArgInfo{copyCtor});
+        }
+        assert argLst.argInfos.getSize() == argLst.args.getSize();
+    }
+
+    // Retrieve return type
+    bool isFct = false;
+    QualType returnType = QualType(SuperType::TY_DYN);
+    if data.isFctPtrCall() {
+        const QualType firstFragType = firstFragEntry.getQualType();
+        const QualType functionType = firstFragType.getBase();
+        isFct = functionType.is(SuperType::TY_FUNCTION);
+        if isFct {
+            returnType = functionType.getFunctionReturnType();
+        } else {
+            returnType = QualType(SuperType::TY_BOOL);
+        }
+    } else {
+        isFct = callee.isFunction();
+        if data.isCtorCall() {
+            returnType = data.thisType;
+        } else if callee.isProcedure() {
+            returnType = QualType(SuperType::TY_DYN);
+        } else {
+            returnType = callee.returnType;
+        }
+    }
+
+    const QualType returnBaseType = returnType.getBase();
+
+    // Make sure this source file knows about the return type
+    if returnBaseType.is(SuperType::TY_STRUCT) {
+        returnType = this.mapImportedScopeTypeToLocalType(returnBaseType.getBodyScope(), returnType);
+    }
+
+    // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
+    SymbolTableEntry* anonymousSymbol = nil<SymbolTableEntry*>;
+    if returnType.is(SuperType::TY_STRUCT) && !returnType.isTriviallyDestructible(baseNode) {
+        anonymousSymbol = this.currentScope.symbolTable.insertAnonymous(returnType, baseNode);
+    }
+
+    // Remove public qualifier to not have public local variables
+    TypeQualifiers& returnTypeQualifiers = returnType.getQualifiers();
+    returnTypeQualifiers.isPublic = false;
+
+    // Check if the return value gets discarded
+    if isFct && !node.hasReturnValueReceiver() {
+        // Discarding a Result<T> is always a hard error when explicit error handling is enabled for this module,
+        // regardless of ignoreUnusedReturnValue (which only ever weakens the generic warning below).
+        const QualType unwrappedReturnType = returnType.removeReferenceWrapper();
+        if this.sourceFile.explicitErrorHandling && unwrappedReturnType.isResultObj() {
+            const String message = String("A Result<T> returned from a call must be handled: bind it to a variable, propagate it with the '!' operator, handle it with '.unwrapOr(...)'/'.unwrapOrElse(...)', or explicitly discard it by binding it to a variable with a name starting with '_'");
+            return this.softErrorER(baseNode, SemanticErrorType::DISCARDED_RESULT_VALUE, message);
+        }
+
+        // Check if we want to ignore the discarded return value
+        bool ignoreUnusedReturnValue = false;
+        if !data.isFctPtrCall() {
+            assert callee != nil<const Function*>;
+            ASTNode* calleeDeclNode = callee.declNode;
+            if calleeDeclNode.kind == ASTNodeKind::FCT_DEF {
+                ASTFctDefNode* fctDef = downcast<ASTFctDefNode>(calleeDeclNode);
+                if fctDef.node.attrs != nil<IVisitable*> {
+                    ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDef.node.attrs);
+                    ASTAttrLstNode* attrLst = attrs.attrLst;
+                    ignoreUnusedReturnValue = attrLst.hasAttr(String(ATTR_IGNORE_UNUSED_RETURN_VALUE));
+                }
+            }
+        }
+
+        if !ignoreUnusedReturnValue {
+            this.addWarning(baseNode.codeLoc, CompilerWarningType::UNUSED_RETURN_VALUE, String("The return value of the function call is unused"));
+        }
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(returnType, this.manIdx), anonymousSymbol});
+}
+
+f<bool> TypeChecker.visitOrdinaryFctCall(ASTFctCallNode* node, String fqFunctionName) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    FctCallData& data = node.data.get(this.manIdx);
+
+    // Check if this is a well-known ctor/fct call
+    if node.functionNameFragments.getSize() == 1l {
+        this.ensureLoadedRuntimeForTypeName(fqFunctionName);
+        this.ensureLoadedRuntimeForFunctionName(fqFunctionName);
+    }
+
+    // Check if the type is generic (possible in case of ctor call)
+    const GenericType* genericType = this.rootScope.lookupGenericTypeStrict(fqFunctionName);
+    if genericType != nil<const GenericType*> && this.typeMapping.contains(fqFunctionName) {
+        const QualType& replacementType = this.typeMapping.get(fqFunctionName);
+        if replacementType.is(SuperType::TY_STRUCT) {
+            fqFunctionName = replacementType.getSubType();
+        }
+    }
+
+    // Check if the exported name registry contains that function name
+    const NameRegistryEntry* functionRegistryEntry = this.sourceFile.getNameRegistryEntry(fqFunctionName);
+    if functionRegistryEntry == nil<const NameRegistryEntry*> {
+        const String message = String("Function/procedure/struct '") + node.functionNameFragments.back() + "' could not be found";
+        this.softError(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION, message);
+        return false;
+    }
+    const SymbolTableEntry* functionEntry = functionRegistryEntry.targetEntry;
+    data.calleeParentScope = functionRegistryEntry.targetScope;
+
+    // Check if the target symbol is a struct -> this must be a constructor call
+    String functionName = node.functionNameFragments.back();
+    if functionEntry != nil<const SymbolTableEntry*> {
+        const QualType structEntryType = functionEntry.getQualType();
+        if structEntryType.is(SuperType::TY_STRUCT) {
+            data.callType = FctCallType::TYPE_CTOR;
+            functionName = String(CTOR_FUNCTION_NAME);
+
+            // Substantiate potentially generic this struct
+            const Struct* thisStruct = structEntryType.getStruct(baseNode, data.templateTypes);
+            if thisStruct == nil<const Struct*> {
+                const SymbolTableEntry* structEntry = functionRegistryEntry.targetEntry;
+                const String signature = getStructSignature(structEntry.name, data.templateTypes);
+                this.softError(baseNode, SemanticErrorType::UNKNOWN_DATATYPE, String("Could not find struct candidate for struct '") + signature + "'. Do the template types match?");
+                return false;
+            }
+
+            // Set the 'this' type of the function to the struct type
+            data.thisType = structEntryType.getWithBodyScope(thisStruct.scope);
+            data.calleeParentScope = thisStruct.scope;
+        }
+    }
+
+    // Attach the concrete template types to the 'this' type
+    if !data.thisType.is(SuperType::TY_DYN) && !data.templateTypes.isEmpty() {
+        data.thisType = data.thisType.getWithTemplateTypes(data.templateTypes);
+    }
+
+    // Map local arg types to imported types
+    for unsigned long i = 0l; i < data.args.getSize(); i++ {
+        Arg& arg = data.args.get(i);
+        QualType& argType = arg.getFirst();
+        argType = this.mapLocalTypeToImportedScopeType(data.calleeParentScope, argType);
+    }
+
+    // Map local template types to imported types
+    for unsigned long i = 0l; i < data.templateTypes.getSize(); i++ {
+        QualType& templateType = data.templateTypes.get(i);
+        templateType = this.mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
+    }
+
+    // Retrieve function object
+    Scope* matchScope = data.calleeParentScope;
+    data.callee = matchFunction(matchScope, functionName, data.thisType, data.args, data.templateTypes, false, baseNode);
+
+    return true;
+}
+
+f<bool> TypeChecker.visitFctPtrCall(ASTFctCallNode* node, const QualType& functionType) {
+    const FctCallData& data = node.data.get(this.manIdx);
+
+    // Check if the given argument types match the type
+    const QualTypeList expectedArgTypes = functionType.getFunctionParamTypes();
+    if data.args.getSize() != expectedArgTypes.getSize() {
+        this.softError(cast<ASTNode*>(node), SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION, String("Expected and actual number of arguments do not match"));
+        return false;
+    }
+
+    // The host passes a resolver function, that never resolves a generic type. The equivalent is an empty list of candidate
+    // template types
+    const Vector<GenericType> noCandidateTemplateTypes;
+
+    for unsigned long i = 0l; i < data.args.getSize(); i++ {
+        const Arg& arg = data.args.get(i);
+        const QualType& actualType = arg.getFirst();
+        const QualType& expectedType = expectedArgTypes.get(i);
+        TypeMapping typeMapping;
+        if !matchRequestedToCandidateType(expectedType, actualType, typeMapping, noCandidateTemplateTypes, false, false) {
+            const String message = String("Expected ") + expectedType.getName(false) + " but got " + actualType.getName(false);
+            this.softError(getASTNode(node.argLst.args.get(i)), SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION, message);
+            return false;
+        }
+    }
+    return true;
+}
+
+f<bool> TypeChecker.visitMethodCall(ASTFctCallNode* node, Scope* structScope) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    FctCallData& data = node.data.get(this.manIdx);
+    Scope* currentStructScope = structScope;
+
+    // Traverse through structs - the first fragment is already looked up and the last one is the method name
+    for unsigned long i = 1l; i < node.functionNameFragments.getSize() - 1l; i++ {
+        const String& identifier = node.functionNameFragments.get(i);
+
+        // Retrieve field entry, also looking through composed fields
+        Vector<unsigned long> indexPath;
+        SymbolTableEntry* fieldEntry = currentStructScope.symbolTable.lookupInComposedFields(identifier, indexPath);
+        if fieldEntry == nil<SymbolTableEntry*> {
+            const QualType thisBaseType = data.thisType.getBase();
+            const String errorMsg = String("The type '") + thisBaseType.getName(false, true) + "' does not have a member with the name '" + identifier + "'";
+            this.softError(baseNode, SemanticErrorType::ACCESS_TO_NON_EXISTING_MEMBER, errorMsg);
+            return false;
+        }
+        const QualType fieldType = fieldEntry.getQualType();
+        const QualType fieldBaseType = fieldType.getBase();
+        const dyn structOrInterface = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+        if !fieldBaseType.isOneOf(structOrInterface, len(structOrInterface)) {
+            const String message = String("Cannot call a method on '") + identifier + "', since it is no struct or interface";
+            this.softError(baseNode, SemanticErrorType::INVALID_MEMBER_ACCESS, message);
+            return false;
+        }
+        fieldEntry.used = true;
+
+        // Get struct type and scope
+        data.thisType = fieldType;
+        currentStructScope = fieldBaseType.getBodyScope();
+        assert currentStructScope != nil<Scope*>;
+    }
+
+    if data.thisType.is(SuperType::TY_INTERFACE) {
+        this.softError(baseNode, SemanticErrorType::INVALID_MEMBER_ACCESS, String("Cannot call a method on an interface"));
+        return false;
+    }
+
+    // Map local arg types to imported types
+    data.calleeParentScope = currentStructScope;
+    Scope* matchScope = currentStructScope;
+    for unsigned long i = 0l; i < data.args.getSize(); i++ {
+        Arg& arg = data.args.get(i);
+        QualType& argType = arg.getFirst();
+        argType = this.mapLocalTypeToImportedScopeType(data.calleeParentScope, argType);
+    }
+
+    // Map local template types to imported types
+    for unsigned long i = 0l; i < data.templateTypes.getSize(); i++ {
+        QualType& templateType = data.templateTypes.get(i);
+        templateType = this.mapLocalTypeToImportedScopeType(data.calleeParentScope, templateType);
+    }
+
+    // 'this' type
+    data.thisType = data.thisType.autoDereference();
+    data.thisType = this.mapLocalTypeToImportedScopeType(data.calleeParentScope, data.thisType);
+
+    // Retrieve function object
+    const String& functionName = node.functionNameFragments.back();
+    data.callee = matchFunction(matchScope, functionName, data.thisType, data.args, data.templateTypes, false, baseNode);
+
+    return true;
+}
+
+public f<Any> TypeChecker.visitArrayInitialization(ASTArrayInitializationNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    if node.itemLst == nil<ASTArgLstNode*> || node.itemLst.args.isEmpty() {
+        return this.softErrorER(baseNode, SemanticErrorType::ARRAY_SIZE_INVALID, String("Array initializers must at least contain one value"));
+    }
+    node.actualSize = cast<unsigned long>(node.itemLst.args.getSize());
+
+    QualType actualItemType = QualType(SuperType::TY_DYN);
+    // Check if all values have the same type
+    foreach IVisitable* arg : node.itemLst.args {
+        const ExprResult itemResult = this.visitExpr(arg);
+        const QualType itemType = itemResult.ty;
+        if itemType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        if actualItemType.is(SuperType::TY_DYN) { // Perform type inference
+            actualItemType = itemType;
+        } else if itemType != actualItemType { // Check if types are matching
+            const String message = String("All provided values have to be of the same data type. You provided ") + actualItemType.getName(false) + " and " + itemType.getName(false);
+            return this.softErrorER(getASTNode(arg), SemanticErrorType::ARRAY_ITEM_TYPE_NOT_MATCHING, message);
+        }
+    }
+    assert !actualItemType.is(SuperType::TY_DYN);
+
+    const QualType arrayType = actualItemType.toArr(baseNode, cast<unsigned int>(node.actualSize), true);
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(arrayType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Retrieve struct name
+    Pair<SymbolTableEntry*, bool> aliasResolution = this.rootScope.symbolTable.lookupWithAliasResolution(node.fqStructName);
+    SymbolTableEntry* aliasedEntry = aliasResolution.getFirst();
+    const bool isAlias = aliasResolution.getSecond();
+    String structName = node.fqStructName;
+    if isAlias {
+        const QualType aliasedType = aliasedEntry.getQualType();
+        structName = aliasedType.getSubType();
+    }
+
+    // Check if the struct type is generic
+    const GenericType* genericType = this.rootScope.lookupGenericTypeStrict(structName);
+    if genericType != nil<const GenericType*> && this.typeMapping.contains(structName) {
+        const QualType& replacementType = this.typeMapping.get(structName);
+        if replacementType.is(SuperType::TY_STRUCT) {
+            structName = replacementType.getSubType();
+        }
+    }
+
+    // Retrieve struct
+    const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(structName);
+    if registryEntry == nil<const NameRegistryEntry*> {
+        return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_STRUCT, String("Cannot find struct '") + structName + "'");
+    }
+    assert registryEntry.targetEntry != nil<SymbolTableEntry*> && registryEntry.targetScope != nil<Scope*>;
+    SymbolTableEntry* structEntry = registryEntry.targetEntry;
+
+    // Check visibility
+    const QualType structEntryType = structEntry.getQualType();
+    if !structEntryType.isPublic() && structEntry.scope.isImportedBy(this.currentScope) {
+        return this.softErrorER(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, String("Struct '") + structName + "' has insufficient visibility");
+    }
+
+    // Get struct type
+    QualType structType = structEntryType;
+
+    // Get the concrete template types
+    QualTypeList concreteTemplateTypes;
+    if isAlias {
+        // Retrieve concrete template types from type alias
+        const QualType aliasedType = aliasedEntry.getQualType();
+        concreteTemplateTypes = aliasedType.getTemplateTypes();
+        // Check if the aliased type specified template types and the struct instantiation does
+        if !concreteTemplateTypes.isEmpty() && node.templateTypeLst != nil<ASTTypeLstNode*> {
+            return this.softErrorER(cast<ASTNode*>(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, String("The aliased type already has a template list"));
+        }
+    }
+
+    if node.templateTypeLst != nil<ASTTypeLstNode*> {
+        concreteTemplateTypes.reserve(cast<unsigned long>(node.templateTypeLst.dataTypes.getSize()));
+        foreach ASTDataTypeNode* dataType : node.templateTypeLst.dataTypes {
+            const QualType concreteType = this.getDataType(dataType);
+            if concreteType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+            // Check if generic type
+            if concreteType.is(SuperType::TY_GENERIC) {
+                return this.softErrorER(cast<ASTNode*>(dataType), SemanticErrorType::EXPECTED_NON_GENERIC_TYPE, String("Struct instantiations may only take concrete template types"));
+            }
+            concreteTemplateTypes.pushBack(concreteType);
+        }
+    }
+
+    // Get the struct instance
+    Struct* spiceStruct = structType.getStructAndAdjustType(baseNode, concreteTemplateTypes);
+    Struct*& instantiatedStruct = node.instantiatedStructs.get(this.manIdx);
+    instantiatedStruct = spiceStruct;
+    if spiceStruct == nil<Struct*> {
+        const String message = String("Struct '") + getStructSignature(structName, concreteTemplateTypes) + "' could not be found";
+        return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_STRUCT, message);
+    }
+
+    // Struct instantiation for an inheriting struct is forbidden, because the vtable needs to be initialized and this is done in
+    // the ctor of the struct, which is never called in case of struct instantiation
+    if !spiceStruct.interfaceTypes.isEmpty() {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_STRUCT_INSTANTIATION, String("Struct instantiations for inheriting structs are forbidden"));
+    }
+
+    // Check if the number of fields matches
+    if node.fieldLst != nil<ASTArgLstNode*> { // Check if any fields are passed. Empty braces are also allowed
+        ASTArgLstNode* fieldLst = node.fieldLst;
+        if spiceStruct.fieldTypes.getSize() != fieldLst.args.getSize() {
+            return this.softErrorER(cast<ASTNode*>(fieldLst), SemanticErrorType::NUMBER_OF_FIELDS_NOT_MATCHING, String("You've passed too less/many field values. Pass either none or all of them"));
+        }
+
+        // Check if the field types are matching
+        const unsigned long fieldCount = cast<unsigned long>(spiceStruct.fieldTypes.getSize());
+        Scope* structScope = spiceStruct.scope;
+        const unsigned long explicitFieldsStartIdx = structScope.getFieldCount() - fieldCount;
+        // Per-manifestation: a struct literal inside a generic function is re-type-checked once per manifestation of
+        // that function, and the struct itself may resolve to a different concrete type each time (e.g. HashEntry<K,
+        // V> inside HashTable<K, V>.upsert()), so the copy-ctor set from one manifestation must not leak into another.
+        Vector<Function*>& fieldCopyCtors = node.fieldCopyCtors.get(this.manIdx);
+        fieldCopyCtors.clear();
+        for unsigned long i = 0l; i < fieldLst.args.getSize(); i++ {
+            // Get actual type
+            IVisitable* assignExpr = fieldLst.args.get(i);
+            ASTNode* assignExprNode = getASTNode(assignExpr);
+            ExprResult fieldResult = this.visitExpr(assignExpr);
+            if fieldResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+            // Get expected type
+            SymbolTableEntry* expectedField = structScope.lookupField(cast<unsigned int>(explicitFieldsStartIdx + i));
+            assert expectedField != nil<SymbolTableEntry*>;
+            // The host compiler aborts on a struct literal field, initialized with a reference to a type with an overloaded
+            // assign operator, so the field type is copied into a local first
+            const QualType expectedFieldType = expectedField.getQualType();
+            const ExprResult expected = ExprResult{expectedFieldType, expectedField};
+            const bool rhsIsImmediate = assignExprNode.hasCompileTimeValue(this.manIdx);
+
+            // Capture anonymous info up front: getFieldAssignResultType may delete the anonymous entry (temp stealing
+            // in performStructAssign), turning fieldResult.entry into a dangling pointer.
+            const bool rhsIsAnonymous = fieldResult.entry != nil<SymbolTableEntry*> && fieldResult.entry.anonymous;
+            String rhsEntryName = String("");
+            if rhsIsAnonymous {
+                rhsEntryName = fieldResult.entry.name;
+            }
+
+            // Check if actual type matches expected type. A non-anonymous, non-trivially-copyable rhs (e.g. a plain
+            // local variable) needs its value deep-copied into the field: the struct instantiation does not
+            // consume/move it, so the caller keeps its own copy alive and destructs it independently.
+            Pair<QualType, Function*> fieldAssignResult = this.opRuleManager.getFieldAssignResultType(assignExprNode, expected, fieldResult, rhsIsImmediate, true);
+            fieldCopyCtors.pushBack(fieldAssignResult.getSecond());
+
+            // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
+            // Safe to call even if performStructAssign already deleted it: erasing by key is a no-op when absent.
+            if rhsIsAnonymous {
+                this.currentScope.symbolTable.deleteAnonymous(rhsEntryName);
+                fieldResult.entry = nil<SymbolTableEntry*>;
+            }
+        }
+        assert fieldCopyCtors.getSize() == fieldLst.args.getSize();
+    } else {
+        bool hasReferenceField = false;
+        foreach const QualType& fieldType : spiceStruct.fieldTypes {
+            if fieldType.isRef() {
+                hasReferenceField = true;
+            }
+        }
+        if hasReferenceField {
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCE_WITHOUT_INITIALIZER, String("The struct takes at least one reference field. You need to instantiate it with all fields."));
+        }
+    }
+
+    // Update type of struct entry
+    structEntry.updateType(structType, true);
+
+    // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
+    SymbolTableEntry* anonymousEntry = nil<SymbolTableEntry*>;
+    if !structType.isTriviallyDestructible(baseNode) {
+        anonymousEntry = this.currentScope.symbolTable.insertAnonymous(structType, baseNode);
+    }
+
+    // Remove public qualifier to not have public local variables
+    TypeQualifiers& structTypeQualifiers = structType.getQualifiers();
+    structTypeQualifiers.isPublic = false;
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(structType, this.manIdx), anonymousEntry});
+}
+
+public f<Any> TypeChecker.visitLambdaFunc(ASTLambdaFuncNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if all control paths in the lambda body return
+    bool returnsOnAllControlPaths = true;
+    if !baseNode.returnsOnAllControlPaths(&returnsOnAllControlPaths, this.manIdx) {
+        return this.softErrorER(baseNode, SemanticErrorType::MISSING_RETURN_STMT, String("Not all control paths of this lambda function have a return statement"));
+    }
+
+    // Change to function scope
+    Scope* bodyScope = this.currentScope.getChildScope(node.getScopeId());
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, bodyScope, ScopeType::LAMBDA_BODY);
+
+    // Visit return type
+    const QualType returnType = this.getDataType(node.returnType);
+    if returnType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    if returnType.is(SuperType::TY_DYN) {
+        return this.softErrorER(baseNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Dyn return types are not allowed"));
+    }
+
+    // Set the type of the result variable
+    SymbolTableEntry* resultVarEntry = this.currentScope.lookupStrict(String(RETURN_VARIABLE_NAME));
+    assert resultVarEntry != nil<SymbolTableEntry*>;
+    resultVarEntry.updateType(returnType, true);
+    resultVarEntry.used = true;
+
+    // Visit parameters
+    QualTypeList paramTypes;
+    ParamList paramList;
+    if node.hasParams {
+        this.visitLambdaParams(baseNode, node.paramLst, paramTypes, paramList);
+    }
+
+    // Visit lambda body
+    this.visit(node.body);
+
+    // Leave function body scope
+    scopeHandle.leaveScopeEarly();
+
+    // Prepare type of function
+    const QualType functionTypeBase = QualType(SuperType::TY_FUNCTION);
+    const QualType functionTypeWithSignature = functionTypeBase.getWithFunctionParamAndReturnTypes(returnType, paramTypes);
+    const QualType functionType = functionTypeWithSignature.getWithLambdaCaptures(!bodyScope.symbolTable.captures.isEmpty());
+
+    // Create function object
+    this.createLambdaManifestation(baseNode, bodyScope, returnType, paramList);
+
+    // Check special requirements if this is an async lambda
+    this.checkAsyncLambdaCaptureRules(baseNode, node.lambdaAttr);
+
+    return Any(ExprResult{node.node.node.setEvaluatedSymbolType(functionType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+public f<Any> TypeChecker.visitLambdaProc(ASTLambdaProcNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Mark unreachable statements
+    bool doSetPredecessorsUnreachable = true;
+    baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
+
+    // Change to function scope
+    Scope* bodyScope = this.currentScope.getChildScope(node.getScopeId());
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, bodyScope, ScopeType::LAMBDA_BODY);
+
+    // Visit parameters
+    QualTypeList paramTypes;
+    ParamList paramList;
+    if node.hasParams {
+        this.visitLambdaParams(baseNode, node.paramLst, paramTypes, paramList);
+    }
+
+    // Visit lambda body
+    this.visit(node.body);
+
+    // Leave function body scope
+    scopeHandle.leaveScopeEarly();
+
+    // Prepare type of function
+    const QualType functionTypeBase = QualType(SuperType::TY_PROCEDURE);
+    const QualType functionTypeWithSignature = functionTypeBase.getWithFunctionParamAndReturnTypes(QualType(SuperType::TY_DYN), paramTypes);
+    const QualType functionType = functionTypeWithSignature.getWithLambdaCaptures(!bodyScope.symbolTable.captures.isEmpty());
+
+    // Create function object
+    this.createLambdaManifestation(baseNode, bodyScope, QualType(SuperType::TY_DYN), paramList);
+
+    // Check special requirements if this is an async lambda
+    this.checkAsyncLambdaCaptureRules(baseNode, node.lambdaAttr);
+
+    return Any(ExprResult{node.node.node.setEvaluatedSymbolType(functionType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Change to function scope
+    Scope* bodyScope = this.currentScope.getChildScope(node.getScopeId());
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, bodyScope, ScopeType::LAMBDA_BODY);
+
+    // Visit parameters
+    QualTypeList paramTypes;
+    ParamList paramList;
+    if node.hasParams {
+        this.visitLambdaParams(baseNode, node.paramLst, paramTypes, paramList);
+    }
+
+    // Visit lambda expression
+    const ExprResult lambdaExprResult = this.visitExpr(node.lambdaExpr);
+    const QualType returnType = lambdaExprResult.ty;
+    if returnType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    if returnType.is(SuperType::TY_DYN) {
+        return this.softErrorER(baseNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Dyn return types are not allowed"));
+    }
+
+    // Leave function body scope
+    scopeHandle.leaveScopeEarly();
+
+    // Prepare type of function
+    const SuperType superType = returnType.is(SuperType::TY_DYN) ? SuperType::TY_PROCEDURE : SuperType::TY_FUNCTION;
+    const QualType functionTypeBase = QualType(superType);
+    const QualType functionTypeWithSignature = functionTypeBase.getWithFunctionParamAndReturnTypes(returnType, paramTypes);
+    const QualType functionType = functionTypeWithSignature.getWithLambdaCaptures(!bodyScope.symbolTable.captures.isEmpty());
+
+    // Create function object
+    this.createLambdaManifestation(baseNode, bodyScope, returnType, paramList);
+
+    return Any(ExprResult{node.node.node.setEvaluatedSymbolType(functionType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+/**
+ * Visit the param list of a lambda and collect the param types (shared part of the host's visitLambdaFunc/Proc/Expr)
+ *
+ * @param node Lambda node
+ * @param paramLst Param list node
+ * @param paramTypes Param types
+ * @param paramList Params
+ */
+p TypeChecker.visitLambdaParams(ASTNode* node, IVisitable* paramLst, QualTypeList& paramTypes, ParamList& paramList) {
+    // Visit param list to retrieve the param names
+    Any paramLstResult = this.visit(paramLst);
+    const NamedParamList namedParamList = paramLstResult.get<NamedParamList>();
+    foreach const NamedParam& param : namedParamList {
+        if param.isOptional {
+            this.softError(node, SemanticErrorType::LAMBDA_WITH_OPTIONAL_PARAMS, String("Lambdas cannot have optional parameters"));
+        }
+
+        paramTypes.pushBack(param.qualType);
+        paramList.pushBack(Param{param.qualType, param.isOptional});
+    }
+}
+
+/**
+ * Create the function object of a lambda for the current manifestation (shared part of the host's visitLambdaFunc/Proc/Expr)
+ *
+ * @param node Lambda node
+ * @param bodyScope Body scope of the lambda
+ * @param returnType Return type of the lambda
+ * @param paramList Params of the lambda
+ */
+p TypeChecker.createLambdaManifestation(ASTNode* node, Scope* bodyScope, const QualType& returnType, const ParamList& paramList) {
+    const String fctName = String("lambda.") + node.codeLoc.toPrettyLineAndColumn();
+    ASTLambdaBaseNode* lambdaBaseNode = asLambdaBaseNode(node);
+    Function& manifestation = lambdaBaseNode.manifestations.get(this.manIdx);
+    const Vector<GenericType> noTemplateTypes;
+    manifestation = Function(fctName, nil<SymbolTableEntry*>, QualType(SuperType::TY_DYN), returnType, paramList, noTemplateTypes, node);
+    manifestation.bodyScope = bodyScope;
+    manifestation.mangleSuffix = String(".") + toString(cast<long>(this.manIdx));
+}
+
+// ======================================================== TypeCheckerBuiltinFunctions.cpp =======================================
+
+// ToDo: Port TypeCheckerBuiltinFunctions.cpp
+f<Any> TypeChecker.visitBuiltinCall(ASTFctCallNode* node) {
+    return this.notPortedYet(cast<ASTNode*>(node));
+}
+
 // ======================================================= Not overridden by the host TypeChecker =================================
 
 // The host TypeChecker does not override these visit methods, so they visit all children (AbstractASTVisitor default)
@@ -3735,19 +4643,6 @@ public f<Any> TypeChecker.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* no
 public f<Any> TypeChecker.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitAttr(ASTAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-
-// ============================================================= Not ported yet ==================================================
-
-// ToDo: Port these visit methods together with the check pass (TypeCheckerValues.cpp, TypeCheckerTopLevelDefinitionsCheck.cpp,
-// TypeCheckerBuiltinFunctions.cpp). They are only reached from function bodies,
-// which the prepare pass does not visit.
-public f<Any> TypeChecker.visitValue(ASTValueNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitLambdaFunc(ASTLambdaFuncNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitLambdaProc(ASTLambdaProcNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 
 // ============================================================== TypeCheckerImplicit.cpp ========================================
 

@@ -721,10 +721,11 @@ public f<bool> SourceFile.isRT(RuntimeModule runtimeModule) {
     return entry.targetEntry.scope == this.globalScope;
 }
 
-// Check if this source file is the string / memory / RTTI runtime module itself
+// Check if this source file is the string / memory / RTTI / result runtime module itself
 public inline f<bool> SourceFile.isStringRT() { return this.isRT(RuntimeModule::STRING_RT); }
 public inline f<bool> SourceFile.isMemoryRT() { return this.isRT(RuntimeModule::MEMORY_RT); }
 public inline f<bool> SourceFile.isRttiRT() { return this.isRT(RuntimeModule::RTTI_RT); }
+public inline f<bool> SourceFile.isResultRT() { return this.isRT(RuntimeModule::RESULT_RT); }
 
 f<bool> SourceFile.haveAllDependantsBeenTypeChecked() {
     foreach const SourceFile* dependant : this.dependants {

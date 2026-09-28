@@ -13,7 +13,7 @@ public type CaptureAccessType enum {
 }
 
 public type Capture struct {
-    SymbolTableEntry* capturedSymbol
+    public SymbolTableEntry* capturedSymbol
     CaptureAccessType accessType = CaptureAccessType::READ_ONLY
     CapturePassMode captureMode = CapturePassMode::BY_VALUE
 }

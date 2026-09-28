@@ -16,8 +16,6 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/util/common-util";
 
-public type TypeMapping alias UnorderedMap</*typeName=*/String, /*concreteType=*/QualType>;
-
 public type VTableData struct {
     llvm::StructType* typeInfoType = nil<llvm::StructType*>
     llvm::StructType* vTableType = nil<llvm::StructType*>
@@ -65,11 +63,12 @@ public f<String> StructBase.getSignature() {
         }
     }
 
-    return this.getSignature(this.name, templateSymbolTypes);
+    return getStructSignature(this.name, templateSymbolTypes);
 }
 
 /**
- * Get the signature from the struct name and the concrete template types
+ * Get the signature from the struct name and the concrete template types. This is the equivalent of the host's static
+ * StructBase::getSignature(), since Spice has no static methods.
  *
  * Example:
  * Pair<int,double>
@@ -78,7 +77,7 @@ public f<String> StructBase.getSignature() {
  * @param concreteTemplateTypes Concrete template types
  * @return Signature
  */
-public f<String> StructBase.getSignature(const String& name, const QualTypeList& concreteTemplateTypes) {
+public f<String> getStructSignature(const String& name, const QualTypeList& concreteTemplateTypes) {
     // Build template type string
     StringStream templateTyStr;
     if !concreteTemplateTypes.isEmpty() {

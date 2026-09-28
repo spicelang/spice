@@ -1,0 +1,74 @@
+// Input program for the standalone type checker values test. The test type-checks the body of main. The last statements are
+// invalid on purpose, the test checks the soft errors they produce.
+
+type Point struct {
+    public int x
+    public int y
+}
+
+f<int> Point.sum() {
+    return this.x + this.y;
+}
+
+type Holder struct {
+    public Point point
+}
+
+type Vec2 struct {
+    int x
+    int y
+}
+
+p Vec2.ctor(int x, int y) {
+    this.x = x;
+    this.y = y;
+}
+
+f<int> Vec2.length() {
+    return this.x * this.x + this.y * this.y;
+}
+
+f<int> add(int a, int b) {
+    return a + b;
+}
+
+p log(int value) {}
+
+f<int> main() {
+    bool flag = true;
+    int counter = 0;
+    Holder holder;
+
+    // Valid values
+    int sum = add(1, 2);
+    log(sum);
+    add(3, 4);
+    Vec2 vec = Vec2(3, 4);
+    int len = vec.length();
+    int nestedSum = holder.point.sum();
+    int[3] arr = [1, 2, 3];
+    Point pt = Point{1, 2};
+    f<int>(int) doubler = (int x) -> x * 2;
+    int doubled = doubler(4);
+    f<int>(int) inc = f<int>(int x) {
+        return x + 1;
+    };
+    p() incrementer = p() {
+        counter++;
+    };
+    incrementer();
+    f<int>(int, int) addRef = add;
+    int* ptr = nil<int*>;
+
+    // Invalid values
+    unknownFct();
+    add(1);
+    int[2] mixed = [1, 2.0];
+    Point partial = Point{1};
+    doubler(1, 2);
+    f<int>() missing = f<int>() {
+        if flag {
+            return 1;
+        }
+    };
+}
