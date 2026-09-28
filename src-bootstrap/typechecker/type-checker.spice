@@ -7,6 +7,7 @@ import "std/data/unordered-map";
 import "std/data/pair";
 import "std/data/queue";
 import "std/type/type-conversion";
+import "std/math/hash";
 
 // Own imports
 import "bootstrap/compiler-pass";
@@ -163,13 +164,6 @@ f<Any> TypeChecker.softErrorER(const ASTNode* node, SemanticErrorType errorType,
 // Return value of a visit method, that evaluates to an unresolved expression result (HANDLE_UNRESOLVED_TYPE_ER in the host)
 f<Any> unresolvedER() {
     return Any(ExprResult{QualType(SuperType::TY_UNRESOLVED), nil<SymbolTableEntry*>});
-}
-
-// Visit method of a node, that is only visited by the check pass, which is not ported yet
-f<Any> TypeChecker.notPortedYet(ASTNode* node) {
-    const String message = String("The type checker does not support this node yet: ") + node.codeLoc.toPrettyString();
-    panic(Error(message.getRaw()));
-    return Any();
 }
 
 // ======================================================== TypeChecker.cpp ======================================================
@@ -476,6 +470,26 @@ p TypeChecker.softError(const ASTNode* node, SemanticErrorType errorType, const 
 // Add a warning to the warning list of the current source file
 p TypeChecker.addWarning(const CodeLoc& codeLoc, CompilerWarningType warningType, const String& message) {
     this.warnings.pushBack(CompilerWarning(codeLoc, warningType, message.getRaw()));
+}
+
+/**
+ * Check if the given call is a copy ctor call (like __new<T>(other) or __placement_new<T>(ptr, other)), i.e. the second arg
+ * has the same type as the struct to construct
+ *
+ * @param node Function call node
+ * @param thisType Type of the struct to construct
+ * @return Copy ctor call or not
+ */
+f<bool> TypeChecker.isCopyCtorCall(ASTFctCallNode* node, const QualType& thisType) {
+    const FctCallData& data = node.data.get(this.manIdx);
+    if data.args.getSize() != 2l {
+        return false;
+    }
+    const Pair<QualType, bool>& secondArg = data.args.back();
+    QualType secondArgType = secondArg.getFirst();
+    secondArgType = secondArgType.removeReferenceWrapper();
+    secondArgType = secondArgType.toNonConst();
+    return thisType.matches(secondArgType, false, false, true);
 }
 
 /**
@@ -4997,9 +5011,814 @@ p TypeChecker.createLambdaManifestation(ASTNode* node, Scope* bodyScope, const Q
 
 // ======================================================== TypeCheckerBuiltinFunctions.cpp =======================================
 
-// ToDo: Port TypeCheckerBuiltinFunctions.cpp
+/**
+ * Build the error message for a mismatching number of template types or arguments of a builtin call
+ *
+ * @param min Min count
+ * @param max Max count
+ * @param actual Actual count
+ * @param suffix Suffix to describe what is counted
+ * @return Error message
+ */
+f<String> buildBuiltinCountErrorMessage(unsigned int min, unsigned int max, unsigned long actual, string suffix) {
+    String expectedStr;
+    // The counts are widened to unsigned long, because the int overload of toString would print large counts as negative
+    if min == max {
+        expectedStr = min == 0u ? String("no") : toString(cast<unsigned long>(min));
+    } else {
+        expectedStr = "between " + toString(cast<unsigned long>(min)) + " and " + toString(cast<unsigned long>(max));
+    }
+    return "This builtin expects " + expectedStr + " " + suffix + ", but got " + toString(actual);
+}
+
 f<Any> TypeChecker.visitBuiltinCall(ASTFctCallNode* node) {
-    return this.notPortedYet(cast<ASTNode*>(node));
+    BuiltinFunctionInfo info;
+    const bool isBuiltin = lookupBuiltinFunction(node.fqFunctionName, info);
+    assert isBuiltin; // Builtin function not implemented
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Do basic checks of template types and args, based on the builtin function info
+    const unsigned long numTemplateTypes = node.hasTemplateTypes ? node.templateTypeLst.dataTypes.getSize() : 0l;
+    if numTemplateTypes < cast<unsigned long>(info.minTemplateTypes) || numTemplateTypes > cast<unsigned long>(info.maxTemplateTypes) {
+        const String msg = buildBuiltinCountErrorMessage(info.minTemplateTypes, info.maxTemplateTypes, numTemplateTypes, "template type(s)");
+        return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_TEMPLATE_TYPE_COUNT_MISMATCH, msg);
+    }
+
+    const unsigned long numArgs = node.hasArgs ? node.argLst.args.getSize() : 0l;
+    if numArgs < cast<unsigned long>(info.minArgTypes) || numArgs > cast<unsigned long>(info.maxArgTypes) {
+        const String msg = buildBuiltinCountErrorMessage(info.minArgTypes, info.maxArgTypes, numArgs, "argument(s)");
+        return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_COUNT_MISMATCH, msg);
+    }
+
+    if info.allTemplateTypesOrAllArgTypes {
+        if numTemplateTypes > 0l && numArgs > 0l {
+            return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_SIGNATURE_MISMATCH, String("This builtin expects either template types or arguments, but got both"));
+        }
+        if numTemplateTypes == 0l && numArgs == 0l {
+            return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_SIGNATURE_MISMATCH, String("This builtin expects either template types or arguments, but got none"));
+        }
+    }
+
+    // Call to TypeChecker delegate to execute further checks. This is the equivalent of the host's BUILTIN_DISPATCH_MAP,
+    // since Spice has no method pointers
+    const String& name = node.fqFunctionName;
+    if name == BUILTIN_FCT_NAME_PRINTF { return this.visitBuiltinPrintfCall(node); }
+    if name == BUILTIN_FCT_NAME_SIZEOF { return this.visitBuiltinSizeOfCall(node); }
+    if name == BUILTIN_FCT_NAME_ALIGNOF { return this.visitBuiltinAlignOfCall(node); }
+    if name == BUILTIN_FCT_NAME_OFFSETOF { return this.visitBuiltinOffsetOfCall(node); }
+    if name == BUILTIN_FCT_NAME_TYPEID { return this.visitBuiltinTypeIdCall(node); }
+    if name == BUILTIN_FCT_NAME_TYPENAME { return this.visitBuiltinTypeNameCall(node); }
+    if name == BUILTIN_FCT_NAME_LEN { return this.visitBuiltinLenCall(node); }
+    if name == BUILTIN_FCT_NAME_PANIC { return this.visitBuiltinPanicCall(node); }
+    if name == BUILTIN_FCT_NAME_SYSCALL { return this.visitBuiltinSyscallCall(node); }
+    if name == BUILTIN_FCT_NAME_IS_SAME { return this.visitBuiltinIsSameCall(node); }
+    if name == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE { return this.visitBuiltinImplementsInterfaceCall(node); }
+    if name == BUILTIN_FCT_NAME_GET_BUILD_VAR { return this.visitBuiltinGetBuildVarCall(node); }
+    if name == BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE { return this.visitBuiltinIsTriviallyConstructible(node); }
+    if name == BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE { return this.visitBuiltinIsTriviallyCopyable(node); }
+    if name == BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE { return this.visitBuiltinIsTriviallyDestructible(node); }
+    if name == BUILTIN_FCT_NAME_IS_HEAP { return this.visitBuiltinIsHeap(node); }
+    if name == BUILTIN_FCT_NAME_NEW { return this.visitBuiltinNewCall(node); }
+    if name == BUILTIN_FCT_NAME_PLACEMENT_NEW { return this.visitBuiltinPlacementNewCall(node); }
+    if name == BUILTIN_FCT_NAME_SOURCE_FILE { return this.visitBuiltinSourceFileCall(node); }
+    if name == BUILTIN_FCT_NAME_SOURCE_LINE { return this.visitBuiltinSourceLineCall(node); }
+    if name == BUILTIN_FCT_NAME_SOURCE_COLUMN { return this.visitBuiltinSourceColumnCall(node); }
+    if name == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER { return this.visitBuiltinErrTraceBufferCall(node); }
+    if name == BUILTIN_FCT_NAME_STDERR { return this.visitBuiltinStdErrCall(node); }
+    if name == BUILTIN_FCT_NAME_FRAME_ADDRESS { return this.visitBuiltinFrameAddressCall(node); }
+    return Any();
+}
+
+// Evaluated symbol type of an argument of a function call
+f<QualType> TypeChecker.getArgType(ASTFctCallNode* node, unsigned long argIdx) {
+    ASTExprNode* argNode = asExprNode(getASTNode(node.argLst.args.get(argIdx)));
+    return argNode.getEvaluatedSymbolType(this.manIdx);
+}
+
+// Evaluated symbol type of the template type or (if there is no template type) the argument of a builtin call like sizeof
+f<QualType> TypeChecker.getTemplateTypeOrArgType(ASTFctCallNode* node) {
+    if node.hasTemplateTypes { // Of type
+        ASTDataTypeNode* dataTypeNode = node.templateTypeLst.dataTypes.front();
+        return dataTypeNode.node.getEvaluatedSymbolType(this.manIdx);
+    }
+    return this.getArgType(node, 0l); // Of value
+}
+
+// Evaluated symbol type of the template type with the given index of a function call
+f<QualType> TypeChecker.getTemplateType(ASTFctCallNode* node, unsigned long templateTypeIdx) {
+    ASTDataTypeNode* dataTypeNode = node.templateTypeLst.dataTypes.get(templateTypeIdx);
+    return dataTypeNode.node.getEvaluatedSymbolType(this.manIdx);
+}
+
+// Set the evaluated symbol type of a builtin call and return it as expression result
+f<Any> TypeChecker.builtinResult(ASTFctCallNode* node, const QualType& qualType) {
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(qualType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+// Set the compile time value of a function call for the current manifestation (FctCallNode::setCompileTimeValue in the host)
+p TypeChecker.setCompileTimeValue(ASTFctCallNode* node, const CompileTimeValue& value) {
+    FctCallData& data = node.data.get(this.manIdx);
+    data.setCompileTimeValue(value);
+}
+
+// Whether the given char is a printf flag
+f<bool> isPrintfFlag(char c) {
+    return c == '-' || c == '+' || c == ' ' || c == '#' || c == '0';
+}
+
+// Whether the given char is a decimal digit
+f<bool> isDecimalDigit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+f<Any> TypeChecker.visitBuiltinPrintfCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_PRINTF;
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Retrieve templated string
+    assert node.hasArgs;
+    ASTNode* firstArg = getASTNode(node.argLst.args.front());
+    const QualType firstArgType = this.getArgType(node, 0l);
+    assert firstArgType.is(SuperType::TY_STRING) && firstArg.hasCompileTimeValue(this.manIdx);
+    const CompileTimeValue firstArgValue = firstArg.getCompileTimeValue(this.manIdx);
+    const unsigned long stringOffset = firstArgValue.stringValueOffset;
+    String templatedString = String(this.resourceManager.getCompileTimeStringValue(stringOffset));
+    const long templatedStringSize = cast<long>(templatedString.getLength());
+    const unsigned long argCount = node.argLst.args.getSize();
+
+    // Check if assignment types match placeholder types
+    unsigned long placeholderCount = 0l;
+    long index = templatedString.find('%');
+    while index != -1l && index != templatedStringSize - 1l {
+        // Handle escaped percent signs (%%), which do not consume an argument
+        if templatedString[cast<unsigned long>(index + 1l)] == '%' {
+            index = templatedString.find('%', cast<unsigned long>(index + 2l));
+            continue;
+        }
+
+        // Determine the position of the conversion specifier by skipping the optional
+        // flags, field width and precision (e.g. the "04" in "%04d"). These are forwarded
+        // verbatim to the underlying C printf, so we only need to skip over them here.
+        long specifierIndex = index + 1l;
+        while specifierIndex < templatedStringSize && isPrintfFlag(templatedString[cast<unsigned long>(specifierIndex)]) {
+            specifierIndex++; // Skip flags
+        }
+        while specifierIndex < templatedStringSize && isDecimalDigit(templatedString[cast<unsigned long>(specifierIndex)]) {
+            specifierIndex++; // Skip field width
+        }
+        if specifierIndex < templatedStringSize && templatedString[cast<unsigned long>(specifierIndex)] == '.' {
+            specifierIndex++; // Skip precision dot
+            while specifierIndex < templatedStringSize && isDecimalDigit(templatedString[cast<unsigned long>(specifierIndex)]) {
+                specifierIndex++; // Skip precision
+            }
+        }
+        if specifierIndex >= templatedStringSize {
+            return this.softErrorER(baseNode, SemanticErrorType::PRINTF_TYPE_ERROR, String("The placeholder string contains an invalid placeholder"));
+        }
+
+        // Check if there is another assignExpr
+        if argCount - 1l <= placeholderCount {
+            return this.softErrorER(baseNode, SemanticErrorType::PRINTF_ARG_COUNT_ERROR, String("The placeholder string contains more placeholders than arguments"));
+        }
+
+        // Get next assignment
+        const ASTNode* assignment = getASTNode(node.argLst.args.get(placeholderCount + 1l));
+        // Visit assignment
+        QualType argType = this.getArgType(node, placeholderCount + 1l);
+        if argType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        argType = argType.removeReferenceWrapper();
+
+        const char specifier = templatedString[cast<unsigned long>(specifierIndex)];
+        switch specifier {
+            case 'c': {
+                if !argType.is(SuperType::TY_CHAR) {
+                    return this.softErrorER(assignment, SemanticErrorType::PRINTF_TYPE_ERROR, "The placeholder string expects char, but got " + argType.getName(false));
+                }
+                placeholderCount++;
+            }
+            case 'd', 'i', 'l', 'o', 'u', 'x', 'X': {
+                const dyn intLikeTypes = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_BOOL];
+                if !argType.isOneOf(intLikeTypes, len(intLikeTypes)) {
+                    return this.softErrorER(assignment, SemanticErrorType::PRINTF_TYPE_ERROR, "The placeholder string expects int, short, long, byte or bool, but got " + argType.getName(false));
+                }
+                placeholderCount++;
+            }
+            case 'a', 'A', 'f', 'F', 'e', 'E', 'g', 'G': {
+                if !argType.is(SuperType::TY_DOUBLE) {
+                    return this.softErrorER(assignment, SemanticErrorType::PRINTF_TYPE_ERROR, "The placeholder string expects double, but got " + argType.getName(false));
+                }
+                placeholderCount++;
+            }
+            case 's': {
+                if !argType.is(SuperType::TY_STRING) && !argType.isStringObj() && !argType.isPtrTo(SuperType::TY_CHAR) && !argType.isArrayOf(SuperType::TY_CHAR) {
+                    return this.softErrorER(assignment, SemanticErrorType::PRINTF_TYPE_ERROR, "The placeholder string expects string, String, char* or char[], but got " + argType.getName(false));
+                }
+                placeholderCount++;
+            }
+            case 'p': {
+                if !argType.isPtr() && !argType.isArray() && !argType.is(SuperType::TY_STRING) {
+                    return this.softErrorER(assignment, SemanticErrorType::PRINTF_TYPE_ERROR, "The placeholder string expects pointer, array or string, but got " + argType.getName(false));
+                }
+                placeholderCount++;
+            }
+            default: {
+                return this.softErrorER(baseNode, SemanticErrorType::PRINTF_TYPE_ERROR, String("The placeholder string contains an invalid placeholder"));
+            }
+        }
+        index = templatedString.find('%', cast<unsigned long>(specifierIndex + 1l)); // We can also skip the conversion specifier
+    }
+
+    // Check if the number of placeholders matches the number of args
+    if placeholderCount < argCount - 1l {
+        return this.softErrorER(baseNode, SemanticErrorType::PRINTF_ARG_COUNT_ERROR, String("The placeholder string contains less placeholders than arguments"));
+    }
+
+    return this.builtinResult(node, QualType(SuperType::TY_INT));
+}
+
+f<Any> TypeChecker.visitBuiltinSizeOfCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_SIZEOF;
+
+    // Directly set compile time value here, so that compile time ifs can be evaluated.
+    const QualType qualType = this.getTemplateTypeOrArgType(node);
+
+    const dyn dynOrUnresolved = [SuperType::TY_UNRESOLVED, SuperType::TY_DYN];
+    if qualType.isOneOf(dynOrUnresolved, len(dynOrUnresolved)) {
+        return this.softErrorER(cast<ASTNode*>(node), SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Cannot use sizeof on a dyn or unresolved type"));
+    }
+
+    const Type* rawType = qualType.getType();
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.longValue = cast<long>(rawType.getTypeAllocSize(this.sourceFile));
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+f<Any> TypeChecker.visitBuiltinAlignOfCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_ALIGNOF;
+
+    // Directly set compile time value here, so that compile time ifs can be evaluated.
+    const QualType qualType = this.getTemplateTypeOrArgType(node);
+
+    const dyn dynOrUnresolved = [SuperType::TY_UNRESOLVED, SuperType::TY_DYN];
+    if qualType.isOneOf(dynOrUnresolved, len(dynOrUnresolved)) {
+        return this.softErrorER(cast<ASTNode*>(node), SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Cannot use alignof on a dyn or unresolved type"));
+    }
+
+    const Type* rawType = qualType.getType();
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.longValue = cast<long>(rawType.getABITypeAlign(this.sourceFile));
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+f<Any> TypeChecker.visitBuiltinOffsetOfCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_OFFSETOF;
+    assert node.hasArgs && node.argLst.args.getSize() == 2l;
+
+    // The first argument denotes the struct to compute the offset within
+    const ASTNode* structArg = getASTNode(node.argLst.args.get(0l));
+    QualType structType = this.getArgType(node, 0l);
+    structType = structType.removeReferenceWrapper();
+    structType = structType.autoDereference();
+    if !structType.is(SuperType::TY_STRUCT) {
+        return this.softErrorER(structArg, SemanticErrorType::EXPECTED_STRUCT_TYPE, String("The offsetof builtin expects a struct as its first argument"));
+    }
+
+    // The second argument must be a (possibly chained) member access, denoting the field to compute the offset of
+    const ASTNode* memberArg = getASTNode(node.argLst.args.get(1l));
+    ASTPostfixUnaryExprNode* leafAccess = nil<ASTPostfixUnaryExprNode*>;
+    ASTNode* cur = memberArg;
+    while cur != nil<ASTNode*> {
+        if cur.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
+            leafAccess = downcast<ASTPostfixUnaryExprNode>(cur);
+            break;
+        }
+        const Vector<ASTNode*>& children = cur.getChildren();
+        cur = children.getSize() == 1l ? children.front() : nil<ASTNode*>;
+    }
+    if leafAccess == nil<ASTPostfixUnaryExprNode*> || leafAccess.op != PostfixUnaryOp::OP_MEMBER_ACCESS {
+        return this.softErrorER(memberArg, SemanticErrorType::INVALID_MEMBER_ACCESS, String("The offsetof builtin expects a struct member access as its second argument"));
+    }
+
+    // Collect the chain of member accesses (from leaf to base). Only plain member accesses are supported.
+    Vector<ASTPostfixUnaryExprNode*> accessChain;
+    ASTPostfixUnaryExprNode* access = leafAccess;
+    while access != nil<ASTPostfixUnaryExprNode*> {
+        if access.op != PostfixUnaryOp::OP_MEMBER_ACCESS {
+            return this.softErrorER(memberArg, SemanticErrorType::INVALID_MEMBER_ACCESS, String("The offsetof builtin only supports plain member accesses"));
+        }
+        accessChain.pushBack(access);
+        // Continue with the operand of the member access, if it is a postfix unary expression itself
+        access = nil<ASTPostfixUnaryExprNode*>;
+        IVisitable* operand = accessChain.back().postfixUnaryExpr;
+        if operand != nil<IVisitable*> && getASTNode(operand).kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
+            access = downcast<ASTPostfixUnaryExprNode>(operand);
+        }
+    }
+
+    // Ensure the base of the member access chain is the struct that was passed as first argument
+    QualType chainBaseType = this.getOperandType(accessChain.back());
+    chainBaseType = chainBaseType.removeReferenceWrapper();
+    chainBaseType = chainBaseType.autoDereference();
+    if !chainBaseType.matches(structType, false, true, false) {
+        return this.softErrorER(memberArg, SemanticErrorType::INVALID_MEMBER_ACCESS, String("The member access must be rooted in the struct passed as first argument"));
+    }
+
+    // Accumulate the byte offset by walking each access in the chain through its struct layout
+    long offset = 0l;
+    foreach ASTPostfixUnaryExprNode* chainAccess : accessChain {
+        QualType baseType = this.getOperandType(chainAccess);
+        baseType = baseType.removeReferenceWrapper();
+        baseType = baseType.autoDereference();
+        assert baseType.is(SuperType::TY_STRUCT);
+
+        // Resolve the struct body scope (substantiate the generic scope if required)
+        Scope* structScope = baseType.getBodyScope();
+        if structScope.isGenericScope {
+            const Struct* spiceStruct = baseType.getStruct(cast<ASTNode*>(node));
+            assert spiceStruct != nil<Struct*>;
+            structScope = spiceStruct.scope;
+        }
+        assert !structScope.isGenericScope;
+
+        // Look up the accessed field to retrieve its index path within the struct
+        Vector<unsigned long> indexPath;
+        const SymbolTableEntry* fieldEntry = structScope.symbolTable.lookupInComposedFields(chainAccess.identifier, indexPath);
+        if fieldEntry == nil<SymbolTableEntry*> {
+            return this.softErrorER(memberArg, SemanticErrorType::REFERENCED_UNDEFINED_FIELD, "Field '" + chainAccess.identifier + "' not found in struct " + baseType.getSubType());
+        }
+
+        // Walk the index path through the struct layout to accumulate the byte offset of the field
+        const Type* baseRawType = baseType.getType();
+        offset += cast<long>(baseRawType.getFieldOffset(this.sourceFile, indexPath));
+    }
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.longValue = offset;
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+// Evaluated symbol type of the operand of a postfix unary expression
+f<QualType> TypeChecker.getOperandType(ASTPostfixUnaryExprNode* node) {
+    ASTExprNode* operandNode = asExprNode(getASTNode(node.postfixUnaryExpr));
+    return operandNode.getEvaluatedSymbolType(this.manIdx);
+}
+
+f<Any> TypeChecker.visitBuiltinTypeIdCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_TYPEID;
+
+    // Directly set compile time value here, so that compile time ifs can be evaluated.
+    const QualType qualType = this.getTemplateTypeOrArgType(node);
+    const Hash typeId = this.resourceManager.typeRegistry.getTypeHash(*qualType.getType());
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.longValue = cast<long>(typeId);
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+f<Any> TypeChecker.visitBuiltinTypeNameCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_TYPENAME;
+
+    // Directly set compile time value here, so that compile time ifs can be evaluated.
+    const QualType qualType = this.getTemplateTypeOrArgType(node);
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+    this.resourceManager.compileTimeStringValues.pushBack(qualType.getName());
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_STRING));
+}
+
+f<Any> TypeChecker.visitBuiltinLenCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_LEN;
+
+    // Directly set compile time value here, so that compile time ifs can be evaluated.
+    QualType argType = this.getArgType(node, 0l);
+    argType = argType.removeReferenceWrapper();
+
+    // Check if arg is of type array
+    if !argType.isArray() && !argType.is(SuperType::TY_STRING) {
+        return this.softErrorER(getASTNode(node.argLst.args.front()), SemanticErrorType::EXPECTED_ARRAY_TYPE, String("The len builtin can only work on arrays or strings"));
+    }
+
+    if argType.is(SuperType::TY_ARRAY) {
+        CompileTimeValue compileTimeValue;
+        compileTimeValue.longValue = cast<long>(argType.getArraySize());
+        this.setCompileTimeValue(node, compileTimeValue);
+    } else {
+        // If we want to use the len builtin on a string, we need to import the string runtime module
+        if !this.sourceFile.isStringRT() {
+            this.sourceFile.requestRuntimeModule(RuntimeModule::STRING_RT);
+        }
+    }
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+f<Any> TypeChecker.visitBuiltinPanicCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_PANIC;
+
+    assert node.hasArgs;
+    const ASTNode* assignExpr = getASTNode(node.argLst.args.front());
+    QualType argType = this.getArgType(node, 0l);
+    if argType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+    argType = argType.removeReferenceWrapper();
+
+    // Check if arg is of type array
+    if !argType.isErrorObj() {
+        return this.softErrorER(assignExpr, SemanticErrorType::EXPECTED_ERROR_TYPE, String("The panic builtin can only work with errors"));
+    }
+
+    // The panic prints the stack trace, so the runtime that does that has to be loaded
+    if this.cliOptions.printsStackTraceOnAbort() && !this.sourceFile.isRT(RuntimeModule::STACK_TRACE_RT) {
+        this.sourceFile.requestRuntimeModule(RuntimeModule::STACK_TRACE_RT);
+    }
+
+    return this.builtinResult(node, QualType(SuperType::TY_DYN));
+}
+
+f<Any> TypeChecker.visitBuiltinSyscallCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_SYSCALL;
+
+    // Check if the syscall number if of type short
+    const ASTNode* sysCallNumberExpr = getASTNode(node.argLst.args.front());
+    const QualType sysCallNumberType = this.getArgType(node, 0l);
+    if !sysCallNumberType.is(SuperType::TY_SHORT) {
+        return this.softErrorER(sysCallNumberExpr, SemanticErrorType::INVALID_SYSCALL_NUMBER_TYPE, String("Syscall number must be of type short"));
+    }
+
+    // Check if the syscall number is out of range
+    // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    if baseNode.hasCompileTimeValue(this.manIdx) {
+        const CompileTimeValue sysCallNumberValue = baseNode.getCompileTimeValue(this.manIdx);
+        const unsigned short sysCallNumber = cast<unsigned short>(sysCallNumberValue.shortValue);
+        if cast<int>(sysCallNumber) > 439 {
+            return this.softErrorER(baseNode, SemanticErrorType::SYSCALL_NUMBER_OUT_OF_RANGE, String("Only syscall numbers between 0 and 439 are supported"));
+        }
+    }
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+f<Any> TypeChecker.visitBuiltinIsSameCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_IS_SAME;
+
+    // Directly set compile time value here, so that compile time ifs can be evaluated.
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.boolValue = true;
+    const QualType firstType = this.getTemplateType(node, 0l);
+    for unsigned long i = 1l; i < node.templateTypeLst.dataTypes.getSize(); i++ {
+        const QualType qualType = this.getTemplateType(node, i);
+        if !qualType.matches(firstType, false, true, false) {
+            compileTimeValue.boolValue = false;
+            break;
+        }
+    }
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_BOOL));
+}
+
+f<Any> TypeChecker.visitBuiltinImplementsInterfaceCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE;
+
+    const QualType interfaceType = this.getTemplateType(node, 0l);
+    const QualType structType = this.getTemplateType(node, node.templateTypeLst.dataTypes.getSize() - 1l);
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.boolValue = interfaceType.is(SuperType::TY_INTERFACE) && structType.is(SuperType::TY_STRUCT) && structType.doesImplement(interfaceType, cast<ASTNode*>(node));
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_BOOL));
+}
+
+/**
+ * Parse the given string to an int with the semantics of std::stoi: Leading whitespace and trailing garbage are ignored, but
+ * at least one digit has to be present and the value has to fit into an int.
+ *
+ * @param input Input string
+ * @param output Parsed int value
+ * @return Successfully parsed or not
+ */
+f<bool> parseIntLikeStoi(const String& input, int& output) {
+    const string rawInput = input.getRaw();
+    const unsigned long length = input.getLength();
+    unsigned long idx = 0l;
+    char c = '\0';
+    // Skip leading whitespace
+    while idx < length {
+        unsafe { c = rawInput[idx]; }
+        if c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\f' && c != '\v' { break; }
+        idx++;
+    }
+    // Sign
+    bool isNegative = false;
+    if idx < length {
+        unsafe { c = rawInput[idx]; }
+        if c == '+' || c == '-' {
+            isNegative = c == '-';
+            idx++;
+        }
+    }
+    // Digits
+    long value = 0l;
+    unsigned long digitCount = 0l;
+    while idx < length {
+        unsafe { c = rawInput[idx]; }
+        if !isDecimalDigit(c) { break; }
+        value = value * 10l + cast<long>(toInt(c) - toInt('0'));
+        if value > 2147483648l { return false; } // Out of range
+        digitCount++;
+        idx++;
+    }
+    if digitCount == 0l { return false; } // Invalid argument
+    if isNegative { value = -value; }
+    if value > 2147483647l { return false; } // Out of range
+    output = cast<int>(value);
+    return true;
+}
+
+f<Any> TypeChecker.visitBuiltinGetBuildVarCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_GET_BUILD_VAR;
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    const ASTNode* requestedTypeNode = cast<ASTNode*>(node.templateTypeLst.dataTypes.front());
+    const QualType requestedType = this.getTemplateType(node, 0l);
+    const dyn buildVarTypes = [SuperType::TY_STRING, SuperType::TY_INT, SuperType::TY_BOOL];
+    if !requestedType.isOneOf(buildVarTypes, len(buildVarTypes)) {
+        return this.softErrorER(requestedTypeNode, SemanticErrorType::BUILTIN_SIGNATURE_MISMATCH, String("Build var type must be string, int or bool"));
+    }
+
+    ASTNode* varNameNode = getASTNode(node.argLst.args.get(0l));
+    const QualType varNameType = this.getArgType(node, 0l);
+    if !varNameType.is(SuperType::TY_STRING) {
+        return this.softErrorER(varNameNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String("Build var name must be a string"));
+    }
+    if !varNameNode.hasCompileTimeValue(this.manIdx) {
+        return this.softErrorER(varNameNode, SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE, String("Var name must be known at compile time"));
+    }
+
+    const bool hasDefaultValue = node.argLst.args.getSize() == 2l;
+    CompileTimeValue defaultValue;
+    if hasDefaultValue {
+        ASTNode* defaultValueNode = getASTNode(node.argLst.args.get(1l));
+        const QualType defaultValueType = this.getArgType(node, 1l);
+        if !defaultValueType.matches(requestedType, false, true, true) {
+            return this.softErrorER(defaultValueNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String("Default value type must be the same as the requested type"));
+        }
+        if !defaultValueNode.hasCompileTimeValue(this.manIdx) {
+            return this.softErrorER(defaultValueNode, SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE, String("Default value must be known at compile time"));
+        }
+        defaultValue = defaultValueNode.getCompileTimeValue(this.manIdx);
+    }
+
+    FctCallData& data = node.data.get(this.manIdx);
+    const CompileTimeValue varNameValue = varNameNode.getCompileTimeValue(this.manIdx);
+    const unsigned long stringValueOffset = varNameValue.stringValueOffset;
+    const String varName = String(this.resourceManager.getCompileTimeStringValue(stringValueOffset));
+    if this.cliOptions.buildVars.contains(varName) {
+        const String buildVarValue = String(this.cliOptions.buildVars.get(varName));
+        CompileTimeValue compileTimeValue;
+        if requestedType.is(SuperType::TY_STRING) {
+            compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+            this.resourceManager.compileTimeStringValues.pushBack(buildVarValue);
+        } else if requestedType.is(SuperType::TY_INT) {
+            // The host parses the value with std::stoi, which throws on invalid values
+            int value = 0;
+            if !parseIntLikeStoi(buildVarValue, value) {
+                return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String("Error while parsing the provided value to the requested type"));
+            }
+            compileTimeValue.intValue = value;
+        } else if requestedType.is(SuperType::TY_BOOL) {
+            compileTimeValue.boolValue = buildVarValue == "true";
+        }
+        data.setCompileTimeValue(compileTimeValue);
+    } else {
+        if !hasDefaultValue {
+            return this.softErrorER(varNameNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String("Build var with this name was not provided"));
+        }
+        data.setCompileTimeValue(defaultValue);
+    }
+
+    return this.builtinResult(node, requestedType);
+}
+
+f<Any> TypeChecker.visitBuiltinIsTriviallyConstructible(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_IS_TRIVIALLY_CONSTRUCTIBLE;
+
+    const QualType qualType = this.getTemplateType(node, 0l);
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.boolValue = qualType.isTriviallyConstructible(cast<ASTNode*>(node));
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_BOOL));
+}
+
+f<Any> TypeChecker.visitBuiltinIsTriviallyCopyable(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_IS_TRIVIALLY_COPYABLE;
+
+    const QualType qualType = this.getTemplateType(node, 0l);
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.boolValue = qualType.isTriviallyCopyable(cast<ASTNode*>(node));
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_BOOL));
+}
+
+f<Any> TypeChecker.visitBuiltinIsTriviallyDestructible(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_IS_TRIVIALLY_DESTRUCTIBLE;
+
+    const QualType qualType = this.getTemplateType(node, 0l);
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.boolValue = qualType.isTriviallyDestructible(cast<ASTNode*>(node));
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_BOOL));
+}
+
+f<Any> TypeChecker.visitBuiltinIsHeap(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_IS_HEAP;
+
+    const QualType qualType = this.getTemplateType(node, 0l);
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.boolValue = qualType.isHeap();
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_BOOL));
+}
+
+/**
+ * Check the constructor of a struct for __new and __placement_new. Shared part of the host's visitBuiltinNewCall and
+ * visitBuiltinPlacementNewCall.
+ *
+ * @param node Builtin call node
+ * @param templateType Struct type to construct
+ * @param ctorArgs Constructor arguments
+ * @return Whether the check was successful. If not, a soft error was recorded
+ */
+f<bool> TypeChecker.checkBuiltinNewCtor(ASTFctCallNode* node, const QualType& templateType, const ArgList& ctorArgs) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    FctCallData& data = node.data.get(this.manIdx);
+    Scope* bodyScope = templateType.getBodyScope();
+    const QualTypeList noTemplateTypeHints;
+    Function* ctor = matchFunction(bodyScope, String(CTOR_FUNCTION_NAME), templateType, ctorArgs, noTemplateTypeHints, false, baseNode);
+    if ctor == nil<Function*> {
+        const bool copyCtorCall = this.isCopyCtorCall(node, templateType);
+        if !copyCtorCall && !templateType.isTriviallyConstructible(baseNode) {
+            this.softError(baseNode, SemanticErrorType::NO_MATCHING_CTOR_FOUND, "No matching constructor found for type '" + templateType.getName(false) + "'");
+            return false;
+        }
+        if copyCtorCall && !templateType.isTriviallyCopyable(baseNode) {
+            this.softError(baseNode, SemanticErrorType::NO_MATCHING_CTOR_FOUND, "No matching copy constructor found for type '" + templateType.getName(false) + "'");
+            return false;
+        }
+    }
+    data.callee = ctor;
+    return true;
+}
+
+f<Any> TypeChecker.visitBuiltinNewCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_NEW;
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    FctCallData& data = node.data.get(this.manIdx);
+    const QualType templateType = this.getTemplateType(node, 0l);
+
+    if templateType.is(SuperType::TY_STRUCT) {
+        if !this.checkBuiltinNewCtor(node, templateType, data.args) { return unresolvedER(); }
+    } else if data.args.getSize() > 1l {
+        const String msg = "Expected no or 1 argument for __new on primitive type, got " + toString(data.args.getSize());
+        return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+    } else if data.args.getSize() == 1l {
+        const Pair<QualType, bool>& arg = data.args.front();
+        QualType argType = arg.getFirst();
+        argType = argType.removeReferenceWrapper();
+        argType = argType.toNonConst();
+        if !templateType.matches(argType, false, false, true) {
+            const String msg = "Argument type '" + argType.getName() + "' does not match template type '" + templateType.getName() + "'";
+            return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+        }
+    }
+
+    QualType returnType = templateType.toPtr(baseNode);
+    returnType.makeHeap();
+    return this.builtinResult(node, returnType);
+}
+
+f<Any> TypeChecker.visitBuiltinPlacementNewCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_PLACEMENT_NEW;
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    FctCallData& data = node.data.get(this.manIdx);
+    const QualType templateType = this.getTemplateType(node, 0l);
+
+    // Validate first arg is a byte pointer or a heap pointer to the template type
+    const Pair<QualType, bool>& ptrArg = data.args.front();
+    QualType ptrArgType = ptrArg.getFirst();
+    ptrArgType = ptrArgType.removeReferenceWrapper();
+    const bool isBytePtr = ptrArgType.isPtrTo(SuperType::TY_BYTE);
+    const bool isStructPtr = ptrArgType.isPtr() && ptrArgType.getContained() == templateType;
+    if !isBytePtr && !isStructPtr {
+        return this.softErrorER(getASTNode(node.argLst.args.front()), SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String("__placement_new expects a 'byte*' or 'T*' as its first argument"));
+    }
+
+    if templateType.is(SuperType::TY_STRUCT) {
+        ArgList ctorArgs;
+        for unsigned long i = 1l; i < data.args.getSize(); i++ {
+            ctorArgs.pushBack(data.args.get(i));
+        }
+        if !this.checkBuiltinNewCtor(node, templateType, ctorArgs) { return unresolvedER(); }
+    } else if data.args.getSize() > 2l {
+        const String msg = "Expected 1 or 2 arguments for __placement_new, got " + toString(data.args.getSize());
+        return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+    } else if data.args.getSize() == 2l {
+        const Pair<QualType, bool>& arg = data.args.back();
+        QualType argType = arg.getFirst();
+        argType = argType.removeReferenceWrapper();
+        argType = argType.toNonConst();
+        if !templateType.matches(argType, false, false, true) {
+            const String msg = "Argument type '" + argType.getName() + "' does not match template type '" + templateType.getName() + "'";
+            return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+        }
+    }
+
+    return this.builtinResult(node, templateType.toPtr(baseNode));
+}
+
+f<Any> TypeChecker.visitBuiltinSourceFileCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_SOURCE_FILE;
+
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+    this.resourceManager.compileTimeStringValues.pushBack(node.codeLoc.toPrettyFilePath());
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_STRING));
+}
+
+f<Any> TypeChecker.visitBuiltinSourceLineCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_SOURCE_LINE;
+
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.longValue = cast<long>(node.codeLoc.line);
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+f<Any> TypeChecker.visitBuiltinSourceColumnCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_SOURCE_COLUMN;
+
+    CompileTimeValue compileTimeValue;
+    compileTimeValue.longValue = cast<long>(node.codeLoc.col);
+    this.setCompileTimeValue(node, compileTimeValue);
+
+    return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+/**
+ * Resolves to a reference to the calling thread's ErrorTraceBuffer (std/runtime/error_trace_rt.spice). Only ever
+ * called from within that same file, where the struct is always in scope by name.
+ */
+f<Any> TypeChecker.visitBuiltinErrTraceBufferCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER;
+
+    const SymbolTableEntry* structEntry = this.rootScope.lookupStrict(String("ErrorTraceBuffer"));
+    assert structEntry != nil<SymbolTableEntry*>;
+    const QualType structType = structEntry.getQualType();
+    const QualType bufferType = structType.toRef(cast<ASTNode*>(node));
+
+    return this.builtinResult(node, bufferType);
+}
+
+/**
+ * Resolves to a pointer to the process's stderr stream. Spice source has no syntax for declaring an external
+ * *variable* (only functions/procedures via 'ext'), so this exists as a builtin that reaches the real libc
+ * symbol directly in IR generation, the same way panic()'s own codegen already did before this builtin existed.
+ */
+f<Any> TypeChecker.visitBuiltinStdErrCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_STDERR;
+
+    const QualType byteType = QualType(SuperType::TY_BYTE);
+    return this.builtinResult(node, byteType.toPtr(cast<ASTNode*>(node)));
+}
+
+/**
+ * Resolves to the frame address (saved frame-pointer slot) of the calling function's own stack frame, i.e. the
+ * same value as C's `__builtin_frame_address(0)`. IRGenerator keeps frame pointers for every function it emits, so
+ * the value is always a real frame address - but see the IR generator side of this builtin for why that alone does
+ * not make the surrounding frame chain walkable on every target.
+ */
+f<Any> TypeChecker.visitBuiltinFrameAddressCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_FRAME_ADDRESS;
+
+    const QualType byteType = QualType(SuperType::TY_BYTE);
+    return this.builtinResult(node, byteType.toPtr(cast<ASTNode*>(node)));
 }
 
 // ======================================================= Not overridden by the host TypeChecker =================================

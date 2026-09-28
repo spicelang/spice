@@ -1,0 +1,7 @@
+import "bootstrap/global/type-name-disambiguator";
+
+// Wrapper for 'spice test' unit test
+f<int> main() {
+    testTypeNameDisambiguatorSmoke();
+    printf("All assertions passed!\n");
+}

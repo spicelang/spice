@@ -1,0 +1,130 @@
+// Std imports
+import "std/data/vector";
+import "std/data/unordered-map";
+import "std/type/type-conversion";
+
+/**
+ * Two structs or interfaces that share a simple name but stem from independent declarations (e.g. a package-private
+ * `Node<T>` declared separately in two source files, see issue #1253) are distinct types, but render to the same
+ * name. That collision surfaces both as a type-checker conflation (same manifestation signature) and as a linker/codegen
+ * clash (same mangled name). To keep them apart without affecting the common, non-colliding case, this registry hands
+ * out a deterministic disambiguation suffix for the second and any further distinct type sharing a given name. The
+ * first type to claim a name keeps it unchanged, so nothing changes unless a name is actually reused.
+ *
+ * The host's TypeNameDisambiguator is process-global (static members). Spice only supports globals of primitive type, so
+ * like the TypeRegistry, it is a normal struct owned by the GlobalResourceManager, which registers it as the active one.
+ * Since the GlobalResourceManager is created per compilation, the state is automatically cleared between compilations.
+ */
+public type TypeNameDisambiguator struct {
+    // Maps a simple type name to the list of distinct type ids claiming it, in first-seen order
+    UnorderedMap<String, Vector<unsigned long>> claimedTypeIds
+}
+
+// Address of the active type name disambiguator. Spice only supports globals of primitive type, so the address is stored
+// as a long.
+long ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = 0l;
+
+/**
+ * Make the given type name disambiguator the active one. getDisambiguationSuffix() operates on it.
+ *
+ * @param disambiguator Type name disambiguator
+ */
+public p setActiveTypeNameDisambiguator(TypeNameDisambiguator* disambiguator) {
+    unsafe {
+        ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = cast<long>(cast<byte*>(disambiguator));
+    }
+}
+
+/**
+ * Get the active type name disambiguator
+ *
+ * @return Active type name disambiguator
+ */
+f<TypeNameDisambiguator*> getActiveTypeNameDisambiguator() {
+    TypeNameDisambiguator* disambiguator = nil<TypeNameDisambiguator*>;
+    unsafe {
+        disambiguator = cast<TypeNameDisambiguator*>(cast<byte*>(ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS));
+    }
+    assert disambiguator != nil<TypeNameDisambiguator*>;
+    return disambiguator;
+}
+
+/**
+ * Get the disambiguation suffix for a struct/interface type with the given name and type id.
+ * The first type id to claim a name keeps it unchanged (empty suffix); every further distinct type id sharing the name
+ * receives a deterministic, dot-separated suffix (e.g. ".1", ".2"). A dot is used on purpose: it is not a valid Spice
+ * identifier character, so the disambiguated name can never collide with a genuine, user-declared type name.
+ *
+ * @param name Simple type name
+ * @param typeId Custom type id of the type
+ * @return Disambiguation suffix (empty for the first claimer of the name)
+ */
+public f<String> TypeNameDisambiguator.getDisambiguationSuffix(const String& name, unsigned long typeId) {
+    if !this.claimedTypeIds.contains(name) {
+        this.claimedTypeIds.upsert(name, Vector<unsigned long>());
+    }
+    Vector<unsigned long>& ids = this.claimedTypeIds.get(name);
+
+    // Find the index of the type id among the ones already claiming this name
+    unsigned long index = ids.getSize();
+    for unsigned long i = 0l; i < ids.getSize(); i++ {
+        if ids.get(i) == typeId {
+            index = i;
+            break;
+        }
+    }
+    // If not seen yet, claim the name
+    if index == ids.getSize() {
+        ids.pushBack(typeId);
+    }
+
+    // The first claimer keeps the plain name to avoid churn for the common, non-colliding case
+    if index == 0l {
+        return String();
+    }
+    return String(".") + toString(index);
+}
+
+/**
+ * Get the disambiguation suffix for a struct/interface type with the given name and type id from the active type name
+ * disambiguator. This is the equivalent of the host's static TypeNameDisambiguator::getDisambiguationSuffix.
+ *
+ * @param name Simple type name
+ * @param typeId Custom type id of the type
+ * @return Disambiguation suffix (empty for the first claimer of the name)
+ */
+public f<String> getDisambiguationSuffix(const String& name, unsigned long typeId) {
+    TypeNameDisambiguator* disambiguator = getActiveTypeNameDisambiguator();
+    return disambiguator.getDisambiguationSuffix(name, typeId);
+}
+
+/**
+ * Clear the disambiguation registry
+ */
+public p TypeNameDisambiguator.clear() {
+    this.claimedTypeIds.clear();
+}
+
+#[test, test.name="TypeNameDisambiguator Smoke test"]
+public f<bool> testTypeNameDisambiguatorSmoke() {
+    TypeNameDisambiguator disambiguator;
+    setActiveTypeNameDisambiguator(&disambiguator);
+
+    // The first claimer keeps the plain name
+    assert getDisambiguationSuffix(String("Node"), 300l) == "";
+    // Repeated claims of the same type are stable
+    assert getDisambiguationSuffix(String("Node"), 300l) == "";
+    // Further distinct types sharing the name get a suffix
+    assert getDisambiguationSuffix(String("Node"), 301l) == ".1";
+    assert getDisambiguationSuffix(String("Node"), 302l) == ".2";
+    assert getDisambiguationSuffix(String("Node"), 301l) == ".1";
+    // Other names are independent
+    assert getDisambiguationSuffix(String("Other"), 301l) == "";
+
+    // Clearing resets all claims
+    disambiguator.clear();
+    assert getDisambiguationSuffix(String("Node"), 302l) == "";
+
+    setActiveTypeNameDisambiguator(nil<TypeNameDisambiguator*>);
+    return true;
+}

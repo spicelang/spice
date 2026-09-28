@@ -1,0 +1,378 @@
+// Std imports
+import "std/data/vector";
+import "std/text/stringstream";
+import "std/type/type-conversion";
+
+// Own imports
+import "bootstrap/global/type-name-disambiguator";
+import "bootstrap/model/function";
+import "bootstrap/model/generic-type";
+import "bootstrap/model/interface";
+import "bootstrap/model/struct";
+import "bootstrap/model/struct-base";
+import "bootstrap/model/union";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/type";
+import "bootstrap/symboltablebuilder/type-chain";
+
+/**
+ * Helper for name mangling.
+ * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ *
+ * The host implements this as a class with static methods. Spice has no static methods, so the methods are free functions
+ * here, prefixed with 'mangle'.
+ *
+ * Names:
+ * - P: pointer
+ * - R: reference
+ * - A: array
+ * - d: double
+ * - i: int
+ * - j: unsigned int
+ * - s: short
+ * - t: unsigned short
+ * - l: long
+ * - m: unsigned long
+ * - a: byte
+ * - h: unsigned byte / unsigned char
+ * - c: char
+ * - PKc: string (const char*)
+ * - b: bool
+ * - v: void
+ * - K: const
+ * - C: capturing
+ *
+ * Reserved:
+ * - I
+ * - E
+ */
+
+/**
+ * Mangle a function or procedure.
+ * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ *
+ * Note: In debug builds, the host additionally validates the mangled name with the C++ demangler, if the signature does not
+ * contain function or procedure types (which are not valid Itanium). This sanity check is not ported.
+ *
+ * @param spiceFunc Input function
+ * @return Mangled name
+ */
+public f<String> mangleFunction(const Function& spiceFunc) {
+    // Check if we have a predefined mangled name, specified by e.g. a function attribute
+    if !spiceFunc.predefinedMangledName.isEmpty() {
+        return String(spiceFunc.predefinedMangledName);
+    }
+
+    // Check if mangling is required
+    if !spiceFunc.mangleFunctionName {
+        return String(spiceFunc.name);
+    }
+
+    StringStream mangledName;
+    mangledName << "_Z";
+
+    // This type
+    if spiceFunc.isMethod() {
+        mangledName << "N";
+        mangleType(mangledName, spiceFunc.thisType);
+    }
+
+    // Function name
+    const String name = spiceFunc.name + spiceFunc.mangleSuffix;
+    mangledName << toString(name.getLength()) << name;
+
+    // Template types
+    bool isSelfGeneric = !spiceFunc.templateTypes.isEmpty();
+    if spiceFunc.isMethod() {
+        const QualTypeList thisTemplateTypes = spiceFunc.thisType.getTemplateTypes();
+        isSelfGeneric = spiceFunc.templateTypes.getSize() > thisTemplateTypes.getSize();
+    }
+    if isSelfGeneric {
+        mangledName << "I";
+        // Template types themselves
+        foreach const GenericType& genericTemplateType : spiceFunc.templateTypes {
+            const String subType = genericTemplateType.qualType.getSubType();
+            assert spiceFunc.typeMapping.contains(subType);
+            const QualType& actualType = spiceFunc.typeMapping.get(subType);
+            mangleType(mangledName, actualType);
+        }
+        mangledName << "E";
+
+        // Insert second end marker to end the nested type
+        if spiceFunc.isMethod() {
+            mangledName << "E";
+        }
+
+        // Return type
+        if spiceFunc.isFunction() {
+            mangleType(mangledName, spiceFunc.returnType);
+        } else {
+            mangledName << "v";
+        }
+    } else if spiceFunc.isMethod() {
+        mangledName << "E";
+    }
+
+    // Parameter types
+    foreach const Param& param : spiceFunc.paramList {
+        assert !param.isOptional;
+        mangleType(mangledName, param.qualType);
+    }
+    if spiceFunc.paramList.isEmpty() {
+        mangledName << "v";
+    }
+
+    return String(mangledName.str());
+}
+
+/**
+ * Mangle a struct
+ * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ *
+ * @param spiceStruct Input struct
+ * @return Mangled name
+ */
+public f<String> mangleStruct(const Struct& spiceStruct) {
+    return String("struct.") + spiceStruct.name;
+}
+
+/**
+ * Mangle an interface
+ *
+ * @param spiceInterface Input interface
+ * @return Mangled name
+ */
+public f<String> mangleInterface(const Interface& spiceInterface) {
+    return String("interface.") + spiceInterface.name;
+}
+
+/**
+ * Mangle a union
+ *
+ * @param spiceUnion Input union
+ * @return Mangled name
+ */
+public f<String> mangleUnion(const Union& spiceUnion) {
+    return String("union.") + spiceUnion.name;
+}
+
+/**
+ * Mangle a fully qualified name like e.g. test::s1::calledMethod to 4test2s112calledMethod
+ * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ *
+ * @param out Output string stream
+ * @param name Input name
+ * @param nestedType True if the name is a nested type
+ */
+p mangleName(StringStream& out, const String& name, bool& nestedType) {
+    Vector<String> fragments;
+    const Vector<String> tokens = splitLikeGetline(name, ':');
+    foreach const String& token : tokens {
+        const Vector<String> subTokens = splitLikeGetline(token, '/');
+        foreach const String& subToken : subTokens {
+            fragments.pushBack(subToken);
+        }
+    }
+
+    // Start a nested type if needed. The caller needs to emit the end marker.
+    if fragments.getSize() > 1l {
+        out << "N";
+        nestedType = true;
+    }
+
+    // Process each fragment and append it to the result
+    foreach const String& currentFragment : fragments {
+        out << toString(currentFragment.getLength()) << currentFragment;
+    }
+}
+
+/**
+ * Split a string at the given delimiter with the semantics of repeated std::getline calls: empty tokens between two
+ * delimiters are kept, but there is no trailing empty token (and none at all for an empty input).
+ *
+ * @param input Input string
+ * @param delimiter Delimiter char
+ * @return Tokens
+ */
+f<Vector<String>> splitLikeGetline(const String& input, char delimiter) {
+    Vector<String> tokens;
+    String token;
+    const string rawInput = input.getRaw();
+    const unsigned long length = input.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        char c = '\0';
+        unsafe {
+            c = rawInput[i];
+        }
+        if c == delimiter {
+            tokens.pushBack(token);
+            token.clear();
+        } else {
+            token += c;
+        }
+    }
+    if !token.isEmpty() {
+        tokens.pushBack(token);
+    }
+    return tokens;
+}
+
+/**
+ * Mangle a symbol qualType
+ * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
+ *
+ * @param out Output string stream
+ * @param qualType Input symbol qualType
+ */
+p mangleType(StringStream& out, const QualType& qualType) {
+    const Type* rawType = qualType.getType();
+    assert !qualType.hasAnyGenericParts();
+
+    // Unwrap qualType chain
+    assert !rawType.typeChain.isEmpty();
+    for unsigned long i = rawType.typeChain.getSize() - 1l; i >= 1l; i-- {
+        mangleTypeChainElement(out, rawType.typeChain.get(i), false);
+    }
+
+    // Qualifiers
+    const TypeQualifiers& qualifiers = qualType.qualifiers;
+    assert qualifiers.isSigned == !qualifiers.isUnsigned;
+    const bool signedness = qualifiers.isSigned;
+    // The 'heap' qualifier has no equivalent in the C++ Itanium ABI, but it changes the semantics of the type (ownership), so
+    // it must be reflected in the mangled name. Otherwise e.g. 'byte*' and 'heap byte*' manifestations of the same generic
+    // function would collide on the same mangled name. Piggyback on the 'volatile' cv-qualifier slot ('V', ordered before
+    // 'K' per the Itanium <CV-qualifiers> grammar) so demangling still succeeds.
+    if qualifiers.isHeap {
+        out << "V";
+    }
+    if qualifiers.isConst && rawType.typeChain.getSize() > 1l {
+        out << "K";
+    }
+
+    // Base chain element
+    mangleTypeChainElement(out, rawType.typeChain.front(), signedness);
+}
+
+/**
+ * Mangle a type chain element
+ *
+ * @param out Output string stream
+ * @param chainElement Input type chain element
+ * @param signedness Signedness of the type
+ */
+p mangleTypeChainElement(StringStream& out, const TypeChainElement& chainElement, bool signedness) {
+    switch chainElement.superType {
+        case SuperType::TY_PTR: {
+            out << "P";
+        }
+        case SuperType::TY_ARRAY: {
+            if cast<unsigned long>(chainElement.data.arraySize) == ARRAY_SIZE_UNKNOWN {
+                out << "P";
+            } else {
+                out << "A" << toString(chainElement.data.arraySize) << "_";
+            }
+        }
+        case SuperType::TY_REF: {
+            out << "R";
+        }
+        case SuperType::TY_DOUBLE: {
+            assert signedness; // Unsigned double types are forbidden
+            out << "d";
+        }
+        case SuperType::TY_INT: {
+            out << (signedness ? "i" : "j");
+        }
+        case SuperType::TY_SHORT: {
+            out << (signedness ? "s" : "t");
+        }
+        case SuperType::TY_LONG: {
+            out << (signedness ? "l" : "m");
+        }
+        case SuperType::TY_BYTE: {
+            out << (signedness ? "a" : "h");
+        }
+        case SuperType::TY_CHAR: {
+            out << "c";
+        }
+        case SuperType::TY_STRING: {
+            out << "PKc";
+        }
+        case SuperType::TY_BOOL: {
+            assert !signedness; // Signed bool types are forbidden
+            out << "b";
+        }
+        case SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION: {
+            bool nestedType = false;
+            // Append a disambiguation suffix for same-named but distinct structs/interfaces/unions (see issue #1253), so
+            // that two independent types sharing a name do not end up with the same mangled name (and thus clash at link
+            // time).
+            const String name = chainElement.subType + getDisambiguationSuffix(chainElement.subType, chainElement.typeId);
+            mangleName(out, name, nestedType);
+            if !chainElement.templateTypes.isEmpty() {
+                out << "I";
+                foreach const QualType& templateType : chainElement.templateTypes {
+                    mangleType(out, templateType);
+                }
+                out << "E";
+            }
+            if nestedType {
+                out << "E";
+            }
+        }
+        case SuperType::TY_ENUM: {
+            bool nestedType = false;
+            mangleName(out, chainElement.subType, nestedType);
+            if nestedType {
+                out << "E";
+            }
+        }
+        case SuperType::TY_FUNCTION: {
+            out << (chainElement.data.hasCaptures ? "PFC" : "PF");
+            foreach const QualType& paramType : chainElement.paramTypes {
+                mangleType(out, paramType);
+            }
+            out << "E";
+        }
+        case SuperType::TY_PROCEDURE: {
+            out << (chainElement.data.hasCaptures ? "PFCv" : "PFv");
+            for unsigned long i = 1l; i < chainElement.paramTypes.getSize(); i++ {
+                mangleType(out, chainElement.paramTypes.get(i));
+            }
+            out << "E";
+        }
+        default: {
+            const String message = "Type " + chainElement.getName(false, true, true) + " cannot be mangled";
+            panic(Error(message.getRaw())); // Internal error
+        }
+    }
+}
+
+public f<String> mangleTypeInfoName(const StructBase* structBase) {
+    StringStream out;
+    out << "_ZTS";
+    mangleType(out, structBase.entry.getQualType());
+    return String(out.str());
+}
+
+public f<String> mangleTypeInfoValue(const String& value) {
+    return toString(value.getLength()) + value;
+}
+
+public f<String> mangleTypeInfo(const StructBase* structBase) {
+    StringStream out;
+    out << "_ZTI";
+    mangleType(out, structBase.entry.getQualType());
+    return String(out.str());
+}
+
+public f<String> mangleVTable(const StructBase* structBase) {
+    StringStream out;
+    out << "_ZTV";
+    mangleType(out, structBase.entry.getQualType());
+    return String(out.str());
+}
+
+public f<String> mangleVTable(const String& typeName) {
+    return "_ZTV" + toString(typeName.getLength()) + typeName;
+}

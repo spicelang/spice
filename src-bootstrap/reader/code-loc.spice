@@ -28,10 +28,21 @@ public f<String> CodeLoc.toString() {
  * @return Pretty code location
  */
 public f<String> CodeLoc.toPrettyString() {
-    if len(this.sourceFilePath) == 0 {
-        return toString(this.line) + ":" + toString(this.col);
-    }
-    return this.sourceFilePath + ":" + toString(this.line) + ":" + toString(this.col);
+    const String filePath = this.toPrettyFilePath();
+    const String prefix = filePath.isEmpty() ? String() : filePath + ":";
+    return prefix + toString(this.line) + ":" + toString(this.col);
+}
+
+/**
+ * Returns the path of the source file this code location points into.
+ *
+ * Note: The host's CodeLoc references the source file and makes the path relative to the root source file. The bootstrap
+ * CodeLoc only carries the path, so it is returned as is.
+ *
+ * @return Pretty file path
+ */
+public f<String> CodeLoc.toPrettyFilePath() {
+    return String(this.sourceFilePath);
 }
 
 /**
@@ -86,8 +97,9 @@ public f<bool> testCodeLocSmoke() {
     // toString
     assert loc1.toString() == "L12C5";
 
-    // toPrettyString without sourceFilePath
+    // toPrettyString and toPrettyFilePath without sourceFilePath
     assert loc1.toPrettyString() == "12:5";
+    assert loc1.toPrettyFilePath() == "";
 
     // toPrettyLine
     assert loc1.toPrettyLine() == "L12";
@@ -98,6 +110,7 @@ public f<bool> testCodeLocSmoke() {
     // Constructor with sourceFilePath
     CodeLoc loc2 = CodeLoc(7l, 3l, "test.spice");
     assert loc2.toPrettyString() == "test.spice:7:3";
+    assert loc2.toPrettyFilePath() == "test.spice";
 
     // Equality
     CodeLoc loc3 = CodeLoc(12l, 5l);

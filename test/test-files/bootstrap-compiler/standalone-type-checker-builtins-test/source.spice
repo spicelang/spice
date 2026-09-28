@@ -1,0 +1,226 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "std/data/pair";
+import "bootstrap/driver";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/exception/error-manager";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/model/function";
+import "bootstrap/model/struct";
+import "bootstrap/source-file";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/typechecker/function-manager";
+import "bootstrap/typechecker/type-checker";
+import "bootstrap/util/pass-test-util";
+
+f<FilePath> getFixturePath(string fileName) {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-type-checker-builtins-test/" + fileName;
+    return FilePath(filePathString);
+}
+
+// Run the front end, the prepare stage and the check stage of the type checker like SourceFile.runMiddleEnd
+p runTypeChecker(GlobalResourceManager& rm, SourceFile* file) {
+    file.runFrontEnd();
+    assert rm.errorManager.softErrors.isEmpty();
+    DefaultMemberCreationSection defaultMemberCreationSection;
+
+    TypeChecker typeCheckerPre = TypeChecker(rm, file, TypeCheckerMode::TC_MODE_PRE);
+    typeCheckerPre.visit(file.ast);
+    assert rm.errorManager.softErrors.isEmpty();
+    file.previousStage = CompileStageType::TYPE_CHECKER_PRE;
+
+    TypeChecker typeCheckerPost = TypeChecker(rm, file, TypeCheckerMode::TC_MODE_POST);
+    unsigned int typeCheckerRuns = 0;
+    while file.reVisitRequested {
+        typeCheckerRuns++;
+        assert typeCheckerRuns < 10;
+        file.reVisitRequested = false;
+        typeCheckerPost.visit(file.ast);
+    }
+}
+
+// Collect all nodes of the given kind in the subtree of the given node in pre-order
+p collectNodes(ASTNode* node, ASTNodeKind kind, Vector<ASTNode*>& nodes) {
+    if node.kind == kind {
+        nodes.pushBack(node);
+    }
+    foreach ASTNode* child : node.children {
+        collectNodes(child, kind, nodes);
+    }
+}
+
+// Call node of the n-th call (0-based) of the function with the given name
+f<ASTFctCallNode*> findCall(Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
+    unsigned long seen = 0l;
+    foreach ASTNode* node : fctCalls {
+        ASTFctCallNode* fctCall = downcast<ASTFctCallNode>(node);
+        if fctCall.fqFunctionName == name {
+            if seen == n {
+                return fctCall;
+            }
+            seen++;
+        }
+    }
+    assert false; // Call not found
+    return nil<ASTFctCallNode*>;
+}
+
+// Compile time value of the n-th call of the builtin with the given name. Fails the test if there is no compile time value
+f<CompileTimeValue> valueOf(Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
+    ASTFctCallNode* fctCall = findCall(fctCalls, name, n);
+    const FctCallData& data = fctCall.data.get(0l);
+    assert data.hasCompileTimeValue();
+    return data.compileTimeValue;
+}
+
+// Long compile time value of the n-th call of the builtin with the given name
+f<long> longValueOf(Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
+    const CompileTimeValue value = valueOf(fctCalls, name, n);
+    return value.longValue;
+}
+
+// Bool compile time value of the n-th call of the builtin with the given name
+f<bool> boolValueOf(Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
+    const CompileTimeValue value = valueOf(fctCalls, name, n);
+    return value.boolValue;
+}
+
+// String compile time value of the n-th call of the builtin with the given name
+f<String> stringValueOf(GlobalResourceManager& rm, Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
+    const CompileTimeValue value = valueOf(fctCalls, name, n);
+    return rm.getCompileTimeStringValue(value.stringValueOffset);
+}
+
+// Evaluated type of the n-th call of the builtin with the given name
+f<QualType> typeOf(Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
+    ASTFctCallNode* fctCall = findCall(fctCalls, name, n);
+    return fctCall.node.getEvaluatedSymbolType(0l);
+}
+
+f<int> main() {
+    // -------------------------------------------------------------------------------------------------------------
+    // Valid builtin calls: the compile time values match the ones of the host compiler for x86_64 linux
+    // -------------------------------------------------------------------------------------------------------------
+    {
+        CliOptions cliOptions;
+        setupPassTestOptions(cliOptions);
+        cliOptions.setBuildVar(String("BOOTSTRAP_BUILTINS_TEST_VAR"), String(" -17abc"));
+        GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+        SourceFile* file = rm.createSourceFile(nil<SourceFile*>, String("root"), getFixturePath("test-file.spice"), false);
+        runTypeChecker(rm, file);
+        assert rm.errorManager.softErrors.isEmpty();
+
+        Vector<ASTNode*> fctCalls;
+        collectNodes(cast<ASTNode*>(file.ast), ASTNodeKind::FCT_CALL, fctCalls);
+
+        // sizeof / alignof, which lower the types to LLVM types and query the data layout of the target
+        assert longValueOf(fctCalls, "sizeof", 0l) == 32l; // Outer
+        assert longValueOf(fctCalls, "sizeof", 1l) == 32l; // outer
+        assert longValueOf(fctCalls, "sizeof", 2l) == 9l; // Packed
+        assert longValueOf(fctCalls, "sizeof", 3l) == 16l; // Number
+        assert longValueOf(fctCalls, "sizeof", 4l) == 8l; // string
+        assert longValueOf(fctCalls, "sizeof", 5l) == 24l; // f<int>(int)
+        assert longValueOf(fctCalls, "alignof", 0l) == 8l; // Inner
+        assert longValueOf(fctCalls, "alignof", 1l) == 2l; // short
+        const QualType sizeOfType = typeOf(fctCalls, "sizeof");
+        assert sizeOfType.is(SuperType::TY_LONG);
+
+        // __offsetof, also through nested member accesses
+        assert longValueOf(fctCalls, "__offsetof", 0l) == 8l; // outer.inner
+        assert longValueOf(fctCalls, "__offsetof", 1l) == 16l; // outer.inner.b
+        assert longValueOf(fctCalls, "__offsetof", 2l) == 24l; // outer.d
+
+        // len
+        assert longValueOf(fctCalls, "len") == 5l;
+
+        // typename
+        assert stringValueOf(rm, fctCalls, "typename", 0l) == "Outer";
+        assert stringValueOf(rm, fctCalls, "typename", 1l) == "int[]";
+        const QualType typeNameType = typeOf(fctCalls, "typename");
+        assert typeNameType.is(SuperType::TY_STRING);
+
+        // Type traits
+        assert boolValueOf(fctCalls, "__is_same", 0l);
+        assert !boolValueOf(fctCalls, "__is_same", 1l);
+        assert boolValueOf(fctCalls, "__implements_interface", 0l);
+        assert !boolValueOf(fctCalls, "__implements_interface", 1l);
+        assert boolValueOf(fctCalls, "__is_trivially_copyable");
+        assert boolValueOf(fctCalls, "__is_heap", 0l);
+        assert !boolValueOf(fctCalls, "__is_heap", 1l);
+
+        // Source location
+        assert longValueOf(fctCalls, "__source_line") == 62l;
+        assert longValueOf(fctCalls, "__source_column") == 31l;
+
+        // Build var, which is parsed like std::stoi does it in the host compiler
+        const CompileTimeValue buildVarValue = valueOf(fctCalls, "__get_build_var");
+        assert buildVarValue.intValue == -17;
+        const QualType buildVarType = typeOf(fctCalls, "__get_build_var");
+        assert buildVarType.is(SuperType::TY_INT);
+
+        // __new returns a heap pointer to the requested type
+        const QualType newType = typeOf(fctCalls, "__new");
+        assert newType.isPtr() && newType.isHeap();
+        const QualType newContainedType = newType.getContained();
+        assert newContainedType.is(SuperType::TY_STRUCT);
+        assert newContainedType.getSubType() == "Inner";
+
+        // printf returns int
+        const QualType printfType = typeOf(fctCalls, "printf");
+        assert printfType.is(SuperType::TY_INT);
+
+        // The method of Square gets the same mangled name as in the host compiler
+        Scope* root = file.getGlobalScope();
+        SymbolTableEntry* squareEntry = root.lookupStrict(String("Square"));
+        assert squareEntry != nil<SymbolTableEntry*>;
+        const QualType squareType = squareEntry.getQualType();
+        Scope* squareScope = root.getChildScope(String("struct:Square"));
+        assert squareScope != nil<Scope*>;
+        const ArgList noArgs;
+        const Function* area = lookupFunction(squareScope, String("area"), squareType, noArgs, true);
+        assert area != nil<const Function*>;
+        assert area.getMangledName() == "_ZN6Square4areaEv";
+    }
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Invalid builtin calls: the soft errors match the ones of the host compiler
+    // -------------------------------------------------------------------------------------------------------------
+    {
+        CliOptions cliOptions;
+        setupPassTestOptions(cliOptions);
+        cliOptions.setBuildVar(String("BOOTSTRAP_BUILTINS_TEST_INVALID_VAR"), String("abc"));
+        GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+        SourceFile* file = rm.createSourceFile(nil<SourceFile*>, String("root"), getFixturePath("test-file-errors.spice"), false);
+        runTypeChecker(rm, file);
+
+        ErrorManager& errorManager = rm.errorManager;
+        assert errorManager.softErrors.getSize() == 10l;
+        assert softErrorContains(errorManager, 0l, "10:20");
+        assert softErrorContains(errorManager, 0l, "The placeholder string expects int, short, long, byte or bool, but got string");
+        assert softErrorContains(errorManager, 1l, "11:5");
+        assert softErrorContains(errorManager, 1l, "The placeholder string contains more placeholders than arguments");
+        assert softErrorContains(errorManager, 2l, "12:5");
+        assert softErrorContains(errorManager, 2l, "The placeholder string contains less placeholders than arguments");
+        assert softErrorContains(errorManager, 3l, "13:29");
+        assert softErrorContains(errorManager, 3l, "This builtin expects either template types or arguments, but got both");
+        assert softErrorContains(errorManager, 4l, "14:31");
+        assert softErrorContains(errorManager, 4l, "The len builtin can only work on arrays or strings");
+        assert softErrorContains(errorManager, 5l, "15:26");
+        assert softErrorContains(errorManager, 5l, "This builtin expects between 2 and 4294967295 template type(s), but got 1");
+        assert softErrorContains(errorManager, 6l, "16:23");
+        assert softErrorContains(errorManager, 6l, "This builtin expects no argument(s), but got 1");
+        assert softErrorContains(errorManager, 7l, "17:41");
+        assert softErrorContains(errorManager, 7l, "The offsetof builtin expects a struct member access as its second argument");
+        assert softErrorContains(errorManager, 8l, "18:47");
+        assert softErrorContains(errorManager, 8l, "Build var with this name was not provided");
+        assert softErrorContains(errorManager, 9l, "19:33");
+        assert softErrorContains(errorManager, 9l, "Error while parsing the provided value to the requested type");
+    }
+
+    printf("All assertions passed!\n");
+}

@@ -11,6 +11,7 @@ import "std/bindings/llvm/llvm" as llvm;
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/global/cache-manager";
 import "bootstrap/global/runtime-module-manager";
+import "bootstrap/global/type-name-disambiguator";
 import "bootstrap/global/type-registry";
 import "bootstrap/exception/error-manager";
 import "bootstrap/linker/external-linker-interface";
@@ -49,6 +50,7 @@ public type GlobalResourceManager struct {
     public CacheManager cacheManager
     public RuntimeModuleManager runtimeModuleManager
     public TypeRegistry typeRegistry // Interns all types and hands out stable `const Type*` handles
+    public TypeNameDisambiguator typeNameDisambiguator // Hands out disambiguation suffixes for same-named types
     public Timer totalTimer
     public ErrorManager errorManager
     public bool abortCompilation = false
@@ -64,6 +66,9 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.sourceFileAlloc = BlockAllocator<SourceFile>(this.memoryManager, sizeof<SourceFile>() * 4l);
     // Context-free type creation (e.g. QualType(TY_INT)) interns into the type registry of the resource manager
     setActiveTypeRegistry(&this.typeRegistry);
+    // The name disambiguation of types operates on the type name disambiguator of the resource manager. The host clears its
+    // static TypeNameDisambiguator in the destructor, which is implicit here, since each resource manager owns a fresh one
+    setActiveTypeNameDisambiguator(&this.typeNameDisambiguator);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {

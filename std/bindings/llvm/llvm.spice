@@ -423,6 +423,7 @@ ext f<LLVMTypeRef> LLVMInt32TypeInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeRef> LLVMInt64TypeInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeRef> LLVMDoubleTypeInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeRef> LLVMPointerTypeInContext(LLVMContextRef /*C*/, unsigned int /*AddressSpace*/);
+ext f<LLVMTypeRef> LLVMArrayType2(LLVMTypeRef /*ElementType*/, unsigned long /*ElementCount*/);
 ext f<LLVMValueRef> LLVMConstInt(LLVMTypeRef /*IntTy*/, unsigned long /*N*/, LLVMBool /*SignExtend*/);
 ext f<LLVMValueRef> LLVMConstReal(LLVMTypeRef /*RealTy*/, double /*N*/);
 ext f<LLVMValueRef> LLVMConstNull(LLVMTypeRef /*Ty*/);
@@ -434,6 +435,7 @@ ext f<LLVMTypeRef> LLVMStructTypeInContext(LLVMContextRef /*C*/, LLVMTypeRef* /*
 ext f<LLVMTypeRef> LLVMStructCreateNamed(LLVMContextRef /*C*/, string /*Name*/);
 ext f<string> LLVMGetStructName(LLVMTypeRef /*Ty*/);
 ext p LLVMStructSetBody(LLVMTypeRef /*StructTy*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, LLVMBool /*Packed*/);
+ext f<LLVMTypeRef> LLVMStructGetTypeAtIndex(LLVMTypeRef /*StructTy*/, unsigned int /*i*/);
 ext p LLVMDumpValue(LLVMValueRef /*Val*/);
 ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, LLVMVerifierFailureAction /*Action*/, string* /*OutMessage*/);
 ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, LLVMVerifierFailureAction /*Action*/);
@@ -526,6 +528,8 @@ ext f<unsigned int> LLVMPointerSize(LLVMTargetDataRef /*TD*/);
 ext f<unsigned long> LLVMSizeOfTypeInBits(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned long> LLVMABISizeOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned int> LLVMPreferredAlignmentOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext f<unsigned int> LLVMABIAlignmentOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext f<unsigned long> LLVMOffsetOfElement(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*StructTy*/, unsigned int /*Element*/);
 ext p LLVMParseCommandLineOptions(int /*argc*/, const string* /*argv*/, string /*Overview*/);
 ext f<LLVMErrorRef> LLVMCreateStringError(string /*ErrMsg*/);
 ext f<string> LLVMGetErrorMessage(LLVMErrorRef /*Err*/);
@@ -605,6 +609,54 @@ public p Type.dump() {
     LLVMDumpType(this.self);
 }
 
+public f<Type> Type.getStructElementType(unsigned int idx) {
+    return Type{ LLVMStructGetTypeAtIndex(this.self, idx) };
+}
+
+public f<Type> getInt1Ty(const LLVMContext& context) {
+    return Type{ LLVMInt1TypeInContext(context.self) };
+}
+
+public f<Type> getInt8Ty(const LLVMContext& context) {
+    return Type{ LLVMInt8TypeInContext(context.self) };
+}
+
+public f<Type> getInt16Ty(const LLVMContext& context) {
+    return Type{ LLVMInt16TypeInContext(context.self) };
+}
+
+public f<Type> getInt32Ty(const LLVMContext& context) {
+    return Type{ LLVMInt32TypeInContext(context.self) };
+}
+
+public f<Type> getInt64Ty(const LLVMContext& context) {
+    return Type{ LLVMInt64TypeInContext(context.self) };
+}
+
+public f<Type> getDoubleTy(const LLVMContext& context) {
+    return Type{ LLVMDoubleTypeInContext(context.self) };
+}
+
+public f<Type> getPtrTy(const LLVMContext& context, unsigned int addressSpace = 0) {
+    return Type{ LLVMPointerTypeInContext(context.self, addressSpace) };
+}
+
+public f<Type> getArrayType(Type elementType, unsigned long numElements) {
+    return Type{ LLVMArrayType2(elementType.self, numElements) };
+}
+
+// Equivalent to llvm::StructType::get: Get a literal (unnamed) struct type
+public f<Type> getStructType(const LLVMContext& context, const Vector<Type>& elementTypes, bool packed = false) {
+    return Type{ LLVMStructTypeInContext(context.self, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), cast<LLVMBool>(packed)) };
+}
+
+// Equivalent to llvm::StructType::create: Create a named struct type with the given body
+public f<Type> createStructType(const LLVMContext& context, const Vector<Type>& elementTypes, string name, bool packed = false) {
+    const LLVMTypeRef structTy = LLVMStructCreateNamed(context.self, name);
+    LLVMStructSetBody(structTy, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), cast<LLVMBool>(packed));
+    return Type{ structTy };
+}
+
 // ===== Value =====
 public type Value struct {
     LLVMValueRef self
@@ -677,6 +729,15 @@ public f<unsigned long> DataLayout.getTypeAllocSize(Type ty) {
 
 public f<unsigned int> DataLayout.getTypeAlignment(Type ty) {
     return LLVMPreferredAlignmentOfType(this.self, ty.self);
+}
+
+public f<unsigned int> DataLayout.getABITypeAlign(Type ty) {
+    return LLVMABIAlignmentOfType(this.self, ty.self);
+}
+
+// Equivalent to getStructLayout(structTy)->getElementOffset(idx)
+public f<unsigned long> DataLayout.getStructElementOffset(Type structTy, unsigned int idx) {
+    return LLVMOffsetOfElement(this.self, structTy.self, idx);
 }
 
 // ===== Triple =====
