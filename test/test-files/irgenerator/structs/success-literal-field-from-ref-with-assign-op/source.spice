@@ -1,0 +1,26 @@
+type Inner struct {
+    int value
+}
+
+p operator=(Inner& this, const Inner& other) {
+    printf("operator= called\n");
+    this.value = other.value;
+}
+
+type Outer struct {
+    Inner inner
+}
+
+f<Inner&> getInner(Outer& outer) {
+    return outer.inner;
+}
+
+f<int> main() {
+    Outer first = Outer{Inner{42}};
+    // Field value of reference type, where the field type has an overloaded assign operator (see #1441)
+    Outer second = Outer{getInner(first)};
+    printf("%d\n", second.inner.value);
+    // The field must hold a copy, not alias the original
+    second.inner.value = 7;
+    printf("%d %d\n", first.inner.value, second.inner.value);
+}
