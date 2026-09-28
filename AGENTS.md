@@ -104,6 +104,16 @@ diagnostics, memory management, and Spice-source conventions. Read it before wri
 - Before opening a PR, run at least a focused build or tests relevant to changed files.
 - If environment limitations prevent running checks, document that clearly in the PR.
 
+## Branch naming
+
+- Never use auto-generated or `claude/...` branch names. Name every branch `<type>/<slug>` with a short, lowercase,
+  kebab-case slug, e.g. `fix/1409-condition-temporaries`.
+- Allowed types: `feature/`, `fix/` (or `bug/`), `chore/`, `ci/`, `std/`, `bootstrap/`, `test/`, `docs/`,
+  `security/`. See the `spice-contribute` skill for when to use which.
+- If the session starts on a pre-created branch, rename it with `git branch -m <type>/<slug>` before the first push.
+- This is enforced by the `.claude/hooks/check-branch-name.py` hook, which blocks git commands that create, rename or
+  push a branch with a non-conforming name.
+
 ## Pull request guidance
 
 Include in PR description:

@@ -15,7 +15,7 @@ All work happens on a dedicated branch, never directly on `main`.
 | Prefix | Use for |
 |--------|---------|
 | `feature/<slug>` | New language features, compiler capabilities, or stdlib additions |
-| `fix/<slug>` | Bug fixes in the compiler, runtime, or stdlib |
+| `fix/<slug>` (or `bug/<slug>`) | Bug fixes in the compiler, runtime, or stdlib |
 | `chore/<slug>` | Build system, dependency updates, repo maintenance |
 | `ci/<slug>` | GitHub Actions workflows, CI scripts, test infrastructure |
 | `std/<slug>` | Standard library changes that aren't strictly a new feature or fix |
