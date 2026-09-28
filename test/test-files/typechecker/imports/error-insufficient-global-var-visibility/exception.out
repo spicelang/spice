@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:4:28:
 Insufficient symbol visibility: Cannot access 'GLOBAL_TEST_VAR' due to its private visibility
 
-4  ntf("Result: %d/n", src1::GLOBAL_TEST_VAR);
-                       ^^^^^^^^^^^^^^^^^^^^^
+4  ("Result: %d/n", src1::GLOBAL_TEST_VAR);
+                    ^^^^^^^^^^^^^^^^^^^^^

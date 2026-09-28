@@ -2,6 +2,8 @@
 
 #include <ast/ASTNodes.h>
 
+#include <cctype>
+
 #include <ANTLRInputStream.h>
 
 #include <SourceFile.h>
@@ -15,6 +17,8 @@ namespace spice::compiler {
 // Constant definitions
 static constexpr size_t ERROR_MESSAGE_CONTEXT = 20;
 
+static bool isIdentifierChar(char c) { return std::isalnum(static_cast<unsigned char>(c)) || c == '_'; }
+
 std::string ASTNode::getErrorMessage() const {
   antlr4::CharStream *inputStream = codeLoc.sourceFile->antlrCtx.inputStream.get();
   const antlr4::misc::Interval &sourceInterval = codeLoc.sourceInterval;
@@ -23,6 +27,9 @@ std::string ASTNode::getErrorMessage() const {
   // If we have a multi-line interval, only use the first line
   if (const size_t offset = inputStream->getText(extSourceInterval).find('\n'); offset != std::string::npos)
     extSourceInterval.b = extSourceInterval.a + static_cast<ssize_t>(offset);
+  const ssize_t nodeStart = extSourceInterval.a;
+  const ssize_t nodeEnd = extSourceInterval.b;
+  const auto charAt = [&](ssize_t idx) { return inputStream->getText(antlr4::misc::Interval(idx, idx))[0]; };
 
   size_t markerIndentation = 0;
   for (; markerIndentation < ERROR_MESSAGE_CONTEXT; markerIndentation++) {
@@ -41,6 +48,16 @@ std::string ASTNode::getErrorMessage() const {
     }
   }
 
+  // Do not cut the context in the middle of an identifier or keyword. Move the cut to the next token boundary instead
+  while (extSourceInterval.a > 0 && extSourceInterval.a < nodeStart && isIdentifierChar(charAt(extSourceInterval.a - 1)) &&
+         isIdentifierChar(charAt(extSourceInterval.a))) {
+    extSourceInterval.a++;
+    markerIndentation--;
+  }
+  while (extSourceInterval.b > nodeEnd && static_cast<size_t>(extSourceInterval.b) + 1 < inputStream->size() &&
+         isIdentifierChar(charAt(extSourceInterval.b)) && isIdentifierChar(charAt(extSourceInterval.b + 1)))
+    extSourceInterval.b--;
+
   // Trim start
   while (inputStream->getText(extSourceInterval)[0] == ' ') {
     extSourceInterval.a++;
@@ -49,6 +66,8 @@ std::string ASTNode::getErrorMessage() const {
 
   // Trim end
   if (inputStream->getText(extSourceInterval)[extSourceInterval.length() - 1] == '\n')
+    extSourceInterval.b--;
+  while (extSourceInterval.b > nodeEnd && charAt(extSourceInterval.b) == ' ')
     extSourceInterval.b--;
 
   const std::string lineNumberStr = std::to_string(codeLoc.line);

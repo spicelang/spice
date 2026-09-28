@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:7:29:
 Referenced undefined function: Function/procedure 'TestStruct.ctor()' could not be found
 
-7  Struct testStruct = TestStruct();
-                       ^^^^^^^^^^^^
+7  testStruct = TestStruct();
+                ^^^^^^^^^^^^

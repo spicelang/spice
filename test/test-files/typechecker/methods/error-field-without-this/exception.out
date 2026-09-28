@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:13:18:
 Referenced undefined variable: The symbol 'size' could not be found. Missing 'this.' prefix?
 
-13  if (index <= size) { // size instead 
+13  if (index <= size) { // size instead
                  ^^^^

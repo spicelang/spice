@@ -1,8 +1,8 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./source.spice:9:37:
+[Error|Semantic] ./source.spice:7:27:
 Number of struct fields not matching declaration: You've passed too less/many field values. Pass either none or all of them
 
-9  = TestStruct { &str, false };
-                  ^^^^^^^^^^^
+7  partial = Point{1};
+                   ^

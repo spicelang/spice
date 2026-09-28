@@ -4,8 +4,8 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:1:28:
 Unexpected dyn type: Dyn data type is not allowed as arg type for external functions
 
-1  nt> exteralFunction(dyn, int);
-                       ^^^
+1  > exteralFunction(dyn, int);
+                     ^^^
 
 [Error|Semantic] ./source.spice:4:5:
 Referenced undefined function: Function/procedure/struct 'extFunction' could not be found

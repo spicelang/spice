@@ -22,11 +22,11 @@ Builtin function argument count mismatch: This builtin expects 2 argument(s), bu
 [Error|Semantic] ./source.spice:11:16:
 Expected a struct type: The offsetof builtin expects a struct as its first argument
 
-11  __offsetof(123, s._fieldA); // Fir
+11  __offsetof(123, s._fieldA); //
                ^^^
 
 [Error|Semantic] ./source.spice:12:19:
 Member access is only allowed on structs and Strings: The offsetof builtin expects a struct member access as its second argument
 
-12  __offsetof(s, s); // Second arg is 
+12  __offsetof(s, s); // Second arg is
                   ^
