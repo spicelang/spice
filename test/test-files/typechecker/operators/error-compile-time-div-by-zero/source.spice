@@ -1,0 +1,10 @@
+f<int> test() {
+    while 1 / 0 == 0 {
+        return 1;
+    }
+    return 0;
+}
+
+f<int> main() {
+    printf("%d\n", test());
+}

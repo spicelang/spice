@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:2:15:
+Division by zero: Dividing by zero is not allowed.
+
+2  while 1 % 0 == 0 {
+             ^
