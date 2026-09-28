@@ -1,0 +1,10 @@
+import "std/os/syscall";
+
+f<int> main() {
+    // mmap(addr, length, prot = PROT_READ | PROT_WRITE, flags = MAP_PRIVATE | MAP_ANONYMOUS, fd, offset)
+    long addr = syscall(SYSCALL_MMAP, 0l, 4096l, 3, 34, -1, 0l);
+    printf("Mapped: %d\n", addr > 0l);
+    // munmap(addr, length)
+    long unmapResult = syscall(SYSCALL_MUNMAP, addr, 4096l);
+    printf("Unmapped: %d\n", unmapResult == 0l);
+}

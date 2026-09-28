@@ -129,7 +129,8 @@ static constexpr std::array BUILTIN_FUNCTIONS = {
             BuiltinFunctionInfo{
                 .minArgTypes = 1,
                 // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-                .maxArgTypes = 6,
+                // (syscall number + up to six arguments)
+                .maxArgTypes = 7,
             },
     },
     BuiltinFunctionEntry{

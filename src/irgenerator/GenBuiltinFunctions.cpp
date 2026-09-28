@@ -155,16 +155,18 @@ std::any IRGenerator::visitBuiltinSyscallCall(const FctCallNode *node) {
   // (We assume at least one argument is provided: the syscall number)
   assert(node->hasArgs);
   const auto requiredRegs = static_cast<uint8_t>(node->argLst->args.size());
-  assert(requiredRegs >= 1 && requiredRegs <= 6);
+  assert(requiredRegs >= 1 && requiredRegs <= 7);
 
   // Create the asm and constraint strings based on the required number of registers.
   const std::string asmString = getSysCallAsmString(requiredRegs);
   const std::string constraints = getSysCallConstraintString(requiredRegs);
 
   // Create the LLVM function type for the inline asm with only the needed operands.
+  // The result register is only 32 bits wide on 32-bit targets.
   llvm::Type *int64Ty = builder.getInt64Ty();
+  llvm::Type *resultTy = cliOptions.targetTriple.isArch32Bit() ? builder.getInt32Ty() : int64Ty;
   const std::vector argTypes(requiredRegs, int64Ty);
-  llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), argTypes, false);
+  llvm::FunctionType *fctType = llvm::FunctionType::get(resultTy, argTypes, false);
   llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constraints, true);
 
   // Build the argument list (each provided argument is converted to i64).
@@ -181,7 +183,7 @@ std::any IRGenerator::visitBuiltinSyscallCall(const FctCallNode *node) {
   }
 
   // Generate the call using only the required number of arguments.
-  llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
+  llvm::Value *result = builder.CreateSExtOrTrunc(builder.CreateCall(inlineAsm, argValues), int64Ty);
 
   return LLVMExprResult{.value = result};
 }
