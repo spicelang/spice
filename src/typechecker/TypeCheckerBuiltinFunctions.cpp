@@ -29,7 +29,7 @@ std::any TypeChecker::visitBuiltinCall(FctCallNode *node) const {
     if (min == max)
       expectedStr = min == 0 ? "no" : std::to_string(min);
     else
-      expectedStr = "between " + std::to_string(min) + " and " + std::to_string(max) + " " + suffix;
+      expectedStr = "between " + std::to_string(min) + " and " + std::to_string(max);
     return "This builtin expects " + expectedStr + " " + suffix + ", but got " + std::to_string(actual);
   };
 

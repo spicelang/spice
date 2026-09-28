@@ -9,7 +9,7 @@ define dso_local noundef i32 @main() local_unnamed_addr #0 {
   %1 = load i16, ptr @SYSCALL_WRITE, align 2
   %2 = zext i16 %1 to i64
   %3 = tail call i64 @_Z12getRawLengthPKc(ptr nonnull @anon.string.0) #1
-  tail call void asm sideeffect "mov x8, $0\0Amov x0, $1\0Amov x1, $2\0Amov x2, $3\0Asvc 0\0A", "r,r,r,r,~{x8},~{x0},~{x1},~{x2},~{dirflag},~{fpsr},~{flags}"(i64 %2, i64 1, i64 ptrtoint (ptr @anon.string.0 to i64), i64 %3) #1
+  %4 = tail call i64 asm sideeffect "mov x8, $1\0Amov x0, $2\0Amov x1, $3\0Amov x2, $4\0Asvc 0\0A", "=&{x0},r,r,r,r,~{x8},~{x1},~{x2},~{dirflag},~{fpsr},~{flags}"(i64 %2, i64 1, i64 ptrtoint (ptr @anon.string.0 to i64), i64 %3) #1
   ret i32 0
 }
 

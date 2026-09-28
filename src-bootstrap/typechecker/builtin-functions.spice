@@ -70,7 +70,7 @@ public f<bool> lookupBuiltinFunction(const String& name, BuiltinFunctionInfo& in
     } else if name == BUILTIN_FCT_NAME_PANIC {
         info = BuiltinFunctionInfo(0u, 0u, 1u, 1u, false, true);
     } else if name == BUILTIN_FCT_NAME_SYSCALL {
-        // The syscall number plus up to 6 args (the host allows only 6 in total, which contradicts the documentation)
+        // The syscall number plus up to 6 args
         info = BuiltinFunctionInfo(0u, 0u, 1u, 7u);
     } else if name == BUILTIN_FCT_NAME_IS_SAME {
         info = BuiltinFunctionInfo(2u, unlimited, 0u, 0u);

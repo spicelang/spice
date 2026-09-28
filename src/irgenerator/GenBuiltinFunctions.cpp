@@ -155,19 +155,25 @@ std::any IRGenerator::visitBuiltinSyscallCall(const FctCallNode *node) {
   // (We assume at least one argument is provided: the syscall number)
   assert(node->hasArgs);
   const auto requiredRegs = static_cast<uint8_t>(node->argLst->args.size());
-  assert(requiredRegs >= 1 && requiredRegs <= 6);
+  assert(requiredRegs >= 1 && requiredRegs <= 7);
 
   // Create the asm and constraint strings based on the required number of registers.
   const std::string asmString = getSysCallAsmString(requiredRegs);
   const std::string constraints = getSysCallConstraintString(requiredRegs);
 
   // Create the LLVM function type for the inline asm with only the needed operands.
+  // On i386, the registers are only 32 bits wide and with six args the syscall number is passed via memory.
+  const bool isX86 = cliOptions.targetTriple.getArch() == llvm::Triple::ArchType::x86;
+  const bool passSysCallNumberViaMemory = isX86 && requiredRegs == 7;
   llvm::Type *int64Ty = builder.getInt64Ty();
-  const std::vector argTypes(requiredRegs, int64Ty);
-  llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), argTypes, false);
+  llvm::Type *regTy = isX86 ? builder.getInt32Ty() : int64Ty;
+  std::vector argTypes(requiredRegs, regTy);
+  if (passSysCallNumberViaMemory)
+    argTypes.front() = builder.getPtrTy();
+  llvm::FunctionType *fctType = llvm::FunctionType::get(regTy, argTypes, false);
   llvm::InlineAsm *inlineAsm = llvm::InlineAsm::get(fctType, asmString, constraints, true);
 
-  // Build the argument list (each provided argument is converted to i64).
+  // Build the argument list (each provided argument is converted to the register type).
   std::vector<llvm::Value *> argValues;
   argValues.reserve(requiredRegs);
   for (uint8_t i = 0; i < requiredRegs; i++) {
@@ -175,13 +181,21 @@ std::any IRGenerator::visitBuiltinSyscallCall(const FctCallNode *node) {
     const QualType &argType = argNode->getEvaluatedSymbolType(manIdx);
     assert(argType.isOneOf({TY_INT, TY_LONG, TY_SHORT, TY_BOOL, TY_BYTE, TY_PTR, TY_STRING}));
     if (argType.isOneOf({TY_PTR, TY_STRING}))
-      argValues.push_back(builder.CreatePtrToInt(resolveValue(argNode), builder.getInt64Ty()));
+      argValues.push_back(builder.CreatePtrToInt(resolveValue(argNode), regTy));
     else
-      argValues.push_back(builder.CreateZExt(resolveValue(argNode), builder.getInt64Ty()));
+      argValues.push_back(builder.CreateZExtOrTrunc(resolveValue(argNode), regTy));
+  }
+  if (passSysCallNumberViaMemory) {
+    llvm::AllocaInst *sysCallNumberPtr = insertAlloca(regTy, "syscall.number");
+    insertStore(argValues.front(), sysCallNumberPtr);
+    argValues.front() = sysCallNumberPtr;
   }
 
   // Generate the call using only the required number of arguments.
-  llvm::Value *result = builder.CreateCall(inlineAsm, argValues);
+  llvm::CallInst *call = builder.CreateCall(inlineAsm, argValues);
+  if (passSysCallNumberViaMemory)
+    call->addParamAttr(0, llvm::Attribute::get(context, llvm::Attribute::ElementType, regTy));
+  llvm::Value *result = builder.CreateSExtOrTrunc(call, int64Ty);
 
   return LLVMExprResult{.value = result};
 }

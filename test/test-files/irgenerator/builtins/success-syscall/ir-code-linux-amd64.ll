@@ -14,7 +14,7 @@ define dso_local noundef i32 @main() #0 {
   %4 = ptrtoint ptr %3 to i64
   %5 = load ptr, ptr %str, align 8
   %6 = call i64 @_Z12getRawLengthPKc(ptr %5)
-  call void asm sideeffect "movq $0, %rax\0Amovq $1, %rdi\0Amovq $2, %rsi\0Amovq $3, %rdx\0Asyscall\0A", "r,r,r,r,~{rax},~{rdi},~{rsi},~{rdx},~{dirflag},~{fpsr},~{flags}"(i64 %2, i64 1, i64 %4, i64 %6)
+  %7 = call i64 asm sideeffect "movq $1, %rax\0Amovq $2, %rdi\0Amovq $3, %rsi\0Amovq $4, %rdx\0Asyscall\0A", "=&{rax},r,r,r,r,~{rdi},~{rsi},~{rdx},~{dirflag},~{fpsr},~{flags}"(i64 %2, i64 1, i64 %4, i64 %6)
   ret i32 0
 }
 
