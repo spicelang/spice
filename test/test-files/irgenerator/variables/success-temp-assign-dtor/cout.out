@@ -1,0 +1,10 @@
+dtor: first
+a is now second
+dtor: second
+dtor: default
+b is now third
+dtor: third
+dtor: default
+dtor: owner-first
+owner holds owner-second
+dtor: owner-second

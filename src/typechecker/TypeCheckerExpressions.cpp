@@ -49,16 +49,16 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       const bool isDecl = lhs.entry != nullptr && lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
       const auto [assignType, copyCtor] = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl);
       rhsType = assignType;
-      // If the assignment overwrites an already initialized struct by copying a new value into it, the old value
-      // of the lhs must be destructed first. Otherwise its owning members (heap pointers, strings, ...) would leak.
-      // A non-null copy ctor signals that a real copy (not a move/temporary steal or ref assignment) takes place.
+      // If the assignment overwrites an already initialized struct, the old value of the lhs must be destructed first.
+      // Otherwise its owning members (heap pointers, strings, ...) would leak. This applies when a new value is copied
+      // into the lhs (non-null copy ctor) and when a temporary is moved into it (temp stealing).
       // 'isInitialized()' is false for declarations, uninitialized fields and moved-from values, so those are skipped.
       // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
       // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
-      if (copyCtor != nullptr && !isDecl && lhs.entry != nullptr && lhs.entry->isInitialized() &&
-          !currentScope->doesAllowUnsafeOperations()) {
+      if (!isDecl && lhs.entry != nullptr && lhs.entry->isInitialized() && !currentScope->doesAllowUnsafeOperations()) {
         const QualType lhsSType = lhs.type.removeReferenceWrapper().toNonConst();
-        if (lhsSType.is(TY_STRUCT) && !lhsSType.isTriviallyDestructible(node))
+        if (lhsSType.is(TY_STRUCT) && !lhsSType.isTriviallyDestructible(node) &&
+            (copyCtor != nullptr || isDestructibleTempStealTarget(node, rhs)))
           node->lhsDtorFct[manIdx] = implicitlyCallStructMethod(lhsSType, DTOR_FUNCTION_NAME, {}, node);
       }
     } else if (node->op == AssignExprNode::AssignOp::OP_PLUS_EQUAL) {
@@ -100,6 +100,57 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
   }
 
   throw CompilerError(UNHANDLED_BRANCH, "AssignExpr fall-through"); // GCOV_EXCL_LINE
+}
+
+/**
+ * Check if a temporary struct is moved into the lhs of an assignment (temp stealing) and the old value of the lhs can
+ * safely be destructed before it gets overwritten.
+ *
+ * @param node Assign expression node
+ * @param rhs Right side of the assignment
+ * @return Destructible temp steal target or not
+ */
+bool TypeChecker::isDestructibleTempStealTarget(AssignExprNode *node, const ExprResult &rhs) const {
+  // The rhs must be a temporary struct value, that is moved into the lhs, and no assign operator overload may take over
+  if (rhs.type.isRef() || !rhs.type.is(TY_STRUCT) || !rhs.isTemporary() || getOpFctPointers(node).front() != nullptr)
+    return false;
+  // The initialization state of the lhs entry does not tell, whether the overwritten value was actually constructed at
+  // runtime (e.g. for '*ptr = ...', 'array[i] = ...' or 'result.field = ...'), so check the lhs expression itself
+  return isAlwaysConstructedLvalue(node->lhs);
+}
+
+/**
+ * Check if the value, that an lvalue expression denotes, has always been constructed at runtime, when it is accessed.
+ * This is the case for variables (except the result variable) and chains of field accesses on them or on 'this', as long
+ * as each involved struct value is referenced or its struct has a no-args ctor. Values of structs with a no-args ctor are
+ * always constructed before they can be accessed: locals at their declaration and fields in the ctor preamble. Values of
+ * other structs might still be uninitialized memory, e.g. fields of such a struct type in a ctor body.
+ *
+ * @param node Lvalue expression
+ * @return Always constructed or not
+ */
+bool TypeChecker::isAlwaysConstructedLvalue(const ExprNode *node) const {
+  // Check the accessed value itself
+  const QualType type = node->getEvaluatedSymbolType(manIdx);
+  const auto *atomicExpr = dynamic_cast<const AtomicExprNode *>(node);
+  const bool isThis = atomicExpr != nullptr && atomicExpr->fqIdentifier == THIS_VARIABLE_NAME;
+  if (!isThis && !type.isRef()) {
+    if (!type.is(TY_STRUCT))
+      return false;
+    const QualType structType = type.toNonConst();
+    if (FunctionManager::lookup(structType.getBodyScope(), CTOR_FUNCTION_NAME, structType, {}, false) == nullptr)
+      return false;
+  }
+
+  // Variables are constructed, except the result variable, which is only constructed by assigning it
+  if (atomicExpr != nullptr)
+    return atomicExpr->fqIdentifier != RETURN_VARIABLE_NAME;
+
+  // Fields are constructed, if the value they are accessed on is constructed
+  const auto *postfixUnaryExpr = dynamic_cast<const PostfixUnaryExprNode *>(node);
+  if (postfixUnaryExpr == nullptr || postfixUnaryExpr->op != PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS)
+    return false;
+  return isAlwaysConstructedLvalue(postfixUnaryExpr->postfixUnaryExpr);
 }
 
 std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
