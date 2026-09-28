@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:8:27:
 Referenced undefined variable: Field 'f3' not found in struct TestStruct
 
-8  intf("Field 1: %d", a.f3);
-                       ^^^^
+8  printf("Field 1: %d", a.f3);
+                         ^^^^

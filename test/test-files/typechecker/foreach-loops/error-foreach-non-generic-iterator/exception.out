@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:28:28:
 Invalid iterator: Iterator has no generic arguments so that the item type could not be inferred
 
-28  each dyn demoItem : MockIterator() {
-                        ^^^^^^^^^^^^^^
+28  foreach dyn demoItem : MockIterator() {
+                           ^^^^^^^^^^^^^^

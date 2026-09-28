@@ -1,0 +1,8 @@
+type Point struct {
+    int x
+    int y
+}
+
+f<int> main() {
+    Point partial = Point{1};
+}

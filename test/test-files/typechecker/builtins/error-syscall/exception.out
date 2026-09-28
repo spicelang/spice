@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:2:13:
 Invalid syscall number type: Syscall number must be of type short
 
-2  syscall('c'); // Invalid syscal
+2  syscall('c'); // Invalid syscall
            ^^^

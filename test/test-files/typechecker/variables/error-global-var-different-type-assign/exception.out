@@ -4,14 +4,14 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:1:33:
 Wrong data type for operator: Expected unsigned short, but got int
 
-1  rt UNSIGNED_SHORT = -10;
-                       ^^^
+1  short UNSIGNED_SHORT = -10;
+                          ^^^
 
 [Error|Semantic] ./source.spice:2:25:
 Wrong data type for operator: Expected int, but got short
 
-2  t signed int TEST = 6s;
-                       ^^
+2  const signed int TEST = 6s;
+                           ^^
 
 [Error|Semantic] ./source.spice:5:23:
 Used before declared: Symbol 'TEST' was used before declared.

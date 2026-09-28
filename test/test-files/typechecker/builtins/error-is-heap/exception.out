@@ -10,11 +10,11 @@ Builtin function argument count mismatch: This builtin expects no argument(s), b
 [Error|Semantic] ./source.spice:3:5:
 Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 0
 
-3  __is_heap(); // Too less templa
+3  __is_heap(); // Too less template
    ^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:4:5:
 Builtin function template type count mismatch: This builtin expects 1 template type(s), but got 2
 
-4  __is_heap<heap double*, int>(); // Too many templa
+4  __is_heap<heap double*, int>(); // Too many template
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

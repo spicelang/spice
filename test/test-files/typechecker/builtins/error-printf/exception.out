@@ -16,35 +16,35 @@ Printf arg number not matching template string: The placeholder string contains 
 [Error|Semantic] ./source.spice:6:36:
 Types of printf call not matching: The placeholder string expects char, but got string
 
-6  s is a string: %c", "test"); // Wrong value ty
-                       ^^^^^^
+6  This is a string: %c", "test"); // Wrong value type
+                          ^^^^^^
 
 [Error|Semantic] ./source.spice:7:18:
 Types of printf call not matching: The placeholder string expects int, short, long, byte or bool, but got double
 
-7  printf("%d", 6.23456); // Wrong value ty
+7  printf("%d", 6.23456); // Wrong value type
                 ^^^^^^^
 
 [Error|Semantic] ./source.spice:8:18:
 Types of printf call not matching: The placeholder string expects double, but got bool
 
-8  printf("%f", true); // Wrong value ty
+8  printf("%f", true); // Wrong value type
                 ^^^^
 
 [Error|Semantic] ./source.spice:10:18:
 Types of printf call not matching: The placeholder string expects string, String, char* or char[], but got int*
 
-10  printf("%s", &integer); // Wrong value ty
+10  printf("%s", &integer); // Wrong value type
                  ^^^^^^^^
 
 [Error|Semantic] ./source.spice:12:18:
 Types of printf call not matching: The placeholder string expects pointer, array or string, but got NotAPointer
 
-12  printf("%p", nonPtr); // Wrong value ty
+12  printf("%p", nonPtr); // Wrong value type
                  ^^^^^^
 
 [Error|Semantic] ./source.spice:13:5:
 Types of printf call not matching: The placeholder string contains an invalid placeholder
 
-13  printf("%y", 23); // Invalid placeho
+13  printf("%y", 23); // Invalid placeholder
     ^^^^^^^^^^^^^^^^

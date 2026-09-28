@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:3:30:
 Array index not of type int or long: Array index must be of type int or long
 
-3  f("Array item: %d", longArray[1s]);
-                       ^^^^^^^^^^^^^
+3  printf("Array item: %d", longArray[1s]);
+                            ^^^^^^^^^^^^^

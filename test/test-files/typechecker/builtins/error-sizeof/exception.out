@@ -4,19 +4,19 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:2:5:
 Builtin function signature mismatch: This builtin expects either template types or arguments, but got none
 
-2  sizeof(); // No template typ
+2  sizeof(); // No template types
    ^^^^^^^^
 
 [Error|Semantic] ./source.spice:3:5:
 Builtin function signature mismatch: This builtin expects either template types or arguments, but got both
 
-3  sizeof<int>("str"); // Template types 
+3  sizeof<int>("str"); // Template types
    ^^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:4:5:
 Builtin function template type count mismatch: This builtin expects between 0 and 1 template type(s), but got 2
 
-4  sizeof<double, int>(); // Too many templa
+4  sizeof<double, int>(); // Too many template
    ^^^^^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:5:5:
@@ -28,11 +28,11 @@ Builtin function argument count mismatch: This builtin expects between 0 and 1 a
 [Error|Semantic] ./source.spice:6:5:
 Unexpected dyn type: Cannot use sizeof on a dyn or unresolved type
 
-6  sizeof<dyn>(); // Dyn type not al
+6  sizeof<dyn>(); // Dyn type not allowed
    ^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:8:5:
 Unexpected dyn type: Cannot use sizeof on a dyn or unresolved type
 
-8  sizeof(x); // Dyn type not al
+8  sizeof(x); // Dyn type not allowed
    ^^^^^^^^^
