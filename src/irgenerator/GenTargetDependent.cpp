@@ -37,11 +37,12 @@ std::string IRGenerator::getSysCallAsmString(uint8_t numRegs) const {
         asmString << "movq $" << std::to_string(i + 1) << ", " << regs[i] << "\n";
       asmString << "syscall\n";
     } else if (targetTriple.getArch() == llvm::Triple::ArchType::x86) {
-      // Note: Using movl for 32-bit registers.
-      static constexpr const char *regs[] = {"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "%ebp"};
-      for (uint8_t i = 0; i < numRegs; ++i)
-        asmString << "movl $" << std::to_string(i + 1) << ", " << regs[i] << "\n";
-      asmString << "int $0x80\n";
+      // The operands are bound to their registers via constraints. The sixth arg belongs into ebp, which may be the frame
+      // pointer. Therefore, it is passed in eax, the syscall number is passed via memory and ebp is restored afterwards.
+      if (numRegs == 7)
+        asmString << "pushl $1\npush %ebp\nmov %eax, %ebp\nmov 4(%esp), %eax\nint $$0x80\npop %ebp\nlea 4(%esp), %esp\n";
+      else
+        asmString << "int $$0x80\n";
     } else if (targetTriple.isAArch64()) {
       static constexpr const char *regs[] = {"x8", "x0", "x1", "x2", "x3", "x4", "x5"};
       for (uint8_t i = 0; i < numRegs; ++i)
@@ -81,9 +82,17 @@ std::string IRGenerator::getSysCallConstraintString(uint8_t numRegs) const {
       regs = linuxX86_64Regs;
       resultReg = "rax";
     } else if (targetTriple.getArch() == llvm::Triple::ArchType::x86) {
-      static constexpr const char *linuxX86Regs[] = {"eax", "ebx", "ecx", "edx", "esi", "edi", "ebp"};
-      regs = linuxX86Regs;
-      resultReg = "eax";
+      // i386 has too few registers to pass the operands in arbitrary ones, so each operand gets its fixed register.
+      // The syscall number is tied to the result in eax. For six args, see getSysCallAsmString.
+      static constexpr const char *argRegs[] = {"ebx", "ecx", "edx", "esi", "edi"};
+      std::stringstream constraints;
+      constraints << "={eax}," << (numRegs == 7 ? "*m" : "0");
+      for (uint8_t i = 1; i < std::min<uint8_t>(numRegs, 6); i++)
+        constraints << ",{" << argRegs[i - 1] << "}";
+      if (numRegs == 7)
+        constraints << ",0";
+      constraints << ",~{dirflag},~{fpsr},~{flags}";
+      return constraints.str();
     } else if (targetTriple.isAArch64()) {
       static constexpr const char *linuxAArch64Regs[] = {"x8", "x0", "x1", "x2", "x3", "x4", "x5"};
       regs = linuxAArch64Regs;
