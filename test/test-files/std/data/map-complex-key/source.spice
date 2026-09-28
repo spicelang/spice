@@ -1,5 +1,6 @@
 import "std/data/map";
 import "std/data/set";
+import "std/iterator/array-iterator";
 
 // Builds the string "a", followed by a null byte and the given char
 f<String> keyWithNull(char suffix) {
@@ -83,6 +84,31 @@ f<int> main() {
         digits = digits * 10l + entry.getSecond() / 10;
     }
     assert digits == 123l;
+
+    // Removing entries with non-trivial keys and values destructs them. This covers removing leaves, nodes with
+    // one child, nodes with two children and the root, so that valgrind reports a leak if a removed node is not freed.
+    Map<String, String> strMap;
+    string[15] strKeys = ["m", "f", "t", "c", "h", "p", "w", "a", "d", "g", "k", "n", "r", "u", "z"];
+    foreach string strKey : strKeys {
+        strMap.insert(String(strKey), String("value-") + strKey);
+    }
+    assert strMap.getSize() == 15;
+    strMap.remove(String("a")); // Leaf
+    strMap.remove(String("c")); // Node with one child
+    strMap.remove(String("t")); // Node with two children
+    strMap.remove(String("m")); // Root
+    strMap.remove(String("x")); // Not contained
+    assert strMap.getSize() == 11;
+    assert !strMap.contains(String("a"));
+    assert !strMap.contains(String("c"));
+    assert !strMap.contains(String("t"));
+    assert !strMap.contains(String("m"));
+    assert strMap.get(String("d")) == "value-d";
+    assert strMap.get(String("w")) == "value-w";
+    foreach string strKey : strKeys {
+        strMap.remove(String(strKey));
+    }
+    assert strMap.isEmpty();
 
     printf("All assertions passed!\n");
 }
