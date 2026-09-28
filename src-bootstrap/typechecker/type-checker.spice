@@ -10,6 +10,7 @@ import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/compiler-pass";
+import "bootstrap/driver";
 import "bootstrap/source-file";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/ast/attributes";
@@ -45,6 +46,7 @@ import "bootstrap/typechecker/union-manager";
 import "bootstrap/util/compiler-warning";
 
 // Constants
+const string FCT_NAME_DEALLOC = "sDealloc";
 const unsigned long UNION_NO_DEFAULT_FIELD_INDEX = 18446744073709551615ul; // SIZE_MAX in the host
 
 public type TypeCheckerMode enum {
@@ -2060,6 +2062,28 @@ public f<Any> TypeChecker.visitFunctionDataType(ASTFunctionDataTypeNode* node) {
 
 // ============================================================ TypeCheckerStatements.cpp =========================================
 
+public f<Any> TypeChecker.visitStmtLst(ASTStmtLstNode* node) {
+    // Visit nodes in this scope
+    foreach IVisitable* stmt : node.statements {
+        if stmt == nil<IVisitable*> {
+            continue;
+        }
+        // Print warning if statement is unreachable
+        ASTStmtNode* stmtNode = asStmtNode(getASTNode(stmt));
+        if stmtNode.unreachable {
+            this.addWarning(stmtNode.codeLoc, CompilerWarningType::UNREACHABLE_CODE, String("This statement is unreachable"));
+            continue;
+        }
+        // Visit the statement
+        this.visit(stmt);
+    }
+
+    // Do cleanup of this scope, e.g. dtor calls for struct instances
+    this.doScopeCleanup(node);
+
+    return Any();
+}
+
 public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
@@ -2069,8 +2093,50 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
 
     QualType localVarType = QualType(SuperType::TY_INVALID);
     if node.hasAssignment {
-        // ToDo: Port the assignment path together with the expression visitors and the OpRuleManager
-        return this.notPortedYet(baseNode);
+        // Visit the right side
+        const ExprResult rhs = this.visitExpr(node.assignExpr);
+        const QualType rhsTy = rhs.ty;
+        SymbolTableEntry* rhsEntry = rhs.entry;
+
+        // Capture anonymous info up front: getAssignResultType may delete the anonymous entry (temp stealing
+        // in performStructAssign), turning rhsEntry into a dangling pointer.
+        const bool rhsIsAnonymous = rhsEntry != nil<SymbolTableEntry*> && rhsEntry.anonymous;
+        String rhsEntryName = String("");
+        if rhsIsAnonymous {
+            rhsEntryName = rhsEntry.name;
+        }
+
+        // Visit data type
+        localVarType = this.getDataType(node.dataType);
+
+        // Check if type has to be inferred or both types are fixed
+        if !localVarType.is(SuperType::TY_UNRESOLVED) && !rhsTy.is(SuperType::TY_UNRESOLVED) {
+            const ExprResult lhsResult = ExprResult{localVarType, localVarEntry};
+            Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhsResult, rhs, true);
+            localVarType = assignResult.getFirst();
+            node.calledCopyCtor = assignResult.getSecond();
+
+            // If this is a struct type, check if the type is known. If not, error out. A type that already carries a
+            // body scope is genuinely resolved (e.g. it reached here through a generic substantiation or a deep
+            // transitive import); only its unqualified name happens to be absent from this file's name registry, which
+            // is not an error.
+            if localVarType.isBase(SuperType::TY_STRUCT) {
+                const QualType localVarBaseType = localVarType.getBase();
+                const String structName = localVarBaseType.getSubType();
+                if this.sourceFile.getNameRegistryEntry(structName) == nil<const NameRegistryEntry*> && localVarBaseType.getBodyScope() == nil<Scope*> {
+                    this.softError(cast<ASTNode*>(node.dataType), SemanticErrorType::UNKNOWN_DATATYPE, String("Unknown struct type '") + structName + "'. Forgot to import?");
+                    localVarType = QualType(SuperType::TY_UNRESOLVED);
+                }
+            }
+        } else {
+            localVarType = QualType(SuperType::TY_UNRESOLVED);
+        }
+
+        // If there is an anonymous entry attached (e.g. for struct instantiation) and we take over ownership, delete it.
+        // Safe to call even if performStructAssign already deleted it: erasing by key is a no-op when absent.
+        if !localVarType.isRef() && rhsIsAnonymous {
+            this.currentScope.symbolTable.deleteAnonymous(rhsEntryName);
+        }
     } else {
         // Visit data type
         localVarType = this.getDataType(node.dataType);
@@ -2107,6 +2173,511 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
     localVarEntry.updateState(LifecycleState::INITIALIZED, baseNode);
 
     return Any(localVarType);
+}
+
+public f<Any> TypeChecker.visitReturnStmt(ASTReturnStmtNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Retrieve return variable entry
+    SymbolTableEntry* returnVar = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
+    const bool isFunction = returnVar != nil<SymbolTableEntry*>;
+    QualType returnType = QualType(SuperType::TY_DYN);
+    if isFunction {
+        returnType = returnVar.getQualType();
+    }
+
+    // Check if procedure with return value
+    if !isFunction {
+        if node.hasReturnValue {
+            return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::RETURN_WITH_VALUE_IN_PROCEDURE, String("Return with value in procedure is not allowed"));
+        }
+        return Any();
+    }
+
+    if !node.hasReturnValue && !returnVar.isInitialized() {
+        return this.softErrorQT(baseNode, SemanticErrorType::RETURN_WITHOUT_VALUE_RESULT, String("Return without value, but result variable is not initialized yet"));
+    }
+
+    if !node.hasReturnValue {
+        return Any();
+    }
+
+    // Visit right side
+    const ExprResult rhs = this.visitExpr(node.assignExpr);
+    if rhs.ty.is(SuperType::TY_UNRESOLVED) { return Any(rhs.ty); }
+
+    // A native lambda stores its captures in this frame, so returning a capturing lambda would let it outlive its
+    // captures. Direct the user to the owning std Lambda wrapper. Non-capturing lambdas (plain function pointers)
+    // are safe to return. The std Lambda wrapper hands its captures-flagged lambda back from get(), so std is exempt.
+    const QualType rhsBaseType = rhs.ty.getBase();
+    const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    if rhsBaseType.isOneOf(fctOptions, len(fctOptions)) && rhs.ty.hasLambdaCaptures() && !this.sourceFile.isStdFile {
+        const QualType nonCapturingType = rhsBaseType.getWithLambdaCaptures(false);
+        const String message = String("A capturing lambda cannot be returned, because its captures live in this frame and would dangle. Wrap it in 'Lambda<") + nonCapturingType.getName(false) + ">' from std/type/lambda instead.";
+        return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::LAMBDA_CAPTURE_ESCAPE, message);
+    }
+
+    // Capture anonymous info up front: getAssignResultType may delete the anonymous entry (temp stealing
+    // in performStructAssign), turning rhs.entry into a dangling pointer.
+    SymbolTableEntry* rhsEntry = rhs.entry;
+    const bool rhsIsAnonymous = rhsEntry != nil<SymbolTableEntry*> && rhsEntry.anonymous;
+    String rhsEntryName = String("");
+    if rhsIsAnonymous {
+        rhsEntryName = rhsEntry.name;
+    }
+
+    // Check if types match
+    const ExprResult returnResult = ExprResult{returnType, returnVar};
+    Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(getASTNode(node.assignExpr), returnResult, rhs, false, true, ERROR_MSG_RETURN);
+    node.calledCopyCtor = assignResult.getSecond();
+
+    // Check if the dtor call on the return value can be skipped
+    if rhsEntry != nil<SymbolTableEntry*> {
+        if rhsIsAnonymous {
+            // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
+            // Safe even if performStructAssign already deleted it: erasing by key is a no-op when absent.
+            this.currentScope.symbolTable.deleteAnonymous(rhsEntryName);
+        } else {
+            // Otherwise omit the destructor call, because the caller destructs the value
+            rhsEntry.omitDtorCall = true;
+        }
+    }
+
+    node.returnType = returnType;
+    return Any(returnType);
+}
+
+public f<Any> TypeChecker.visitBreakStmt(ASTBreakStmtNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if the stated number is valid
+    if node.breakTimes < 1 {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_BREAK_NUMBER, String("Break count must be >= 1, you provided ") + toString(node.breakTimes));
+    }
+
+    // Check if we can break this often
+    const unsigned int maxBreaks = this.currentScope.getLoopNestingDepth();
+    if cast<unsigned int>(node.breakTimes) > maxBreaks {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_BREAK_NUMBER, String("We can only break ") + toString(cast<long>(maxBreaks)) + " time(s) here");
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitContinueStmt(ASTContinueStmtNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if the stated number is valid
+    if node.continueTimes < 1 {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_CONTINUE_NUMBER, String("Continue count must be >= 1, you provided ") + toString(node.continueTimes));
+    }
+
+    // Check if we can continue this often
+    const unsigned int maxContinues = this.currentScope.getLoopNestingDepth();
+    if cast<unsigned int>(node.continueTimes) > maxContinues {
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_CONTINUE_NUMBER, String("We can only continue ") + toString(cast<long>(maxContinues)) + " time(s) here");
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitFallthroughStmt(ASTFallthroughStmtNode* node) {
+    // Check if we can do a fallthrough here
+    if !this.currentScope.isInCaseBranch() {
+        return this.softErrorER(cast<ASTNode*>(node), SemanticErrorType::FALLTHROUGH_NOT_ALLOWED, String("Fallthrough is only allowed in case branches"));
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitAssertStmt(ASTAssertStmtNode* node) {
+    // Visit condition
+    const ExprResult condition = this.visitExpr(node.assignExpr);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::ASSERTION_CONDITION_BOOL, String("The asserted condition must be of type bool"));
+    }
+
+    // A failed assertion prints the stack trace, so the runtime that does that has to be loaded. Assertions are not
+    // generated in release builds, so nothing needs to be loaded for them there
+    if this.cliOptions.printsStackTraceOnAbort() && this.cliOptions.buildMode != BuildMode::RELEASE && !this.sourceFile.isRT(RuntimeModule::STACK_TRACE_RT) {
+        this.sourceFile.requestRuntimeModule(RuntimeModule::STACK_TRACE_RT);
+    }
+
+    return Any();
+}
+
+// ======================================================= TypeCheckerControlStructures.cpp ========================================
+
+public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
+    // Change to unsafe block body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::UNSAFE_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
+    // Change to for body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
+
+    // Visit loop variable declaration
+    this.visit(node.initDecl);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condAssign);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.condAssign), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("For loop condition must be of type bool"));
+    }
+
+    // Visit incrementer
+    this.visit(node.incAssign);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Visit iterator assignment
+    IVisitable* iteratorNode = node.iteratorAssign;
+    ASTNode* iteratorBaseNode = getASTNode(iteratorNode);
+    const ExprResult iteratorResult = this.visitExpr(iteratorNode);
+    QualType iteratorOrIterableType = iteratorResult.ty;
+    if iteratorOrIterableType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    iteratorOrIterableType = iteratorOrIterableType.removeReferenceWrapper();
+
+    // Retrieve iterator type
+    QualType iteratorType = iteratorOrIterableType;
+
+    const ArgList noArgs;
+    const QualTypeList noTemplateTypeHints;
+    if iteratorOrIterableType.isIterable(baseNode) {
+        const QualType& iterableType = iteratorOrIterableType;
+        if iteratorOrIterableType.isArray() { // Array
+            const NameRegistryEntry* nameRegistryEntry = this.sourceFile.getNameRegistryEntry(String(ARRAY_ITERATOR_NAME));
+            if nameRegistryEntry == nil<const NameRegistryEntry*> {
+                this.softError(baseNode, SemanticErrorType::UNKNOWN_DATATYPE, String("Forgot to import \"std/iterator/array-iterator\"?"));
+                return Any();
+            }
+            nameRegistryEntry.targetEntry.used = true;
+            nameRegistryEntry.importEntry.used = true;
+            Scope* arrayIteratorScope = nameRegistryEntry.targetScope;
+            Scope* matchScope = arrayIteratorScope.parent;
+            assert matchScope.scopeType == ScopeType::GLOBAL;
+            QualType unsignedLongType = QualType(SuperType::TY_LONG);
+            unsignedLongType.makeUnsigned(true);
+            ArgList argTypes;
+            argTypes.pushBack(Pair<QualType, bool>(iterableType, false));
+            argTypes.pushBack(Pair<QualType, bool>(unsignedLongType, false));
+            const QualType thisType = QualType(SuperType::TY_DYN);
+            node.getIteratorFct = matchFunction(matchScope, String("iterate"), thisType, argTypes, noTemplateTypeHints, true, iteratorBaseNode);
+        } else { // Struct, implementing Iterator interface
+            Scope* matchScope = iterableType.getBodyScope();
+            node.getIteratorFct = matchFunction(matchScope, String("getIterator"), iterableType, noArgs, noTemplateTypeHints, true, iteratorBaseNode);
+        }
+        if node.getIteratorFct == nil<Function*> {
+            // The host throws a SemanticError here
+            this.softError(iteratorBaseNode, SemanticErrorType::INVALID_ITERATOR, String("No getIterator() function found for the given iterable type"));
+            return Any();
+        }
+
+        const Function* getIteratorFct = node.getIteratorFct;
+        iteratorType = getIteratorFct.returnType;
+        // Add anonymous symbol to keep track of dtor call, if non-trivially destructible
+        if !iteratorType.isTriviallyDestructible(iteratorBaseNode) {
+            this.currentScope.symbolTable.insertAnonymous(iteratorType, iteratorBaseNode);
+        }
+    }
+
+    // Change to foreach body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOREACH_BODY);
+
+    // Check iterator type
+    if !iteratorType.isIterator(baseNode) {
+        const String errMsg = String("Can only iterate over arrays or data structures, inheriting from IIterator or IIterable. You provided ") + iteratorType.getName(false, true);
+        this.softError(getASTNode(node.iteratorAssign), SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, errMsg);
+        return Any();
+    }
+    const QualTypeList iteratorTemplateTypes = iteratorType.getTemplateTypes();
+    if iteratorTemplateTypes.isEmpty() {
+        return this.softErrorER(getASTNode(node.iteratorAssign), SemanticErrorType::INVALID_ITERATOR, String("Iterator has no generic arguments so that the item type could not be inferred"));
+    }
+
+    const bool hasIdx = node.idxVarDecl != nil<IVisitable*>;
+    if hasIdx {
+        // Visit index declaration or assignment
+        const QualType indexType = this.visitType(node.idxVarDecl);
+        if indexType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+        // Check if index type is int
+        if !indexType.is(SuperType::TY_LONG) {
+            const String message = String("Index in foreach loop must be of type long. You provided ") + indexType.getName(false);
+            return this.softErrorER(getASTNode(node.idxVarDecl), SemanticErrorType::FOREACH_IDX_NOT_LONG, message);
+        }
+    }
+
+    // Retrieve .get(), .getIdx(), .isValid() and .next() functions
+    Scope* matchScope = iteratorType.getBodyScope();
+    QualType iteratorItemType = QualType(SuperType::TY_INVALID);
+    if hasIdx {
+        node.getIdxFct = matchFunction(matchScope, String("getIdx"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+        if node.getIdxFct == nil<Function*> { return Any(); }
+        const Function* getIdxFct = node.getIdxFct;
+        const QualTypeList idxTemplateTypes = getIdxFct.returnType.getTemplateTypes();
+        iteratorItemType = idxTemplateTypes.back();
+    } else {
+        node.getFct = matchFunction(matchScope, String("get"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+        if node.getFct == nil<Function*> { return Any(); }
+        const Function* getFct = node.getFct;
+        iteratorItemType = getFct.returnType;
+    }
+    node.isValidFct = matchFunction(matchScope, String("isValid"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+    if node.isValidFct == nil<Function*> { return Any(); }
+    node.nextFct = matchFunction(matchScope, String("next"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
+    if node.nextFct == nil<Function*> { return Any(); }
+
+    // Retrieve item variable entry
+    ASTDeclStmtNode* itemVarDecl = downcast<ASTDeclStmtNode>(node.itemVarDecl);
+    SymbolTableEntry* itemVarSymbol = this.currentScope.lookupStrict(itemVarDecl.varName);
+    assert itemVarSymbol != nil<SymbolTableEntry*>;
+
+    // Check type of the item
+    QualType itemType = this.visitType(node.itemVarDecl);
+    if itemType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    if itemType.is(SuperType::TY_DYN) { // Perform type inference
+        // Update evaluated symbol type of the declaration data type
+        itemVarDecl.dataType.node.setEvaluatedSymbolType(iteratorItemType, this.manIdx);
+        // Update item type
+        itemType = iteratorItemType;
+    }
+
+    // Check result type. This is important, also for copy ctor calls, etc.
+    const ExprResult itemResult = ExprResult{itemType, itemVarSymbol};
+    const ExprResult iteratorItemResult = ExprResult{iteratorItemType, nil<SymbolTableEntry*> /* always a temporary */};
+    Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(cast<ASTNode*>(itemVarDecl), itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
+    node.calledItemCopyCtor = assignResult.getSecond();
+
+    // Update type of item
+    itemVarSymbol.updateType(itemType, true);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitWhileLoop(ASTWhileLoopNode* node) {
+    // Change to while body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condition);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.condition), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("While loop condition must be of type bool"));
+    }
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
+    // Change to while body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condition);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(getASTNode(node.condition), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("Do-While loop condition must be of type bool"));
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitIfStmt(ASTIfStmtNode* node) {
+    // Change to then body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::IF_ELSE_BODY);
+
+    // Visit condition
+    const ExprResult condition = this.visitInExprScope(node.condition);
+    const QualType conditionType = condition.ty;
+    if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    // Check if condition evaluates to bool
+    ASTNode* conditionNode = getASTNode(node.condition);
+    if !conditionType.is(SuperType::TY_BOOL) {
+        return this.softErrorER(conditionNode, SemanticErrorType::CONDITION_MUST_BE_BOOL, String("If condition must be of type bool"));
+    }
+
+    // Warning for bool assignment
+    if conditionNode.kind == ASTNodeKind::ASSIGN_EXPR {
+        ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(conditionNode);
+        if assignExprNode.op == AssignOp::OP_ASSIGN {
+            this.addWarning(conditionNode.codeLoc, CompilerWarningType::BOOL_ASSIGN_AS_CONDITION, String("If you want to compare the values, use '=='"));
+        }
+    }
+
+    // Update the information, if one of the branches should be skipped.
+    // This is important to check again here, because the constness of the condition can have changed after type checking.
+    const bool constantCondition = conditionNode.hasCompileTimeValue(this.manIdx);
+    bool compileThenBranch = true;
+    bool compileElseBranch = true;
+    if constantCondition {
+        const CompileTimeValue compileTimeValue = conditionNode.getCompileTimeValue(this.manIdx);
+        compileThenBranch = compileTimeValue.boolValue;
+        compileElseBranch = !compileTimeValue.boolValue;
+    }
+    bool& compileThenBranchSlot = node.compileThenBranch.get(this.manIdx);
+    compileThenBranchSlot = compileThenBranch;
+    bool& compileElseBranchSlot = node.compileElseBranch.get(this.manIdx);
+    compileElseBranchSlot = compileElseBranch;
+
+    // Visit body
+    if compileThenBranch {
+        this.visit(node.thenBody);
+    }
+
+    // Leave then body scope
+    scopeHandle.leaveScopeEarly();
+
+    // Visit else statement if existing
+    if compileElseBranch && node.elseStmt != nil<IVisitable*> {
+        this.visit(node.elseStmt);
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitElseStmt(ASTElseStmtNode* node) {
+    // Visit if statement in the case of an else if branch
+    if node.isElseIf {
+        this.visit(node.ifStmt);
+        return Any();
+    }
+
+    // Change to else body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::IF_ELSE_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitSwitchStmt(ASTSwitchStmtNode* node) {
+    // Check expression type
+    const ExprResult switchExpr = this.visitExpr(node.assignExpr);
+    const QualType exprType = switchExpr.ty;
+    if exprType.is(SuperType::TY_UNRESOLVED) { return Any(); }
+    const dyn switchOptions = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
+    if !exprType.isOneOf(switchOptions, len(switchOptions)) {
+        return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::SWITCH_EXPR_MUST_BE_PRIMITIVE, String("Switch expression must be of int, short, long, byte, char or bool type"));
+    }
+
+    // Visit children
+    this.visitChildren(cast<ASTNode*>(node));
+
+    // Check if case constant types match switch expression type
+    foreach IVisitable* caseBranch : node.caseBranches {
+        ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(caseBranch);
+        foreach IVisitable* constantNode : caseBranchNode.caseConstants {
+            const ExprResult constantResult = this.visitExpr(constantNode);
+            const QualType constantType = constantResult.ty;
+            if !constantType.matches(exprType, false, true, true) {
+                return this.softErrorER(getASTNode(constantNode), SemanticErrorType::SWITCH_CASE_TYPE_MISMATCH, String("Case value type does not match the switch expression type"));
+            }
+        }
+    }
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitCaseBranch(ASTCaseBranchNode* node) {
+    // Change to case body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::CASE_BODY);
+
+    // Visit constant list
+    foreach IVisitable* constant : node.caseConstants {
+        this.visit(constant);
+    }
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) {
+    // If we have a normal constant, we can take the symbol type from there
+    if node.constant != nil<ASTConstantNode*> {
+        return this.visitConstant(node.constant);
+    }
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    // Check if a local or global variable can be found by searching for the name
+    if node.identifierFragments.getSize() == 1l {
+        node.entry = this.currentScope.lookup(node.identifierFragments.back());
+    }
+
+    // If no local or global was found, search in the name registry
+    if node.entry == nil<const SymbolTableEntry*> {
+        const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(node.fqIdentifier);
+        if registryEntry == nil<const NameRegistryEntry*> {
+            const String message = String("The variable '") + node.fqIdentifier + "' could not be found";
+            return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
+        }
+        node.entry = registryEntry.targetEntry;
+    }
+    assert node.entry != nil<const SymbolTableEntry*>;
+
+    // Check for the correct type
+    const QualType qualType = node.entry.getQualType();
+    const dyn caseConstantOptions = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
+    if !qualType.isOneOf(caseConstantOptions, len(caseConstantOptions)) {
+        return this.softErrorER(baseNode, SemanticErrorType::CASE_CONSTANT_INVALID_TYPE, String("Case constants must be of type int, short, long, byte, char, bool or enum"));
+    }
+
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(qualType, this.manIdx), nil<SymbolTableEntry*>});
+}
+
+public f<Any> TypeChecker.visitDefaultBranch(ASTDefaultBranchNode* node) {
+    // Change to default body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::DEFAULT_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
+}
+
+public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) {
+    // Change to anonymous scope body scope
+    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
+
+    // Visit body
+    this.visit(node.body);
+
+    return Any();
 }
 
 // ========================================================== TypeCheckerExpressions.cpp ==========================================
@@ -3167,27 +3738,9 @@ public f<Any> TypeChecker.visitAttr(ASTAttrNode* node) { return this.visitChildr
 
 // ============================================================= Not ported yet ==================================================
 
-// ToDo: Port these visit methods together with the check pass (TypeCheckerStatements.cpp, TypeCheckerControlStructures.cpp,
-// TypeCheckerValues.cpp, TypeCheckerTopLevelDefinitionsCheck.cpp, TypeCheckerBuiltinFunctions.cpp). They are only reached from function bodies,
+// ToDo: Port these visit methods together with the check pass (TypeCheckerValues.cpp, TypeCheckerTopLevelDefinitionsCheck.cpp,
+// TypeCheckerBuiltinFunctions.cpp). They are only reached from function bodies,
 // which the prepare pass does not visit.
-public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitWhileLoop(ASTWhileLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitDoWhileLoop(ASTDoWhileLoopNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitIfStmt(ASTIfStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitElseStmt(ASTElseStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitSwitchStmt(ASTSwitchStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitCaseBranch(ASTCaseBranchNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitDefaultBranch(ASTDefaultBranchNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitStmtLst(ASTStmtLstNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitReturnStmt(ASTReturnStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitBreakStmt(ASTBreakStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitContinueStmt(ASTContinueStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAssertStmt(ASTAssertStmtNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitValue(ASTValueNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
 public f<Any> TypeChecker.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.notPortedYet(cast<ASTNode*>(node)); }
@@ -3198,7 +3751,7 @@ public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) { return this
 
 // ============================================================== TypeCheckerImplicit.cpp ========================================
 
-// ToDo: Port the rest of TypeCheckerImplicit.cpp (implicit default ctors/dtors, dtor calls, ...)
+// ToDo: Port the rest of TypeCheckerImplicit.cpp (implicit default ctors/dtors, body preambles)
 
 /**
  * Prepare the generation of a call to a method of a given struct
@@ -3296,6 +3849,45 @@ public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const QualType& thi
 }
 
 /**
+ * Prepare the generation of a call to the dtor of a given struct
+ *
+ * @param entry Symbol entry to use as 'this' pointer for the dtor call
+ * @param node StmtLstNode for the current scope
+ */
+p TypeChecker.implicitlyCallStructDtor(SymbolTableEntry* entry, ASTStmtLstNode* node) {
+    // Add the dtor to the stmt list node to call it later in codegen
+    const ArgList noArgs;
+    Function* dtor = this.implicitlyCallStructMethod(entry, String(DTOR_FUNCTION_NAME), noArgs, cast<ASTNode*>(node));
+    if dtor != nil<Function*> {
+        ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
+        resources.dtorFunctionsToCall.pushBack(Pair<SymbolTableEntry*, Function*>(entry, dtor));
+    }
+}
+
+/**
+ * Prepare the generation of a call to the deallocate function for a heap-allocated variable
+ *
+ * @param node Current AST node for error messages
+ */
+p TypeChecker.implicitlyCallDeallocate(const ASTNode* node) {
+    SourceFile* memoryRT = this.sourceFile.requestRuntimeModule(RuntimeModule::MEMORY_RT);
+    assert memoryRT != nil<SourceFile*>;
+    Scope* matchScope = memoryRT.getGlobalScope();
+    // Set dealloc function to used
+    const QualType thisType = QualType(SuperType::TY_DYN);
+    const QualType byteType = QualType(SuperType::TY_BYTE);
+    const QualType bytePtrType = byteType.toPtr(node);
+    QualType bytePtrRefType = bytePtrType.toRef(node);
+    bytePtrRefType.makeHeap();
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(bytePtrRefType, false /* we always have the field as storage */));
+    const QualTypeList noTemplateTypeHints;
+    Function* deallocFct = matchFunction(matchScope, String(FCT_NAME_DEALLOC), thisType, args, noTemplateTypeHints, true, node);
+    assert deallocFct != nil<Function*>;
+    deallocFct.used = true;
+}
+
+/**
  * Sort the given variables in reverse declaration order. This is the order in which their dtors are called.
  *
  * @param vars Variables to sort
@@ -3334,6 +3926,50 @@ f<unsigned long> TypeChecker.getNodeId(const ASTNode* node) {
         return 0l;
     }
     return this.resourceManager.nodeToNodeId.get(nodeAddress);
+}
+
+/**
+ * Consider calls to destructors for the given scope
+ *
+ * @param node StmtLstNode for the current scope
+ */
+p TypeChecker.doScopeCleanup(ASTStmtLstNode* node) {
+    // Get all variables, that are approved for de-allocation
+    Vector<SymbolTableEntry*> vars = this.currentScope.getVarsGoingOutOfScope();
+    // Sort by reverse declaration order
+    this.sortByReverseDeclarationOrder(vars);
+    // Call the dtor of each variable. We call the dtor in reverse declaration order
+    foreach SymbolTableEntry* varEntry : vars {
+        const QualType varType = varEntry.getQualType();
+        // Check if we have a heap-allocated pointer
+        const dyn heapOptions = [SuperType::TY_PTR, SuperType::TY_STRING, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+        if varType.isHeap() && varType.isOneOf(heapOptions, len(heapOptions)) {
+            // The memory runtime is ignored, because it manually allocates to avoid circular dependencies.
+            // Same goes for the string runtime.
+            if this.sourceFile.isMemoryRT() || this.sourceFile.isStringRT() {
+                continue;
+            }
+            // If the local variable currently does not have the ownership, we must not deallocate its memory
+            const Lifecycle& lifecycle = varEntry.getLifecycle();
+            if !lifecycle.isInOwningState() {
+                continue;
+            }
+
+            this.implicitlyCallDeallocate(cast<ASTNode*>(node)); // Required to request the memory runtime
+            ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
+            resources.heapVarsToFree.pushBack(varEntry);
+        }
+        // Only generate dtor call for structs and if not omitted
+        if !varType.is(SuperType::TY_STRUCT) || varEntry.omitDtorCall {
+            continue;
+        }
+        // Variable must be either initialized or a struct field
+        if !varEntry.isInitialized() && varEntry.scope.scopeType != ScopeType::STRUCT {
+            continue;
+        }
+        // Call dtor
+        this.implicitlyCallStructDtor(varEntry, node);
+    }
 }
 
 /**

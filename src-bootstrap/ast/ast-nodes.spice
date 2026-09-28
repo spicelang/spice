@@ -1004,6 +1004,12 @@ public type ASTForeachLoopNode struct : IVisitable {
     public IVisitable* iteratorAssign = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
     public Scope* bodyScope = nil<Scope*>
+    public Function* getIteratorFct = nil<Function*>
+    public Function* getFct = nil<Function*>
+    public Function* getIdxFct = nil<Function*>
+    public Function* isValidFct = nil<Function*>
+    public Function* nextFct = nil<Function*>
+    public Function* calledItemCopyCtor = nil<Function*>
 }
 
 public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
@@ -1210,10 +1216,16 @@ public f<String> ASTAnonymousBlockStmtNode.getScopeId() {
 
 // ========================================================== StmtLstNode ========================================================
 
+public type ResourcesForManifestationToCleanup struct {
+    public Vector<Pair<SymbolTableEntry*, Function*>> dtorFunctionsToCall
+    public Vector<SymbolTableEntry*> heapVarsToFree
+}
+
 public type ASTStmtLstNode struct : IVisitable {
     compose public ASTNode node
     public Vector<IVisitable*> statements
     public CodeLoc closingBraceCodeLoc
+    public Vector<ResourcesForManifestationToCleanup> resourcesToCleanup
 }
 
 public p ASTStmtLstNode.ctor(CodeLoc codeLoc) {
@@ -1489,6 +1501,7 @@ public type ASTCaseConstantNode struct : IVisitable {
     public ASTConstantNode* constant = nil<ASTConstantNode*>
     public Vector<String> identifierFragments
     public String fqIdentifier
+    public const SymbolTableEntry* entry = nil<const SymbolTableEntry*>
 }
 
 public p ASTCaseConstantNode.ctor(CodeLoc codeLoc) {
@@ -1506,6 +1519,8 @@ public type ASTReturnStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
     public IVisitable* assignExpr = nil<IVisitable*>
+    public QualType returnType
+    public Function* calledCopyCtor = nil<Function*>
     public bool hasReturnValue = false
 }
 
@@ -2373,6 +2388,12 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
         while declStmtNode.entries.getSize() < manifestationCount {
             declStmtNode.entries.pushBack(nil<SymbolTableEntry*>);
+        }
+    }
+    if node.kind == ASTNodeKind::STMT_LST {
+        ASTStmtLstNode* stmtLstNode = downcast<ASTStmtLstNode>(node);
+        while stmtLstNode.resourcesToCleanup.getSize() < manifestationCount {
+            stmtLstNode.resourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
         }
     }
     if node.kind == ASTNodeKind::ATOMIC_EXPR {

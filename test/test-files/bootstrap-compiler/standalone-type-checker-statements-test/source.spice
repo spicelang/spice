@@ -1,0 +1,146 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "std/data/pair";
+import "bootstrap/driver";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/global/runtime-module-manager";
+import "bootstrap/model/function";
+import "bootstrap/source-file";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/typechecker/type-checker";
+import "bootstrap/util/compiler-warning";
+import "bootstrap/util/pass-test-util";
+
+f<FilePath> getFixturePath() {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-type-checker-statements-test/test-file.spice";
+    return FilePath(filePathString);
+}
+
+// Type of the symbol with the given name in the given scope. Fails the test if the symbol does not exist
+f<QualType> typeOf(Scope* scope, string name) {
+    SymbolTableEntry* entry = scope.lookupStrict(String(name));
+    assert entry != nil<SymbolTableEntry*>;
+    return entry.getQualType();
+}
+
+// Statement at the given index of the given statement list
+f<ASTNode*> stmtAt(ASTStmtLstNode* stmtLst, unsigned long index) {
+    IVisitable* stmt = stmtLst.statements.get(index);
+    return getASTNode(stmt);
+}
+
+f<int> main() {
+    // -------------------------------------------------------------------------------------------------------------
+    // Run the front end and the prepare stage of the type checker
+    // -------------------------------------------------------------------------------------------------------------
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    SourceFile* file = rm.createSourceFile(nil<SourceFile*>, String("root"), getFixturePath(), false);
+    file.runFrontEnd();
+    TypeChecker typeChecker = TypeChecker(rm, file, TypeCheckerMode::TC_MODE_PRE);
+    typeChecker.visit(file.ast);
+    assert rm.errorManager.softErrors.isEmpty();
+    Scope* root = file.getGlobalScope();
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Type-check the body of main. The check stage of function definitions is not ported yet
+    // -------------------------------------------------------------------------------------------------------------
+    ASTEntryNode* entry = file.ast;
+    ASTMainFctDefNode* mainFctDef = nil<ASTMainFctDefNode*>;
+    foreach IVisitable* topLevelDef : entry.topLevelDefs {
+        ASTNode* topLevelDefNode = getASTNode(topLevelDef);
+        if topLevelDefNode.kind == ASTNodeKind::MAIN_FCT_DEF {
+            mainFctDef = downcast<ASTMainFctDefNode>(topLevelDefNode);
+        }
+    }
+    assert mainFctDef != nil<ASTMainFctDefNode*>;
+    Scope* mainScope = nil<Scope*>;
+    foreach Pair<const String&, Scope*&> childEntry : root.children {
+        Scope* child = childEntry.getSecond();
+        if child.scopeType == ScopeType::FUNC_PROC_BODY {
+            mainScope = child;
+        }
+    }
+    assert mainScope != nil<Scope*>;
+    typeChecker.currentScope = mainScope;
+
+    ASTStmtLstNode* body = downcast<ASTStmtLstNode>(getASTNode(mainFctDef.body));
+    typeChecker.visitStmtLst(body);
+    // All control structures leave their scopes again
+    assert typeChecker.currentScope == mainScope;
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Declarations with assignment
+    // -------------------------------------------------------------------------------------------------------------
+    const QualType aType = typeOf(mainScope, "a");
+    assert aType.is(SuperType::TY_INT);
+    const QualType inferredType = typeOf(mainScope, "inferred");
+    assert inferredType.is(SuperType::TY_DOUBLE);
+    const QualType sType = typeOf(mainScope, "s");
+    assert sType.is(SuperType::TY_STRING);
+    SymbolTableEntry* aEntry = mainScope.lookupStrict(String("a"));
+    assert aEntry.isInitialized();
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Control structures
+    // -------------------------------------------------------------------------------------------------------------
+    // if flag = true { ... } warns about the assignment in the condition
+    bool foundBoolAssignWarning = false;
+    foreach const CompilerWarning& warning : file.compilerOutput.warnings {
+        if warning.warningMessage.contains("If you want to compare the values, use '=='") {
+            foundBoolAssignWarning = true;
+        }
+    }
+    assert foundBoolAssignWarning;
+    // if true { ... } else { ... } only compiles the then branch
+    ASTIfStmtNode* constantIf = downcast<ASTIfStmtNode>(stmtAt(body, 7l));
+    assert constantIf.doCompileThenBranch(0l);
+    assert !constantIf.doCompileElseBranch(0l);
+    // if a > 3 { ... } else if a < 0 { ... } compiles both branches
+    ASTIfStmtNode* ifElseIf = downcast<ASTIfStmtNode>(stmtAt(body, 8l));
+    assert ifElseIf.doCompileThenBranch(0l);
+    assert ifElseIf.doCompileElseBranch(0l);
+    // The for loop variable is declared in the loop scope
+    ASTForLoopNode* forLoop = downcast<ASTForLoopNode>(stmtAt(body, 11l));
+    Scope* forScope = mainScope.getChildScope(forLoop.getScopeId());
+    assert forScope != nil<Scope*>;
+    const QualType iType = typeOf(forScope, "i");
+    assert iType.is(SuperType::TY_INT);
+    // The assertion does not request the stack trace runtime, because pass tests do not compile for the native target
+    assert !file.isRuntimeModuleAvailable(RuntimeModule::STACK_TRACE_RT);
+    // return a; returns the result type of main
+    ASTReturnStmtNode* returnStmt = downcast<ASTReturnStmtNode>(stmtAt(body, 22l));
+    assert returnStmt.returnType.is(SuperType::TY_INT);
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Scope cleanup: the dtor of 'res' is called at the end of main
+    // -------------------------------------------------------------------------------------------------------------
+    const ResourcesForManifestationToCleanup& resources = body.resourcesToCleanup.get(0l);
+    assert resources.dtorFunctionsToCall.getSize() == 1l;
+    const Pair<SymbolTableEntry*, Function*>& dtorCall = resources.dtorFunctionsToCall.get(0l);
+    const SymbolTableEntry* resEntry = dtorCall.getFirst();
+    assert resEntry.name == "res";
+    const Function* dtor = dtorCall.getSecond();
+    assert dtor.name == "dtor";
+    assert resources.heapVarsToFree.isEmpty();
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Invalid statements
+    // -------------------------------------------------------------------------------------------------------------
+    assert rm.errorManager.softErrors.getSize() == 6l;
+    assert softErrorContains(rm.errorManager, 0l, "We can only break 0 time(s) here");
+    assert softErrorContains(rm.errorManager, 1l, "Fallthrough is only allowed in case branches");
+    assert softErrorContains(rm.errorManager, 2l, "The asserted condition must be of type bool");
+    assert softErrorContains(rm.errorManager, 3l, "While loop condition must be of type bool");
+    assert softErrorContains(rm.errorManager, 4l, "Switch expression must be of int, short, long, byte, char or bool type");
+    assert softErrorContains(rm.errorManager, 5l, "Forgot to import \"std/iterator/array-iterator\"?");
+
+    printf("All assertions passed!\n");
+}

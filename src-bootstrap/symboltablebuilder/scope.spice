@@ -237,6 +237,39 @@ public f<bool> Scope.isRootScope() {
 }
 
 /**
+ * Get the number of nested loops, which enclose this scope
+ *
+ * @return Loop nesting depth
+ */
+public f<unsigned int> Scope.getLoopNestingDepth() {
+    assert !this.isRootScope();
+    if this.parent.parent == nil<Scope*> {
+        return 0u;
+    }
+    unsigned int loopCount = this.parent.getLoopNestingDepth();
+    if this.scopeType == ScopeType::WHILE_BODY || this.scopeType == ScopeType::FOR_BODY || this.scopeType == ScopeType::FOREACH_BODY {
+        loopCount++;
+    }
+    return loopCount;
+}
+
+/**
+ * Check if this scope is within a case branch
+ *
+ * @return Within a case branch or not
+ */
+public f<bool> Scope.isInCaseBranch() {
+    assert !this.isRootScope();
+    if this.parent.parent == nil<Scope*> {
+        return false;
+    }
+    if this.scopeType == ScopeType::CASE_BODY {
+        return true;
+    }
+    return this.parent.isInCaseBranch();
+}
+
+/**
  * Check if unsafe operations are allowed in this scope. This is the case in unsafe blocks and all scopes within them.
  *
  * @return Allowed or not

@@ -99,6 +99,15 @@ public f<const CodeLoc &> SymbolTableEntry.getDeclCodeLoc() {
 }
 
 /**
+ * Retrieve the lifecycle of this symbol
+ *
+ * @return Lifecycle
+ */
+public f<const Lifecycle&> SymbolTableEntry.getLifecycle() {
+    return this.lifecycle;
+}
+
+/**
  * Check if this symbol is initialized
  *
  * @return Initialized or not
