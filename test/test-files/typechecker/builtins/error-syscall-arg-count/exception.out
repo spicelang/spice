@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:2:5:
 Builtin function argument count mismatch: This builtin expects between 1 and 7 argument(s), but got 8
 
-2  syscall(0s, 1, 2, 3, 4, 5, 6, 7); // Too many
+2  syscall(0s, 1, 2, 3, 4, 5, 6, 7); // Too many arguments
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:2:26:
 Referenced undefined variable: The variable 'test' could not be found
 
-2  ("Output: %s", test);
-                  ^^^^
+2  printf("Output: %s", test);
+                        ^^^^

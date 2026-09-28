@@ -22,7 +22,7 @@ Builtin function argument count mismatch: This builtin expects 2 argument(s), bu
 [Error|Semantic] ./source.spice:11:16:
 Expected a struct type: The offsetof builtin expects a struct as its first argument
 
-11  __offsetof(123, s._fieldA); //
+11  __offsetof(123, s._fieldA); // First
                ^^^
 
 [Error|Semantic] ./source.spice:12:19:

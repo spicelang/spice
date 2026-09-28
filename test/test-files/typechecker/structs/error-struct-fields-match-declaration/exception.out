@@ -1,5 +1,5 @@
 [Error|Semantic] ./source.spice:8:37:
 Wrong data type for operator: Given type of the field value does not match declaration. Expected double* but got double
 
-8  = TestStruct { 6.987, "Hello!", false };
-                  ^^^^^
+8  testInstance = TestStruct { 6.987, "Hello!", false };
+                               ^^^^^

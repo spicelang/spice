@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:2:11:
 Expected error type: The panic builtin can only work with errors
 
-2  panic(123); // Invalid arg
+2  panic(123); // Invalid arg type
          ^^^

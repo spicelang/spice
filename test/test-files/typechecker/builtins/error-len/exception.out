@@ -10,13 +10,13 @@ Builtin function template type count mismatch: This builtin expects no template 
 [Error|Semantic] ./source.spice:3:5:
 Builtin function argument count mismatch: This builtin expects 1 argument(s), but got 0
 
-3  len(); // Too less
+3  len(); // Too less arguments
    ^^^^^
 
 [Error|Semantic] ./source.spice:4:5:
 Builtin function argument count mismatch: This builtin expects 1 argument(s), but got 2
 
-4  len(1, 5); // Too many
+4  len(1, 5); // Too many arguments
    ^^^^^^^^^
 
 [Error|Semantic] ./source.spice:6:9:

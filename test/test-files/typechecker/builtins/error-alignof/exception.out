@@ -4,7 +4,7 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:2:5:
 Builtin function signature mismatch: This builtin expects either template types or arguments, but got none
 
-2  alignof(); // No template
+2  alignof(); // No template types
    ^^^^^^^^^
 
 [Error|Semantic] ./source.spice:3:5:
@@ -16,7 +16,7 @@ Builtin function signature mismatch: This builtin expects either template types 
 [Error|Semantic] ./source.spice:4:5:
 Builtin function template type count mismatch: This builtin expects between 0 and 1 template type(s), but got 2
 
-4  alignof<double, int>(); // Too many
+4  alignof<double, int>(); // Too many template
    ^^^^^^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:5:5:
@@ -28,11 +28,11 @@ Builtin function argument count mismatch: This builtin expects between 0 and 1 a
 [Error|Semantic] ./source.spice:6:5:
 Unexpected dyn type: Cannot use alignof on a dyn or unresolved type
 
-6  alignof<dyn>(); // Dyn type not
+6  alignof<dyn>(); // Dyn type not allowed
    ^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:8:5:
 Unexpected dyn type: Cannot use alignof on a dyn or unresolved type
 
-8  alignof(x); // Dyn type not
+8  alignof(x); // Dyn type not allowed
    ^^^^^^^^^^

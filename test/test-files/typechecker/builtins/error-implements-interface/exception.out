@@ -10,11 +10,11 @@ Builtin function argument count mismatch: This builtin expects no argument(s), b
 [Error|Semantic] ./source.spice:3:5:
 Builtin function template type count mismatch: This builtin expects 2 template type(s), but got 1
 
-3  __implements_interface<int>(); // Too less
+3  __implements_interface<int>(); // Too less template
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 [Error|Semantic] ./source.spice:4:5:
 Builtin function template type count mismatch: This builtin expects 2 template type(s), but got 3
 
-4  __implements_interface<int, int, string>(); // Too many
+4  __implements_interface<int, int, string>(); // Too many template
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

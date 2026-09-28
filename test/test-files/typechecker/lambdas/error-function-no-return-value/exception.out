@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:2:51:
 Return without initialization of result variable: Return without value, but result variable is not initialized yet
 
-2  >(int x, int y) { return; };
-                     ^^^^^^
+2  int>(int x, int y) { return; };
+                        ^^^^^^

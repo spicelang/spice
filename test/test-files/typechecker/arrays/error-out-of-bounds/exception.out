@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:3:26:
 Array index out of bounds: You are trying to access element with index 15 of an array with size 10
 
-3  ("Test: %d/n", testArray[15]);
-                  ^^^^^^^^^^^^^
+3  printf("Test: %d/n", testArray[15]);
+                        ^^^^^^^^^^^^^

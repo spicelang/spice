@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:7:27:
 Number of struct fields not matching declaration: You've passed too less/many field values. Pass either none or all of them
 
-7  partial = Point{1};
-                   ^
+7  Point partial = Point{1};
+                         ^

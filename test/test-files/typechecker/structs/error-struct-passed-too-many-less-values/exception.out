@@ -4,5 +4,5 @@ Unresolved soft errors: There are unresolved errors. Please fix them and recompi
 [Error|Semantic] ./source.spice:9:37:
 Number of struct fields not matching declaration: You've passed too less/many field values. Pass either none or all of them
 
-9  = TestStruct { &str, false };
-                  ^^^^^^^^^^^
+9  testInstance = TestStruct { &str, false };
+                               ^^^^^^^^^^^
