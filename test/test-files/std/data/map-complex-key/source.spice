@@ -1,5 +1,6 @@
 import "std/data/map";
 import "std/data/set";
+import "std/iterator/array-iterator";
 
 // Builds the string "a", followed by a null byte and the given char
 f<String> keyWithNull(char suffix) {
