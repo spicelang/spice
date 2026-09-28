@@ -47,6 +47,8 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     // Take a look at the operator
     if (node->op == AssignExprNode::AssignOp::OP_ASSIGN) {
       const bool isDecl = lhs.entry != nullptr && lhs.entry->isField() && !lhs.entry->getLifecycle().isInitialized();
+      // Save this before checking the assignment, because stealing a temporary deletes its anonymous symbol table entry
+      const bool isRhsTemporary = rhs.isTemporary();
       const auto [assignType, copyCtor] = opRuleManager.getAssignResultType(node, lhs, rhs, isDecl);
       rhsType = assignType;
       // If the assignment overwrites an already initialized struct, the old value of the lhs must be destructed first.
@@ -58,7 +60,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       if (!isDecl && lhs.entry != nullptr && lhs.entry->isInitialized() && !currentScope->doesAllowUnsafeOperations()) {
         const QualType lhsSType = lhs.type.removeReferenceWrapper().toNonConst();
         if (lhsSType.is(TY_STRUCT) && !lhsSType.isTriviallyDestructible(node) &&
-            (copyCtor != nullptr || isDestructibleTempStealTarget(node, rhs)))
+            (copyCtor != nullptr || isDestructibleTempStealTarget(node, rhs.type, isRhsTemporary)))
           node->lhsDtorFct[manIdx] = implicitlyCallStructMethod(lhsSType, DTOR_FUNCTION_NAME, {}, node);
       }
     } else if (node->op == AssignExprNode::AssignOp::OP_PLUS_EQUAL) {
@@ -107,12 +109,13 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
  * safely be destructed before it gets overwritten.
  *
  * @param node Assign expression node
- * @param rhs Right side of the assignment
+ * @param rhsType Type of the right side of the assignment
+ * @param isRhsTemporary Whether the right side of the assignment is a temporary
  * @return Destructible temp steal target or not
  */
-bool TypeChecker::isDestructibleTempStealTarget(AssignExprNode *node, const ExprResult &rhs) const {
+bool TypeChecker::isDestructibleTempStealTarget(AssignExprNode *node, const QualType &rhsType, bool isRhsTemporary) const {
   // The rhs must be a temporary struct value, that is moved into the lhs, and no assign operator overload may take over
-  if (rhs.type.isRef() || !rhs.type.is(TY_STRUCT) || !rhs.isTemporary() || getOpFctPointers(node).front() != nullptr)
+  if (rhsType.isRef() || !rhsType.is(TY_STRUCT) || !isRhsTemporary || getOpFctPointers(node).front() != nullptr)
     return false;
   // The initialization state of the lhs entry does not tell, whether the overwritten value was actually constructed at
   // runtime (e.g. for '*ptr = ...', 'array[i] = ...' or 'result.field = ...'), so check the lhs expression itself

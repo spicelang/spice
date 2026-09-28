@@ -200,7 +200,7 @@ private:
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;
   [[nodiscard]] QualType mapImportedScopeTypeToLocalType(const Scope *sourceScope, const QualType &symbolType) const;
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
-  [[nodiscard]] bool isDestructibleTempStealTarget(AssignExprNode *node, const ExprResult &rhs) const;
+  [[nodiscard]] bool isDestructibleTempStealTarget(AssignExprNode *node, const QualType &rhsType, bool isRhsTemporary) const;
   [[nodiscard]] bool isAlwaysConstructedLvalue(const ExprNode *node) const;
   static void requestRevisitIfRequired(const Function *fct);
   void ensureLoadedRuntimeForTypeName(const std::string &typeName) const;
