@@ -90,6 +90,12 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
 }
 
 public p GlobalResourceManager.dtor() {
+    // Destruct all AST nodes as their concrete node types. The node pool could only destruct them as ASTNode
+    Vector<ASTNode*> astNodes = this.astNodeAlloc.releaseObjects();
+    foreach ASTNode* astNode : astNodes {
+        destructASTNode(astNode);
+    }
+
     // Notify all global components to prepare to destroy
     // ToDo: Implement
     // Cleanup all LLVM statics

@@ -81,6 +81,19 @@ public f<T*> BlockAllocator.reserve<T>() {
 }
 
 /**
+ * Hand the reserved objects over to the caller, which is then responsible for destructing them. The memory blocks stay owned by
+ * the allocator. Pools of objects, whose concrete types compose Base (e.g. the AST nodes), need this, because the dtor of the
+ * allocator can only destruct them as Base, which would leak the members of the concrete types.
+ *
+ * @return Pointers to all objects, which were reserved via this allocator
+ */
+public f<Vector<Base*>> BlockAllocator.releaseObjects() {
+    Vector<Base*> objects = this.allocatedObjects;
+    this.allocatedObjects.clear();
+    return objects;
+}
+
+/**
  * Get the total number of bytes, which were allocated for memory blocks
  *
  * @return Total allocated size in bytes
