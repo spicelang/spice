@@ -17,8 +17,7 @@ import "bootstrap/symboltablebuilder/type";
 // into each Type it creates (Type.registry), so the Type derivation methods (toPtr, getBase, ...) can re-enter it.
 // Storage is a BlockAllocator<Type> (stable addresses, exactly like the parser's AST node pool) plus a hash ->
 // bucket map for deduplication. Buckets (Vector<Type*>) are used instead of a single value per hash so that hash
-// collisions (and same-named structs from different scopes, whose scope pointers cannot be hashed in Spice) are
-// resolved exactly via structural equality.
+// collisions are resolved exactly via structural equality.
 public type TypeRegistry struct {
     // The memory manager is declared before the allocator so that it outlives it (the allocator keeps a reference).
     DefaultMemoryManager memoryManager
@@ -111,7 +110,7 @@ f<const Type*> TypeRegistry.getOrInsertType(const Type& candidate) {
         // Search the bucket for a structurally equal type
         Vector<Type*>& bucket = this.types.get(h);
         foreach Type* existing : bucket {
-            if existing.matches(candidatePtr, false) {
+            if existing.matches(candidatePtr, false) && haveSameBodyScopes(existing, candidatePtr) {
                 const Type* hit = existing;
                 return hit;
             }
@@ -147,6 +146,36 @@ f<Type*> TypeRegistry.allocateType(const Type& candidate) {
 }
 
 /**
+ * Check if two types with the same structure also have the same body scopes. Type.matches ignores the body scopes of
+ * structs, interfaces and unions (like the host's TypeChainElement equality), but two manifestations of a generic type
+ * (e.g. the one bound to the generic struct scope and the one bound to the scope of the concrete substantiation) must be
+ * interned as distinct types, like the host does by hashing the body scope.
+ */
+f<bool> haveSameBodyScopes(const Type* lhs, const Type* rhs) {
+    assert lhs.typeChain.getSize() == rhs.typeChain.getSize();
+    for unsigned long i = 0ul; i < lhs.typeChain.getSize(); i++ {
+        const TypeChainElement& lhsElement = lhs.typeChain.get(i);
+        const TypeChainElement& rhsElement = rhs.typeChain.get(i);
+        const SuperType superType = lhsElement.superType;
+        const bool hasBodyScope = superType == SuperType::TY_STRUCT || superType == SuperType::TY_INTERFACE || superType == SuperType::TY_UNION || superType == SuperType::TY_ENUM;
+        if hasBodyScope && lhsElement.data.bodyScope != rhsElement.data.bodyScope {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Address of the body scope of a type chain element, which is used to hash body scopes by pointer identity like the host
+// (hashPointer)
+f<long> getBodyScopeAddress(const TypeChainElement& tce) {
+    long address = 0l;
+    unsafe {
+        address = cast<long>(cast<byte*>(tce.data.bodyScope));
+    }
+    return address;
+}
+
+/**
  * Compute the hash of a type over its type chain. Template and function param/return sub-types are hashed
  * recursively (they are themselves interned Types).
  */
@@ -164,15 +193,17 @@ f<Hash> TypeRegistry.hashElement(const TypeChainElement& tce) {
     h = combineHashes(h, hash(tce.subType));
     h = combineHashes(h, hash(tce.typeId));
 
-    // Hash the super-type-specific data payload. The body scope pointer cannot be hashed (Spice has no
-    // pointer-to-integer cast), so it is intentionally omitted here and disambiguated exactly via structural
-    // equality on a bucket lookup.
+    // Hash the super-type-specific data payload
     switch tce.superType {
         case SuperType::TY_ARRAY: {
             h = combineHashes(h, hash(cast<long>(tce.data.arraySize)));
         }
         case SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE: {
             h = combineHashes(h, hash(tce.data.hasCaptures));
+        }
+        case SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION, SuperType::TY_ENUM: {
+            // Hash based on pointer identity of the body scope, like the host compiler
+            h = combineHashes(h, hash(getBodyScopeAddress(tce)));
         }
         default: {}
     }
