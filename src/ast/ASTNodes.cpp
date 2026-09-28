@@ -472,7 +472,7 @@ CompileTimeValue MultiplicativeExprNode::getCompileTimeValue(size_t manIdx) cons
     } else if (op == MultiplicativeOp::OP_REM) {
       if (opCompileTimeValue.longValue == 0)
         throw SemanticError(operands.at(i), DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
-      result.longValue %=opCompileTimeValue.longValue;
+      result.longValue %= opCompileTimeValue.longValue;
     } else {
       throw CompilerError(UNHANDLED_BRANCH, "MultiplicativeExprNode::getCompileTimeValue()");
     }
