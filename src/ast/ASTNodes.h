@@ -1509,8 +1509,9 @@ public:
   ExprNode *ternaryExpr = nullptr;
   AssignOp op = AssignOp::OP_NONE;
   std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
-  // Dtor of the left-hand side to call before a copy-assignment overwrites an already initialized value.
-  // Only set for non-declaration copy-assignments of non-trivially-destructible structs (one entry per manifestation).
+  // Dtor of the left-hand side to call before an assignment overwrites an already initialized value.
+  // Only set for non-declaration assignments, that copy or move a temporary into a non-trivially-destructible struct
+  // (one entry per manifestation).
   std::vector<const Function *> lhsDtorFct;
 };
 

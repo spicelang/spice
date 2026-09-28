@@ -1,0 +1,53 @@
+// Verifies that moving a temporary into an already initialized struct destructs the previous value first,
+// so its owning members do not leak. Covers locals, a field that was default-constructed by the ctor
+// preamble and a field that is reassigned in a method.
+
+type Holder struct {
+    String name
+}
+
+p Holder.ctor() {
+    this.name = String("default");
+}
+
+p Holder.ctor(string name) {
+    this.name = String(name);
+}
+
+p Holder.dtor() {
+    printf("dtor: %s\n", this.name.getRaw());
+}
+
+type Owner struct {
+    Holder holder
+}
+
+p Owner.ctor() {
+    // The ctor preamble default-constructs 'holder', so this must destruct the default value first
+    this.holder = Holder("owner-first");
+}
+
+p Owner.replace(string name) {
+    // Reassigning the field must destruct its old value first
+    this.holder = Holder(name);
+}
+
+f<int> main() {
+    {
+        Holder a = Holder("first");
+        // Moving the temporary into 'a' must destruct the old value of 'a' ("first") first
+        a = Holder("second");
+        printf("a is now %s\n", a.name.getRaw());
+    }
+    {
+        Holder b;
+        // Moving the temporary into 'b' must destruct the default-constructed value of 'b' first
+        b = Holder("third");
+        printf("b is now %s\n", b.name.getRaw());
+    }
+    {
+        Owner owner = Owner();
+        owner.replace("owner-second");
+        printf("owner holds %s\n", owner.holder.name.getRaw());
+    }
+}

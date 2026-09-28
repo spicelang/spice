@@ -683,6 +683,15 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTa
     return LLVMExprResult{.ptr = lhsAddress, .entry = lhsEntry};
   }
 
+  // If a temporary struct is moved into an already initialized lhs (temp stealing), the old value of the lhs must be
+  // destructed before it gets overwritten, otherwise its owning members would leak. The typechecker only sets a dtor in
+  // exactly those cases. The rhs is already evaluated at this point and, being a temporary, never aliases the lhs.
+  if (rhsSType.is(TY_STRUCT) && rhs.isTemporary()) {
+    const auto *assignNode = dynamic_cast<const AssignExprNode *>(node);
+    if (const Function *lhsDtor = assignNode ? assignNode->lhsDtorFct.at(manIdx) : nullptr)
+      generateCtorOrDtorCall(lhsAddress, lhsDtor, {});
+  }
+
   // Optimization: If we have the address of both sides, we can do a memcpy instead of loading and storing the value
   llvm::Value *rhsValue = nullptr;
   if (rhsSType.is(TY_STRUCT) && rhs.value == nullptr && rhs.constant == nullptr) {
