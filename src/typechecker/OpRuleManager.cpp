@@ -99,15 +99,12 @@ std::pair<QualType, Function *> OpRuleManager::getFieldAssignResultType(ASTNode 
     return {rhsType, nullptr};
   // Allow ref type to type of the same contained type straight away
   if (rhsType.isRef() && lhsType.matches(rhsType.getContained(), false, false, true)) {
-    // Check is there is an overloaded operator function available
-    const auto [type, _] = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_ASSIGN, {lhs, rhs}, 0);
-    if (!type.is(TY_INVALID))
-      return {type, nullptr};
-
-    // In case of a return expression, we perform temp stealing
+    // Initializing a field constructs a new value, so we copy via the copy ctor instead of calling an overloaded
+    // assign operator. The rhs may have no entry (e.g. a function call returning a reference), so go by type
     Function *copyCtor = nullptr;
-    if (rhsType.getContained().is(TY_STRUCT) && !rhs.isTemporary())
-      copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhs.entry, rhs.entry->declNode);
+    const QualType rhsContainedType = rhsType.getContained().toNonConst();
+    if (rhsContainedType.is(TY_STRUCT) && !rhs.isTemporary())
+      copyCtor = typeChecker->implicitlyCallStructCopyCtor(rhsContainedType, node);
     return {lhsType, copyCtor};
   }
   // Allow ref type to type of the same contained type straight away
