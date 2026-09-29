@@ -85,14 +85,3 @@ f<string> CompilerError.getMessagePrefix(const CompilerErrorType errorType) {
         default: { panic(Error("Unknown error")); }
     }
 }
-
-#[test, test.name="CompilerError Smoke test"]
-public f<bool> testCompilerErrorSmoke() {
-    CompilerError err1 = CompilerError(CompilerErrorType::UNRESOLVED_SOFT_ERRORS, "There are unresolved errors.");
-    assert err1.errorMessage == "[Error|Compiler]:\nUnresolved soft errors: There are unresolved errors.";
-
-    const CodeLoc loc = CodeLoc(3l, 7l, "main.spice");
-    CompilerError err2 = CompilerError(loc, CompilerErrorType::INTERNAL_ERROR, "Oops");
-    assert err2.errorMessage == "[Error|Compiler] main.spice:3:7:\nInternal compiler error: Oops";
-    return true;
-}

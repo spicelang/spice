@@ -36,7 +36,7 @@ cmake-build-debug/test/spicetest --gtest_filter='*ForLoop*'
 Reference-test suites (instantiated from `test/test-files/<group>`):
 `CommonTests`, `LexerTests`, `ParserTests`, `SymbolTableBuilderTests`,
 `TypeCheckerTests`, `IRGeneratorTests`, `StdTests`, `BenchmarkTests`,
-`ExampleTests`, `BootstrapCompilerTests`.
+`ExampleTests`.
 
 ## Custom test-runner flags
 
@@ -71,7 +71,9 @@ paths rewritten to `./` like the host prints them. A missing expected error
 fails only for the kinds listed in `BOOTSTRAP_SUPPORTED_ERROR_PREFIXES`
 (`test/util/BootstrapUtil.h`); extend that list as stages get ported. Other
 cases pass if the bootstrap compiler finishes without crashing or raising an
-unexpected error. `BootstrapCompilerTests` and `LinterTests` are skipped.
+unexpected error. `LinterTests` are skipped.
+CI (`ci-cpp.yml`, Linux/x86_64) runs this mode for the lexer, parser, symbol
+table builder and type checker suites, minus a list of known-failing cases.
 `--update-refs` and `--coverage` are rejected, so host refs are never
 overwritten with bootstrap output.
 

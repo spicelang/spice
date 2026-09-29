@@ -112,7 +112,7 @@ git diff test/test-files   # review generated output before committing
 
 # 4. If you changed stdlib or bootstrap, include relevant suite(s)
 cmake-build-debug/test/spicetest --gtest_filter='StdTests*'
-cmake-build-debug/test/spicetest --gtest_filter='BootstrapCompilerTests*'
+cmake-build-debug/test/spicetest --bootstrap --gtest_filter='LexerTests*:ParserTests*:SymbolTableBuilderTests*:TypeCheckerTests*'
 ```
 
 If the environment cannot run the full suite (e.g. LLVM not installed), say so

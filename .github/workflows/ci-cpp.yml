@@ -93,9 +93,30 @@ jobs:
             ..
           cmake --build . --target spicetest
 
-      - name: Run Test target
+      - name: Run Test target (host compiler)
         working-directory: build
         run: cmake --build . --target spicetest_parallel
+
+      - name: Run Test target (bootstrap compiler)
+        working-directory: build
+        env:
+          # Only the stages the bootstrap compiler already covers. The excluded test cases are known bootstrap compiler
+          # gaps (diverging error messages/locations, unsupported CLI options). Remove them from this list once fixed.
+          GTEST_FILTER: >-
+            LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*
+            -LexerTests.lexer_errorLexingError
+            :ParserTests.parser_errorExtraneousInput
+            :ParserTests.parser_errorParsingError
+            :SymbolTableBuilderTests.attributes_errorAdditionalLinkSourceNotFound
+            :SymbolTableBuilderTests.attributes_errorMissingValue
+            :TypeCheckerTests.functions_successFunctionOverloading1
+            :TypeCheckerTests.builtins_errorGetBuildVar
+            :TypeCheckerTests.imports_errorImportedFileNotExisting
+            :TypeCheckerTests.imports_errorImportedStdNotExisting
+            :TypeCheckerTests.imports_errorCircularPrivateAccess
+            :TypeCheckerTests.imports_errorCircularInfiniteSize
+        # The folded filter above is joined with spaces, which gtest does not accept
+        run: GTEST_FILTER="${GTEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
 
       - name: Save CCache
         uses: actions/cache/save@v6

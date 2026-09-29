@@ -49,11 +49,3 @@ f<string> LexerError.getMessagePrefix(const LexerErrorType errorType) {
         default: { panic(Error("Unknown error")); }
     }
 }
-
-#[test, test.name="LexerError Smoke test"]
-public f<bool> testLexerErrorSmoke() {
-    const CodeLoc loc = CodeLoc(7l, 4l, "lex.spice");
-    LexerError err = LexerError(loc, LexerErrorType::TOKENIZING_FAILED, "bad char");
-    assert err.errorMessage == "[Error|Lexer] lex.spice:7:4: Tokenizing failed: bad char";
-    return true;
-}

@@ -1,7 +1,0 @@
-import "bootstrap/model/interface";
-
-// Wrapper for 'spice test' unit test
-f<int> main() {
-    testInterfaceSmoke();
-    printf("All assertions passed!\n");
-}

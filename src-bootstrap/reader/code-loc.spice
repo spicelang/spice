@@ -89,37 +89,3 @@ public f<bool> CodeLoc.isAfter(const CodeLoc& other) {
 public f<bool> operator==(const CodeLoc &lhs, const CodeLoc &rhs) {
     return lhs.sourceFilePath == rhs.sourceFilePath && lhs.line == rhs.line && lhs.col == rhs.col;
 }
-
-#[test, test.name="CodeLoc Smoke test"]
-public f<bool> testCodeLocSmoke() {
-    // Constructor without sourceFilePath
-    CodeLoc loc1 = CodeLoc(12l, 5l);
-    assert loc1.line == 12l;
-    assert loc1.col == 5l;
-    assert loc1.sourceFilePath == "";
-
-    // toString
-    assert loc1.toString() == "L12C5";
-
-    // toPrettyString and toPrettyFilePath without sourceFilePath
-    assert loc1.toPrettyString() == "12:5";
-    assert loc1.toPrettyFilePath() == "";
-
-    // toPrettyLine
-    assert loc1.toPrettyLine() == "L12";
-
-    // toPrettyLineAndColumn
-    assert loc1.toPrettyLineAndColumn() == "L12C5";
-
-    // Constructor with sourceFilePath
-    CodeLoc loc2 = CodeLoc(7l, 3l, "test.spice");
-    assert loc2.toPrettyString() == "test.spice:7:3";
-    assert loc2.toPrettyFilePath() == "test.spice";
-
-    // Equality
-    CodeLoc loc3 = CodeLoc(12l, 5l);
-    assert loc1 == loc3;
-    assert !(loc1 == loc2);
-
-    return true;
-}

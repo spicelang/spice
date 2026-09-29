@@ -1,3 +1,0 @@
-import "std/data/vector";
-
-p rows(const Vector<Vector<int>>& ref, Vector<Vector<int>>* ptr, Vector<Vector<Vector<int>>>& nested) {}

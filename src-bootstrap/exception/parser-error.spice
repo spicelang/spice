@@ -61,14 +61,3 @@ f<string> ParserError.getMessagePrefix(const ParserErrorType errorType) {
         default: { panic(Error("Unknown error")); }
     }
 }
-
-#[test, test.name="ParserError Smoke test"]
-public f<bool> testParserErrorSmoke() {
-    const CodeLoc loc = CodeLoc(2l, 1l, "p.spice");
-    ParserError err = ParserError(loc, ParserErrorType::PARSING_FAILED, "unexpected token");
-    assert err.errorMessage == "[Error|Parser] p.spice:2:1: Parsing failed: unexpected token";
-
-    ParserError err2 = ParserError(loc, ParserErrorType::RESERVED_TYPENAME, "Foo");
-    assert err2.errorMessage == "[Error|Parser] p.spice:2:1: Usage of reserved typename: Foo";
-    return true;
-}

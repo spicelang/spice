@@ -1,7 +1,0 @@
-import "bootstrap/ast/attributes";
-
-// Wrapper for 'spice test' unit test
-f<int> main() {
-    testAttributesSmoke();
-    printf("All assertions passed!\n");
-}
