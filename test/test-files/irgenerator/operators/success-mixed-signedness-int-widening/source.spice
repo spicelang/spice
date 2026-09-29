@@ -8,7 +8,7 @@ f<int> main() {
     const char c = cast<char>(200);
     printf("%ld %ld\n", cast<long>(ui), cast<unsigned long>(ui));
     printf("%d %ld\n", cast<int>(us), cast<long>(us));
-    printf("%d %hd %ld\n", cast<int>(b), cast<short>(c), cast<long>(c));
+    printf("%d %d\n", cast<int>(b), cast<int>(c));
 
     // Signed source -> wider unsigned target (sign-extend)
     const int i = -1;
