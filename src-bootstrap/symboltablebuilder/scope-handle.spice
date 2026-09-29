@@ -4,17 +4,20 @@
 import "bootstrap/compiler-pass";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/irgenerator/ir-generator";
 
 /**
  * This struct is used to change the current scope to a child scope and change it back to the parent scope when the handle
  * object is destroyed. This can be used in visit functions to automatically leave the scope when the function returns.
  *
- * The host implements this via DeferredLogic. The constructors that take an IRGenerator are ported with the IR generator.
+ * The host implements this via DeferredLogic. The constructors that take an IRGenerator additionally push/pop a lexical block
+ * for the debug info.
  */
 public type ScopeHandle struct {
     CompilerPass* pass
     ScopeType scopeType
     bool alreadyExecuted = false
+    IRGenerator* generator = nil<IRGenerator*>
 }
 
 public p ScopeHandle.ctor(CompilerPass* pass, Scope* childScope, ScopeType scopeType) {
@@ -30,9 +33,28 @@ public p ScopeHandle.ctor(CompilerPass* pass, const String& childScopeId, ScopeT
     this.pass.changeToScope(currentScope.getChildScope(childScopeId), scopeType);
 }
 
+public p ScopeHandle.ctor(IRGenerator* generator, Scope* childScope, ScopeType scopeType, const ASTNode* node) {
+    assert scopeType != ScopeType::FUNC_PROC_BODY; // Functions/procedures manage scopes manually
+    this.pass = &generator.compilerPass;
+    this.scopeType = scopeType;
+    this.generator = generator;
+    this.pass.changeToScope(childScope, scopeType);
+    generator.diGenerator.pushLexicalBlock(node);
+}
+
+public p ScopeHandle.ctor(IRGenerator* generator, const String& childScopeId, ScopeType scopeType, const ASTNode* node) {
+    assert scopeType != ScopeType::FUNC_PROC_BODY; // Functions/procedures manage scopes manually
+    this.pass = &generator.compilerPass;
+    this.scopeType = scopeType;
+    this.generator = generator;
+    Scope* currentScope = this.pass.currentScope;
+    this.pass.changeToScope(currentScope.getChildScope(childScopeId), scopeType);
+    generator.diGenerator.pushLexicalBlock(node);
+}
+
 public p ScopeHandle.dtor() {
     if !this.alreadyExecuted {
-        this.pass.changeToParentScope(this.scopeType);
+        this.leaveScope();
     }
 }
 
@@ -40,8 +62,15 @@ public p ScopeHandle.dtor() {
  * Leave the scope before the handle is destroyed
  */
 public p ScopeHandle.leaveScopeEarly() {
-    this.pass.changeToParentScope(this.scopeType);
+    this.leaveScope();
     this.alreadyExecuted = true;
+}
+
+p ScopeHandle.leaveScope() {
+    this.pass.changeToParentScope(this.scopeType);
+    if this.generator != nil<IRGenerator*> {
+        this.generator.diGenerator.popLexicalBlock();
+    }
 }
 
 /**

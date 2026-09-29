@@ -36,6 +36,10 @@ import "bootstrap/importcollector/import-collector";
 import "bootstrap/symboltablebuilder/symbol-table-builder";
 import "bootstrap/typechecker/type-checker";
 import "bootstrap/typechecker/post-type-checking-verifier";
+import "bootstrap/irgenerator/ir-generator";
+import "bootstrap/iroptimizer/ir-optimizer";
+import "bootstrap/linker/bitcode-linker";
+import "bootstrap/objectemitter/llvm-object-emitter";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
@@ -100,6 +104,22 @@ public type NameRegistryEntry struct {
 }
 
 /**
+ * Get the code generation opt level for the given opt level
+ *
+ * @param optLevel Opt level
+ * @return Code generation opt level
+ */
+f<llvm::LLVMCodeGenOptLevel> getCodeGenOptLevel(OptLevel optLevel) {
+    switch optLevel {
+        case OptLevel::O0: { return llvm::LLVMCodeGenOptLevel::None; }
+        case OptLevel::O1: { return llvm::LLVMCodeGenOptLevel::Less; }
+        case OptLevel::O3: { return llvm::LLVMCodeGenOptLevel::Aggressive; }
+        default: { return llvm::LLVMCodeGenOptLevel::Default; } // O2, Os, Oz
+    }
+    return llvm::LLVMCodeGenOptLevel::Default;
+}
+
+/**
  * Represents a single source file
  */
 public type SourceFile struct {
@@ -128,6 +148,7 @@ public type SourceFile struct {
     public llvm::IRBuilder builder
     public llvm::TargetMachine targetMachine
     public llvm::Module llvmModule
+    public FilePath objectFilePath
     public Map<String, SourceFile*> dependencies // Has to be an ordered map to keep the compilation order deterministic
     public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
@@ -162,6 +183,9 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     this.fileName = path.getFileName();
     this.fileDir = path.getParentDir();
 
+    // Discard value names if not required
+    this.context.setDiscardValueNames(!this.cliOptions.namesForIRValues);
+
     // Search after selected target
     string error = nil<string>;
     const llvm::Target target = llvm::getTargetFromTriple(this.cliOptions.targetTriple, &error);
@@ -174,7 +198,10 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     const string features = resourceManager.cpuFeatures.getRaw();
     const llvm::Triple& targetTriple = this.cliOptions.targetTriple;
     const llvm::LLVMRelocMode relocMode = llvm::LLVMRelocMode::PIC;
-    this.targetMachine = target.createTargetMachine(targetTriple, cpuName, features, llvm::LLVMCodeGenOptLevel::Default, relocMode, llvm::LLVMCodeModel::Default);
+    // The host creates the target machine with the default codegen opt level and sets the actual one right before the object
+    // emission. The LLVM C API cannot change the opt level of a target machine, so it is set right away here.
+    const llvm::LLVMCodeGenOptLevel codeGenOptLevel = getCodeGenOptLevel(this.cliOptions.optLevel);
+    this.targetMachine = target.createTargetMachine(targetTriple, cpuName, features, codeGenOptLevel, relocMode, llvm::LLVMCodeModel::Default);
 }
 
 public p SourceFile.runParser() {
@@ -404,14 +431,12 @@ public p SourceFile.runIRGenerator() {
     this.llvmModule = llvm::Module(this.fileName.getRaw(), llvmContext);
 
     // Generate this source file
-    // ToDo: Port the IRGenerator
-    //IRGenerator irGenerator = IRGenerator(this.resourceManager, this);
-    //irGenerator.visit(this.ast);
+    IRGenerator irGenerator = IRGenerator(this.resourceManager, this);
+    irGenerator.visit(this.ast);
 
     // Save the ir string in the compiler output
     if this.cliOptions.dump.dumpIR || this.cliOptions.testMode {
-        // ToDo: Port IRGenerator.getIRString
-        //this.compilerOutput.irString = getIRString(this.llvmModule, this.cliOptions);
+        this.compilerOutput.irString = getIRString(&this.llvmModule, this.cliOptions);
     }
 
     // Dump unoptimized IR code
@@ -436,15 +461,13 @@ public p SourceFile.runDefaultIROptimizer() {
     timer.start();
 
     // Optimize this source file
-    // ToDo: Port the IROptimizer
-    //IROptimizer irOptimizer = IROptimizer(this.resourceManager, this);
-    //irOptimizer.prepare();
-    //irOptimizer.optimizeDefault();
+    IROptimizer irOptimizer = IROptimizer(this.resourceManager, this);
+    irOptimizer.prepare();
+    irOptimizer.optimizeDefault();
 
     // Save the optimized ir string in the compiler output
     if this.cliOptions.dump.dumpIR || this.cliOptions.testMode {
-        // ToDo: Port IRGenerator.getIRString
-        //this.compilerOutput.irOptString = getIRString(this.llvmModule, this.cliOptions);
+        this.compilerOutput.irOptString = getIRString(&this.llvmModule, this.cliOptions);
     }
 
     // Dump optimized IR code
@@ -461,16 +484,89 @@ public p SourceFile.runDefaultIROptimizer() {
 public p SourceFile.runPreLinkIROptimizer() {
     assert this.cliOptions.useLTO;
 
+    // Skip if restored from the cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_OPTIMIZER {
+        return;
+    }
+
+    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irOptimizer);
+    timer.start();
+
+    // Optimize this source file
+    IROptimizer irOptimizer = IROptimizer(this.resourceManager, this);
+    irOptimizer.prepare();
+    irOptimizer.optimizePreLink();
+
+    // Save the optimized ir string in the compiler output
+    if this.cliOptions.dump.dumpIR || this.cliOptions.testMode {
+        this.compilerOutput.irOptString = getIRString(&this.llvmModule, this.cliOptions);
+    }
+
+    // Dump optimized IR code
+    if this.cliOptions.dump.dumpIR {
+        this.dumpOutput(this.compilerOutput.irOptString, String("Optimized IR Code (pre-link)"), String("ir-code-lto-pre-link.ll"));
+    }
+
+    timer.pause();
 }
 
 public p SourceFile.runBitcodeLinker() {
     assert this.cliOptions.useLTO;
 
+    // Skip if this is not the main source file
+    if !this.isMainFile {
+        return;
+    }
+
+    // Skip if restored from the cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_OPTIMIZER {
+        return;
+    }
+
+    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irOptimizer);
+    timer.resume();
+
+    // Link all source files together
+    BitcodeLinker linker = BitcodeLinker(this.resourceManager);
+    linker.link();
+
+    timer.pause();
 }
 
 public p SourceFile.runPostLinkIROptimizer() {
     assert this.cliOptions.useLTO;
 
+    // Skip if this is not the main source file
+    if !this.isMainFile {
+        return;
+    }
+
+    // Skip if restored from the cache or this stage has already been done
+    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_OPTIMIZER {
+        return;
+    }
+
+    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irOptimizer);
+    timer.resume();
+
+    // Optimize LTO module
+    IROptimizer irOptimizer = IROptimizer(this.resourceManager, this);
+    irOptimizer.prepare();
+    irOptimizer.optimizePostLink();
+
+    // Save the optimized ir string in the compiler output
+    if this.cliOptions.dump.dumpIR || this.cliOptions.testMode {
+        this.compilerOutput.irOptString = getIRString(&this.resourceManager.ltoModule, this.cliOptions);
+    }
+
+    // Dump optimized IR code
+    if this.cliOptions.dump.dumpIR {
+        this.dumpOutput(this.compilerOutput.irOptString, String("Optimized IR Code (post-Link)"), String("ir-code-lto-post-link.ll"));
+    }
+
+    this.previousStage = CompileStageType::IR_OPTIMIZER;
+    timer.stop();
+    this.printStatusMessage("IR Optimizer", CompileStageIOType::IO_IR, CompileStageIOType::IO_IR, this.compilerOutput.times.irOptimizer);
 }
 
 public p SourceFile.runObjectEmitter() {
@@ -487,7 +583,29 @@ public p SourceFile.runObjectEmitter() {
     Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.objectEmitter);
     timer.start();
 
-    // ToDo: Emit object file
+    // The code generation opt level matches the opt level, the IR was generated and optimized with. The host sets it on the target
+    // machine here. The LLVM C API cannot change it afterwards, so the target machine is created with it in the constructor.
+
+    // Deduce an object file path
+    this.objectFilePath = this.cliOptions.outputDir / this.filePath.getFileName();
+    this.objectFilePath.replaceExtension("o");
+
+    // Emit object for this source file. The bootstrap compiler has no TPDE backend (SPICE_ENABLE_TPDE in the host)
+    LLVMObjectEmitter objectEmitter = LLVMObjectEmitter(this.resourceManager, this);
+    objectEmitter.emit(this.objectFilePath);
+
+    // Save assembly string in the compiler output
+    if this.cliOptions.isNativeTarget && (this.cliOptions.dump.dumpAssembly || this.cliOptions.testMode) {
+        objectEmitter.getASMString(this.compilerOutput.asmString);
+    }
+
+    // Dump assembly code
+    if this.cliOptions.dump.dumpAssembly {
+        this.dumpOutput(this.compilerOutput.asmString, String("Assembly code"), String("assembly-code.s"));
+    }
+
+    // The object file is registered with the linker in concludeCompilation and not here, because this stage may run on a
+    // worker thread of the parallel back end and the linker input order has to stay deterministic.
 
     this.previousStage = CompileStageType::OBJECT_EMITTER;
     timer.stop();
@@ -496,8 +614,16 @@ public p SourceFile.runObjectEmitter() {
 
 public p SourceFile.concludeCompilation() {
     // Skip if restored from cache or this stage has already been done
+    // ToDo: Register the cached object files, linker flags and additional sources with the linker for cache-restored files
     if this.restoredFromCache || this.previousStage >= CompileStageType::FINISHED {
         return;
+    }
+
+    // Add the emitted object file to the linker objects. This happens here and not in runObjectEmitter, because
+    // concludeCompilation is always driven serially and in dependency order, while the object emitter may run on a worker
+    // thread of the parallel back end.
+    if !this.objectFilePath.isEmpty() {
+        this.resourceManager.linker.addFileToLinkage(this.objectFilePath);
     }
 
     // Cache the source file

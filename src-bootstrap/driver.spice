@@ -660,6 +660,16 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--use-tbaa-metadata", this.cliOptions.useTBAAMetadata, "Generate metadata for type-based alias analysis to enhance optimizations");
     // --keep-frame-pointers
     subCmd.addFlag("--keep-frame-pointers", this.cliOptions.keepFramePointers, "Set up a frame pointer in every function, so external profilers and debuggers can walk the stack (costs a register and a bit of performance)");
+    // --test-mode
+    // The host has no such option: its test runner sets up the cli options in-process. The test runner drives the bootstrap
+    // compiler as separate process, so it needs an option to compile in the same mode.
+    const p(const bool&) testModeCallback = p(const bool& _v) {
+        this.cliOptions.testMode = true;
+        this.cliOptions.comparableOutput = true;
+        this.cliOptions.namesForIRValues = true;
+        this.cliOptions.useCPUFeatures = false; // Disabled because it makes the refs differ on different machines
+    };
+    subCmd.addFlag("--test-mode", testModeCallback, "Compile like the test runner of the host compiler does (test mode, comparable output). For internal use");
 
     // Opt levels
     subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");

@@ -1,0 +1,45 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/io/filepath";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/compiler-pass";
+import "bootstrap/driver";
+import "bootstrap/source-file";
+import "bootstrap/exception/compiler-error";
+import "bootstrap/global/global-resource-manager";
+
+/**
+ * Emits the object file or the assembly code of a module with the LLVM codegen backend
+ */
+public type LLVMObjectEmitter struct {
+    compose public CompilerPass compilerPass
+    llvm::Module* module
+}
+
+public p LLVMObjectEmitter.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
+    this.module = this.cliOptions.useLTO ? &resourceManager.ltoModule : &sourceFile.llvmModule;
+}
+
+public p LLVMObjectEmitter.emit(const FilePath& objectPath) {
+    const string objectPathString = objectPath.toString();
+
+    // Emit object file
+    String errorMessage;
+    if this.sourceFile.targetMachine.emitToFileWithError(*this.module, objectPathString, llvm::LLVMCodeGenFileType::ObjectFile, errorMessage) {
+        const CompilerError error = CompilerError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, errorMessage.getRaw()); // GCOV_EXCL_LINE
+        const String& message = error.getMessage();                                                               // GCOV_EXCL_LINE
+        panic(Error(message.getRaw()));                                                                            // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+}
+
+public p LLVMObjectEmitter.getASMString(String& output) {
+    if this.sourceFile.targetMachine.emitToString(*this.module, llvm::LLVMCodeGenFileType::AssemblyFile, output) {
+        const CompilerError error = CompilerError(CompilerErrorType::WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
+        const String& message = error.getMessage();                                                                                     // GCOV_EXCL_LINE
+        panic(Error(message.getRaw()));                                                                                                  // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+}

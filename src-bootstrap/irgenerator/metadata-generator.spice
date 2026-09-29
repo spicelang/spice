@@ -1,0 +1,86 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/irgenerator/ir-generator";
+import "bootstrap/global/type-registry";
+import "bootstrap/symboltablebuilder/qual-type";
+
+/**
+ * Generates the metadata, that is attached to instructions (branch weights, type metadata and TBAA metadata).
+ *
+ * The host builds the metadata nodes with llvm::MDBuilder, which has no counterpart in the LLVM C API. The nodes are built
+ * with the same structure here.
+ */
+public type MetadataGenerator struct {
+    IRGenerator* irGenerator
+    llvm::Metadata tbaaRoot
+    llvm::Metadata omnipotentByte
+}
+
+public p MetadataGenerator.ctor(IRGenerator* irGenerator) {
+    this.irGenerator = irGenerator;
+    // Like mdBuilder.createTBAARoot("Simple Spice TBAA")
+    Vector<llvm::Metadata> rootOperands;
+    rootOperands.pushBack(llvm::getMDString(*irGenerator.context, String("Simple Spice TBAA")));
+    this.tbaaRoot = llvm::getMDNode(*irGenerator.context, rootOperands);
+    this.omnipotentByte = this.createTBAAScalarTypeNode(String("omnipotent byte"), this.tbaaRoot);
+}
+
+public p MetadataGenerator.generateBranchWeightsMetadata(llvm::Value jumpInst, Likelihood likeliness) {
+    assert likeliness != Likelihood::UNSPECIFIED;
+    const bool likely = likeliness == Likelihood::LIKELY;
+    // Like mdBuilder.createLikelyBranchWeights() / mdBuilder.createUnlikelyBranchWeights()
+    const unsigned int trueWeight = likely ? llvm::LIKELY_BRANCH_WEIGHT : llvm::UNLIKELY_BRANCH_WEIGHT;
+    const unsigned int falseWeight = likely ? llvm::UNLIKELY_BRANCH_WEIGHT : llvm::LIKELY_BRANCH_WEIGHT;
+    llvm::IRBuilder* builder = this.irGenerator.builder;
+    Vector<llvm::Metadata> operands;
+    operands.pushBack(llvm::getMDString(*this.irGenerator.context, String("branch_weights")));
+    operands.pushBack(llvm::getConstantAsMetadata(builder.getInt32(trueWeight)));
+    operands.pushBack(llvm::getConstantAsMetadata(builder.getInt32(falseWeight)));
+    const llvm::Metadata profMetadata = llvm::getMDNode(*this.irGenerator.context, operands);
+    jumpInst.setMetadata("prof", profMetadata);
+}
+
+public p MetadataGenerator.generateTypeMetadata(llvm::Value inst, const QualType& qualType) {
+    TypeRegistry& typeRegistry = this.irGenerator.resourceManager.typeRegistry;
+    const unsigned long typeHash = cast<unsigned long>(typeRegistry.getTypeHash(*qualType.getType()));
+
+    llvm::IRBuilder* builder = this.irGenerator.builder;
+    Vector<llvm::Metadata> operands;
+    operands.pushBack(llvm::getConstantAsMetadata(builder.getInt64(typeHash)));
+    operands.pushBack(llvm::getMDString(*this.irGenerator.context, qualType.getName(true, true)));
+    const llvm::Metadata typeMetadata = llvm::getMDNode(*this.irGenerator.context, operands);
+
+    inst.setMetadata("type", typeMetadata);
+}
+
+public p MetadataGenerator.generateTBAAMetadata(llvm::Value inst, const QualType& qualType) {
+    const String typeName = qualType.getName(true, true);
+    const llvm::Metadata tbaaTypeNode = this.createTBAAScalarTypeNode(typeName, this.omnipotentByte);
+    // Seems so new, that the verifier does not accept it
+    //const llvm::TypeSize typeSize = irGenerator->module->getDataLayout().getTypeAllocSize(llvmType);
+    //const bool isImmutable = type.isConst();
+    //llvm::MDNode *tbaaAccessTag = mdBuilder.createTBAAAccessTag(tbaaTypeNode, tbaaTypeNode, 0, typeSize, isImmutable);
+    llvm::IRBuilder* builder = this.irGenerator.builder;
+    Vector<llvm::Metadata> operands;
+    operands.pushBack(tbaaTypeNode);
+    operands.pushBack(tbaaTypeNode);
+    operands.pushBack(llvm::getConstantAsMetadata(builder.getInt64(0)));
+    const llvm::Metadata tbaaAccessTag = llvm::getMDNode(*this.irGenerator.context, operands);
+
+    inst.setMetadata("tbaa", tbaaAccessTag);
+}
+
+// Like mdBuilder.createTBAAScalarTypeNode(name, parent)
+f<llvm::Metadata> MetadataGenerator.createTBAAScalarTypeNode(const String& name, llvm::Metadata parent) {
+    llvm::IRBuilder* builder = this.irGenerator.builder;
+    Vector<llvm::Metadata> operands;
+    operands.pushBack(llvm::getMDString(*this.irGenerator.context, name));
+    operands.pushBack(parent);
+    operands.pushBack(llvm::getConstantAsMetadata(builder.getInt64(0)));
+    return llvm::getMDNode(*this.irGenerator.context, operands);
+}

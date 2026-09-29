@@ -178,4 +178,12 @@ bool BootstrapUtil::isErrorSupported(const std::filesystem::path &errorRefPath) 
   return false;
 }
 
+/**
+ * Erase the dso_local markers from the given IR code. The LLVM C API, which the bootstrap compiler uses, offers no way to
+ * mark global values as dso_local, so the IR of the host and the bootstrap compiler only differs in these markers.
+ *
+ * @param irCode IR code
+ */
+void BootstrapUtil::eraseDSOLocalMarkers(std::string &irCode) { CommonUtil::replaceAll(irCode, " dso_local ", " "); }
+
 } // namespace spice::testing

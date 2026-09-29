@@ -123,12 +123,19 @@ public inline f<String> FilePath.getFileName() {
  * Example:
  * In:  /home/user/file.txt
  * Out: /home/user
+ * In:  file.txt
+ * Out: (empty)
  *
  * @return The parent directory of the file or directory
  */
 public inline f<String> FilePath.getParentDir() {
     this.makeGeneric();
-    return this.path.getSubstring(0, this.path.rfind(PATH_SEPARATOR_UNIX));
+    const long separatorIdx = this.path.rfind(PATH_SEPARATOR_UNIX);
+    // A path without separator has no parent dir, like std::filesystem::path::parent_path() in C++
+    if separatorIdx < 0l {
+        return String();
+    }
+    return this.path.getSubstring(0, separatorIdx);
 }
 
 /**

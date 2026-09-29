@@ -1,0 +1,140 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/text/print";
+import "std/type/type-conversion";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/compiler-pass";
+import "bootstrap/driver";
+import "bootstrap/source-file";
+import "bootstrap/global/global-resource-manager";
+
+/**
+ * Runs the LLVM optimization pipelines on the modules of the source files.
+ *
+ * The host sets up an llvm::PassBuilder with its analysis managers. The LLVM C API only allows to run a textual pass pipeline,
+ * which sets up the same pass builder internally. So the pipelines of the host are described textually here, e.g. the
+ * pipeline of passBuilder->buildPerModuleDefaultPipeline(O2) is 'default<O2>'.
+ */
+public type IROptimizer struct {
+    compose public CompilerPass compilerPass
+    llvm::PassBuilderOptions passBuilderOptions
+}
+
+public p IROptimizer.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
+}
+
+public p IROptimizer.prepare() {
+    // The host verifies the IR after each pass in test mode (StandardInstrumentations with VerifyEach)
+    this.passBuilderOptions.setVerifyEach(this.resourceManager.cliOptions.testMode);
+}
+
+public p IROptimizer.optimizeDefault() {
+    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // GCOV_EXCL_LINE
+        println("\nOptimizing on level " + toString(cast<int>(this.cliOptions.optLevel)) + " ...");            // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+
+    // Prepare pipeline
+    llvm::PassBuilder passBuilder = llvm::PassBuilder(this.passBuilderOptions);
+    passBuilder.addPass("default<" + this.getLLVMOptLevelName() + ">");
+
+    // Add optional passes
+    this.addInstrumentationPassToPipeline(passBuilder);
+    this.addCoveragePassToPipeline(passBuilder);
+
+    // Run pipeline
+    this.runPipeline(passBuilder, this.sourceFile.llvmModule);
+}
+
+public p IROptimizer.optimizePreLink() {
+    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // GCOV_EXCL_LINE
+        println("\nOptimizing on level " + toString(cast<int>(this.cliOptions.optLevel)) + " (pre-link) ...");  // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+
+    // Prepare pipeline
+    llvm::PassBuilder passBuilder = llvm::PassBuilder(this.passBuilderOptions);
+    passBuilder.addPass("lto-pre-link<" + this.getLLVMOptLevelName() + ">");
+
+    // Run pipeline
+    // The host additionally generates the module summary index here, which the LLVM C API does not offer
+    this.runPipeline(passBuilder, this.sourceFile.llvmModule);
+}
+
+public p IROptimizer.optimizePostLink() {
+    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // GCOV_EXCL_LINE
+        println("\nOptimizing on level " + toString(cast<int>(this.cliOptions.optLevel)) + " (post-link) ..."); // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+
+    // Prepare pipeline
+    // The host passes a module summary index with whole program visibility, which the LLVM C API does not offer
+    llvm::PassBuilder passBuilder = llvm::PassBuilder(this.passBuilderOptions);
+    passBuilder.addPass("lto<" + this.getLLVMOptLevelName() + ">");
+
+    // Add optional passes
+    this.addInstrumentationPassToPipeline(passBuilder);
+
+    // Run pipeline
+    this.runPipeline(passBuilder, this.resourceManager.ltoModule);
+}
+
+p IROptimizer.runPipeline(llvm::PassBuilder& passBuilder, llvm::Module& module) {
+    passBuilder.buildCustomPipeline();
+    llvm::LLVMError error = passBuilder.run(module, this.sourceFile.targetMachine);
+    if error.isError() {                                   // GCOV_EXCL_LINE
+        const llvm::Message errorMessage = error.getMessage(); // GCOV_EXCL_LINE
+        panic(Error(errorMessage.get()));                  // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+}
+
+p IROptimizer.addInstrumentationPassToPipeline(llvm::PassBuilder& passBuilder) {
+    switch this.cliOptions.instrumentation.sanitizer {
+        case Sanitizer::NONE: {
+            return;
+        }
+        case Sanitizer::ADDRESS: {
+            // AddressSanitizerPass with UseAfterScope enabled
+            passBuilder.addPass("asan<use-after-scope>");
+        }
+        case Sanitizer::THREAD: {
+            passBuilder.addPass("tsan-module");
+            passBuilder.addPass("function(tsan)");
+        }
+        case Sanitizer::MEMORY: {
+            // MemorySanitizerPass with EagerChecks enabled
+            passBuilder.addPass("msan<eager-checks>");
+        }
+        case Sanitizer::TYPE: {
+            passBuilder.addPass("typesan");
+        }
+    }
+}
+
+p IROptimizer.addCoveragePassToPipeline(llvm::PassBuilder& passBuilder) {
+    if !this.cliOptions.instrumentation.codeCoverage {
+        return;
+    }
+    // The host additionally passes a virtual file system with the output dir as working dir, which the LLVM C API does not offer
+    passBuilder.addPass("insert-gcov-profiling");
+}
+
+// Get the name of the LLVM optimization level for the pass pipeline (getLLVMOptLevelFromSpiceOptLevel in the host)
+f<string> IROptimizer.getLLVMOptLevelName() {
+    switch this.cliOptions.optLevel {
+        case OptLevel::O1: {
+            return "O1";
+        }
+        case OptLevel::Os, OptLevel::Oz, OptLevel::O2: { // Os = O2 + optsize, Oz = O2 + optsize + minsize function attributes
+            return "O2";
+        }
+        case OptLevel::O3: {
+            return "O3";
+        }
+        default: {
+            return "O0";
+        }
+    }
+    return "O0";
+}

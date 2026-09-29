@@ -2,12 +2,13 @@
 import "std/data/vector";
 import "std/data/pair";
 import "std/text/stringstream";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/source-file";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/type";
+import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
 import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
@@ -49,7 +50,7 @@ public f<bool> isReservedTypeName(const String& typeName) {
  * around freely; the rawType pointer is owned by the type registry.
  */
 public type QualType struct {
-    public const Type* rawType = nil<const Type*>
+    public const symboltable::Type* rawType = nil<const symboltable::Type*>
     public TypeQualifiers qualifiers
 }
 
@@ -73,7 +74,7 @@ public p QualType.ctor(SuperType superType, const String& subType) {
     this.qualifiers = getTypeQualifiersOf(superType);
 }
 
-public p QualType.ctor(const Type* rawType, TypeQualifiers qualifiers) {
+public p QualType.ctor(const symboltable::Type* rawType, TypeQualifiers qualifiers) {
     this.rawType = rawType;
     this.qualifiers = qualifiers;
 }
@@ -93,7 +94,7 @@ public p operator=(QualType& this, const QualType& other) {
  *
  * @return Underlying raw type
  */
-public f<const Type*> QualType.getType() {
+public f<const symboltable::Type*> QualType.getType() {
     return this.rawType;
 }
 
@@ -214,7 +215,7 @@ public f<Struct*> QualType.getStruct(const ASTNode* node) {
 public f<Struct*> QualType.getStructAndAdjustType(const ASTNode* node, const QualTypeList& templateTypes) {
     Struct* spiceStruct = this.getStruct(node, templateTypes);
     if spiceStruct != nil<Struct*> {
-        const Type* typeWithBodyScope = this.rawType.getWithBodyScope(spiceStruct.scope);
+        const symboltable::Type* typeWithBodyScope = this.rawType.getWithBodyScope(spiceStruct.scope);
         this.rawType = typeWithBodyScope.getWithTemplateTypes(spiceStruct.structBase.getTemplateTypes());
     }
     return spiceStruct;
@@ -407,6 +408,15 @@ public f<bool> QualType.isConstRef() {
 }
 
 /**
+ * Check if the type is an array with a known size, which decays to a pointer, when it is passed to a function
+ *
+ * @return Decayed array or not
+ */
+public f<bool> QualType.isDecayedArray() {
+    return this.isArray() && cast<unsigned long>(this.getArraySize()) != ARRAY_SIZE_UNKNOWN;
+}
+
+/**
  * Check if the current type is an iterator
  *
  * @param node ASTNode
@@ -450,7 +460,7 @@ f<QualType> getIteratorInterfaceType(unsigned long typeId) {
     const TypeChainElementData data; // No body scope
     QualTypeList templateTypes;
     templateTypes.pushBack(genericType);
-    const Type* itType = registry.getOrInsert(SuperType::TY_INTERFACE, String(IITERATOR_NAME), typeId, data, templateTypes);
+    const symboltable::Type* itType = registry.getOrInsert(SuperType::TY_INTERFACE, String(IITERATOR_NAME), typeId, data, templateTypes);
     return QualType(itType, getTypeQualifiersOf(SuperType::TY_INTERFACE));
 }
 
@@ -843,6 +853,28 @@ public f<String> QualType.getName(bool withSize = false, bool ignorePublic = fal
 }
 
 /**
+ * Convert the type to an LLVM type
+ *
+ * @param sourceFile Source file
+ * @return LLVM type
+ */
+public f<llvm::Type> QualType.toLLVMType(SourceFile* sourceFile) {
+    return sourceFile.getLLVMType(this.rawType);
+}
+
+/**
+ * Convert the type to the LLVM type to use for a parameter of this type in a function signature
+ *
+ * @param sourceFile Source file
+ * @return LLVM type
+ */
+public f<llvm::Type> QualType.getParamLLVMType(SourceFile* sourceFile) {
+    // Take the context from the source file, so that we always end up in the same context as toLLVMType()
+    const llvm::Type llvmType = this.toLLVMType(sourceFile);
+    return this.isDecayedArray() ? llvm::getPtrTy(sourceFile.getLLVMContext()) : llvmType;
+}
+
+/**
  * Retrieve the pointer type to this type
  *
  * @param node ASTNode
@@ -982,7 +1014,7 @@ public f<QualType> QualType.autoDereference() {
  */
 public f<QualType> QualType.replaceBaseType(const QualType& newBaseType) {
     // Create new type
-    const Type* newType = this.rawType.replaceBase(newBaseType.rawType);
+    const symboltable::Type* newType = this.rawType.replaceBase(newBaseType.rawType);
     // Create new qualifiers
     const TypeQualifiers newQualifiers = this.qualifiers.merge(newBaseType.qualifiers);
     // Return the new qualified type
@@ -996,7 +1028,7 @@ public f<QualType> QualType.replaceBaseType(const QualType& newBaseType) {
  */
 public f<QualType> QualType.getWithLambdaCaptures(bool enabled = true) {
     // Create new type
-    const Type* newType = this.rawType.getWithLambdaCaptures(enabled);
+    const symboltable::Type* newType = this.rawType.getWithLambdaCaptures(enabled);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -1008,7 +1040,7 @@ public f<QualType> QualType.getWithLambdaCaptures(bool enabled = true) {
  */
 public f<QualType> QualType.getWithBodyScope(Scope* bodyScope) {
     // Create new type
-    const Type* newType = this.rawType.getWithBodyScope(bodyScope);
+    const symboltable::Type* newType = this.rawType.getWithBodyScope(bodyScope);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -1021,7 +1053,7 @@ public f<QualType> QualType.getWithBodyScope(Scope* bodyScope) {
  */
 public f<QualType> QualType.getWithTemplateTypes(const QualTypeList& templateTypes) {
     // Create new type
-    const Type* newType = this.rawType.getWithTemplateTypes(templateTypes);
+    const symboltable::Type* newType = this.rawType.getWithTemplateTypes(templateTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -1034,7 +1066,7 @@ public f<QualType> QualType.getWithTemplateTypes(const QualTypeList& templateTyp
  */
 public f<QualType> QualType.getWithBaseTemplateTypes(const QualTypeList& templateTypes) {
     // Create new type
-    const Type* newType = this.rawType.getWithBaseTemplateTypes(templateTypes);
+    const symboltable::Type* newType = this.rawType.getWithBaseTemplateTypes(templateTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -1047,7 +1079,7 @@ public f<QualType> QualType.getWithBaseTemplateTypes(const QualTypeList& templat
  */
 public f<QualType> QualType.getWithFunctionParamAndReturnTypes(const QualTypeList& paramAndReturnTypes) {
     // Create new type
-    const Type* newType = this.rawType.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
+    const symboltable::Type* newType = this.rawType.getWithFunctionParamAndReturnTypes(paramAndReturnTypes);
     // Return the new qualified type
     return QualType(newType, this.qualifiers);
 }
@@ -1236,9 +1268,9 @@ public f<bool> operator!=(const QualType& lhs, const QualType& rhs) {
  */
 public p unwrapBoth(QualType& typeA, QualType& typeB) {
     // Unwrap the raw types via locals, the fields cannot be bound to the 'const Type*&' params directly
-    const Type* rawTypeA = typeA.rawType;
-    const Type* rawTypeB = typeB.rawType;
-    unwrapBothTypes(rawTypeA, rawTypeB);
+    const symboltable::Type* rawTypeA = typeA.rawType;
+    const symboltable::Type* rawTypeB = typeB.rawType;
+    symboltable::unwrapBothTypes(rawTypeA, rawTypeB);
     typeA.rawType = rawTypeA;
     typeB.rawType = rawTypeB;
 }
@@ -1252,9 +1284,9 @@ public p unwrapBoth(QualType& typeA, QualType& typeB) {
  */
 public p unwrapBothWithRefWrappers(QualType& typeA, QualType& typeB) {
     // Unwrap the raw types via locals, the fields cannot be bound to the 'const Type*&' params directly
-    const Type* rawTypeA = typeA.rawType;
-    const Type* rawTypeB = typeB.rawType;
-    unwrapBothWithReferenceWrappers(rawTypeA, rawTypeB);
+    const symboltable::Type* rawTypeA = typeA.rawType;
+    const symboltable::Type* rawTypeB = typeB.rawType;
+    symboltable::unwrapBothWithReferenceWrappers(rawTypeA, rawTypeB);
     typeA.rawType = rawTypeA;
     typeB.rawType = rawTypeB;
 }

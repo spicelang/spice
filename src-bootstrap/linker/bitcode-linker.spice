@@ -1,0 +1,30 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/pair";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/compiler-pass";
+import "bootstrap/source-file";
+import "bootstrap/global/global-resource-manager";
+
+/**
+ * Links the modules of all source files into the LTO module
+ */
+public type BitcodeLinker struct {
+    compose public CompilerPass compilerPass
+}
+
+public p BitcodeLinker.ctor(GlobalResourceManager& resourceManager) {
+    this.compilerPass = CompilerPass(resourceManager);
+}
+
+public p BitcodeLinker.link() {
+    // Link all source file modules in
+    foreach Pair<const String&, SourceFile*&> sourceFileEntry : this.resourceManager.sourceFiles {
+        SourceFile* sourceFile = sourceFileEntry.getSecond();
+        const bool failed = this.resourceManager.ltoModule.linkInModule(sourceFile.llvmModule);
+        assert !failed;
+    }
+}

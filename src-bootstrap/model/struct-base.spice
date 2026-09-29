@@ -16,12 +16,14 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/util/common-util";
 
+// IR generator data of a struct or interface. The LLVM entities are wrappers around the respective LLVM C API refs, which are
+// nil as long as they were not generated yet
 public type VTableData struct {
-    llvm::StructType* typeInfoType = nil<llvm::StructType*>
-    llvm::StructType* vTableType = nil<llvm::StructType*>
-    llvm::Constant* typeInfoName = nil<llvm::Constant*>
-    llvm::Constant* typeInfo = nil<llvm::Constant*>
-    llvm::Constant* vTable = nil<llvm::Constant*>
+    public llvm::Type typeInfoType
+    public llvm::Type vtableType
+    public llvm::Value typeInfoName
+    public llvm::Value typeInfo
+    public llvm::Value vtable
 }
 
 public type StructBase struct {

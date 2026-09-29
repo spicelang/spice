@@ -25,6 +25,10 @@ type LLVMTargetRef alias VoidPtr;
 type LLVMTargetMachineRef alias VoidPtr;
 type LLVMTargetDataRef alias VoidPtr;
 type LLVMErrorRef alias VoidPtr;
+type LLVMAttributeRef alias VoidPtr;
+type LLVMMetadataRef alias VoidPtr;
+type LLVMComdatRef alias VoidPtr;
+type LLVMMemoryBufferRef alias VoidPtr;
 
 // ===== Generic helper definitions =====
 type ShortIntLong unsigned short|unsigned int|unsigned long;
@@ -260,15 +264,15 @@ public type LLVMValueKind enum {
 
 public type LLVMIntPredicate enum {
     EQ = 32,
-    NE,
-    UGT,
-    UGE,
-    ULT,
-    ULE,
-    SGT,
-    SGE,
-    SLT,
-    SLE
+    NE = 33,
+    UGT = 34,
+    UGE = 35,
+    ULT = 36,
+    ULE = 37,
+    SGT = 38,
+    SGE = 39,
+    SLT = 40,
+    SLE = 41
 }
 
 public type LLVMRealPredicate enum {
@@ -297,10 +301,10 @@ public type LLVMLandingPadClauseTy enum {
 
 public type LLVMThreadLocalMode enum {
     NotThreadLocal = 0,
-    GeneralDynamicTLSModel,
-    LocalDynamicTLSModel,
-    InitialExecTLSModel,
-    LocalExecTLSModel
+    GeneralDynamicTLSModel = 1,
+    LocalDynamicTLSModel = 2,
+    InitialExecTLSModel = 3,
+    LocalExecTLSModel = 4
 }
 
 public type LLVMAtomicOrdering enum {
@@ -458,9 +462,9 @@ ext f<LLVMValueRef> LLVMBuildAlloca(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, st
 ext f<LLVMValueRef> LLVMBuildArrayAlloca(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*Val*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildStore(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMValueRef /*Ptr*/);
 ext f<LLVMValueRef> LLVMBuildLoad2(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*PointerVal*/, string /*Name*/);
-ext f<LLVMValueRef> LLVMBuildGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
-ext f<LLVMValueRef> LLVMBuildInBoundsGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
-ext f<LLVMValueRef> LLVMBuildStructGEP2(LLVMBuilderRef /*B*/, LLVMValueRef /*Ptr*/, unsigned int /*Idx*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildGEP2(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildInBoundsGEP2(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*Ptr*/, LLVMValueRef* /*Indices*/, unsigned int /*NumIndices*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildStructGEP2(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, LLVMValueRef /*Ptr*/, unsigned int /*Idx*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildSelect(LLVMBuilderRef /*B*/, LLVMValueRef /*If*/, LLVMValueRef /*Then*/, LLVMValueRef /*Else*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildPhi(LLVMBuilderRef /*B*/, LLVMTypeRef /*Ty*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildAdd(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
@@ -486,7 +490,7 @@ ext f<LLVMValueRef> LLVMBuildXor(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLV
 ext f<LLVMValueRef> LLVMBuildNeg(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildFNeg(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, string /*Name*/);
 ext f<LLVMValueRef> LLVMBuildNot(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, string /*Name*/);
-ext p LLVMSetVolatile(LLVMValueRef /*MemoryAccessInst*/);
+ext p LLVMSetVolatile(LLVMValueRef /*MemoryAccessInst*/, LLVMBool /*IsVolatile*/);
 ext f<LLVMValueRef> LLVMBuildCall2(LLVMBuilderRef /*B*/, LLVMTypeRef /*FctTy*/, LLVMValueRef /*Fn*/, LLVMValueRef* /*Args*/, unsigned int /*NumArgs*/, string /*Name*/);
 ext f<LLVMBool> LLVMPrintModuleToFile(LLVMModuleRef /*M*/, string /*Filename*/, string& /*ErrorMessage*/);
 ext f<string> LLVMPrintModuleToString(LLVMModuleRef /*M*/);
@@ -522,7 +526,8 @@ ext p LLVMDisposeTargetMachine(LLVMTargetMachineRef /*TM*/);
 ext f<LLVMBool> LLVMTargetMachineEmitToFile(LLVMTargetMachineRef /*T*/, LLVMModuleRef /*M*/, string /*Filename*/, LLVMCodeGenFileType /*codegen*/, string* /*ErrorMessage*/);
 ext f<LLVMTargetDataRef> LLVMCreateTargetDataLayout(LLVMTargetMachineRef /*TM*/);
 ext p LLVMDisposeTargetData(LLVMTargetDataRef /*TD*/);
-ext p LLVMSetDataLayout(LLVMModuleRef /*M*/, LLVMTargetDataRef /*DL*/);
+ext p LLVMSetDataLayout(LLVMModuleRef /*M*/, string /*DataLayoutStr*/);
+ext p LLVMSetModuleDataLayout(LLVMModuleRef /*M*/, LLVMTargetDataRef /*DL*/);
 ext p LLVMSetTarget(LLVMModuleRef /*M*/, string /*Triple*/);
 ext f<unsigned int> LLVMPointerSize(LLVMTargetDataRef /*TD*/);
 ext f<unsigned long> LLVMSizeOfTypeInBits(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
@@ -539,6 +544,103 @@ ext f<string> LLVMCreateMessage(string /*Message*/);
 ext p LLVMDisposeMessage(string /*Message*/);
 ext p LLVMGetVersion(unsigned int* /*Major*/, unsigned int* /*Minor*/, unsigned int* /*Patch*/);
 ext p LLVMShutdown();
+
+// Extended API, used by the IR generator of the bootstrap compiler
+ext f<LLVMContextRef> LLVMGetTypeContext(LLVMTypeRef /*Ty*/);
+ext p LLVMContextSetDiscardValueNames(LLVMContextRef /*C*/, LLVMBool /*Discard*/);
+ext f<LLVMTypeRef> LLVMVoidTypeInContext(LLVMContextRef /*C*/);
+ext f<LLVMTypeKind> LLVMGetTypeKind(LLVMTypeRef /*Ty*/);
+ext f<unsigned int> LLVMGetIntTypeWidth(LLVMTypeRef /*IntegerTy*/);
+ext f<LLVMTypeRef> LLVMTypeOf(LLVMValueRef /*Val*/);
+ext f<LLVMTypeRef> LLVMGetReturnType(LLVMTypeRef /*FunctionTy*/);
+ext f<unsigned int> LLVMCountParamTypes(LLVMTypeRef /*FunctionTy*/);
+ext p LLVMGetParamTypes(LLVMTypeRef /*FunctionTy*/, LLVMTypeRef* /*Dest*/);
+ext f<LLVMBool> LLVMIsFunctionVarArg(LLVMTypeRef /*FunctionTy*/);
+ext f<LLVMTypeRef> LLVMGlobalGetValueType(LLVMValueRef /*Global*/);
+ext f<unsigned long> LLVMGetArrayLength2(LLVMTypeRef /*ArrayTy*/);
+ext f<LLVMTypeRef> LLVMGetElementType(LLVMTypeRef /*Ty*/);
+ext f<LLVMValueRef> LLVMGetNamedFunction(LLVMModuleRef /*M*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMAddGlobal(LLVMModuleRef /*M*/, LLVMTypeRef /*Ty*/, string /*Name*/);
+ext p LLVMSetInitializer(LLVMValueRef /*GlobalVar*/, LLVMValueRef /*ConstantVal*/);
+ext p LLVMSetGlobalConstant(LLVMValueRef /*GlobalVar*/, LLVMBool /*IsConstant*/);
+ext f<LLVMBool> LLVMIsGlobalConstant(LLVMValueRef /*GlobalVar*/);
+ext p LLVMSetUnnamedAddress(LLVMValueRef /*Global*/, LLVMUnnamedAddr /*UnnamedAddr*/);
+ext p LLVMSetAlignment(LLVMValueRef /*V*/, unsigned int /*Bytes*/);
+ext p LLVMSetThreadLocal(LLVMValueRef /*GlobalVar*/, LLVMBool /*IsThreadLocal*/);
+ext p LLVMSetDLLStorageClass(LLVMValueRef /*Global*/, LLVMDLLStorageClass /*Class*/);
+ext p LLVMDeleteGlobal(LLVMValueRef /*GlobalVar*/);
+ext f<LLVMComdatRef> LLVMGetOrInsertComdat(LLVMModuleRef /*M*/, string /*Name*/);
+ext p LLVMSetComdat(LLVMValueRef /*V*/, LLVMComdatRef /*C*/);
+ext f<LLVMValueRef> LLVMConstStringInContext2(LLVMContextRef /*C*/, string /*Str*/, unsigned long /*Length*/, LLVMBool /*DontNullTerminate*/);
+ext f<LLVMValueRef> LLVMConstNamedStruct(LLVMTypeRef /*StructTy*/, LLVMValueRef* /*ConstantVals*/, unsigned int /*Count*/);
+ext f<LLVMValueRef> LLVMConstInBoundsGEP2(LLVMTypeRef /*Ty*/, LLVMValueRef /*ConstantVal*/, LLVMValueRef* /*ConstantIndices*/, unsigned int /*NumIndices*/);
+ext f<LLVMBool> LLVMIsNull(LLVMValueRef /*Val*/);
+ext f<LLVMOpcode> LLVMGetConstOpcode(LLVMValueRef /*ConstantVal*/);
+ext f<LLVMValueRef> LLVMGetOperand(LLVMValueRef /*Val*/, unsigned int /*Index*/);
+ext f<LLVMValueRef> LLVMIsAAllocaInst(LLVMValueRef /*Val*/);
+ext f<LLVMValueRef> LLVMIsAPHINode(LLVMValueRef /*Val*/);
+ext f<LLVMValueRef> LLVMIsAGlobalVariable(LLVMValueRef /*Val*/);
+ext f<LLVMValueRef> LLVMIsAConstantExpr(LLVMValueRef /*Val*/);
+ext f<LLVMValueRef> LLVMIsAConstantInt(LLVMValueRef /*Val*/);
+ext f<LLVMValueRef> LLVMIsAConstantFP(LLVMValueRef /*Val*/);
+ext f<LLVMValueRef> LLVMIsAFunction(LLVMValueRef /*Val*/);
+ext f<unsigned long> LLVMConstIntGetZExtValue(LLVMValueRef /*ConstantVal*/);
+ext f<double> LLVMConstRealGetDouble(LLVMValueRef /*ConstantVal*/, LLVMBool* /*LosesInfo*/);
+ext f<LLVMValueRef> LLVMGetParam(LLVMValueRef /*Fn*/, unsigned int /*Index*/);
+ext f<unsigned int> LLVMCountParams(LLVMValueRef /*Fn*/);
+ext p LLVMSetValueName2(LLVMValueRef /*Val*/, string /*Name*/, unsigned long /*NameLen*/);
+ext f<string> LLVMGetValueName2(LLVMValueRef /*Val*/, unsigned long* /*Length*/);
+ext f<LLVMValueRef> LLVMGetBasicBlockParent(LLVMBasicBlockRef /*BB*/);
+ext f<unsigned int> LLVMCountBasicBlocks(LLVMValueRef /*Fn*/);
+ext f<LLVMValueRef> LLVMGetFirstInstruction(LLVMBasicBlockRef /*BB*/);
+ext f<LLVMValueRef> LLVMGetNextInstruction(LLVMValueRef /*Inst*/);
+ext p LLVMPositionBuilder(LLVMBuilderRef /*Builder*/, LLVMBasicBlockRef /*Block*/, LLVMValueRef /*Instr*/);
+ext p LLVMInstructionSetDebugLoc(LLVMValueRef /*Inst*/, LLVMMetadataRef /*Loc*/);
+ext f<unsigned int> LLVMGetEnumAttributeKindForName(string /*Name*/, unsigned long /*SLen*/);
+ext f<LLVMAttributeRef> LLVMCreateEnumAttribute(LLVMContextRef /*C*/, unsigned int /*KindID*/, unsigned long /*Val*/);
+ext f<LLVMAttributeRef> LLVMCreateStringAttribute(LLVMContextRef /*C*/, string /*K*/, unsigned int /*KLength*/, string /*V*/, unsigned int /*VLength*/);
+ext f<LLVMAttributeRef> LLVMCreateTypeAttribute(LLVMContextRef /*C*/, unsigned int /*KindID*/, LLVMTypeRef /*TypeRef*/);
+ext p LLVMAddAttributeAtIndex(LLVMValueRef /*F*/, unsigned int /*Idx*/, LLVMAttributeRef /*A*/);
+ext p LLVMAddCallSiteAttribute(LLVMValueRef /*C*/, unsigned int /*Idx*/, LLVMAttributeRef /*A*/);
+ext f<LLVMValueRef> LLVMBuildSwitch(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, LLVMBasicBlockRef /*Else*/, unsigned int /*NumCases*/);
+ext p LLVMAddCase(LLVMValueRef /*Switch*/, LLVMValueRef /*OnVal*/, LLVMBasicBlockRef /*Dest*/);
+ext p LLVMAddIncoming(LLVMValueRef /*PhiNode*/, LLVMValueRef* /*IncomingValues*/, LLVMBasicBlockRef* /*IncomingBlocks*/, unsigned int /*Count*/);
+ext f<LLVMValueRef> LLVMBuildIntCast2(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, LLVMBool /*IsSigned*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildZExt(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildSExt(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildTrunc(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildBitCast(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildPtrToInt(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildIntToPtr(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildSIToFP(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildUIToFP(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFPToSI(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildFPToUI(LLVMBuilderRef /*B*/, LLVMValueRef /*Val*/, LLVMTypeRef /*DestTy*/, string /*Name*/);
+ext p LLVMSetNSW(LLVMValueRef /*ArithInst*/, LLVMBool /*HasNSW*/);
+ext f<LLVMValueRef> LLVMBuildNSWAdd(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildNSWSub(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMBuildNSWMul(LLVMBuilderRef /*B*/, LLVMValueRef /*LHS*/, LLVMValueRef /*RHS*/, string /*Name*/);
+ext f<LLVMValueRef> LLVMGetInlineAsm(LLVMTypeRef /*Ty*/, string /*AsmString*/, unsigned long /*AsmStringSize*/, string /*Constraints*/, unsigned long /*ConstraintsSize*/, LLVMBool /*HasSideEffects*/, LLVMBool /*IsAlignStack*/, LLVMInlineAsmDialect /*Dialect*/, LLVMBool /*CanThrow*/);
+ext f<unsigned int> LLVMLookupIntrinsicID(string /*Name*/, unsigned long /*NameLen*/);
+ext f<LLVMValueRef> LLVMGetIntrinsicDeclaration(LLVMModuleRef /*Mod*/, unsigned int /*ID*/, LLVMTypeRef* /*ParamTypes*/, unsigned long /*ParamCount*/);
+ext f<unsigned int> LLVMGetMDKindIDInContext(LLVMContextRef /*C*/, string /*Name*/, unsigned int /*SLen*/);
+ext f<LLVMMetadataRef> LLVMMDStringInContext2(LLVMContextRef /*C*/, string /*Str*/, unsigned long /*SLen*/);
+ext f<LLVMMetadataRef> LLVMMDNodeInContext2(LLVMContextRef /*C*/, LLVMMetadataRef* /*MDs*/, unsigned long /*Count*/);
+ext f<LLVMMetadataRef> LLVMValueAsMetadata(LLVMValueRef /*Val*/);
+ext f<LLVMValueRef> LLVMMetadataAsValue(LLVMContextRef /*C*/, LLVMMetadataRef /*MD*/);
+ext p LLVMSetMetadata(LLVMValueRef /*Val*/, unsigned int /*KindID*/, LLVMValueRef /*Node*/);
+ext p LLVMAddNamedMetadataOperand(LLVMModuleRef /*M*/, string /*Name*/, LLVMValueRef /*Val*/);
+ext f<LLVMTargetDataRef> LLVMGetModuleDataLayout(LLVMModuleRef /*M*/);
+ext f<unsigned long> LLVMStoreSizeOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
+ext f<int> LLVMByteOrder(LLVMTargetDataRef /*TD*/);
+ext f<string> LLVMGetDataLayoutStr(LLVMModuleRef /*M*/);
+ext f<string> LLVMGetTarget(LLVMModuleRef /*M*/);
+ext p LLVMPassBuilderOptionsSetVerifyEach(LLVMPassBuilderOptionsRef /*Options*/, LLVMBool /*VerifyEach*/);
+ext f<LLVMBool> LLVMTargetMachineEmitToMemoryBuffer(LLVMTargetMachineRef /*T*/, LLVMModuleRef /*M*/, LLVMCodeGenFileType /*codegen*/, string* /*ErrorMessage*/, LLVMMemoryBufferRef* /*OutMemBuf*/);
+ext f<string> LLVMGetBufferStart(LLVMMemoryBufferRef /*MemBuf*/);
+ext f<unsigned long> LLVMGetBufferSize(LLVMMemoryBufferRef /*MemBuf*/);
+ext p LLVMDisposeMemoryBuffer(LLVMMemoryBufferRef /*MemBuf*/);
+ext f<LLVMBool> LLVMLinkModules2(LLVMModuleRef /*Dest*/, LLVMModuleRef /*Src*/);
 
 // ===== Message =====
 
@@ -580,11 +682,21 @@ public p LLVMError.ctor(LLVMErrorRef error) {
 }
 
 public p LLVMError.dtor() {
-    LLVMConsumeError(this.self);
+    if this.self != nil<LLVMErrorRef> {
+        LLVMConsumeError(this.self);
+    }
 }
 
+// Check if this is an actual error (and not a success value)
+public f<bool> LLVMError.isError() {
+    return this.self != nil<LLVMErrorRef>;
+}
+
+// Retrieve the error message. This consumes the error
 public f<Message> LLVMError.getMessage() {
-    return Message(LLVMGetErrorMessage(this.self));
+    const string message = LLVMGetErrorMessage(this.self);
+    this.self = nil<LLVMErrorRef>;
+    return Message(message);
 }
 
 // ===== LLVMContext =====
@@ -594,6 +706,11 @@ public type LLVMContext struct {
 
 public p LLVMContext.ctor() {
     this.self = LLVMContextCreate();
+}
+
+// Like llvm::LLVMContext::setDiscardValueNames
+public p LLVMContext.setDiscardValueNames(bool discard) {
+    LLVMContextSetDiscardValueNames(this.self, cast<LLVMBool>(discard));
 }
 
 public p LLVMContext.dtor() {
@@ -811,6 +928,60 @@ public f<bool> Triple.empty() {
     return this.value == nil<string> || len(this.value) == 0;
 }
 
+// The following predicates mirror the ones of llvm::Triple, based on the textual triple fragments
+
+public f<bool> Triple.isOSLinux() {
+    const String osName = this.getOSName();
+    return osName.startsWith("linux");
+}
+
+public f<bool> Triple.isOSWindows() {
+    const String osName = this.getOSName();
+    return osName.startsWith("windows") || osName.startsWith("win32") || osName.startsWith("mingw") || osName.startsWith("cygwin");
+}
+
+// All Apple OSes are Darwin based, like llvm::Triple::isOSDarwin()
+public f<bool> Triple.isOSDarwin() {
+    const String osName = this.getOSName();
+    if osName.startsWith("darwin") || osName.startsWith("macos") || osName.startsWith("ios") || osName.startsWith("tvos") {
+        return true;
+    }
+    if osName.startsWith("watchos") || osName.startsWith("driverkit") || osName.startsWith("xros") || osName.startsWith("visionos") {
+        return true;
+    }
+    return osName.startsWith("bridgeos");
+}
+
+public f<bool> Triple.isX86() {
+    const String archName = this.getArchName();
+    return archName == "i386" || archName == "i486" || archName == "i586" || archName == "i686" || archName == "x86";
+}
+
+public f<bool> Triple.isX86_64() {
+    const String archName = this.getArchName();
+    return archName == "x86_64" || archName == "amd64";
+}
+
+public f<bool> Triple.isAArch64() {
+    const String archName = this.getArchName();
+    return archName.startsWith("aarch64") || archName.startsWith("arm64");
+}
+
+public f<bool> Triple.isPPC() {
+    const String archName = this.getArchName();
+    return archName.startsWith("powerpc") || archName.startsWith("ppc");
+}
+
+public f<bool> Triple.isWasm() {
+    const String archName = this.getArchName();
+    return archName.startsWith("wasm");
+}
+
+// Like getObjectFormat() == llvm::Triple::MachO. Darwin based OSes use the MachO object format
+public f<bool> Triple.isMachO() {
+    return this.isOSDarwin();
+}
+
 public f<bool> operator==(const Triple& a, const Triple& b) {
     return a.value == b.value;
 }
@@ -833,7 +1004,16 @@ public p Module.ctor(string name, const LLVMContext& ctx) {
 }
 
 public p Module.dtor() {
-    LLVMDisposeModule(this.self);
+    if this.self != nil<LLVMModuleRef> {
+        LLVMDisposeModule(this.self);
+    }
+}
+
+// Like llvm::Linker::linkModules: link the source module into this module. The source module is destroyed in the process
+public f<bool> Module.linkInModule(Module& src) {
+    const bool failed = LLVMLinkModules2(this.self, src.self) != 0;
+    src.self = nil<LLVMModuleRef>;
+    return failed;
 }
 
 public f<LLVMContext> Module.getContext() {
@@ -861,7 +1041,7 @@ public p Module.setTargetTriple(Triple triple) {
 }
 
 public p Module.setDataLayout(DataLayout dataLayout) {
-    LLVMSetDataLayout(this.self, dataLayout.self);
+    LLVMSetModuleDataLayout(this.self, dataLayout.self);
 }
 
 // ===== BasicBlock =====
@@ -870,7 +1050,7 @@ public type BasicBlock struct {
     LLVMBasicBlockRef self
 }
 
-public p BasicBlock.ctor(LLVMContext ctx, string name = "") {
+public p BasicBlock.ctor(const LLVMContext& ctx, string name = "") {
     this.self = LLVMCreateBasicBlockInContext(ctx.self, name);
 }
 
@@ -899,7 +1079,7 @@ public p Function.pushBack(BasicBlock bb) {
 }
 
 public f<Function> Module.getOrInsertFunction(string name, Type fctType) {
-    LLVMFunctionRef fctRef = LLVMGetNamedGlobal(this.self, name);
+    LLVMFunctionRef fctRef = LLVMGetNamedFunction(this.self, name);
     if fctRef == nil<LLVMFunctionRef> {
         fctRef = LLVMAddFunction(this.self, name, fctType.self);
     }
@@ -1033,7 +1213,7 @@ public f<Value> IRBuilder.createAlloca(Type ty, Value arraySize = Value(), strin
 public f<Value> IRBuilder.createStore(Value value, Value ptr, bool volatile = false) {
     LLVMValueRef valueRef = LLVMBuildStore(this.self, value.self, ptr.self);
     if volatile {
-        LLVMSetVolatile(valueRef);
+        LLVMSetVolatile(valueRef, 1);
     }
     return Value{ valueRef };
 }
@@ -1041,29 +1221,29 @@ public f<Value> IRBuilder.createStore(Value value, Value ptr, bool volatile = fa
 public f<Value> IRBuilder.createLoad(Value ptr, Type ty, string name = "", bool volatile = false) {
     LLVMValueRef valueRef = LLVMBuildLoad2(this.self, ty.self, ptr.self, name);
     if volatile {
-        LLVMSetVolatile(valueRef);
+        LLVMSetVolatile(valueRef, 1);
     }
     return Value{ valueRef };
 }
 
-public f<Value> IRBuilder.createGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+public f<Value> IRBuilder.createGEP(Type ty, Value ptr, const Vector<Value>& indices, string name = "") {
     unsafe {
         LLVMValueRef* indicesRef = cast<LLVMValueRef*>(indices.getDataPtr());
-        LLVMValueRef valueRef = LLVMBuildGEP2(this.self, ptr.self, indicesRef, cast<unsigned int>(indices.getSize()), name);
+        LLVMValueRef valueRef = LLVMBuildGEP2(this.self, ty.self, ptr.self, indicesRef, cast<unsigned int>(indices.getSize()), name);
         return Value{ valueRef };
     }
 }
 
-public f<Value> IRBuilder.createInBoundsGEP(Value ptr, const Vector<Value>& indices, string name = "") {
+public f<Value> IRBuilder.createInBoundsGEP(Type ty, Value ptr, const Vector<Value>& indices, string name = "") {
     unsafe {
         LLVMValueRef* indicesRef = cast<LLVMValueRef*>(indices.getDataPtr());
-        LLVMValueRef valueRef = LLVMBuildInBoundsGEP2(this.self, ptr.self, indicesRef, cast<unsigned int>(indices.getSize()), name);
+        LLVMValueRef valueRef = LLVMBuildInBoundsGEP2(this.self, ty.self, ptr.self, indicesRef, cast<unsigned int>(indices.getSize()), name);
         return Value{ valueRef };
     }
 }
 
-public f<Value> IRBuilder.createStructGEP(Value ptr, unsigned int index, string name = "") {
-    LLVMValueRef valueRef = LLVMBuildStructGEP2(this.self, ptr.self, index, name);
+public f<Value> IRBuilder.createStructGEP(Type ty, Value ptr, unsigned int index, string name = "") {
+    LLVMValueRef valueRef = LLVMBuildStructGEP2(this.self, ty.self, ptr.self, index, name);
     return Value{ valueRef };
 }
 
@@ -1215,6 +1395,50 @@ public f<LLVMError> TargetMachine.emitToFile(const Module& module, string filena
     return LLVMError(errorMessage);
 }
 
+/**
+ * Emit the given module to a file
+ *
+ * @param module Module to emit
+ * @param filename Output file path
+ * @param codegen Type of the file to emit
+ * @param errorMessage Error message, if the emission failed
+ * @return True if the emission failed
+ */
+public f<bool> TargetMachine.emitToFileWithError(const Module& module, string filename, LLVMCodeGenFileType codegen, String& errorMessage) {
+    string outMessage = nil<string>;
+    const bool errorOccurred = LLVMTargetMachineEmitToFile(this.self, module.self, filename, codegen, &outMessage) != 0;
+    if outMessage != nil<string> {
+        errorMessage = String(outMessage);
+        LLVMDisposeMessage(outMessage);
+    }
+    return errorOccurred;
+}
+
+/**
+ * Emit the given module to a string (e.g. assembly code)
+ *
+ * @param module Module to emit
+ * @param codegen Type of the file to emit
+ * @param output Emitted file content
+ * @return True if the emission failed
+ */
+public f<bool> TargetMachine.emitToString(const Module& module, LLVMCodeGenFileType codegen, String& output) {
+    string outMessage = nil<string>;
+    LLVMMemoryBufferRef buffer = nil<LLVMMemoryBufferRef>;
+    const bool errorOccurred = LLVMTargetMachineEmitToMemoryBuffer(this.self, module.self, codegen, &outMessage, &buffer) != 0;
+    if outMessage != nil<string> {
+        LLVMDisposeMessage(outMessage);
+    }
+    if errorOccurred {
+        return true;
+    }
+    // The buffer is null-terminated (LLVM copies the emitted data into a null-terminated memory buffer)
+    const string bufferStart = LLVMGetBufferStart(buffer);
+    output = String(bufferStart);
+    LLVMDisposeMemoryBuffer(buffer);
+    return false;
+}
+
 public f<DataLayout> TargetMachine.createDataLayout() {
     return DataLayout{ LLVMCreateTargetDataLayout(this.self) };
 }
@@ -1239,6 +1463,10 @@ public p PassBuilderOptions.ctor() {
 
 public p PassBuilderOptions.dtor() {
     LLVMDisposePassBuilderOptions(this.internalOptions);
+}
+
+public p PassBuilderOptions.setVerifyEach(bool enabled) {
+    LLVMPassBuilderOptionsSetVerifyEach(this.internalOptions, cast<LLVMBool>(enabled));
 }
 
 public p PassBuilderOptions.setDebugLogging(bool enabled) {
@@ -1463,4 +1691,753 @@ public f<String> getVersionString() {
 
 public p llvm_shutdown() {
     LLVMShutdown();
+}
+// ================================================= Extended API =================================================
+// The following wrappers are used by the IR generator of the bootstrap compiler. They mirror the respective parts of
+// the LLVM C++ API, as far as the LLVM C API allows.
+
+// Attribute indices, like LLVMAttributeReturnIndex and LLVMAttributeFunctionIndex in the C API
+public const unsigned int ATTRIBUTE_RETURN_INDEX = 0;
+public const unsigned int ATTRIBUTE_FUNCTION_INDEX = 4294967295u;
+
+// Module flag behaviors (llvm::Module::ModFlagBehavior)
+public const int MOD_FLAG_BEHAVIOR_MAX = 7;
+public const int MOD_FLAG_BEHAVIOR_MIN = 8;
+
+// Branch weights, used by llvm::MDBuilder::createLikelyBranchWeights and createUnlikelyBranchWeights
+public const unsigned int LIKELY_BRANCH_WEIGHT = 1048575; // (1 << 20) - 1
+public const unsigned int UNLIKELY_BRANCH_WEIGHT = 1;
+
+f<unsigned int> getAttrKind(string name) {
+    const unsigned int kind = LLVMGetEnumAttributeKindForName(name, cast<unsigned long>(len(name)));
+    assert kind != 0; // Unknown attribute kind
+    return kind;
+}
+
+f<LLVMAttributeRef> createEnumAttr(LLVMContextRef ctx, string kindName, unsigned long value = 0l) {
+    return LLVMCreateEnumAttribute(ctx, getAttrKind(kindName), value);
+}
+
+f<LLVMAttributeRef> createStringAttr(LLVMContextRef ctx, string key, string value) {
+    return LLVMCreateStringAttribute(ctx, key, cast<unsigned int>(len(key)), value, cast<unsigned int>(len(value)));
+}
+
+// ----- Metadata -----
+public type Metadata struct {
+    LLVMMetadataRef self = nil<LLVMMetadataRef>
+}
+
+public f<bool> Metadata.isNull() {
+    return this.self == nil<LLVMMetadataRef>;
+}
+
+// Like llvm::MDString::get
+public f<Metadata> getMDString(const LLVMContext& context, const String& value) {
+    return Metadata{ LLVMMDStringInContext2(context.self, value.getRaw(), value.getLength()) };
+}
+
+// Like llvm::ConstantAsMetadata::get
+public f<Metadata> getConstantAsMetadata(Value constant) {
+    return Metadata{ LLVMValueAsMetadata(constant.self) };
+}
+
+// Like llvm::MDNode::get
+public f<Metadata> getMDNode(const LLVMContext& context, const Vector<Metadata>& operands) {
+    unsafe {
+        LLVMMetadataRef* operandsRef = cast<LLVMMetadataRef*>(operands.getDataPtr());
+        return Metadata{ LLVMMDNodeInContext2(context.self, operandsRef, cast<unsigned long>(operands.getSize())) };
+    }
+}
+
+// ----- Comdat -----
+public type Comdat struct {
+    LLVMComdatRef self = nil<LLVMComdatRef>
+}
+
+// ----- Type -----
+public p Type.ctor() {
+    this.self = nil<LLVMTypeRef>;
+}
+
+public f<bool> Type.isNull() {
+    return this.self == nil<LLVMTypeRef>;
+}
+
+public f<bool> Type.isSameAs(const Type& other) {
+    return this.self == other.self;
+}
+
+public f<LLVMTypeKind> Type.getKind() {
+    return LLVMGetTypeKind(this.self);
+}
+
+public f<bool> Type.isPointerTy() {
+    return this.getKind() == LLVMTypeKind::PointerTypeKind;
+}
+
+public f<bool> Type.isIntegerTy() {
+    return this.getKind() == LLVMTypeKind::IntegerTypeKind;
+}
+
+public f<bool> Type.isIntegerTy(unsigned int bitWidth) {
+    return this.isIntegerTy() && LLVMGetIntTypeWidth(this.self) == bitWidth;
+}
+
+public f<unsigned int> Type.getIntegerBitWidth() {
+    return LLVMGetIntTypeWidth(this.self);
+}
+
+public f<bool> Type.isDoubleTy() {
+    return this.getKind() == LLVMTypeKind::DoubleTypeKind;
+}
+
+public f<bool> Type.isVoidTy() {
+    return this.getKind() == LLVMTypeKind::VoidTypeKind;
+}
+
+public f<bool> Type.isArrayTy() {
+    return this.getKind() == LLVMTypeKind::ArrayTypeKind;
+}
+
+public f<bool> Type.isStructTy() {
+    return this.getKind() == LLVMTypeKind::StructTypeKind;
+}
+
+public f<unsigned long> Type.getArrayNumElements() {
+    return LLVMGetArrayLength2(this.self);
+}
+
+public f<Type> Type.getArrayElementType() {
+    return Type{ LLVMGetElementType(this.self) };
+}
+
+// Function types
+public f<Type> Type.getReturnType() {
+    return Type{ LLVMGetReturnType(this.self) };
+}
+
+public f<unsigned int> Type.getNumParams() {
+    return LLVMCountParamTypes(this.self);
+}
+
+public f<Vector<Type>> Type.getParamTypes() {
+    Vector<Type> paramTypes;
+    const unsigned int paramCount = LLVMCountParamTypes(this.self);
+    for unsigned int i = 0; i < paramCount; i++ {
+        paramTypes.pushBack(Type{ nil<LLVMTypeRef> });
+    }
+    if paramCount > 0 {
+        unsafe {
+            LLVMGetParamTypes(this.self, cast<LLVMTypeRef*>(paramTypes.getDataPtr()));
+        }
+    }
+    return paramTypes;
+}
+
+public f<bool> Type.isFunctionVarArg() {
+    return LLVMIsFunctionVarArg(this.self) != 0;
+}
+
+public f<Type> getVoidTy(const LLVMContext& context) {
+    return Type{ LLVMVoidTypeInContext(context.self) };
+}
+
+// ----- Value -----
+public f<bool> Value.isNull() {
+    return this.self == nil<LLVMValueRef>;
+}
+
+public f<bool> Value.isSameAs(const Value& other) {
+    return this.self == other.self;
+}
+
+public f<Type> Value.getType() {
+    return Type{ LLVMTypeOf(this.self) };
+}
+
+public p Value.setName(string name) {
+    LLVMSetValueName2(this.self, name, cast<unsigned long>(len(name)));
+}
+
+public f<String> Value.getName() {
+    unsigned long length = 0l;
+    const string name = LLVMGetValueName2(this.self, &length);
+    return String(name);
+}
+
+public f<Value> Value.getNextInstruction() {
+    return Value{ LLVMGetNextInstruction(this.self) };
+}
+
+public f<bool> Value.isAllocaInst() {
+    return LLVMIsAAllocaInst(this.self) != nil<LLVMValueRef>;
+}
+
+public f<bool> Value.isPHINode() {
+    return LLVMIsAPHINode(this.self) != nil<LLVMValueRef>;
+}
+
+public f<bool> Value.isGlobalVariable() {
+    return LLVMIsAGlobalVariable(this.self) != nil<LLVMValueRef>;
+}
+
+public f<bool> Value.isConstantInt() {
+    return LLVMIsAConstantInt(this.self) != nil<LLVMValueRef>;
+}
+
+public f<bool> Value.isConstantFP() {
+    return LLVMIsAConstantFP(this.self) != nil<LLVMValueRef>;
+}
+
+// Like llvm::Constant::isNullValue()
+public f<bool> Value.isNullValue() {
+    return LLVMIsNull(this.self) != 0;
+}
+
+public f<unsigned long> Value.getZExtValue() {
+    return LLVMConstIntGetZExtValue(this.self);
+}
+
+public f<double> Value.getDoubleValue() {
+    LLVMBool losesInfo = 0;
+    return LLVMConstRealGetDouble(this.self, &losesInfo);
+}
+
+/**
+ * Like llvm::Value::stripInBoundsConstantOffsets(), for the subset of values, the IR generator produces: step through
+ * constant GEP expressions to the underlying base pointer.
+ */
+public f<Value> Value.stripInBoundsConstantOffsets() {
+    LLVMValueRef value = this.self;
+    while LLVMIsAConstantExpr(value) != nil<LLVMValueRef> && LLVMGetConstOpcode(value) == LLVMOpcode::GetElementPtr {
+        value = LLVMGetOperand(value, 0);
+    }
+    return Value{ value };
+}
+
+public p Value.setVolatile(bool isVolatile) {
+    LLVMSetVolatile(this.self, cast<LLVMBool>(isVolatile));
+}
+
+public p Value.setAlignment(unsigned int alignment) {
+    LLVMSetAlignment(this.self, alignment);
+}
+
+public p Value.dropLocation() {
+    LLVMInstructionSetDebugLoc(this.self, nil<LLVMMetadataRef>);
+}
+
+// Global values / global variables
+public p Value.setLinkage(LLVMLinkage linkage) {
+    LLVMSetLinkage(this.self, linkage);
+}
+
+public p Value.setInitializer(Value initializer) {
+    LLVMSetInitializer(this.self, initializer.self);
+}
+
+public p Value.setConstant(bool isConstant) {
+    LLVMSetGlobalConstant(this.self, cast<LLVMBool>(isConstant));
+}
+
+public f<bool> Value.isConstant() {
+    return LLVMIsGlobalConstant(this.self) != 0;
+}
+
+public p Value.setUnnamedAddr(LLVMUnnamedAddr unnamedAddr) {
+    LLVMSetUnnamedAddress(this.self, unnamedAddr);
+}
+
+public p Value.setThreadLocal(bool isThreadLocal) {
+    LLVMSetThreadLocal(this.self, cast<LLVMBool>(isThreadLocal));
+}
+
+public p Value.setDLLStorageClass(LLVMDLLStorageClass storageClass) {
+    LLVMSetDLLStorageClass(this.self, storageClass);
+}
+
+public p Value.setComdat(Comdat comdat) {
+    LLVMSetComdat(this.self, comdat.self);
+}
+
+public f<Type> Value.getValueType() {
+    return Type{ LLVMGlobalGetValueType(this.self) };
+}
+
+public p Value.eraseGlobalFromParent() {
+    LLVMDeleteGlobal(this.self);
+}
+
+// Instructions
+public p Value.setNSW(bool hasNSW) {
+    LLVMSetNSW(this.self, cast<LLVMBool>(hasNSW));
+}
+
+public p Value.addCallParamAttr(unsigned int argNo, string kindName, unsigned long value = 0l) {
+    const LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
+    LLVMAddCallSiteAttribute(this.self, argNo + 1, createEnumAttr(ctx, kindName, value));
+}
+
+// Like llvm::CallBase::addDereferenceableParamAttr, which adds nothing for zero bytes
+public p Value.addCallDereferenceableParamAttr(unsigned int argNo, unsigned long bytes) {
+    if bytes != 0l {
+        this.addCallParamAttr(argNo, "dereferenceable", bytes);
+    }
+}
+
+public p Value.addCallParamTypeAttr(unsigned int argNo, string kindName, Type ty) {
+    const LLVMContextRef ctx = LLVMGetTypeContext(ty.self);
+    LLVMAddCallSiteAttribute(this.self, argNo + 1, LLVMCreateTypeAttribute(ctx, getAttrKind(kindName), ty.self));
+}
+
+public p Value.addCallRetAttr(string kindName) {
+    const LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
+    LLVMAddCallSiteAttribute(this.self, ATTRIBUTE_RETURN_INDEX, createEnumAttr(ctx, kindName));
+}
+
+// Switch and phi instructions
+public p Value.addCase(Value onValue, BasicBlock dest) {
+    LLVMAddCase(this.self, onValue.self, dest.self);
+}
+
+public p Value.addIncoming(Value value, BasicBlock block) {
+    LLVMValueRef valueRef = value.self;
+    LLVMBasicBlockRef blockRef = block.self;
+    LLVMAddIncoming(this.self, &valueRef, &blockRef, 1);
+}
+
+// Like llvm::Instruction::setMetadata with the kind given by its name (e.g. 'prof' for LLVMContext::MD_prof)
+public p Value.setMetadata(string kindName, Metadata node) {
+    const LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
+    const unsigned int kindId = LLVMGetMDKindIDInContext(ctx, kindName, cast<unsigned int>(len(kindName)));
+    LLVMSetMetadata(this.self, kindId, LLVMMetadataAsValue(ctx, node.self));
+}
+
+public f<Function> Value.asFunction() {
+    assert LLVMIsAFunction(this.self) != nil<LLVMValueRef>;
+    return Function{ this.self, Type{ LLVMGlobalGetValueType(this.self) } };
+}
+
+// Constants
+public f<Value> getConstInt(Type ty, unsigned long value, bool isSigned = false) {
+    return Value{ LLVMConstInt(ty.self, value, cast<LLVMBool>(isSigned)) };
+}
+
+public f<Value> getConstDouble(Type ty, double value) {
+    return Value{ LLVMConstReal(ty.self, value) };
+}
+
+public f<Value> getNullValue(Type ty) {
+    return Value{ LLVMConstNull(ty.self) };
+}
+
+public f<Value> getConstArray(Type elementType, const Vector<Value>& values) {
+    unsafe {
+        LLVMValueRef* valuesRef = cast<LLVMValueRef*>(values.getDataPtr());
+        return Value{ LLVMConstArray2(elementType.self, valuesRef, cast<unsigned long>(values.getSize())) };
+    }
+}
+
+// Like llvm::ConstantStruct::get for named struct types
+public f<Value> getConstNamedStruct(Type structType, const Vector<Value>& values) {
+    unsafe {
+        LLVMValueRef* valuesRef = cast<LLVMValueRef*>(values.getDataPtr());
+        return Value{ LLVMConstNamedStruct(structType.self, valuesRef, cast<unsigned int>(values.getSize())) };
+    }
+}
+
+// Like llvm::ConstantStruct::get for literal struct types
+public f<Value> getConstStruct(const LLVMContext& context, const Vector<Value>& values, bool packed = false) {
+    unsafe {
+        LLVMValueRef* valuesRef = cast<LLVMValueRef*>(values.getDataPtr());
+        return Value{ LLVMConstStructInContext(context.self, valuesRef, cast<unsigned int>(values.getSize()), cast<LLVMBool>(packed)) };
+    }
+}
+
+// Like llvm::ConstantDataArray::getString
+public f<Value> getConstString(const LLVMContext& context, const String& value, bool addNull = true) {
+    return Value{ LLVMConstStringInContext2(context.self, value.getRaw(), value.getLength(), cast<LLVMBool>(!addNull)) };
+}
+
+// Like llvm::ConstantDataArray::get for a raw byte buffer
+public f<Value> getConstByteArray(const LLVMContext& context, const Vector<char>& bytes) {
+    unsafe {
+        const string data = cast<string>(bytes.getDataPtr());
+        return Value{ LLVMConstStringInContext2(context.self, data, bytes.getSize(), 1) };
+    }
+}
+
+// Like llvm::ConstantExpr::getInBoundsGetElementPtr
+public f<Value> getConstInBoundsGEP(Type ty, Value ptr, const Vector<Value>& indices) {
+    unsafe {
+        LLVMValueRef* indicesRef = cast<LLVMValueRef*>(indices.getDataPtr());
+        return Value{ LLVMConstInBoundsGEP2(ty.self, ptr.self, indicesRef, cast<unsigned int>(indices.getSize())) };
+    }
+}
+
+// Like llvm::InlineAsm::get
+public f<Value> getInlineAsm(Type fctType, const String& asmString, const String& constraints, bool hasSideEffects) {
+    return Value{ LLVMGetInlineAsm(fctType.self, asmString.getRaw(), asmString.getLength(), constraints.getRaw(), constraints.getLength(), cast<LLVMBool>(hasSideEffects), 0, LLVMInlineAsmDialect::ATT, 0) };
+}
+
+// ----- BasicBlock -----
+public p BasicBlock.ctor() {
+    this.self = nil<LLVMBasicBlockRef>;
+}
+
+public f<bool> BasicBlock.isNull() {
+    return this.self == nil<LLVMBasicBlockRef>;
+}
+
+public f<bool> BasicBlock.isSameAs(const BasicBlock& other) {
+    return this.self == other.self;
+}
+
+public f<bool> BasicBlock.hasParent() {
+    return LLVMGetBasicBlockParent(this.self) != nil<LLVMValueRef>;
+}
+
+public f<Function> BasicBlock.getParent() {
+    const LLVMValueRef fctRef = LLVMGetBasicBlockParent(this.self);
+    return Function{ fctRef, Type{ LLVMGlobalGetValueType(fctRef) } };
+}
+
+public f<Value> BasicBlock.getFirstInstruction() {
+    return Value{ LLVMGetFirstInstruction(this.self) };
+}
+
+// ----- Function -----
+public p Function.ctor() {
+    this.self = nil<LLVMValueRef>;
+    this.fctType = Type();
+}
+
+public f<bool> Function.isNull() {
+    return this.self == nil<LLVMValueRef>;
+}
+
+public f<Value> Function.asValue() {
+    return Value{ this.self };
+}
+
+public f<Type> Function.getFunctionType() {
+    return this.fctType;
+}
+
+public f<Type> Function.getReturnType() {
+    return Type{ LLVMGetReturnType(this.fctType.self) };
+}
+
+public f<unsigned int> Function.argSize() {
+    return LLVMCountParams(this.self);
+}
+
+public f<Value> Function.getArg(unsigned int argNo) {
+    return Value{ LLVMGetParam(this.self, argNo) };
+}
+
+public f<bool> Function.isEmpty() {
+    return LLVMCountBasicBlocks(this.self) == 0;
+}
+
+public f<String> Function.getName() {
+    unsigned long length = 0l;
+    return String(LLVMGetValueName2(this.self, &length));
+}
+
+public p Function.setDLLStorageClass(LLVMDLLStorageClass storageClass) {
+    LLVMSetDLLStorageClass(this.self, storageClass);
+}
+
+public p Function.setUnnamedAddr(LLVMUnnamedAddr unnamedAddr) {
+    LLVMSetUnnamedAddress(this.self, unnamedAddr);
+}
+
+f<LLVMContextRef> Function.getContextRef() {
+    return LLVMGetTypeContext(this.fctType.self);
+}
+
+public p Function.addFnAttr(string kindName, unsigned long value = 0l) {
+    LLVMAddAttributeAtIndex(this.self, ATTRIBUTE_FUNCTION_INDEX, createEnumAttr(this.getContextRef(), kindName, value));
+}
+
+public p Function.addFnStringAttr(string key, string value) {
+    LLVMAddAttributeAtIndex(this.self, ATTRIBUTE_FUNCTION_INDEX, createStringAttr(this.getContextRef(), key, value));
+}
+
+public p Function.addParamAttr(unsigned int argNo, string kindName, unsigned long value = 0l) {
+    LLVMAddAttributeAtIndex(this.self, argNo + 1, createEnumAttr(this.getContextRef(), kindName, value));
+}
+
+// Like llvm::Function::addDereferenceableParamAttr, which adds nothing for zero bytes
+public p Function.addDereferenceableParamAttr(unsigned int argNo, unsigned long bytes) {
+    if bytes != 0l {
+        this.addParamAttr(argNo, "dereferenceable", bytes);
+    }
+}
+
+public p Function.addRetAttr(string kindName) {
+    LLVMAddAttributeAtIndex(this.self, ATTRIBUTE_RETURN_INDEX, createEnumAttr(this.getContextRef(), kindName));
+}
+
+// ----- Module -----
+public f<Function> Module.getFunction(string name) {
+    const LLVMValueRef fctRef = LLVMGetNamedFunction(this.self, name);
+    if fctRef == nil<LLVMValueRef> {
+        return Function{ nil<LLVMValueRef>, Type{ nil<LLVMTypeRef> } };
+    }
+    return Function{ fctRef, Type{ LLVMGlobalGetValueType(fctRef) } };
+}
+
+// Like llvm::Function::Create
+public f<Function> Module.createFunction(Type fctType, LLVMLinkage linkage, string name) {
+    const LLVMValueRef fctRef = LLVMAddFunction(this.self, name, fctType.self);
+    LLVMSetLinkage(fctRef, linkage);
+    return Function{ fctRef, fctType };
+}
+
+public f<Value> Module.getNamedGlobal(string name) {
+    return Value{ LLVMGetNamedGlobal(this.self, name) };
+}
+
+public f<Value> Module.getOrInsertGlobal(string name, Type ty) {
+    LLVMValueRef globalRef = LLVMGetNamedGlobal(this.self, name);
+    if globalRef == nil<LLVMValueRef> {
+        globalRef = LLVMAddGlobal(this.self, ty.self, name);
+    }
+    return Value{ globalRef };
+}
+
+public f<Value> Module.addGlobal(Type ty, string name) {
+    return Value{ LLVMAddGlobal(this.self, ty.self, name) };
+}
+
+public f<Comdat> Module.getOrInsertComdat(string name) {
+    return Comdat{ LLVMGetOrInsertComdat(this.self, name) };
+}
+
+/**
+ * Like llvm::IRBuilder::CreateGlobalString with an explicit module. Unlike LLVMBuildGlobalString, this does not require the
+ * builder to have an insert point.
+ */
+public f<Value> Module.createGlobalString(const String& value, string name) {
+    const LLVMContextRef ctx = LLVMGetModuleContext(this.self);
+    const LLVMValueRef stringConstant = LLVMConstStringInContext2(ctx, value.getRaw(), value.getLength(), 0);
+    const LLVMValueRef global = LLVMAddGlobal(this.self, LLVMTypeOf(stringConstant), name);
+    LLVMSetInitializer(global, stringConstant);
+    LLVMSetGlobalConstant(global, 1);
+    LLVMSetLinkage(global, LLVMLinkage::PrivateLinkage);
+    LLVMSetUnnamedAddress(global, LLVMUnnamedAddr::GlobalUnnamedAddr);
+    LLVMSetAlignment(global, 1);
+    return Value{ global };
+}
+
+// Like llvm::Intrinsic::getOrInsertDeclaration
+public f<Function> Module.getIntrinsicDeclaration(string name, const Vector<Type>& overloadTypes) {
+    const unsigned int id = LLVMLookupIntrinsicID(name, cast<unsigned long>(len(name)));
+    assert id != 0; // Unknown intrinsic
+    unsafe {
+        LLVMTypeRef* typesRef = cast<LLVMTypeRef*>(overloadTypes.getDataPtr());
+        const LLVMValueRef fctRef = LLVMGetIntrinsicDeclaration(this.self, id, typesRef, cast<unsigned long>(overloadTypes.getSize()));
+        return Function{ fctRef, Type{ LLVMGlobalGetValueType(fctRef) } };
+    }
+}
+
+// Like llvm::Module::addModuleFlag with an integer value
+public p Module.addModuleFlag(int behavior, string key, unsigned int value) {
+    const LLVMContextRef ctx = LLVMGetModuleContext(this.self);
+    const LLVMTypeRef int32Ty = LLVMInt32TypeInContext(ctx);
+    LLVMMetadataRef[3] ops = [
+        LLVMValueAsMetadata(LLVMConstInt(int32Ty, cast<unsigned long>(behavior), 0)),
+        LLVMMDStringInContext2(ctx, key, cast<unsigned long>(len(key))),
+        LLVMValueAsMetadata(LLVMConstInt(int32Ty, cast<unsigned long>(value), 0))
+    ];
+    const LLVMMetadataRef node = LLVMMDNodeInContext2(ctx, &ops[0], 3l);
+    LLVMAddNamedMetadataOperand(this.self, "llvm.module.flags", LLVMMetadataAsValue(ctx, node));
+}
+
+// Add a node with a single string operand to the given named metadata, e.g. llvm.ident
+public p Module.addNamedStringMetadata(string name, const String& value) {
+    const LLVMContextRef ctx = LLVMGetModuleContext(this.self);
+    LLVMMetadataRef op = LLVMMDStringInContext2(ctx, value.getRaw(), value.getLength());
+    const LLVMMetadataRef node = LLVMMDNodeInContext2(ctx, &op, 1l);
+    LLVMAddNamedMetadataOperand(this.self, name, LLVMMetadataAsValue(ctx, node));
+}
+
+public f<String> Module.getTargetTripleString() {
+    return String(LLVMGetTarget(this.self));
+}
+
+public p Module.setTargetTripleString(string triple) {
+    LLVMSetTarget(this.self, triple);
+}
+
+public f<String> Module.getDataLayoutString() {
+    return String(LLVMGetDataLayoutStr(this.self));
+}
+
+public p Module.setDataLayoutString(string dataLayout) {
+    LLVMSetDataLayout(this.self, dataLayout);
+}
+
+public f<String> Module.printToString() {
+    const Message message = this.print();
+    return String(message.get());
+}
+
+/**
+ * Verify the module
+ *
+ * @param errorMessage Output of the verifier
+ * @return True if the module is broken
+ */
+public f<bool> Module.verify(String& errorMessage) {
+    string outMessage = nil<string>;
+    const bool isBroken = LLVMVerifyModule(this.self, LLVMVerifierFailureAction::ReturnStatusAction, &outMessage) != 0;
+    if outMessage != nil<string> {
+        errorMessage = String(outMessage);
+        LLVMDisposeMessage(outMessage);
+    }
+    return isBroken;
+}
+
+// Data layout queries, like on llvm::Module::getDataLayout()
+public f<unsigned long> Module.getTypeAllocSize(Type ty) {
+    return LLVMABISizeOfType(LLVMGetModuleDataLayout(this.self), ty.self);
+}
+
+public f<unsigned long> Module.getTypeStoreSize(Type ty) {
+    return LLVMStoreSizeOfType(LLVMGetModuleDataLayout(this.self), ty.self);
+}
+
+public f<unsigned long> Module.getTypeSizeInBits(Type ty) {
+    return LLVMSizeOfTypeInBits(LLVMGetModuleDataLayout(this.self), ty.self);
+}
+
+public f<unsigned int> Module.getABITypeAlign(Type ty) {
+    return LLVMABIAlignmentOfType(LLVMGetModuleDataLayout(this.self), ty.self);
+}
+
+public f<unsigned int> Module.getPointerSize() {
+    return LLVMPointerSize(LLVMGetModuleDataLayout(this.self));
+}
+
+public f<bool> Module.isLittleEndian() {
+    return LLVMByteOrder(LLVMGetModuleDataLayout(this.self)) == 1;
+}
+
+// ----- IRBuilder -----
+public f<Type> IRBuilder.getVoidTy() {
+    return Type{ LLVMVoidTypeInContext(this.ctx) };
+}
+
+public f<Type> IRBuilder.getDoubleTy() {
+    return Type{ LLVMDoubleTypeInContext(this.ctx) };
+}
+
+// Position the builder before the given instruction
+public p IRBuilder.setInsertPointBefore(BasicBlock block, Value inst) {
+    LLVMPositionBuilder(this.self, block.self, inst.self);
+}
+
+public f<Value> IRBuilder.createAlloca(Type ty, string name) {
+    return Value{ LLVMBuildAlloca(this.self, ty.self, name) };
+}
+
+public f<Value> IRBuilder.createInBoundsGEP(Type ty, Value ptr, Value index, string name = "") {
+    LLVMValueRef indexRef = index.self;
+    return Value{ LLVMBuildInBoundsGEP2(this.self, ty.self, ptr.self, &indexRef, 1, name) };
+}
+
+public f<Value> IRBuilder.createGEP(Type ty, Value ptr, Value index, string name = "") {
+    LLVMValueRef indexRef = index.self;
+    return Value{ LLVMBuildGEP2(this.self, ty.self, ptr.self, &indexRef, 1, name) };
+}
+
+public f<Value> IRBuilder.createNSWAdd(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildNSWAdd(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> IRBuilder.createNSWSub(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildNSWSub(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> IRBuilder.createNSWMul(Value lhs, Value rhs, string name = "") {
+    return Value{ LLVMBuildNSWMul(this.self, lhs.self, rhs.self, name) };
+}
+
+public f<Value> IRBuilder.createIntCast(Value value, Type destTy, bool isSigned, string name = "") {
+    return Value{ LLVMBuildIntCast2(this.self, value.self, destTy.self, cast<LLVMBool>(isSigned), name) };
+}
+
+public f<Value> IRBuilder.createZExt(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildZExt(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createSExt(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildSExt(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createTrunc(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildTrunc(this.self, value.self, destTy.self, name) };
+}
+
+// Like llvm::IRBuilder::CreateZExtOrTrunc
+public f<Value> IRBuilder.createZExtOrTrunc(Value value, Type destTy, string name = "") {
+    const unsigned int srcWidth = LLVMGetIntTypeWidth(LLVMTypeOf(value.self));
+    const unsigned int destWidth = destTy.getIntegerBitWidth();
+    if srcWidth < destWidth { return this.createZExt(value, destTy, name); }
+    if srcWidth > destWidth { return this.createTrunc(value, destTy, name); }
+    return value;
+}
+
+// Like llvm::IRBuilder::CreateSExtOrTrunc
+public f<Value> IRBuilder.createSExtOrTrunc(Value value, Type destTy, string name = "") {
+    const unsigned int srcWidth = LLVMGetIntTypeWidth(LLVMTypeOf(value.self));
+    const unsigned int destWidth = destTy.getIntegerBitWidth();
+    if srcWidth < destWidth { return this.createSExt(value, destTy, name); }
+    if srcWidth > destWidth { return this.createTrunc(value, destTy, name); }
+    return value;
+}
+
+// Like llvm::IRBuilder::CreateBitCast, which omits no-op casts
+public f<Value> IRBuilder.createBitCast(Value value, Type destTy, string name = "") {
+    if LLVMTypeOf(value.self) == destTy.self { return value; }
+    return Value{ LLVMBuildBitCast(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createPtrToInt(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildPtrToInt(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createIntToPtr(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildIntToPtr(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createSIToFP(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildSIToFP(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createUIToFP(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildUIToFP(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createFPToSI(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildFPToSI(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createFPToUI(Value value, Type destTy, string name = "") {
+    return Value{ LLVMBuildFPToUI(this.self, value.self, destTy.self, name) };
+}
+
+public f<Value> IRBuilder.createSwitch(Value value, BasicBlock defaultDest, unsigned int numCases) {
+    return Value{ LLVMBuildSwitch(this.self, value.self, defaultDest.self, numCases) };
+}
+
+// Call with an explicit function type, e.g. for calls through function pointers or inline assembly
+public f<Value> IRBuilder.createCall(Type fctType, Value callee, const Vector<Value>& args, string name = "") {
+    unsafe {
+        LLVMValueRef* argsRef = cast<LLVMValueRef*>(args.getDataPtr());
+        return Value{ LLVMBuildCall2(this.self, fctType.self, callee.self, argsRef, cast<unsigned int>(args.getSize()), name) };
+    }
 }
