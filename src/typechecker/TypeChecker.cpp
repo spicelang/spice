@@ -2,6 +2,8 @@
 
 #include "TypeChecker.h"
 
+#include <unordered_set>
+
 #include <SourceFile.h>
 #include <ast/Attributes.h>
 #include <global/GlobalResourceManager.h>
@@ -24,6 +26,11 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   if (isPrepare)
     node->resizeToNumberOfManifestations(1);
 
+  // Find switch statements, that cover all items of an enum. This has to be done before visiting the children, because
+  // the control flow analysis of functions and procedures in the prepare stage relies on it
+  if (isPrepare)
+    markExhaustiveEnumSwitches(node);
+
   // Visit children
   visitChildren(node);
 
@@ -34,6 +41,52 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
       createImplicitDefaultMembers(*manifestation, node);
 
   return nullptr;
+}
+
+/**
+ * Mark all switch statements in the given subtree, whose case constants cover all items of an enum
+ *
+ * @param node Root node of the subtree
+ */
+void TypeChecker::markExhaustiveEnumSwitches(ASTNode *node) const { // NOLINT(misc-no-recursion)
+  if (auto *switchStmtNode = dynamic_cast<SwitchStmtNode *>(node))
+    switchStmtNode->coversAllEnumItems = coversAllEnumItems(switchStmtNode);
+
+  for (ASTNode *child : node->getChildren())
+    markExhaustiveEnumSwitches(child);
+}
+
+/**
+ * Check if the case constants of a switch statement cover all items of a single enum
+ *
+ * @param node Switch statement node
+ * @return All enum items covered or not
+ */
+bool TypeChecker::coversAllEnumItems(const SwitchStmtNode *node) const {
+  const EnumDefNode *enumDef = nullptr;
+  std::unordered_set<const EnumItemNode *> coveredItems;
+  for (const CaseBranchNode *caseBranchNode : node->caseBranches) {
+    for (const CaseConstantNode *constantNode : caseBranchNode->caseConstants) {
+      // Literal constants can never be enum items
+      if (constantNode->constant)
+        return false;
+
+      // Resolve the enum item via the name registry, since enum items are always referenced by their qualified name
+      const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(constantNode->fqIdentifier);
+      if (!registryEntry || !registryEntry->targetEntry)
+        return false;
+      const auto enumItemNode = dynamic_cast<const EnumItemNode *>(registryEntry->targetEntry->declNode);
+      if (!enumItemNode)
+        return false;
+
+      // All case constants have to be items of the same enum
+      if (enumDef != nullptr && enumItemNode->enumDef != enumDef)
+        return false;
+      enumDef = enumItemNode->enumDef;
+      coveredItems.insert(enumItemNode);
+    }
+  }
+  return enumDef != nullptr && coveredItems.size() == enumDef->itemLst->items.size();
 }
 
 /**

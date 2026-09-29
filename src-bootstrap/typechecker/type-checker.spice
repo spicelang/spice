@@ -190,6 +190,12 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
         baseNode.resizeToNumberOfManifestations(1l);
     }
 
+    // Find switch statements, that cover all items of an enum. This has to be done before visiting the children, because
+    // the control flow analysis of functions and procedures in the prepare stage relies on it
+    if isPrepare {
+        this.markExhaustiveEnumSwitches(baseNode);
+    }
+
     // Visit children
     this.visitChildren(baseNode);
     // The host would have thrown on a hard error, so skip the rest (the compilation is aborted after this stage)
@@ -208,6 +214,74 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     }
 
     return Any();
+}
+
+/**
+ * Mark all switch statements in the given subtree, whose case constants cover all items of an enum
+ *
+ * @param node Root node of the subtree
+ */
+p TypeChecker.markExhaustiveEnumSwitches(ASTNode* node) {
+    if node.kind == ASTNodeKind::SWITCH_STMT {
+        ASTSwitchStmtNode* switchStmtNode = downcast<ASTSwitchStmtNode>(node);
+        switchStmtNode.coversAllEnumItems = this.coversAllEnumItems(switchStmtNode);
+    }
+
+    foreach ASTNode* child : node.children {
+        this.markExhaustiveEnumSwitches(child);
+    }
+}
+
+/**
+ * Check if the case constants of a switch statement cover all items of a single enum
+ *
+ * @param node Switch statement node
+ * @return All enum items covered or not
+ */
+f<bool> TypeChecker.coversAllEnumItems(ASTSwitchStmtNode* node) {
+    ASTEnumDefNode* enumDef = nil<ASTEnumDefNode*>;
+    Vector<ASTEnumItemNode*> coveredItems;
+    foreach IVisitable* caseBranch : node.caseBranches {
+        ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(caseBranch);
+        foreach IVisitable* constant : caseBranchNode.caseConstants {
+            ASTCaseConstantNode* constantNode = downcast<ASTCaseConstantNode>(constant);
+            // Literal constants can never be enum items
+            if constantNode.constant != nil<ASTConstantNode*> {
+                return false;
+            }
+
+            // Resolve the enum item via the name registry, since enum items are always referenced by their qualified name
+            const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(constantNode.fqIdentifier);
+            if registryEntry == nil<const NameRegistryEntry*> || registryEntry.targetEntry == nil<SymbolTableEntry*> {
+                return false;
+            }
+            ASTNode* declNode = registryEntry.targetEntry.declNode;
+            if declNode == nil<ASTNode*> || declNode.kind != ASTNodeKind::ENUM_ITEM {
+                return false;
+            }
+            ASTEnumItemNode* enumItemNode = downcast<ASTEnumItemNode>(declNode);
+
+            // All case constants have to be items of the same enum
+            if enumDef != nil<ASTEnumDefNode*> && enumItemNode.enumDef != enumDef {
+                return false;
+            }
+            enumDef = enumItemNode.enumDef;
+            bool alreadyCovered = false;
+            foreach ASTEnumItemNode* coveredItem : coveredItems {
+                if coveredItem == enumItemNode {
+                    alreadyCovered = true;
+                }
+            }
+            if !alreadyCovered {
+                coveredItems.pushBack(enumItemNode);
+            }
+        }
+    }
+    if enumDef == nil<ASTEnumDefNode*> {
+        return false;
+    }
+    ASTEnumItemLstNode* itemLst = downcast<ASTEnumItemLstNode>(enumDef.itemLst);
+    return coveredItems.getSize() == itemLst.items.getSize();
 }
 
 /**

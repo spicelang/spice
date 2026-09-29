@@ -41,6 +41,33 @@ switch (input) {
 This piece of code is a bit pointless, but you can see, that you can also assign two constant values to result in the same branch
 being executed.
 
+## Returning from a switch statement
+
+A `switch` statement only returns on all control paths, if all of its branches return. Without a `default` branch, the control
+flow continues after the `switch` statement if no case branch matches. So a function, whose last statement is a `switch` statement
+without `default` branch, needs a trailing `return` statement:
+```spice
+f<int> classify(int value) {
+    switch value {
+        case 1: { return 10; }
+        case 2: { return 20; }
+    }
+    return 99; // Executed for all other values
+}
+```
+The only exception are `switch` statements over enums, whose case branches cover all items of the enum:
+```spice
+type Color enum { RED, GREEN, BLUE }
+
+f<bool> isWarm(Color color) {
+    switch color {
+        case Color::RED: { return true; }
+        case Color::GREEN, Color::BLUE: { return false; }
+    }
+    // No return required, since the switch statement above is exhaustive
+}
+```
+
 ## Fallthrough
 
 In Spice, the `switch` statement does not fall through by default. This means, that you don't need to use the `break` keyword to

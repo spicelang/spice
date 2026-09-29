@@ -1,0 +1,26 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:1:
+Missing return statement: Not all control paths of this function have a return statement
+
+8  f<int> classify(int v) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:16:1:
+Missing return statement: Not all control paths of this function have a return statement
+
+16  f<string> getName(Fruit input) {
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:24:20:
+Referenced undefined function: Function/procedure 'classify(int)' could not be found
+
+24  printf("%d/n", classify(3));
+                   ^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:25:20:
+Referenced undefined function: Function/procedure 'getName(int)' could not be found
+
+25  printf("%s/n", getName(Fruit::Orange));
+                   ^^^^^^^^^^^^^^^^^^^^^^

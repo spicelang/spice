@@ -2794,9 +2794,6 @@ f<char> Parser.parseChar(const Token& token) {
             case 'f': { return '\f'; }
             case 'v': { return '\v'; }
             case '0': { return '\0'; }
-            default: {
-                // Required, see https://github.com/spicelang/spice/issues/1459 (the code below would be dropped otherwise)
-            }
         }
         const String message = "Invalid escape sequence '" + input + "'";
         this.throwParserError(token.codeLoc, ParserErrorType::INVALID_CHAR_LITERAL, message.getRaw());
@@ -2890,9 +2887,6 @@ f<char> getEscapedChar(char c) {
         case '?': { return '?'; }
         case '\'': { return '\''; }
         case '"': { return '"'; }
-        default: {
-            // Required, see https://github.com/spicelang/spice/issues/1459 (the code below would be dropped otherwise)
-        }
     }
     return '\0';
 }

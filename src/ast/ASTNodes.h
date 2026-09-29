@@ -847,6 +847,7 @@ public:
   std::vector<CaseBranchNode *> caseBranches;
   DefaultBranchNode *defaultBranch = nullptr;
   bool hasDefaultBranch = false;
+  bool coversAllEnumItems = false;
 };
 
 // ======================================================== CaseBranchNode =======================================================

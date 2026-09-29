@@ -195,6 +195,8 @@ private:
   bool visitFctPtrCall(const FctCallNode *node, const QualType &functionType) const;
   bool visitMethodCall(FctCallNode *node, Scope *structScope) const;
   bool checkAsyncLambdaCaptureRules(const LambdaBaseNode *node, const LambdaAttrNode *attrs) const;
+  void markExhaustiveEnumSwitches(ASTNode *node) const;
+  [[nodiscard]] bool coversAllEnumItems(const SwitchStmtNode *node) const;
   [[nodiscard]] Function *matchCopyCtor(const QualType &thisType, const ASTNode *node) const;
   [[nodiscard]] Function *matchMoveCtor(const QualType &thisType, const ASTNode *node) const;
   [[nodiscard]] QualType mapLocalTypeToImportedScopeType(const Scope *targetScope, const QualType &symbolType) const;

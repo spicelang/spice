@@ -1,0 +1,26 @@
+type Fruit enum {
+    Apple,
+    Banana,
+    Orange
+}
+
+// No default branch, so the control flow continues after the switch if no case matches
+f<int> classify(int v) {
+    switch v {
+        case 1: { return 10; }
+        case 2: { return 20; }
+    }
+}
+
+// Not all enum items are covered, so the switch is not exhaustive
+f<string> getName(Fruit input) {
+    switch input {
+        case Fruit::Apple: { return "Apple"; }
+        case Fruit::Banana: { return "Banana"; }
+    }
+}
+
+f<int> main() {
+    printf("%d\n", classify(3));
+    printf("%s\n", getName(Fruit::Orange));
+}
