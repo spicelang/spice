@@ -27,10 +27,21 @@ public type PostTypeCheckingVerifier struct : IAbstractAstVisitor {
     compose public CompilerPass compilerPass
 }
 
+/**
+ * Construct a verifier for the given source file
+ *
+ * @param resourceManager Global resource manager
+ * @param sourceFile Source file, whose AST is verified
+ */
 public p PostTypeCheckingVerifier.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
     this.compilerPass = CompilerPass(resourceManager, sourceFile);
 }
 
+/**
+ * Verify that the type checker fully annotated the given AST. Fails an assertion otherwise.
+ *
+ * @param ast Root node of the AST to verify
+ */
 public p PostTypeCheckingVerifier.verify(ASTEntryNode* ast) {
     this.visitEntry(ast);
 }

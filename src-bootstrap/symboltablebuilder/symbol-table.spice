@@ -170,6 +170,7 @@ f<String> getAnonymousSymbolName(const ASTNode* declNode, unsigned long numericS
 public f<SymbolTableEntry*> SymbolTable.copySymbol(const String& originalName, const String& newName) {
     SymbolTableEntry* entryToCopy = this.lookupStrict(originalName);
     assert entryToCopy != nil<SymbolTableEntry*>;
+    assert !this.symbols.contains(newName);
     this.symbols.upsert(newName, *entryToCopy);
     return &this.symbols.get(newName);
 }

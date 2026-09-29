@@ -244,8 +244,8 @@ public p Vector.insertAt(unsigned long index, const T& item) {
         const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR;
         this.resize(newCapacity);
     }
-    // Move all elements after the index one to the back. The elements are relocated bitwise, because the slot behind the
-    // last element is uninitialized and must not be assigned to. The slot at the index is then re-initialized below.
+    // Move all elements after the index one to the back. They are relocated bitwise like in resize(), since the slot behind
+    // the last element is uninitialized and must not be assigned to. The slot at the index is re-initialized below.
     if index < this.size {
         unsafe {
             const unsigned long moveSize = cast<unsigned long>(sizeof<T>()) * (this.size - index);
