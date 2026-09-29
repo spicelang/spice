@@ -179,7 +179,7 @@ f<long> getBodyScopeAddress(const TypeChainElement& tce) {
  * Compute the hash of a type over its type chain. Template and function param/return sub-types are hashed
  * recursively (they are themselves interned Types).
  */
-f<Hash> TypeRegistry.getTypeHash(const Type& candidate) {
+public f<Hash> TypeRegistry.getTypeHash(const Type& candidate) {
     Hash h = 0ul;
     foreach const TypeChainElement& tce : candidate.typeChain {
         const Hash elementHash = this.hashElement(tce);

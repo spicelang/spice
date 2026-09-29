@@ -26,6 +26,7 @@ import "bootstrap/util/compiler-warning";
 import "bootstrap/util/system-util";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
 import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
 import "bootstrap/importcollector/import-collector";
@@ -126,7 +127,7 @@ public type SourceFile struct {
     // Private fields
     GlobalResourceManager& resourceManager
     CliOptions& cliOptions
-    // ToDo: UnorderedMap<const Type*, llvm::Type*> llvmTypeMapping (typeToLLVMTypeMapping in the host) is blocked on hashing pointers
+    UnorderedMap<long, llvm::Type> typeToLLVMTypeMapping // Maps the address of each type to its LLVM type
     public unsigned int importedRuntimeModules = 0 // Public, because the RuntimeModuleManager is a friend class in the host
     unsigned short totalTypeCheckerRuns = 0s
     // Cycle-safety guards: the pipeline drivers recurse over a dependency graph that may contain cycles (circular
@@ -704,6 +705,38 @@ public p SourceFile.collectAndPrintWarnings() {
 
 public f<const SourceFile*> SourceFile.getRootSourceFile() {
     return this.isMainFile ? this : this.parent.getRootSourceFile();
+}
+
+/**
+ * Get the LLVM context, the LLVM entities of this source file live in
+ *
+ * @return LLVM context
+ */
+public f<llvm::LLVMContext&> SourceFile.getLLVMContext() {
+    return this.cliOptions.useLTO ? this.resourceManager.ltoContext : this.context;
+}
+
+/**
+ * Get the LLVM type of the given type. The LLVM types are cached, so that each type gets lowered only once (e.g. named struct
+ * types would otherwise be created multiple times).
+ *
+ * @param rawType Type
+ * @return LLVM type
+ */
+public f<llvm::Type> SourceFile.getLLVMType(const symboltable::Type* rawType) {
+    // Check if the type is already in the mapping
+    long typeAddress = 0l;
+    unsafe {
+        typeAddress = cast<long>(cast<byte*>(rawType));
+    }
+    if this.typeToLLVMTypeMapping.contains(typeAddress) {
+        return this.typeToLLVMTypeMapping.get(typeAddress);
+    }
+
+    // If not, generate the LLVM type
+    const llvm::Type llvmType = rawType.toLLVMType(this);
+    this.typeToLLVMTypeMapping.upsert(typeAddress, llvmType);
+    return llvmType;
 }
 
 /**

@@ -14,6 +14,7 @@ import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/model/generic-type";
+import "bootstrap/irgenerator/name-mangling";
 
 // Helper structs
 public type Param struct {
@@ -205,8 +206,7 @@ public f<String> Function.getMangledName() {
         return String(this.name);
     }
     // Use normal name mangling
-    // ToDo: Use NameMangling.mangleFunction(*this) once the name mangling pass is ported. Fall back to the raw name for now.
-    return String(this.name);
+    return mangleFunction(*this);
 }
 
 /**
@@ -411,7 +411,7 @@ public f<bool> testFunctionSmoke() {
     assert fct.isNormalFunction();
     assert !fct.isMethodFunction();
     assert fct.getSignature() == String("f<int> foo()");
-    assert fct.getMangledName() == String("foo");
+    assert fct.getMangledName() == String("_Z3foov");
     QualTypeList fctParams = fct.getParamTypes();
     assert fctParams.isEmpty();
     assert fct.hasSubstantiatedParams();

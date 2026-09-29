@@ -1,0 +1,16 @@
+type Point struct {
+    int x
+    int y
+}
+
+p Point.ctor(int x, int y) {
+    this.x = x;
+    this.y = y;
+}
+
+f<int> main() {
+    // Point has no default ctor, but __new<Point>(other) copies the trivially copyable Point
+    Point point = Point(3, 5);
+    heap Point* copy = __new<Point>(point);
+    printf("%d %d\n", copy.x, copy.y);
+}

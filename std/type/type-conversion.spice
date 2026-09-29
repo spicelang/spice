@@ -451,9 +451,10 @@ public f<String> toString(short input) {
  * @return String value
  */
 public f<String> toString(long input) {
-    const int length = snprintf(nil<char*>, 0l, "%ld", input);
+    // Use %lld, because a Spice long is always 64 bit, but a C long is only 32 bit on Windows
+    const int length = snprintf(nil<char*>, 0l, "%lld", input);
     result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%ld", input);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%lld", input);
 }
 
 /**

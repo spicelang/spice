@@ -12,6 +12,13 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/source-file";
 import "bootstrap/global/type-registry";
+import "bootstrap/ast/attributes";
+import "bootstrap/irgenerator/name-mangling";
+import "bootstrap/model/interface";
+import "bootstrap/model/struct";
+import "bootstrap/model/struct-base";
+import "bootstrap/model/union";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
 
 public type Type struct {
     Vector<TypeChainElement> typeChain
@@ -563,8 +570,217 @@ public f<const Type*> Type.getWithFunctionParamAndReturnTypes(const QualTypeList
  */
 public f<llvm::Type> Type.toLLVMType(SourceFile* sourceFile) {
     assert !this.typeChain.isEmpty() && !this.is(SuperType::TY_INVALID);
-    // ToDo: Port the full host implementation once the IR generator layer is available.
-    panic(Error("Type.toLLVMType is not yet implemented in the bootstrap compiler"));
+    const llvm::LLVMContext& context = sourceFile.getLLVMContext();
+
+    const dyn ptrLikeTypes = [SuperType::TY_PTR, SuperType::TY_REF, SuperType::TY_STRING];
+    if this.isOneOf(ptrLikeTypes, len(ptrLikeTypes)) || (this.isArray() && this.getArraySize() == 0u) {
+        return llvm::getPtrTy(context);
+    }
+
+    if this.isArray() {
+        assert this.getArraySize() > 0u;
+        const llvm::Type containedType = sourceFile.getLLVMType(this.getContained());
+        return llvm::getArrayType(containedType, cast<unsigned long>(this.getArraySize()));
+    }
+
+    assert !this.hasAnyGenericParts();
+
+    if this.is(SuperType::TY_DOUBLE) {
+        return llvm::getDoubleTy(context);
+    }
+
+    const dyn int32Types = [SuperType::TY_INT, SuperType::TY_ENUM];
+    if this.isOneOf(int32Types, len(int32Types)) {
+        return llvm::getInt32Ty(context);
+    }
+
+    if this.is(SuperType::TY_SHORT) {
+        return llvm::getInt16Ty(context);
+    }
+
+    if this.is(SuperType::TY_LONG) {
+        return llvm::getInt64Ty(context);
+    }
+
+    const dyn int8Types = [SuperType::TY_CHAR, SuperType::TY_BYTE];
+    if this.isOneOf(int8Types, len(int8Types)) {
+        return llvm::getInt8Ty(context);
+    }
+
+    if this.is(SuperType::TY_BOOL) {
+        return llvm::getInt1Ty(context);
+    }
+
+    const dyn structOrInterface = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
+    if this.isOneOf(structOrInterface, len(structOrInterface)) {
+        const Scope* structBodyScope = this.getBodyScope();
+        const String structSignature = getStructSignature(this.getSubType(), this.getTemplateTypes());
+        const SymbolTableEntry* structSymbol = structBodyScope.parent.lookupStrict(structSignature);
+        assert structSymbol != nil<SymbolTableEntry*>;
+        const QualType structSymbolType = structSymbol.getQualType();
+
+        // Collect concrete field types
+        String mangledName;
+        Vector<llvm::Type> fieldTypes;
+        bool isPacked = false;
+        if this.is(SuperType::TY_STRUCT) { // Struct
+            const Struct* spiceStruct = structSymbolType.getStruct(structSymbol.declNode);
+            assert spiceStruct != nil<Struct*>;
+            mangledName = mangleStruct(*spiceStruct);
+
+            const unsigned long totalFieldCount = spiceStruct.scope.getFieldCount();
+            fieldTypes.reserve(totalFieldCount);
+
+            // If the struct implements interfaces, the first implicit field (added below via lookupField) is an interface
+            // type, which already lowers to a { ptr } struct carrying the vtable pointer. Only add an explicit ptr field
+            // here for structs without interfaces that still need a vtable (e.g. RTTI root types), to avoid duplicating it.
+            assert structSymbol.declNode.kind == ASTNodeKind::STRUCT_DEF;
+            const ASTStructDefNode* structDeclNode = downcast<ASTStructDefNode>(structSymbol.declNode);
+            if spiceStruct.hasSynthesizedVTablePtr() {
+                fieldTypes.pushBack(llvm::getPtrTy(context));
+            }
+
+            // Collect all field types
+            for unsigned long i = 0l; i < totalFieldCount; i++ {
+                const SymbolTableEntry* fieldSymbol = spiceStruct.scope.lookupField(cast<unsigned int>(i));
+                assert fieldSymbol != nil<SymbolTableEntry*>;
+                const QualType fieldType = fieldSymbol.getQualType();
+                fieldTypes.pushBack(sourceFile.getLLVMType(fieldType.getType()));
+            }
+
+            // Check if the struct is declared as packed
+            if structDeclNode.attrs != nil<IVisitable*> {
+                const ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(structDeclNode.attrs);
+                const String packedAttrName = String(ATTR_CORE_COMPILER_PACKED);
+                if attrs.attrLst.hasAttr(packedAttrName) {
+                    const CompileTimeValue packedAttrValue = attrs.attrLst.getAttrValueByName(packedAttrName);
+                    isPacked = packedAttrValue.boolValue;
+                }
+            }
+        } else { // Interface
+            const Interface* spiceInterface = structSymbolType.getInterface(structSymbol.declNode);
+            assert spiceInterface != nil<Interface*>;
+            mangledName = mangleInterface(*spiceInterface);
+
+            // vtable pointer
+            fieldTypes.pushBack(llvm::getPtrTy(context));
+        }
+
+        return llvm::createStructType(context, fieldTypes, mangledName.getRaw(), isPacked);
+    }
+
+    if this.is(SuperType::TY_UNION) {
+        // A union is lowered to { i32 tag, [0 x MaxAlignTy] alignPad, [maxSize x i8] payload }. The tag tracks which field
+        // is currently active. The zero-length array contributes no bytes but forces the whole struct's (and therefore the
+        // payload's) ABI alignment to be at least as strict as the most-aligned field, so that every field can be safely
+        // loaded/stored at the payload's address regardless of its own alignment requirement. The payload itself is always
+        // a raw byte buffer (not a typed array), so that any field's value can be stored/loaded there directly, and any
+        // compile-time constant for it can be built uniformly as packed raw bytes, without needing a legal LLVM constant
+        // conversion between the payload's declared element type and a field's unrelated type.
+        const Scope* unionBodyScope = this.getBodyScope();
+        const String unionSignature = getStructSignature(this.getSubType(), this.getTemplateTypes());
+        const SymbolTableEntry* unionSymbol = unionBodyScope.parent.lookupStrict(unionSignature);
+        assert unionSymbol != nil<SymbolTableEntry*>;
+
+        const QualType unionSymbolType = unionSymbol.getQualType();
+        const Union* spiceUnion = unionSymbolType.getUnion(unionSymbol.declNode);
+        assert spiceUnion != nil<Union*>;
+        const String mangledName = mangleUnion(*spiceUnion);
+
+        llvm::DataLayout dataLayout = sourceFile.targetMachine.createDataLayout();
+        const unsigned long totalFieldCount = spiceUnion.scope.getFieldCount();
+
+        unsigned long maxSize = 0l;
+        unsigned long maxAlign = 1l;
+        llvm::Type maxAlignFieldType = llvm::getInt8Ty(context);
+        for unsigned long i = 0l; i < totalFieldCount; i++ {
+            const SymbolTableEntry* fieldSymbol = spiceUnion.scope.lookupField(cast<unsigned int>(i));
+            assert fieldSymbol != nil<SymbolTableEntry*>;
+            const QualType fieldQualType = fieldSymbol.getQualType();
+            const llvm::Type fieldType = sourceFile.getLLVMType(fieldQualType.getType());
+            const unsigned long fieldSize = dataLayout.getTypeAllocSize(fieldType);
+            const unsigned long fieldAlign = cast<unsigned long>(dataLayout.getABITypeAlign(fieldType));
+            if fieldSize > maxSize {
+                maxSize = fieldSize;
+            }
+            if fieldAlign > maxAlign {
+                maxAlign = fieldAlign;
+                maxAlignFieldType = fieldType;
+            }
+        }
+
+        Vector<llvm::Type> elementTypes;
+        elementTypes.pushBack(llvm::getInt32Ty(context)); // Tag type
+        elementTypes.pushBack(llvm::getArrayType(maxAlignFieldType, 0l)); // Align pad type
+        elementTypes.pushBack(llvm::getArrayType(llvm::getInt8Ty(context), maxSize)); // Payload type
+        return llvm::createStructType(context, elementTypes, mangledName.getRaw());
+    }
+
+    const dyn fctOrProc = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    if this.isOneOf(fctOrProc, len(fctOrProc)) {
+        // Lambda/function values are represented as a fat pointer with three slots:
+        // { fctPtr, capturePtr, captureSize }. The capture size (in bytes) travels with
+        // the value so that the std Lambda type can take ownership of the captures on the
+        // heap regardless of where the lambda came from. It is 0 if there is no owned
+        // capture struct (no captures, or a single capture stored inline in capturePtr).
+        const llvm::Type ptrTy = llvm::getPtrTy(context);
+        Vector<llvm::Type> elementTypes;
+        elementTypes.pushBack(ptrTy);
+        elementTypes.pushBack(ptrTy);
+        elementTypes.pushBack(llvm::getInt64Ty(context));
+        return llvm::getStructType(context, elementTypes);
+    }
+
+    const String message = "Cannot determine LLVM type of " + this.getName(true, true, true);
+    panic(Error(message.getRaw())); // Unhandled branch
+}
+
+// The following helpers query the data layout of the target for the LLVM type of this type. The host does this inline, where
+// it is needed (e.g. in the type checker for the sizeof builtin). The LLVM bindings cannot be imported there, because their
+// type names (e.g. Function, Type) clash with the ones of the compiler.
+
+/**
+ * Get the allocation size of this type in bytes, according to the data layout of the target
+ *
+ * @param sourceFile Source file
+ * @return Allocation size in bytes
+ */
+public f<unsigned long> Type.getTypeAllocSize(SourceFile* sourceFile) {
+    const llvm::Type llvmType = sourceFile.getLLVMType(this);
+    llvm::DataLayout dataLayout = sourceFile.targetMachine.createDataLayout();
+    return dataLayout.getTypeAllocSize(llvmType);
+}
+
+/**
+ * Get the ABI alignment of this type in bytes, according to the data layout of the target
+ *
+ * @param sourceFile Source file
+ * @return ABI alignment in bytes
+ */
+public f<unsigned long> Type.getABITypeAlign(SourceFile* sourceFile) {
+    const llvm::Type llvmType = sourceFile.getLLVMType(this);
+    llvm::DataLayout dataLayout = sourceFile.targetMachine.createDataLayout();
+    return cast<unsigned long>(dataLayout.getABITypeAlign(llvmType));
+}
+
+/**
+ * Get the byte offset of a (possibly composed) field of this struct type, by walking the given index path through the struct
+ * layout of the target
+ *
+ * @param sourceFile Source file
+ * @param indexPath Index path of the field, like SymbolTable.lookupInComposedFields returns it
+ * @return Byte offset of the field
+ */
+public f<unsigned long> Type.getFieldOffset(SourceFile* sourceFile, const Vector<unsigned long>& indexPath) {
+    llvm::DataLayout dataLayout = sourceFile.targetMachine.createDataLayout();
+    unsigned long offset = 0l;
+    llvm::Type currentType = sourceFile.getLLVMType(this);
+    foreach const unsigned long index : indexPath {
+        const unsigned int elementIndex = cast<unsigned int>(index);
+        offset += dataLayout.getStructElementOffset(currentType, elementIndex);
+        currentType = currentType.getStructElementType(elementIndex);
+    }
+    return offset;
 }
 
 /**
