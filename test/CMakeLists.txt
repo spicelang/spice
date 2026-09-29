@@ -45,12 +45,12 @@ add_custom_target(spicetest_leakcheck COMMAND valgrind --leak-check=full --suppr
 # build artifacts to a per-test directory (see TestUtil::prepareArtifactDir), which makes the cases safe to run concurrently.
 # Arguments forwarded to each spicetest process spawned by gtest-parallel (e.g. "--is-github-actions" in CI).
 set(SPICE_TEST_ARGS "" CACHE STRING "Arguments forwarded to spicetest when run via the spicetest_parallel target")
+# Collect all LLVM include dirs into a single "-I<dir> -I<dir> ..." string forwarded as one env var.
+SET(LLVM_INCLUDE_FLAGS ${LLVM_INCLUDE_DIRS})
+list(TRANSFORM LLVM_INCLUDE_FLAGS PREPEND "-I")
+list(JOIN LLVM_INCLUDE_FLAGS " " LLVM_INCLUDE_FLAGS)
 find_program(PYTHON3_EXECUTABLE NAMES python3 python)
 if (PYTHON3_EXECUTABLE)
-    # Collect all LLVM include dirs into a single "-I<dir> -I<dir> ..." string forwarded as one env var.
-    SET(LLVM_INCLUDE_FLAGS ${LLVM_INCLUDE_DIRS})
-    list(TRANSFORM LLVM_INCLUDE_FLAGS PREPEND "-I")
-    list(JOIN LLVM_INCLUDE_FLAGS " " LLVM_INCLUDE_FLAGS)
     add_custom_target(spicetest_parallel
             COMMAND ${CMAKE_COMMAND} -E env
             SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
@@ -72,6 +72,7 @@ add_custom_target(spicetest_bootstrap
         SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
         SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
         LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
+        LLVM_INCLUDE_DIRS=${LLVM_INCLUDE_FLAGS}
         $<TARGET_FILE:spicetest> --bootstrap ${SPICE_TEST_ARGS}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         DEPENDS spicetest
