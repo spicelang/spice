@@ -1,0 +1,5 @@
+on==on: 1, on==off: 0, off==on: 0, off==off: 1
+on!=on: 0, on!=off: 1, off!=on: 1, off!=off: 0
+on==true: 1, off==true: 0, on!=false: 1, off!=false: 0
+a==b: 0, a!=b: 1
+on and off differ

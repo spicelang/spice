@@ -1,0 +1,36 @@
+// Runtime bool == and != comparisons must compare the actual values
+
+type Flags struct {
+    bool a
+    bool b
+}
+
+f<bool> id(bool v) {
+    return v;
+}
+
+f<int> main() {
+    const bool on = id(true);
+    const bool off = id(false);
+
+    // All combinations of == and !=
+    printf("on==on: %d, on==off: %d, off==on: %d, off==off: %d\n", on == on, on == off, off == on, off == off);
+    printf("on!=on: %d, on!=off: %d, off!=on: %d, off!=off: %d\n", on != on, on != off, off != on, off != off);
+
+    // Comparisons with constants
+    printf("on==true: %d, off==true: %d, on!=false: %d, off!=false: %d\n", on == true, off == true, on != false, off != false);
+
+    // Comparisons of struct fields
+    const Flags flags = Flags{ id(true), id(false) };
+    printf("a==b: %d, a!=b: %d\n", flags.a == flags.b, flags.a != flags.b);
+
+    // Comparisons as conditions
+    if on != off {
+        printf("on and off differ\n");
+    }
+    if on == off {
+        printf("on and off are equal\n");
+    }
+    assert on != off;
+    assert !(on == off);
+}
