@@ -14,32 +14,30 @@ source_filename = "source.spice"
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal void @_ZN6Vector4dtorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #0 {
   %this = alloca ptr, align 8
-  %2 = alloca i1, align 1
   store ptr %0, ptr %this, align 8
-  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
-  %4 = load ptr, ptr %this, align 8
-  %field1.addr = getelementptr inbounds %struct.Vector, ptr %4, i64 0, i32 0
-  store i1 true, ptr %2, align 1
-  %5 = call i32 @memcmp(ptr %field1.addr, ptr %2, i64 0)
-  %6 = icmp eq i32 %5, 0
-  br i1 %6, label %assert.exit.L8, label %assert.then.L8, !prof !5
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
+  %3 = load ptr, ptr %this, align 8
+  %field1.addr = getelementptr inbounds %struct.Vector, ptr %3, i64 0, i32 0
+  %4 = load i1, ptr %field1.addr, align 1
+  %5 = icmp eq i1 %4, true
+  br i1 %5, label %assert.exit.L8, label %assert.then.L8, !prof !5
 
 assert.then.L8:                                   ; preds = %1
-  %7 = load ptr, ptr @stderr, align 8
-  %8 = call i32 (ptr, ptr, ...) @fprintf(ptr %7, ptr @anon.string.0)
+  %6 = load ptr, ptr @stderr, align 8
+  %7 = call i32 (ptr, ptr, ...) @fprintf(ptr %6, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
 assert.exit.L8:                                   ; preds = %1
-  %9 = load ptr, ptr %this, align 8
-  %field2.addr = getelementptr inbounds %struct.Vector, ptr %9, i64 0, i32 1
-  %10 = load ptr, ptr %field2.addr, align 8
-  %11 = call i1 @_Z10isRawEqualPKcPKc(ptr %10, ptr @anon.string.1)
-  br i1 %11, label %assert.exit.L9, label %assert.then.L9, !prof !5
+  %8 = load ptr, ptr %this, align 8
+  %field2.addr = getelementptr inbounds %struct.Vector, ptr %8, i64 0, i32 1
+  %9 = load ptr, ptr %field2.addr, align 8
+  %10 = call i1 @_Z10isRawEqualPKcPKc(ptr %9, ptr @anon.string.1)
+  br i1 %10, label %assert.exit.L9, label %assert.then.L9, !prof !5
 
 assert.then.L9:                                   ; preds = %assert.exit.L8
-  %12 = load ptr, ptr @stderr, align 8
-  %13 = call i32 (ptr, ptr, ...) @fprintf(ptr %12, ptr @anon.string.2)
+  %11 = load ptr, ptr @stderr, align 8
+  %12 = call i32 (ptr, ptr, ...) @fprintf(ptr %11, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
@@ -50,19 +48,16 @@ assert.exit.L9:                                   ; preds = %assert.exit.L8
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-; Function Attrs: nounwind
-declare noundef i32 @memcmp(ptr noundef readonly captures(none), ptr noundef readonly captures(none), i64 noundef) #2
-
 ; Function Attrs: nofree
-declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #2
 
 ; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #4
+declare void @exit(i32) #3
 
 declare i1 @_Z10isRawEqualPKcPKc(ptr, ptr)
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #5 {
+define dso_local noundef i32 @main() #4 {
   %vec = alloca %struct.Vector, align 8
   store %struct.Vector { i1 true, ptr @anon.string.3 }, ptr %vec, align 8
   %field1.addr = getelementptr inbounds %struct.Vector, ptr %vec, i64 0, i32 0
@@ -77,10 +72,9 @@ define dso_local noundef i32 @main() #5 {
 
 attributes #0 = { noinline nounwind optnone uwtable }
 attributes #1 = { nofree nounwind }
-attributes #2 = { nounwind }
-attributes #3 = { nofree }
-attributes #4 = { cold noreturn nounwind }
-attributes #5 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #2 = { nofree }
+attributes #3 = { cold noreturn nounwind }
+attributes #4 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
