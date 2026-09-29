@@ -1,0 +1,12 @@
+import "helper";
+
+// The arguments after the by-value struct are passed on the stack. Caller and callee have to agree on their stack
+// slots, even though only the callee is exempt from 'optnone' at O0.
+f<int> main() {
+    QualifiedType qt;
+    qt.qualifiers.q7 = true;
+    const Holder holder1 = Holder(qt, true, 123, false);
+    printf("%d %d %d %d\n", holder1.first.qualifiers.q7, holder1.second, holder1.third, holder1.fourth);
+    const Holder holder2 = Holder(qt, false, -7, true);
+    printf("%d %d %d %d\n", holder2.first.qualifiers.q7, holder2.second, holder2.third, holder2.fourth);
+}

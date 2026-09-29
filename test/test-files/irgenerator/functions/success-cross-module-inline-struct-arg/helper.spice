@@ -1,0 +1,30 @@
+// Mirrors the shape of QualType in the bootstrap compiler: a pointer, followed by many sub-word fields
+public type Qualifiers struct {
+    public bool q1 = false
+    public bool q2 = false
+    public bool q3 = false
+    public bool q4 = false
+    public bool q5 = false
+    public bool q6 = false
+    public bool q7 = false
+}
+
+public type QualifiedType struct {
+    public int* rawType = nil<int*>
+    public Qualifiers qualifiers
+}
+
+public type Holder struct {
+    public QualifiedType first
+    public bool second
+    public int third
+    public bool fourth
+}
+
+// Inline, so it is not marked as optnone at O0, while its caller in the other module is
+public inline p Holder.ctor(QualifiedType first, bool second, int third, bool fourth) {
+    this.first = first;
+    this.second = second;
+    this.third = third;
+    this.fourth = fourth;
+}
