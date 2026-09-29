@@ -9,7 +9,7 @@ define dso_local noundef i32 @main() #0 {
   %j = alloca i64, align 8, !type !6
   store i32 123, ptr %i, align 4, !tbaa !7
   %1 = load i32, ptr %i, align 4, !tbaa !7
-  %2 = zext i32 %1 to i64
+  %2 = sext i32 %1 to i64
   store i64 %2, ptr %j, align 8, !tbaa !11
   %3 = load i64, ptr %j, align 8, !tbaa !11
   %4 = add i64 %3, 1
