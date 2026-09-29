@@ -412,11 +412,14 @@ jobs:
         working-directory: build
         run: cmake --build . --target spicetest_parallel
 
-      - name: Run Test target (bootstrap compiler)
-        working-directory: build
-        shell: bash
-        # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
-        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+      # ToDo: Re-enable once the LLVM 23 GlobalISel/SelectionDAG ABI mismatch for by-value structs on arm64-apple-darwin is
+      #       fixed. At -O0, the non-optnone inline functions and their optnone callers disagree on stack argument offsets,
+      #       which corrupts arguments in the bootstrap compiler (e.g. Pair<QualType, bool>.ctor)
+      # - name: Run Test target (bootstrap compiler)
+      #   working-directory: build
+      #   shell: bash
+      #   # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
+      #   run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
 
       - name: Save CCache
         uses: actions/cache/save@v6
