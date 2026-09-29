@@ -17,10 +17,12 @@ Return from lambda as reference:
 -- LifetimeObject 7 was created (ctor)
 -- LifetimeObject 7 was copied to LifetimeObject 8 (copy ctor)
 -- LifetimeObject 8 (dtor)
+-- LifetimeObject 7 (dtor)
 Return from lambda as const reference:
 -- LifetimeObject 9 was created (ctor)
 -- LifetimeObject 9 was copied to LifetimeObject 10 (copy ctor)
 -- LifetimeObject 10 (dtor)
+-- LifetimeObject 9 (dtor)
 Return from function as value:
 -- LifetimeObject 11 was created (ctor)
 -- LifetimeObject 12 was created (ctor)

@@ -34,11 +34,15 @@ std::any TypeChecker::visitMainFctDefCheck(MainFctDefNode *node) {
 }
 
 std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
-  node->resizeToNumberOfManifestations(node->manifestations.size());
+  const size_t manifestationCount = node->manifestations.size();
+  node->resizeToNumberOfManifestations(manifestationCount);
   manIdx = 0; // Reset the manifestation index
 
-  // Get all manifestations for this function definition
-  for (Function *manifestation : node->manifestations) {
+  // Get all manifestations for this function definition. Type-checking a body can add new manifestations of this function
+  // (e.g. a generic struct method that uses another substantiation of its own struct), which would invalidate iterators.
+  // Those are type-checked in the next run, so only visit the manifestations that exist up front, accessing them by index.
+  while (manIdx < manifestationCount) {
+    Function *manifestation = node->manifestations.at(manIdx);
     // Skip non-substantiated or already checked functions
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
       manIdx++; // Increase the manifestation index
@@ -102,11 +106,15 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
 }
 
 std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
-  node->resizeToNumberOfManifestations(node->manifestations.size());
+  const size_t manifestationCount = node->manifestations.size();
+  node->resizeToNumberOfManifestations(manifestationCount);
   manIdx = 0; // Reset the manifestation index
 
-  // Get all manifestations for this procedure definition
-  for (Function *manifestation : node->manifestations) {
+  // Get all manifestations for this procedure definition. Type-checking a body can add new manifestations of this procedure
+  // (e.g. a generic struct method that uses another substantiation of its own struct), which would invalidate iterators.
+  // Those are type-checked in the next run, so only visit the manifestations that exist up front, accessing them by index.
+  while (manIdx < manifestationCount) {
+    Function *manifestation = node->manifestations.at(manIdx);
     // Skip non-substantiated or already checked procedures
     if (!manifestation->isFullySubstantiated() || manifestation->alreadyTypeChecked) {
       manIdx++; // Increase the manifestation index
