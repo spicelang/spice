@@ -146,6 +146,8 @@ public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceF
 
     // Run frontend and first type checker run for the loaded source file
     moduleSourceFile.runFrontEnd();
+    // Merge the runtime module's own dependency registries (deferred tail of the front-end, see SourceFile.runMiddleEnd)
+    moduleSourceFile.mergeNameRegistriesRecursive();
     moduleSourceFile.runTypeCheckerPre();
 
     return moduleSourceFile;

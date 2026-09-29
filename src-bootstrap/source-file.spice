@@ -20,6 +20,7 @@ import "bootstrap/driver";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/global/runtime-module-manager";
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/error-manager";
 import "bootstrap/model/function" as model;
 import "bootstrap/util/compiler-warning";
@@ -31,6 +32,7 @@ import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
 import "bootstrap/importcollector/import-collector";
 import "bootstrap/symboltablebuilder/symbol-table-builder";
+import "bootstrap/typechecker/type-checker";
 import "bootstrap/visualizer/ast-visualizer";
 
 type CompileStageType enum {
@@ -220,7 +222,8 @@ public p SourceFile.runASTVisualizer() {
     dotCode << " " << astDotCode.get<String>() << "}";
 
     // Dump the serialized AST string and the SVG file
-    this.compilerOutput.astString = dotCode.str();
+    // Copy explicitly, see https://github.com/spicelang/spice/issues/1460
+    this.compilerOutput.astString = String(dotCode.str());
 
     if this.cliOptions.dump.dumpAST {
         this.visualizerOutput("AST", this.compilerOutput.astString);
@@ -243,6 +246,7 @@ public p SourceFile.runImportCollector() {
     // Collect the imports for this source file
     ImportCollector importCollector = ImportCollector(this.resourceManager, this);
     importCollector.visit(this.ast);
+    this.checkForHardError();
 
     this.previousStage = CompileStageType::IMPORT_COLLECTOR;
 
@@ -270,6 +274,7 @@ public p SourceFile.runSymbolTableBuilder() {
     // circular imports work: with a cycle, a dependency's registry is not fully populated yet at this point.
     SymbolTableBuilder symbolTableBuilder = SymbolTableBuilder(this.resourceManager, this);
     symbolTableBuilder.visit(this.ast);
+    this.checkForHardError();
 
     this.previousStage = CompileStageType::SYMBOL_TABLE_BUILDER;
     timer.stop();
@@ -294,9 +299,9 @@ public p SourceFile.runTypeCheckerPre() { // Public for the RuntimeModuleManager
     timer.start();
 
     // Then type-check the current file
-    // ToDo: Port the TypeChecker
-    //TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_PRE);
-    //typeChecker.visit(this.ast);
+    TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_PRE);
+    typeChecker.visit(this.ast);
+    this.checkForHardError();
 
     this.previousStage = CompileStageType::TYPE_CHECKER_PRE;
     this.typeCheckerPreRunning = false;
@@ -324,8 +329,7 @@ p SourceFile.runTypeCheckerPost() {
     timer.start();
 
     // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
-    // ToDo: Port the TypeChecker
-    //TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_POST);
+    TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_POST);
     unsigned short typeCheckerRuns = 0s;
     while this.reVisitRequested {
         typeCheckerRuns++;
@@ -334,7 +338,8 @@ p SourceFile.runTypeCheckerPost() {
 
         // Type-check the current file first. Multiple times, if requested
         timer.resume();
-        //typeChecker.visit(this.ast);
+        typeChecker.visit(this.ast);
+        this.checkForHardError();
         timer.pause();
 
         // Then type-check all dependencies
@@ -349,8 +354,7 @@ p SourceFile.runTypeCheckerPost() {
     this.checkForSoftErrors();
 
     // Check if all dyn variables were type-inferred successfully
-    // ToDo: Port Scope.ensureSuccessfulTypeInference
-    //this.globalScope.ensureSuccessfulTypeInference();
+    this.globalScope.ensureSuccessfulTypeInference();
 
     this.previousStage = CompileStageType::TYPE_CHECKER_POST;
     timer.stop();
@@ -529,8 +533,45 @@ public p SourceFile.runMiddleEnd() {
     // why it cannot live inside the per-file front-end recursion (a circular import would otherwise merge a dependency
     // whose registry is not populated yet). runMiddleEnd is the first stage that is only ever invoked at the top level.
     this.mergeNameRegistriesRecursive();
-    this.runTypeCheckerPre();
-    this.runTypeCheckerPost();
+    if this.resourceManager.abortCompilation { return; }
+    // From here on, struct manifestations may be substantiated, and each of them gets its compiler-generated default
+    // members decided right at that point (see TypeChecker.createImplicitDefaultMembers). Once the middle end is done,
+    // every manifestation exists and was decided on, so the back end must not create any more of them.
+    DefaultMemberCreationSection defaultMemberCreationSection;
+    // We need two runs here due to generics.
+    // The first run to determine all concrete function/struct/interface substantiations
+    this.runTypeCheckerPre(); // Visit the dependency tree from bottom to top
+    if this.resourceManager.abortCompilation { return; }
+    // The second run to ensure, also generic scopes are type-checked properly
+    this.runTypeCheckerPost(); // Visit the dependency tree from top to bottom in topological order
+    if this.resourceManager.abortCompilation { return; }
+    // The per-file convergence loop inside runTypeCheckerPost is scoped to its own call stack: a cross-file revisit
+    // request that lands on a file whose loop already unwound (e.g. a recursive generic dtor chain that closes back
+    // through a runtime module which was itself gated behind another, not-yet-checked importer) is otherwise dropped,
+    // leaving a fully-substantiated manifestation whose body was never type-checked. Sweep every source file in the
+    // program for a straggling revisit request and drive it to convergence directly, repeating until none are left.
+    bool anySourceFileRevisitPending = true;
+    while anySourceFileRevisitPending {
+        anySourceFileRevisitPending = false;
+        // Snapshot the current files before driving any of them: runTypeCheckerPost() below can itself trigger a
+        // freshly-discovered runtime import (SourceFile.requestRuntimeModule -> GlobalResourceManager.createSourceFile),
+        // which inserts into resourceManager.sourceFiles, so a stable list of pointers is collected first.
+        Vector<SourceFile*> sourceFilesSnapshot;
+        foreach dyn sourceFileEntry : this.resourceManager.sourceFiles {
+            sourceFilesSnapshot.pushBack(sourceFileEntry.getSecond());
+        }
+        foreach SourceFile* sourceFile : sourceFilesSnapshot {
+            if sourceFile.reVisitRequested {
+                sourceFile.runTypeCheckerPost();
+                anySourceFileRevisitPending = true;
+            }
+        }
+        // A source file created mid-sweep (see above) still needs its own pass; it starts out with reVisitRequested
+        // true, so re-looping picks it up via the snapshot taken on the next iteration.
+        if this.resourceManager.sourceFiles.getSize() > sourceFilesSnapshot.getSize() {
+            anySourceFileRevisitPending = true;
+        }
+    }
 }
 
 public p SourceFile.runBackEnd() {
@@ -666,6 +707,17 @@ public f<const NameRegistryEntry*> SourceFile.getNameRegistryEntry(const String&
     return entry;
 }
 
+/**
+ * Abort the compilation if a hard error was raised. In the host, hard errors are thrown as SemanticError and abort the
+ * compilation right away. The bootstrap records them instead (see ErrorManager), so each stage checks for them afterwards.
+ */
+public p SourceFile.checkForHardError() {
+    const ErrorManager& errorManager = this.resourceManager.errorManager;
+    if errorManager.hasHardError {
+        panic(Error(errorManager.hardErrorMessage.getRaw()));
+    }
+}
+
 public p SourceFile.checkForSoftErrors() {
     // Check if there are any soft errors and if so, print them
     if !this.resourceManager.errorManager.softErrors.isEmpty() {
@@ -674,7 +726,9 @@ public p SourceFile.checkForSoftErrors() {
             errorMessage += "\n\n";
             errorMessage += error.message;
         }
-        panic(Error(errorMessage.getRaw()));
+        const CompilerError compilerError = CompilerError(CompilerErrorType::UNRESOLVED_SOFT_ERRORS, errorMessage.getRaw());
+        const String& compilerErrorMessage = compilerError.getMessage();
+        panic(Error(compilerErrorMessage.getRaw()));
     }
 }
 
@@ -812,7 +866,7 @@ public p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, co
  *
  * Must only be called once every reachable file has built its own exported name registry (i.e. after the front-end).
  */
-p SourceFile.mergeNameRegistriesRecursive() {
+public p SourceFile.mergeNameRegistriesRecursive() {
     if this.registriesMerged {
         return;
     }

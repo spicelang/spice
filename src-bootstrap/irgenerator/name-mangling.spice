@@ -12,6 +12,7 @@ import "bootstrap/model/struct";
 import "bootstrap/model/struct-base";
 import "bootstrap/model/union";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type";
 import "bootstrap/symboltablebuilder/type-chain";
@@ -237,7 +238,7 @@ p mangleType(StringStream& out, const QualType& qualType) {
 
     // Qualifiers
     const TypeQualifiers& qualifiers = qualType.qualifiers;
-    assert qualifiers.isSigned == !qualifiers.isUnsigned;
+    assert boolEquals(qualifiers.isSigned, !qualifiers.isUnsigned);
     const bool signedness = qualifiers.isSigned;
     // The 'heap' qualifier has no equivalent in the C++ Itanium ABI, but it changes the semantics of the type (ownership), so
     // it must be reflected in the mangled name. Otherwise e.g. 'byte*' and 'heap byte*' manifestations of the same generic

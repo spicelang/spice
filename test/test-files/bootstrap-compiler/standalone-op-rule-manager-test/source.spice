@@ -85,12 +85,10 @@ f<int> main() {
     assert qualType.is(SuperType::TY_BOOL);
     assert rm.errorManager.softErrors.isEmpty();
 
-    // Invalid operand types record a soft error and yield the unresolved type
+    // Invalid operand types record a hard error and yield the unresolved type
     exprResult = opRuleManager.getPlusResultType(node, temp(intType), temp(stringType), 0l);
     assert exprResult.ty.is(SuperType::TY_UNRESOLVED);
-    assert rm.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(rm.errorManager, 0l, "Cannot apply '+' operator on types int and string");
-    rm.errorManager.softErrors.clear();
+    assert takeHardError(rm.errorManager, "Cannot apply '+' operator on types int and string");
 
     // -------------------------------------------------------------------------------------------------------------
     // Unary operators
@@ -106,8 +104,7 @@ f<int> main() {
     assert rm.errorManager.softErrors.isEmpty();
     qualType = opRuleManager.getPrefixMulResultType(node, temp(intType));
     assert qualType.is(SuperType::TY_UNRESOLVED);
-    assert softErrorContains(rm.errorManager, 0l, "Cannot apply de-referencing operator on type int");
-    rm.errorManager.softErrors.clear();
+    assert takeHardError(rm.errorManager, "Cannot apply de-referencing operator on type int");
 
     // -------------------------------------------------------------------------------------------------------------
     // Unsafe operations are only allowed in unsafe blocks
@@ -150,8 +147,7 @@ f<int> main() {
     assert rm.errorManager.softErrors.isEmpty();
     qualType = opRuleManager.getCastResultType(node, boolType, temp(intType));
     assert qualType.is(SuperType::TY_UNRESOLVED);
-    assert softErrorContains(rm.errorManager, 0l, "Cannot apply '(cast)' operator on types bool and int");
-    rm.errorManager.softErrors.clear();
+    assert takeHardError(rm.errorManager, "Cannot apply '(cast)' operator on types bool and int");
 
     // -------------------------------------------------------------------------------------------------------------
     // Assignments
@@ -168,8 +164,7 @@ f<int> main() {
     assignResult = opRuleManager.getAssignResultType(node, temp(intType), temp(intType));
     assignType = assignResult.getFirst();
     assert assignType.is(SuperType::TY_UNRESOLVED);
-    assert softErrorContains(rm.errorManager, 0l, "Cannot assign to a temporary value");
-    rm.errorManager.softErrors.clear();
+    assert takeHardError(rm.errorManager, "Cannot assign to a temporary value");
     // Assigning to a constant
     SymbolTableEntry* limitEntry = root.lookupStrict(String("LIMIT"));
     const ExprResult limit = ExprResult{limitEntry.getQualType(), limitEntry};
@@ -180,8 +175,7 @@ f<int> main() {
     assignResult = opRuleManager.getAssignResultType(node, counter, temp(stringType), false, false, ERROR_MSG_RETURN);
     assignType = assignResult.getFirst();
     assert assignType.is(SuperType::TY_UNRESOLVED);
-    assert softErrorContains(rm.errorManager, 0l, "Passed wrong data type to return statement. Expected int but got string");
-    rm.errorManager.softErrors.clear();
+    assert takeHardError(rm.errorManager, "Passed wrong data type to return statement. Expected int but got string");
     // Compound assignments
     exprResult = opRuleManager.getPlusEqualResultType(node, counter, temp(longType));
     assert exprResult.ty.is(SuperType::TY_INT);
@@ -216,8 +210,7 @@ f<int> main() {
     // Without an operator function for the given types, the primitive rules apply
     exprResult = opRuleManager.getMinusResultType(node, temp(vecType), temp(vecType), 0l);
     assert exprResult.ty.is(SuperType::TY_UNRESOLVED);
-    assert softErrorContains(rm.errorManager, 0l, "Cannot apply '-' operator on types Vec and Vec");
-    rm.errorManager.softErrors.clear();
+    assert takeHardError(rm.errorManager, "Cannot apply '-' operator on types Vec and Vec");
 
     printf("All assertions passed!\n");
 }

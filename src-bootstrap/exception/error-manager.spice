@@ -26,8 +26,82 @@ public p operator=(SoftError& this, const SoftError& other) {
     this.message = other.message;
 }
 
+/**
+ * Collects the errors of a compilation.
+ *
+ * Soft errors are collected and reported together at the end of the type checker (see SourceFile.checkForSoftErrors).
+ * Hard errors are thrown as SemanticError in the host and abort the compilation right away. Spice has no exceptions, so a
+ * hard error is recorded here instead and the pipeline aborts with it after the current stage (see
+ * SourceFile.checkForHardError). Like in the host, where the first thrown error ends the compilation, only the first hard
+ * error is kept. Recording instead of panicking also keeps hard errors testable.
+ */
 public type ErrorManager struct {
     public Vector<SoftError> softErrors
+    public bool hasHardError = false
+    public String hardErrorMessage
+}
+
+// Address of the active error manager. The host throws hard errors as exceptions from anywhere in the compiler, including
+// places that have no access to the resource manager (e.g. the FunctionManager). Spice only supports globals of primitive
+// type, so the address is stored as a long.
+long ACTIVE_ERROR_MANAGER_ADDRESS = 0l;
+
+/**
+ * Make the given error manager the active one. throwSemanticError() records hard errors in it.
+ *
+ * @param errorManager Error manager
+ */
+public p setActiveErrorManager(ErrorManager* errorManager) {
+    unsafe {
+        ACTIVE_ERROR_MANAGER_ADDRESS = cast<long>(cast<byte*>(errorManager));
+    }
+}
+
+/**
+ * Get the active error manager
+ *
+ * @return Active error manager
+ */
+public f<ErrorManager*> getActiveErrorManager() {
+    ErrorManager* errorManager = nil<ErrorManager*>;
+    unsafe {
+        errorManager = cast<ErrorManager*>(cast<byte*>(ACTIVE_ERROR_MANAGER_ADDRESS));
+    }
+    assert errorManager != nil<ErrorManager*>;
+    return errorManager;
+}
+
+/**
+ * Record a hard error. Only the first hard error is kept, since the host aborts the compilation with the first one.
+ *
+ * @param astNode AST node, where the error occurred
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ * @param printErrorMessage Whether to append the code snippet of the node to the message
+ */
+public p ErrorManager.addHardError(const ASTNode* astNode, SemanticErrorType errorType, const String& message, bool printErrorMessage = true) {
+    if this.hasHardError {
+        return;
+    }
+    const SemanticError semanticError = SemanticError(astNode, errorType, message.getRaw(), printErrorMessage);
+    // Copy the message explicitly. Assigning the reference, returned by getMessage(), would alias the buffer of the
+    // SemanticError, which is freed at the end of this method (see https://github.com/spicelang/spice/issues/1460)
+    this.hardErrorMessage = String(semanticError.getMessage());
+    this.hasHardError = true;
+}
+
+/**
+ * Raise a hard error on the active error manager. This is the equivalent of the host's 'throw SemanticError(...)'.
+ * The caller has to return afterwards, like after reporting a soft error.
+ *
+ * @param astNode AST node, where the error occurred
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ * @param printErrorMessage Whether to append the code snippet of the node to the message
+ */
+public p throwSemanticError(const ASTNode* astNode, SemanticErrorType errorType, const String& message, bool printErrorMessage = true) {
+    ErrorManager* errorManager = getActiveErrorManager();
+    errorManager.addHardError(astNode, errorType, message, printErrorMessage);
 }
 
 p ErrorManager.addSoftError(const CodeLoc& codeLoc, const String& message) {
@@ -77,6 +151,21 @@ public f<bool> testErrorManagerSmoke() {
     // Adding a soft error for the same node again is deduplicated
     em.addSoftError(&node, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, String("x"));
     assert em.softErrors.getSize() == 3l;
+
+    // Only the first hard error is kept
+    assert !em.hasHardError;
+    em.addHardError(&node, SemanticErrorType::DUPLICATE_SYMBOL, String("first hard"));
+    assert em.hasHardError;
+    em.addHardError(&node, SemanticErrorType::DUPLICATE_SYMBOL, String("second hard"));
+    assert em.hardErrorMessage == "[Error|Semantic] test.spice:7:3:\nDuplicate symbol: first hard";
+
+    // Hard errors can also be raised through the active error manager
+    ErrorManager activeEm;
+    setActiveErrorManager(&activeEm);
+    throwSemanticError(&node, SemanticErrorType::MISSING_MAIN_FUNCTION, String("No main function found"), false);
+    assert activeEm.hasHardError;
+    assert activeEm.hardErrorMessage == "[Error|Semantic] test.spice:7:3:\nSpice executables must contain a main function: No main function found";
+    setActiveErrorManager(nil<ErrorManager*>);
 
     // A different error type maps to its own message prefix
     ASTNode node2 = ASTNode(CodeLoc(9l, 1l, "test.spice"));

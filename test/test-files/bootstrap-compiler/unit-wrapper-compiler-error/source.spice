@@ -1,8 +1,7 @@
-import "bootstrap/ast/ast-nodes";
+import "bootstrap/exception/compiler-error";
 
 // Wrapper for 'spice test' unit test
 f<int> main() {
-    testASTNodesSmoke();
-    testCompileTimeValueViews();
+    testCompilerErrorSmoke();
     printf("All assertions passed!\n");
 }

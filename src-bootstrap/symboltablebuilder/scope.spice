@@ -6,6 +6,7 @@ import "std/data/pair";
 // Own imports
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
@@ -116,6 +117,28 @@ public f<Scope*> Scope.getParent() {
  */
 public f<ScopeType> Scope.getScopeType() {
     return this.scopeType;
+}
+
+/**
+ * Checks if all variables of this and all child scopes are of an explicit type.
+ * This is executed after type inference to check that all variables could be inferred correctly.
+ */
+public p Scope.ensureSuccessfulTypeInference() {
+    // Check symbols in this scope
+    foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbolTable.symbols {
+        const SymbolTableEntry& entry = symbol.getSecond();
+        const QualType entryType = entry.getQualType();
+        if entryType.is(SuperType::TY_DYN) {
+            const String message = "For the variable '" + symbol.getFirst() + "' no type could be inferred";
+            panicWithSemanticError(entry.declNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, message.getRaw());
+        }
+    }
+
+    // Check child scopes
+    foreach Pair<const String&, Scope*&> childEntry : this.children {
+        Scope* childScope = childEntry.getSecond();
+        childScope.ensureSuccessfulTypeInference();
+    }
 }
 
 /**

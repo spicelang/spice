@@ -3,6 +3,9 @@ import "std/data/unordered-map";
 import "std/data/vector";
 
 // Own imports
+import "bootstrap/exception/error-manager";
+import "bootstrap/model/struct-base";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
@@ -255,11 +258,14 @@ public p substantiateTypeWithTypeMapping(QualType& qualType, const TypeMapping& 
     if !baseType.isSelfReferencingStructType(nil<const QualType*>) {
         if baseType.is(SuperType::TY_STRUCT) { // Struct
             Struct* spiceStruct = baseType.getStruct(node, templateTypes);
-            // ToDo: Report as a hard error (UNKNOWN_DATATYPE) once error propagation for typechecker passes is designed.
-            // For now, leave the type as is if the struct could not be found.
-            if spiceStruct != nil<Struct*> {
-                qualType = qualType.getWithBodyScope(spiceStruct.scope);
+            if spiceStruct == nil<Struct*> {
+                assert node != nil<ASTNode*>;
+                const String signature = getStructSignature(baseType.getSubType(), templateTypes);
+                throwSemanticError(node, SemanticErrorType::UNKNOWN_DATATYPE, "Could not find struct '" + signature + "'");
+                // The compilation is aborted after this stage. Until then, leave the type as is
+                return;
             }
+            qualType = qualType.getWithBodyScope(spiceStruct.scope);
         } else if baseType.is(SuperType::TY_UNION) { // Union
             Union* spiceUnion = baseType.getUnion(node, templateTypes);
             if spiceUnion != nil<Union*> {
@@ -267,9 +273,14 @@ public p substantiateTypeWithTypeMapping(QualType& qualType, const TypeMapping& 
             }
         } else { // Interface
             Interface* spiceInterface = baseType.getInterface(node, templateTypes);
-            if spiceInterface != nil<Interface*> {
-                qualType = qualType.getWithBodyScope(spiceInterface.scope);
+            if spiceInterface == nil<Interface*> {
+                assert node != nil<ASTNode*>;
+                const String signature = getStructSignature(baseType.getSubType(), templateTypes);
+                throwSemanticError(node, SemanticErrorType::UNKNOWN_DATATYPE, "Could not find interface '" + signature + "'");
+                // The compilation is aborted after this stage. Until then, leave the type as is
+                return;
             }
+            qualType = qualType.getWithBodyScope(spiceInterface.scope);
         }
     }
 }

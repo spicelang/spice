@@ -93,6 +93,9 @@ f<T*> Parser.concludeNode<T>(T* node) {
     ASTNode* nodeBase = cast<ASTNode*>(node);
     assert this.parentStack.top() == nodeBase;
     this.parentStack.pop();
+    // The node ends with the last token, that was consumed for it (like the stop token of a parser rule context in the host)
+    const Token& stopToken = this.lexer.getPreviousRelevantToken();
+    nodeBase.codeLoc.sourceIntervalStop = cast<long>(stopToken.endOffset) - 1l;
     return node;
 }
 
@@ -830,7 +833,7 @@ p Parser.applyFixedTypeId(ASTTopLevelDefAttrNode* attrs, unsigned long& typeId) 
     const String fixedTypeIdKey = String(ATTR_CORE_COMPILER_FIXED_TYPE_ID);
     if attrs.attrLst.hasAttr(fixedTypeIdKey) {
         const CompileTimeValue value = attrs.attrLst.getAttrValueByName(fixedTypeIdKey);
-        typeId = cast<unsigned long>(value.intValue);
+        typeId = cast<unsigned long>(value.getIntValue());
     }
 }
 
@@ -2322,38 +2325,38 @@ f<ASTConstantNode*> Parser.parseConstant() {
     if this.currentTokenIs(TokenType::DOUBLE_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_DOUBLE;
         const double value = toDouble(token.text.getRaw());
-        constantNode.compileTimeValue.doubleValue = isNegative ? -value : value;
+        constantNode.compileTimeValue.setDoubleValue(isNegative ? -value : value);
         this.expect(TokenType::DOUBLE_LIT);
     } else if this.currentTokenIs(TokenType::INT_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_INT;
-        constantNode.compileTimeValue.intValue = cast<int>(this.parseNumeric(token, isNegative, 32));
+        constantNode.compileTimeValue.setIntValue(cast<int>(this.parseNumeric(token, isNegative, 32)));
         this.expect(TokenType::INT_LIT);
     } else if this.currentTokenIs(TokenType::SHORT_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_SHORT;
-        constantNode.compileTimeValue.shortValue = cast<short>(this.parseNumeric(token, isNegative, 16));
+        constantNode.compileTimeValue.setShortValue(cast<short>(this.parseNumeric(token, isNegative, 16)));
         this.expect(TokenType::SHORT_LIT);
     } else if this.currentTokenIs(TokenType::LONG_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_LONG;
-        constantNode.compileTimeValue.longValue = this.parseNumeric(token, isNegative, 64);
+        constantNode.compileTimeValue.setLongValue(this.parseNumeric(token, isNegative, 64));
         this.expect(TokenType::LONG_LIT);
     } else if this.currentTokenIs(TokenType::CHAR_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_CHAR;
-        constantNode.compileTimeValue.charValue = this.parseChar(token);
+        constantNode.compileTimeValue.setCharValue(this.parseChar(token));
         this.expect(TokenType::CHAR_LIT);
     } else if this.currentTokenIs(TokenType::STRING_LIT) {
         // Save a pointer to the string in the compile time value
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_STRING;
-        constantNode.compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+        constantNode.compileTimeValue.setStringValueOffset(this.resourceManager.compileTimeStringValues.getSize());
         // Add the string to the global compile time string list
         this.resourceManager.compileTimeStringValues.pushBack(parseString(token.text));
         this.expect(TokenType::STRING_LIT);
     } else if this.currentTokenIs(TokenType::TRUE) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_BOOL;
-        constantNode.compileTimeValue.boolValue = true;
+        constantNode.compileTimeValue.setBoolValue(true);
         this.expect(TokenType::TRUE);
     } else if this.currentTokenIs(TokenType::FALSE) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_BOOL;
-        constantNode.compileTimeValue.boolValue = false;
+        constantNode.compileTimeValue.setBoolValue(false);
         this.expect(TokenType::FALSE);
     } else {
         panic(Error("Unknown constant type"));
@@ -2554,8 +2557,9 @@ f<ASTDataTypeNode*> Parser.parseDataType() {
     }
     dataTypeNode.baseDataType = this.parseBaseDataType();
 
-    // Parse type modifiers
-    while true {
+    // Parse type modifiers. If a '>' of a split SHR ('>>') token is still pending, it closes the enclosing generic list
+    // first, so the following modifiers belong to the enclosing data type (e.g. the '&' in 'Vector<Vector<int>>&')
+    while this.pendingGreaters == 0 {
         if this.currentTokenIs(TokenType::MUL) { // Pointer
             this.expect(TokenType::MUL);
             dataTypeNode.tmQueue.push(TypeModifier(TypeModifierType::TYPE_PTR, false, 0, String()));
@@ -2790,6 +2794,9 @@ f<char> Parser.parseChar(const Token& token) {
             case 'f': { return '\f'; }
             case 'v': { return '\v'; }
             case '0': { return '\0'; }
+            default: {
+                // Required, see https://github.com/spicelang/spice/issues/1459 (the code below would be dropped otherwise)
+            }
         }
         const String message = "Invalid escape sequence '" + input + "'";
         this.throwParserError(token.codeLoc, ParserErrorType::INVALID_CHAR_LITERAL, message.getRaw());
@@ -2883,6 +2890,9 @@ f<char> getEscapedChar(char c) {
         case '?': { return '?'; }
         case '\'': { return '\''; }
         case '"': { return '"'; }
+        default: {
+            // Required, see https://github.com/spicelang/spice/issues/1459 (the code below would be dropped otherwise)
+        }
     }
     return '\0';
 }

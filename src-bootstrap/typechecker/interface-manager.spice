@@ -5,6 +5,8 @@ import "std/data/vector";
 import "std/data/pair";
 
 // Own imports
+import "bootstrap/exception/error-manager";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/interface";
 import "bootstrap/model/function";
@@ -33,7 +35,10 @@ public type InterfaceRegistry alias Map</*interfaceId=*/String, /*manifestationL
 public f<Interface*> insertInterface(Scope* insertScope, Interface& spiceInterface, Vector<Interface*>* nodeInterfaceList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
     const String interfaceId = spiceInterface.name + ":" + spiceInterface.declNode.codeLoc.toString();
-    insertScope.interfaces.insert(interfaceId, InterfaceManifestationList());
+    // Like std::map::emplace in the host, keep an existing manifestation list
+    if !insertScope.interfaces.contains(interfaceId) {
+        insertScope.interfaces.insert(interfaceId, InterfaceManifestationList());
+    }
 
     // Save substantiation in declaration node
     Interface* substantiation = insertSubstantiation(insertScope, spiceInterface, spiceInterface.declNode);
@@ -155,6 +160,9 @@ public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, co
 
             // Add to matched interfaces
             matches.pushBack(substantiatedInterface);
+            // Leave the manifestation list: the remaining manifestations are substantiations, which are skipped anyway, and
+            // iterating the hash table further after inserting into it could visit the generic preset a second time
+            break;
         }
     }
 
@@ -165,8 +173,8 @@ public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, co
 
     // Check if more than one interface matches the requirements
     if matches.getSize() > 1l {
-        // ToDo: Report as a hard error (INTERFACE_AMBIGUITY) once error propagation for typechecker passes is
-        // designed. For now, deterministically pick the first candidate.
+        throwSemanticError(node, SemanticErrorType::INTERFACE_AMBIGUITY, String("Multiple interfaces match the requested signature"));
+        // The compilation is aborted after this stage. Until then, deterministically pick the first candidate
     }
     Interface* matchedInterface = matches.front();
     matchedInterface.isNewlyInserted = false;

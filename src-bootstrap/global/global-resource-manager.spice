@@ -69,6 +69,8 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     // The name disambiguation of types operates on the type name disambiguator of the resource manager. The host clears its
     // static TypeNameDisambiguator in the destructor, which is implicit here, since each resource manager owns a fresh one
     setActiveTypeNameDisambiguator(&this.typeNameDisambiguator);
+    // Hard errors (thrown as SemanticError in the host) are recorded in the error manager of the resource manager
+    setActiveErrorManager(&this.errorManager);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {
