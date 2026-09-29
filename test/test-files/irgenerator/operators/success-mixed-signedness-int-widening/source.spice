@@ -6,25 +6,25 @@ f<int> main() {
     const unsigned short us = 65535us;
     const byte b = cast<byte>(255);
     const char c = cast<char>(200);
-    printf("%ld %ld\n", cast<long>(ui), cast<unsigned long>(ui));
-    printf("%d %ld\n", cast<int>(us), cast<long>(us));
+    printf("%lld %lld\n", cast<long>(ui), cast<unsigned long>(ui));
+    printf("%d %lld\n", cast<int>(us), cast<long>(us));
     printf("%d %d\n", cast<int>(b), cast<int>(c));
 
     // Signed source -> wider unsigned target (sign-extend)
     const int i = -1;
     const short s = -1s;
-    printf("%lu %u %lu\n", cast<unsigned long>(i), cast<unsigned int>(s), cast<unsigned long>(s));
+    printf("%llu %u %llu\n", cast<unsigned long>(i), cast<unsigned int>(s), cast<unsigned long>(s));
 
     // Mixed signedness in binary operators
     const long l = 1l;
     const unsigned long ul = 1ul;
-    printf("%ld %ld\n", l + ui, ui + l);
-    printf("%lu %lu\n", ul + i, i + ul);
+    printf("%lld %lld\n", l + ui, ui + l);
+    printf("%llu %llu\n", ul + i, i + ul);
     const long lMax = 4294967295l;
     assert lMax == ui;
     assert ui == lMax;
     long acc = 0l;
     acc += ui;
     acc -= us;
-    printf("%ld\n", acc);
+    printf("%lld\n", acc);
 }
