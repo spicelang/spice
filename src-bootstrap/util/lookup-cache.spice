@@ -1,0 +1,45 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/unordered-map";
+import "std/math/hash";
+import "std/text/stringstream";
+import "std/type/type-conversion";
+
+// Generic type defs
+type T dyn;
+
+/**
+ * Lookup cache of a manager (FunctionManager, StructManager, ...). The host keeps the cache and its statistics in static
+ * members of the managers. Spice only supports globals of primitive type, so the bootstrap keeps them in the global resource
+ * manager instead, which also mirrors the host clearing them when the global resource manager is destroyed.
+ */
+public type LookupCache<T> struct {
+    public UnorderedMap<Hash, T*> lookupCache
+    public unsigned long lookupCacheHits = 0l
+    public unsigned long lookupCacheMisses = 0l
+}
+
+/**
+ * Clear the lookup cache
+ */
+public p LookupCache.cleanup() {
+    this.lookupCache.clear();
+    this.lookupCacheHits = 0l;
+    this.lookupCacheMisses = 0l;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ *
+ * @param managerName Name of the manager, the cache belongs to
+ * @return Statistics string
+ */
+public f<String> LookupCache.dumpLookupCacheStatistics(const string managerName) {
+    StringStream stats;
+    stats << managerName << " lookup cache statistics:\n";
+    stats << "  lookup cache entries: " << toString(this.lookupCache.getSize()) << "\n";
+    stats << "  lookup cache hits: " << toString(this.lookupCacheHits) << "\n";
+    stats << "  lookup cache misses: " << toString(this.lookupCacheMisses) << "\n";
+    return stats.str();
+}

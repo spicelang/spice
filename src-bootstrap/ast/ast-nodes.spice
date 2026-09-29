@@ -2735,6 +2735,20 @@ public p destructASTNode(ASTNode* node) {
 }
 
 /**
+ * Check if this node is a function parameter. Mirrors the host's virtual ASTNode::isParam(), which only the DeclStmtNode
+ * overrides.
+ *
+ * @return Parameter or not
+ */
+public f<bool> ASTNode.isParam() {
+    if this.kind != ASTNodeKind::DECL_STMT {
+        return false;
+    }
+    ASTDeclStmtNode* concreteNode = downcast<ASTDeclStmtNode>(this);
+    return concreteNode.isFctParam;
+}
+
+/**
  * Get the function manifestation list of a declaration node. Mirrors the host's virtual ASTNode::getFctManifestations().
  *
  * @param fctName Name of the function. Only relevant for struct defs, which hold the implicitly created default methods

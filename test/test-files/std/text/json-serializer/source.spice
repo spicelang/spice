@@ -28,6 +28,18 @@ f<int> main() {
     objVal.addObjectField(String("b"), __new<JsonValue>(String("x")));
     assert serializer.serialize(objVal) == String("{\"a\":true,\"b\":\"x\"}");
 
+    // Fields can be inserted at a given position
+    objVal.insertObjectField(0l, String("0"), __new<JsonValue>(false));
+    objVal.insertObjectField(2l, String("ab"), __new<JsonValue>(1.0));
+    assert serializer.serialize(objVal) == String("{\"0\":false,\"a\":true,\"ab\":1,\"b\":\"x\"}");
+
+    // Unsigned integers keep their exact value, also beyond 2^53
+    JsonValue maxVal = JsonValue(18446744073709551615ul);
+    assert maxVal.hasUnsignedIntegerValue();
+    assert maxVal.getUnsignedInteger() == 18446744073709551615ul;
+    assert serializer.serialize(maxVal) == String("18446744073709551615");
+    assert !intVal.hasUnsignedIntegerValue();
+
     // Compact serialization of a parsed object preserves field order
     String compactDoc = String("{\"name\":\"Alice\",\"age\":30,\"admin\":true,\"tags\":[\"a\",\"b\"],\"address\":{\"city\":\"NYC\"}}");
     Result<JsonValue*> compactRes = parseJson(compactDoc);

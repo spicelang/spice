@@ -3,6 +3,7 @@ import "std/data/map";
 import "std/data/unordered-map";
 import "std/data/vector";
 import "std/data/pair";
+import "std/math/hash";
 
 // Own imports
 import "bootstrap/exception/error-manager";
@@ -15,6 +16,8 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/typechecker/type-matcher";
+import "bootstrap/util/custom-hash-functions";
+import "bootstrap/util/lookup-cache";
 
 // Type aliases
 public type UnionManifestationList alias UnorderedMap</*mangledName=*/String, Union>;
@@ -57,6 +60,35 @@ f<Union*> insertSubstantiation(Scope* insertScope, Union& newManifestation, cons
     return &manifestationList.get(signature);
 }
 
+// Address of the active union lookup cache. The host keeps the lookup cache in static members of the UnionManager. Spice
+// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+long ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = 0l;
+
+/**
+ * Make the given lookup cache the active one. The union lookup operates on it.
+ *
+ * @param cache Lookup cache
+ */
+public p setActiveUnionLookupCache(LookupCache<Union>* cache) {
+    unsafe {
+        ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+    }
+}
+
+/**
+ * Get the active union lookup cache
+ *
+ * @return Active lookup cache
+ */
+f<LookupCache<Union>*> getActiveUnionLookupCache() {
+    LookupCache<Union>* cache = nil<LookupCache<Union>*>;
+    unsafe {
+        cache = cast<LookupCache<Union>*>(cast<byte*>(ACTIVE_UNION_LOOKUP_CACHE_ADDRESS));
+    }
+    assert cache != nil<LookupCache<Union>*>;
+    return cache;
+}
+
 /**
  * Check if there is a union in this scope, fulfilling all given requirements and if found, return it.
  * If more than one union matches the requirement, this is reported (see ToDo below).
@@ -68,6 +100,15 @@ f<Union*> insertSubstantiation(Scope* insertScope, Union& newManifestation, cons
  * @return Matched union or nil
  */
 public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+    // Do cache lookup
+    LookupCache<Union>* cache = getActiveUnionLookupCache();
+    const Hash cacheKey = getUnionCacheKey(matchScope, qt, reqTemplateTypes);
+    if cache.lookupCache.contains(cacheKey) {
+        cache.lookupCacheHits++;
+        return cache.lookupCache.get(cacheKey);
+    }
+    cache.lookupCacheMisses++;
+
     // Loop over union registry to find unions, that match the requirements of the instantiation
     Vector<Union*> matches;
     foreach Pair<const String&, UnionManifestationList&> defEntry : matchScope.unions {
@@ -204,6 +245,9 @@ public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeL
     Union* matchedUnion = matches.front();
     matchedUnion.isNewlyInserted = false;
 
+    // Insert into cache
+    cache.lookupCache.upsert(cacheKey, matchedUnion);
+
     return matchedUnion;
 }
 
@@ -255,3 +299,27 @@ p substantiateFieldTypes(Union& candidate, const TypeMapping& typeMapping, const
     }
 }
 
+
+/**
+ * Calculate the cache key for the union lookup cache
+ *
+ * @param scope Scope to match against
+ * @param name Union name requirement
+ * @param templateTypes Template types to substantiate generic types
+ * @return Cache key
+ */
+f<Hash> getUnionCacheKey(const Scope* scope, const String& name, const QualTypeList& templateTypes) {
+    Hash hash = 0ul;
+    hashCombine64(hash, hashPointer(scope));
+    hashCombine64(hash, hash(name));
+    hashCombine64(hash, hashQualTypeList(templateTypes));
+    return hash;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ */
+public f<String> dumpUnionLookupCacheStatistics() {
+    LookupCache<Union>* cache = getActiveUnionLookupCache();
+    return cache.dumpLookupCacheStatistics("UnionManager");
+}

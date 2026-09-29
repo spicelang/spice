@@ -15,7 +15,15 @@ import "bootstrap/global/type-name-disambiguator";
 import "bootstrap/global/type-registry";
 import "bootstrap/exception/error-manager";
 import "bootstrap/linker/external-linker-interface";
+import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
+import "bootstrap/model/interface";
 import "bootstrap/model/struct";
+import "bootstrap/model/union";
+import "bootstrap/typechecker/function-manager";
+import "bootstrap/typechecker/interface-manager";
+import "bootstrap/typechecker/struct-manager";
+import "bootstrap/typechecker/union-manager";
+import "bootstrap/util/lookup-cache";
 import "bootstrap/reader/code-loc";
 import "bootstrap/util/memory";
 import "bootstrap/util/block-allocator";
@@ -53,6 +61,11 @@ public type GlobalResourceManager struct {
     public TypeNameDisambiguator typeNameDisambiguator // Hands out disambiguation suffixes for same-named types
     public Timer totalTimer
     public ErrorManager errorManager
+    // Lookup caches of the managers (static members of the managers in the host)
+    public LookupCache<model::Function> functionLookupCache
+    public LookupCache<Struct> structLookupCache
+    public LookupCache<Interface> interfaceLookupCache
+    public LookupCache<Union> unionLookupCache
     public bool abortCompilation = false
     unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1l // Start at 256 because all primitive types come first
 }
@@ -71,6 +84,12 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     setActiveTypeNameDisambiguator(&this.typeNameDisambiguator);
     // Hard errors (thrown as SemanticError in the host) are recorded in the error manager of the resource manager
     setActiveErrorManager(&this.errorManager);
+    // The lookups of the managers operate on the lookup caches of the resource manager. The host clears its static lookup
+    // caches in the destructor, which is implicit here, since each resource manager owns fresh ones
+    setActiveFunctionLookupCache(&this.functionLookupCache);
+    setActiveStructLookupCache(&this.structLookupCache);
+    setActiveInterfaceLookupCache(&this.interfaceLookupCache);
+    setActiveUnionLookupCache(&this.unionLookupCache);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {

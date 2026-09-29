@@ -3,6 +3,7 @@ import "std/data/map";
 import "std/data/unordered-map";
 import "std/data/vector";
 import "std/data/pair";
+import "std/math/hash";
 
 // Own imports
 import "bootstrap/exception/error-manager";
@@ -18,6 +19,8 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/source-file";
 import "bootstrap/typechecker/type-checker";
 import "bootstrap/typechecker/type-matcher";
+import "bootstrap/util/custom-hash-functions";
+import "bootstrap/util/lookup-cache";
 
 // Type aliases
 public type StructManifestationList alias UnorderedMap</*mangledName=*/String, Struct>;
@@ -60,6 +63,35 @@ f<Struct*> insertSubstantiation(Scope* insertScope, Struct& newManifestation, co
     return &manifestationList.get(signature);
 }
 
+// Address of the active struct lookup cache. The host keeps the lookup cache in static members of the StructManager. Spice
+// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+long ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS = 0l;
+
+/**
+ * Make the given lookup cache the active one. The struct lookup operates on it.
+ *
+ * @param cache Lookup cache
+ */
+public p setActiveStructLookupCache(LookupCache<Struct>* cache) {
+    unsafe {
+        ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+    }
+}
+
+/**
+ * Get the active struct lookup cache
+ *
+ * @return Active lookup cache
+ */
+f<LookupCache<Struct>*> getActiveStructLookupCache() {
+    LookupCache<Struct>* cache = nil<LookupCache<Struct>*>;
+    unsafe {
+        cache = cast<LookupCache<Struct>*>(cast<byte*>(ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS));
+    }
+    assert cache != nil<LookupCache<Struct>*>;
+    return cache;
+}
+
 /**
  * Check if there is a struct in this scope, fulfilling all given requirements and if found, return it.
  * If more than one struct matches the requirement, this is reported (see ToDo below).
@@ -71,6 +103,15 @@ f<Struct*> insertSubstantiation(Scope* insertScope, Struct& newManifestation, co
  * @return Matched struct or nil
  */
 public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+    // Do cache lookup
+    LookupCache<Struct>* cache = getActiveStructLookupCache();
+    const Hash cacheKey = getStructCacheKey(matchScope, qt, reqTemplateTypes);
+    if cache.lookupCache.contains(cacheKey) {
+        cache.lookupCacheHits++;
+        return cache.lookupCache.get(cacheKey);
+    }
+    cache.lookupCacheMisses++;
+
     // Loop over struct registry to find structs, that match the requirements of the instantiation
     Vector<Struct*> matches;
     foreach Pair<const String&, StructManifestationList&> defEntry : matchScope.structs {
@@ -240,6 +281,9 @@ public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTyp
     Struct* matchedStruct = matches.front();
     matchedStruct.isNewlyInserted = false;
 
+    // Insert into cache
+    cache.lookupCache.upsert(cacheKey, matchedStruct);
+
     return matchedStruct;
 }
 
@@ -304,3 +348,27 @@ p substantiateFieldTypes(Struct& candidate, const TypeMapping& typeMapping, cons
     }
 }
 
+
+/**
+ * Calculate the cache key for the struct lookup cache
+ *
+ * @param scope Scope to match against
+ * @param name Struct name requirement
+ * @param templateTypes Template types to substantiate generic types
+ * @return Cache key
+ */
+f<Hash> getStructCacheKey(const Scope* scope, const String& name, const QualTypeList& templateTypes) {
+    Hash hash = 0ul;
+    hashCombine64(hash, hashPointer(scope));
+    hashCombine64(hash, hash(name));
+    hashCombine64(hash, hashQualTypeList(templateTypes));
+    return hash;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ */
+public f<String> dumpStructLookupCacheStatistics() {
+    LookupCache<Struct>* cache = getActiveStructLookupCache();
+    return cache.dumpLookupCacheStatistics("StructManager");
+}

@@ -2,6 +2,9 @@ import "std/iterator/iterable";
 import "std/iterator/iterator";
 import "std/data/pair";
 
+// External functions
+ext f<byte*> memmove(byte*, byte*, unsigned long);
+
 // Constants
 const unsigned long INITIAL_CAPACITY = 5l;
 const unsigned int RESIZE_FACTOR = 2;
@@ -241,10 +244,12 @@ public p Vector.insertAt(unsigned long index, const T& item) {
         const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR;
         this.resize(newCapacity);
     }
-    // Move all elements after the index one to the back
-    for unsigned long i = this.size; i > index; i-- {
+    // Move all elements after the index one to the back. The elements are relocated bitwise, because the slot behind the
+    // last element is uninitialized and must not be assigned to. The slot at the index is then re-initialized below.
+    if index < this.size {
         unsafe {
-            this.contents[i] = this.contents[i - 1];
+            const unsigned long moveSize = cast<unsigned long>(sizeof<T>()) * (this.size - index);
+            memmove(cast<byte*>(&this.contents[index + 1l]), cast<byte*>(&this.contents[index]), moveSize);
         }
     }
     // Insert the new element at the index

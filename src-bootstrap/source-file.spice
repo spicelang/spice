@@ -12,6 +12,8 @@ import "std/data/vector";
 import "std/data/stack";
 import "std/io/file";
 import "std/io/filepath";
+import "std/text/json/json-value";
+import "std/text/json/json-serializer";
 import "std/time/timer";
 import "std/bindings/llvm/llvm" as llvm;
 
@@ -33,6 +35,10 @@ import "bootstrap/parser/parser";
 import "bootstrap/importcollector/import-collector";
 import "bootstrap/symboltablebuilder/symbol-table-builder";
 import "bootstrap/typechecker/type-checker";
+import "bootstrap/typechecker/post-type-checking-verifier";
+import "bootstrap/typechecker/function-manager";
+import "bootstrap/typechecker/struct-manager";
+import "bootstrap/typechecker/interface-manager";
 import "bootstrap/visualizer/ast-visualizer";
 
 type CompileStageType enum {
@@ -356,20 +362,32 @@ p SourceFile.runTypeCheckerPost() {
     // Check if all dyn variables were type-inferred successfully
     this.globalScope.ensureSuccessfulTypeInference();
 
+    // In debug builds, verify that the TypeChecker fully annotated the AST
+    if __get_build_var<bool>("spice.is_debug") {
+        this.runPostTypeCheckingVerifier();
+    }
+
     this.previousStage = CompileStageType::TYPE_CHECKER_POST;
     timer.stop();
     this.printStatusMessage("Type Checker Post", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.typeCheckerPost, typeCheckerRuns);
 
     // Save the JSON version in the compiler output
     if this.cliOptions.dump.dumpSymbolTable || this.cliOptions.testMode {
-        // ToDo: Port Scope.getSymbolTableJSON
-        //this.compilerOutput.symbolTableString = this.globalScope.getSymbolTableJSON();
+        JsonValue* symbolTableJSON = this.globalScope.getSymbolTableJSON();
+        JsonSerializer serializer = JsonSerializer(/*pretty=*/true);
+        this.compilerOutput.symbolTableString = serializer.serialize(symbolTableJSON);
+        deleteJsonValue(symbolTableJSON);
     }
 
     // Dump symbol table
     if this.cliOptions.dump.dumpSymbolTable {
         this.dumpOutput(this.compilerOutput.symbolTableString, String("Symbol Table"), String("symbol-table.json"));
     }
+}
+
+p SourceFile.runPostTypeCheckingVerifier() {
+    PostTypeCheckingVerifier verifier = PostTypeCheckingVerifier(this.resourceManager, this);
+    verifier.verify(this.ast);
 }
 
 public p SourceFile.runIRGenerator() {
@@ -489,8 +507,7 @@ public p SourceFile.concludeCompilation() {
 
     // Save type registry as string in the compiler output
     if this.isMainFile && (this.cliOptions.dump.dumpTypes || this.cliOptions.testMode) {
-        // ToDo: Port TypeRegistry.dump (needs a sort helper in std)
-        //this.compilerOutput.typesString = this.resourceManager.typeRegistry.dump();
+        this.compilerOutput.typesString = this.resourceManager.typeRegistry.dump();
     }
 
     // Dump type registry
@@ -574,22 +591,66 @@ public p SourceFile.runMiddleEnd() {
     }
 }
 
-public p SourceFile.runBackEnd() {
-    // Guard against re-entering a file that is already running its back end. Circular imports form a cycle in the
+p SourceFile.collectBackEndSourceFiles(Vector<SourceFile*>& backEndSourceFiles) {
+    // Guard against collecting a file that already went through the back end. Circular imports form a cycle in the
     // dependency graph, so the deps-first recursion below would otherwise loop forever.
     if this.backEndStarted {
         return;
     }
     this.backEndStarted = true;
 
-    // Run backend for all dependencies first
+    // Collect all dependencies first, so that they end up in front of this file in the resulting list
     foreach dyn dependency : this.dependencies {
         SourceFile* sourceFile = dependency.getSecond();
-        sourceFile.runBackEnd();
+        sourceFile.collectBackEndSourceFiles(backEndSourceFiles);
     }
 
-    // Submit source file compilation to the task queue
+    backEndSourceFiles.pushBack(this);
+}
 
+p SourceFile.runBackEndForThisFile() {
+    this.runIRGenerator();
+    if this.resourceManager.abortCompilation { return; }
+    if this.cliOptions.useLTO {
+        this.runPreLinkIROptimizer();
+        if this.resourceManager.abortCompilation { return; }
+        this.runBitcodeLinker();
+        if this.resourceManager.abortCompilation { return; }
+        this.runPostLinkIROptimizer();
+        if this.resourceManager.abortCompilation { return; }
+    } else {
+        this.runDefaultIROptimizer();
+        if this.resourceManager.abortCompilation { return; }
+    }
+    this.runObjectEmitter();
+}
+
+public p SourceFile.runBackEnd() {
+    // Flatten the dependency graph into the order the back end used to recurse in: every file comes after all of its
+    // dependencies, and files that already ran their back end are skipped.
+    Vector<SourceFile*> backEndSourceFiles;
+    this.collectBackEndSourceFiles(backEndSourceFiles);
+
+    // Nothing to do if this file and all of its dependencies already went through the back end
+    if backEndSourceFiles.isEmpty() {
+        return;
+    }
+
+    // Look up all files before compiling any: a key is only final after its lookup and cache entries of dependants refer to it
+    // ToDo: Port SourceFile.lookupCache as soon as the CacheManager is ported
+
+    // The host spreads the per-file pipelines over a worker pool, except for LTO and the dump modes. The bootstrap compiler
+    // has no thread pool yet, so it always takes the serial path.
+    foreach SourceFile* sourceFile : backEndSourceFiles {
+        sourceFile.runBackEndForThisFile();
+        if this.resourceManager.abortCompilation { return; }
+    }
+
+    // Conclude the compilation of all source files. This registers the emitted object files with the linker and writes the
+    // compilation cache, both of which have to happen serially and in a fixed order to stay deterministic.
+    foreach SourceFile* sourceFile : backEndSourceFiles {
+        sourceFile.concludeCompilation();
+    }
 
     if this.isMainFile {
         this.resourceManager.totalTimer.stop();
@@ -732,6 +793,10 @@ public p SourceFile.checkForSoftErrors() {
     }
 }
 
+public f<bool> SourceFile.isLibraryOutput() {
+    return this.cliOptions.outputContainer == OutputContainer::STATIC_LIBRARY || this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
+}
+
 public p SourceFile.collectAndPrintWarnings() {
     // Skip if restored from cache (no scope tree available), or if already visited. The latter guard keeps circular
     // imports from recursing infinitely, since the dependency graph may contain cycles.
@@ -748,8 +813,7 @@ public p SourceFile.collectAndPrintWarnings() {
     }
     // Collect warnings for this file
     if !this.ignoreWarnings {
-        // ToDo: Port Scope.collectWarnings
-        //this.globalScope.collectWarnings(this.compilerOutput.warnings);
+        this.globalScope.collectWarnings(this.compilerOutput.warnings);
     }
     // Print warnings for this file
     foreach dyn warning : this.compilerOutput.warnings {
@@ -920,9 +984,9 @@ f<bool> SourceFile.dependsOn(const SourceFile* other) {
 
 p SourceFile.dumpCacheStats() {
     StringStream cacheStats;
-    //cacheStats << FunctionManager.dumpLookupCacheStatistics() << endl();
-    //cacheStats << StructManager.dumpLookupCacheStatistics() << endl();
-    //cacheStats << InterfaceManager.dumpLookupCacheStatistics() << endl();
+    cacheStats << dumpFunctionLookupCacheStatistics() << "\n";
+    cacheStats << dumpStructLookupCacheStatistics() << "\n";
+    cacheStats << dumpInterfaceLookupCacheStatistics() << "\n";
     this.compilerOutput.cacheStats = cacheStats.str();
 }
 

@@ -56,7 +56,11 @@ p JsonSerializer.serializeInto(JsonValue* value, StringStream& out, unsigned lon
     } else if kind == JsonValueKind::JSON_BOOL {
         out << (value.getBool() ? "true" : "false");
     } else if kind == JsonValueKind::JSON_NUMBER {
-        out << serializeJsonNumber(value.getNumber());
+        if value.hasUnsignedIntegerValue() {
+            out << serializeJsonUnsignedInteger(value.getUnsignedInteger());
+        } else {
+            out << serializeJsonNumber(value.getNumber());
+        }
     } else if kind == JsonValueKind::JSON_STRING {
         serializeJsonString(out, value.getString());
     } else if kind == JsonValueKind::JSON_ARRAY {
@@ -145,4 +149,11 @@ f<String> serializeJsonNumber(double value) {
     const int length = snprintf(nil<char*>, 0l, "%.17g", value);
     result = String(length);
     snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.17g", value);
+}
+
+// Serialize an unsigned integer exactly. %llu, because a Spice long is always 64 bit, but a C long is only 32 bit on Windows
+f<String> serializeJsonUnsignedInteger(unsigned long value) {
+    const int length = snprintf(nil<char*>, 0l, "%llu", value);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%llu", value);
 }

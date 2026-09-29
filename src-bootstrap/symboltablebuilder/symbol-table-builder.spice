@@ -31,6 +31,7 @@ import "bootstrap/util/system-util";
 
 // Reserved names (THIS_VARIABLE_NAME, RETURN_VARIABLE_NAME, CTOR_FUNCTION_NAME and DTOR_FUNCTION_NAME live in symbol-table-entry.spice)
 const string MAIN_FUNCTION_NAME = "main";
+public const string UNUSED_VARIABLE_NAME = "_";
 const string ENUM_SCOPE_PREFIX = "enum:";
 
 /**

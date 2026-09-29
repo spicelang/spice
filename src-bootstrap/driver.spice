@@ -147,7 +147,7 @@ public type CliOptions struct {
     public bool generateTestMain = false
     public bool staticLinking = false
     public InstrumentationSettings instrumentation
-    public bool disableVerifier = !__get_build_var<bool>("spice.is_release")
+    public bool disableVerifier = !__get_build_var<bool>("spice.is_debug")
     public bool testMode = false
     public bool comparableOutput = false
     public Map<String, String> buildVars
