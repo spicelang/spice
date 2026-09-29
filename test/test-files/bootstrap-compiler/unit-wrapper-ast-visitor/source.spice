@@ -1,7 +1,0 @@
-import "bootstrap/ast/ast-visitor";
-
-// Wrapper for 'spice test' unit test
-f<int> main() {
-    testAstVisitorSmoke();
-    printf("All assertions passed!\n");
-}

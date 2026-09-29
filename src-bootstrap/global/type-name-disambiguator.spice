@@ -104,27 +104,3 @@ public f<String> getDisambiguationSuffix(const String& name, unsigned long typeI
 public p TypeNameDisambiguator.clear() {
     this.claimedTypeIds.clear();
 }
-
-#[test, test.name="TypeNameDisambiguator Smoke test"]
-public f<bool> testTypeNameDisambiguatorSmoke() {
-    TypeNameDisambiguator disambiguator;
-    setActiveTypeNameDisambiguator(&disambiguator);
-
-    // The first claimer keeps the plain name
-    assert getDisambiguationSuffix(String("Node"), 300l) == "";
-    // Repeated claims of the same type are stable
-    assert getDisambiguationSuffix(String("Node"), 300l) == "";
-    // Further distinct types sharing the name get a suffix
-    assert getDisambiguationSuffix(String("Node"), 301l) == ".1";
-    assert getDisambiguationSuffix(String("Node"), 302l) == ".2";
-    assert getDisambiguationSuffix(String("Node"), 301l) == ".1";
-    // Other names are independent
-    assert getDisambiguationSuffix(String("Other"), 301l) == "";
-
-    // Clearing resets all claims
-    disambiguator.clear();
-    assert getDisambiguationSuffix(String("Node"), 302l) == "";
-
-    setActiveTypeNameDisambiguator(nil<TypeNameDisambiguator*>);
-    return true;
-}

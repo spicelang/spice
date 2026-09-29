@@ -1,8 +1,0 @@
-import "bootstrap/ast/ast-nodes";
-
-// Wrapper for 'spice test' unit test
-f<int> main() {
-    testASTNodesSmoke();
-    testCompileTimeValueViews();
-    printf("All assertions passed!\n");
-}

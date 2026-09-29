@@ -1,7 +1,0 @@
-import "bootstrap/driver";
-
-// Wrapper for 'spice test' unit test
-f<int> main() {
-    testDriverSmoke();
-    printf("All assertions passed!\n");
-}

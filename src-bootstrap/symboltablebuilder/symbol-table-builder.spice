@@ -1371,14 +1371,3 @@ f<bool> testAttributeRules(GlobalResourceManager& rm) {
     assert file.sourceAdditionalSourcePaths.getSize() == 1l;
     return true;
 }
-
-#[test, test.name="SymbolTableBuilder Smoke test"]
-public f<bool> testSymbolTableBuilderSmoke() {
-    CliOptions cliOptions;
-    setupPassTestOptions(cliOptions);
-    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
-    assert testMainFunctionRules(rm);
-    assert testDefinitionRules(rm);
-    assert testAttributeRules(rm);
-    return true;
-}

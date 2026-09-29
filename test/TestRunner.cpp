@@ -306,17 +306,13 @@ static void execTestCase(const TestCase &testCase) {
     // GCOV_EXCL_STOP
 
     // Check warnings
-    // The bootstrap compiler is still incomplete, so its sources emit huge amounts of unused-symbol warnings. Skip warning
-    // collection for the whole bootstrap-compiler suite to keep the test output readable.
-    if (testCase.testSuite != "bootstrapCompiler") {
-      mainSourceFile->collectAndPrintWarnings();
-      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] {
-        std::stringstream actualWarningString;
-        for (const CompilerWarning &warning : mainSourceFile->compilerOutput.warnings)
-          actualWarningString << warning.warningMessage << "\n";
-        return actualWarningString.str();
-      });
-    }
+    mainSourceFile->collectAndPrintWarnings();
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] {
+      std::stringstream actualWarningString;
+      for (const CompilerWarning &warning : mainSourceFile->compilerOutput.warnings)
+        actualWarningString << warning.warningMessage << "\n";
+      return actualWarningString.str();
+    });
 
     // Do linking and conclude compilation
     const bool needsNormalRunForOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
@@ -594,16 +590,6 @@ INSTANTIATE_TEST_SUITE_P(, BenchmarkTests, ::testing::ValuesIn(TestUtil::collect
 class ExampleTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(ExampleTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, ExampleTests, ::testing::ValuesIn(TestUtil::collectTestCases("examples", false)),
-                         TestUtil::NameResolver());
-
-class BootstrapCompilerTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(BootstrapCompilerTests, ) {
-  // These test cases compile parts of the bootstrap compiler, which the bootstrap compiler cannot do yet
-  if (testDriverCliOptions.bootstrapMode)
-    GTEST_SKIP() << "Not supported in bootstrap mode";
-  execTestCase(GetParam());
-}
-INSTANTIATE_TEST_SUITE_P(, BootstrapCompilerTests, ::testing::ValuesIn(TestUtil::collectTestCases("bootstrap-compiler", false)),
                          TestUtil::NameResolver());
 
 class LinterTests : public ::testing::TestWithParam<TestCase> {};

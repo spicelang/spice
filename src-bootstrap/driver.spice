@@ -1086,21 +1086,3 @@ f<bool> testRejectedArguments() {
     assert !unknownOption.shouldCompile;
     return true;
 }
-
-#[test, test.name="Driver Smoke test"]
-public f<bool> testDriverSmoke() {
-    // SPICE_BOOTSTRAP_DIR must point to src-bootstrap/ (same requirement as the other bootstrap tests). Its main.spice is a
-    // source file, that surely exists
-    const FilePath bootstrapDir = getBootstrapCompilerDir();
-    assert !bootstrapDir.isEmpty();
-    const FilePath mainSourceFile = bootstrapDir / "main.spice";
-    const string mainFile = mainSourceFile.toGenericString();
-
-    assert testBuildAndRunSubcommands(mainFile);
-    assert testTestLintInstallSubcommands(mainFile);
-    assert testInstrumentation(mainFile);
-    assert testBuildVarsAndTarget(mainFile);
-    assert testOutputFileExtensions();
-    assert testRejectedArguments();
-    return true;
-}

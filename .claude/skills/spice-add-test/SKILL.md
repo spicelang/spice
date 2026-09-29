@@ -17,11 +17,11 @@ Some suites are **grouped** (`test-files/<suite>/<group>/<case>/`), others are
 **flat** (`test-files/<suite>/<case>/`):
 
 - Grouped (`useSubDirs=true`): `symboltablebuilder`, `typechecker`, `irgenerator`, `std`
-- Flat: `common`, `lexer`, `parser`, `benchmark`, `examples`, `bootstrap-compiler`
+- Flat: `common`, `lexer`, `parser`, `benchmark`, `examples`
 
 The GoogleTest suite names are `SymbolTableBuilderTests`, `TypeCheckerTests`,
 `IRGeneratorTests`, `StdTests`, `CommonTests`, `LexerTests`, `ParserTests`,
-`BenchmarkTests`, `ExampleTests`, `BootstrapCompilerTests`. Match an existing
+`BenchmarkTests`, `ExampleTests`. Match an existing
 neighbor case for conventions.
 
 ## 2. Add `source.spice`

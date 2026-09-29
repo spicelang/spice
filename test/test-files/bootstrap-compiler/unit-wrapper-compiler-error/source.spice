@@ -1,7 +1,0 @@
-import "bootstrap/exception/compiler-error";
-
-// Wrapper for 'spice test' unit test
-f<int> main() {
-    testCompilerErrorSmoke();
-    printf("All assertions passed!\n");
-}

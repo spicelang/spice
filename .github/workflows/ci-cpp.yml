@@ -11,6 +11,22 @@ on:
 env:
   LLVM_VERSION: "llvmorg-23.1.2"
   GCC_VERSION: "16"
+  # Test filter for the bootstrap compiler runs: only the stages the bootstrap compiler already covers. The excluded test
+  # cases are known bootstrap compiler gaps (diverging error messages/locations, unsupported CLI options). Remove them from
+  # this list once fixed.
+  BOOTSTRAP_TEST_FILTER: >-
+    LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*
+    -LexerTests.lexer_errorLexingError
+    :ParserTests.parser_errorExtraneousInput
+    :ParserTests.parser_errorParsingError
+    :SymbolTableBuilderTests.attributes_errorAdditionalLinkSourceNotFound
+    :SymbolTableBuilderTests.attributes_errorMissingValue
+    :TypeCheckerTests.functions_successFunctionOverloading1
+    :TypeCheckerTests.builtins_errorGetBuildVar
+    :TypeCheckerTests.imports_errorImportedFileNotExisting
+    :TypeCheckerTests.imports_errorImportedStdNotExisting
+    :TypeCheckerTests.imports_errorCircularPrivateAccess
+    :TypeCheckerTests.imports_errorCircularInfiniteSize
 
 jobs:
   build-linux-x86:
@@ -93,9 +109,15 @@ jobs:
             ..
           cmake --build . --target spicetest
 
-      - name: Run Test target
+      - name: Run Test target (host compiler)
         working-directory: build
         run: cmake --build . --target spicetest_parallel
+
+      - name: Run Test target (bootstrap compiler)
+        working-directory: build
+        shell: bash
+        # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -184,9 +206,15 @@ jobs:
             ..
           cmake --build . --target spicetest
 
-      - name: Run Test target
+      - name: Run Test target (host compiler)
         working-directory: build
         run: cmake --build . --target spicetest_parallel
+
+      - name: Run Test target (bootstrap compiler)
+        working-directory: build
+        shell: bash
+        # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -289,10 +317,16 @@ jobs:
             ..
           cmake --build . --target spicetest
 
-      - name: Run Test target
+      - name: Run Test target (host compiler)
         working-directory: build
         run: |
           cmake --build . --target spicetest_parallel
+
+      - name: Run Test target (bootstrap compiler)
+        working-directory: build
+        shell: bash
+        # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -374,9 +408,18 @@ jobs:
             ..
           cmake --build . --target spicetest
 
-      - name: Run Test target
+      - name: Run Test target (host compiler)
         working-directory: build
         run: cmake --build . --target spicetest_parallel
+
+      # ToDo: Re-enable once the LLVM 23 GlobalISel/SelectionDAG ABI mismatch for by-value structs on arm64-apple-darwin is
+      #       fixed. At -O0, the non-optnone inline functions and their optnone callers disagree on stack argument offsets,
+      #       which corrupts arguments in the bootstrap compiler (e.g. Pair<QualType, bool>.ctor)
+      # - name: Run Test target (bootstrap compiler)
+      #   working-directory: build
+      #   shell: bash
+      #   # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
+      #   run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
 
       - name: Save CCache
         uses: actions/cache/save@v6
