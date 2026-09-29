@@ -1,0 +1,7 @@
+Root inner parent is nil: 1
+Child inner parent is root inner: 1
+Root parent value: -1
+Child parent value: 1
+Depth of nil: 0
+Depth of root: 1
+Depth of child: 2

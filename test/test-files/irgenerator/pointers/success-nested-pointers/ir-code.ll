@@ -9,7 +9,7 @@ source_filename = "source.spice"
 @printf.str.4 = private unnamed_addr constant [7 x i8] c"1: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_Z8testProcPPPA4_i(ptr noundef nonnull align 8 dereferenceable(8) %0) #0 {
+define internal void @_Z8testProcPPPA4_i(ptr noundef align 8 %0) #0 {
   %nums = alloca ptr, align 8
   %nums1 = alloca ptr, align 8
   %nums2 = alloca [4 x i32], align 4
@@ -52,7 +52,7 @@ define dso_local noundef i32 @main() #2 {
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %4)
   store ptr %intArray, ptr %1, align 8
   store ptr %1, ptr %2, align 8
-  call void @_Z8testProcPPPA4_i(ptr noundef align 8 dereferenceable(8) %2)
+  call void @_Z8testProcPPPA4_i(ptr noundef align 8 %2)
   ret i32 0
 }
 

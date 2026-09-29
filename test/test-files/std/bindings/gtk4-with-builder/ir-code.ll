@@ -43,7 +43,7 @@ define internal void @_Z4quit9GtkWidget9GtkWindow(%struct.GtkWidget noundef %0, 
 declare void @_ZN9GtkWindow7destroyEv(ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_Z8activate14GtkApplicationPh(%struct.GtkApplication noundef %0, ptr noundef nonnull align 1 dereferenceable(1) %1) #0 {
+define internal void @_Z8activate14GtkApplicationPh(%struct.GtkApplication noundef %0, ptr noundef align 1 %1) #0 {
   %app = alloca %struct.GtkApplication, align 8
   %data = alloca ptr, align 8
   %spiceStdDir = alloca %struct.Result, align 8

@@ -519,12 +519,13 @@ void IRGenerator::setParamAttrs(llvm::Function *function, const ParamInfoList &p
     function->addParamAttr(i, llvm::Attribute::NoUndef);
 
     if (paramType.isPtr()) {
-      // NonNull attribute
-      function->addParamAttr(i, llvm::Attribute::NonNull);
-      // Dereferenceable attribute
       llvm::Type *pointeeType = paramType.getContained().toLLVMType(sourceFile);
       assert(pointeeType != nullptr);
-      function->addDereferenceableParamAttr(i, module->getDataLayout().getTypeStoreSize(pointeeType));
+      // NonNull and dereferenceable attributes. Only 'this' is guaranteed to point to a valid object, other pointers may be nil
+      if (paramInfo.at(i).first == THIS_VARIABLE_NAME) {
+        function->addParamAttr(i, llvm::Attribute::NonNull);
+        function->addDereferenceableParamAttr(i, module->getDataLayout().getTypeStoreSize(pointeeType));
+      }
       // Alignment attribute
       function->addParamAttr(i, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(pointeeType)));
     }

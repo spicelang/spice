@@ -10,7 +10,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [24 x i8] c"Age after birthday: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_Z8birthdayP6Person(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
+define internal void @_Z8birthdayP6Person(ptr noundef align 8 %0) #0 {
   %person = alloca ptr, align 8
   store ptr %0, ptr %person, align 8
   %2 = load ptr, ptr %person, align 8
@@ -33,7 +33,7 @@ define dso_local noundef i32 @main() #1 {
   %age.addr = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
   %4 = load i32, ptr %age.addr, align 4
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %4)
-  call void @_Z8birthdayP6Person(ptr noundef align 8 dereferenceable(24) %mike)
+  call void @_Z8birthdayP6Person(ptr noundef align 8 %mike)
   %age.addr1 = getelementptr inbounds %struct.Person, ptr %mike, i64 0, i32 2
   %6 = load i32, ptr %age.addr1, align 4
   %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6)

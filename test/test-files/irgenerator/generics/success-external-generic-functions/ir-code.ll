@@ -18,9 +18,9 @@ define dso_local noundef i32 @main() #0 {
   call void @llvm.memcpy.p0.p0.i64(ptr %arg.decay, ptr @anon.array.0, i64 16, i1 false)
   call void @_Z11printFormatIA2_PKcEvA2_PKc(ptr noundef %arg.decay)
   store i32 1234, ptr %test, align 4
-  call void @_Z11printFormatIPiEvPi(ptr noundef align 4 dereferenceable(4) %test)
+  call void @_Z11printFormatIPiEvPi(ptr noundef align 4 %test)
   store i32 12, ptr %i, align 4
-  %1 = call noundef ptr @_Z7getAIncIiEPiPi(ptr noundef align 4 dereferenceable(4) %i)
+  %1 = call noundef ptr @_Z7getAIncIiEPiPi(ptr noundef align 4 %i)
   store ptr %1, ptr %iPtr, align 8
   %2 = load ptr, ptr %iPtr, align 8
   %3 = load i32, ptr %2, align 4

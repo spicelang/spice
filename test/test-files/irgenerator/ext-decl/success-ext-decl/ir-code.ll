@@ -15,7 +15,7 @@ define dso_local noundef i32 @main() #1 {
   %2 = load ptr, ptr %address, align 8
   store i8 12, ptr %2, align 1
   %3 = load ptr, ptr %address, align 8
-  call void @free(ptr noundef align 1 dereferenceable(1) %3)
+  call void @free(ptr noundef align 1 %3)
   ret i32 0
 }
 
