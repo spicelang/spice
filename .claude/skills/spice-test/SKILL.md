@@ -72,8 +72,9 @@ fails only for the kinds listed in `BOOTSTRAP_SUPPORTED_ERROR_PREFIXES`
 (`test/util/BootstrapUtil.h`); extend that list as stages get ported. Other
 cases pass if the bootstrap compiler finishes without crashing or raising an
 unexpected error. `LinterTests` are skipped.
-CI (`ci-cpp.yml`, Linux/x86_64) runs this mode for the lexer, parser, symbol
-table builder and type checker suites, minus a list of known-failing cases.
+CI (`ci-cpp.yml`, all platforms except macOS for now) runs this mode for the
+lexer, parser, symbol table builder and type checker suites, minus a list of
+known-failing cases.
 `--update-refs` and `--coverage` are rejected, so host refs are never
 overwritten with bootstrap output.
 
