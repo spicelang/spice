@@ -370,8 +370,8 @@ std::any TypeChecker::visitBuiltinSyscallCall(FctCallNode *node) const {
 
   // Check if the syscall number is out of range
   // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
-  if (node->hasCompileTimeValue(manIdx)) {
-    const unsigned short sysCallNumber = node->getCompileTimeValue(manIdx).shortValue;
+  if (sysCallNumberExpr->hasCompileTimeValue(manIdx)) {
+    const short sysCallNumber = sysCallNumberExpr->getCompileTimeValue(manIdx).shortValue;
     if (sysCallNumber < 0 || sysCallNumber > 439)
       SOFT_ERROR_ER(node, SYSCALL_NUMBER_OUT_OF_RANGE, "Only syscall numbers between 0 and 439 are supported")
   }
@@ -515,7 +515,7 @@ std::any TypeChecker::visitBuiltinNewCall(FctCallNode *node) const {
     Scope *bodyScope = templateType.getBodyScope();
     Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, data.args, {}, false, node);
     if (ctor == nullptr) {
-      const bool copyCtorCall = isCopyCtorCall(node, templateType);
+      const bool copyCtorCall = isCopyCtorCall(data.args, templateType);
       if (!copyCtorCall && !templateType.isTriviallyConstructible(node))
         SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
                       "No matching constructor found for type '" + templateType.getName(false) + "'")
@@ -559,7 +559,7 @@ std::any TypeChecker::visitBuiltinPlacementNewCall(FctCallNode *node) const {
     const ArgList ctorArgs(data.args.begin() + 1, data.args.end());
     Function *ctor = FunctionManager::match(bodyScope, CTOR_FUNCTION_NAME, templateType, ctorArgs, {}, false, node);
     if (ctor == nullptr) {
-      const bool copyCtorCall = isCopyCtorCall(node, templateType);
+      const bool copyCtorCall = isCopyCtorCall(ctorArgs, templateType);
       if (!copyCtorCall && !templateType.isTriviallyConstructible(node))
         SOFT_ERROR_ER(node, NO_MATCHING_CTOR_FOUND,
                       "No matching constructor found for type '" + templateType.getName(false) + "'")

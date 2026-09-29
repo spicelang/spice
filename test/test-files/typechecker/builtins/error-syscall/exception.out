@@ -6,3 +6,15 @@ Invalid syscall number type: Syscall number must be of type short
 
 2  syscall('c'); // Invalid syscall
            ^^^
+
+[Error|Semantic] ./source.spice:3:5:
+Syscall number out of range: Only syscall numbers between 0 and 439 are supported
+
+3  syscall(-1s); // Syscall number
+   ^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:4:5:
+Syscall number out of range: Only syscall numbers between 0 and 439 are supported
+
+4  syscall(450s); // Syscall number
+   ^^^^^^^^^^^^^

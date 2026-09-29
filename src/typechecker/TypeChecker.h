@@ -235,7 +235,7 @@ private:
   void doScopeCleanup(StmtLstNode *node) const;
   void doExprScopeCleanup(const ExprNode *node) const;
   ExprResult visitInExprScope(ExprNode *expr);
-  bool isCopyCtorCall(const FctCallNode *node, const QualType &thisType) const;
+  bool isCopyCtorCall(const ArgList &ctorArgs, const QualType &thisType) const;
 };
 
 } // namespace spice::compiler

@@ -473,23 +473,22 @@ p TypeChecker.addWarning(const CodeLoc& codeLoc, CompilerWarningType warningType
 }
 
 /**
- * Check if the given call is a copy ctor call (like __new<T>(other) or __placement_new<T>(ptr, other)), i.e. the second arg
- * has the same type as the struct to construct
+ * Check if the given ctor args denote a copy ctor call (like __new<T>(other) or __placement_new<T>(ptr, other)), i.e. there
+ * is exactly one ctor arg and it has the same type as the struct to construct
  *
- * @param node Function call node
+ * @param ctorArgs Ctor args (without the target pointer of __placement_new)
  * @param thisType Type of the struct to construct
  * @return Copy ctor call or not
  */
-f<bool> TypeChecker.isCopyCtorCall(ASTFctCallNode* node, const QualType& thisType) {
-    const FctCallData& data = node.data.get(this.manIdx);
-    if data.args.getSize() != 2l {
+f<bool> TypeChecker.isCopyCtorCall(const ArgList& ctorArgs, const QualType& thisType) {
+    if ctorArgs.getSize() != 1l {
         return false;
     }
-    const Pair<QualType, bool>& secondArg = data.args.back();
-    QualType secondArgType = secondArg.getFirst();
-    secondArgType = secondArgType.removeReferenceWrapper();
-    secondArgType = secondArgType.toNonConst();
-    return thisType.matches(secondArgType, false, false, true);
+    const Pair<QualType, bool>& arg = ctorArgs.front();
+    QualType argType = arg.getFirst();
+    argType = argType.removeReferenceWrapper();
+    argType = argType.toNonConst();
+    return thisType.matches(argType, false, false, true);
 }
 
 /**
@@ -5446,7 +5445,7 @@ f<Any> TypeChecker.visitBuiltinSyscallCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_SYSCALL;
 
     // Check if the syscall number if of type short
-    const ASTNode* sysCallNumberExpr = getASTNode(node.argLst.args.front());
+    ASTNode* sysCallNumberExpr = getASTNode(node.argLst.args.front());
     const QualType sysCallNumberType = this.getArgType(node, 0l);
     if !sysCallNumberType.is(SuperType::TY_SHORT) {
         return this.softErrorER(sysCallNumberExpr, SemanticErrorType::INVALID_SYSCALL_NUMBER_TYPE, String("Syscall number must be of type short"));
@@ -5455,10 +5454,10 @@ f<Any> TypeChecker.visitBuiltinSyscallCall(ASTFctCallNode* node) {
     // Check if the syscall number is out of range
     // According to https://www.chromium.org/chromium-os/developer-library/reference/linux-constants/syscalls/
     ASTNode* baseNode = cast<ASTNode*>(node);
-    if baseNode.hasCompileTimeValue(this.manIdx) {
-        const CompileTimeValue sysCallNumberValue = baseNode.getCompileTimeValue(this.manIdx);
-        const unsigned short sysCallNumber = cast<unsigned short>(sysCallNumberValue.shortValue);
-        if cast<int>(sysCallNumber) > 439 {
+    if sysCallNumberExpr.hasCompileTimeValue(this.manIdx) {
+        const CompileTimeValue sysCallNumberValue = sysCallNumberExpr.getCompileTimeValue(this.manIdx);
+        const short sysCallNumber = sysCallNumberValue.shortValue;
+        if sysCallNumber < 0s || sysCallNumber > 439s {
             return this.softErrorER(baseNode, SemanticErrorType::SYSCALL_NUMBER_OUT_OF_RANGE, String("Only syscall numbers between 0 and 439 are supported"));
         }
     }
@@ -5668,7 +5667,7 @@ f<bool> TypeChecker.checkBuiltinNewCtor(ASTFctCallNode* node, const QualType& te
     const QualTypeList noTemplateTypeHints;
     Function* ctor = matchFunction(bodyScope, String(CTOR_FUNCTION_NAME), templateType, ctorArgs, noTemplateTypeHints, false, baseNode);
     if ctor == nil<Function*> {
-        const bool copyCtorCall = this.isCopyCtorCall(node, templateType);
+        const bool copyCtorCall = this.isCopyCtorCall(ctorArgs, templateType);
         if !copyCtorCall && !templateType.isTriviallyConstructible(baseNode) {
             this.softError(baseNode, SemanticErrorType::NO_MATCHING_CTOR_FOUND, "No matching constructor found for type '" + templateType.getName(false) + "'");
             return false;
