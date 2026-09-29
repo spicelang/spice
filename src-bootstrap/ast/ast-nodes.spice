@@ -479,6 +479,7 @@ public type ASTEntryNode struct : IVisitable {
     public Vector<IVisitable*> modAttrs
     public Vector<IVisitable*> importDefs
     public Vector<IVisitable*> topLevelDefs
+    public Vector<IVisitable*> switchStmts // All switch statements of this file for quick access, not part of the children
 }
 
 public p ASTEntryNode.ctor(CodeLoc codeLoc) {

@@ -29,7 +29,8 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
   // Find switch statements, that cover all items of an enum. This has to be done before visiting the children, because
   // the control flow analysis of functions and procedures in the prepare stage relies on it
   if (isPrepare)
-    markExhaustiveEnumSwitches(node);
+    for (SwitchStmtNode *switchStmtNode : node->switchStmts)
+      switchStmtNode->coversAllEnumItems = coversAllEnumItems(switchStmtNode);
 
   // Visit children
   visitChildren(node);
@@ -41,19 +42,6 @@ std::any TypeChecker::visitEntry(EntryNode *node) {
       createImplicitDefaultMembers(*manifestation, node);
 
   return nullptr;
-}
-
-/**
- * Mark all switch statements in the given subtree, whose case constants cover all items of an enum
- *
- * @param node Root node of the subtree
- */
-void TypeChecker::markExhaustiveEnumSwitches(ASTNode *node) const { // NOLINT(misc-no-recursion)
-  if (auto *switchStmtNode = dynamic_cast<SwitchStmtNode *>(node))
-    switchStmtNode->coversAllEnumItems = coversAllEnumItems(switchStmtNode);
-
-  for (ASTNode *child : node->getChildren())
-    markExhaustiveEnumSwitches(child);
 }
 
 /**

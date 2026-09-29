@@ -21,6 +21,7 @@ namespace spice::compiler {
 class ASTNode;
 class EntryNode;
 class ConstantNode;
+class SwitchStmtNode;
 
 static constexpr const char *const RESERVED_KEYWORDS[] = {"new", "stash", "pick", "sync", "class"};
 const char *const MEMBER_ACCESS_TOKEN = ".";
@@ -126,6 +127,7 @@ private:
   antlr4::ANTLRInputStream *inputStream;
   std::stack<ASTNode *> parentStack;
   size_t currentNodeId = 0;
+  std::vector<SwitchStmtNode *> switchStmts;
 
   // Private methods
   template <typename SrcTy, typename TgtTy>

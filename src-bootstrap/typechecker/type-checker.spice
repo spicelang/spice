@@ -193,7 +193,10 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     // Find switch statements, that cover all items of an enum. This has to be done before visiting the children, because
     // the control flow analysis of functions and procedures in the prepare stage relies on it
     if isPrepare {
-        this.markExhaustiveEnumSwitches(baseNode);
+        foreach IVisitable* switchStmt : node.switchStmts {
+            ASTSwitchStmtNode* switchStmtNode = downcast<ASTSwitchStmtNode>(getASTNode(switchStmt));
+            switchStmtNode.coversAllEnumItems = this.coversAllEnumItems(switchStmtNode);
+        }
     }
 
     // Visit children
@@ -214,22 +217,6 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     }
 
     return Any();
-}
-
-/**
- * Mark all switch statements in the given subtree, whose case constants cover all items of an enum
- *
- * @param node Root node of the subtree
- */
-p TypeChecker.markExhaustiveEnumSwitches(ASTNode* node) {
-    if node.kind == ASTNodeKind::SWITCH_STMT {
-        ASTSwitchStmtNode* switchStmtNode = downcast<ASTSwitchStmtNode>(node);
-        switchStmtNode.coversAllEnumItems = this.coversAllEnumItems(switchStmtNode);
-    }
-
-    foreach ASTNode* child : node.children {
-        this.markExhaustiveEnumSwitches(child);
-    }
 }
 
 /**

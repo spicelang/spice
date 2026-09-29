@@ -52,6 +52,9 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
       assert_fail("Unknown top level definition type"); // GCOV_EXCL_LINE
   }
 
+  // Hand over all switch statements of this file
+  entryNode->switchStmts = std::move(switchStmts);
+
   return concludeNode(entryNode);
 }
 
@@ -467,6 +470,9 @@ std::any ASTBuilder::visitSwitchStmt(SpiceParser::SwitchStmtContext *ctx) {
     switchStmtNode->hasDefaultBranch = true;
     switchStmtNode->defaultBranch = std::any_cast<DefaultBranchNode *>(visit(ctx->defaultBranch()));
   }
+
+  // Remember the switch statement, so that later passes can access all switch statements without walking the whole AST
+  switchStmts.push_back(switchStmtNode);
 
   return concludeNode(switchStmtNode);
 }

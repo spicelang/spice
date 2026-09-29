@@ -21,6 +21,7 @@ namespace spice::compiler {
 
 // Forward declarations
 class TopLevelDefNode;
+class SwitchStmtNode;
 class Capture;
 using Arg = std::pair</*type=*/QualType, /*isTemporary=*/bool>;
 using ArgList = std::vector<Arg>;
@@ -211,6 +212,7 @@ public:
   std::vector<ModAttrNode *> modAttrs;
   std::vector<ImportDefNode *> importDefs;
   std::vector<TopLevelDefNode *> topLevelDefs;
+  std::vector<SwitchStmtNode *> switchStmts; // All switch statements of this file for quick access, not part of the children
 };
 
 // ======================================================= TopLevelDefNode =======================================================
