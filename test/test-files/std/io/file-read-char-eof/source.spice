@@ -33,6 +33,13 @@ f<int> main() {
     assert file.isEOF();
     _ = file.close();
 
+    // Read the whole file at once
+    const Result<String> contentResult = readFile("./test-file-eof.txt");
+    assert contentResult.isOk();
+    const String content = contentResult.unwrap();
+    assert content.getLength() == 3;
+    assert content[2] == 'b';
+
     assert deleteFile("./test-file-eof.txt");
     printf("All assertions passed!\n");
 }

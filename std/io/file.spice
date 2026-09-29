@@ -275,10 +275,11 @@ public f<Result<String>> readFile(string path) {
     // Open the file in read mode
     File file = openFile(path, MODE_READ)!;
     // Read from the file char by char
-    char buffer;
     String output = String();
-    while (buffer = file.readChar()) != cast<char>(EOF) {
-        output += cast<char>(buffer);
+    while true {
+        const char buffer = file.readChar();
+        if file.isEOF() { break; }
+        output += buffer;
     }
     // Close the file
     file.close();
