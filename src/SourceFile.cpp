@@ -45,6 +45,31 @@
 
 namespace spice::compiler {
 
+/**
+ * Map the Spice optimization level to the LLVM code generation optimization level, like Clang does.
+ *
+ * The code generation level must match the 'optnone' marking of the functions. At O0, all functions except the
+ * 'alwaysinline' ones are marked as 'optnone', which forces the O0 instruction selector. The 'alwaysinline' ones would be
+ * compiled with the instruction selector of the target machine's level. On arm64-apple-darwin, LLVM's two instruction
+ * selectors disagree on the stack layout of by-value aggregate arguments, so calls between the two kinds of functions
+ * (e.g. to an inline function in another module) would read their arguments from the wrong stack slots.
+ *
+ * @param optLevel Spice optimization level
+ * @return LLVM code generation optimization level
+ */
+static llvm::CodeGenOptLevel getCodeGenOptLevel(OptLevel optLevel) {
+  switch (optLevel) {
+  case OptLevel::O0:
+    return llvm::CodeGenOptLevel::None;
+  case OptLevel::O1:
+    return llvm::CodeGenOptLevel::Less;
+  case OptLevel::O3:
+    return llvm::CodeGenOptLevel::Aggressive;
+  default: // O2, Os, Oz
+    return llvm::CodeGenOptLevel::Default;
+  }
+}
+
 SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *parent, std::string name,
                        const std::filesystem::path &filePath, bool stdFile)
     : name(std::move(name)), filePath(filePath), isStdFile(stdFile), parent(parent),
@@ -546,6 +571,9 @@ void SourceFile::runObjectEmitter() {
 
   Timer timer(&compilerOutput.times.objectEmitter);
   timer.start();
+
+  // Let the code generation opt level match the opt level, the IR was generated and optimized with
+  targetMachine->setOptLevel(getCodeGenOptLevel(cliOptions.optLevel));
 
   // Deduce an object file path
   objectFilePath = cliOptions.outputDir / filePath.filename();
