@@ -530,7 +530,9 @@ LLVMExprResult IRGenerator::doAssignment(llvm::Value *lhsAddress, const SymbolTa
   // (declaration/initial field ref/return value) all return early above before this is consumed, so the remaining
   // reference assignments are assign-throughs that must copy into the referent instead of shallow-copying (which would
   // alias the rhs' owned members and double-free).
-  const bool needsCopy = rhsSType.removeReferenceWrapper().is(TY_STRUCT) && !rhs.isTemporary();
+  // A reference rhs never denotes a temporary that could be stolen, even without an entry (e.g. a call returning a
+  // reference), because the referenced value is owned elsewhere.
+  const bool needsCopy = rhsSType.removeReferenceWrapper().is(TY_STRUCT) && (rhsSType.isRef() || !rhs.isTemporary());
 
   if (isRefAssign) {
     assert(lhsEntry != nullptr);
