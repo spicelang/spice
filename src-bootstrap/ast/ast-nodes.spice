@@ -479,6 +479,7 @@ public type ASTEntryNode struct : IVisitable {
     public Vector<IVisitable*> modAttrs
     public Vector<IVisitable*> importDefs
     public Vector<IVisitable*> topLevelDefs
+    public Vector<IVisitable*> switchStmts // All switch statements of this file for quick access, not part of the children
 }
 
 public p ASTEntryNode.ctor(CodeLoc codeLoc) {
@@ -1392,6 +1393,7 @@ public type ASTSwitchStmtNode struct : IVisitable {
     public Vector<IVisitable*> caseBranches
     public IVisitable* defaultBranch = nil<IVisitable*>
     public bool hasDefaultBranch = false
+    public bool coversAllEnumItems = false
 }
 
 public p ASTSwitchStmtNode.ctor(CodeLoc codeLoc) {
@@ -2985,8 +2987,12 @@ public f<bool> ASTNode.returnsOnAllControlPaths(bool* doSetPredecessorsUnreachab
                     return false;
                 }
             }
-            const bool hasDefaultBranch = switchStmtNode.defaultBranch != nil<IVisitable*>;
-            return !hasDefaultBranch || returnsOnAllControlPaths(switchStmtNode.defaultBranch, doSetPredecessorsUnreachable, manIdx);
+            // Without a default branch, the control flow continues after the switch if no case matches. The only exception is
+            // a switch, that is exhaustive, because its cases cover all items of an enum
+            if switchStmtNode.defaultBranch == nil<IVisitable*> {
+                return switchStmtNode.coversAllEnumItems;
+            }
+            return returnsOnAllControlPaths(switchStmtNode.defaultBranch, doSetPredecessorsUnreachable, manIdx);
         }
         case ASTNodeKind::CASE_BRANCH: {
             ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(this);
@@ -3054,11 +3060,6 @@ public f<bool> ASTNode.returnsOnAllControlPaths(bool* doSetPredecessorsUnreachab
         case ASTNodeKind::LAMBDA_PROC: {
             ASTLambdaProcNode* lambdaProcNode = downcast<ASTLambdaProcNode>(this);
             return returnsOnAllControlPaths(lambdaProcNode.body, doSetPredecessorsUnreachable, manIdx);
-        }
-        default: {
-            // The empty default branch is required, because the host treats a switch without default branch, where all
-            // case branches return, as returning on all control paths and would drop the code below as unreachable
-            // (see https://github.com/spicelang/spice/issues/1459).
         }
     }
     // Default behavior: Returns on all control paths if the only child does

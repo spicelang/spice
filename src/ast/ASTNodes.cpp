@@ -145,9 +145,11 @@ bool SwitchStmtNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable
     return node->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
   };
   const bool allCaseBranchesReturn = std::ranges::all_of(caseBranches, pred);
-  const bool defaultBranchReturns =
-      !defaultBranch || defaultBranch->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
-  return allCaseBranchesReturn && defaultBranchReturns;
+  // Without a default branch, the control flow continues after the switch if no case matches. The only exception is a
+  // switch, that is exhaustive, because its cases cover all items of an enum
+  if (!defaultBranch)
+    return allCaseBranchesReturn && coversAllEnumItems;
+  return allCaseBranchesReturn && defaultBranch->returnsOnAllControlPaths(doSetPredecessorsUnreachable, manIdx);
 }
 
 bool CaseBranchNode::returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const {

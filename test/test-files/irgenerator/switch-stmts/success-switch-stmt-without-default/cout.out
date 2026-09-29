@@ -1,0 +1,10 @@
+classify(1) = 10
+classify(2) = 20
+classify(3) = 99
+classifyWithDefault(1) = 10
+classifyWithDefault(3) = 30
+One
+Two or three
+Other
+isWarm(RED) = 1
+isWarm(BLUE) = 0

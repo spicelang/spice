@@ -1,0 +1,53 @@
+// All case branches return, but there is no default branch, so the code after the switch is reachable
+f<int> classify(int v) {
+    switch v {
+        case 1: { return 10; }
+        case 2: { return 20; }
+    }
+    return 99;
+}
+
+// All case branches and the default branch return, so the switch returns on all control paths
+f<int> classifyWithDefault(int v) {
+    switch v {
+        case 1: { return 10; }
+        case 2: { return 20; }
+        default: { return 30; }
+    }
+}
+
+// Without a default branch, a trailing statement after the switch is executed if no case matches
+p printClassification(int v) {
+    switch v {
+        case 1: { printf("One\n"); return; }
+        case 2, 3: { printf("Two or three\n"); return; }
+    }
+    printf("Other\n");
+}
+
+type Color enum {
+    RED,
+    GREEN,
+    BLUE
+}
+
+// All enum items are covered, so the switch is exhaustive and returns on all control paths
+f<bool> isWarm(Color color) {
+    switch color {
+        case Color::RED: { return true; }
+        case Color::GREEN, Color::BLUE: { return false; }
+    }
+}
+
+f<int> main() {
+    printf("classify(1) = %d\n", classify(1));
+    printf("classify(2) = %d\n", classify(2));
+    printf("classify(3) = %d\n", classify(3));
+    printf("classifyWithDefault(1) = %d\n", classifyWithDefault(1));
+    printf("classifyWithDefault(3) = %d\n", classifyWithDefault(3));
+    printClassification(1);
+    printClassification(3);
+    printClassification(4);
+    printf("isWarm(RED) = %d\n", isWarm(Color::RED));
+    printf("isWarm(BLUE) = %d\n", isWarm(Color::BLUE));
+}

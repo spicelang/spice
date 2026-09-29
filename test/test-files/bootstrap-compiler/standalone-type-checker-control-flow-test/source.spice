@@ -1,0 +1,91 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "bootstrap/driver";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/source-file";
+import "bootstrap/typechecker/type-checker";
+import "bootstrap/util/pass-test-util";
+
+f<FilePath> getFixturePath() {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-type-checker-control-flow-test/test-file.spice";
+    return FilePath(filePathString);
+}
+
+// Function definition with the given name. Fails the test if the function does not exist
+f<ASTFctDefNode*> getFctDef(ASTEntryNode* entry, string name) {
+    foreach IVisitable* topLevelDef : entry.topLevelDefs {
+        ASTNode* topLevelDefNode = getASTNode(topLevelDef);
+        if topLevelDefNode.kind == ASTNodeKind::FCT_DEF {
+            ASTFctDefNode* fctDef = downcast<ASTFctDefNode>(topLevelDefNode);
+            if fctDef.name.name == name {
+                return fctDef;
+            }
+        }
+    }
+    assert false;
+    return nil<ASTFctDefNode*>;
+}
+
+// Statement at the given index of the body of the given function
+f<ASTStmtNode*> stmtAt(ASTFctDefNode* fctDef, unsigned long index) {
+    ASTStmtLstNode* body = downcast<ASTStmtLstNode>(fctDef.body);
+    return asStmtNode(getASTNode(body.statements.get(index)));
+}
+
+// Switch statement at the start of the body of the given function
+f<ASTSwitchStmtNode*> switchOf(ASTFctDefNode* fctDef) {
+    return downcast<ASTSwitchStmtNode>(cast<ASTNode*>(stmtAt(fctDef, 0l)));
+}
+
+f<int> main() {
+    // -------------------------------------------------------------------------------------------------------------
+    // Run the front end and the prepare stage of the type checker, which runs the control flow analysis
+    // -------------------------------------------------------------------------------------------------------------
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    SourceFile* file = rm.createSourceFile(nil<SourceFile*>, String("root"), getFixturePath(), false);
+    file.runFrontEnd();
+    assert rm.errorManager.softErrors.isEmpty();
+    TypeChecker typeChecker = TypeChecker(rm, file, TypeCheckerMode::TC_MODE_PRE);
+    typeChecker.visit(file.ast);
+    ASTEntryNode* entry = file.ast;
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Switch statements without default branch
+    // -------------------------------------------------------------------------------------------------------------
+    // The trailing return statement after a switch statement without default branch is reachable
+    ASTFctDefNode* classify = getFctDef(entry, "classify");
+    assert !switchOf(classify).coversAllEnumItems;
+    assert !stmtAt(classify, 1l).unreachable;
+    // A switch statement over an int can never cover all enum items
+    ASTFctDefNode* classifyWithoutReturn = getFctDef(entry, "classifyWithoutReturn");
+    assert !switchOf(classifyWithoutReturn).coversAllEnumItems;
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Switch statements over enums
+    // -------------------------------------------------------------------------------------------------------------
+    // All enum items are covered, also by case branches with multiple constants
+    ASTFctDefNode* getName = getFctDef(entry, "getName");
+    assert switchOf(getName).coversAllEnumItems;
+    // Not all enum items are covered
+    ASTFctDefNode* getNameNotExhaustive = getFctDef(entry, "getNameNotExhaustive");
+    assert !switchOf(getNameNotExhaustive).coversAllEnumItems;
+
+    // -------------------------------------------------------------------------------------------------------------
+    // Missing return statements
+    // -------------------------------------------------------------------------------------------------------------
+    assert rm.errorManager.softErrors.getSize() == 2l;
+    assert softErrorContains(rm.errorManager, 0l, "Not all control paths of this function have a return statement");
+    assert softErrorContains(rm.errorManager, 1l, "Not all control paths of this function have a return statement");
+    // The errors point to the functions classifyWithoutReturn and getNameNotExhaustive
+    const SoftError& firstError = rm.errorManager.softErrors.get(0l);
+    assert firstError.codeLoc.line == 36l;
+    const SoftError& secondError = rm.errorManager.softErrors.get(1l);
+    assert secondError.codeLoc.line == 44l;
+
+    printf("All assertions passed!\n");
+}

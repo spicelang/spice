@@ -49,6 +49,7 @@ public type Parser struct {
     // Whether a field data type is currently parsed. Its template types are field types as well
     bool isParsingFieldType = false
     unsigned long currentNodeId = 0l
+    Vector<IVisitable*> switchStmts
 }
 
 public p Parser.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile, Lexer& lexer) {
@@ -498,6 +499,11 @@ public f<ASTEntryNode*> Parser.parse() {
 
     // The host lists the children of the entry node grouped by kind: mod attrs, import defs and top level defs
     this.groupEntryChildren(entryNode);
+
+    // Hand over all switch statements of this file
+    foreach IVisitable* switchStmt : this.switchStmts {
+        entryNode.switchStmts.pushBack(switchStmt);
+    }
 
     return this.concludeNode(entryNode);
 }
@@ -1278,6 +1284,9 @@ f<ASTSwitchStmtNode*> Parser.parseSwitchStmt() {
         switchStmtNode.defaultBranch = cast<IVisitable*>(this.parseDefaultBranch());
     }
     this.expect(TokenType::RBRACE);
+
+    // Remember the switch statement, so that later passes can access all switch statements without walking the whole AST
+    this.switchStmts.pushBack(cast<IVisitable*>(switchStmtNode));
 
     return this.concludeNode(switchStmtNode);
 }
@@ -2794,9 +2803,6 @@ f<char> Parser.parseChar(const Token& token) {
             case 'f': { return '\f'; }
             case 'v': { return '\v'; }
             case '0': { return '\0'; }
-            default: {
-                // Required, see https://github.com/spicelang/spice/issues/1459 (the code below would be dropped otherwise)
-            }
         }
         const String message = "Invalid escape sequence '" + input + "'";
         this.throwParserError(token.codeLoc, ParserErrorType::INVALID_CHAR_LITERAL, message.getRaw());
@@ -2890,9 +2896,6 @@ f<char> getEscapedChar(char c) {
         case '?': { return '?'; }
         case '\'': { return '\''; }
         case '"': { return '"'; }
-        default: {
-            // Required, see https://github.com/spicelang/spice/issues/1459 (the code below would be dropped otherwise)
-        }
     }
     return '\0';
 }
