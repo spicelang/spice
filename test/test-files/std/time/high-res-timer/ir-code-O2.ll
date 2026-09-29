@@ -48,7 +48,7 @@ assert.then.L16:                                  ; preds = %assert.exit.L12
 
 assert.exit.L16:                                  ; preds = %assert.exit.L12
   store i64 0, ptr %duration, align 8
-  call void @_ZN5Timer4ctorEiPm(ptr noundef nonnull align 8 dereferenceable(32) %1, i32 noundef 0, ptr noundef nonnull align 8 dereferenceable(8) %duration) #4
+  call void @_ZN5Timer4ctorEiPm(ptr noundef nonnull align 8 dereferenceable(32) %1, i32 noundef 0, ptr noundef nonnull align 8 %duration) #4
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(32) %t, ptr noundef nonnull align 8 dereferenceable(32) %1, i64 32, i1 false)
   %11 = call noundef i64 @_ZN5Timer11getDurationEv(ptr noundef nonnull align 8 dereferenceable(32) %t) #4
   %12 = icmp eq i64 %11, 0

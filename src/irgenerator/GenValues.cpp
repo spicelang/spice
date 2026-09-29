@@ -341,13 +341,13 @@ void IRGenerator::setCallArgAttrs(llvm::CallInst *callInst, const Function *spic
     callInst->addParamAttr(i, llvm::Attribute::NoUndef);
 
     if (paramType.isPtr()) {
-      // NonNull attribute
-      if (i == 0 && isMethod)
-        callInst->addParamAttr(i, llvm::Attribute::NonNull);
-      // Dereferenceable attribute
       llvm::Type *pointeeType = paramType.getContained().toLLVMType(sourceFile);
       assert(pointeeType != nullptr);
-      callInst->addDereferenceableParamAttr(i, callInst->getModule()->getDataLayout().getTypeStoreSize(pointeeType));
+      // NonNull and dereferenceable attributes. Only 'this' is guaranteed to point to a valid object, other pointers may be nil
+      if (i == 0 && isMethod) {
+        callInst->addParamAttr(i, llvm::Attribute::NonNull);
+        callInst->addDereferenceableParamAttr(i, callInst->getModule()->getDataLayout().getTypeStoreSize(pointeeType));
+      }
       // Alignment attribute
       callInst->addParamAttr(i, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(pointeeType)));
     }

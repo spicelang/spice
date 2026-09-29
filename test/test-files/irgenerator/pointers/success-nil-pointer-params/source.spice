@@ -1,0 +1,51 @@
+type Inner struct {
+    Inner* parent
+    int value
+}
+
+p Inner.ctor(Inner* parent, int value) {
+    this.parent = parent;
+    this.value = value;
+}
+
+type Outer struct {
+    Outer* parent
+    long padding
+    Inner inner
+}
+
+p Outer.ctor(Outer* parent) {
+    this.parent = parent;
+    // Pointer params must not be assumed to be non-nil, otherwise the nil check folds away and yields &nil.inner
+    this.inner = Inner(parent == nil<Outer*> ? nil<Inner*> : &parent.inner, parent == nil<Outer*> ? 1 : 2);
+}
+
+// Method with a pointer param, that can be nil
+f<int> Outer.getParentValue(Outer* other) {
+    if other == nil<Outer*> {
+        return -1;
+    }
+    return other.inner.value;
+}
+
+// Function with a pointer param, that can be nil
+f<int> getDepth(const Inner* inner) {
+    int depth = 0;
+    while inner != nil<Inner*> {
+        depth++;
+        inner = inner.parent;
+    }
+    return depth;
+}
+
+f<int> main() {
+    Outer root = Outer(nil<Outer*>);
+    Outer child = Outer(&root);
+    printf("Root inner parent is nil: %d\n", root.inner.parent == nil<Inner*>);
+    printf("Child inner parent is root inner: %d\n", child.inner.parent == &root.inner);
+    printf("Root parent value: %d\n", root.getParentValue(root.parent));
+    printf("Child parent value: %d\n", child.getParentValue(child.parent));
+    printf("Depth of nil: %d\n", getDepth(nil<Inner*>));
+    printf("Depth of root: %d\n", getDepth(&root.inner));
+    printf("Depth of child: %d\n", getDepth(&child.inner));
+}
