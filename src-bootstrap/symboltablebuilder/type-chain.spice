@@ -7,6 +7,7 @@ import "std/type/type-conversion";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/global/type-name-disambiguator";
 
 // Constants
 public const unsigned long ARRAY_SIZE_UNKNOWN = 0ul;
@@ -169,8 +170,8 @@ public p TypeChainElement.getName(StringStream& name, bool withSize, bool ignore
         case SuperType::TY_BOOL: {
             name << "bool";
         }
-        case SuperType::TY_STRUCT, SuperType::TY_INTERFACE: {
-            name << this.subType;
+        case SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION: {
+            name << this.subType << getDisambiguationSuffix(this.subType, this.typeId);
             if !this.templateTypes.isEmpty() {
                 name << "<";
                 foreach unsigned long i, const QualType& templateType : this.templateTypes {

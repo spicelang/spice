@@ -1,8 +1,10 @@
 // Std imports
 import "std/data/unordered-map";
+import "std/data/map";
 import "std/data/vector";
 import "std/data/pair";
 import "std/type/type-conversion";
+import "std/text/json/json-value";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -19,6 +21,7 @@ import "bootstrap/model/function";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/util/compiler-warning";
+import "bootstrap/util/common-util";
 
 // Type aliases
 public type CaptureMap alias UnorderedMap</*name=*/String, /*capture*/Capture>;
@@ -94,11 +97,22 @@ public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode
         }
     }
     // Insert into symbols map. The type is invalid, because concrete types are determined by the type checker later on
-    // ToDo: Port the DECLARED state update and the shadowed-variable warning of the host
+    assert !this.symbols.contains(name);
     const QualType qualType = QualType(SuperType::TY_INVALID);
-    SymbolTableEntry entry = SymbolTableEntry(name, qualType, this.scope, cast<ASTNode*>(declNode), orderIndex, isGlobal);
-    this.symbols.upsert(name, entry);
-    return &this.symbols.get(name);
+    ASTNode* mutableDeclNode = cast<ASTNode*>(declNode);
+    this.symbols.upsert(name, SymbolTableEntry(name, qualType, this.scope, mutableDeclNode, orderIndex, isGlobal));
+    // Set entry to declared
+    SymbolTableEntry* entry = &this.symbols.get(name);
+    entry.updateState(LifecycleState::DECLARED, mutableDeclNode);
+
+    // Check if shadowed
+    if this.parent != nil<SymbolTable*> && this.parent.lookup(name) != nil<SymbolTableEntry*> && !mutableDeclNode.isParam() && name != RETURN_VARIABLE_NAME {
+        const String warningMsg = "Variable '" + name + "' shadows a variable in a parent scope";
+        const CompilerWarning warning = CompilerWarning(declNode.codeLoc, CompilerWarningType::SHADOWED_VARIABLE, warningMsg.getRaw());
+        this.scope.sourceFile.compilerOutput.warnings.pushBack(warning);
+    }
+
+    return entry;
 }
 
 /**
@@ -156,6 +170,7 @@ f<String> getAnonymousSymbolName(const ASTNode* declNode, unsigned long numericS
 public f<SymbolTableEntry*> SymbolTable.copySymbol(const String& originalName, const String& newName) {
     SymbolTableEntry* entryToCopy = this.lookupStrict(originalName);
     assert entryToCopy != nil<SymbolTableEntry*>;
+    assert !this.symbols.contains(newName);
     this.symbols.upsert(newName, *entryToCopy);
     return &this.symbols.get(newName);
 }
@@ -388,9 +403,36 @@ public p SymbolTable.deleteAnonymous(const String& name) {
  *   ]
  * }
  *
+ * The returned heap-allocated JSON value is owned by the caller.
+ *
  * @return Symbol table if form of a string
  */
-public f<String> SymbolTable.toJSON() {
-    // ToDo
-    return String();
+public f<JsonValue*> SymbolTable.toJSON() {
+    // Collect all symbols. The host keeps them in an ordered map, so sort them by name
+    Map<String, SymbolTableEntry*> sortedSymbols;
+    foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbols {
+        sortedSymbols.insert(symbol.getFirst(), &symbol.getSecond());
+    }
+    JsonValue* jsonSymbols = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
+    foreach Pair<const String&, SymbolTableEntry*&> symbol : sortedSymbols {
+        SymbolTableEntry* entry = symbol.getSecond();
+        jsonSymbols.addArrayItem(entry.toJSON());
+    }
+
+    // Collect all captures. The host keeps them in an ordered map, so sort them by name
+    Map<String, Capture*> sortedCaptures;
+    foreach Pair<const String&, Capture&> capture : this.captures {
+        sortedCaptures.insert(capture.getFirst(), &capture.getSecond());
+    }
+    JsonValue* jsonCaptures = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
+    foreach Pair<const String&, Capture*&> capture : sortedCaptures {
+        Capture* capturePtr = capture.getSecond();
+        jsonCaptures.addArrayItem(capturePtr.toJSON());
+    }
+
+    // Generate json
+    result = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    setJsonField(result, String("symbols"), jsonSymbols);
+    setJsonField(result, String("captures"), jsonCaptures);
+    return result;
 }

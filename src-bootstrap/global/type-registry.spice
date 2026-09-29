@@ -1,6 +1,9 @@
 // Std imports
 import "std/data/vector";
 import "std/data/unordered-map";
+import "std/data/map";
+import "std/data/pair";
+import "std/text/stringstream";
 import "std/math/hash";
 
 // Own imports
@@ -96,6 +99,33 @@ public f<const Type*> TypeRegistry.getOrInsertChain(const TypeChain& typeChain) 
  */
 public f<unsigned long> TypeRegistry.getTypeCount() {
     return this.typeCount;
+}
+
+/**
+ * Dump all types in the type registry
+ */
+public f<String> TypeRegistry.dump() {
+    // Sort to ensure deterministic output. Distinct types can share the same name (e.g. different body scopes), so count
+    // the occurrences of each name, to emit duplicates like the sorted list of the host does
+    Map<String, unsigned long> typeStrings;
+    foreach Pair<const Hash&, Vector<Type*>&> bucket : this.types {
+        foreach Type* registryType : bucket.getSecond() {
+            const String typeString = registryType.getName(false, true, true);
+            if typeStrings.contains(typeString) {
+                typeStrings.get(typeString)++;
+            } else {
+                typeStrings.insert(typeString, 1ul);
+            }
+        }
+    }
+    // Serialize type registry
+    StringStream typeRegistryString;
+    foreach Pair<const String&, unsigned long&> typeString : typeStrings {
+        for unsigned long i = 0ul; i < typeString.getSecond(); i++ {
+            typeRegistryString << typeString.getFirst() << "\n";
+        }
+    }
+    return typeRegistryString.str();
 }
 
 /**

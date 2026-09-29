@@ -1,7 +1,9 @@
 // Std imports
 import "std/data/unordered-map";
+import "std/data/map";
 import "std/data/vector";
 import "std/data/pair";
+import "std/text/json/json-value";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -10,6 +12,8 @@ import "bootstrap/exception/semantic-error";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/symbol-table-builder";
+import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
@@ -20,6 +24,8 @@ import "bootstrap/typechecker/union-manager";
 import "bootstrap/source-file";
 import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
+import "bootstrap/util/common-util";
+import "bootstrap/util/compiler-warning";
 
 public type ScopeType enum {
     GLOBAL,
@@ -117,6 +123,121 @@ public f<Scope*> Scope.getParent() {
  */
 public f<ScopeType> Scope.getScopeType() {
     return this.scopeType;
+}
+
+/**
+ * Collect all warnings, produced within this scope
+ *
+ * @param warnings List of warnings
+ * @return Collection of warnings
+ */
+public p Scope.collectWarnings(Vector<CompilerWarning>& warnings) {
+    const dyn genericCandidates = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
+    const dyn fctOrProc = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+
+    // Visit own symbols
+    foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbolTable.symbols {
+        const SymbolTableEntry& entry = symbol.getSecond();
+        // Do not produce a warning if the symbol is used or has a special name
+        const String& name = entry.name;
+        if entry.used || name.startsWith(UNUSED_VARIABLE_NAME) {
+            continue;
+        }
+
+        const QualType entryType = entry.getQualType();
+
+        // When compiling a static or shared library, publicly accessible symbols form part of the library's exported
+        // API. They may legitimately go unused within the library itself, since external consumers are expected to
+        // use them, so do not report them as unused. isPublic() is only defined for the type categories checked here
+        // (see the assertion in QualType::isPublic()), so guard the call accordingly.
+        const bool isPublicApiCandidate = entryType.isExtendedPrimitive() || entryType.is(SuperType::TY_ENUM);
+        if isPublicApiCandidate && entryType.isPublic() && this.sourceFile.isLibraryOutput() {
+            continue;
+        }
+
+        // Determine warning type and message by the scope type and the symbol type
+        CompilerWarningType warningType = CompilerWarningType::UNUSED_VARIABLE;
+        String warningMessage;
+        switch this.scopeType {
+            case ScopeType::GLOBAL: {
+                // Skip generic function/procedure/struct/interface/union entries
+                const QualTypeList entryTemplateTypes = entryType.getTemplateTypes();
+                if entryType.isOneOf(genericCandidates, len(genericCandidates)) && !entryTemplateTypes.isEmpty() {
+                    continue;
+                }
+
+                if entryType.is(SuperType::TY_FUNCTION) {
+                    Vector<Function*>* fctManifestations = entry.declNode.getFctManifestations(name);
+                    warningType = CompilerWarningType::UNUSED_FUNCTION;
+                    const Function* firstManifestation = fctManifestations.front();
+                    warningMessage = "'" + firstManifestation.getSignature() + "' is unused";
+                } else if entryType.is(SuperType::TY_PROCEDURE) {
+                    Vector<Function*>* fctManifestations = entry.declNode.getFctManifestations(name);
+                    warningType = CompilerWarningType::UNUSED_PROCEDURE;
+                    const Function* firstManifestation = fctManifestations.front();
+                    warningMessage = "'" + firstManifestation.getSignature() + "' is unused";
+                } else if entryType.is(SuperType::TY_STRUCT) {
+                    warningType = CompilerWarningType::UNUSED_STRUCT;
+                    warningMessage = "The struct '" + entry.name + "' is unused";
+                } else if entryType.is(SuperType::TY_INTERFACE) {
+                    warningType = CompilerWarningType::UNUSED_INTERFACE;
+                    warningMessage = "The interface '" + entry.name + "' is unused";
+                } else if entryType.is(SuperType::TY_UNION) {
+                    warningType = CompilerWarningType::UNUSED_UNION;
+                    warningMessage = "The union '" + entry.name + "' is unused";
+                } else if entryType.is(SuperType::TY_ENUM) {
+                    continue; // Do not report unused enums. Only unused enum items are reported
+                } else if entryType.is(SuperType::TY_IMPORT) {
+                    warningType = CompilerWarningType::UNUSED_IMPORT;
+                    warningMessage = "The import '" + entry.name + "' is unused";
+                } else if entryType.is(SuperType::TY_ALIAS) {
+                    warningType = CompilerWarningType::UNUSED_ALIAS;
+                    warningMessage = "The type alias '" + entry.name + "' is unused";
+                } else {
+                    warningType = CompilerWarningType::UNUSED_VARIABLE;
+                    warningMessage = "The variable '" + entry.name + "' is unused";
+                }
+            }
+            case ScopeType::STRUCT, ScopeType::INTERFACE, ScopeType::UNION: {
+                if entry.isField() {
+                    warningType = CompilerWarningType::UNUSED_FIELD;
+                    warningMessage = "The field '" + entry.name + "' is unused";
+                } else if entryType.isOneOf(fctOrProc, len(fctOrProc)) {
+                    // Skip implicit method entries and generic templates
+                    Vector<Function*>* fctManifestations = entry.declNode.getFctManifestations(name);
+                    if fctManifestations.isEmpty() {
+                        continue;
+                    }
+                    const Function* firstManifestation = fctManifestations.front();
+                    if firstManifestation.implicitDefault {
+                        continue;
+                    }
+
+                    warningType = CompilerWarningType::UNUSED_METHOD;
+                    warningMessage = "The method '" + firstManifestation.getSignature() + "' is unused";
+                }
+            }
+            case ScopeType::ENUM: {
+                warningType = CompilerWarningType::UNUSED_ENUM_ITEM;
+                warningMessage = "The enum item '" + entry.name + "' is unused";
+            }
+            default: {
+                warningType = CompilerWarningType::UNUSED_VARIABLE;
+                warningMessage = "The variable '" + entry.name + "' is unused";
+            }
+        }
+
+        // Add warning
+        warnings.pushBack(CompilerWarning(entry.getDeclCodeLoc(), warningType, warningMessage.getRaw()));
+    }
+
+    // Visit children
+    foreach Pair<const String&, Scope*&> childEntry : this.children {
+        Scope* childScope = childEntry.getSecond();
+        if !childScope.isGenericScope {
+            childScope.collectWarnings(warnings);
+        }
+    }
 }
 
 /**
@@ -312,6 +433,32 @@ public f<bool> Scope.doesAllowUnsafeOperations() {
  */
 public f<bool> Scope.isImportedBy(const Scope* askingScope) {
     return askingScope.sourceFile.imports(this.sourceFile);
+}
+
+/**
+ * Get JSON representation of the symbol table.
+ * The returned heap-allocated JSON value is owned by the caller.
+ *
+ * @return Symbol table as JSON object
+ */
+public f<JsonValue*> Scope.getSymbolTableJSON() {
+    result = this.symbolTable.toJSON();
+
+    // Collect all children. The host keeps them in an ordered map, so sort them by name
+    Map<String, Scope*> sortedChildren;
+    foreach Pair<const String&, Scope*&> childEntry : this.children {
+        sortedChildren.insert(childEntry.getFirst(), childEntry.getSecond());
+    }
+    JsonValue* jsonChildren = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
+    foreach Pair<const String&, Scope*&> childEntry : sortedChildren {
+        Scope* childScope = childEntry.getSecond();
+        JsonValue* c = childScope.getSymbolTableJSON();
+        setJsonField(c, String("name"), __new<JsonValue>(childEntry.getFirst())); // Inject symbol table name into JSON object
+        jsonChildren.addArrayItem(c);
+    }
+    setJsonField(result, String("children"), jsonChildren);
+
+    return result;
 }
 
 /**

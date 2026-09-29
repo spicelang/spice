@@ -18,7 +18,8 @@ public type JsonValueKind enum {
  * Composite values (arrays and objects) own their children as heap pointers,
  * so a JsonValue is always reached via `heap JsonValue*` once it has been
  * parsed. Numbers are stored as `double`; integers are representable up to
- * 2^53. Object fields preserve insertion order.
+ * 2^53. Numbers constructed from an `unsigned long` additionally keep their
+ * exact integer value. Object fields preserve insertion order.
  *
  * Destroying a value recursively destroys everything below it, so a whole tree
  * is released with a single `deleteJsonValue` call on its root. Accessors like
@@ -37,6 +38,8 @@ public type JsonValue struct {
     JsonValueKind kind
     bool boolValue
     double numberValue
+    bool isUnsignedInteger = false
+    unsigned long unsignedValue = 0ul
     String stringValue
     Vector<JsonValue*> arrayItems
     Vector<String> objectKeys
@@ -78,6 +81,18 @@ public p JsonValue.ctor(bool value) {
 public p JsonValue.ctor(double value) {
     this.kind = JsonValueKind::JSON_NUMBER;
     this.numberValue = value;
+}
+
+/**
+ * Construct a JSON number value, that keeps the exact value of the given unsigned integer
+ *
+ * @param value Unsigned integer value
+ */
+public p JsonValue.ctor(unsigned long value) {
+    this.kind = JsonValueKind::JSON_NUMBER;
+    this.numberValue = cast<double>(value);
+    this.isUnsignedInteger = true;
+    this.unsignedValue = value;
 }
 
 /**
@@ -194,6 +209,28 @@ public f<bool> JsonValue.getBool() {
 public f<double> JsonValue.getNumber() {
     assert this.kind == JsonValueKind::JSON_NUMBER;
     return this.numberValue;
+}
+
+/**
+ * Check whether the number was constructed from an unsigned integer and keeps its exact value.
+ * Panics if the value is not a number.
+ *
+ * @return Exact unsigned integer or not
+ */
+public f<bool> JsonValue.hasUnsignedIntegerValue() {
+    assert this.kind == JsonValueKind::JSON_NUMBER;
+    return this.isUnsignedInteger;
+}
+
+/**
+ * Retrieve the exact unsigned integer payload. Panics if the value is not a number, that was constructed from an unsigned
+ * integer.
+ *
+ * @return Unsigned integer value
+ */
+public f<unsigned long> JsonValue.getUnsignedInteger() {
+    assert this.kind == JsonValueKind::JSON_NUMBER && this.isUnsignedInteger;
+    return this.unsignedValue;
 }
 
 /**
@@ -333,4 +370,19 @@ public p JsonValue.addObjectField(const String& key, JsonValue* value) {
     assert this.kind == JsonValueKind::JSON_OBJECT;
     this.objectKeys.pushBack(key);
     this.objectValues.pushBack(value);
+}
+
+/**
+ * Insert a field into the object at the given position. Panics if the value is not an object.
+ * The object takes ownership of the heap-allocated field value.
+ *
+ * @param idx Position to insert the field at (0 to object size)
+ * @param key Field key
+ * @param value Field value
+ */
+public p JsonValue.insertObjectField(unsigned long idx, const String& key, JsonValue* value) {
+    assert this.kind == JsonValueKind::JSON_OBJECT;
+    assert idx <= this.objectKeys.getSize();
+    this.objectKeys.insertAt(idx, key);
+    this.objectValues.insertAt(idx, value);
 }

@@ -1,6 +1,10 @@
+// Std imports
+import "std/text/json/json-value";
+
 // Own imports
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/util/common-util";
 
 public type CapturePassMode enum {
     BY_VALUE,
@@ -63,6 +67,7 @@ public f<CapturePassMode> Capture.getMode() {
 
 /**
  * Stringify the current capture to a human-readable form. Used to dump whole symbol tables with their contents.
+ * The returned heap-allocated JSON value is owned by the caller.
  *
  * Example:
  * {
@@ -73,7 +78,12 @@ public f<CapturePassMode> Capture.getMode() {
  *
  * @return Capture as a JSON object
  */
-public f<String> Capture.toString() {
-    // ToDo: Implement this
-    return String();
+public f<JsonValue*> Capture.toJSON() {
+    result = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    setJsonField(result, String("name"), __new<JsonValue>(this.capturedSymbol.name));
+    const string accessType = this.accessType == CaptureAccessType::READ_ONLY ? "READ_ONLY" : "READ_WRITE";
+    setJsonField(result, String("accessType"), __new<JsonValue>(String(accessType)));
+    const string mode = this.captureMode == CapturePassMode::BY_VALUE ? "BY_VALUE" : "BY_REFERENCE";
+    setJsonField(result, String("mode"), __new<JsonValue>(String(mode)));
+    return result;
 }

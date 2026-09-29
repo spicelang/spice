@@ -65,7 +65,7 @@ public p CompilerWarning.ctor(const CompilerWarningType warningType, const strin
  * Print the compiler warning to the standard error output
  */
 public p CompilerWarning.print() {
-    printf("%s", this.warningMessage);
+    printf("\033[33m%s\033[0m\n", this.warningMessage);
 }
 
 /**

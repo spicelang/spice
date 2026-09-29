@@ -1,0 +1,98 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/math/hash";
+
+// Own imports
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-qualifiers";
+
+// Generic type defs
+type T dyn;
+
+/**
+ * Mix the bits of the given hash value (splitmix64 finalizer)
+ *
+ * @param hash Input hash value
+ * @return Mixed hash value
+ */
+public f<Hash> hashMix(Hash hash) {
+    hash += 0x9e3779b97f4a7c15ul;
+    hash = (hash ^ (hash >> 30ul)) * 0xbf58476d1ce4e5b9ul;
+    hash = (hash ^ (hash >> 27ul)) * 0x94d049bb133111ebul;
+    hash ^= (hash >> 31ul);
+    return hash;
+}
+
+/**
+ * Combine the given value into the given hash
+ *
+ * @param hash Hash to combine the value into
+ * @param value Value to combine
+ */
+public p hashCombine64(Hash& hash, Hash value) {
+    hash ^= hashMix(value + 0x9e3779b97f4a7c15ul + (hash << 6ul) + (hash >> 2ul));
+}
+
+/**
+ * Hash a pointer by its address
+ *
+ * @param value Pointer to hash
+ * @return Hash value
+ */
+public f<Hash> hashPointer<T>(const T* value) {
+    unsafe {
+        return cast<Hash>(cast<byte*>(value)) >> 3ul;
+    }
+}
+
+/**
+ * Hash type qualifiers
+ *
+ * @param qualifiers Type qualifiers
+ * @return Hash value
+ */
+public f<Hash> hashTypeQualifiers(const TypeQualifiers& qualifiers) {
+    Hash bits = 0ul;
+    if qualifiers.isConst { bits |= 1ul << 0ul; }
+    if qualifiers.isSigned { bits |= 1ul << 1ul; }
+    if qualifiers.isUnsigned { bits |= 1ul << 2ul; }
+    if qualifiers.isHeap { bits |= 1ul << 3ul; }
+    if qualifiers.isPublic { bits |= 1ul << 4ul; }
+    if qualifiers.isInline { bits |= 1ul << 5ul; }
+    if qualifiers.isComposition { bits |= 1ul << 6ul; }
+    return hashMix(bits);
+}
+
+/**
+ * Hash a qualified type. Types are interned in the type registry, so the address of the type identifies its content, like
+ * the content hash of the host does.
+ *
+ * @param qualType Qualified type
+ * @return Hash value
+ */
+public f<Hash> hashQualType(const QualType& qualType) {
+    Hash seed = 0ul;
+
+    // Hash type pointer
+    hashCombine64(seed, hashPointer(qualType.rawType));
+
+    TypeQualifiers qualifiers = qualType.qualifiers;
+    qualifiers.isPublic = false; // Ignore the public qualifier for hashing
+    hashCombine64(seed, hashTypeQualifiers(qualifiers));
+    return hashMix(seed);
+}
+
+/**
+ * Hash a list of qualified types
+ *
+ * @param qualTypes List of qualified types
+ * @return Hash value
+ */
+public f<Hash> hashQualTypeList(const QualTypeList& qualTypes) {
+    Hash hash = 0ul;
+    foreach const QualType& qualType : qualTypes {
+        hashCombine64(hash, hashQualType(qualType));
+    }
+    return hash;
+}

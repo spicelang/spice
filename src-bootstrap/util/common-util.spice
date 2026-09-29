@@ -1,6 +1,10 @@
 // Std imports
 import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
+import "std/text/json/json-value";
+
+// External functions
+ext f<int> memcmp(string, string, unsigned long);
 
 /**
  * Split the given haystack by the needle and return the last fragment
@@ -33,4 +37,44 @@ public f<String> buildVersionInfo() {
     versionString << "built by:      " << builtBy << endl() << endl();
     versionString << "(c) Marc Auberer 2021-2026";
     return versionString.str();
+}
+
+/**
+ * Checks if the first string sorts lexicographically before the second one. This compares byte-wise, like the comparison
+ * operators of std::string in the host compiler.
+ *
+ * @param lhs First string
+ * @param rhs Second string
+ * @return Sorts before or not
+ */
+public f<bool> isStringLess(const String& lhs, const String& rhs) {
+    const unsigned long lhsLength = lhs.getLength();
+    const unsigned long rhsLength = rhs.getLength();
+    const unsigned long commonLength = lhsLength < rhsLength ? lhsLength : rhsLength;
+    if commonLength > 0l {
+        const int comparison = memcmp(lhs.getRaw(), rhs.getRaw(), commonLength);
+        if comparison != 0 {
+            return comparison < 0;
+        }
+    }
+    return lhsLength < rhsLength;
+}
+
+/**
+ * Add a field to a JSON object, keeping the fields sorted by key. This mirrors 'json[key] = value' in the host compiler,
+ * where nlohmann::json stores the fields of an object in a map, sorted by key.
+ * The object takes ownership of the heap-allocated field value.
+ *
+ * @param object JSON object
+ * @param key Field key
+ * @param value Field value
+ */
+public p setJsonField(JsonValue* object, const String& key, JsonValue* value) {
+    const unsigned long size = object.getObjectSize();
+    unsigned long idx = 0l;
+    while idx < size && isStringLess(object.getObjectKey(idx), key) {
+        idx++;
+    }
+    assert idx == size || object.getObjectKey(idx) != key; // Overwriting fields is not supported
+    object.insertObjectField(idx, key, value);
 }

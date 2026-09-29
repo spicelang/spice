@@ -1,4 +1,5 @@
 // Std imports
+import "std/text/json/json-value";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -7,6 +8,8 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/lifecycle";
 import "bootstrap/reader/code-loc";
+import "bootstrap/util/common-util";
+import "bootstrap/exception/compiler-error";
 
 // Reserved function names for implicitly generated struct constructors/destructors
 public const string CTOR_FUNCTION_NAME = "ctor";
@@ -67,24 +70,24 @@ public p SymbolTableEntry.updateType(const QualType& newType, bool overwriteExis
 /**
  * Update the state of the current symbol
  *
- * @throws SemanticError When trying to re-assign a constant variable
- * @throws runtime_error When the state of the symbol is set to initialized before a concrete type was set
+ * @throws CompilerError When the state change is not valid
  *
  * @param newState New state of the current symbol
  * @param node AST node where the update takes place
- * @param force Force update. This can only be used compiler-internal
  */
-public p SymbolTableEntry.updateState(const LifecycleState& newState, ASTNode* node, bool force = false) {
+public p SymbolTableEntry.updateState(const LifecycleState& newState, ASTNode* node) {
     const LifecycleState oldState = this.lifecycle.getCurrentState();
-    // Check if this is a constant variable and is already initialized
-    if newState != LifecycleState::DEAD && oldState != LifecycleState::DECLARED && this.qualType.isConst() && !force {
-        // throw internal error
-    }
-    if newState != LifecycleState::DEAD && oldState == LifecycleState::DECLARED {
-        // throw internal error
+    if newState == LifecycleState::DEAD && oldState == LifecycleState::DECLARED {
+        const String message = "Cannot destroy uninitialized variable '" + this.name + "'";
+        const CompilerError error = CompilerError(CompilerErrorType::INTERNAL_ERROR, message.getRaw());
+        const String& errorMessage = error.getMessage();
+        panic(Error(errorMessage.getRaw()));
     }
     if newState == LifecycleState::DEAD && oldState == LifecycleState::DEAD {
-        // throw internal error
+        const String message = "Cannot destroy already destroyed variable '" + this.name + "'";
+        const CompilerError error = CompilerError(CompilerErrorType::INTERNAL_ERROR, message.getRaw());
+        const String& errorMessage = error.getMessage();
+        panic(Error(errorMessage.getRaw()));
     }
     this.lifecycle.addEvent(LifecycleEvent{newState, node});
 }
@@ -128,6 +131,7 @@ public f<bool> SymbolTableEntry.isField() {
 
 /**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
+ * The returned heap-allocated JSON value is owned by the caller.
  *
  * Example:
  * {
@@ -145,6 +149,14 @@ public f<bool> SymbolTableEntry.isField() {
  *
  * @return Symbol table entry as a JSON object
  */
-public f<String> SymbolTableEntry.toJSON() {
-    return String();
+public f<JsonValue*> SymbolTableEntry.toJSON() {
+    result = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    setJsonField(result, String("name"), __new<JsonValue>(this.name));
+    setJsonField(result, String("type"), __new<JsonValue>(this.qualType.getName(true)));
+    setJsonField(result, String("codeLoc"), __new<JsonValue>(this.declNode.codeLoc.toString()));
+    setJsonField(result, String("orderIndex"), __new<JsonValue>(this.orderIndex));
+    setJsonField(result, String("state"), __new<JsonValue>(String(this.lifecycle.getCurrentStateName())));
+    setJsonField(result, String("isGlobal"), __new<JsonValue>(this.global));
+    setJsonField(result, String("isVolatile"), __new<JsonValue>(this.isVolatile));
+    return result;
 }

@@ -99,5 +99,19 @@ f<int> main() {
     b.pushBack(4);
     assert a != b;
 
+    // insertAt with non-trivial items (shifted items must be relocated, not assigned to uninitialized memory)
+    Vector<String> strings;
+    strings.pushBack(String("b"));
+    strings.pushBack(String("d"));
+    strings.insertAt(0l, String("a"));
+    strings.insertAt(2l, String("c"));
+    strings.insertAt(strings.getSize(), String("e"));
+    assert strings.getSize() == 5;
+    assert strings[0] == "a";
+    assert strings[1] == "b";
+    assert strings[2] == "c";
+    assert strings[3] == "d";
+    assert strings[4] == "e";
+
     printf("Vector smoke tests passed!\n");
 }

@@ -3,6 +3,7 @@ import "std/data/vector";
 import "std/data/map";
 import "std/data/unordered-map";
 import "std/data/pair";
+import "std/math/hash";
 
 // Own imports
 import "bootstrap/exception/error-manager";
@@ -17,6 +18,9 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/typechecker/type-matcher";
+import "bootstrap/typechecker/type-checker";
+import "bootstrap/util/custom-hash-functions";
+import "bootstrap/util/lookup-cache";
 
 // Aliases
 public type FunctionManifestationList alias UnorderedMap</*mangledName=*/String, Function>;
@@ -31,6 +35,35 @@ type MatchResult enum {
 }
 
 public const string MAIN_FUNCTION_NAME = "main";
+
+// Address of the active function lookup cache. The host keeps the lookup cache in static members of the FunctionManager. Spice
+// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+long ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = 0l;
+
+/**
+ * Make the given lookup cache the active one. The function lookup operates on it.
+ *
+ * @param cache Lookup cache
+ */
+public p setActiveFunctionLookupCache(LookupCache<Function>* cache) {
+    unsafe {
+        ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+    }
+}
+
+/**
+ * Get the active function lookup cache
+ *
+ * @return Active lookup cache
+ */
+f<LookupCache<Function>*> getActiveFunctionLookupCache() {
+    LookupCache<Function>* cache = nil<LookupCache<Function>*>;
+    unsafe {
+        cache = cast<LookupCache<Function>*>(cast<byte*>(ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS));
+    }
+    assert cache != nil<LookupCache<Function>*>;
+    return cache;
+}
 
 /**
  * Insert a function declaration (which may still carry optional parameters) into the given scope, substantiating
@@ -209,6 +242,16 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
     const dyn thisTypeOptions = [SuperType::TY_DYN, SuperType::TY_STRUCT];
     assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
 
+    // Do cache lookup
+    LookupCache<Function>* cache = getActiveFunctionLookupCache();
+    const QualTypeList noTemplateTypes;
+    const Hash cacheKey = getFunctionCacheKey(matchScope, reqName, reqThisType, reqArgs, noTemplateTypes);
+    if cache.lookupCache.contains(cacheKey) {
+        cache.lookupCacheHits++;
+        return cache.lookupCache.get(cacheKey);
+    }
+    cache.lookupCacheMisses++;
+
     // Loop over function registry to find functions, that match the requirements of the call
     Vector<const Function*> matches;
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
@@ -266,6 +309,15 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
 public f<Function*> matchFunction(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, const QualTypeList& templateTypeHints, bool strictQualifierMatching, const ASTNode* callNode) {
     const dyn thisTypeOptions = [SuperType::TY_DYN, SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
     assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
+
+    // Do cache lookup
+    LookupCache<Function>* cache = getActiveFunctionLookupCache();
+    const Hash cacheKey = getFunctionCacheKey(matchScope, reqName, reqThisType, reqArgs, templateTypeHints);
+    if cache.lookupCache.contains(cacheKey) {
+        cache.lookupCacheHits++;
+        return cache.lookupCache.get(cacheKey);
+    }
+    cache.lookupCacheMisses++;
 
     // Loop over function registry to find functions, that match the requirements of the call
     Vector<Function*> matches;
@@ -399,10 +451,11 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
     Function* matchedFunction = matches.front();
     matchedFunction.isNewlyInserted = false;
 
-    // ToDo: Trigger revisit in type checker (requestRevisitIfRequired) once the lookup cache of the host is ported. The host
-    // only reaches this point on a cache miss, so it requests the revisit once per call site. Without the cache, every
-    // match of a function that is never checked itself (e.g. an implicit default member) would request another revisit and
-    // the type checker post loop would not converge.
+    // Insert into cache
+    cache.lookupCache.upsert(cacheKey, matchedFunction);
+
+    // Trigger revisit in type checker if required
+    requestRevisitIfRequired(matchedFunction);
 
     // Return the very match
     return matchedFunction;
@@ -733,6 +786,29 @@ f<bool> hasCtor(Scope* matchScope, CtorKind kind) {
  * @param matchScope Scope to search in
  * @return Has any constructor or not
  */
+/**
+ * Calculate the cache key for the function lookup cache
+ *
+ * @param scope Scope to match against
+ * @param name Function name requirement
+ * @param thisType This type requirement
+ * @param args Argument requirement
+ * @param templateTypes Template type requirement
+ * @return Cache key
+ */
+f<Hash> getFunctionCacheKey(const Scope* scope, const String& name, const QualType& thisType, const ArgList& args, const QualTypeList& templateTypes) {
+    Hash hash = 0ul;
+    hashCombine64(hash, hashPointer(scope));
+    hashCombine64(hash, hash(name));
+    hashCombine64(hash, hashQualType(thisType));
+    foreach const Arg& arg : args {
+        hashCombine64(hash, hashQualType(arg.getFirst()));
+        hashCombine64(hash, hash(arg.getSecond()));
+    }
+    hashCombine64(hash, hashQualTypeList(templateTypes));
+    return hash;
+}
+
 public f<bool> hasAnyCtor(Scope* matchScope) {
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
         foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
@@ -851,4 +927,12 @@ public f<bool> hasDtor(Scope* matchScope) {
         }
     }
     return false;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ */
+public f<String> dumpFunctionLookupCacheStatistics() {
+    LookupCache<Function>* cache = getActiveFunctionLookupCache();
+    return cache.dumpLookupCacheStatistics("FunctionManager");
 }

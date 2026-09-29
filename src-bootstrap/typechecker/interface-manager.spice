@@ -3,6 +3,7 @@ import "std/data/map";
 import "std/data/unordered-map";
 import "std/data/vector";
 import "std/data/pair";
+import "std/math/hash";
 
 // Own imports
 import "bootstrap/exception/error-manager";
@@ -17,6 +18,8 @@ import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/typechecker/type-matcher";
 import "bootstrap/typechecker/function-manager";
+import "bootstrap/util/custom-hash-functions";
+import "bootstrap/util/lookup-cache";
 
 // Type aliases
 public type InterfaceManifestationList alias UnorderedMap</*mangledName=*/String, Interface>;
@@ -61,6 +64,35 @@ f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestati
     return &manifestationList.get(signature);
 }
 
+// Address of the active interface lookup cache. The host keeps the lookup cache in static members of the InterfaceManager. Spice
+// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+long ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = 0l;
+
+/**
+ * Make the given lookup cache the active one. The interface lookup operates on it.
+ *
+ * @param cache Lookup cache
+ */
+public p setActiveInterfaceLookupCache(LookupCache<Interface>* cache) {
+    unsafe {
+        ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+    }
+}
+
+/**
+ * Get the active interface lookup cache
+ *
+ * @return Active lookup cache
+ */
+f<LookupCache<Interface>*> getActiveInterfaceLookupCache() {
+    LookupCache<Interface>* cache = nil<LookupCache<Interface>*>;
+    unsafe {
+        cache = cast<LookupCache<Interface>*>(cast<byte*>(ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS));
+    }
+    assert cache != nil<LookupCache<Interface>*>;
+    return cache;
+}
+
 /**
  * Check if there is an interface in this scope, fulfilling all given requirements and if found, return it.
  * If more than one interface matches the requirement, this is reported (see ToDo below).
@@ -72,6 +104,15 @@ f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestati
  * @return Matched interface or nil
  */
 public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+    // Do cache lookup
+    LookupCache<Interface>* cache = getActiveInterfaceLookupCache();
+    const Hash cacheKey = getInterfaceCacheKey(matchScope, reqName, reqTemplateTypes);
+    if cache.lookupCache.contains(cacheKey) {
+        cache.lookupCacheHits++;
+        return cache.lookupCache.get(cacheKey);
+    }
+    cache.lookupCacheMisses++;
+
     // Loop over interface registry to find interfaces, that match the requirements of the instantiation
     Vector<Interface*> matches;
     foreach Pair<const String&, InterfaceManifestationList&> defEntry : matchScope.interfaces {
@@ -179,6 +220,9 @@ public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, co
     Interface* matchedInterface = matches.front();
     matchedInterface.isNewlyInserted = false;
 
+    // Insert into cache
+    cache.lookupCache.upsert(cacheKey, matchedInterface);
+
     return matchedInterface;
 }
 
@@ -243,3 +287,27 @@ p substantiateSignatures(Interface& candidate, const TypeMapping& typeMapping, c
     }
 }
 
+
+/**
+ * Calculate the cache key for the interface lookup cache
+ *
+ * @param scope Scope to match against
+ * @param name Interface name requirement
+ * @param templateTypes Template types to substantiate generic types
+ * @return Cache key
+ */
+f<Hash> getInterfaceCacheKey(const Scope* scope, const String& name, const QualTypeList& templateTypes) {
+    Hash hash = 0ul;
+    hashCombine64(hash, hashPointer(scope));
+    hashCombine64(hash, hash(name));
+    hashCombine64(hash, hashQualTypeList(templateTypes));
+    return hash;
+}
+
+/**
+ * Dump usage statistics for the lookup cache
+ */
+public f<String> dumpInterfaceLookupCacheStatistics() {
+    LookupCache<Interface>* cache = getActiveInterfaceLookupCache();
+    return cache.dumpLookupCacheStatistics("InterfaceManager");
+}
