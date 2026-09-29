@@ -166,5 +166,4 @@ public f<Optional<Vector<long>>> runProgram(const RegexProgram& prog, const Stri
     if haveMatch {
         result = Optional<Vector<long>>(matchedSaved);
     }
-    return result;
 }

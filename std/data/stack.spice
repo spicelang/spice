@@ -60,8 +60,8 @@ public p Stack.ctor(unsigned long initAllocItems = 0l) {
     if initAllocItems == 0l { return; }
     // Allocate space for the initial number of elements
     const unsigned long itemSize = sizeof<T>();
+    Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
     unsafe {
-        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
         this.contents = cast<heap T*>(allocResult.unwrapAndMove());
     }
     this.capacity = initAllocItems;

@@ -85,5 +85,4 @@ public f<JsonValue*> Capture.toJSON() {
     setJsonField(result, String("accessType"), __new<JsonValue>(String(accessType)));
     const string mode = this.captureMode == CapturePassMode::BY_VALUE ? "BY_VALUE" : "BY_REFERENCE";
     setJsonField(result, String("mode"), __new<JsonValue>(String(mode)));
-    return result;
 }

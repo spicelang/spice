@@ -434,5 +434,4 @@ public f<JsonValue*> SymbolTable.toJSON() {
     result = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
     setJsonField(result, String("symbols"), jsonSymbols);
     setJsonField(result, String("captures"), jsonCaptures);
-    return result;
 }

@@ -457,8 +457,6 @@ public f<JsonValue*> Scope.getSymbolTableJSON() {
         jsonChildren.addArrayItem(c);
     }
     setJsonField(result, String("children"), jsonChildren);
-
-    return result;
 }
 
 /**

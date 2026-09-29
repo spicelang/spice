@@ -34,8 +34,8 @@ public p BitSet.ctor(unsigned long numBits = 0l) {
     this.numWords = (numBits + BITS_PER_WORD - 1l) / BITS_PER_WORD;
     // Leave the backing storage unallocated for the empty bit set
     if this.numWords == 0l { return; }
+    Result<heap byte*> allocResult = sAlloc(sizeof<unsigned long>() * this.numWords);
     unsafe {
-        Result<heap byte*> allocResult = sAlloc(sizeof<unsigned long>() * this.numWords);
         this.words = cast<heap unsigned long*>(allocResult.unwrapAndMove());
     }
     this.clearAll();

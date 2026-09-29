@@ -158,5 +158,4 @@ public f<JsonValue*> SymbolTableEntry.toJSON() {
     setJsonField(result, String("state"), __new<JsonValue>(String(this.lifecycle.getCurrentStateName())));
     setJsonField(result, String("isGlobal"), __new<JsonValue>(this.global));
     setJsonField(result, String("isVolatile"), __new<JsonValue>(this.isVolatile));
-    return result;
 }
