@@ -1,0 +1,45 @@
+import "std/io/file";
+
+f<int> main() {
+    // Write a file that contains a 0xFF byte, which must not be mistaken for EOF
+    Result<File> fileResult = openFile("./test-file-eof.txt", MODE_WRITE);
+    assert fileResult.isOk();
+    File file = fileResult.unwrap();
+    bool _ = file.write('a');
+    _ = file.write(cast<char>(255));
+    _ = file.write('b');
+    _ = file.close();
+
+    // Read the file char by char
+    fileResult = openFile("./test-file-eof.txt", MODE_READ);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
+    assert file.readChar() == 'a';
+    assert !file.isEOF();
+    assert file.readChar() == cast<char>(255);
+    assert !file.isEOF();
+    assert file.readChar() == 'b';
+    assert !file.isEOF();
+    const char _eof = file.readChar();
+    assert file.isEOF();
+    _ = file.close();
+
+    // Read the file line by line
+    fileResult = openFile("./test-file-eof.txt", MODE_READ);
+    assert fileResult.isOk();
+    file = fileResult.unwrap();
+    const String line = file.readLine();
+    assert line.getLength() == 3;
+    assert file.isEOF();
+    _ = file.close();
+
+    // Read the whole file at once
+    const Result<String> contentResult = readFile("./test-file-eof.txt");
+    assert contentResult.isOk();
+    const String content = contentResult.unwrap();
+    assert content.getLength() == 3;
+    assert content[2] == 'b';
+
+    assert deleteFile("./test-file-eof.txt");
+    printf("All assertions passed!\n");
+}

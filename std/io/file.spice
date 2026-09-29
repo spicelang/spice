@@ -119,8 +119,10 @@ public inline p File.setCursorPos(long offset, int origin = SEEK_SET) {
  */
 public f<char> File.readChar() {
     assert !this.isEOF;
-    result = cast<char>(fgetc(this.filePtr));
-    this.isEOF = result == EOF;
+    // Check for EOF before narrowing, because a 0xFF byte and EOF are indistinguishable as char
+    const int c = fgetc(this.filePtr);
+    this.isEOF = c == EOF;
+    return cast<char>(c);
 }
 
 /**
@@ -131,13 +133,10 @@ public f<char> File.readChar() {
 public f<String> File.readLine() {
     assert !this.isEOF;
     result = String();
-    char buffer;
-    while (buffer = this.readChar()) != EOF {
-        if buffer == '\n' { break; }
-        result += cast<char>(buffer);
-    }
-    if buffer == EOF {
-        this.isEOF = true;
+    while true {
+        const char buffer = this.readChar();
+        if this.isEOF || buffer == '\n' { break; }
+        result += buffer;
     }
 }
 
@@ -276,10 +275,11 @@ public f<Result<String>> readFile(string path) {
     // Open the file in read mode
     File file = openFile(path, MODE_READ)!;
     // Read from the file char by char
-    char buffer;
     String output = String();
-    while (buffer = file.readChar()) != cast<char>(EOF) {
-        output += cast<char>(buffer);
+    while true {
+        const char buffer = file.readChar();
+        if file.isEOF() { break; }
+        output += buffer;
     }
     // Close the file
     file.close();

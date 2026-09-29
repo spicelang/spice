@@ -218,7 +218,7 @@ define internal noundef ptr @_Z12op.subscriptR7Counterj(ptr noundef %0, i32 noun
   %3 = load ptr, ptr %c, align 8
   %value.addr = getelementptr inbounds %struct.Counter, ptr %3, i64 0, i32 0
   %4 = load i32, ptr %summand, align 4
-  %5 = sext i32 %4 to i64
+  %5 = zext i32 %4 to i64
   %6 = load i64, ptr %value.addr, align 8
   %7 = add i64 %6, %5
   store i64 %7, ptr %value.addr, align 8
