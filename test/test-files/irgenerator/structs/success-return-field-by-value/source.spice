@@ -1,0 +1,108 @@
+// TEST: --sanitizer=address
+
+import "std/data/vector";
+
+// Returning a value of a non-trivially-copyable struct type by value must only skip the copy ctor call (RVO) for
+// local variables of the returning function. Fields, values reached through a pointer or a reference and captured
+// variables are still owned elsewhere, so they have to be copied. A shallow copy would alias the heap buffer of the
+// owned value and cause a double free once both owners get destructed. See issue #1433.
+// Vector<Element> also covers type-checking a generic method manifestation (Vector<Element> copy ctor), whose body adds
+// new manifestations of the same method (Vector<int> copy ctor), which crashed the compiler before.
+type Element struct {
+    Vector<int> items
+}
+
+type Container struct {
+    Vector<int> items
+    Vector<Element> elements
+}
+
+f<Vector<int>> Container.getItems() {
+    return this.items;
+}
+
+f<Vector<int>> Container.getLastElementItems() {
+    return this.elements.back().items;
+}
+
+f<Container> Container.clone() {
+    return *this;
+}
+
+f<Vector<int>> getLastItems(Vector<Element>& elements) {
+    return elements.back().items;
+}
+
+f<Vector<int>> getItemsOf(const Container& container) {
+    return container.items;
+}
+
+f<Vector<int>> derefItems(Vector<int>* items) {
+    return *items;
+}
+
+f<Vector<int>> getLocalItems() {
+    Vector<int> items;
+    items.pushBack(42);
+    return items;
+}
+
+f<int> main() {
+    Container container;
+    container.items.pushBack(1);
+    container.items.pushBack(2);
+    Element element;
+    element.items.pushBack(3);
+    container.elements.pushBack(element);
+
+    // Field of this
+    {
+        Vector<int> items = container.getItems();
+        printf("getItems: %d\n", items.getSize());
+    }
+    // Field of a value reached through a call
+    {
+        Vector<int> items = container.getLastElementItems();
+        printf("getLastElementItems: %d\n", items.getSize());
+    }
+    // Dereferenced this
+    {
+        Container clone = container.clone();
+        printf("clone: %d, %d\n", clone.items.getSize(), clone.elements.getSize());
+    }
+    // Field of a reference parameter
+    {
+        Vector<int> items = getLastItems(container.elements);
+        printf("getLastItems: %d\n", items.getSize());
+    }
+    // Field of a const reference parameter
+    {
+        Vector<int> items = getItemsOf(container);
+        printf("getItemsOf: %d\n", items.getSize());
+    }
+    // Dereferenced pointer parameter
+    {
+        Vector<int> items = derefItems(&container.items);
+        printf("derefItems: %d\n", items.getSize());
+    }
+    // Local variable (RVO)
+    {
+        Vector<int> items = getLocalItems();
+        printf("getLocalItems: %d\n", items.getSize());
+    }
+    // Captured variable
+    {
+        Vector<int> captured;
+        captured.pushBack(4);
+        f<Vector<int>>() getCaptured = f<Vector<int>>() {
+            return captured;
+        };
+        Vector<int> items = getCaptured();
+        printf("getCaptured: %d, %d\n", items.getSize(), captured.getSize());
+    }
+
+    // The sources must still be intact
+    printf("container: %d, %d\n", container.items.getSize(), container.elements.getSize());
+    const Element& lastElement = container.elements.back();
+    printf("element: %d\n", lastElement.items.getSize());
+}

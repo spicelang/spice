@@ -191,7 +191,7 @@ std::pair<QualType, Function *> OpRuleManager::performStructAssign(ASTNode *node
   }
 
   // If RVO is possible, cancel here
-  if (!rhsIsRef && isReturn && !rhs.isTemporary())
+  if (isReturn && typeChecker->isReturnValueOptimizable(rhs))
     return {rhsType, nullptr};
 
   // => We have to copy

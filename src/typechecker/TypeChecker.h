@@ -203,6 +203,7 @@ private:
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   [[nodiscard]] bool isDestructibleTempStealTarget(AssignExprNode *node, const QualType &rhsType, bool isRhsTemporary) const;
   [[nodiscard]] bool isAlwaysConstructedLvalue(const ExprNode *node) const;
+  [[nodiscard]] bool isReturnValueOptimizable(const ExprResult &returnValue) const;
   static void requestRevisitIfRequired(const Function *fct);
   void ensureLoadedRuntimeForTypeName(const std::string &typeName) const;
   void ensureLoadedRuntimeForFunctionName(const std::string &functionName) const;

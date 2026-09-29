@@ -156,6 +156,31 @@ bool TypeChecker::isAlwaysConstructedLvalue(const ExprNode *node) const {
   return isAlwaysConstructedLvalue(postfixUnaryExpr->postfixUnaryExpr);
 }
 
+/**
+ * Check if the value of a return statement can be returned without copying it (RVO). This is only the case for local
+ * variables of the current function/procedure/lambda, because their dtor call can be omitted and the caller takes over
+ * the ownership. Fields, globals, captured variables and values that are reached through a variable (e.g. by
+ * dereferencing a pointer) are still owned by someone else, so they have to be copied.
+ *
+ * @param returnValue Value of the return statement
+ * @return Return value optimizable or not
+ */
+bool TypeChecker::isReturnValueOptimizable(const ExprResult &returnValue) const {
+  // The return value must be a variable, not a temporary or a reference
+  if (returnValue.isTemporary() || returnValue.type.isRef())
+    return false;
+  // The return value must be the variable itself, not a value that is reached through it
+  const SymbolTableEntry *entry = returnValue.entry;
+  if (!entry->getQualType().matches(returnValue.type, false, true, true))
+    return false;
+  // The variable must be declared in the current function/procedure/lambda
+  const Scope *functionScope = currentScope->getFunctionScope();
+  for (const Scope *scope = entry->scope; scope != nullptr; scope = scope->parent)
+    if (scope->type == ScopeType::FUNC_PROC_BODY || scope->type == ScopeType::LAMBDA_BODY)
+      return scope == functionScope;
+  return false;
+}
+
 std::any TypeChecker::visitTernaryExpr(TernaryExprNode *node) {
   // Check if there is a ternary operator applied
   if (!node->falseExpr)

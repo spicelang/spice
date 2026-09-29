@@ -148,6 +148,7 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   // in performStructAssign), turning rhs.entry into a dangling pointer.
   const bool rhsIsAnonymous = rhs.entry != nullptr && rhs.entry->anonymous;
   const std::string rhsEntryName = rhsIsAnonymous ? rhs.entry->name : std::string();
+  const bool rhsIsOptimizable = isReturnValueOptimizable(rhs);
 
   // Check if types match
   const ExprResult returnResult = {returnType, returnVar};
@@ -160,8 +161,8 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
       // Safe even if performStructAssign already deleted it: map::erase by key is a no-op when absent.
       currentScope->symbolTable.deleteAnonymous(rhsEntryName);
-    } else {
-      // Otherwise omit the destructor call, because the caller destructs the value
+    } else if (rhsIsOptimizable) {
+      // Otherwise omit the destructor call of the local variable, because the caller destructs the value
       rhs.entry->omitDtorCall = true;
     }
   }
