@@ -28,7 +28,6 @@ import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/model/union";
-//import "bootstrap/model/function";
 
 // Access tokens used when building type/function/scope signatures
 public const string MEMBER_ACCESS_TOKEN = ".";
@@ -71,20 +70,16 @@ public type CompileTimeValue struct {
 
 // Address of the shared storage, the members are views on
 inline f<byte*> CompileTimeValue.getStorageAddress() {
-    byte* address = nil<byte*>;
     unsafe {
-        address = cast<byte*>(&this.storage);
+        return cast<byte*>(&this.storage);
     }
-    return address;
 }
 
 public f<double> CompileTimeValue.getDoubleValue() {
-    double value = 0.0;
     unsafe {
         const double* valuePtr = cast<double*>(this.getStorageAddress());
-        value = *valuePtr;
+        return *valuePtr;
     }
-    return value;
 }
 public p CompileTimeValue.setDoubleValue(double value) {
     unsafe {
@@ -94,12 +89,10 @@ public p CompileTimeValue.setDoubleValue(double value) {
 }
 
 public f<int> CompileTimeValue.getIntValue() {
-    int value = 0;
     unsafe {
         const int* valuePtr = cast<int*>(this.getStorageAddress());
-        value = *valuePtr;
+        return *valuePtr;
     }
-    return value;
 }
 public p CompileTimeValue.setIntValue(int value) {
     unsafe {
@@ -109,12 +102,10 @@ public p CompileTimeValue.setIntValue(int value) {
 }
 
 public f<short> CompileTimeValue.getShortValue() {
-    short value = 0s;
     unsafe {
         const short* valuePtr = cast<short*>(this.getStorageAddress());
-        value = *valuePtr;
+        return *valuePtr;
     }
-    return value;
 }
 public p CompileTimeValue.setShortValue(short value) {
     unsafe {
@@ -131,12 +122,10 @@ public p CompileTimeValue.setLongValue(long value) {
 }
 
 public f<byte> CompileTimeValue.getByteValue() {
-    byte value = cast<byte>(0);
     unsafe {
         const byte* valuePtr = this.getStorageAddress();
-        value = *valuePtr;
+        return *valuePtr;
     }
-    return value;
 }
 public p CompileTimeValue.setByteValue(byte value) {
     unsafe {
@@ -146,12 +135,10 @@ public p CompileTimeValue.setByteValue(byte value) {
 }
 
 public f<char> CompileTimeValue.getCharValue() {
-    char value = '\0';
     unsafe {
         const char* valuePtr = cast<char*>(this.getStorageAddress());
-        value = *valuePtr;
+        return *valuePtr;
     }
-    return value;
 }
 public p CompileTimeValue.setCharValue(char value) {
     unsafe {
@@ -162,12 +149,10 @@ public p CompileTimeValue.setCharValue(char value) {
 
 // Offset into vector of strings in GlobalResourceManager
 public f<unsigned long> CompileTimeValue.getStringValueOffset() {
-    unsigned long value = 0ul;
     unsafe {
         const unsigned long* valuePtr = cast<unsigned long*>(this.getStorageAddress());
-        value = *valuePtr;
+        return *valuePtr;
     }
-    return value;
 }
 public p CompileTimeValue.setStringValueOffset(unsigned long value) {
     unsafe {
@@ -178,12 +163,10 @@ public p CompileTimeValue.setStringValueOffset(unsigned long value) {
 
 // A bool occupies one byte, which is interpreted like a C++ bool (any non-zero value is true)
 public f<bool> CompileTimeValue.getBoolValue() {
-    byte value = cast<byte>(0);
     unsafe {
         const byte* valuePtr = this.getStorageAddress();
-        value = *valuePtr;
+        return *valuePtr != cast<byte>(0);
     }
-    return value != cast<byte>(0);
 }
 public p CompileTimeValue.setBoolValue(bool value) {
     unsafe {

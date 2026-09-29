@@ -82,7 +82,7 @@ public f<Vector<String>> CsvParser.parseLine(const String& input) {
 public f<Vector<Vector<String>>> CsvParser.parse(const String& input) {
     result = Vector<Vector<String>>();
     const unsigned long length = input.getLength();
-    if length == 0l { return result; }
+    if length == 0l { return; }
 
     // We pre-allocate the current row inside `result` and write fields through
     // a reference. This avoids relying on copying a non-empty Vector<String>.

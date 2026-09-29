@@ -130,7 +130,6 @@ public f<QualTypeList> StructBase.getTemplateTypes() {
     foreach GenericType& genericTemplateType : this.templateTypes {
         result.pushBack(genericTemplateType.qualType);
     }
-    return result;
 }
 
 /**

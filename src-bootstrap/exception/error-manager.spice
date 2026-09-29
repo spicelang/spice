@@ -63,12 +63,10 @@ public p setActiveErrorManager(ErrorManager* errorManager) {
  * @return Active error manager
  */
 public f<ErrorManager*> getActiveErrorManager() {
-    ErrorManager* errorManager = nil<ErrorManager*>;
     unsafe {
-        errorManager = cast<ErrorManager*>(cast<byte*>(ACTIVE_ERROR_MANAGER_ADDRESS));
+        result = cast<ErrorManager*>(cast<byte*>(ACTIVE_ERROR_MANAGER_ADDRESS));
     }
-    assert errorManager != nil<ErrorManager*>;
-    return errorManager;
+    assert result != nil<ErrorManager*>;
 }
 
 /**

@@ -75,7 +75,6 @@ public f<QualTypeList> Function.getParamTypes() {
     foreach const Param& param : this.paramList {
         result.pushBack(param.qualType);
     }
-    return result;
 }
 
 /**

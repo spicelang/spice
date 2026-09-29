@@ -62,7 +62,7 @@ public f<Optional<T>> MessageQueue.pop() {
                 isClosed = this.closed;
             }
         }
-        if hasItem || isClosed { return result; }
+        if hasItem || isClosed { return; }
         // Give up the CPU while waiting for a producer instead of busy-spinning at full speed
         yield();
     }
@@ -79,7 +79,6 @@ public f<Optional<T>> MessageQueue.tryPop() {
     if !this.queue.isEmpty() {
         result.set(this.queue.pop());
     }
-    return result;
 }
 
 /**

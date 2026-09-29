@@ -295,13 +295,11 @@ public p DoublyLinkedList.dtor() {
 }
 
 f<heap Node<T>*> DoublyLinkedList.createNode(const T& value) {
-    heap Node<T>* newNode;
+    Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
     unsafe {
-        Result<heap byte*> allocResult = sAlloc(sizeof<Node<T>>());
-        newNode = cast<heap Node<T>*>(allocResult.unwrapAndMove());
+        result = cast<heap Node<T>*>(allocResult.unwrapAndMove());
     }
-    newNode.value = value;
-    newNode.prev = nil<Node<T>*>;
-    newNode.next = nil<heap Node<T>*>;
-    return newNode;
+    result.value = value;
+    result.prev = nil<Node<T>*>;
+    result.next = nil<heap Node<T>*>;
 }

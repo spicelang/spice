@@ -66,8 +66,8 @@ public p Deque.ctor(unsigned long initAllocItems = 0l) {
     if initAllocItems == 0l { return; }
     // Allocate space for the initial number of elements
     const long itemSize = sizeof<T>();
+    Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
     unsafe {
-        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
         this.contents = cast<heap T*>(allocResult.unwrapAndMove());
     }
     this.capacity = initAllocItems;
@@ -119,9 +119,9 @@ public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
         this.capacity = newValue.capacity;
     }
     // Copy elements in logical order, normalizing the layout so idxFront = 0
-    unsafe {
-        for unsigned long i = 0l; i < newValue.size; i++ {
-            const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
+    for unsigned long i = 0l; i < newValue.size; i++ {
+        const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
+        unsafe {
             this.contents[i] = newValue.contents[srcIdx];
         }
     }
@@ -302,10 +302,10 @@ public f<bool> operator==<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
     // Compare the contents
-    unsafe {
-        for unsigned long index = 0l; index < lhs.size; index++ {
-            const unsigned long lhsIdx = (lhs.idxFront + index) % lhs.capacity;
-            const unsigned long rhsIdx = (rhs.idxFront + index) % rhs.capacity;
+    for unsigned long index = 0l; index < lhs.size; index++ {
+        const unsigned long lhsIdx = (lhs.idxFront + index) % lhs.capacity;
+        const unsigned long rhsIdx = (rhs.idxFront + index) % rhs.capacity;
+        unsafe {
             if lhs.contents[lhsIdx] != rhs.contents[rhsIdx] {
                 return false;
             }
@@ -342,17 +342,19 @@ p Deque.resize(unsigned long itemCount) {
     }
     // Allocate the new memory
     const unsigned long itemSize = sizeof<T>();
+    // Allocate a new chunk of memory with the requested size
+    unsigned long newSize = itemSize * itemCount;
+    Result<heap byte*> allocResult = sAlloc(newSize);
+    // Take ownership of the old pointer to free it at the end of the scope
+    heap T* oldAddress = this.contents;
     unsafe {
-        // Allocate a new chunk of memory with the requested size
-        unsigned long newSize = itemSize * itemCount;
-        Result<heap byte*> allocResult = sAlloc(newSize);
-        // Take ownership of the old pointer to free it at the end of the scope
-        heap T* oldAddress = this.contents;
         this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-        // Copy data over to new memory chunk
-        for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
-            unsigned long oldIndex = this.idxFront + newIndex;
-            oldIndex %= this.capacity;
+    }
+    // Copy data over to new memory chunk
+    for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
+        unsigned long oldIndex = this.idxFront + newIndex;
+        oldIndex %= this.capacity;
+        unsafe {
             this.contents[newIndex] = oldAddress[oldIndex];
         }
     }
