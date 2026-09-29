@@ -1,0 +1,77 @@
+// TEST: --sanitizer=address
+
+// Assigning to a struct field from a call that returns a reference must deep-copy the referenced value (call its
+// copy ctor), not shallow-copy its raw bytes. The call result has no symbol table entry, but it still refers to a
+// value that is owned elsewhere, so it must not be treated as a temporary that could be stolen. A shallow copy
+// would alias the referenced value's heap buffer and cause a double free once both owners get destructed.
+// See issue #1460.
+type Holder struct {
+    String s
+}
+
+type Inner struct {
+    String value
+}
+
+type Outer struct {
+    Inner inner
+}
+
+type Source struct {
+    String content
+    Inner inner
+}
+
+f<const String&> choose(const String& v) {
+    return v;
+}
+
+f<String&> chooseMut(String& v) {
+    return v;
+}
+
+f<const String&> Source.getContent() {
+    return this.content;
+}
+
+f<const Inner&> Source.getInner() {
+    return this.inner;
+}
+
+f<int> main() {
+    String y = String("some long string value on the heap for testing");
+
+    // Initial field assignment from a free function returning a const reference
+    Holder h1;
+    h1.s = choose(y);
+    // Second assignment (goes through op.assign)
+    h1.s = choose(y);
+    printf("h1: %s\n", h1.s.getRaw());
+
+    // Initial field assignment from a free function returning a non-const reference
+    Holder h2;
+    h2.s = chooseMut(y);
+    printf("h2: %s\n", h2.s.getRaw());
+
+    // Initial field assignment from a method returning a const reference
+    Source src = Source{String("another long string value that lives on the heap"), Inner{String("inner value on the heap")}};
+    Holder h3;
+    h3.s = src.getContent();
+    printf("h3: %s\n", h3.s.getRaw());
+
+    // Initial field assignment of a struct with an implicit copy ctor from a method returning a const reference
+    Outer o1;
+    o1.inner = src.getInner();
+    printf("o1: %s\n", o1.inner.value.getRaw());
+
+    // Struct literal field initialized from calls returning references
+    Holder h4 = Holder{choose(y)};
+    Outer o2 = Outer{src.getInner()};
+    printf("h4: %s\n", h4.s.getRaw());
+    printf("o2: %s\n", o2.inner.value.getRaw());
+
+    // The sources must still be intact
+    printf("y: %s\n", y.getRaw());
+    printf("src: %s %s\n", src.content.getRaw(), src.inner.value.getRaw());
+    return 0;
+}
