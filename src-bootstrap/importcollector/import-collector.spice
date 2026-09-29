@@ -74,11 +74,11 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     const FilePath& ownFilePath = this.sourceFile.getFilePath();
     const FilePath importPathRelative = FilePath(node.importPath);
     if importPathRelative.hasRootPath() {
-        errorManager.addSoftError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import paths must be relative, but '" + node.importPath + "' is not");
+        errorManager.addHardError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import paths must be relative, but '" + node.importPath + "' is not");
         return Any();
     }
     if importPathRelative.hasParentDirComponent() {
-        errorManager.addSoftError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import paths must not contain parent-directory ('..') components: '" + node.importPath + "'");
+        errorManager.addHardError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import paths must not contain parent-directory ('..') components: '" + node.importPath + "'");
         return Any();
     }
 
@@ -134,7 +134,7 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
         errorMessage += "- " + osArchPathObfuscated + "\n";
         errorMessage += "- " + osPathObfuscated + "\n";
         errorMessage += "- " + defaultPathObfuscated;
-        errorManager.addSoftError(baseNode, SemanticErrorType::IMPORTED_FILE_NOT_EXISTING, errorMessage);
+        errorManager.addHardError(baseNode, SemanticErrorType::IMPORTED_FILE_NOT_EXISTING, errorMessage);
         return Any();
     }
 
@@ -163,13 +163,13 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     const String canonicalImportPathStr = String(canonicalImportPath.toGenericString());
     const bool isContained = allowedRoot == canonicalImportPath || canonicalImportPathStr.startsWith(allowedRootPrefix.getRaw());
     if !isContained {
-        errorManager.addSoftError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import path '" + node.importPath + "' escapes the permitted directory tree");
+        errorManager.addHardError(baseNode, SemanticErrorType::INVALID_IMPORT_PATH, "Import path '" + node.importPath + "' escapes the permitted directory tree");
         return Any();
     }
 
     // Check if the import already exists
     if this.rootScope.lookupStrict(node.importName) != nil<SymbolTableEntry*> {
-        errorManager.addSoftError(baseNode, SemanticErrorType::DUPLICATE_IMPORT_NAME, "Duplicate import '" + node.importName + "'");
+        errorManager.addHardError(baseNode, SemanticErrorType::DUPLICATE_IMPORT_NAME, "Duplicate import '" + node.importName + "'");
         return Any();
     }
 
@@ -189,25 +189,29 @@ public f<Any> ImportCollector.visitModAttr(ASTModAttrNode* node) {
 
     // core.compiler.keep-on-name-collision
     if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)) {
-        const bool keepOnCollision = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION)).boolValue;
+        const CompileTimeValue keepOnCollisionAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION));
+        const bool keepOnCollision = keepOnCollisionAttrValue.getBoolValue();
         this.sourceFile.setAlwaysKeepSymbolsOnNameCollision(keepOnCollision);
     }
 
     // core.compiler.warnings.ignore
     if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_WARNINGS_IGNORE)) {
-        const bool ignoreWarnings = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_WARNINGS_IGNORE)).boolValue;
+        const CompileTimeValue ignoreWarningsAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_WARNINGS_IGNORE));
+        const bool ignoreWarnings = ignoreWarningsAttrValue.getBoolValue();
         this.sourceFile.setIgnoreWarnings(ignoreWarnings);
     }
 
     // core.compiler.explicitErrorHandling
     if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING)) {
-        const bool explicitErrorHandling = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING)).boolValue;
+        const CompileTimeValue explicitErrorHandlingAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING));
+        const bool explicitErrorHandling = explicitErrorHandlingAttrValue.getBoolValue();
         this.sourceFile.setExplicitErrorHandling(explicitErrorHandling);
     }
 
     // core.compiler.errorReturnTracing
     if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING)) {
-        const bool errorReturnTracing = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING)).boolValue;
+        const CompileTimeValue errorReturnTracingAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING));
+        const bool errorReturnTracing = errorReturnTracingAttrValue.getBoolValue();
         this.sourceFile.setErrorReturnTracing(errorReturnTracing);
     }
 
@@ -312,9 +316,9 @@ public f<bool> testImportCollectorSmoke() {
 
     // ---- visitModAttr: the four core.compiler.* bool attributes ----
     ASTConstantNode trueValue = ASTConstantNode(CodeLoc(1l, 1l, "t.spice"));
-    trueValue.compileTimeValue.boolValue = true;
+    trueValue.compileTimeValue.setBoolValue(true);
     ASTConstantNode falseValue = ASTConstantNode(CodeLoc(1l, 2l, "t.spice"));
-    falseValue.compileTimeValue.boolValue = false;
+    falseValue.compileTimeValue.setBoolValue(false);
     ASTAttrNode attrIgnore = ASTAttrNode(CodeLoc(2l, 1l, "t.spice"));
     attrIgnore.key = String(ATTR_CORE_COMPILER_WARNINGS_IGNORE);
     attrIgnore.value = &trueValue;
@@ -346,22 +350,19 @@ public f<bool> testImportCollectorSmoke() {
     absImport.importPath = String("/etc/passwd");
     absImport.importName = String("abs");
     collector.visitImportDef(&absImport);
-    assert resourceManager.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(resourceManager.errorManager, 0l, "must be relative");
+    assert takeHardError(resourceManager.errorManager, "must be relative");
 
     ASTImportDefNode parentImport = ASTImportDefNode(CodeLoc(11l, 1l, "t.spice"));
     parentImport.importPath = String("std/../../etc/passwd");
     parentImport.importName = String("parent");
     collector.visitImportDef(&parentImport);
-    assert resourceManager.errorManager.softErrors.getSize() == 2l;
-    assert softErrorContains(resourceManager.errorManager, 1l, "parent-directory");
+    assert takeHardError(resourceManager.errorManager, "parent-directory");
 
     ASTImportDefNode missingImport = ASTImportDefNode(CodeLoc(12l, 1l, "t.spice"));
     missingImport.importPath = String("bootstrap/no-such-module");
     missingImport.importName = String("missing");
     collector.visitImportDef(&missingImport);
-    assert resourceManager.errorManager.softErrors.getSize() == 3l;
-    assert softErrorContains(resourceManager.errorManager, 2l, "The source file 'no-such-module.spice' was not found");
+    assert takeHardError(resourceManager.errorManager, "The source file 'no-such-module.spice' was not found");
 
     // None of the rejected imports registered a symbol, created a source file or added a dependency
     assert root.lookupStrict(String("abs")) == nil<SymbolTableEntry*>;
@@ -375,7 +376,7 @@ public f<bool> testImportCollectorSmoke() {
     okImport.importPath = String("bootstrap/ast/attributes");
     okImport.importName = String("attrs");
     collector.visitImportDef(&okImport);
-    assert resourceManager.errorManager.softErrors.getSize() == 3l;
+    assert !resourceManager.errorManager.hasHardError;
     assert resourceManager.sourceFiles.getSize() == 1l;
     assert sourceFile.dependencies.getSize() == 1l;
     assert sourceFile.dependencies.contains(String("attrs"));
@@ -392,14 +393,13 @@ public f<bool> testImportCollectorSmoke() {
     dupImport.importPath = String("bootstrap/ast/attributes");
     dupImport.importName = String("attrs");
     collector.visitImportDef(&dupImport);
-    assert resourceManager.errorManager.softErrors.getSize() == 4l;
-    assert softErrorContains(resourceManager.errorManager, 3l, "Duplicate import 'attrs'");
+    assert takeHardError(resourceManager.errorManager, "Duplicate import 'attrs'");
     assert resourceManager.sourceFiles.getSize() == 1l;
     assert sourceFile.dependencies.getSize() == 1l;
 
     // ---- entry point: visit(ASTEntryNode*) dispatches module attributes and imports through IVisitable ----
     ASTConstantNode resetValue = ASTConstantNode(CodeLoc(20l, 1l, "t.spice"));
-    resetValue.compileTimeValue.boolValue = false;
+    resetValue.compileTimeValue.setBoolValue(false);
     ASTAttrNode attrReset = ASTAttrNode(CodeLoc(21l, 1l, "t.spice"));
     attrReset.key = String(ATTR_CORE_COMPILER_WARNINGS_IGNORE);
     attrReset.value = &resetValue;

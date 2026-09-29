@@ -4,6 +4,8 @@ import "std/data/queue";
 import "std/data/unordered-map";
 import "std/data/pair";
 import "std/type/any";
+import "std/type/type-conversion";
+import "std/io/file";
 
 // Generic types
 type ConcreteNode dyn;
@@ -57,16 +59,137 @@ public const string OP_FCT_ASSIGN = "op.assign";
 
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
+ *
+ * The host's CompileTimeValue is an untagged C++ union and the host reads across its members, e.g. the longValue of an int
+ * constant in compile time arithmetic, or the boolValue of a non-bool condition. Spice unions are tagged and panic when an
+ * inactive field is read, so the union is emulated here: all members share 8 bytes of storage and each member is a view on
+ * them, which reads and writes only its own bytes, like the members of the host's union.
  */
-public type CompileTimeValue union {
-    public double doubleValue
-    public int intValue
-    public short shortValue
-    public long longValue
-    public byte byteValue
-    public char charValue
-    public unsigned long stringValueOffset // Offset into vector of strings in GlobalResourceManager
-    public bool boolValue
+public type CompileTimeValue struct {
+    long storage = 0l
+}
+
+// Address of the shared storage, the members are views on
+inline f<byte*> CompileTimeValue.getStorageAddress() {
+    byte* address = nil<byte*>;
+    unsafe {
+        address = cast<byte*>(&this.storage);
+    }
+    return address;
+}
+
+public f<double> CompileTimeValue.getDoubleValue() {
+    double value = 0.0;
+    unsafe {
+        const double* valuePtr = cast<double*>(this.getStorageAddress());
+        value = *valuePtr;
+    }
+    return value;
+}
+public p CompileTimeValue.setDoubleValue(double value) {
+    unsafe {
+        double* valuePtr = cast<double*>(this.getStorageAddress());
+        *valuePtr = value;
+    }
+}
+
+public f<int> CompileTimeValue.getIntValue() {
+    int value = 0;
+    unsafe {
+        const int* valuePtr = cast<int*>(this.getStorageAddress());
+        value = *valuePtr;
+    }
+    return value;
+}
+public p CompileTimeValue.setIntValue(int value) {
+    unsafe {
+        int* valuePtr = cast<int*>(this.getStorageAddress());
+        *valuePtr = value;
+    }
+}
+
+public f<short> CompileTimeValue.getShortValue() {
+    short value = 0s;
+    unsafe {
+        const short* valuePtr = cast<short*>(this.getStorageAddress());
+        value = *valuePtr;
+    }
+    return value;
+}
+public p CompileTimeValue.setShortValue(short value) {
+    unsafe {
+        short* valuePtr = cast<short*>(this.getStorageAddress());
+        *valuePtr = value;
+    }
+}
+
+public f<long> CompileTimeValue.getLongValue() {
+    return this.storage;
+}
+public p CompileTimeValue.setLongValue(long value) {
+    this.storage = value;
+}
+
+public f<byte> CompileTimeValue.getByteValue() {
+    byte value = cast<byte>(0);
+    unsafe {
+        const byte* valuePtr = this.getStorageAddress();
+        value = *valuePtr;
+    }
+    return value;
+}
+public p CompileTimeValue.setByteValue(byte value) {
+    unsafe {
+        byte* valuePtr = this.getStorageAddress();
+        *valuePtr = value;
+    }
+}
+
+public f<char> CompileTimeValue.getCharValue() {
+    char value = '\0';
+    unsafe {
+        const char* valuePtr = cast<char*>(this.getStorageAddress());
+        value = *valuePtr;
+    }
+    return value;
+}
+public p CompileTimeValue.setCharValue(char value) {
+    unsafe {
+        char* valuePtr = cast<char*>(this.getStorageAddress());
+        *valuePtr = value;
+    }
+}
+
+// Offset into vector of strings in GlobalResourceManager
+public f<unsigned long> CompileTimeValue.getStringValueOffset() {
+    unsigned long value = 0ul;
+    unsafe {
+        const unsigned long* valuePtr = cast<unsigned long*>(this.getStorageAddress());
+        value = *valuePtr;
+    }
+    return value;
+}
+public p CompileTimeValue.setStringValueOffset(unsigned long value) {
+    unsafe {
+        unsigned long* valuePtr = cast<unsigned long*>(this.getStorageAddress());
+        *valuePtr = value;
+    }
+}
+
+// A bool occupies one byte, which is interpreted like a C++ bool (any non-zero value is true)
+public f<bool> CompileTimeValue.getBoolValue() {
+    byte value = cast<byte>(0);
+    unsafe {
+        const byte* valuePtr = this.getStorageAddress();
+        value = *valuePtr;
+    }
+    return value != cast<byte>(0);
+}
+public p CompileTimeValue.setBoolValue(bool value) {
+    unsafe {
+        byte* valuePtr = this.getStorageAddress();
+        *valuePtr = value ? cast<byte>(1) : cast<byte>(0);
+    }
 }
 
 public type IVisitable interface {
@@ -206,6 +329,130 @@ public p ASTNode.addChild(ASTNode* child) {
 
 public f<const Vector<ASTNode*>&> ASTNode.getChildren() {
     return this.children;
+}
+
+// Number of chars of context, that an error message shows around the erroneous code
+const long ERROR_MESSAGE_CONTEXT = 20l;
+
+// Whether the given char can be part of an identifier or keyword
+f<bool> isIdentifierChar(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+// Get the text of the source code interval [start, stop] (both inclusive), clamped to the source code like ANTLR's
+// CharStream::getText
+f<String> getSourceText(const String& sourceCode, long start, long stop) {
+    const long size = cast<long>(sourceCode.getLength());
+    if stop >= size { stop = size - 1l; }
+    if start < 0l || start >= size || stop < start { return String(); }
+    return sourceCode.getSubstring(cast<unsigned long>(start), stop - start + 1l);
+}
+
+// Get the char at the given offset of the source code
+f<char> getSourceChar(const String& sourceCode, long idx) {
+    const String text = getSourceText(sourceCode, idx, idx);
+    if text.isEmpty() { return '\0'; }
+    const string rawText = text.getRaw();
+    char c = '\0';
+    unsafe { c = rawText[0]; }
+    return c;
+}
+
+// Get the length of the interval [start, stop], like antlr4::misc::Interval::length
+f<long> getIntervalLength(long start, long stop) {
+    return stop < start ? 0l : stop - start + 1l;
+}
+
+/**
+ * Get the error message snippet of this node: the source code line of the node with some context around it, and a marker
+ * below the code of the node.
+ *
+ * Note: The host takes the source code from the ANTLR input stream of the source file. The bootstrap nodes do not know their
+ * source file, so the source code is read from the file, the code location points to.
+ *
+ * @return Error message snippet
+ */
+public f<String> ASTNode.getErrorMessage() {
+    // Without a source interval (e.g. for nodes that were not created by the parser), there is no snippet to show
+    if this.codeLoc.sourceIntervalStart < 0l || len(this.codeLoc.sourceFilePath) == 0 {
+        return String();
+    }
+    Result<String> sourceCodeResult = readFile(this.codeLoc.sourceFilePath);
+    if !sourceCodeResult.isOk() {
+        return String();
+    }
+    const String sourceCode = sourceCodeResult.unwrap();
+    const long inputSize = cast<long>(sourceCode.getLength());
+    const long sourceIntervalStart = this.codeLoc.sourceIntervalStart;
+    const long sourceIntervalStop = this.codeLoc.sourceIntervalStop;
+    long extStart = sourceIntervalStart;
+    long extStop = sourceIntervalStop;
+
+    // If we have a multi-line interval, only use the first line
+    const String nodeText = getSourceText(sourceCode, extStart, extStop);
+    const long newLineOffset = nodeText.find('\n');
+    if newLineOffset != -1l {
+        extStop = extStart + newLineOffset;
+    }
+    const long nodeEnd = extStop;
+
+    long markerIndentation = 0l;
+    while markerIndentation < ERROR_MESSAGE_CONTEXT {
+        extStart--;
+        const String extText = getSourceText(sourceCode, extStart, extStop);
+        if extStart < 0l || extText.find('\n') != -1l {
+            extStart++;
+            break;
+        }
+        markerIndentation++;
+    }
+    for long suffixContext = 0l; suffixContext < ERROR_MESSAGE_CONTEXT; suffixContext++ {
+        extStop++;
+        const String extText = getSourceText(sourceCode, extStart, extStop);
+        if extStop > inputSize || extText.find('\n') != -1l {
+            extStop--;
+            break;
+        }
+    }
+
+    // The context size is only a rough suggestion. Do not cut the context in the middle of an identifier or keyword
+    while extStart > 0l && isIdentifierChar(getSourceChar(sourceCode, extStart - 1l)) && isIdentifierChar(getSourceChar(sourceCode, extStart)) {
+        extStart--;
+        markerIndentation++;
+    }
+    while extStop + 1l < inputSize && isIdentifierChar(getSourceChar(sourceCode, extStop)) && isIdentifierChar(getSourceChar(sourceCode, extStop + 1l)) {
+        extStop++;
+    }
+
+    // Trim start
+    while getSourceChar(sourceCode, extStart) == ' ' {
+        extStart++;
+        markerIndentation--;
+    }
+
+    // Trim end
+    if getSourceChar(sourceCode, extStop) == '\n' {
+        extStop--;
+    }
+    while extStop > nodeEnd && getSourceChar(sourceCode, extStop) == ' ' {
+        extStop--;
+    }
+
+    const String lineNumberStr = toString(this.codeLoc.line);
+    markerIndentation += cast<long>(lineNumberStr.getLength()) + 2l;
+
+    // Build error message
+    String errorMessage = lineNumberStr + "  " + getSourceText(sourceCode, extStart, extStop) + "\n";
+    for long i = 0l; i < markerIndentation; i++ {
+        errorMessage += ' ';
+    }
+    const long sourceIntervalLength = getIntervalLength(sourceIntervalStart, sourceIntervalStop);
+    const long extIntervalLength = getIntervalLength(extStart, extStop);
+    const long markerLength = sourceIntervalLength < extIntervalLength ? sourceIntervalLength : extIntervalLength;
+    for long i = 0l; i < markerLength; i++ {
+        errorMessage += '^';
+    }
+    return errorMessage;
 }
 
 /**
@@ -450,7 +697,7 @@ public f<Vector<CompileTimeValue>> ASTAttrLstNode.getAttrValuesByName(const Stri
         if value == nil<const CompileTimeValue*> {
             // Attribute given without a value defaults to boolValue = true (bool attributes only)
             CompileTimeValue defaultValue;
-            defaultValue.boolValue = true;
+            defaultValue.setBoolValue(true);
             attributeValues.pushBack(defaultValue);
         } else {
             attributeValues.pushBack(*value);
@@ -682,6 +929,7 @@ public type ASTFctDefBaseNode struct/*: IVisitable*/ {
 
 public p ASTFctDefBaseNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.qualifiers = getTypeQualifiersOf(SuperType::TY_FUNCTION);
 }
 
 public f<String> ASTFctDefBaseNode.getSymbolTableEntryName() {
@@ -754,6 +1002,7 @@ public type ASTStructDefNode struct : IVisitable {
 
 public p ASTStructDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.qualifiers = getTypeQualifiersOf(SuperType::TY_STRUCT);
     this.kind = ASTNodeKind::STRUCT_DEF;
 }
 public f<Any> ASTStructDefNode.accept(IAbstractAstVisitor* visitor) {
@@ -781,6 +1030,7 @@ public type ASTInterfaceDefNode struct : IVisitable {
 
 public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.qualifiers = getTypeQualifiersOf(SuperType::TY_INTERFACE);
     this.kind = ASTNodeKind::INTERFACE_DEF;
 }
 public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
@@ -808,6 +1058,7 @@ public type ASTUnionDefNode struct : IVisitable {
 
 public p ASTUnionDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.qualifiers = getTypeQualifiersOf(SuperType::TY_UNION);
     this.kind = ASTNodeKind::UNION_DEF;
 }
 public f<Any> ASTUnionDefNode.accept(IAbstractAstVisitor* visitor) {
@@ -831,6 +1082,7 @@ public type ASTEnumDefNode struct : IVisitable {
 
 public p ASTEnumDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.qualifiers = getTypeQualifiersOf(SuperType::TY_ENUM);
     this.kind = ASTNodeKind::ENUM_DEF;
 }
 public f<Any> ASTEnumDefNode.accept(IAbstractAstVisitor* visitor) {
@@ -874,6 +1126,7 @@ public type ASTAliasDefNode struct : IVisitable {
 
 public p ASTAliasDefNode.ctor(CodeLoc codeLoc) {
     this.node = ASTTopLevelDefNode(codeLoc);
+    this.qualifiers = getTypeQualifiersOf(SuperType::TY_ALIAS);
     this.kind = ASTNodeKind::ALIAS_DEF;
 }
 public f<Any> ASTAliasDefNode.accept(IAbstractAstVisitor* visitor) {
@@ -2257,6 +2510,44 @@ public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 }
 
 
+#[test, test.name="CompileTimeValue views test"]
+public f<bool> testCompileTimeValueViews() {
+    // A fresh value is all zero
+    CompileTimeValue value;
+    assert value.getLongValue() == 0l;
+    assert !value.getBoolValue();
+
+    // Members share their storage, like the members of the host's C++ union
+    value.setIntValue(5);
+    assert value.getIntValue() == 5;
+    assert value.getLongValue() == 5l; // Compile time arithmetic reads int constants as long
+    assert value.getBoolValue(); // Non-zero low byte
+
+    value.setLongValue(1l << 40l);
+    assert value.getIntValue() == 0; // Only the low 4 bytes
+    assert !value.getBoolValue();
+
+    // Writing a smaller member only overwrites its own bytes
+    value.setBoolValue(true);
+    assert value.getBoolValue();
+    assert value.getLongValue() == (1l << 40l) + 1l;
+
+    value.setShortValue(-2s);
+    assert value.getShortValue() == -2s;
+    value.setCharValue('A');
+    assert value.getCharValue() == 'A';
+
+    CompileTimeValue doubleValue;
+    doubleValue.setDoubleValue(1.5);
+    assert doubleValue.getDoubleValue() == 1.5;
+    assert doubleValue.getLongValue() == 4609434218613702656l; // Bit pattern of 1.5
+
+    CompileTimeValue stringValue;
+    stringValue.setStringValueOffset(42ul);
+    assert stringValue.getStringValueOffset() == 42ul;
+    return true;
+}
+
 #[test, test.name="ASTNodes Smoke test"]
 public f<bool> testASTNodesSmoke() {
     const CodeLoc loc = CodeLoc(3l, 7l, "ast.spice");
@@ -2764,6 +3055,11 @@ public f<bool> ASTNode.returnsOnAllControlPaths(bool* doSetPredecessorsUnreachab
             ASTLambdaProcNode* lambdaProcNode = downcast<ASTLambdaProcNode>(this);
             return returnsOnAllControlPaths(lambdaProcNode.body, doSetPredecessorsUnreachable, manIdx);
         }
+        default: {
+            // The empty default branch is required, because the host treats a switch without default branch, where all
+            // case branches return, as returning on all control paths and would drop the code below as unreachable
+            // (see https://github.com/spicelang/spice/issues/1459).
+        }
     }
     // Default behavior: Returns on all control paths if the only child does
     if this.children.getSize() != 1l {
@@ -2786,7 +3082,34 @@ f<bool> isAlwaysTrue(IVisitable* node, unsigned long manIdx) {
         return false;
     }
     const CompileTimeValue compileTimeValue = astNode.getCompileTimeValue(manIdx);
-    return compileTimeValue.boolValue;
+    return compileTimeValue.getBoolValue();
+}
+
+/**
+ * Check if the node is a function or procedure definition
+ *
+ * @return Function or procedure definition or not
+ */
+public f<bool> ASTNode.isFctOrProcDef() {
+    return this.kind == ASTNodeKind::MAIN_FCT_DEF || this.kind == ASTNodeKind::FCT_DEF || this.kind == ASTNodeKind::PROC_DEF;
+}
+
+/**
+ * Check if the node is a struct definition
+ *
+ * @return Struct definition or not
+ */
+public f<bool> ASTNode.isStructDef() {
+    return this.kind == ASTNodeKind::STRUCT_DEF;
+}
+
+/**
+ * Check if the node is a union definition
+ *
+ * @return Union definition or not
+ */
+public f<bool> ASTNode.isUnionDef() {
+    return this.kind == ASTNodeKind::UNION_DEF;
 }
 
 /**
@@ -2915,7 +3238,7 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
 
             // Check if the condition always evaluates to 'true'
             const CompileTimeValue conditionValue = getCompileTimeValue(ternaryExprNode.condition, manIdx);
-            if conditionValue.boolValue {
+            if conditionValue.getBoolValue() {
                 IVisitable* trueValue = ternaryExprNode.isShortened ? ternaryExprNode.condition : ternaryExprNode.trueExpr;
                 assert trueValue != nil<IVisitable*>;
                 return getCompileTimeValue(trueValue, manIdx);
@@ -2933,13 +3256,13 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 assert operand.hasCompileTimeValue(manIdx);
                 // If one operand evaluates to 'true' the whole expression is 'true'
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
-                if operandValue.boolValue {
-                    compileTimeValue.boolValue = true;
+                if operandValue.getBoolValue() {
+                    compileTimeValue.setBoolValue(true);
                     return compileTimeValue;
                 }
             }
             // Return 'false'
-            compileTimeValue.boolValue = false;
+            compileTimeValue.setBoolValue(false);
             return compileTimeValue;
         }
         case ASTNodeKind::LOGICAL_AND_EXPR: {
@@ -2951,13 +3274,13 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 assert operand.hasCompileTimeValue(manIdx);
                 // If one operand evaluates to 'false' the whole expression is 'false'
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
-                if !operandValue.boolValue {
-                    compileTimeValue.boolValue = false;
+                if !operandValue.getBoolValue() {
+                    compileTimeValue.setBoolValue(false);
                     return compileTimeValue;
                 }
             }
             // Return 'false' (mirrors the host)
-            compileTimeValue.boolValue = false;
+            compileTimeValue.setBoolValue(false);
             return compileTimeValue;
         }
         case ASTNodeKind::BITWISE_OR_EXPR, ASTNodeKind::BITWISE_XOR_EXPR, ASTNodeKind::BITWISE_AND_EXPR: {
@@ -2970,11 +3293,11 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 assert operand.hasCompileTimeValue(manIdx);
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
                 if this.kind == ASTNodeKind::BITWISE_OR_EXPR {
-                    compileTimeValue.longValue |= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() | operandValue.getLongValue());
                 } else if this.kind == ASTNodeKind::BITWISE_XOR_EXPR {
-                    compileTimeValue.longValue ^= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() ^ operandValue.getLongValue());
                 } else {
-                    compileTimeValue.longValue &= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() & operandValue.getLongValue());
                 }
             }
             return compileTimeValue;
@@ -2987,10 +3310,10 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
             const CompileTimeValue op0Value = getChildCompileTimeValue(this, 0l, manIdx);
             const CompileTimeValue op1Value = getChildCompileTimeValue(this, 1l, manIdx);
             if equalityExprNode.op == EqualityOp::OP_EQUAL {
-                compileTimeValue.boolValue = op0Value.longValue == op1Value.longValue;
+                compileTimeValue.setBoolValue(op0Value.getLongValue() == op1Value.getLongValue());
             } else {
                 assert equalityExprNode.op == EqualityOp::OP_NOT_EQUAL;
-                compileTimeValue.boolValue = op0Value.longValue != op1Value.longValue;
+                compileTimeValue.setBoolValue(op0Value.getLongValue() != op1Value.getLongValue());
             }
             return compileTimeValue;
         }
@@ -3003,14 +3326,14 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
             const CompileTimeValue op1Value = getChildCompileTimeValue(this, 1l, manIdx);
             const RelationalOp op = relationalExprNode.op;
             if op == RelationalOp::OP_LESS {
-                compileTimeValue.boolValue = op0Value.longValue < op1Value.longValue;
+                compileTimeValue.setBoolValue(op0Value.getLongValue() < op1Value.getLongValue());
             } else if op == RelationalOp::OP_GREATER {
-                compileTimeValue.boolValue = op0Value.longValue > op1Value.longValue;
+                compileTimeValue.setBoolValue(op0Value.getLongValue() > op1Value.getLongValue());
             } else if op == RelationalOp::OP_LESS_EQUAL {
-                compileTimeValue.boolValue = op0Value.longValue <= op1Value.longValue;
+                compileTimeValue.setBoolValue(op0Value.getLongValue() <= op1Value.getLongValue());
             } else {
                 assert op == RelationalOp::OP_GREATER_EQUAL;
-                compileTimeValue.boolValue = op0Value.longValue >= op1Value.longValue;
+                compileTimeValue.setBoolValue(op0Value.getLongValue() >= op1Value.getLongValue());
             }
             return compileTimeValue;
         }
@@ -3027,10 +3350,10 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
                 const Pair<ShiftOp, QualType> opEntry = opQueueCopy.pop();
                 if opEntry.getFirst() == ShiftOp::OP_SHIFT_LEFT {
-                    compileTimeValue.longValue <<= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() << operandValue.getLongValue());
                 } else {
                     assert opEntry.getFirst() == ShiftOp::OP_SHIFT_RIGHT;
-                    compileTimeValue.longValue >>= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() >> operandValue.getLongValue());
                 }
             }
             return compileTimeValue;
@@ -3048,10 +3371,10 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
                 const Pair<AdditiveOp, QualType> opEntry = opQueueCopy.pop();
                 if opEntry.getFirst() == AdditiveOp::OP_PLUS {
-                    compileTimeValue.longValue += operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() + operandValue.getLongValue());
                 } else {
                     assert opEntry.getFirst() == AdditiveOp::OP_MINUS;
-                    compileTimeValue.longValue -= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() - operandValue.getLongValue());
                 }
             }
             return compileTimeValue;
@@ -3070,23 +3393,19 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 const Pair<MultiplicativeOp, QualType> opEntry = opQueueCopy.pop();
                 const MultiplicativeOp op = opEntry.getFirst();
                 if op == MultiplicativeOp::OP_MUL {
-                    compileTimeValue.longValue *= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() * operandValue.getLongValue());
                 } else if op == MultiplicativeOp::OP_DIV {
-                    if operandValue.longValue == 0l {
-                        const SemanticError error = SemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
-                        const String& errorMessage = error.getMessage();
-                        panic(Error(errorMessage.getRaw()));
+                    if operandValue.getLongValue() == 0l {
+                        panicWithSemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
                     }
-                    compileTimeValue.longValue /= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() / operandValue.getLongValue());
                 } else {
                     assert op == MultiplicativeOp::OP_REM;
                     // Note: The host does not check for a zero divisor here and crashes with SIGFPE
-                    if operandValue.longValue == 0l {
-                        const SemanticError error = SemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
-                        const String& errorMessage = error.getMessage();
-                        panic(Error(errorMessage.getRaw()));
+                    if operandValue.getLongValue() == 0l {
+                        panicWithSemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
                     }
-                    compileTimeValue.longValue %= operandValue.longValue;
+                    compileTimeValue.setLongValue(compileTimeValue.getLongValue() % operandValue.getLongValue());
                 }
             }
             return compileTimeValue;
@@ -3103,16 +3422,16 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
             const CompileTimeValue opValue = getCompileTimeValue(prefixUnaryExprNode.prefixUnaryExpr, manIdx);
             const PrefixUnaryOp op = prefixUnaryExprNode.op;
             if op == PrefixUnaryOp::OP_MINUS {
-                compileTimeValue.longValue = -opValue.longValue;
+                compileTimeValue.setLongValue(-opValue.getLongValue());
             } else if op == PrefixUnaryOp::OP_PLUS_PLUS {
-                compileTimeValue.longValue = opValue.longValue + 1l;
+                compileTimeValue.setLongValue(opValue.getLongValue() + 1l);
             } else if op == PrefixUnaryOp::OP_MINUS_MINUS {
-                compileTimeValue.longValue = opValue.longValue - 1l;
+                compileTimeValue.setLongValue(opValue.getLongValue() - 1l);
             } else if op == PrefixUnaryOp::OP_NOT {
-                compileTimeValue.boolValue = !opValue.boolValue;
+                compileTimeValue.setBoolValue(!opValue.getBoolValue());
             } else {
                 assert op == PrefixUnaryOp::OP_BITWISE_NOT;
-                compileTimeValue.longValue = ~opValue.longValue;
+                compileTimeValue.setLongValue(~opValue.getLongValue());
             }
             return compileTimeValue;
         }
@@ -3129,7 +3448,7 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
         case ASTNodeKind::VALUE: {
             ASTValueNode* valueNode = downcast<ASTValueNode>(this);
             if valueNode.isNil {
-                compileTimeValue.longValue = 0l;
+                compileTimeValue.setLongValue(0l);
                 return compileTimeValue;
             }
         }

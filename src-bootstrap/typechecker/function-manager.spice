@@ -5,11 +5,14 @@ import "std/data/unordered-map";
 import "std/data/pair";
 
 // Own imports
+import "bootstrap/exception/error-manager";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
 import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
@@ -41,7 +44,10 @@ public const string MAIN_FUNCTION_NAME = "main";
 public f<Function*> insertFunction(Scope* insertScope, const Function& baseFunction, Vector<Function*>* nodeFunctionList = nil<Vector<Function*>*>) {
     // Open a new manifestation list for the function definition
     const String fctId = baseFunction.name + ":" + baseFunction.declNode.codeLoc.toString();
-    insertScope.functions.insert(fctId, FunctionManifestationList());
+    // Like std::map::emplace in the host, keep an existing list (e.g. of the implicit ctor and copy ctor, which share a decl node)
+    if !insertScope.functions.contains(fctId) {
+        insertScope.functions.insert(fctId, FunctionManifestationList());
+    }
 
     // Collect substantiations
     Vector<Function> manifestations;
@@ -172,8 +178,9 @@ public f<Function*> insertSubstantiation(Scope* insertScope, const Function& new
     foreach Pair<const String&, FunctionManifestationList&> entry : insertScope.functions {
         FunctionManifestationList& manifestations = entry.getSecond();
         if manifestations.contains(signature) {
-            // ToDo: Report as a hard error ('<signature> is declared twice') once error propagation for
-            // typechecker passes is designed. For now, fall through and keep the first declaration.
+            const SemanticErrorType errorType = newManifestation.isFunction() ? SemanticErrorType::FUNCTION_DECLARED_TWICE : SemanticErrorType::PROCEDURE_DECLARED_TWICE;
+            throwSemanticError(declNode, errorType, "'" + newManifestation.getSignature(true, false) + "' is declared twice");
+            // The compilation is aborted after this stage. Until then, keep the first declaration
             return &manifestations.get(signature);
         }
     }
@@ -214,7 +221,7 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
 
             // - search for concrete fct: Only match against fully substantiated versions to prevent double matching of a function
             // - search for generic fct: Only match against generic preset functions
-            if presetFunction.isFullySubstantiated() != requestedFullySubstantiated {
+            if !boolEquals(presetFunction.isFullySubstantiated(), requestedFullySubstantiated) {
                 continue;
             }
 
@@ -381,8 +388,13 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
 
     // Check if more than one function matches the requirements
     if matches.getSize() > 1l {
-        // ToDo: Report as a hard error (FUNCTION_AMBIGUITY) once error propagation for typechecker passes is
-        // designed. For now, deterministically pick the first candidate.
+        String errorMessage = "The function/procedure '" + reqName + "' is ambiguous. All of the following match the requested criteria:";
+        foreach const Function* match : matches {
+            errorMessage += "\n  ";
+            errorMessage += match.getSignature();
+        }
+        throwSemanticError(callNode, SemanticErrorType::FUNCTION_AMBIGUITY, errorMessage);
+        // The compilation is aborted after this stage. Until then, deterministically pick the first candidate
     }
     Function* matchedFunction = matches.front();
     matchedFunction.isNewlyInserted = false;
@@ -524,8 +536,9 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
 
         // Check if we try to bind a non-ref temporary to a non-const ref parameter
         if !candidateType.canBind(requestedType, isArgTemporary) {
-            // ToDo: Report as a hard error (TEMP_TO_NON_CONST_REF) once error propagation for typechecker
-            // passes is designed.
+            if callNode != nil<ASTNode*> {
+                throwSemanticError(callNode, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Temporary values can only be bound to const reference parameters"));
+            }
             return false;
         }
 

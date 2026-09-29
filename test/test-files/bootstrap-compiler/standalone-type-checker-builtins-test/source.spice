@@ -81,19 +81,19 @@ f<CompileTimeValue> valueOf(Vector<ASTNode*>& fctCalls, string name, unsigned lo
 // Long compile time value of the n-th call of the builtin with the given name
 f<long> longValueOf(Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
     const CompileTimeValue value = valueOf(fctCalls, name, n);
-    return value.longValue;
+    return value.getLongValue();
 }
 
 // Bool compile time value of the n-th call of the builtin with the given name
 f<bool> boolValueOf(Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
     const CompileTimeValue value = valueOf(fctCalls, name, n);
-    return value.boolValue;
+    return value.getBoolValue();
 }
 
 // String compile time value of the n-th call of the builtin with the given name
 f<String> stringValueOf(GlobalResourceManager& rm, Vector<ASTNode*>& fctCalls, string name, unsigned long n = 0l) {
     const CompileTimeValue value = valueOf(fctCalls, name, n);
-    return rm.getCompileTimeStringValue(value.stringValueOffset);
+    return rm.getCompileTimeStringValue(value.getStringValueOffset());
 }
 
 // Evaluated type of the n-th call of the builtin with the given name
@@ -159,7 +159,7 @@ f<int> main() {
 
         // Build var, which is parsed like std::stoi does it in the host compiler
         const CompileTimeValue buildVarValue = valueOf(fctCalls, "__get_build_var");
-        assert buildVarValue.intValue == -17;
+        assert buildVarValue.getIntValue() == -17;
         const QualType buildVarType = typeOf(fctCalls, "__get_build_var");
         assert buildVarType.is(SuperType::TY_INT);
 

@@ -122,9 +122,20 @@ public f<Any> TypeChecker.visit(ASTEntryNode* node) {
     return this.visitEntry(node);
 }
 
-// Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
+// Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor).
+// The host aborts the whole visitor by throwing on a hard error. The bootstrap records the hard error instead and stops
+// visiting further children here, because the following nodes may depend on what the erroneous node failed to set up.
 f<Any> TypeChecker.visitChildren(ASTNode* node) {
-    return visitChildrenOf(node, cast<IAbstractAstVisitor*>(this));
+    const ErrorManager& errorManager = this.resourceManager.getErrorManager();
+    foreach ASTNode* child : node.children {
+        if errorManager.hasHardError {
+            break;
+        }
+        assert child != nil<ASTNode*>;
+        assert child.visitable != nil<IVisitable*>;
+        this.visit(child.visitable);
+    }
+    return Any();
 }
 
 // Visit a node, which evaluates to a type (e.g. a data type node)
@@ -181,6 +192,11 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
 
     // Visit children
     this.visitChildren(baseNode);
+    // The host would have thrown on a hard error, so skip the rest (the compilation is aborted after this stage)
+    const ErrorManager& errorManager = this.resourceManager.getErrorManager();
+    if errorManager.hasHardError {
+        return Any();
+    }
 
     // Check which implicit structures we need for each struct, defined in this source file. Manifestations that are
     // substantiated after this point are decided on directly at their creation (see createImplicitDefaultMembers).
@@ -214,7 +230,7 @@ f<bool> TypeChecker.checkAsyncLambdaCaptureRules(ASTNode* node, const ASTLambdaA
         return true; // Not violated
     }
     const CompileTimeValue asyncValue = attrLst.getAttrValueByName(String(ATTR_ASYNC));
-    if !asyncValue.boolValue {
+    if !asyncValue.getBoolValue() {
         return true; // Not violated
     }
 
@@ -508,7 +524,7 @@ f<bool> TypeChecker.collectTemplateTypes(ASTTypeLstNode* templateTypeLst, Vector
         }
         // Check if it is a generic type
         if !templateType.is(SuperType::TY_GENERIC) {
-            this.softError(cast<ASTNode*>(dataType), SemanticErrorType::EXPECTED_GENERIC_TYPE, String("A template list can only contain generic types"));
+            throwSemanticError(cast<ASTNode*>(dataType), SemanticErrorType::EXPECTED_GENERIC_TYPE, String("A template list can only contain generic types"));
             return false;
         }
         // Convert generic symbol type to generic type
@@ -718,7 +734,11 @@ f<Any> TypeChecker.visitFctDefCheck(ASTFctDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this function definition
-    foreach Function* manifestation : fctDefBase.manifestations {
+    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
+    // not covered by the resize above and get checked in a revisit)
+    const unsigned long manifestationCount = fctDefBase.manifestations.getSize();
+    for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
+        Function* manifestation = fctDefBase.manifestations.get(manifestationIdx);
         // Skip non-substantiated or already checked functions
         if !manifestation.isFullySubstantiated() || manifestation.alreadyTypeChecked {
             this.manIdx++; // Increase the manifestation index
@@ -779,7 +799,11 @@ f<Any> TypeChecker.visitProcDefCheck(ASTProcDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this procedure definition
-    foreach Function* manifestation : fctDefBase.manifestations {
+    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
+    // not covered by the resize above and get checked in a revisit)
+    const unsigned long manifestationCount = fctDefBase.manifestations.getSize();
+    for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
+        Function* manifestation = fctDefBase.manifestations.get(manifestationIdx);
         // Skip non-substantiated or already checked procedures
         if !manifestation.isFullySubstantiated() || manifestation.alreadyTypeChecked {
             this.manIdx++; // Increase the manifestation index
@@ -862,7 +886,11 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this procedure definition
-    foreach Struct* manifestation : node.structManifestations {
+    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
+    // not covered by the resize above and get checked in a revisit)
+    const unsigned long manifestationCount = node.structManifestations.getSize();
+    for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
+        Struct* manifestation = node.structManifestations.get(manifestationIdx);
         // Skip non-substantiated or already checked procedures
         if !manifestation.structBase.isFullySubstantiated() {
             this.manIdx++; // Increase the manifestation index
@@ -995,7 +1023,11 @@ f<Any> TypeChecker.visitUnionDefCheck(ASTUnionDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this union definition
-    foreach Union* manifestation : node.unionManifestations {
+    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
+    // not covered by the resize above and get checked in a revisit)
+    const unsigned long manifestationCount = node.unionManifestations.getSize();
+    for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
+        Union* manifestation = node.unionManifestations.get(manifestationIdx);
         // Skip non-substantiated manifestations
         if !manifestation.structBase.isFullySubstantiated() {
             this.manIdx++; // Increase the manifestation index
@@ -1149,7 +1181,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
             paramList.pushBack(Param{qualType, namedParam.isOptional});
             // Check if the type is present in the template for generic types
             if !qualType.isCoveredByGenericTypeList(usedGenericTypes) {
-                this.softError(getASTNode(fctDefBase.paramLst), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic param type not included in the template type list of the function"));
+                throwSemanticError(getASTNode(fctDefBase.paramLst), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic param type not included in the template type list of the function"));
                 return Any();
             }
         }
@@ -1188,6 +1220,12 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
     Function spiceFunc = Function(fctDefBase.name.name, functionEntry, thisType, returnType, paramList, usedGenericTypes, baseNode);
     spiceFunc.bodyScope = fctDefBase.scope;
     insertFunction(this.currentScope, spiceFunc, &fctDefBase.manifestations);
+    // The host throws on a duplicate declaration. Stop here, the compilation is aborted after this stage
+    const ErrorManager& errorManager = this.resourceManager.getErrorManager();
+    if errorManager.hasHardError {
+        this.currentScope = this.rootScope;
+        return Any();
+    }
 
     // Check function attributes
     if fctDefBase.attrs != nil<IVisitable*> {
@@ -1196,22 +1234,22 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
         Function* firstManifestation = fctDefBase.manifestations.front();
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLE));
-            firstManifestation.mangleFunctionName = value.boolValue;
+            firstManifestation.mangleFunctionName = value.getBoolValue();
         }
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLED_NAME)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
-            firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.stringValueOffset);
+            firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         }
         if attrLst.hasAttr(String(ATTR_TEST)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_TEST));
-            if value.boolValue {
+            if value.getBoolValue() {
                 // Make sure that the function has the correct signature
                 if fctDefBase.hasParams {
-                    this.softError(getASTNode(fctDefBase.paramLst), SemanticErrorType::TEST_FUNCTION_WITH_PARAMS, String("Test function may not have parameters"));
+                    throwSemanticError(getASTNode(fctDefBase.paramLst), SemanticErrorType::TEST_FUNCTION_WITH_PARAMS, String("Test function may not have parameters"));
                     return Any();
                 }
                 if !returnType.is(SuperType::TY_BOOL) {
-                    this.softError(cast<ASTNode*>(node.returnType), SemanticErrorType::TEST_FUNCTION_WRONG_RETURN_TYPE, String("Test function must return a bool"));
+                    throwSemanticError(cast<ASTNode*>(node.returnType), SemanticErrorType::TEST_FUNCTION_WRONG_RETURN_TYPE, String("Test function must return a bool"));
                     return Any();
                 }
                 // Add to test function list
@@ -1249,7 +1287,7 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
 
     // Check if dtor and has params
     if fctDefBase.hasParams && fctDefBase.name.name == DTOR_FUNCTION_NAME {
-        this.softError(baseNode, SemanticErrorType::DTOR_WITH_PARAMS, String("It is not allowed to specify parameters for destructors"));
+        throwSemanticError(baseNode, SemanticErrorType::DTOR_WITH_PARAMS, String("It is not allowed to specify parameters for destructors"));
         return Any();
     }
 
@@ -1304,7 +1342,7 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
             paramList.pushBack(Param{qualType, namedParam.isOptional});
             // Check if the type is present in the template for generic types
             if !qualType.isCoveredByGenericTypeList(usedGenericTypes) {
-                this.softError(getASTNode(fctDefBase.paramLst), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic param type not included in the template type list of the procedure"));
+                throwSemanticError(getASTNode(fctDefBase.paramLst), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic param type not included in the template type list of the procedure"));
                 return Any();
             }
         }
@@ -1329,6 +1367,12 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
     Function spiceProc = Function(fctDefBase.name.name, procedureEntry, thisType, QualType(SuperType::TY_DYN), paramList, usedGenericTypes, baseNode);
     spiceProc.bodyScope = fctDefBase.scope;
     insertFunction(this.currentScope, spiceProc, &fctDefBase.manifestations);
+    // The host throws on a duplicate declaration. Stop here, the compilation is aborted after this stage
+    const ErrorManager& errorManager = this.resourceManager.getErrorManager();
+    if errorManager.hasHardError {
+        this.currentScope = this.rootScope;
+        return Any();
+    }
 
     // Check procedure attributes
     if fctDefBase.attrs != nil<IVisitable*> {
@@ -1337,11 +1381,11 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
         Function* firstManifestation = fctDefBase.manifestations.front();
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLE));
-            firstManifestation.mangleFunctionName = value.boolValue;
+            firstManifestation.mangleFunctionName = value.getBoolValue();
         }
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLED_NAME)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
-            firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.stringValueOffset);
+            firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         }
     }
 
@@ -1449,13 +1493,13 @@ f<Any> TypeChecker.visitStructDefPrepare(ASTStructDefNode* node) {
             }
             // Check if it is an interface type
             if !interfaceType.is(SuperType::TY_INTERFACE) {
-                this.softError(cast<ASTNode*>(interfaceNode), SemanticErrorType::EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName(false));
+                throwSemanticError(cast<ASTNode*>(interfaceNode), SemanticErrorType::EXPECTED_INTERFACE_TYPE, "Expected interface type, got " + interfaceType.getName(false));
                 return Any();
             }
             // Check for visibility
             Scope* interfaceScope = interfaceType.getBodyScope();
             if interfaceScope.isImportedBy(this.rootScope) && !interfaceType.isPublic() {
-                this.softError(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, "Cannot access interface '" + interfaceType.getSubType() + "' due to its private visibility");
+                throwSemanticError(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, "Cannot access interface '" + interfaceType.getSubType() + "' due to its private visibility");
                 return Any();
             }
             // Add to interface types
@@ -1504,7 +1548,7 @@ f<Any> TypeChecker.visitStructDefPrepare(ASTStructDefNode* node) {
         // contains itself - either directly (struct A has a field of type A) or through a cycle of structs in mutually
         // importing files (A has a field of type B and B has a field of type A).
         if fieldContainsAggregateByValue(fieldType, node.structScope, fieldBaseNode, visitedScopes) {
-            this.softError(fieldBaseNode, SemanticErrorType::STRUCT_INFINITE_SIZE, String("Struct with infinite size detected"));
+            throwSemanticError(fieldBaseNode, SemanticErrorType::STRUCT_INFINITE_SIZE, String("Struct with infinite size detected"));
             return Any();
         }
 
@@ -1518,7 +1562,7 @@ f<Any> TypeChecker.visitStructDefPrepare(ASTStructDefNode* node) {
 
         // Check if the template type list contains this type
         if !fieldType.isCoveredByGenericTypeList(templateTypesGeneric) {
-            this.softError(cast<ASTNode*>(field.dataType), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic field type not included in struct template"));
+            throwSemanticError(cast<ASTNode*>(field.dataType), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic field type not included in struct template"));
             return Any();
         }
     }
@@ -1539,7 +1583,7 @@ f<Any> TypeChecker.visitStructDefPrepare(ASTStructDefNode* node) {
         ASTAttrLstNode* attrLst = attrs.attrLst;
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_EMIT_VTABLE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_EMIT_VTABLE));
-            node.emitVTable = node.emitVTable || value.boolValue;
+            node.emitVTable = node.emitVTable || value.getBoolValue();
         }
     }
     if node.emitVTable && !this.sourceFile.isRttiRT() {
@@ -1694,7 +1738,7 @@ f<Any> TypeChecker.visitUnionDefPrepare(ASTUnionDefNode* node) {
         // struct/union fields) contains itself - either directly or through a cycle of aggregates in mutually
         // importing files.
         if fieldContainsAggregateByValue(fieldType, node.unionScope, fieldBaseNode, visitedScopes) {
-            this.softError(fieldBaseNode, SemanticErrorType::UNION_INFINITE_SIZE, String("Union with infinite size detected"));
+            throwSemanticError(fieldBaseNode, SemanticErrorType::UNION_INFINITE_SIZE, String("Union with infinite size detected"));
             return Any();
         }
 
@@ -1728,7 +1772,7 @@ f<Any> TypeChecker.visitUnionDefPrepare(ASTUnionDefNode* node) {
 
         // Check if the template type list contains this type
         if !fieldType.isCoveredByGenericTypeList(templateTypesGeneric) {
-            this.softError(cast<ASTNode*>(field.dataType), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic field type not included in union template"));
+            throwSemanticError(cast<ASTNode*>(field.dataType), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic field type not included in union template"));
             return Any();
         }
     }
@@ -1989,11 +2033,11 @@ f<Any> TypeChecker.visitExtDeclPrepare(ASTExtDeclNode* node) {
         ASTAttrLstNode* attrLst = attrs.attrLst;
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLE));
-            node.extFunction.mangleFunctionName = value.boolValue;
+            node.extFunction.mangleFunctionName = value.getBoolValue();
         }
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLED_NAME)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
-            node.extFunction.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.stringValueOffset);
+            node.extFunction.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         }
     }
 
@@ -2202,7 +2246,7 @@ public f<Any> TypeChecker.visitDataType(ASTDataTypeNode* node) {
                         return this.softErrorQT(baseNode, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, String("Expected variable of type int"));
                     }
                     const CompileTimeValue globalVarValue = globalVar.declNode.getCompileTimeValue(this.manIdx);
-                    hardcodedSize = cast<unsigned int>(globalVarValue.intValue);
+                    hardcodedSize = cast<unsigned int>(globalVarValue.getIntValue());
                 }
 
                 if typeModifier.hasSize && hardcodedSize <= 1u {
@@ -2832,7 +2876,7 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
         }
         if node.getIteratorFct == nil<Function*> {
             // The host throws a SemanticError here
-            this.softError(iteratorBaseNode, SemanticErrorType::INVALID_ITERATOR, String("No getIterator() function found for the given iterable type"));
+            throwSemanticError(iteratorBaseNode, SemanticErrorType::INVALID_ITERATOR, String("No getIterator() function found for the given iterable type"));
             return Any();
         }
 
@@ -2987,8 +3031,8 @@ public f<Any> TypeChecker.visitIfStmt(ASTIfStmtNode* node) {
     bool compileElseBranch = true;
     if constantCondition {
         const CompileTimeValue compileTimeValue = conditionNode.getCompileTimeValue(this.manIdx);
-        compileThenBranch = compileTimeValue.boolValue;
-        compileElseBranch = !compileTimeValue.boolValue;
+        compileThenBranch = compileTimeValue.getBoolValue();
+        compileElseBranch = !compileTimeValue.getBoolValue();
     }
     bool& compileThenBranchSlot = node.compileThenBranch.get(this.manIdx);
     compileThenBranchSlot = compileThenBranch;
@@ -3803,7 +3847,7 @@ public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
                 ASTNode* indexNode = getASTNode(indexAssignExpr);
                 if operandType.isArray() && cast<unsigned long>(operandType.getArraySize()) != ARRAY_SIZE_UNKNOWN && indexNode.hasCompileTimeValue(this.manIdx) {
                     const CompileTimeValue compileTimeValue = indexNode.getCompileTimeValue(this.manIdx);
-                    const int constIndex = compileTimeValue.intValue;
+                    const int constIndex = compileTimeValue.getIntValue();
                     const unsigned int constSize = operandType.getArraySize();
                     // Check if we are accessing out-of-bounds memory
                     if constIndex >= cast<int>(constSize) {
@@ -5140,7 +5184,7 @@ f<Any> TypeChecker.visitBuiltinPrintfCall(ASTFctCallNode* node) {
     const QualType firstArgType = this.getArgType(node, 0l);
     assert firstArgType.is(SuperType::TY_STRING) && firstArg.hasCompileTimeValue(this.manIdx);
     const CompileTimeValue firstArgValue = firstArg.getCompileTimeValue(this.manIdx);
-    const unsigned long stringOffset = firstArgValue.stringValueOffset;
+    const unsigned long stringOffset = firstArgValue.getStringValueOffset();
     String templatedString = String(this.resourceManager.getCompileTimeStringValue(stringOffset));
     const long templatedStringSize = cast<long>(templatedString.getLength());
     const unsigned long argCount = node.argLst.args.getSize();
@@ -5248,7 +5292,7 @@ f<Any> TypeChecker.visitBuiltinSizeOfCall(ASTFctCallNode* node) {
 
     const Type* rawType = qualType.getType();
     CompileTimeValue compileTimeValue;
-    compileTimeValue.longValue = cast<long>(rawType.getTypeAllocSize(this.sourceFile));
+    compileTimeValue.setLongValue(cast<long>(rawType.getTypeAllocSize(this.sourceFile)));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
@@ -5267,7 +5311,7 @@ f<Any> TypeChecker.visitBuiltinAlignOfCall(ASTFctCallNode* node) {
 
     const Type* rawType = qualType.getType();
     CompileTimeValue compileTimeValue;
-    compileTimeValue.longValue = cast<long>(rawType.getABITypeAlign(this.sourceFile));
+    compileTimeValue.setLongValue(cast<long>(rawType.getABITypeAlign(this.sourceFile)));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
@@ -5355,7 +5399,7 @@ f<Any> TypeChecker.visitBuiltinOffsetOfCall(ASTFctCallNode* node) {
         offset += cast<long>(baseRawType.getFieldOffset(this.sourceFile, indexPath));
     }
     CompileTimeValue compileTimeValue;
-    compileTimeValue.longValue = offset;
+    compileTimeValue.setLongValue(offset);
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
@@ -5374,7 +5418,7 @@ f<Any> TypeChecker.visitBuiltinTypeIdCall(ASTFctCallNode* node) {
     const QualType qualType = this.getTemplateTypeOrArgType(node);
     const Hash typeId = this.resourceManager.typeRegistry.getTypeHash(*qualType.getType());
     CompileTimeValue compileTimeValue;
-    compileTimeValue.longValue = cast<long>(typeId);
+    compileTimeValue.setLongValue(cast<long>(typeId));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
@@ -5386,7 +5430,7 @@ f<Any> TypeChecker.visitBuiltinTypeNameCall(ASTFctCallNode* node) {
     // Directly set compile time value here, so that compile time ifs can be evaluated.
     const QualType qualType = this.getTemplateTypeOrArgType(node);
     CompileTimeValue compileTimeValue;
-    compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+    compileTimeValue.setStringValueOffset(this.resourceManager.compileTimeStringValues.getSize());
     this.resourceManager.compileTimeStringValues.pushBack(qualType.getName());
     this.setCompileTimeValue(node, compileTimeValue);
 
@@ -5407,7 +5451,7 @@ f<Any> TypeChecker.visitBuiltinLenCall(ASTFctCallNode* node) {
 
     if argType.is(SuperType::TY_ARRAY) {
         CompileTimeValue compileTimeValue;
-        compileTimeValue.longValue = cast<long>(argType.getArraySize());
+        compileTimeValue.setLongValue(cast<long>(argType.getArraySize()));
         this.setCompileTimeValue(node, compileTimeValue);
     } else {
         // If we want to use the len builtin on a string, we need to import the string runtime module
@@ -5456,7 +5500,7 @@ f<Any> TypeChecker.visitBuiltinSyscallCall(ASTFctCallNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
     if sysCallNumberExpr.hasCompileTimeValue(this.manIdx) {
         const CompileTimeValue sysCallNumberValue = sysCallNumberExpr.getCompileTimeValue(this.manIdx);
-        const short sysCallNumber = sysCallNumberValue.shortValue;
+        const short sysCallNumber = sysCallNumberValue.getShortValue();
         if sysCallNumber < 0s || sysCallNumber > 439s {
             return this.softErrorER(baseNode, SemanticErrorType::SYSCALL_NUMBER_OUT_OF_RANGE, String("Only syscall numbers between 0 and 439 are supported"));
         }
@@ -5470,12 +5514,12 @@ f<Any> TypeChecker.visitBuiltinIsSameCall(ASTFctCallNode* node) {
 
     // Directly set compile time value here, so that compile time ifs can be evaluated.
     CompileTimeValue compileTimeValue;
-    compileTimeValue.boolValue = true;
+    compileTimeValue.setBoolValue(true);
     const QualType firstType = this.getTemplateType(node, 0l);
     for unsigned long i = 1l; i < node.templateTypeLst.dataTypes.getSize(); i++ {
         const QualType qualType = this.getTemplateType(node, i);
         if !qualType.matches(firstType, false, true, false) {
-            compileTimeValue.boolValue = false;
+            compileTimeValue.setBoolValue(false);
             break;
         }
     }
@@ -5490,7 +5534,7 @@ f<Any> TypeChecker.visitBuiltinImplementsInterfaceCall(ASTFctCallNode* node) {
     const QualType interfaceType = this.getTemplateType(node, 0l);
     const QualType structType = this.getTemplateType(node, node.templateTypeLst.dataTypes.getSize() - 1l);
     CompileTimeValue compileTimeValue;
-    compileTimeValue.boolValue = interfaceType.is(SuperType::TY_INTERFACE) && structType.is(SuperType::TY_STRUCT) && structType.doesImplement(interfaceType, cast<ASTNode*>(node));
+    compileTimeValue.setBoolValue(interfaceType.is(SuperType::TY_INTERFACE) && structType.is(SuperType::TY_STRUCT) && structType.doesImplement(interfaceType, cast<ASTNode*>(node)));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_BOOL));
@@ -5578,13 +5622,13 @@ f<Any> TypeChecker.visitBuiltinGetBuildVarCall(ASTFctCallNode* node) {
 
     FctCallData& data = node.data.get(this.manIdx);
     const CompileTimeValue varNameValue = varNameNode.getCompileTimeValue(this.manIdx);
-    const unsigned long stringValueOffset = varNameValue.stringValueOffset;
+    const unsigned long stringValueOffset = varNameValue.getStringValueOffset();
     const String varName = String(this.resourceManager.getCompileTimeStringValue(stringValueOffset));
     if this.cliOptions.buildVars.contains(varName) {
         const String buildVarValue = String(this.cliOptions.buildVars.get(varName));
         CompileTimeValue compileTimeValue;
         if requestedType.is(SuperType::TY_STRING) {
-            compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+            compileTimeValue.setStringValueOffset(this.resourceManager.compileTimeStringValues.getSize());
             this.resourceManager.compileTimeStringValues.pushBack(buildVarValue);
         } else if requestedType.is(SuperType::TY_INT) {
             // The host parses the value with std::stoi, which throws on invalid values
@@ -5592,9 +5636,9 @@ f<Any> TypeChecker.visitBuiltinGetBuildVarCall(ASTFctCallNode* node) {
             if !parseIntLikeStoi(buildVarValue, value) {
                 return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String("Error while parsing the provided value to the requested type"));
             }
-            compileTimeValue.intValue = value;
+            compileTimeValue.setIntValue(value);
         } else if requestedType.is(SuperType::TY_BOOL) {
-            compileTimeValue.boolValue = buildVarValue == "true";
+            compileTimeValue.setBoolValue(buildVarValue == "true");
         }
         data.setCompileTimeValue(compileTimeValue);
     } else {
@@ -5612,7 +5656,7 @@ f<Any> TypeChecker.visitBuiltinIsTriviallyConstructible(ASTFctCallNode* node) {
 
     const QualType qualType = this.getTemplateType(node, 0l);
     CompileTimeValue compileTimeValue;
-    compileTimeValue.boolValue = qualType.isTriviallyConstructible(cast<ASTNode*>(node));
+    compileTimeValue.setBoolValue(qualType.isTriviallyConstructible(cast<ASTNode*>(node)));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_BOOL));
@@ -5623,7 +5667,7 @@ f<Any> TypeChecker.visitBuiltinIsTriviallyCopyable(ASTFctCallNode* node) {
 
     const QualType qualType = this.getTemplateType(node, 0l);
     CompileTimeValue compileTimeValue;
-    compileTimeValue.boolValue = qualType.isTriviallyCopyable(cast<ASTNode*>(node));
+    compileTimeValue.setBoolValue(qualType.isTriviallyCopyable(cast<ASTNode*>(node)));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_BOOL));
@@ -5634,7 +5678,7 @@ f<Any> TypeChecker.visitBuiltinIsTriviallyDestructible(ASTFctCallNode* node) {
 
     const QualType qualType = this.getTemplateType(node, 0l);
     CompileTimeValue compileTimeValue;
-    compileTimeValue.boolValue = qualType.isTriviallyDestructible(cast<ASTNode*>(node));
+    compileTimeValue.setBoolValue(qualType.isTriviallyDestructible(cast<ASTNode*>(node)));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_BOOL));
@@ -5645,7 +5689,7 @@ f<Any> TypeChecker.visitBuiltinIsHeap(ASTFctCallNode* node) {
 
     const QualType qualType = this.getTemplateType(node, 0l);
     CompileTimeValue compileTimeValue;
-    compileTimeValue.boolValue = qualType.isHeap();
+    compileTimeValue.setBoolValue(qualType.isHeap());
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_BOOL));
@@ -5753,7 +5797,7 @@ f<Any> TypeChecker.visitBuiltinSourceFileCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_SOURCE_FILE;
 
     CompileTimeValue compileTimeValue;
-    compileTimeValue.stringValueOffset = this.resourceManager.compileTimeStringValues.getSize();
+    compileTimeValue.setStringValueOffset(this.resourceManager.compileTimeStringValues.getSize());
     this.resourceManager.compileTimeStringValues.pushBack(node.codeLoc.toPrettyFilePath());
     this.setCompileTimeValue(node, compileTimeValue);
 
@@ -5764,7 +5808,7 @@ f<Any> TypeChecker.visitBuiltinSourceLineCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_SOURCE_LINE;
 
     CompileTimeValue compileTimeValue;
-    compileTimeValue.longValue = cast<long>(node.codeLoc.line);
+    compileTimeValue.setLongValue(cast<long>(node.codeLoc.line));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
@@ -5774,7 +5818,7 @@ f<Any> TypeChecker.visitBuiltinSourceColumnCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_SOURCE_COLUMN;
 
     CompileTimeValue compileTimeValue;
-    compileTimeValue.longValue = cast<long>(node.codeLoc.col);
+    compileTimeValue.setLongValue(cast<long>(node.codeLoc.col));
     this.setCompileTimeValue(node, compileTimeValue);
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));

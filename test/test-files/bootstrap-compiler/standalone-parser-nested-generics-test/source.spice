@@ -1,0 +1,70 @@
+import "std/os/env";
+import "std/io/filepath";
+import "std/data/vector";
+import "bootstrap/lexer/lexer";
+import "bootstrap/parser/parser";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/driver";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/source-file";
+import "bootstrap/util/pass-test-util";
+
+f<FilePath> getTestFilePath() {
+    Result<string> spiceStdDir = getEnv("SPICE_STD_DIR");
+    String filePathString = spiceStdDir.unwrap() + "/../test/test-files/bootstrap-compiler/standalone-parser-nested-generics-test/test-file.spice";
+    return FilePath(filePathString);
+}
+
+// Get the data type of the template type at the given index
+f<ASTDataTypeNode*> getTemplateDataType(ASTDataTypeNode* dataType, unsigned long idx) {
+    ASTCustomDataTypeNode* customDataType = dataType.baseDataType.customDataType;
+    assert customDataType != nil<ASTCustomDataTypeNode*>;
+    ASTTypeLstNode* templateTypeLst = downcast<ASTTypeLstNode>(customDataType.templateTypeLst);
+    return templateTypeLst.dataTypes.get(idx);
+}
+
+// Check that the data type has exactly the given type modifier or none, if the expected count is 0
+p assertModifiers(ASTDataTypeNode* dataType, long expectedCount, TypeModifierType expectedType) {
+    assert dataType.tmQueue.getSize() == expectedCount;
+    if expectedCount > 0l {
+        const TypeModifier& modifier = dataType.tmQueue.front();
+        assert modifier.modifierType == expectedType;
+    }
+}
+
+// The lexer merges the closing brackets of nested generic lists into a single '>>' token. A type modifier after the '>>'
+// belongs to the outer data type and must not be attached to the inner one.
+f<int> main() {
+    const FilePath filePath = getTestFilePath();
+    CliOptions cliOptions;
+    setupPassTestOptions(cliOptions);
+    GlobalResourceManager rm = GlobalResourceManager(cliOptions);
+    SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), filePath, false);
+    Lexer lexer = Lexer(filePath);
+    Parser parser = Parser(rm, &file, lexer);
+    ASTEntryNode* entry = parser.parse();
+    assert entry != nil<ASTEntryNode*>;
+
+    ASTProcDefNode* procDef = downcast<ASTProcDefNode>(entry.topLevelDefs.get(0l));
+    ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(procDef.node.paramLst);
+    assert paramLst.params.getSize() == 3l;
+
+    // const Vector<Vector<int>>& ref
+    ASTDataTypeNode* refType = paramLst.params.get(0l).dataType;
+    assertModifiers(refType, 1l, TypeModifierType::TYPE_REF);
+    assertModifiers(getTemplateDataType(refType, 0l), 0l, TypeModifierType::TYPE_REF);
+
+    // Vector<Vector<int>>* ptr
+    ASTDataTypeNode* ptrType = paramLst.params.get(1l).dataType;
+    assertModifiers(ptrType, 1l, TypeModifierType::TYPE_PTR);
+    assertModifiers(getTemplateDataType(ptrType, 0l), 0l, TypeModifierType::TYPE_PTR);
+
+    // Vector<Vector<Vector<int>>>& nested
+    ASTDataTypeNode* nestedType = paramLst.params.get(2l).dataType;
+    assertModifiers(nestedType, 1l, TypeModifierType::TYPE_REF);
+    ASTDataTypeNode* middleType = getTemplateDataType(nestedType, 0l);
+    assertModifiers(middleType, 0l, TypeModifierType::TYPE_REF);
+    assertModifiers(getTemplateDataType(middleType, 0l), 0l, TypeModifierType::TYPE_REF);
+
+    printf("All assertions passed!\n");
+}

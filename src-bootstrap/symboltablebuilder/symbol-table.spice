@@ -56,21 +56,19 @@ public p SymbolTable.copyContentsFrom(const SymbolTable& other) {
 
 /**
  * Count the number of field symbols in this symbol table (struct scopes). Mirrors the host Scope::getFieldCount:
- * skip anonymous symbols, imports and nested function/struct definitions.
+ * skip anonymous symbols, imports and nested function/struct/union definitions.
  *
  * @return Number of field symbols
  */
 public f<unsigned long> SymbolTable.getFieldCount() {
     result = 0ul;
-    // Skip imports and function/procedure symbols (methods). Note: the host also skips nested struct defs via
-    // declNode->isStructDef(); that AST-node query is not available on the concrete ASTNode yet, so we currently
-    // approximate by the symbol type, which already excludes methods (TY_FUNCTION/TY_PROCEDURE).
-    const dyn skipOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_IMPORT];
     foreach Pair<const String&, SymbolTableEntry&> symbolPair : this.symbols {
         SymbolTableEntry& symbol = symbolPair.getSecond();
         if symbol.anonymous { continue; }
         const QualType& symbolType = symbol.getQualType();
-        if symbolType.isOneOf(skipOptions, len(skipOptions)) { continue; }
+        if symbolType.is(SuperType::TY_IMPORT) { continue; }
+        const ASTNode* declNode = symbol.declNode;
+        if declNode.isFctOrProcDef() || declNode.isStructDef() || declNode.isUnionDef() { continue; }
         result++;
     }
 }

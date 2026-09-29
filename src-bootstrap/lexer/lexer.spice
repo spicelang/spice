@@ -82,6 +82,20 @@ public f<const Token&> Lexer.getToken() {
     return this.tokens.get(this.curIdx);
 }
 
+/**
+ * Get the last relevant (non-comment) token before the current one. This is the equivalent of ANTLR's stop token of a
+ * parser rule context, when the rule is exited.
+ *
+ * @return Previous relevant token or the current token, if there is none
+ */
+public f<const Token&> Lexer.getPreviousRelevantToken() {
+    const unsigned long ordinal = this.relevantOrdinal.get(this.curIdx);
+    if ordinal == 0l {
+        return this.tokens.get(this.curIdx);
+    }
+    return this.tokens.get(this.relevantIndices.get(ordinal - 1l));
+}
+
 public p Lexer.advance() {
     // Stop at the terminating EOF token so that getToken() keeps returning EOF once the end is reached.
     if this.curIdx + 1l < cast<unsigned long>(this.tokens.getSize()) {
@@ -172,6 +186,9 @@ f<Token> Lexer.readRawToken() {
     Token token = this.consumeToken();
     token.startOffset = startOffset;
     token.endOffset = this.reader.getOffset();
+    // A code location, created from a token, covers the token, like the host's CodeLoc(antlr4::Token*)
+    token.codeLoc.sourceIntervalStart = cast<long>(token.startOffset);
+    token.codeLoc.sourceIntervalStop = cast<long>(token.endOffset) - 1l;
     return token;
 }
 

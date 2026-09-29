@@ -69,9 +69,10 @@ f<Any> SymbolTableBuilder.visitChildren(ASTNode* node) {
     return visitChildrenOf(node, cast<IAbstractAstVisitor*>(this));
 }
 
-p SymbolTableBuilder.reportError(const ASTNode* node, SemanticErrorType errorType, const String& message) {
+// All errors of the symbol table builder are hard errors (thrown as SemanticError in the host)
+p SymbolTableBuilder.reportError(const ASTNode* node, SemanticErrorType errorType, const String& message, bool printErrorMessage = true) {
     ErrorManager& errorManager = this.resourceManager.getErrorManager();
-    errorManager.addSoftError(node, errorType, message);
+    errorManager.addHardError(node, errorType, message, printErrorMessage);
 }
 
 // Entry name of a function/procedure in its symbol table. Mirrors Function::getSymbolTableEntryName of the host, which
@@ -224,7 +225,7 @@ public f<Any> SymbolTableBuilder.visitEntry(ASTEntryNode* node) {
     // Check if the main function exists
     const bool mainFctRequired = this.cliOptions.outputContainer == OutputContainer::EXECUTABLE && !this.cliOptions.noEntryFct;
     if this.sourceFile.isMainSourceFile() && mainFctRequired && !this.hasMainFunction {
-        this.reportError(cast<ASTNode*>(node), SemanticErrorType::MISSING_MAIN_FUNCTION, String("No main function found"));
+        this.reportError(cast<ASTNode*>(node), SemanticErrorType::MISSING_MAIN_FUNCTION, String("No main function found"), false);
     }
 
     return Any();
@@ -848,7 +849,7 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
         linkerFlagValues.pushBack(osValue);
     }
     foreach CompileTimeValue value : linkerFlagValues {
-        const String& flag = resourceManager.getCompileTimeStringValue(value.stringValueOffset);
+        const String& flag = resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         resourceManager.addLinkerFlag(flag);
         this.sourceFile.addSourceLinkerFlag(flag);
     }
@@ -857,7 +858,7 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
     const Vector<CompileTimeValue> additionalSourceValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINKER_ADDITIONAL_SOURCE));
     const FilePath& ownFilePath = this.sourceFile.getFilePath();
     foreach CompileTimeValue additionalSourceValue : additionalSourceValues {
-        const String& stringValue = resourceManager.getCompileTimeStringValue(additionalSourceValue.stringValueOffset);
+        const String& stringValue = resourceManager.getCompileTimeStringValue(additionalSourceValue.getStringValueOffset());
         const FilePath additionalSourcePath = FilePath(ownFilePath.getParentDir()) / stringValue;
         resourceManager.addAdditionalSourcePath(additionalSourcePath);
         this.sourceFile.addSourceAdditionalSourcePath(additionalSourcePath);
@@ -894,7 +895,8 @@ public f<Any> SymbolTableBuilder.visitAttr(ASTAttrNode* node) {
 // Shared by the lambda visit methods: an 'async' lambda attribute marks the lambda scope as async
 p SymbolTableBuilder.applyLambdaAttr(ASTLambdaAttrNode* lambdaAttr, Scope* bodyScope) {
     if lambdaAttr != nil<ASTLambdaAttrNode*> && lambdaAttr.attrLst.hasAttr(String(ATTR_ASYNC)) {
-        bodyScope.isAsyncScope = lambdaAttr.attrLst.getAttrValueByName(String(ATTR_ASYNC)).boolValue;
+        const CompileTimeValue isAsyncScopeAttrValue = lambdaAttr.attrLst.getAttrValueByName(String(ATTR_ASYNC));
+        bodyScope.isAsyncScope = isAsyncScopeAttrValue.getBoolValue();
     }
 }
 
@@ -1090,7 +1092,7 @@ public f<Any> SymbolTableBuilder.visitImportDef(ASTImportDefNode* node) { return
 // manager of the test. Its recorded state is reset at the start of each scenario.
 
 f<bool> testMainFunctionRules(GlobalResourceManager& rm) {
-    rm.errorManager.softErrors.clear();
+    resetErrors(rm.errorManager);
     SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
     Scope* root = createTestGlobalScope(file);
     SymbolTableBuilder builder = SymbolTableBuilder(rm, &file);
@@ -1098,21 +1100,20 @@ f<bool> testMainFunctionRules(GlobalResourceManager& rm) {
     // An executable's main file without a main function is rejected
     ASTEntryNode emptyEntry = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
     builder.visit(&emptyEntry);
-    assert rm.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(rm.errorManager, 0l, "No main function found");
+    assert takeHardError(rm.errorManager, "No main function found");
 
     // A file that is not the compilation root does not need one
-    rm.errorManager.softErrors.clear();
+    resetErrors(rm.errorManager);
     SourceFile file2 = SourceFile(rm, nil<SourceFile*>, String("root2"), FilePath("/tmp/mock-main2.spice"), false);
     Scope* root2 = createTestGlobalScope(file2);
     file2.isMainFile = false;
     SymbolTableBuilder builder2 = SymbolTableBuilder(rm, &file2);
     ASTEntryNode emptyEntry2 = ASTEntryNode(CodeLoc(1l, 1l, "t.spice"));
     builder2.visit(&emptyEntry2);
-    assert rm.errorManager.softErrors.getSize() == 0l;
+    assert !rm.errorManager.hasHardError;
 
     // Declaring main creates its scope with the 'result' symbol, and declaring it twice is rejected
-    rm.errorManager.softErrors.clear();
+    resetErrors(rm.errorManager);
     SourceFile file3 = SourceFile(rm, nil<SourceFile*>, String("root3"), FilePath("/tmp/mock-main3.spice"), false);
     Scope* root3 = createTestGlobalScope(file3);
     SymbolTableBuilder builder3 = SymbolTableBuilder(rm, &file3);
@@ -1126,8 +1127,7 @@ f<bool> testMainFunctionRules(GlobalResourceManager& rm) {
     entry3.topLevelDefs.pushBack(cast<IVisitable*>(&main1));
     entry3.topLevelDefs.pushBack(cast<IVisitable*>(&main2));
     builder3.visit(&entry3);
-    assert rm.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(rm.errorManager, 0l, "Main function is declared twice");
+    assert takeHardError(rm.errorManager, "Main function is declared twice");
     assert root3.lookupStrict(String("main")) != nil<SymbolTableEntry*>;
     assert root3.lookupStrict(String("main")).used;
     Scope* mainScope = root3.getChildScope(String("fct:main"));
@@ -1140,7 +1140,7 @@ f<bool> testMainFunctionRules(GlobalResourceManager& rm) {
 }
 
 f<bool> testDefinitionRules(GlobalResourceManager& rm) {
-    rm.errorManager.softErrors.clear();
+    resetErrors(rm.errorManager);
     SourceFile file = SourceFile(rm, nil<SourceFile*>, String("root"), FilePath("/tmp/mock-main.spice"), false);
     Scope* root = createTestGlobalScope(file);
     file.isMainFile = false;
@@ -1157,8 +1157,7 @@ f<bool> testDefinitionRules(GlobalResourceManager& rm) {
     rect.fields.pushBack(cast<IVisitable*>(&widthField));
     rect.fields.pushBack(cast<IVisitable*>(&duplicateField));
     builder.visitStructDef(&rect);
-    assert rm.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(rm.errorManager, 0l, "The field 'width' was declared more than once");
+    assert takeHardError(rm.errorManager, "The field 'width' was declared more than once");
     assert rect.entry != nil<SymbolTableEntry*>;
     assert rect.entry == root.lookupStrict(String("Rectangle"));
     Scope* rectScope = root.getChildScope(String("struct:Rectangle"));
@@ -1176,14 +1175,13 @@ f<bool> testDefinitionRules(GlobalResourceManager& rm) {
     ASTStructDefNode duplicateStruct = ASTStructDefNode(CodeLoc(10l, 1l, "t.spice"));
     duplicateStruct.structName = String("Rectangle");
     builder.visitStructDef(&duplicateStruct);
-    assert rm.errorManager.softErrors.getSize() == 2l;
-    assert softErrorContains(rm.errorManager, 1l, "Duplicate symbol 'Rectangle'");
+    assert takeHardError(rm.errorManager, "Duplicate symbol 'Rectangle'");
     assert duplicateStruct.entry == nil<SymbolTableEntry*>;
 
     ASTGenericTypeDefNode genericDef = ASTGenericTypeDefNode(CodeLoc(11l, 1l, "t.spice"));
     genericDef.typeName = String("Rectangle");
     builder.visitGenericTypeDef(&genericDef);
-    assert rm.errorManager.softErrors.getSize() == 3l;
+    assert takeHardError(rm.errorManager, "Duplicate symbol 'Rectangle'");
     ASTGenericTypeDefNode okGeneric = ASTGenericTypeDefNode(CodeLoc(12l, 1l, "t.spice"));
     okGeneric.typeName = String("T");
     builder.visitGenericTypeDef(&okGeneric);
@@ -1199,8 +1197,7 @@ f<bool> testDefinitionRules(GlobalResourceManager& rm) {
     badStruct.structName = String("Bad");
     badStruct.qualifierLst = &qualifiers;
     builder.visitStructDef(&badStruct);
-    assert rm.errorManager.softErrors.getSize() == 4l;
-    assert softErrorContains(rm.errorManager, 3l, "Cannot use this qualifier on a struct definition");
+    assert takeHardError(rm.errorManager, "Cannot use this qualifier on a struct definition");
     assert root.lookupStrict(String("Bad")) == nil<SymbolTableEntry*>;
     ASTQualifierNode publicQualifier = ASTQualifierNode(CodeLoc(14l, 1l, "t.spice"));
     publicQualifier.qualifierType = QualifierType::PUBLIC;
@@ -1211,7 +1208,7 @@ f<bool> testDefinitionRules(GlobalResourceManager& rm) {
     publicStruct.qualifierLst = &publicQualifiers;
     builder.visitStructDef(&publicStruct);
     assert publicStruct.qualifiers.isPublic;
-    assert rm.errorManager.softErrors.getSize() == 4l;
+    assert !rm.errorManager.hasHardError;
 
     // A method of a struct that does not exist
     ASTFctNameNode missingName = ASTFctNameNode(CodeLoc(20l, 1l, "t.spice"));
@@ -1222,8 +1219,7 @@ f<bool> testDefinitionRules(GlobalResourceManager& rm) {
     missingMethod.name = &missingName;
     missingMethod.isMethod = true;
     builder.visitProcDef(&missingMethod);
-    assert rm.errorManager.softErrors.getSize() == 5l;
-    assert softErrorContains(rm.errorManager, 4l, "Struct 'Missing' could not be found");
+    assert takeHardError(rm.errorManager, "Struct 'Missing' could not be found");
     assert builder.currentScope == root;
 
     // Globals: duplicates within the file and across imported files are both rejected
@@ -1234,16 +1230,14 @@ f<bool> testDefinitionRules(GlobalResourceManager& rm) {
     ASTGlobalVarDefNode global2 = ASTGlobalVarDefNode(CodeLoc(31l, 1l, "t.spice"));
     global2.varName = String("LIMIT");
     builder.visitGlobalVarDef(&global2);
-    assert rm.errorManager.softErrors.getSize() == 6l;
-    assert softErrorContains(rm.errorManager, 5l, "Duplicate symbol 'LIMIT'");
+    assert takeHardError(rm.errorManager, "Duplicate symbol 'LIMIT'");
     SourceFile dependency = SourceFile(rm, &file, String("dependency"), FilePath("/tmp/mock-dependency.spice"), false);
     dependency.addNameRegistryEntry(String("SHARED"), 0l, nil<SymbolTableEntry*>, root, true, nil<SymbolTableEntry*>);
     file.addDependency(&dependency, String("dependency"));
     ASTGlobalVarDefNode global3 = ASTGlobalVarDefNode(CodeLoc(32l, 1l, "t.spice"));
     global3.varName = String("SHARED");
     builder.visitGlobalVarDef(&global3);
-    assert rm.errorManager.softErrors.getSize() == 7l;
-    assert softErrorContains(rm.errorManager, 6l, "Duplicate global variable 'SHARED' in other module");
+    assert takeHardError(rm.errorManager, "Duplicate global variable 'SHARED' in other module");
     assert global3.entry == nil<SymbolTableEntry*>;
 
     // Enums: items live in the enum scope and are exported as 'Enum::ITEM'
@@ -1260,8 +1254,7 @@ f<bool> testDefinitionRules(GlobalResourceManager& rm) {
     items.items.pushBack(&redAgain);
     colors.itemLst = cast<IVisitable*>(&items);
     builder.visitEnumDef(&colors);
-    assert rm.errorManager.softErrors.getSize() == 8l;
-    assert softErrorContains(rm.errorManager, 7l, "The enum item 'RED' was declared more than once");
+    assert takeHardError(rm.errorManager, "The enum item 'RED' was declared more than once");
     Scope* colorScope = root.getChildScope(String("enum:Color"));
     assert colorScope != nil<Scope*>;
     assert colorScope.lookupStrict(String("RED")) != nil<SymbolTableEntry*>;
@@ -1283,7 +1276,7 @@ f<bool> testAttributeRules(GlobalResourceManager& rm) {
     const FilePath bootstrapDir = getBootstrapCompilerDir();
     assert !bootstrapDir.isEmpty();
 
-    rm.errorManager.softErrors.clear();
+    resetErrors(rm.errorManager);
     rm.compileTimeStringValues.clear();
     rm.linker.linkerFlags.clear();
     rm.linker.linkedFiles.clear();
@@ -1297,24 +1290,21 @@ f<bool> testAttributeRules(GlobalResourceManager& rm) {
     unknownAttr.key = String("no.such.attribute");
     unknownAttr.target = AttrTarget::TARGET_MODULE;
     builder.visitAttr(&unknownAttr);
-    assert rm.errorManager.softErrors.getSize() == 1l;
-    assert softErrorContains(rm.errorManager, 0l, "Unknown attribute 'no.such.attribute'");
+    assert takeHardError(rm.errorManager, "Unknown attribute 'no.such.attribute'");
 
     // Attribute on a target it does not support (a module attribute on a struct)
     ASTAttrNode wrongTarget = ASTAttrNode(CodeLoc(2l, 1l, "t.spice"));
     wrongTarget.key = String(ATTR_CORE_COMPILER_WARNINGS_IGNORE);
     wrongTarget.target = AttrTarget::TARGET_STRUCT;
     builder.visitAttr(&wrongTarget);
-    assert rm.errorManager.softErrors.getSize() == 2l;
-    assert softErrorContains(rm.errorManager, 1l, "cannot be used on this target");
+    assert takeHardError(rm.errorManager, "cannot be used on this target");
 
     // Non-bool attributes need a value
     ASTAttrNode missingValue = ASTAttrNode(CodeLoc(3l, 1l, "t.spice"));
     missingValue.key = String(ATTR_CORE_LINKER_FLAG);
     missingValue.target = AttrTarget::TARGET_MODULE;
     builder.visitAttr(&missingValue);
-    assert rm.errorManager.softErrors.getSize() == 3l;
-    assert softErrorContains(rm.errorManager, 2l, "requires a value");
+    assert takeHardError(rm.errorManager, "requires a value");
 
     // Bool attributes do not, and a fully valid attribute reports nothing
     ASTAttrNode boolAttr = ASTAttrNode(CodeLoc(4l, 1l, "t.spice"));
@@ -1325,7 +1315,7 @@ f<bool> testAttributeRules(GlobalResourceManager& rm) {
     asyncOnLambda.key = String(ATTR_ASYNC);
     asyncOnLambda.target = AttrTarget::TARGET_LAMBDA;
     builder.visitAttr(&asyncOnLambda);
-    assert rm.errorManager.softErrors.getSize() == 3l;
+    assert !rm.errorManager.hasHardError;
 
     // Module attributes: linker flags (incl. the ones for the current OS only) and additional sources
     rm.compileTimeStringValues.pushBack(String("-lm"));
@@ -1333,13 +1323,13 @@ f<bool> testAttributeRules(GlobalResourceManager& rm) {
     rm.compileTimeStringValues.pushBack(String("-framework Foo"));
     rm.compileTimeStringValues.pushBack(String("driver.spice"));
     ASTConstantNode flagValue = ASTConstantNode(CodeLoc(10l, 1l, "t.spice"));
-    flagValue.compileTimeValue.stringValueOffset = 0l;
+    flagValue.compileTimeValue.setStringValueOffset(0l);
     ASTConstantNode linuxFlagValue = ASTConstantNode(CodeLoc(11l, 1l, "t.spice"));
-    linuxFlagValue.compileTimeValue.stringValueOffset = 1l;
+    linuxFlagValue.compileTimeValue.setStringValueOffset(1l);
     ASTConstantNode darwinFlagValue = ASTConstantNode(CodeLoc(12l, 1l, "t.spice"));
-    darwinFlagValue.compileTimeValue.stringValueOffset = 2l;
+    darwinFlagValue.compileTimeValue.setStringValueOffset(2l);
     ASTConstantNode sourceValue = ASTConstantNode(CodeLoc(13l, 1l, "t.spice"));
-    sourceValue.compileTimeValue.stringValueOffset = 3l;
+    sourceValue.compileTimeValue.setStringValueOffset(3l);
     ASTAttrNode flagAttr = ASTAttrNode(CodeLoc(10l, 1l, "t.spice"));
     flagAttr.key = String(ATTR_CORE_LINKER_FLAG);
     flagAttr.target = AttrTarget::TARGET_MODULE;
@@ -1369,7 +1359,7 @@ f<bool> testAttributeRules(GlobalResourceManager& rm) {
     attrLst.node.addChild(&flagAttr.node);
     flagAttr.node.visitable = cast<IVisitable*>(&flagAttr);
     builder.visitModAttr(&modAttr);
-    assert rm.errorManager.softErrors.getSize() == 3l; // the visited attribute was valid
+    assert !rm.errorManager.hasHardError; // the visited attribute was valid
     assert rm.linker.linkerFlags.getSize() == 2l; // '-lm' (all OSes) and '-ldl' (linux only), but not the darwin flag
     assert rm.linker.linkerFlags.get(0l) == "-lm";
     assert rm.linker.linkerFlags.get(1l) == "-ldl";

@@ -102,7 +102,7 @@ public f<TypeQualifiers> getTypeQualifiersOf(SuperType superType) {
 public f<TypeQualifiers> TypeQualifiers.merge(const TypeQualifiers& other) {
     result = TypeQualifiers();
     const bool isGeneric = !this.getBit(BIT_INDEX_SIGNED) && !this.getBit(BIT_INDEX_UNSIGNED);
-    for unsigned short i = 0s; i < BIT_INDEX_MAX; i++ {
+    for unsigned short i = 0s; i <= BIT_INDEX_MAX; i++ {
         const bool x = this.getBit(i);
         const bool y = other.getBit(i);
 
@@ -140,7 +140,7 @@ public f<bool> TypeQualifiers.match(TypeQualifiers otherQualifiers, bool allowCo
  */
 public p TypeQualifiers.eraseWithMask(const TypeQualifiers& mask) {
     // Zero out all bits that are set in the mask
-    for unsigned short i = 0s; i < BIT_INDEX_MAX; i++ {
+    for unsigned short i = 0s; i <= BIT_INDEX_MAX; i++ {
         if mask.getBit(i) {
             // Zero out the bit
             this.setBit(i, false);
@@ -155,11 +155,23 @@ public p TypeQualifiers.eraseWithMask(const TypeQualifiers& mask) {
     }
 }
 
+/**
+ * Compare two bools for equality. The host compiler currently miscompiles runtime 'bool == bool' and 'bool != bool'
+ * (always equal, see https://github.com/spicelang/spice/issues/1458), so the bootstrap compares bools with this helper.
+ *
+ * @param lhs Left hand side
+ * @param rhs Right hand side
+ * @return Equal or not
+ */
+public f<bool> boolEquals(bool lhs, bool rhs) {
+    return lhs ? rhs : !rhs;
+}
+
 public f<bool> operator==(const TypeQualifiers& lhs, const TypeQualifiers& rhs) {
-    const bool isConst = lhs.isConst == rhs.isConst;
-    const bool isSigned = lhs.isSigned == rhs.isSigned;
-    const bool isUnsigned = lhs.isUnsigned == rhs.isUnsigned;
-    const bool isHeap = lhs.isHeap == rhs.isHeap;
+    const bool isConst = boolEquals(lhs.isConst, rhs.isConst);
+    const bool isSigned = boolEquals(lhs.isSigned, rhs.isSigned);
+    const bool isUnsigned = boolEquals(lhs.isUnsigned, rhs.isUnsigned);
+    const bool isHeap = boolEquals(lhs.isHeap, rhs.isHeap);
     return isConst && isSigned && isUnsigned && isHeap;
 }
 
@@ -201,6 +213,12 @@ public f<bool> testTypeQualifiersSmoke() {
     TypeQualifiers merged = tqGeneric.merge(tqInt);
     assert !merged.isConst && merged.isSigned && !merged.isUnsigned && !merged.isHeap && !merged.isPublic && !merged.isInline && !merged.isComposition;
 
+    // The const qualifier (the last bit) is merged as well, e.g. when substantiating 'const T&' with 'int'
+    TypeQualifiers tqConstGeneric = getTypeQualifiersOf(SuperType::TY_GENERIC);
+    tqConstGeneric.isConst = true;
+    TypeQualifiers mergedConst = tqConstGeneric.merge(tqInt);
+    assert mergedConst.isConst && mergedConst.isSigned && !mergedConst.isUnsigned;
+
     // test match
     TypeQualifiers tqShort = getTypeQualifiersOf(SuperType::TY_SHORT);
     assert !tqShort.isConst && tqShort.isSigned && !tqShort.isUnsigned && !tqShort.isHeap && !tqShort.isPublic && !tqShort.isInline && !tqShort.isComposition;
@@ -210,6 +228,14 @@ public f<bool> testTypeQualifiersSmoke() {
     TypeQualifiers tqGenericCopy = tqGeneric;
     tqGenericCopy.eraseWithMask(tqShort);
     assert !tqGenericCopy.isConst && !tqGenericCopy.isSigned && tqGenericCopy.isUnsigned && !tqGenericCopy.isHeap && !tqGenericCopy.isPublic && !tqGenericCopy.isInline && !tqGenericCopy.isComposition;
+
+    // The const qualifier (the last bit) is erased as well
+    TypeQualifiers tqConstInt = getTypeQualifiersOf(SuperType::TY_INT);
+    tqConstInt.isConst = true;
+    TypeQualifiers constMask;
+    constMask.isConst = true;
+    tqConstInt.eraseWithMask(constMask);
+    assert !tqConstInt.isConst && tqConstInt.isSigned;
 
     return true;
 }

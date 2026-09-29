@@ -13,6 +13,7 @@ import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/source-file";
 import "bootstrap/global/type-registry";
 import "bootstrap/ast/attributes";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/irgenerator/name-mangling";
 import "bootstrap/model/interface";
 import "bootstrap/model/struct";
@@ -359,8 +360,8 @@ public f<String> Type.getName(bool withSize, bool ignorePublic, bool withAliases
  * @return Pointer type of the current type
  */
 public f<const Type*> Type.toPtr(const ASTNode* node) {
-    if this.is(SuperType::TY_DYN) { panic(Error("Just use the dyn type without '*' instead")); }
-    if this.isRef() { panic(Error("Pointers to references are not allowed. Use pointer instead")); }
+    if this.is(SuperType::TY_DYN) { panicWithSemanticError(node, SemanticErrorType::DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead"); }
+    if this.isRef() { panicWithSemanticError(node, SemanticErrorType::REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead"); }
 
     // Create new type chain
     TypeChain newTypeChain = this.typeChain;
@@ -377,8 +378,8 @@ public f<const Type*> Type.toPtr(const ASTNode* node) {
  * @return Reference type of the current type
  */
 public f<const Type*> Type.toRef(const ASTNode* node) {
-    if this.is(SuperType::TY_DYN) { panic(Error("Just use the dyn type without '&' instead")); }
-    if this.isRef() { panic(Error("References to references are not allowed")); }
+    if this.is(SuperType::TY_DYN) { panicWithSemanticError(node, SemanticErrorType::DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead"); }
+    if this.isRef() { panicWithSemanticError(node, SemanticErrorType::MULTI_REF_NOT_ALLOWED, "References to references are not allowed"); }
 
     // Create new type chain
     TypeChain newTypeChain = this.typeChain;
@@ -398,7 +399,7 @@ public f<const Type*> Type.toRef(const ASTNode* node) {
  */
 public f<const Type*> Type.toArr(const ASTNode* node, unsigned int size, bool skipDynCheck) {
     if !skipDynCheck && this.typeChain.back().superType == SuperType::TY_DYN {
-        panic(Error("Just use the dyn type without '[]' instead"));
+        panicWithSemanticError(node, SemanticErrorType::DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
     }
 
     // Create new type chain
@@ -654,7 +655,7 @@ public f<llvm::Type> Type.toLLVMType(SourceFile* sourceFile) {
                 const String packedAttrName = String(ATTR_CORE_COMPILER_PACKED);
                 if attrs.attrLst.hasAttr(packedAttrName) {
                     const CompileTimeValue packedAttrValue = attrs.attrLst.getAttrValueByName(packedAttrName);
-                    isPacked = packedAttrValue.boolValue;
+                    isPacked = packedAttrValue.getBoolValue();
                 }
             }
         } else { // Interface

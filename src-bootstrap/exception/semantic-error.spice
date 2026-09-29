@@ -130,11 +130,34 @@ public type SemanticError struct {
     String errorMessage
 }
 
-public p SemanticError.ctor(const ASTNode* node, const SemanticErrorType errorType, const string message) {
+public p SemanticError.ctor(const ASTNode* node, const SemanticErrorType errorType, const string message, bool printErrorMessage = true) {
+    assert node != nil<ASTNode*>;
     StringStream msg;
     msg << "[Error|Semantic] " << node.codeLoc.toPrettyString() << ":" << endl();
     msg << this.getMessagePrefix(errorType) << ": " << message;
+    if printErrorMessage {
+        // Nodes without a source interval (not created by the parser) have no snippet. The host has one for every node
+        const String nodeErrorMessage = node.getErrorMessage();
+        if !nodeErrorMessage.isEmpty() {
+            msg << "\n\n" << nodeErrorMessage;
+        }
+    }
     this.errorMessage = msg.str();
+}
+
+/**
+ * Abort the compilation with a semantic error right away. This is the equivalent of the host's 'throw SemanticError(...)'
+ * for places, that cannot continue after the error (e.g. because they have to return a valid type). Places that can
+ * continue should record the error with throwSemanticError (see ErrorManager) instead, which keeps them testable.
+ *
+ * @param node AST node, where the error occurred
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p panicWithSemanticError(const ASTNode* node, const SemanticErrorType errorType, const string message) {
+    const SemanticError error = SemanticError(node, errorType, message);
+    const String& errorMessage = error.getMessage();
+    panic(Error(errorMessage.getRaw()));
 }
 
 /**

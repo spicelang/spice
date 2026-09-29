@@ -1,0 +1,98 @@
+// Std imports
+import "std/text/stringstream";
+
+// Own imports
+import "bootstrap/reader/code-loc";
+
+public type CompilerErrorType enum {
+    UNRESOLVED_SOFT_ERRORS,
+    SOURCE_FILE_NOT_FOUND,
+    CANT_OPEN_OUTPUT_FILE,
+    WRONG_OUTPUT_TYPE,
+    INTERNAL_ERROR,
+    IO_ERROR,
+    STD_NOT_FOUND,
+    BOOTSTRAP_NOT_FOUND,
+    UNHANDLED_BRANCH,
+    TYPE_CHECKER_RUNS_EXCEEDED,
+    TARGET_NOT_AVAILABLE,
+    OOM,
+    INVALID_FUNCTION,
+    INVALID_MODULE
+}
+
+/**
+ * Custom exception for errors, occurring in the general context of the compiler
+ */
+public type CompilerError struct {
+    String errorMessage
+}
+
+/**
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p CompilerError.ctor(const CompilerErrorType errorType, const string message) {
+    StringStream msg;
+    msg << "[Error|Compiler]:" << endl();
+    msg << this.getMessagePrefix(errorType) << ": " << message;
+    this.errorMessage = msg.str();
+}
+
+/**
+ * @param codeLoc Code location, where the error occurred
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+public p CompilerError.ctor(const CodeLoc& codeLoc, const CompilerErrorType errorType, const string message) {
+    StringStream msg;
+    msg << "[Error|Compiler] " << codeLoc.toPrettyString() << ":" << endl();
+    msg << this.getMessagePrefix(errorType) << ": " << message;
+    this.errorMessage = msg.str();
+}
+
+/**
+ * Get the message for this particular error instance
+ *
+ * @return Error message
+ */
+public f<const String&> CompilerError.getMessage() {
+    return this.errorMessage;
+}
+
+/**
+ * Get the prefix of the error message for a particular error
+ *
+ * @param errorType Type of the error
+ * @return Prefix string for the error type
+ */
+f<string> CompilerError.getMessagePrefix(const CompilerErrorType errorType) {
+    switch errorType {
+        case CompilerErrorType::UNRESOLVED_SOFT_ERRORS: { return "Unresolved soft errors"; }
+        case CompilerErrorType::SOURCE_FILE_NOT_FOUND: { return "Source file not found"; }
+        case CompilerErrorType::CANT_OPEN_OUTPUT_FILE: { return "Could not open output file"; }
+        case CompilerErrorType::WRONG_OUTPUT_TYPE: { return "Wrong type of output file"; }
+        case CompilerErrorType::INTERNAL_ERROR: { return "Internal compiler error"; }
+        case CompilerErrorType::IO_ERROR: { return "I/O Error"; }
+        case CompilerErrorType::STD_NOT_FOUND: { return "Std lib not found"; }
+        case CompilerErrorType::BOOTSTRAP_NOT_FOUND: { return "Bootstrap compiler not found"; }
+        case CompilerErrorType::UNHANDLED_BRANCH: { return "Unhandled code branch"; }
+        case CompilerErrorType::TYPE_CHECKER_RUNS_EXCEEDED: { return "Type-checker runs exceeded"; }
+        case CompilerErrorType::TARGET_NOT_AVAILABLE: { return "Selected target not available"; }
+        case CompilerErrorType::OOM: { return "An out of memory error occurred"; }
+        case CompilerErrorType::INVALID_FUNCTION: { return "Invalid function"; }
+        case CompilerErrorType::INVALID_MODULE: { return "Invalid module"; }
+        default: { panic(Error("Unknown error")); }
+    }
+}
+
+#[test, test.name="CompilerError Smoke test"]
+public f<bool> testCompilerErrorSmoke() {
+    CompilerError err1 = CompilerError(CompilerErrorType::UNRESOLVED_SOFT_ERRORS, "There are unresolved errors.");
+    assert err1.errorMessage == "[Error|Compiler]:\nUnresolved soft errors: There are unresolved errors.";
+
+    const CodeLoc loc = CodeLoc(3l, 7l, "main.spice");
+    CompilerError err2 = CompilerError(loc, CompilerErrorType::INTERNAL_ERROR, "Oops");
+    assert err2.errorMessage == "[Error|Compiler] main.spice:3:7:\nInternal compiler error: Oops";
+    return true;
+}

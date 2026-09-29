@@ -283,6 +283,12 @@ public f<bool> Function.hasSubstantiatedParams() {
  */
 public f<bool> Function.hasSubstantiatedGenerics() {
     foreach const GenericType& genericType : this.templateTypes {
+        // A template slot that is not generic (anymore) is already substantiated. This is the case for the default members
+        // of an already-concrete struct manifestation (e.g. HashEntry<int, String>.dtor()), whose template type list holds
+        // the concrete types instead of generic placeholders. Only generic types carry a sub type usable as a mapping key.
+        if !genericType.qualType.is(SuperType::TY_GENERIC) {
+            continue;
+        }
         if !this.typeMapping.contains(genericType.qualType.getSubType()) {
             return false;
         }

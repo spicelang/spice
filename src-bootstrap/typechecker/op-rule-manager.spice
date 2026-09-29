@@ -635,7 +635,7 @@ public f<Pair<QualType, Function*>> OpRuleManager.getAssignResultType(ASTNode* n
 
     // Check if lhs is a temporary
     if lhs.isTemporary() {
-        this.softError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, String("Cannot assign to a temporary value"));
+        throwSemanticError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, String("Cannot assign to a temporary value"));
         return assignResult(QualType(SuperType::TY_UNRESOLVED));
     }
 
@@ -782,11 +782,11 @@ f<QualType> OpRuleManager.getAssignResultTypeCommon(const ASTNode* node, const E
         if lhsContainedType.matches(rhsType, false, false, true) {
             const bool isDeclOrReturn = isDecl || isReturn;
             if isDeclOrReturn && !lhsType.canBind(rhsType, rhs.isTemporary()) {
-                this.softError(node, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Temporary values can only be bound to const reference variables/fields"));
+                throwSemanticError(node, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Temporary values can only be bound to const reference variables/fields"));
                 return QualType(SuperType::TY_UNRESOLVED);
             }
             if isReturn && rhs.isTemporary() {
-                this.softError(node, SemanticErrorType::RETURN_OF_TEMPORARY_VALUE, String("Cannot return reference to temporary value"));
+                throwSemanticError(node, SemanticErrorType::RETURN_OF_TEMPORARY_VALUE, String("Cannot return reference to temporary value"));
                 return QualType(SuperType::TY_UNRESOLVED);
             }
             return lhsType;
@@ -1166,7 +1166,7 @@ public f<QualType> OpRuleManager.getPrefixMulResultType(const ASTNode* node, con
     const QualType lhsType = lhs.ty.removeReferenceWrapper();
 
     if !lhsType.isPtr() {
-        this.softError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhsType.getName(true));
+        throwSemanticError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, "Cannot apply de-referencing operator on type " + lhsType.getName(true));
         return QualType(SuperType::TY_UNRESOLVED);
     }
     return lhsType.getContained();
@@ -1216,7 +1216,7 @@ public f<QualType> OpRuleManager.getCastResultType(const ASTNode* node, QualType
     const QualType rhsType = rhs.ty.removeReferenceWrapper();
 
     // Only allow to cast the 'heap' qualifier away, if we are in unsafe mode
-    if lhsType.qualifiers.isHeap != rhsType.qualifiers.isHeap {
+    if !boolEquals(lhsType.qualifiers.isHeap, rhsType.qualifiers.isHeap) {
         this.ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
     }
 
@@ -1339,7 +1339,7 @@ public f<ExprResult> OpRuleManager.isOperatorOverloadingFctAvailable(ASTNode* no
     const SymbolTableEntry* calleeEntry = callee.entry;
     const QualType calleeEntryType = calleeEntry.getQualType();
     if isImported && !calleeEntryType.isPublic() {
-        this.softError(node, SemanticErrorType::INSUFFICIENT_VISIBILITY, "Overloaded operator '" + callee.getSignature() + "' has insufficient visibility");
+        throwSemanticError(node, SemanticErrorType::INSUFFICIENT_VISIBILITY, "Overloaded operator '" + callee.getSignature() + "' has insufficient visibility");
         return toExprResult(QualType(SuperType::TY_UNRESOLVED));
     }
 
@@ -1366,7 +1366,7 @@ f<QualType> OpRuleManager.validateUnaryOperation(const ASTNode* node, const Unar
             return QualType(rule.resultType);
         }
     }
-    this.softError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, getUnaryErrorMessage(name, lhs));
+    throwSemanticError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, getUnaryErrorMessage(name, lhs));
     return QualType(SuperType::TY_UNRESOLVED);
 }
 
@@ -1381,7 +1381,7 @@ f<QualType> OpRuleManager.validateBinaryOperation(const ASTNode* node, const Bin
             return resultType;
         }
     }
-    this.softError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, getBinaryErrorMessage(name, lhs, rhs, customMessagePrefix));
+    throwSemanticError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, getBinaryErrorMessage(name, lhs, rhs, customMessagePrefix));
     return QualType(SuperType::TY_UNRESOLVED);
 }
 

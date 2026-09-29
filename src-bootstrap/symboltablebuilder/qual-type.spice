@@ -8,6 +8,7 @@ import "bootstrap/source-file";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type";
+import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/scope";
@@ -415,8 +416,7 @@ public f<bool> QualType.isIterator(const ASTNode* node) {
     // The type must be a struct that implements the iterator interface
     if !this.is(SuperType::TY_STRUCT) { return false; }
 
-    // ToDo: Port iterator-interface matching once the type registry is threaded to call sites.
-    return false;
+    return this.doesImplement(getIteratorInterfaceType(TYPE_ID_ITERATOR_INTERFACE), node);
 }
 
 /**
@@ -433,8 +433,25 @@ public f<bool> QualType.isIterable(const ASTNode* node) {
     // Otherwise the type must be a struct that implements the iterator interface
     if !this.is(SuperType::TY_STRUCT) { return false; }
 
-    // ToDo: Port iterable-interface matching once the type registry is threaded to call sites.
-    return false;
+    return this.doesImplement(getIteratorInterfaceType(TYPE_ID_ITERABLE_INTERFACE), node);
+}
+
+/**
+ * Build the interface type IIterator<T> with the given type id. Interface types are compared by their type id only,
+ * so the host uses this for the IIterable interface as well (with the type id of IIterable).
+ *
+ * @param typeId Type id of the interface
+ * @return Interface type
+ */
+f<QualType> getIteratorInterfaceType(unsigned long typeId) {
+    TypeRegistry* registry = getActiveTypeRegistry();
+    assert registry != nil<TypeRegistry*>;
+    const QualType genericType = QualType(SuperType::TY_GENERIC, String("T"));
+    const TypeChainElementData data; // No body scope
+    QualTypeList templateTypes;
+    templateTypes.pushBack(genericType);
+    const Type* itType = registry.getOrInsert(SuperType::TY_INTERFACE, String(IITERATOR_NAME), typeId, data, templateTypes);
+    return QualType(itType, getTypeQualifiersOf(SuperType::TY_INTERFACE));
 }
 
 /**
@@ -1196,7 +1213,8 @@ public p QualType.setQualifiers(TypeQualifiers newQualifiers) {
  * @return Equal or not
  */
 public f<bool> operator==(const QualType& lhs, const QualType& rhs) {
-    return lhs.rawType == rhs.rawType && lhs.qualifiers == rhs.qualifiers;
+    // Like the host, only compare the types, not the qualifiers
+    return lhs.rawType == rhs.rawType;
 }
 
 /**

@@ -45,3 +45,39 @@ public f<bool> softErrorContains(ErrorManager& errorManager, unsigned long index
     const SoftError& error = errorManager.softErrors.get(index);
     return error.message.contains(needle);
 }
+
+/**
+ * Check if a hard error was raised and its message contains the needle
+ *
+ * @param errorManager Error manager to look into
+ * @param needle Text to search in the message
+ * @return Contained or not
+ */
+public f<bool> hardErrorContains(ErrorManager& errorManager, string needle) {
+    return errorManager.hasHardError && errorManager.hardErrorMessage.contains(needle);
+}
+
+/**
+ * Reset the recorded errors of the error manager, so that the next test scenario starts from a clean state
+ *
+ * @param errorManager Error manager to reset
+ */
+public p resetErrors(ErrorManager& errorManager) {
+    errorManager.softErrors.clear();
+    errorManager.hasHardError = false;
+    errorManager.hardErrorMessage = String();
+}
+
+/**
+ * Check if a hard error was raised and its message contains the needle. Afterwards, reset the errors of the error
+ * manager, because only the first hard error is recorded.
+ *
+ * @param errorManager Error manager to look into
+ * @param needle Text to search in the message
+ * @return Contained or not
+ */
+public f<bool> takeHardError(ErrorManager& errorManager, string needle) {
+    const bool contained = hardErrorContains(errorManager, needle);
+    resetErrors(errorManager);
+    return contained;
+}
