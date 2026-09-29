@@ -615,7 +615,8 @@ LLVMExprResult OpRuleConversionManager::getEqualInst(const ASTNode *node, LLVMEx
     llvm::Value *result = builder.CreateCall(opFct, {lhsV(), rhsV()});
     return {.value = result};
   }
-  case COMB(TY_BOOL, TY_BOOL):         // fallthrough
+  case COMB(TY_BOOL, TY_BOOL):
+    return {.value = builder.CreateICmpEQ(lhsV(), rhsV())};
   case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
   case COMB(TY_PROCEDURE, TY_PROCEDURE): {
     const uint64_t typeSize = irGenerator->module->getDataLayout().getTypeSizeInBits(lhsT) / 8;
@@ -737,7 +738,8 @@ LLVMExprResult OpRuleConversionManager::getNotEqualInst(const ASTNode *node, LLV
     // Negate the result
     return {.value = builder.CreateNot(result)};
   }
-  case COMB(TY_BOOL, TY_BOOL):         // fallthrough
+  case COMB(TY_BOOL, TY_BOOL):
+    return {.value = builder.CreateICmpNE(lhsV(), rhsV())};
   case COMB(TY_FUNCTION, TY_FUNCTION): // fallthrough
   case COMB(TY_PROCEDURE, TY_PROCEDURE): {
     const uint64_t typeSize = irGenerator->module->getDataLayout().getTypeSizeInBits(lhsT) / 8;

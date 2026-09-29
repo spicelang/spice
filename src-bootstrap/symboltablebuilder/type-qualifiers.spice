@@ -155,23 +155,11 @@ public p TypeQualifiers.eraseWithMask(const TypeQualifiers& mask) {
     }
 }
 
-/**
- * Compare two bools for equality. The host compiler currently miscompiles runtime 'bool == bool' and 'bool != bool'
- * (always equal, see https://github.com/spicelang/spice/issues/1458), so the bootstrap compares bools with this helper.
- *
- * @param lhs Left hand side
- * @param rhs Right hand side
- * @return Equal or not
- */
-public f<bool> boolEquals(bool lhs, bool rhs) {
-    return lhs ? rhs : !rhs;
-}
-
 public f<bool> operator==(const TypeQualifiers& lhs, const TypeQualifiers& rhs) {
-    const bool isConst = boolEquals(lhs.isConst, rhs.isConst);
-    const bool isSigned = boolEquals(lhs.isSigned, rhs.isSigned);
-    const bool isUnsigned = boolEquals(lhs.isUnsigned, rhs.isUnsigned);
-    const bool isHeap = boolEquals(lhs.isHeap, rhs.isHeap);
+    const bool isConst = lhs.isConst == rhs.isConst;
+    const bool isSigned = lhs.isSigned == rhs.isSigned;
+    const bool isUnsigned = lhs.isUnsigned == rhs.isUnsigned;
+    const bool isHeap = lhs.isHeap == rhs.isHeap;
     return isConst && isSigned && isUnsigned && isHeap;
 }
 

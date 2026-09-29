@@ -1216,7 +1216,7 @@ public f<QualType> OpRuleManager.getCastResultType(const ASTNode* node, QualType
     const QualType rhsType = rhs.ty.removeReferenceWrapper();
 
     // Only allow to cast the 'heap' qualifier away, if we are in unsafe mode
-    if !boolEquals(lhsType.qualifiers.isHeap, rhsType.qualifiers.isHeap) {
+    if lhsType.qualifiers.isHeap != rhsType.qualifiers.isHeap {
         this.ensureUnsafeAllowed(node, "(cast)", lhsType, rhsType);
     }
 

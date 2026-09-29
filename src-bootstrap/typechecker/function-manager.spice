@@ -221,7 +221,7 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
 
             // - search for concrete fct: Only match against fully substantiated versions to prevent double matching of a function
             // - search for generic fct: Only match against generic preset functions
-            if !boolEquals(presetFunction.isFullySubstantiated(), requestedFullySubstantiated) {
+            if presetFunction.isFullySubstantiated() != requestedFullySubstantiated {
                 continue;
             }
 
