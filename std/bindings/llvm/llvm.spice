@@ -1886,7 +1886,7 @@ public f<Metadata> IRBuilder.getCurrentDebugLocation() {
 // respective call sites in debug-info-generator.spice).
 
 // DWARF source languages (LLVMDWARFSourceLanguage ordinals)
-public const int DW_SOURCE_LANGUAGE_C_PLUS_PLUS_14 = 35;
+public const int DW_SOURCE_LANGUAGE_C_PLUS_PLUS_14 = 32;
 // DWARF debug info emission kinds (LLVMDWARFEmissionKind)
 public const int DW_EMISSION_FULL = 1;
 public const int DW_EMISSION_LINE_TABLES_ONLY = 2;
