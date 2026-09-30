@@ -67,10 +67,10 @@ void DebugInfoGenerator::initialize(const std::string &sourceFileName, std::file
   llvm::IntegerType *int64Ty = irGenerator->builder.getInt64Ty();
   const llvm::DataLayout &dataLayout = module->getDataLayout();
   const llvm::StructLayout *structLayout = dataLayout.getStructLayout(irGenerator->llvmTypes.lambdaFatPtrType);
-  const uint32_t alignInBits = dataLayout.getABITypeAlign(irGenerator->llvmTypes.lambdaFatPtrType).value();
-  const uint32_t ptrAlignInBits = dataLayout.getABITypeAlign(ptrTy).value();
+  const uint32_t alignInBits = dataLayout.getABITypeAlign(irGenerator->llvmTypes.lambdaFatPtrType).value() * 8;
+  const uint32_t ptrAlignInBits = dataLayout.getABITypeAlign(ptrTy).value() * 8;
   const uint32_t int64Width = dataLayout.getTypeSizeInBits(int64Ty);
-  const uint32_t int64AlignInBits = dataLayout.getABITypeAlign(int64Ty).value();
+  const uint32_t int64AlignInBits = dataLayout.getABITypeAlign(int64Ty).value() * 8;
   const uint64_t fctPtrOffset = structLayout->getElementOffsetInBits(0);
   const uint64_t capturesOffset = structLayout->getElementOffsetInBits(1);
   const uint64_t captureSizeOffset = structLayout->getElementOffsetInBits(2);
@@ -205,7 +205,7 @@ llvm::DICompositeType *DebugInfoGenerator::generateCaptureStructDebugInfo(const 
   }
   llvm::StructType *structType = llvm::StructType::get(irGenerator->context, fieldTypes);
   const llvm::StructLayout *structLayout = irGenerator->module->getDataLayout().getStructLayout(structType);
-  const size_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value();
+  const size_t alignInBits = irGenerator->module->getDataLayout().getABITypeAlign(structType).value() * 8;
 
   llvm::DIScope *scope = lexicalBlocks.top();
   llvm::DICompositeType *structDiType =
@@ -235,7 +235,7 @@ void DebugInfoGenerator::generateGlobalVarDebugInfo(llvm::GlobalVariable *global
   const uint32_t lineNo = globalEntry->getDeclCodeLoc().line;
   const llvm::StringRef name = global->getName();
   llvm::DIType *type = getDITypeForQualType(globalEntry->declNode, globalEntry->getQualType());
-  const bool isLocal = globalEntry->getQualType().isPublic();
+  const bool isLocal = !globalEntry->getQualType().isPublic();
 
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, type, isLocal));
 }
@@ -352,7 +352,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     assert(structType != nullptr);
     const llvm::DataLayout &dataLayout = irGenerator->module->getDataLayout();
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(llvm::cast<llvm::StructType>(structType));
-    const uint32_t alignInBits = dataLayout.getABITypeAlign(structType).value();
+    const uint32_t alignInBits = dataLayout.getABITypeAlign(structType).value() * 8;
 
     // Create struct ty. Generic substantiations are named by their signature (e.g. Vector<int>), so that debuggers can
     // tell the manifestations of a generic struct apart
@@ -431,7 +431,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     assert(interfaceType != nullptr);
     const llvm::DataLayout dataLayout = irGenerator->module->getDataLayout();
     const llvm::StructLayout *structLayout = dataLayout.getStructLayout(llvm::cast<llvm::StructType>(interfaceType));
-    const uint32_t alignInBits = dataLayout.getABITypeAlign(interfaceType).value();
+    const uint32_t alignInBits = dataLayout.getABITypeAlign(interfaceType).value() * 8;
 
     // Create interface ty
     const std::string mangledName = NameMangling::mangleInterface(*spiceInterface);

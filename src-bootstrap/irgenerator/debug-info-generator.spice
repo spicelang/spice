@@ -110,10 +110,10 @@ public p DebugInfoGenerator.initialize(const String& sourceFileName, const Strin
     const llvm::Type int64Ty = this.irGenerator.builder.getInt64Ty();
     const llvm::Type ptrTy = this.irGenerator.builder.getPtrTy();
     llvm::DataLayout dataLayout = this.irGenerator.sourceFile.targetMachine.createDataLayout();
-    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(lambdaFatPtrType);
-    const unsigned int ptrAlignInBits = this.irGenerator.module.getABITypeAlign(ptrTy);
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(lambdaFatPtrType) * 8u;
+    const unsigned int ptrAlignInBits = this.irGenerator.module.getABITypeAlign(ptrTy) * 8u;
     const unsigned long int64Width = this.irGenerator.module.getTypeSizeInBits(int64Ty);
-    const unsigned int int64AlignInBits = this.irGenerator.module.getABITypeAlign(int64Ty);
+    const unsigned int int64AlignInBits = this.irGenerator.module.getABITypeAlign(int64Ty) * 8u;
     const unsigned long fctPtrOffset = dataLayout.getStructElementOffset(lambdaFatPtrType, 0u) * 8l;
     const unsigned long capturesOffset = dataLayout.getStructElementOffset(lambdaFatPtrType, 1u) * 8l;
     const unsigned long captureSizeOffset = dataLayout.getStructElementOffset(lambdaFatPtrType, 2u) * 8l;
@@ -249,7 +249,7 @@ public f<llvm::Metadata> DebugInfoGenerator.generateCaptureStructDebugInfo(const
     }
     const llvm::Type structType = llvm::getStructType(*this.irGenerator.context, fieldTypes);
     llvm::DataLayout dataLayout = this.irGenerator.sourceFile.targetMachine.createDataLayout();
-    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(structType);
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(structType) * 8u;
 
     const llvm::Metadata scope = this.lexicalBlocks.top();
     Vector<llvm::Metadata> noElements;
@@ -280,7 +280,7 @@ public p DebugInfoGenerator.generateGlobalVarDebugInfo(llvm::Value global, const
     const String name = global.getName();
     const QualType& globalType = globalEntry.getQualType();
     const llvm::Metadata diType = this.getDITypeForQualType(globalEntry.declNode, globalType);
-    const bool isLocal = globalType.isPublic();
+    const bool isLocal = !globalType.isPublic();
 
     const llvm::Metadata gve = this.diBuilder.createGlobalVariableExpression(this.compileUnit, name, name, this.diFile, lineNo, diType, isLocal);
     global.setGlobalMetadata(llvm::getDebugMetadataKindID(*this.irGenerator.context), gve);
@@ -418,7 +418,7 @@ f<llvm::Metadata> DebugInfoGenerator.getStructDIType(const ASTNode* node, const 
     const QualType& structQualType = spiceStruct.entry.getQualType();
     const llvm::Type structType = structQualType.toLLVMType(this.irGenerator.sourceFile);
     llvm::DataLayout dataLayout = this.irGenerator.sourceFile.targetMachine.createDataLayout();
-    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(structType);
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(structType) * 8u;
 
     // Create struct ty. Generic substantiations are named by their signature (e.g. Vector<int>), so that debuggers can
     // tell the manifestations of a generic struct apart
@@ -478,7 +478,7 @@ f<llvm::Metadata> DebugInfoGenerator.getInterfaceDIType(const ASTNode* node, con
     const unsigned int lineNo = cast<unsigned int>(spiceInterface.structBase.getDeclCodeLoc().line);
     const QualType& interfaceQualType = spiceInterface.entry.getQualType();
     const llvm::Type interfaceType = interfaceQualType.toLLVMType(this.irGenerator.sourceFile);
-    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(interfaceType);
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(interfaceType) * 8u;
 
     // Create interface ty. Note: the C API has no replaceVTableHolder, so the vtable holder is not set.
     const String mangledName = mangleInterface(*spiceInterface);
