@@ -329,6 +329,8 @@ bool TypeChecker::visitOrdinaryFctCall(FctCallNode *node, std::string fqFunction
   // Check if the exported name registry contains that function name
   const NameRegistryEntry *functionRegistryEntry = sourceFile->getNameRegistryEntry(fqFunctionName);
   if (!functionRegistryEntry) {
+    if (sourceFile->isAmbiguousName(fqFunctionName))
+      SOFT_ERROR_BOOL(node, AMBIGUOUS_SYMBOL, sourceFile->getAmbiguousNameMessage(fqFunctionName))
     const std::string msg = "Function/procedure/struct '" + node->functionNameFragments.back() + "' could not be found";
     SOFT_ERROR_BOOL(node, REFERENCED_UNDEFINED_FUNCTION, msg)
   }
@@ -489,8 +491,11 @@ std::any TypeChecker::visitStructInstantiation(StructInstantiationNode *node) {
 
   // Retrieve struct
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(structName);
-  if (!registryEntry)
+  if (!registryEntry) {
+    if (sourceFile->isAmbiguousName(structName))
+      SOFT_ERROR_ER(node, AMBIGUOUS_SYMBOL, sourceFile->getAmbiguousNameMessage(structName))
     SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_STRUCT, "Cannot find struct '" + structName + "'")
+  }
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *structEntry = registryEntry->targetEntry;
 

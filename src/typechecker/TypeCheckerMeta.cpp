@@ -300,8 +300,11 @@ std::any TypeChecker::visitCustomDataType(CustomDataTypeNode *node) {
 
   // Check if the type exists in the exported names registry
   const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqTypeName);
-  if (!registryEntry)
+  if (!registryEntry) {
+    if (sourceFile->isAmbiguousName(node->fqTypeName))
+      SOFT_ERROR_QT(node, AMBIGUOUS_SYMBOL, sourceFile->getAmbiguousNameMessage(node->fqTypeName))
     SOFT_ERROR_QT(node, UNKNOWN_DATATYPE, "Unknown datatype '" + node->fqTypeName + "'")
+  }
   assert(registryEntry->targetEntry != nullptr && registryEntry->targetScope != nullptr);
   SymbolTableEntry *entry = registryEntry->targetEntry;
   assert(entry != nullptr);

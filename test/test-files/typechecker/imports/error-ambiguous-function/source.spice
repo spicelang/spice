@@ -1,0 +1,8 @@
+import "source1";
+import "source2";
+import "source3";
+import "source4";
+
+f<int> main() {
+    printf("%d\n", getValue());
+}

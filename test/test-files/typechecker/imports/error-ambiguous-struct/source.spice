@@ -1,0 +1,7 @@
+import "source1" as s1;
+import "source2";
+
+f<int> main() {
+    Item item = Item{2};
+    printf("%d\n", item.b);
+}

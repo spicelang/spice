@@ -2451,6 +2451,9 @@ public f<Any> TypeChecker.visitCustomDataType(ASTCustomDataTypeNode* node) {
     // Check if the type exists in the exported names registry
     const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(node.fqTypeName);
     if registryEntry == nil<const NameRegistryEntry*> {
+        if this.sourceFile.isAmbiguousName(node.fqTypeName) {
+            return this.softErrorQT(baseNode, SemanticErrorType::AMBIGUOUS_SYMBOL, this.sourceFile.getAmbiguousNameMessage(node.fqTypeName));
+        }
         return this.softErrorQT(baseNode, SemanticErrorType::UNKNOWN_DATATYPE, "Unknown datatype '" + node.fqTypeName + "'");
     }
     assert registryEntry.targetEntry != nil<SymbolTableEntry*> && registryEntry.targetScope != nil<Scope*>;
@@ -3191,6 +3194,9 @@ public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) {
     if node.entry == nil<const SymbolTableEntry*> {
         const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(node.fqIdentifier);
         if registryEntry == nil<const NameRegistryEntry*> {
+            if this.sourceFile.isAmbiguousName(node.fqIdentifier) {
+                return this.softErrorER(baseNode, SemanticErrorType::AMBIGUOUS_SYMBOL, this.sourceFile.getAmbiguousNameMessage(node.fqIdentifier));
+            }
             const String message = String("The variable '") + node.fqIdentifier + "' could not be found";
             return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
         }
@@ -4151,6 +4157,9 @@ public f<Any> TypeChecker.visitAtomicExpr(ASTAtomicExprNode* node) {
     if accessData.entry == nil<SymbolTableEntry*> {
         const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(node.fqIdentifier);
         if registryEntry == nil<const NameRegistryEntry*> {
+            if this.sourceFile.isAmbiguousName(node.fqIdentifier) {
+                return this.softErrorER(baseNode, SemanticErrorType::AMBIGUOUS_SYMBOL, this.sourceFile.getAmbiguousNameMessage(node.fqIdentifier));
+            }
             const String message = String("The variable '") + node.fqIdentifier + "' could not be found";
             return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
         }
@@ -4611,6 +4620,10 @@ f<bool> TypeChecker.visitOrdinaryFctCall(ASTFctCallNode* node, String fqFunction
     // Check if the exported name registry contains that function name
     const NameRegistryEntry* functionRegistryEntry = this.sourceFile.getNameRegistryEntry(fqFunctionName);
     if functionRegistryEntry == nil<const NameRegistryEntry*> {
+        if this.sourceFile.isAmbiguousName(fqFunctionName) {
+            this.softError(baseNode, SemanticErrorType::AMBIGUOUS_SYMBOL, this.sourceFile.getAmbiguousNameMessage(fqFunctionName));
+            return false;
+        }
         const String message = String("Function/procedure/struct '") + node.functionNameFragments.back() + "' could not be found";
         this.softError(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION, message);
         return false;
@@ -4810,6 +4823,9 @@ public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* n
     // Retrieve struct
     const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(structName);
     if registryEntry == nil<const NameRegistryEntry*> {
+        if this.sourceFile.isAmbiguousName(structName) {
+            return this.softErrorER(baseNode, SemanticErrorType::AMBIGUOUS_SYMBOL, this.sourceFile.getAmbiguousNameMessage(structName));
+        }
         return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_STRUCT, String("Cannot find struct '") + structName + "'");
     }
     assert registryEntry.targetEntry != nil<SymbolTableEntry*> && registryEntry.targetScope != nil<Scope*>;

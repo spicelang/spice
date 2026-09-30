@@ -152,6 +152,9 @@ public type SourceFile struct {
     public Map<String, SourceFile*> dependencies // Has to be an ordered map to keep the compilation order deterministic
     public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
+    // Unqualified names that were dropped from the name registry, because multiple imports expose them. Maps each name to the
+    // import entries exposing it, so that a failing lookup can point the user to the colliding imports
+    public Map<String, Vector<const SymbolTableEntry*>> ambiguousNameRegistry
     public Vector<const model::Function*> testFunctions
     // Private fields
     GlobalResourceManager& resourceManager
@@ -873,7 +876,16 @@ public p SourceFile.addNameRegistryEntry(const String& symbolName, unsigned long
             this.exportedNameRegistry.remove(symbolName);
         }
         this.exportedNameRegistry.insert(symbolName, NameRegistryEntry{symbolName, typeId, entry, scope, importEntry});
-    } else { // Name collision => we must remove the existing entry
+        if keepNewOnCollision && this.ambiguousNameRegistry.contains(symbolName) {
+            this.ambiguousNameRegistry.remove(symbolName);
+        }
+    } else { // Name collision => we must remove the existing entry. Remember the colliding imports to report the ambiguity later
+        if !this.ambiguousNameRegistry.contains(symbolName) {
+            this.ambiguousNameRegistry.insert(symbolName, Vector<const SymbolTableEntry*>());
+        }
+        Vector<const SymbolTableEntry*>& collidingImports = this.ambiguousNameRegistry.get(symbolName);
+        collidingImports.pushBack(this.exportedNameRegistry.get(symbolName).importEntry);
+        collidingImports.pushBack(importEntry);
         this.exportedNameRegistry.remove(symbolName);
     }
 }
@@ -892,6 +904,88 @@ public f<const NameRegistryEntry*> SourceFile.getNameRegistryEntry(const String&
     }
 
     return entry;
+}
+
+public f<bool> SourceFile.isAmbiguousName(const String& symbolName) {
+    return this.ambiguousNameRegistry.contains(symbolName);
+}
+
+/**
+ * Build an error message for a name that is not available, because multiple imports expose it. The message lists the
+ * colliding imports and suggests how to qualify the name.
+ *
+ * @param symbolName Ambiguous name
+ * @return Error message
+ */
+public f<String> SourceFile.getAmbiguousNameMessage(const String& symbolName) {
+    assert this.isAmbiguousName(symbolName);
+
+    // Collect the distinct imports that expose the name. Runtime imports have no import entry and are skipped
+    Vector<ASTImportDefNode*> importNodes;
+    const Vector<const SymbolTableEntry*>& importEntries = this.ambiguousNameRegistry.get(symbolName);
+    for unsigned long i = 0l; i < importEntries.getSize(); i++ {
+        const SymbolTableEntry* importEntry = importEntries.get(i);
+        if importEntry == nil<const SymbolTableEntry*> {
+            continue;
+        }
+        ASTImportDefNode* importNode = downcast<ASTImportDefNode>(importEntry.declNode);
+        bool alreadyCollected = false;
+        for unsigned long j = 0l; j < importNodes.getSize(); j++ {
+            if importNodes.get(j) == importNode {
+                alreadyCollected = true;
+            }
+        }
+        if !alreadyCollected {
+            importNodes.pushBack(importNode);
+        }
+    }
+
+    String msg = String("'") + symbolName + "' is exposed by ";
+    if importNodes.getSize() < 2l {
+        msg += "multiple imports";
+    } else {
+        if importNodes.getSize() == 2l {
+            msg += "both ";
+        }
+        for unsigned long i = 0l; i < importNodes.getSize(); i++ {
+            if i > 0l {
+                msg += i == importNodes.getSize() - 1l ? " and " : ", ";
+            }
+            msg += String("'") + importNodes.get(i).importPath + "'";
+        }
+    }
+
+    // Suggest qualifying the name with the first import name, that can be written in source code
+    for unsigned long i = 0l; i < importNodes.getSize(); i++ {
+        String& importName = importNodes.get(i).importName;
+        if this.isQualifiableImportName(importName) {
+            msg += String(". Please qualify it, e.g. '") + importName + SCOPE_ACCESS_TOKEN + symbolName + "'";
+            return msg;
+        }
+    }
+    msg += String(". Please import one of them with an alias and qualify it, e.g. 'alias") + SCOPE_ACCESS_TOKEN + symbolName + "'";
+    return msg;
+}
+
+/**
+ * Check if the given import name can be used to qualify a name in source code, i.e. if it is a valid identifier.
+ *
+ * @param importName Import name
+ * @return Qualifiable or not
+ */
+f<bool> SourceFile.isQualifiableImportName(String& importName) {
+    if importName.isEmpty() {
+        return false;
+    }
+    for unsigned long i = 0l; i < importName.getLength(); i++ {
+        const char c = importName[i];
+        const bool isLowerLetter = c >= 'a' && c <= 'z';
+        const bool isIdentifierChar = isLowerLetter || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+        if !isIdentifierChar || (i == 0l && !isLowerLetter && c != '_') {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**

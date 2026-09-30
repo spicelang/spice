@@ -1,0 +1,7 @@
+import "lib-a";
+import "lib-b";
+
+f<int> main() {
+    Item item;
+    printf("%d\n", item.b);
+}

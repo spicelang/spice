@@ -1,0 +1,3 @@
+public f<int> getValue() {
+    return 4;
+}

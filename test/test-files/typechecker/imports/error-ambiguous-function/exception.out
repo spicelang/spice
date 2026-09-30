@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:7:20:
+Ambiguous symbol: 'getValue' is exposed by 'source1', 'source2', 'source3' and 'source4'. Please qualify it, e.g. 'source1::getValue'
+
+7  printf("%d/n", getValue());
+                  ^^^^^^^^^^
