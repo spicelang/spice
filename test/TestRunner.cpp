@@ -441,6 +441,9 @@ static void execBootstrapTestCase(const TestCase &testCase) {
   const std::filesystem::path artifactDir = TestUtil::prepareArtifactDir(testCase);
   const std::filesystem::path executablePath = TestUtil::getExecutablePath(artifactDir);
   const bool checkAST = TestUtil::doesRefExist(testCase.testPath / REF_NAME_SYNTAX_TREE);
+  const bool checkExecutionOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+  const bool checkExecutionExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
+  const bool needsExecutable = checkExecutionOutput || checkExecutionExitCode;
 
   // Assemble the command line, mirroring the one the test runner passes to the host compiler
   const auto buildArgs = [&](const std::filesystem::path &outputPath) {
@@ -453,6 +456,11 @@ static void execBootstrapTestCase(const TestCase &testCase) {
     return args;
   };
   std::vector<std::string> args = buildArgs(executablePath);
+  // Like the host test runner, only link an executable if it gets executed afterwards
+  if (!needsExecutable) {
+    args.emplace_back("--output-container");
+    args.emplace_back("obj");
+  }
   if (checkAST)
     args.emplace_back("--dump-ast");
   args.push_back(mainSourceFilePath.string());
@@ -515,9 +523,7 @@ static void execBootstrapTestCase(const TestCase &testCase) {
   }
 
   // Check execution output and exit code
-  const bool checkExecutionOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
-  const bool checkExecutionExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
-  if (checkExecutionOutput || checkExecutionExitCode) {
+  if (needsExecutable) {
     // Execute binary
     std::stringstream cmd;
     cmd << executablePath.string();

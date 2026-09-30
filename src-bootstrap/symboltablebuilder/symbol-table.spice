@@ -189,6 +189,10 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
         if this.parent == nil<SymbolTable*> {
             return nil<SymbolTableEntry*>;
         }
+        // If we search for the result variable, we want to stop the search when exiting a lambda body
+        if name == RETURN_VARIABLE_NAME && this.scope.scopeType == ScopeType::LAMBDA_BODY {
+            return nil<SymbolTableEntry*>;
+        }
         // If there is a parent scope, continue the search there
         entry = this.parent.lookup(name);
         // Symbol was also not found in all the parent scopes, return nullptr
