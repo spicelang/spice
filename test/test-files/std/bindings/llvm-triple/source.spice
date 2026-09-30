@@ -58,5 +58,27 @@ f<int> main() {
     llvm::Triple emptyCopy = empty;
     assert emptyCopy.empty();
 
+    // The canonical OS and arch names are the ones of llvm::Triple::getOSTypeName / getArchTypeName
+    const llvm::Triple darwin = llvm::Triple("arm64-apple-darwin25.6.0");
+    assert darwin.getOSName() == "darwin25.6.0";
+    assert darwin.getArchName() == "arm64";
+    assert darwin.getOSTypeName() == "darwin";
+    assert darwin.getArchTypeName() == "aarch64";
+    const llvm::Triple macos = llvm::Triple("aarch64-apple-macosx15.0");
+    assert macos.getOSTypeName() == "macosx";
+    assert macos.getArchTypeName() == "aarch64";
+    const llvm::Triple linux = llvm::Triple("x86_64-unknown-linux-gnu");
+    assert linux.getOSTypeName() == "linux";
+    assert linux.getArchTypeName() == "x86_64";
+    const llvm::Triple windows = llvm::Triple("x86_64-pc-windows-msvc");
+    assert windows.getOSTypeName() == "windows";
+    const llvm::Triple mingw = llvm::Triple("x86_64-w64-mingw32");
+    assert mingw.getOSTypeName() == "windows";
+    const llvm::Triple x86 = llvm::Triple("i686-pc-linux-gnu");
+    assert x86.getArchTypeName() == "i386";
+    const llvm::Triple wasm = llvm::Triple("wasm32-unknown-unknown");
+    assert wasm.getOSTypeName() == "unknown";
+    assert wasm.getArchTypeName() == "wasm32";
+
     printf("All assertions passed!\n");
 }

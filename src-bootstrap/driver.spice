@@ -360,7 +360,7 @@ public p Driver.enrich() {
         if !this.isTargetLinux() {
             raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports ELF targets (Linux)");
         }
-        const String archName = this.cliOptions.targetTriple.getArchName();
+        const String archName = this.cliOptions.targetTriple.getArchTypeName();
         if archName != "x86_64" && archName != "aarch64" {
             raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports x86_64 and aarch64");
         }

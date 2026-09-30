@@ -927,6 +927,46 @@ public f<String> Triple.getOSName() {
     return fragments.get(2);
 }
 
+// Like llvm::Triple::getArchTypeName(getArch()): the canonical name of the architecture, e.g. 'aarch64' for 'arm64'
+public f<String> Triple.getArchTypeName() {
+    const String archName = this.getArchName();
+    if archName == "arm64" {
+        return String("aarch64");
+    }
+    if archName == "arm64_32" {
+        return String("aarch64_32");
+    }
+    if this.isX86_64() || archName == "x86_64h" {
+        return String("x86_64");
+    }
+    if this.isX86() {
+        return String("i386");
+    }
+    return archName;
+}
+
+// Like llvm::Triple::getOSTypeName(getOS()): the canonical name of the OS without version, e.g. 'darwin' for 'darwin25.6.0'
+public f<String> Triple.getOSTypeName() {
+    if this.isOSWindows() {
+        return String("windows");
+    }
+    String osName = this.getOSName();
+    // Strip the version suffix
+    unsigned long length = osName.getLength();
+    while length > 0l {
+        const char c = osName[length - 1l];
+        if (c < '0' || c > '9') && c != '.' {
+            break;
+        }
+        length--;
+    }
+    osName = osName.getSubstring(0, cast<long>(length));
+    if osName == "macos" {
+        return String("macosx");
+    }
+    return osName;
+}
+
 public f<bool> Triple.empty() {
     return this.value == nil<string> || len(this.value) == 0;
 }
