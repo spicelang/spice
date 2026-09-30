@@ -95,6 +95,40 @@ git reset --hard origin/main           # restore main to remote state
 git checkout feature/my-new-thing      # continue on the branch
 ```
 
+## Keep the host and bootstrap compilers in sync
+
+The host compiler (`src/`, C++) and the self-hosted bootstrap compiler
+(`src-bootstrap/`, Spice) implement the same pipeline and must not drift apart.
+The bootstrap compiler mirrors the host class by class: `src/<stage>/FooBar.{h,cpp}`
+corresponds to `src-bootstrap/<stage>/foo-bar.spice` (the host's split files such
+as `TypeCheckerExpressions.cpp` or `GenStatements.cpp` are merged into the one
+bootstrap file of that class).
+
+Whenever a PR changes compiler behavior in `src/`, port the same change to
+`src-bootstrap/` in the **same PR**:
+
+- Bug fixes, new or changed semantics, diagnostics, name mangling and codegen
+  changes go into the matching bootstrap file, keeping the same structure,
+  function names and control flow so the two stay easy to diff.
+- Grammar changes in `src/Spice.g4` must also be implemented in the hand-written
+  `src-bootstrap/lexer/` and `src-bootstrap/parser/`, and new or changed AST
+  nodes in `src-bootstrap/ast/`.
+- New diagnostics need the same error kind and message text in
+  `src-bootstrap/exception/`. Once a stage can raise them, list the prefix in
+  `BOOTSTRAP_SUPPORTED_ERROR_PREFIXES` (`test/util/BootstrapUtil.h`).
+- Changes to a stage the bootstrap compiler has not implemented yet need no
+  port, but mention that in the PR description so it is not forgotten when
+  the stage is ported.
+- The reverse holds too: a fix discovered while working on `src-bootstrap/`
+  that also affects the host compiler must be fixed in `src/` as well.
+
+If a change cannot be ported (e.g. it relies on a Spice language feature or
+stdlib API that is not available yet), say so under "Follow-up / known
+limitations" in the PR description instead of skipping it silently.
+
+Validate both sides: run the regular suite for the host compiler and the
+bootstrap suite (`--bootstrap`, see the quality gate below) for the port.
+
 ## Pre-PR quality gate
 
 Run these checks before opening (or requesting review on) a PR:
@@ -110,7 +144,7 @@ cmake-build-debug/test/spicetest
 cmake-build-debug/test/spicetest --gtest_filter='<Suite>*<Case>*' --update-refs
 git diff test/test-files   # review generated output before committing
 
-# 4. If you changed stdlib or bootstrap, include relevant suite(s)
+# 4. If you changed the compiler, stdlib or bootstrap, include relevant suite(s)
 cmake-build-debug/test/spicetest --gtest_filter='StdTests*'
 cmake-build-debug/test/spicetest --bootstrap --gtest_filter='LexerTests*:ParserTests*:SymbolTableBuilderTests*:TypeCheckerTests*'
 ```
@@ -166,6 +200,7 @@ they will be squashed at merge time.
 - [ ] All commits have a short descriptive headline (no type prefix)
 - [ ] Build passes (`cmake --build cmake-build-debug --target spice spicetest`)
 - [ ] Relevant tests pass (full suite or focused filter)
+- [ ] Compiler changes ported between `src/` and `src-bootstrap/` (or the gap noted in the PR)
 - [ ] Reference files updated and reviewed (`--update-refs` + `git diff`)
 - [ ] Docs updated if behavior/CLI/error messages changed
 - [ ] Issue linked in footer (`Fixes #N` or `Refs #N`)
