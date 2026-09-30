@@ -47,6 +47,9 @@ public type CliSubcommand struct {
     // matching per-type option vector.
     Vector<unsigned int> positionalTypeTags
     Vector<unsigned int> positionalIndices
+    // Owning storage for the values split off "--name=value" arguments. Reserved to the argument count before parsing, so
+    // pointers into these strings (e.g. of a raw string option in set-value mode) stay valid for the whole parse run.
+    Vector<String> inlineValues
     bool allowUnknownOptions = false
 }
 
@@ -94,8 +97,31 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
     }
 
     unsigned int positionalConsumed = 0u;
+    // Reset and pre-size the storage for inline option values ("--name=value"). Reserving up front keeps the buffer from
+    // reallocating during parsing, so pointers into its strings remain valid.
+    this.inlineValues.clear();
+    this.inlineValues.reserve(argc);
     for unsigned int argNo = layer; argNo < argc; argNo++ {
         string arg = argv[argNo];
+
+        // Support the "--name=value" syntax by splitting the inline value off the option name, so it is handled like
+        // "--name value". The split-off value is stored in a stable buffer (see this.inlineValues), because a raw string
+        // option in set-value mode keeps a pointer to it. The name only needs to be valid within this iteration.
+        String optNameStr = String(arg);
+        string optName = arg;
+        string inlineValue = arg;
+        bool hasInlineValue = false;
+        if this.isOptionLike(arg) {
+            const long eqPos = optNameStr.find('=');
+            if eqPos > 0l {
+                this.inlineValues.pushBack(optNameStr.getSubstring(cast<unsigned long>(eqPos + 1l)));
+                const String& valueRef = this.inlineValues.back();
+                inlineValue = valueRef.getRaw();
+                optNameStr = optNameStr.getSubstring(0u, eqPos);
+                optName = optNameStr.getRaw();
+                hasInlineValue = true;
+            }
+        }
 
         // Check for subcommands
         foreach const CliSubcommand& subcommand : this.subcommands {
@@ -117,7 +143,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         // Check for options (positional options are matched separately below)
         foreach const CliOption<bool>& boolOption : this.boolOptions {
             if boolOption.isPositional() { continue; }
-            if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), optName) {
                 bool value = true;
                 boolOption.setTargetValue(value);
                 boolOption.callCallback(value);
@@ -126,7 +152,20 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
         foreach const CliOption<string>& stringOption : this.stringOptions {
             if stringOption.isPositional() { continue; }
-            if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), optName) {
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
+                if hasInlineValue {
+                    stringOption.setTargetValue(inlineValue);
+                    stringOption.callCallback(inlineValue);
+                    while stringOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        string value = argv[argNo];
+                        stringOption.setTargetValue(value);
+                        stringOption.callCallback(value);
+                    }
+                    continue 2; // Continue with next argument
+                }
                 // Check if a value is present
                 if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);
@@ -144,7 +183,21 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
         foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
             if stringObjOption.isPositional() { continue; }
-            if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), optName) {
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
+                if hasInlineValue {
+                    String parsedArg = String(inlineValue);
+                    stringObjOption.setTargetValue(parsedArg);
+                    stringObjOption.callCallback(parsedArg);
+                    while stringObjOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        String nextArg = String(argv[argNo]);
+                        stringObjOption.setTargetValue(nextArg);
+                        stringObjOption.callCallback(nextArg);
+                    }
+                    continue 2; // Continue with next argument
+                }
                 // Check if a value is present
                 if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);
@@ -162,7 +215,21 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
         foreach const CliOption<int>& intOption : this.intOptions {
             if intOption.isPositional() { continue; }
-            if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), optName) {
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
+                if hasInlineValue {
+                    int parsedArg = toInt(inlineValue);
+                    intOption.setTargetValue(parsedArg);
+                    intOption.callCallback(parsedArg);
+                    while intOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        int nextArg = toInt(argv[argNo]);
+                        intOption.setTargetValue(nextArg);
+                        intOption.callCallback(nextArg);
+                    }
+                    continue 2; // Continue with next argument
+                }
                 // Check if a value is present
                 if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);
@@ -180,7 +247,21 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
         foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
             if filePathOption.isPositional() { continue; }
-            if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
+            if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), optName) {
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
+                if hasInlineValue {
+                    FilePath parsedArg = FilePath(inlineValue);
+                    filePathOption.setTargetValue(parsedArg);
+                    filePathOption.callCallback(parsedArg);
+                    while filePathOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        FilePath nextArg = FilePath(argv[argNo]);
+                        filePathOption.setTargetValue(nextArg);
+                        filePathOption.callCallback(nextArg);
+                    }
+                    continue 2; // Continue with next argument
+                }
                 // Check if a value is present
                 if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);

@@ -220,6 +220,16 @@ public p SourceFile.runParser() {
     Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.lexerAndParser);
     timer.start();
 
+    // The source file must exist. Raise the same error as the host compiler does in its lexer stage when it cannot be read.
+    if !this.filePath.exists() {
+        StringStream msg;
+        msg << "Source file at path '" << this.filePath.toString() << "' does not exist.";
+        const String messageSuffix = msg.str();
+        const CompilerError error = CompilerError(CompilerErrorType::SOURCE_FILE_NOT_FOUND, messageSuffix.getRaw());
+        const String& message = error.getMessage();
+        panic(Error(message.getRaw()));
+    }
+
     // Parse the source file
     Lexer lexer = Lexer(this.filePath);
     Parser parser = Parser(this.resourceManager, this, lexer);

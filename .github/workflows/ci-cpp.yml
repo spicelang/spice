@@ -16,7 +16,7 @@ env:
   # that check host specifics, the bootstrap compiler does not replicate (e.g. ANTLR error messages), have a
   # 'skip-bootstrap' marker file instead.
   BOOTSTRAP_TEST_FILTER: >-
-    LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*
+    CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*
 
 jobs:
   build-linux-x86:

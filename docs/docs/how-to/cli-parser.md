@@ -164,3 +164,12 @@ Tag: b
 Tag: c
 Hello Spice!
 ```
+
+The value of an option can be attached to its name with an equals sign instead of being passed as a separate argument.
+Only the first `=` splits the name from the value, so the value itself may contain further `=` characters. Both of these
+invocations are equivalent:
+
+```console
+$ ./app-name --name Spice
+$ ./app-name --name=Spice
+```
