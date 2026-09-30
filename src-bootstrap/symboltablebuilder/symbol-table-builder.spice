@@ -822,6 +822,11 @@ public f<Any> SymbolTableBuilder.visitDeclStmt(ASTDeclStmtNode* node) {
 public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
     // Visit attributes
     this.visitChildren(cast<ASTNode*>(node));
+    // The host throws on an invalid attribute. Stop here, the compilation is aborted after this stage
+    const ErrorManager& errorManager = this.resourceManager.getErrorManager();
+    if errorManager.hasHardError {
+        return Any();
+    }
 
     // Retrieve attributes
     ASTAttrLstNode* attrs = node.attrLst;

@@ -11,22 +11,12 @@ on:
 env:
   LLVM_VERSION: "llvmorg-23.1.2"
   GCC_VERSION: "16"
-  # Test filter for the bootstrap compiler runs: only the stages the bootstrap compiler already covers. The excluded test
-  # cases are known bootstrap compiler gaps (diverging error messages/locations, unsupported CLI options). Remove them from
-  # this list once fixed.
+  # Test filter for the bootstrap compiler runs: only the stages the bootstrap compiler already covers. Exclude known
+  # bootstrap compiler gaps here (e.g. -TestSuite.testCase:TestSuite.otherTestCase) and remove them once fixed. Test cases
+  # that check host specifics, the bootstrap compiler does not replicate (e.g. ANTLR error messages), have a
+  # 'skip-bootstrap' marker file instead.
   BOOTSTRAP_TEST_FILTER: >-
     LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*
-    -LexerTests.lexer_errorLexingError
-    :ParserTests.parser_errorExtraneousInput
-    :ParserTests.parser_errorParsingError
-    :SymbolTableBuilderTests.attributes_errorAdditionalLinkSourceNotFound
-    :SymbolTableBuilderTests.attributes_errorMissingValue
-    :TypeCheckerTests.functions_successFunctionOverloading1
-    :TypeCheckerTests.builtins_errorGetBuildVar
-    :TypeCheckerTests.imports_errorImportedFileNotExisting
-    :TypeCheckerTests.imports_errorImportedStdNotExisting
-    :TypeCheckerTests.imports_errorCircularPrivateAccess
-    :TypeCheckerTests.imports_errorCircularInfiniteSize
 
 jobs:
   build-linux-x86:

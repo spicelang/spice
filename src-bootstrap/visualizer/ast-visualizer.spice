@@ -51,8 +51,13 @@ f<Any> ASTVisualizer.buildNode<T>(const T* node) {
     // Set parentNodeId for children
     SaveAndRestore<String>(this.parentNodeId, nodeId);
 
-    // Note: getChildren() is not accessible on generic T* in the bootstrap.
-    // Full child traversal requires concrete typed access or IVisitable vtable dispatch.
+    // Visit all the children. A plain ASTNode* cannot be dispatched on, so this goes through its IVisitable pointer
+    foreach ASTNode* child : node.children {
+        assert child != nil<ASTNode*>;
+        assert child.visitable != nil<IVisitable*>;
+        Any childDotCode = child.visitable.accept(cast<IAbstractAstVisitor*>(this));
+        output << " " << childDotCode.get<String>();
+    }
 
     return Any(output.str());
 }

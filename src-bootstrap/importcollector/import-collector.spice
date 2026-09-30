@@ -96,8 +96,8 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
         basePath = FilePath(ownFilePath.getParentDir()) / node.importPath;
     }
 
-    const String osName = this.cliOptions.targetTriple.getOSName();
-    const String archName = this.cliOptions.targetTriple.getArchName();
+    const String osName = this.cliOptions.targetTriple.getOSTypeName();
+    const String archName = this.cliOptions.targetTriple.getArchTypeName();
 
     // basePath never has a '.spice' extension yet at this point (import paths are given without one), so
     // getFileName() (not getBaseName(), which assumes an extension is present) is the right way to get the

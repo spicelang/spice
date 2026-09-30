@@ -129,3 +129,38 @@ f<int> main(int argc, string[] argv) {
     cli.parse(argc, argv);
 }
 ```
+
+## Add options
+
+Options take a value. It is either written into a target variable or passed to a callback. By default, an option takes
+exactly one value. Calling `allowMultipleValues()` on an option makes it take all following arguments as values, up to
+the next option or the positional arguments that are still missing. Each value is passed to the option separately:
+
+```spice
+// app-name.spice
+
+import "std/io/cli-parser";
+
+f<int> main(int argc, string[] argv) {
+    CliParser cli = CliParser("app-name", "Short description of the app");
+
+    string name = "World";
+    cli.addOption("--name", name, "Name to greet");
+
+    CliOption<string>& tagOption = cli.addOption("--tag", p(const string& tag) {
+        printf("Tag: %s\n", tag);
+    }, "Tags to print");
+    tagOption.allowMultipleValues();
+
+    cli.parse(argc, argv);
+    printf("Hello %s!\n", name);
+}
+```
+
+```console
+$ ./app-name --tag a b c --name Spice
+Tag: a
+Tag: b
+Tag: c
+Hello Spice!
+```

@@ -5,6 +5,16 @@ f<bool> isLinux(llvm::Triple triple) {
     return triple.getOSName() == "linux";
 }
 
+f<String> archTypeName(string tripleString) {
+    const llvm::Triple triple = llvm::Triple(tripleString);
+    return triple.getArchTypeName();
+}
+
+f<String> osTypeName(string tripleString) {
+    const llvm::Triple triple = llvm::Triple(tripleString);
+    return triple.getOSTypeName();
+}
+
 f<int> main() {
     llvm::Triple original = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
     assert !original.empty();
@@ -57,6 +67,44 @@ f<int> main() {
     llvm::Triple empty;
     llvm::Triple emptyCopy = empty;
     assert emptyCopy.empty();
+
+    // The canonical OS and arch names are the ones of llvm::Triple::getOSTypeName / getArchTypeName
+    const llvm::Triple darwin = llvm::Triple("arm64-apple-darwin25.6.0");
+    assert darwin.getOSName() == "darwin25.6.0";
+    assert darwin.getArchName() == "arm64";
+    assert darwin.getOSTypeName() == "darwin";
+    assert darwin.getArchTypeName() == "aarch64";
+    const llvm::Triple macos = llvm::Triple("aarch64-apple-macosx15.0");
+    assert macos.getOSTypeName() == "macosx";
+    assert macos.getArchTypeName() == "aarch64";
+    const llvm::Triple linux = llvm::Triple("x86_64-unknown-linux-gnu");
+    assert linux.getOSTypeName() == "linux";
+    assert linux.getArchTypeName() == "x86_64";
+    const llvm::Triple windows = llvm::Triple("x86_64-pc-windows-msvc");
+    assert windows.getOSTypeName() == "windows";
+    const llvm::Triple mingw = llvm::Triple("x86_64-w64-mingw32");
+    assert mingw.getOSTypeName() == "windows";
+    const llvm::Triple x86 = llvm::Triple("i686-pc-linux-gnu");
+    assert x86.getArchTypeName() == "i386";
+    const llvm::Triple wasm = llvm::Triple("wasm32-unknown-unknown");
+    assert wasm.getOSTypeName() == "unknown";
+    assert wasm.getArchTypeName() == "wasm32";
+    // Architecture aliases
+    assert archTypeName("arm64e-apple-darwin") == "aarch64";
+    assert archTypeName("arm64ec-pc-windows-msvc") == "aarch64";
+    assert archTypeName("arm64_32-apple-watchos") == "aarch64_32";
+    assert archTypeName("aarch64_be-unknown-linux-gnu") == "aarch64_be";
+    assert archTypeName("amd64-unknown-freebsd") == "x86_64";
+    // Digits, that belong to the OS name, are kept. Version suffixes are stripped
+    assert osTypeName("wasm32-unknown-wasip1") == "wasip1";
+    assert osTypeName("wasm32-unknown-wasi") == "wasi";
+    assert osTypeName("x86_64-scei-ps4") == "ps4";
+    assert osTypeName("x86_64-sie-ps5") == "ps5";
+    assert osTypeName("arm64-apple-ios17.0") == "ios";
+    // OS aliases
+    assert osTypeName("x86_64-pc-win32") == "windows";
+    assert osTypeName("arm64-apple-visionos1.0") == "xros";
+    assert osTypeName("x86_64-unknown-kfreebsd") == "kfreebsd";
 
     printf("All assertions passed!\n");
 }

@@ -472,7 +472,7 @@ static void execBootstrapTestCase(const TestCase &testCase) {
 
   // Check if the bootstrap compiler raised an error
   const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
-  if (const std::optional<std::string> errorMessage = BootstrapUtil::extractErrorMessage(output, testCase.testPath)) {
+  if (const std::optional<std::string> errorMessage = BootstrapUtil::extractErrorMessage(output)) {
     if (!TestUtil::doesRefExist(errorRefPath))
       FAIL() << "Expected no error, but got: " << *errorMessage;
     TestUtil::checkRefMatch(errorRefPath, [&] { return *errorMessage; });

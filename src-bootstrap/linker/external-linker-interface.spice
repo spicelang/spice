@@ -8,6 +8,7 @@ import "std/text/stringstream";
 // Own imports
 import "bootstrap/driver";
 import "bootstrap/util/system-util";
+import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/linker-error";
 
 public type ExternalLinkerInterface struct {
@@ -239,7 +240,9 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSour
     // Check if the file exists
     if !additionalSource.exists() {
         const String msg = "The additional source file '" + additionalSource.toGenericString() + "' does not exist";
-        panic(Error(msg.getRaw()));
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, msg.getRaw());
+        const String& message = error.getMessage();
+        panic(Error(message.getRaw()));
     }
 
     // Add the file to the linker

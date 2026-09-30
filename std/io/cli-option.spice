@@ -25,6 +25,7 @@ public type CliOption<T> struct {
     CliOptionMode mode
     T& targetVariable
     Lambda<p(const T&)> callback
+    bool multipleValues = false
 }
 
 /**
@@ -121,6 +122,23 @@ public p CliOption.addAlias(const String& optionName) {
  */
 public const f<const Vector<String>&> CliOption.getAliases() {
     return this.aliases;
+}
+
+/**
+ * Allow the option to take multiple values. All arguments after the option are taken as its values, up to the next option
+ * or the positional arguments, that are still missing. Each value is passed to the option separately.
+ */
+public p CliOption.allowMultipleValues() {
+    this.multipleValues = true;
+}
+
+/**
+ * Check whether the option can take multiple values
+ *
+ * @return true if the option can take multiple values, false otherwise
+ */
+public const f<bool> CliOption.acceptsMultipleValues() {
+    return this.multipleValues;
 }
 
 /**

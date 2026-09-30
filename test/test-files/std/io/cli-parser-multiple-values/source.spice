@@ -1,0 +1,93 @@
+import "std/os/os";
+import "std/data/vector";
+import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+
+// State the callbacks write to. The callbacks capture a pointer to it
+type State struct {
+    Vector<String> values
+    Vector<int> numbers
+    string single = ""
+    string file = ""
+    bool verbose = false
+}
+
+f<int> main() {
+    State state;
+    State* s = &state;
+
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    CliSubcommand& build = parser.addSubcommand("build", "Build something");
+    CliOption<string>& multiOption = build.addOption("--value", p(const string& value) {
+        s.values.pushBack(String(value));
+    }, "Values");
+    multiOption.addAlias("-v");
+    multiOption.allowMultipleValues();
+    build.addOption("--single", state.single, "Single value");
+    CliOption<int>& numberOption = build.addOption("--number", p(const int& number) {
+        s.numbers.pushBack(number);
+    }, "Numbers");
+    numberOption.allowMultipleValues();
+    build.addFlag("--verbose", state.verbose, "Verbose output");
+    build.addOption("<file>", state.file, "File to build");
+
+    // All values up to the next option are taken, but the missing positional argument is left over
+    string[9] args = ["prog", "build", "-v", "a", "b", "c", "--single", "x", "main.spice"];
+    assert parser.parse(9u, args) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 3;
+    assert state.values.get(0) == "a";
+    assert state.values.get(1) == "b";
+    assert state.values.get(2) == "c";
+    assert state.single == "x";
+    assert state.file == "main.spice";
+
+    // Values are left over for the missing positional argument
+    state.values.clear();
+    string[6] trailingArgs = ["prog", "build", "--value", "d", "e", "other.spice"];
+    assert parser.parse(6u, trailingArgs) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 2;
+    assert state.values.get(0) == "d";
+    assert state.values.get(1) == "e";
+    assert state.file == "other.spice";
+
+    // Options, that do not accept multiple values, take only one value
+    string[6] singleArgs = ["prog", "build", "--single", "y", "z", "third.spice"];
+    assert parser.parse(6u, singleArgs) != EXIT_CODE_SUCCESS;
+    assert state.single == "y";
+    assert state.file == "z";
+
+    // Flags after the positional argument are no positional argument candidates
+    state.values.clear();
+    string[6] trailingFlagArgs = ["prog", "build", "-v", "f", "flag.spice", "--verbose"];
+    assert parser.parse(6u, trailingFlagArgs) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 1;
+    assert state.values.get(0) == "f";
+    assert state.file == "flag.spice";
+    assert state.verbose;
+
+    // Values of other options are no positional argument candidates either
+    state.values.clear();
+    string[7] trailingOptionArgs = ["prog", "build", "-v", "g", "option.spice", "--single", "w"];
+    assert parser.parse(7u, trailingOptionArgs) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 1;
+    assert state.values.get(0) == "g";
+    assert state.file == "option.spice";
+    assert state.single == "w";
+
+    // Negative numbers are values, not options
+    string[7] numberArgs = ["prog", "build", "--number", "-1", "2", "-3", "numbers.spice"];
+    assert parser.parse(7u, numberArgs) == EXIT_CODE_SUCCESS;
+    assert state.numbers.getSize() == 3;
+    assert state.numbers.get(0) == -1;
+    assert state.numbers.get(1) == 2;
+    assert state.numbers.get(2) == -3;
+    assert state.file == "numbers.spice";
+
+    // An option without a value is an error, no matter whether it accepts multiple values
+    string[3] missingValueArgs = ["prog", "build", "-v"];
+    assert parser.parse(3u, missingValueArgs) != EXIT_CODE_SUCCESS;
+    string[3] missingSingleValueArgs = ["prog", "build", "--single"];
+    assert parser.parse(3u, missingSingleValueArgs) != EXIT_CODE_SUCCESS;
+
+    printf("All assertions passed!\n");
+}
