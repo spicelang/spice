@@ -674,32 +674,36 @@ std::any SymbolTableBuilder::visitModAttr(ModAttrNode *node) {
   // Retrieve attributes
   const AttrLstNode *attrs = node->attrLst;
 
-  // Collect linker flags
-  std::vector<const CompileTimeValue *> linkerFlagValues;
-  // core.linker.flag
-  std::vector<const CompileTimeValue *> values = attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG);
-  linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
-  // core.linux.linker.flag
+  // Collect and register linker flags.
+  // On Linux, platform-independent flags (core.linker.flag) are wrapped in --start-group/--end-group
+  // so the linker rescans the archive group until all circular symbol references are resolved (e.g.
+  // LLVM's core static archives have mutual dependencies that alphabetical ordering cannot satisfy).
   const llvm::Triple &targetTriple = sourceFile->targetMachine->getTargetTriple();
-  if (targetTriple.isOSLinux()) {
-    values = attrs->getAttrValuesByName(ATTR_CORE_LINUX_LINKER_FLAG);
-    linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
-  }
-  // core.darwin.linker.flag
-  if (targetTriple.isOSDarwin()) {
-    values = attrs->getAttrValuesByName(ATTR_CORE_DARWIN_LINKER_FLAG);
-    linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
-  }
-  // core.windows.linker.flag
-  if (targetTriple.isOSWindows()) {
-    values = attrs->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
-    linkerFlagValues.insert(linkerFlagValues.end(), values.begin(), values.end());
-  }
-  for (const CompileTimeValue *value : linkerFlagValues) {
-    const std::string &flag = resourceManager.compileTimeStringValues.at(value->stringValueOffset);
+  const bool wrapInGroup = targetTriple.isOSLinux();
+  auto addFlag = [&](const std::string &flag) {
     resourceManager.linker.addLinkerFlag(flag);
     sourceFile->sourceLinkerFlags.push_back(flag);
-  }
+  };
+
+  // core.linker.flag — platform-independent; wrapped in a group on Linux
+  const std::vector<const CompileTimeValue *> coreValues = attrs->getAttrValuesByName(ATTR_CORE_LINKER_FLAG);
+  if (wrapInGroup && !coreValues.empty())
+    addFlag("-Wl,--start-group");
+  for (const CompileTimeValue *value : coreValues)
+    addFlag(resourceManager.compileTimeStringValues.at(value->stringValueOffset));
+  if (wrapInGroup && !coreValues.empty())
+    addFlag("-Wl,--end-group");
+
+  // Platform-specific flags — always come after the (possibly grouped) core flags
+  std::vector<const CompileTimeValue *> platformValues;
+  if (targetTriple.isOSLinux())
+    platformValues = attrs->getAttrValuesByName(ATTR_CORE_LINUX_LINKER_FLAG);
+  else if (targetTriple.isOSDarwin())
+    platformValues = attrs->getAttrValuesByName(ATTR_CORE_DARWIN_LINKER_FLAG);
+  else if (targetTriple.isOSWindows())
+    platformValues = attrs->getAttrValuesByName(ATTR_CORE_WINDOWS_LINKER_FLAG);
+  for (const CompileTimeValue *value : platformValues)
+    addFlag(resourceManager.compileTimeStringValues.at(value->stringValueOffset));
 
   // core.linker.additionalSource
   for (const CompileTimeValue *value : attrs->getAttrValuesByName(ATTR_CORE_LINKER_ADDITIONAL_SOURCE)) {
