@@ -1,0 +1,46 @@
+type Callback alias p(int);
+type Transform alias f<int>(int);
+
+type Holder struct {
+    Callback cb = nil<Callback>
+    Transform transform = nil<Transform>
+    int value = 0
+}
+
+f<Holder> makeIfElse(bool flag) {
+    Holder h;
+    if flag {
+        h.value = 1;
+        return h;
+    } else {
+        h.value = 2;
+        return h;
+    }
+}
+
+f<Holder> makeSwitch(int selector) {
+    Holder h;
+    switch selector {
+        case 1: {
+            h.value = 3;
+            return h;
+        }
+        default: {
+            h.value = 4;
+            return h;
+        }
+    }
+}
+
+f<int> main() {
+    Holder h1 = makeIfElse(true);
+    printf("%d\n", h1.value);
+    Holder h2 = makeIfElse(false);
+    printf("%d\n", h2.value);
+    Holder h3 = makeSwitch(1);
+    printf("%d\n", h3.value);
+    Holder h4 = makeSwitch(2);
+    printf("%d\n", h4.value);
+    Holder h5 = Holder{};
+    printf("%d\n", h5.value);
+}
