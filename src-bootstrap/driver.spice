@@ -832,7 +832,7 @@ f<bool> testBuildAndRunSubcommands() {
     assert !buildMinimal.cliOptions.instrumentation.emitsDebugInfo();
     // The executable lands in the current dir and is named like the source file, with the extension of the target
     assert buildMinimal.cliOptions.outputDir.toGenericString() == "./";
-    FilePath expectedOutputPath = FilePath("./main");
+    FilePath expectedOutputPath = FilePath("./main-file");
     expectedOutputPath.replaceExtension(getOutputFileExtension(buildMinimal.cliOptions, OutputContainer::EXECUTABLE));
     assert buildMinimal.cliOptions.outputPath.toGenericString() == expectedOutputPath.toGenericString();
 
