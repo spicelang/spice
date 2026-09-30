@@ -1,47 +1,550 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Std imports
+import "std/data/vector";
+import "std/data/stack";
+import "std/data/unordered-map";
+import "std/data/pair";
+import "std/math/hash";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/driver";
 import "bootstrap/irgenerator/ir-generator";
+import "bootstrap/irgenerator/name-mangling";
 import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
+import "bootstrap/model/struct";
+import "bootstrap/model/interface";
+import "bootstrap/model/union";
+import "bootstrap/model/struct-base";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/capture";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
 
 /**
- * Generates the debug info of a source file.
+ * Generates the debug info of a source file. This mirrors the host compiler's src/irgenerator/DebugInfoGenerator.cpp.
  *
- * ToDo: Port the debug info generation of the host (src/irgenerator/DebugInfoGenerator.cpp). Until then, the bootstrap compiler
- * emits no debug info and all methods are no-ops. They are already called at the same places as in the host.
+ * The host uses the LLVM C++ DIBuilder; here we use the LLVM C API (llvm::DIBuilder wrapper in std/bindings/llvm), which
+ * represents every debug info node as an llvm::Metadata. A few C++-only capabilities have no C-API equivalent and are
+ * therefore not mirrored:
+ *   - Methods use createFunction (the C API has no createMethod).
+ *   - Subprogram virtuality flags (SPFlagVirtual/SPFlagPureVirtual) cannot be set (the C API createFunction exposes only
+ *     IsLocalToUnit/IsDefinition, not DISPFlags).
+ *   - Global strings are emitted as a char array type (the C API has no createStringType).
+ *   - Generic struct template parameters are omitted (the C API has no createTemplateTypeParameter).
+ *   - The interface vtable holder is not set (the C API has no replaceVTableHolder).
  */
 public type DebugInfoGenerator struct {
     IRGenerator* irGenerator
+    llvm::DIBuilder diBuilder
+    llvm::Metadata compileUnit
+    llvm::Metadata diFile
+    Stack<llvm::Metadata> lexicalBlocks
+    UnorderedMap<long, llvm::Metadata> structTypeCache
+    unsigned int pointerWidth = 0u
+    // Debug types
+    llvm::Metadata doubleTy
+    llvm::Metadata intTy
+    llvm::Metadata uIntTy
+    llvm::Metadata shortTy
+    llvm::Metadata uShortTy
+    llvm::Metadata longTy
+    llvm::Metadata uLongTy
+    llvm::Metadata byteTy
+    llvm::Metadata charTy
+    llvm::Metadata stringTy
+    llvm::Metadata boolTy
+    llvm::Metadata voidTy
+    llvm::Metadata fatPtrTy
 }
 
 public p DebugInfoGenerator.ctor(IRGenerator* irGenerator) {
     this.irGenerator = irGenerator;
 }
 
-public p DebugInfoGenerator.initialize(const String& sourceFileName, const String& sourceFileDir) {}
+public p DebugInfoGenerator.initialize(const String& sourceFileName, const String& sourceFileDir) {
+    // Create DIBuilder
+    this.diBuilder = llvm::DIBuilder(*this.irGenerator.module);
 
-public p DebugInfoGenerator.generateFunctionDebugInfo(llvm::Function llvmFunction, const model::Function* spiceFunc, bool isLambda = false) {}
+    // Create compilation unit
+    // Note: unlike the host we do not absolutize the path here; the directory operand already carries it
+    const llvm::Metadata cuDiFile = this.diBuilder.createFile(sourceFileName, sourceFileDir);
+    const bool fullDebugInfo = this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo();
+    const int emissionKind = fullDebugInfo ? llvm::DW_EMISSION_FULL : llvm::DW_EMISSION_LINE_TABLES_ONLY;
+    const bool isOptimized = this.irGenerator.cliOptions.optLevel != OptLevel::O0;
+    this.compileUnit = this.diBuilder.createCompileUnit(llvm::DW_SOURCE_LANGUAGE_C_PLUS_PLUS_14, cuDiFile, getProducerString(), isOptimized, emissionKind);
 
-public p DebugInfoGenerator.concludeFunctionDebugInfo() {}
+    this.irGenerator.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "Dwarf Version", 5);
+    this.irGenerator.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_WARNING, "Debug Info Version", 3); // llvm::DEBUG_METADATA_VERSION
 
-public p DebugInfoGenerator.pushLexicalBlock(const ASTNode* node) {}
+    // Create another DIFile as scope for subprograms
+    this.diFile = this.diBuilder.createFile(sourceFileName, sourceFileDir);
 
-public p DebugInfoGenerator.popLexicalBlock() {}
+    this.pointerWidth = this.irGenerator.module.getPointerSize() * 8u;
 
-public p DebugInfoGenerator.generateGlobalVarDebugInfo(llvm::Value global, const SymbolTableEntry* globalEntry) {}
+    // Line tables do not carry any type information, so there is no need to build the debug types at all
+    if !fullDebugInfo {
+        return;
+    }
 
-public p DebugInfoGenerator.generateGlobalStringDebugInfo(llvm::Value global, const String& name, unsigned long length, const CodeLoc& codeLoc) {}
+    // Initialize primitive debug types
+    this.doubleTy = this.diBuilder.createBasicType(String("double"), 64l, llvm::DW_ATE_FLOAT);
+    this.intTy = this.diBuilder.createBasicType(String("int"), 32l, llvm::DW_ATE_SIGNED);
+    this.uIntTy = this.diBuilder.createBasicType(String("unsigned int"), 32l, llvm::DW_ATE_UNSIGNED);
+    this.shortTy = this.diBuilder.createBasicType(String("short"), 16l, llvm::DW_ATE_SIGNED);
+    this.uShortTy = this.diBuilder.createBasicType(String("unsigned short"), 16l, llvm::DW_ATE_UNSIGNED);
+    this.longTy = this.diBuilder.createBasicType(String("long"), 64l, llvm::DW_ATE_SIGNED);
+    this.uLongTy = this.diBuilder.createBasicType(String("unsigned long"), 64l, llvm::DW_ATE_UNSIGNED);
+    this.byteTy = this.diBuilder.createBasicType(String("byte"), 8l, llvm::DW_ATE_UNSIGNED);
+    this.charTy = this.diBuilder.createBasicType(String("char"), 8l, llvm::DW_ATE_UNSIGNED_CHAR);
+    this.stringTy = this.diBuilder.createPointerType(this.charTy, cast<unsigned long>(this.pointerWidth));
+    this.boolTy = this.diBuilder.createBasicType(String("bool"), 8l, llvm::DW_ATE_BOOLEAN);
+    this.voidTy = this.diBuilder.createBasicType(String("void"), 0l, llvm::DW_ATE_UNSIGNED);
 
-public p DebugInfoGenerator.generateLocalVarDebugInfo(const String& varName, llvm::Value address, unsigned long argNumber = 18446744073709551615ul) {}
+    // Initialize lambda fat ptr type
+    const llvm::Type lambdaFatPtrType = this.irGenerator.llvmTypes.lambdaFatPtrType;
+    const llvm::Type int64Ty = this.irGenerator.builder.getInt64Ty();
+    const llvm::Type ptrTy = this.irGenerator.builder.getPtrTy();
+    llvm::DataLayout dataLayout = this.irGenerator.sourceFile.targetMachine.createDataLayout();
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(lambdaFatPtrType);
+    const unsigned int ptrAlignInBits = this.irGenerator.module.getABITypeAlign(ptrTy);
+    const unsigned long int64Width = this.irGenerator.module.getTypeSizeInBits(int64Ty);
+    const unsigned int int64AlignInBits = this.irGenerator.module.getABITypeAlign(int64Ty);
+    const unsigned long fctPtrOffset = dataLayout.getStructElementOffset(lambdaFatPtrType, 0u) * 8l;
+    const unsigned long capturesOffset = dataLayout.getStructElementOffset(lambdaFatPtrType, 1u) * 8l;
+    const unsigned long captureSizeOffset = dataLayout.getStructElementOffset(lambdaFatPtrType, 2u) * 8l;
 
-public p DebugInfoGenerator.setSourceLocation(const CodeLoc& codeLoc) {}
+    const llvm::Metadata voidPtrDIType = this.diBuilder.createPointerType(this.voidTy, cast<unsigned long>(this.pointerWidth), ptrAlignInBits);
+    Vector<llvm::Metadata> noElements;
+    this.fatPtrTy = this.diBuilder.createStructType(this.diFile, String("_lambda"), this.diFile, 0u, this.irGenerator.module.getTypeSizeInBits(lambdaFatPtrType),
+        alignInBits, llvm::DI_FLAG_TYPE_PASS_BY_VALUE | llvm::DI_FLAG_NON_TRIVIAL, noElements, String("_lambda"));
+    const llvm::Metadata firstType = this.diBuilder.createMemberType(this.fatPtrTy, String("fct"), this.diFile, 0u, cast<unsigned long>(this.pointerWidth), ptrAlignInBits, fctPtrOffset, voidPtrDIType);
+    const llvm::Metadata secondType = this.diBuilder.createMemberType(this.fatPtrTy, String("captures"), this.diFile, 0u, cast<unsigned long>(this.pointerWidth), ptrAlignInBits, capturesOffset, voidPtrDIType);
+    const llvm::Metadata thirdType = this.diBuilder.createMemberType(this.fatPtrTy, String("captureSize"), this.diFile, 0u, int64Width, int64AlignInBits, captureSizeOffset, this.uLongTy);
+    Vector<llvm::Metadata> fatPtrElements;
+    fatPtrElements.pushBack(firstType);
+    fatPtrElements.pushBack(secondType);
+    fatPtrElements.pushBack(thirdType);
+    this.diBuilder.replaceArrays(this.fatPtrTy, fatPtrElements);
+}
 
-public p DebugInfoGenerator.setSourceLocation(const ASTNode* node) {}
+public p DebugInfoGenerator.generateFunctionDebugInfo(llvm::Function llvmFunction, const model::Function* spiceFunc, bool isLambda = false) {
+    if !this.irGenerator.cliOptions.instrumentation.emitsDebugInfo() {
+        return;
+    }
 
-public p DebugInfoGenerator.finalize() {}
+    const ASTNode* node = spiceFunc.declNode;
+    // Compiler-synthesized functions without a source declaration (e.g. the generated test-suite main) have no code
+    // location to attach debug info to, so skip them
+    if node == nil<ASTNode*> {
+        return;
+    }
+    const unsigned int lineNo = cast<unsigned int>(spiceFunc.getDeclCodeLoc().line);
+
+    // Prepare flags
+    llvm::Metadata scope = this.diFile;
+    int flags = llvm::DI_FLAG_PROTOTYPED;
+    if spiceFunc.entry != nil<SymbolTableEntry*> {
+        const QualType& entryType = spiceFunc.entry.getQualType();
+        if entryType.isPublic() {
+            flags = flags | llvm::DI_FLAG_PUBLIC;
+        }
+    }
+
+    // Collect arguments. In line info only mode, the subroutine type stays empty, since no type info is emitted at all
+    Vector<llvm::Metadata> argTypes;
+    if this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo() {
+        if spiceFunc.isProcedure() {
+            argTypes.pushBack(this.voidTy);
+        } else {
+            argTypes.pushBack(this.getDITypeForQualType(node, spiceFunc.returnType)); // Add result type
+        }
+        if spiceFunc.isMethod() {
+            argTypes.pushBack(this.getDITypeForQualType(node, spiceFunc.thisType)); // Add this type
+        }
+        if isLambda {
+            const llvm::Metadata captureStructType = this.generateCaptureStructDebugInfo(spiceFunc);
+            scope = captureStructType;
+            const llvm::Metadata captureStructPtr = this.diBuilder.createPointerType(captureStructType, cast<unsigned long>(this.pointerWidth));
+            argTypes.pushBack(captureStructPtr); // Add this type
+        }
+        const QualTypeList paramTypes = spiceFunc.getParamTypes();
+        foreach const QualType& argType : paramTypes { // Add arg types
+            argTypes.pushBack(this.getDITypeForQualType(node, argType));
+        }
+    }
+
+    // Create function type
+    const llvm::Metadata functionTy = this.diBuilder.createSubroutineType(this.diFile, argTypes);
+
+    // Note: the C API only exposes IsLocalToUnit/IsDefinition and has no createMethod, so methods are created via
+    // createFunction and the virtual/pure-virtual subprogram flags cannot be represented (see the type doc comment).
+    const bool isLocalToUnit = isLambda;
+    const llvm::Metadata subprogram = this.diBuilder.createFunction(scope, spiceFunc.name, spiceFunc.getMangledName(), this.diFile,
+        lineNo, functionTy, isLocalToUnit, /*isDefinition=*/true, lineNo, flags, isOptimizedBuild(this.irGenerator));
+
+    // Add debug info to LLVM function
+    llvmFunction.setSubprogram(subprogram);
+    // Add scope to lexicalBlocks
+    this.lexicalBlocks.push(subprogram);
+}
+
+public p DebugInfoGenerator.concludeFunctionDebugInfo() {
+    if !this.irGenerator.cliOptions.instrumentation.emitsDebugInfo() {
+        return;
+    }
+    // Functions generateFunctionDebugInfo skipped (no declNode, see there) never pushed a scope to conclude here.
+    if this.lexicalBlocks.isEmpty() {
+        return;
+    }
+
+    this.lexicalBlocks.pop();
+}
+
+public p DebugInfoGenerator.pushLexicalBlock(const ASTNode* node) {
+    // Line tables do not carry scope info, so we attach all locations to the enclosing subprogram instead
+    if !this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo() {
+        return;
+    }
+
+    const unsigned int line = cast<unsigned int>(node.codeLoc.line);
+    const unsigned int col = cast<unsigned int>(node.codeLoc.col);
+    const llvm::Metadata lexicalBlock = this.diBuilder.createLexicalBlock(this.lexicalBlocks.top(), this.diFile, line, col);
+    this.lexicalBlocks.push(lexicalBlock);
+}
+
+public p DebugInfoGenerator.popLexicalBlock() {
+    if !this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo() {
+        return;
+    }
+
+    assert !this.lexicalBlocks.isEmpty();
+    this.lexicalBlocks.pop();
+}
+
+public f<llvm::Metadata> DebugInfoGenerator.generateCaptureStructDebugInfo(const model::Function* spiceFunc) {
+    const ASTNode* node = spiceFunc.declNode;
+    const unsigned int lineNo = cast<unsigned int>(node.codeLoc.line);
+
+    // Get LLVM type for struct
+    Vector<llvm::Type> fieldTypes;
+    Vector<SymbolTableEntry*> fieldEntries;
+    QualTypeList fieldSymbolTypes;
+    foreach Pair<const String&, Capture&> capturePair : spiceFunc.bodyScope.symbolTable.captures {
+        Capture& capture = capturePair.getSecond();
+        QualType captureType = capture.capturedSymbol.getQualType();
+
+        // Capture by reference
+        if capture.getMode() == CapturePassMode::BY_REFERENCE {
+            captureType = captureType.toRef(node);
+        }
+
+        fieldEntries.pushBack(capture.capturedSymbol);
+        fieldSymbolTypes.pushBack(captureType);
+        fieldTypes.pushBack(captureType.toLLVMType(this.irGenerator.sourceFile));
+    }
+    const llvm::Type structType = llvm::getStructType(*this.irGenerator.context, fieldTypes);
+    llvm::DataLayout dataLayout = this.irGenerator.sourceFile.targetMachine.createDataLayout();
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(structType);
+
+    const llvm::Metadata scope = this.lexicalBlocks.top();
+    Vector<llvm::Metadata> noElements;
+    llvm::Metadata structDiType = this.diBuilder.createClassType(scope, String(""), this.diFile, lineNo, this.irGenerator.module.getTypeSizeInBits(structType),
+        alignInBits, llvm::DI_FLAG_TYPE_PASS_BY_VALUE | llvm::DI_FLAG_NON_TRIVIAL, noElements);
+
+    Vector<llvm::Metadata> fieldDITypes;
+    for unsigned long i = 0l; i < fieldEntries.getSize(); i++ {
+        const llvm::Metadata fieldDiType = this.getDITypeForQualType(node, fieldSymbolTypes.get(i));
+        const String& fieldName = fieldEntries.get(i).name;
+        const unsigned long offsetInBits = dataLayout.getStructElementOffset(structType, cast<unsigned int>(i)) * 8l;
+        const unsigned long fieldSize = fieldDiType.getDITypeSizeInBits();
+        const unsigned int fieldAlign = fieldDiType.getDITypeAlignInBits();
+        const llvm::Metadata fieldDiDerivedType = this.diBuilder.createMemberType(structDiType, fieldName, this.diFile, lineNo, fieldSize, fieldAlign, offsetInBits, fieldDiType);
+        fieldDITypes.pushBack(fieldDiDerivedType);
+    }
+    this.diBuilder.replaceArrays(structDiType, fieldDITypes);
+
+    return structDiType;
+}
+
+public p DebugInfoGenerator.generateGlobalVarDebugInfo(llvm::Value global, const SymbolTableEntry* globalEntry) {
+    if !this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo() {
+        return;
+    }
+
+    const unsigned int lineNo = cast<unsigned int>(globalEntry.getDeclCodeLoc().line);
+    const String name = global.getName();
+    const QualType& globalType = globalEntry.getQualType();
+    const llvm::Metadata diType = this.getDITypeForQualType(globalEntry.declNode, globalType);
+    const bool isLocal = globalType.isPublic();
+
+    const llvm::Metadata gve = this.diBuilder.createGlobalVariableExpression(this.compileUnit, name, name, this.diFile, lineNo, diType, isLocal);
+    global.setGlobalMetadata(llvm::getDebugMetadataKindID(*this.irGenerator.context), gve);
+}
+
+public p DebugInfoGenerator.generateGlobalStringDebugInfo(llvm::Value global, const String& name, unsigned long length, const CodeLoc& codeLoc) {
+    if !this.irGenerator.cliOptions.instrumentation.emitsDebugInfo() {
+        return;
+    }
+    const unsigned int lineNo = cast<unsigned int>(codeLoc.line);
+
+    // The C API has no createStringType, so the string is described as a char array (length + 1 for the null-terminator)
+    const llvm::Metadata stringType = this.diBuilder.createArrayType(length + 1l, this.charTy.isNull() ? this.diBuilder.createBasicType(String("char"), 8l, llvm::DW_ATE_UNSIGNED_CHAR) : this.charTy);
+    const llvm::Metadata gve = this.diBuilder.createGlobalVariableExpression(this.compileUnit, name, name, this.diFile, lineNo, stringType, true);
+    global.setGlobalMetadata(llvm::getDebugMetadataKindID(*this.irGenerator.context), gve);
+}
+
+public p DebugInfoGenerator.generateLocalVarDebugInfo(const String& varName, llvm::Value address, unsigned long argNumber = 18446744073709551615ul) {
+    if !this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo() {
+        return;
+    }
+
+    // Get symbol table entry
+    const SymbolTableEntry* variableEntry = this.irGenerator.currentScope.lookupStrict(varName);
+    assert variableEntry != nil<SymbolTableEntry*>;
+    // Build debug info
+    const llvm::Metadata scope = this.lexicalBlocks.top();
+    const llvm::Metadata diType = this.getDITypeForQualType(variableEntry.declNode, variableEntry.getQualType());
+    const unsigned int lineNo = cast<unsigned int>(variableEntry.declNode.codeLoc.line);
+
+    llvm::Metadata varInfo;
+    if argNumber != 18446744073709551615ul {
+        varInfo = this.diBuilder.createParameterVariable(scope, varName, cast<unsigned int>(argNumber), this.diFile, lineNo, diType);
+    } else {
+        varInfo = this.diBuilder.createAutoVariable(scope, varName, this.diFile, lineNo, diType);
+    }
+    const llvm::Metadata expr = this.diBuilder.createExpression();
+    const llvm::Metadata debugLocation = this.irGenerator.builder.getCurrentDebugLocation();
+    assert !debugLocation.isNull();
+    this.diBuilder.insertDeclareAtEnd(address, varInfo, expr, debugLocation, this.irGenerator.builder.getInsertBlock());
+}
+
+public p DebugInfoGenerator.setSourceLocation(const CodeLoc& codeLoc) {
+    if !this.irGenerator.cliOptions.instrumentation.emitsDebugInfo() {
+        return;
+    }
+
+    assert !this.lexicalBlocks.isEmpty();
+    const llvm::Metadata scope = this.lexicalBlocks.top();
+    const llvm::Metadata diCodeLoc = llvm::getDebugLocation(*this.irGenerator.context, cast<unsigned int>(codeLoc.line), cast<unsigned int>(codeLoc.col), scope);
+    this.irGenerator.builder.setCurrentDebugLocation(diCodeLoc);
+}
+
+public p DebugInfoGenerator.setSourceLocation(const ASTNode* node) {
+    this.setSourceLocation(node.codeLoc);
+}
+
+public p DebugInfoGenerator.finalize() {
+    if this.irGenerator.cliOptions.instrumentation.emitsDebugInfo() {
+        this.diBuilder.finalize();
+    }
+}
+
+f<llvm::Metadata> DebugInfoGenerator.getDITypeForQualType(const ASTNode* node, const QualType& ty) {
+    // Pointer type
+    if ty.isPtr() {
+        const llvm::Metadata pointeeTy = this.getDITypeForQualType(node, ty.getContained());
+        return this.diBuilder.createPointerType(pointeeTy, cast<unsigned long>(this.pointerWidth));
+    }
+
+    // Reference type
+    if ty.isRef() {
+        const llvm::Metadata referencedType = this.getDITypeForQualType(node, ty.getContained());
+        return this.diBuilder.createReferenceType(referencedType, cast<unsigned long>(this.pointerWidth));
+    }
+
+    // Array type
+    if ty.isArray() {
+        const llvm::Metadata itemTy = this.getDITypeForQualType(node, ty.getContained());
+        const unsigned long size = cast<unsigned long>(ty.getArraySize());
+        return this.diBuilder.createArrayType(size, itemTy);
+    }
+
+    // Primitive types
+    llvm::Metadata baseDiType;
+    const SuperType superType = ty.getSuperType();
+    if superType == SuperType::TY_DOUBLE {
+        baseDiType = this.doubleTy;
+    } else if superType == SuperType::TY_INT {
+        baseDiType = ty.isSigned() ? this.intTy : this.uIntTy;
+    } else if superType == SuperType::TY_SHORT {
+        baseDiType = ty.isSigned() ? this.shortTy : this.uShortTy;
+    } else if superType == SuperType::TY_LONG {
+        baseDiType = ty.isSigned() ? this.longTy : this.uLongTy;
+    } else if superType == SuperType::TY_BYTE {
+        baseDiType = this.byteTy;
+    } else if superType == SuperType::TY_CHAR {
+        baseDiType = this.charTy;
+    } else if superType == SuperType::TY_STRING {
+        baseDiType = this.stringTy;
+    } else if superType == SuperType::TY_BOOL {
+        baseDiType = this.boolTy;
+    } else if superType == SuperType::TY_STRUCT {
+        baseDiType = this.getStructDIType(node, ty);
+    } else if superType == SuperType::TY_INTERFACE {
+        baseDiType = this.getInterfaceDIType(node, ty);
+    } else if superType == SuperType::TY_UNION {
+        baseDiType = this.getUnionDIType(node, ty);
+    } else if superType == SuperType::TY_FUNCTION || superType == SuperType::TY_PROCEDURE {
+        baseDiType = this.fatPtrTy;
+    } else {
+        panic(Error("Debug Info Type fallthrough")); // GCOV_EXCL_LINE
+    }
+
+    if ty.isConst() {
+        baseDiType = this.diBuilder.createQualifiedType(llvm::DW_TAG_CONST_TYPE, baseDiType);
+    }
+
+    return baseDiType;
+}
+
+f<llvm::Metadata> DebugInfoGenerator.getStructDIType(const ASTNode* node, const QualType& ty) {
+    // Do cache lookup
+    const long hashKey = cast<long>(hash(ty.getName(true, false, true)));
+    if this.structTypeCache.contains(hashKey) {
+        return this.structTypeCache.get(hashKey);
+    }
+
+    // Cache miss, generate struct type
+    const Struct* spiceStruct = ty.getStruct(node);
+    assert spiceStruct != nil<Struct*>;
+
+    // Retrieve information about the struct
+    const unsigned int lineNo = cast<unsigned int>(spiceStruct.structBase.getDeclCodeLoc().line);
+    const QualType& structQualType = spiceStruct.entry.getQualType();
+    const llvm::Type structType = structQualType.toLLVMType(this.irGenerator.sourceFile);
+    llvm::DataLayout dataLayout = this.irGenerator.sourceFile.targetMachine.createDataLayout();
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(structType);
+
+    // Create struct ty. Generic substantiations are named by their signature (e.g. Vector<int>), so that debuggers can
+    // tell the manifestations of a generic struct apart
+    const String structName = spiceStruct.structBase.getSignature();
+    const String mangledName = mangleStruct(*spiceStruct);
+    Vector<llvm::Metadata> noElements;
+    llvm::Metadata structDiType = this.diBuilder.createStructType(this.diFile, structName, this.diFile, lineNo, this.irGenerator.module.getTypeSizeInBits(structType),
+        alignInBits, llvm::DI_FLAG_TYPE_PASS_BY_REFERENCE | llvm::DI_FLAG_NON_TRIVIAL, noElements, mangledName);
+
+    // Insert into cache
+    this.structTypeCache.upsert(hashKey, structDiType);
+
+    // A synthesized vtable pointer takes up the first element of the LLVM struct type, which shifts all fields by one
+    const unsigned int fieldElementOffset = spiceStruct.hasSynthesizedVTablePtr() ? 1u : 0u;
+
+    // Collect DI types for fields
+    Vector<llvm::Metadata> fieldTypes;
+    for unsigned long i = 0l; i < spiceStruct.scope.getFieldCount(); i++ {
+        // Get field entry
+        const SymbolTableEntry* fieldEntry = spiceStruct.scope.lookupField(cast<unsigned int>(i));
+        assert fieldEntry != nil<SymbolTableEntry*> && fieldEntry.isField();
+        if fieldEntry.isImplicitField {
+            continue;
+        }
+
+        const QualType fieldType = fieldEntry.getQualType();
+        const unsigned int fieldLineNo = cast<unsigned int>(fieldEntry.declNode.codeLoc.line);
+        const unsigned long offsetInBits = dataLayout.getStructElementOffset(structType, cast<unsigned int>(i) + fieldElementOffset) * 8l;
+
+        const llvm::Metadata fieldDiType = this.getDITypeForQualType(node, fieldType);
+        const llvm::Metadata fieldDiDerivedType = this.diBuilder.createMemberType(structDiType, fieldEntry.name, this.diFile, fieldLineNo,
+            fieldDiType.getDITypeSizeInBits(), fieldDiType.getDITypeAlignInBits(), offsetInBits, fieldDiType);
+
+        fieldTypes.pushBack(fieldDiDerivedType);
+    }
+
+    // Note: the C API has no createTemplateTypeParameter, so template parameters of generic substantiations are omitted.
+
+    // Attach fields. This may re-unique the struct type, so refresh all references to it
+    this.diBuilder.replaceArrays(structDiType, fieldTypes);
+    this.structTypeCache.upsert(hashKey, structDiType);
+    return structDiType;
+}
+
+f<llvm::Metadata> DebugInfoGenerator.getInterfaceDIType(const ASTNode* node, const QualType& ty) {
+    // Do cache lookup
+    const long hashKey = cast<long>(hash(ty.getName(true, false, true)));
+    if this.structTypeCache.contains(hashKey) {
+        return this.structTypeCache.get(hashKey);
+    }
+
+    // Cache miss, generate interface type
+    const Interface* spiceInterface = ty.getInterface(node);
+    assert spiceInterface != nil<Interface*>;
+
+    // Retrieve information about the interface
+    const unsigned int lineNo = cast<unsigned int>(spiceInterface.structBase.getDeclCodeLoc().line);
+    const QualType& interfaceQualType = spiceInterface.entry.getQualType();
+    const llvm::Type interfaceType = interfaceQualType.toLLVMType(this.irGenerator.sourceFile);
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(interfaceType);
+
+    // Create interface ty. Note: the C API has no replaceVTableHolder, so the vtable holder is not set.
+    const String mangledName = mangleInterface(*spiceInterface);
+    Vector<llvm::Metadata> noElements;
+    const llvm::Metadata interfaceDiType = this.diBuilder.createStructType(this.diFile, spiceInterface.name, this.diFile, lineNo,
+        this.irGenerator.module.getTypeSizeInBits(interfaceType), alignInBits, llvm::DI_FLAG_TYPE_PASS_BY_REFERENCE | llvm::DI_FLAG_NON_TRIVIAL, noElements, mangledName);
+
+    // Insert into cache
+    this.structTypeCache.upsert(hashKey, interfaceDiType);
+
+    return interfaceDiType;
+}
+
+f<llvm::Metadata> DebugInfoGenerator.getUnionDIType(const ASTNode* node, const QualType& ty) {
+    // Do cache lookup
+    const long hashKey = cast<long>(hash(ty.getName(true, false, true)));
+    if this.structTypeCache.contains(hashKey) {
+        return this.structTypeCache.get(hashKey);
+    }
+
+    // Cache miss, generate union type
+    const Union* spiceUnion = ty.getUnion(node);
+    assert spiceUnion != nil<Union*>;
+
+    // Retrieve information about the union
+    const unsigned int lineNo = cast<unsigned int>(spiceUnion.structBase.getDeclCodeLoc().line);
+    const QualType& unionQualType = spiceUnion.entry.getQualType();
+    const llvm::Type unionType = unionQualType.toLLVMType(this.irGenerator.sourceFile);
+    llvm::DataLayout dataLayout = this.irGenerator.sourceFile.targetMachine.createDataLayout();
+    const unsigned int alignInBits = this.irGenerator.module.getABITypeAlign(unionType) * 8u;
+    // Element 2 is the raw byte-buffer payload that every field aliases at runtime (see Type::toLLVMType's TY_UNION
+    // branch); element 0 is the hidden discriminant tag, which is not surfaced in the debug view.
+    const unsigned long payloadOffsetInBits = dataLayout.getStructElementOffset(unionType, 2u) * 8l;
+
+    const String unionName = spiceUnion.structBase.getSignature();
+    const String mangledName = mangleUnion(*spiceUnion);
+    Vector<llvm::Metadata> noElements;
+    llvm::Metadata unionDiType = this.diBuilder.createUnionType(this.diFile, unionName, this.diFile, lineNo, this.irGenerator.module.getTypeSizeInBits(unionType),
+        alignInBits, llvm::DI_FLAG_ZERO, noElements, mangledName);
+
+    // Insert into cache before computing field types, so that a self-referential field (e.g. a pointer to this same
+    // union) can find this (still-empty) type instead of recursing infinitely
+    this.structTypeCache.upsert(hashKey, unionDiType);
+
+    // Collect DI types for fields. Every field overlaps the same payload bytes, so they all share the same offset
+    Vector<llvm::Metadata> fieldTypes;
+    for unsigned long i = 0l; i < spiceUnion.scope.getFieldCount(); i++ {
+        const SymbolTableEntry* fieldEntry = spiceUnion.scope.lookupField(cast<unsigned int>(i));
+        assert fieldEntry != nil<SymbolTableEntry*> && fieldEntry.isField();
+
+        const QualType fieldType = fieldEntry.getQualType();
+        const unsigned int fieldLineNo = cast<unsigned int>(fieldEntry.declNode.codeLoc.line);
+        const llvm::Metadata fieldDiType = this.getDITypeForQualType(node, fieldType);
+        const llvm::Metadata fieldDiDerivedType = this.diBuilder.createMemberType(unionDiType, fieldEntry.name, this.diFile, fieldLineNo,
+            fieldDiType.getDITypeSizeInBits(), fieldDiType.getDITypeAlignInBits(), payloadOffsetInBits, fieldDiType);
+
+        fieldTypes.pushBack(fieldDiDerivedType);
+    }
+
+    // Attach fields. This may re-unique the union type, so refresh all references to it
+    this.diBuilder.replaceArrays(unionDiType, fieldTypes);
+    this.structTypeCache.upsert(hashKey, unionDiType);
+    return unionDiType;
+}
+
+// Whether the current build is optimized (host: cliOptions.optLevel > OptLevel::O0)
+f<bool> isOptimizedBuild(IRGenerator* irGenerator) {
+    return irGenerator.cliOptions.optLevel != OptLevel::O0;
+}
