@@ -5,15 +5,12 @@ import "std/text/analysis";
 import "std/io/filepath";
 
 // Own imports
-//import "bootstrap/source-file";
-//import "bootstrap/compiler-pass";
 import "bootstrap/lexer/token";
 import "bootstrap/reader/reader";
 import "bootstrap/reader/code-loc";
 import "bootstrap/exception/lexer-error";
 
 public type Lexer struct {
-    //compose CompilerPass compilerPass
     Reader reader
     Vector<Token> tokens // Fully materialized token stream, terminated by a single EOF token
     unsigned long curIdx // Index of the current token within 'tokens'
@@ -73,10 +70,6 @@ public f<TokenType> Lexer.peekRelevantType(unsigned long k) {
     }
     return this.tokens.get(this.relevantIndices.get(ord)).tokenType;
 }
-
-/*public p Lexer.ctor(SourceFile* sourceFile) {
-    this.ctor(sourceFile.filePath);
-}*/
 
 public f<const Token&> Lexer.getToken() {
     return this.tokens.get(this.curIdx);

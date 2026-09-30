@@ -41,12 +41,10 @@ public p setActiveTypeNameDisambiguator(TypeNameDisambiguator* disambiguator) {
  * @return Active type name disambiguator
  */
 f<TypeNameDisambiguator*> getActiveTypeNameDisambiguator() {
-    TypeNameDisambiguator* disambiguator = nil<TypeNameDisambiguator*>;
     unsafe {
-        disambiguator = cast<TypeNameDisambiguator*>(cast<byte*>(ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS));
+        result = cast<TypeNameDisambiguator*>(cast<byte*>(ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS));
     }
-    assert disambiguator != nil<TypeNameDisambiguator*>;
-    return disambiguator;
+    assert result != nil<TypeNameDisambiguator*>;
 }
 
 /**

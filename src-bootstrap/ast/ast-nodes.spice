@@ -3560,11 +3560,9 @@ public f<const CodeLoc&> ASTFunctionDataTypeNode.getCodeLoc() { return this.code
  * @return Composed ASTNode
  */
 public f<ASTNode*> getASTNode(IVisitable* node) {
-    ASTNode* astNode = nil<ASTNode*>;
     unsafe {
-        astNode = cast<ASTNode*>(node.getASTNodeAddress());
+        return cast<ASTNode*>(node.getASTNodeAddress());
     }
-    return astNode;
 }
 
 public f<byte*> ASTEntryNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }

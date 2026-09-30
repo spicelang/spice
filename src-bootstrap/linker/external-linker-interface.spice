@@ -80,10 +80,7 @@ public p ExternalLinkerInterface.prepare() {
  */
 public p ExternalLinkerInterface.run() {
     switch this.cliOptions.outputContainer {
-        case OutputContainer::EXECUTABLE: {
-            this.link();
-        }
-        case OutputContainer::SHARED_LIBRARY: {
+        case OutputContainer::EXECUTABLE, OutputContainer::SHARED_LIBRARY: {
             this.link();
         }
         case OutputContainer::STATIC_LIBRARY: {

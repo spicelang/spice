@@ -50,11 +50,9 @@ public p setActiveTypeRegistry(TypeRegistry* registry) {
  * @return Active type registry or nil if no type registry is active
  */
 public f<TypeRegistry*> getActiveTypeRegistry() {
-    TypeRegistry* registry = nil<TypeRegistry*>;
     unsafe {
-        registry = cast<TypeRegistry*>(cast<byte*>(ACTIVE_TYPE_REGISTRY_ADDRESS));
+        return cast<TypeRegistry*>(cast<byte*>(ACTIVE_TYPE_REGISTRY_ADDRESS));
     }
-    return registry;
 }
 
 public p TypeRegistry.ctor() {
