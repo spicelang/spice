@@ -509,7 +509,11 @@ static void execBootstrapTestCase(const TestCase &testCase) {
           irArgs.push_back(mainSourceFilePath.string());
           const auto [irOutput, irExitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, irArgs, true);
           EXPECT_EQ(0, irExitCode) << "Bootstrap compiler exited with code " << irExitCode << ":\n" << irOutput;
-          const std::filesystem::path irDumpPath = irArtifactDir / ("source-ir-code-O" + std::to_string(i) + ".ll");
+          // With LTO, the bootstrap compiler dumps the IR of the LTO module after the post-link optimization
+          const bool useLTO = std::ranges::find(irArgs, "-lto") != irArgs.end();
+          const std::string irDumpName =
+              useLTO ? "source-ir-code-lto-post-link.ll" : "source-ir-code-O" + std::to_string(i) + ".ll";
+          const std::filesystem::path irDumpPath = irArtifactDir / irDumpName;
           if (!exists(irDumpPath))
             return std::string();
           return FileUtil::getFileContent(irDumpPath);

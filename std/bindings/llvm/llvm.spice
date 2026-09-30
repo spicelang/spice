@@ -694,8 +694,11 @@ public f<bool> LLVMError.isError() {
 
 // Retrieve the error message. This consumes the error
 public f<Message> LLVMError.getMessage() {
-    const string message = LLVMGetErrorMessage(this.self);
+    const string errorMessage = LLVMGetErrorMessage(this.self);
     this.self = nil<LLVMErrorRef>;
+    // The error message has to be released with LLVMDisposeErrorMessage, a Message with LLVMDisposeMessage
+    const string message = LLVMCreateMessage(errorMessage);
+    LLVMDisposeErrorMessage(errorMessage);
     return Message(message);
 }
 
