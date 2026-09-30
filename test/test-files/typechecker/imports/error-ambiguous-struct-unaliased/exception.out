@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:5:5:
+Ambiguous symbol: 'Item' is exposed by both 'lib-a' and 'lib-b'. Please import one of them with an alias and qualify it, e.g. 'alias::Item'
+
+5  Item item;
+   ^^^^

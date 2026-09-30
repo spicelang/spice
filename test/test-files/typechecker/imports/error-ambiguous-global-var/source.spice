@@ -1,0 +1,6 @@
+import "source1" as s1;
+import "source2" as s2;
+
+f<int> main() {
+    printf("%d\n", COUNTER);
+}

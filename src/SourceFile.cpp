@@ -851,10 +851,19 @@ bool SourceFile::isRuntimeModuleAvailable(RuntimeModule runtimeModule) const { r
 
 void SourceFile::addNameRegistryEntry(const std::string &symbolName, uint64_t typeId, SymbolTableEntry *entry, Scope *scope,
                                       bool keepNewOnCollision, SymbolTableEntry *importEntry) {
-  if (keepNewOnCollision || !exportedNameRegistry.contains(symbolName)) // Overwrite potential existing entry
+  const auto it = exportedNameRegistry.find(symbolName);
+  if (keepNewOnCollision || it == exportedNameRegistry.end()) { // Overwrite potential existing entry
     exportedNameRegistry[symbolName] = {symbolName, typeId, entry, scope, importEntry};
-  else // Name collision => we must remove the existing entry
-    exportedNameRegistry.erase(symbolName);
+    if (keepNewOnCollision)
+      ambiguousNameRegistry.erase(symbolName);
+    return;
+  }
+
+  // Name collision => we must remove the existing entry. Remember the colliding imports to report the ambiguity later
+  std::vector<const SymbolTableEntry *> &collidingImports = ambiguousNameRegistry[symbolName];
+  collidingImports.push_back(it->second.importEntry);
+  collidingImports.push_back(importEntry);
+  exportedNameRegistry.erase(it);
 }
 
 const NameRegistryEntry *SourceFile::getNameRegistryEntry(const std::string &symbolName) const {
@@ -870,6 +879,57 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(const std::string &sym
     entry->importEntry->used = true;
 
   return entry;
+}
+
+bool SourceFile::isAmbiguousName(const std::string &symbolName) const { return ambiguousNameRegistry.contains(symbolName); }
+
+/**
+ * Build an error message for a name that is not available, because multiple imports expose it. The message lists the
+ * colliding imports and suggests how to qualify the name.
+ *
+ * @param symbolName Ambiguous name
+ * @return Error message
+ */
+std::string SourceFile::getAmbiguousNameMessage(const std::string &symbolName) const {
+  assert(isAmbiguousName(symbolName));
+
+  // Collect the distinct imports that expose the name. Runtime imports have no import entry and are skipped
+  std::vector<const ImportDefNode *> importNodes;
+  for (const SymbolTableEntry *importEntry : ambiguousNameRegistry.at(symbolName)) {
+    if (importEntry == nullptr)
+      continue;
+    const auto importNode = spice_pointer_cast<const ImportDefNode *>(importEntry->declNode);
+    if (std::ranges::find(importNodes, importNode) == importNodes.end())
+      importNodes.push_back(importNode);
+  }
+
+  std::stringstream msg;
+  msg << "'" << symbolName << "' is exposed by ";
+  if (importNodes.size() < 2) {
+    msg << "multiple imports";
+  } else {
+    if (importNodes.size() == 2)
+      msg << "both ";
+    for (size_t i = 0; i < importNodes.size(); i++) {
+      if (i > 0)
+        msg << (i == importNodes.size() - 1 ? " and " : ", ");
+      msg << "'" << importNodes.at(i)->importPath << "'";
+    }
+  }
+
+  // Suggest qualifying the name with the first import name, that can be written in source code
+  const auto isIdentifier = [](const std::string &name) {
+    const auto isIdentifierChar = [](char c) { return std::isalnum(static_cast<unsigned char>(c)) || c == '_'; };
+    return !name.empty() && (std::islower(static_cast<unsigned char>(name.front())) || name.front() == '_') &&
+           std::ranges::all_of(name, isIdentifierChar);
+  };
+  const auto qualifiableImport =
+      std::ranges::find_if(importNodes, [&](const ImportDefNode *importNode) { return isIdentifier(importNode->importName); });
+  if (qualifiableImport != importNodes.end())
+    msg << ". Please qualify it, e.g. '" << (*qualifiableImport)->importName << SCOPE_ACCESS_TOKEN << symbolName << "'";
+  else
+    msg << ". Please import one of them with an alias and qualify it, e.g. 'alias" << SCOPE_ACCESS_TOKEN << symbolName << "'";
+  return msg.str();
 }
 
 llvm::Type *SourceFile::getLLVMType(const Type *type) {

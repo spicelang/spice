@@ -42,6 +42,17 @@ f<int> main() {
 
 In the case that two imported source files expose symbols with the same name, Spice does not offer the anonymous usage of both
 symbols to prevent the usage of the wrong symbol. Then, you need to specify explicitly, which of the two symbols is meant.
+Using the unqualified name results in an `Ambiguous symbol` error, which names the colliding imports:
+
+```spice
+import "lib-a" as libA;
+import "lib-b" as libB;
+
+f<int> main() {
+	Item item1 = Item{}; // Error: 'Item' is exposed by both 'lib-a' and 'lib-b'
+	libA::Item item2 = libA::Item{}; // Ok
+}
+```
 
 !!! tip "Linking against source files with another main function"
     Spice supports linking against source files which include a main function. Although the main function in the imported source

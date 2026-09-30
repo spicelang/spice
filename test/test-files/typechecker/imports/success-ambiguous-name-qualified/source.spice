@@ -1,0 +1,8 @@
+import "source1" as s1;
+import "source2" as s2;
+
+f<int> main() {
+    s1::Item item1 = s1::Item{1};
+    s2::Item item2 = s2::Item{2};
+    printf("%d %d\n", item1.a, item2.b);
+}

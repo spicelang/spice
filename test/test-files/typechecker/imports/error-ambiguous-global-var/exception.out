@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:5:20:
+Ambiguous symbol: 'COUNTER' is exposed by both 'source1' and 'source2'. Please qualify it, e.g. 's1::COUNTER'
+
+5  printf("%d/n", COUNTER);
+                  ^^^^^^^

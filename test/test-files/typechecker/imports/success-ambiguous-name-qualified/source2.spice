@@ -1,0 +1,3 @@
+public type Item struct {
+    public int b
+}

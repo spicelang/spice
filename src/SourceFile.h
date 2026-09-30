@@ -167,6 +167,8 @@ public:
   void addNameRegistryEntry(const std::string &symbolName, uint64_t typeId, SymbolTableEntry *entry, Scope *scope,
                             bool keepNewOnCollision = true, SymbolTableEntry *importEntry = nullptr);
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(const std::string &symbolName) const;
+  [[nodiscard]] bool isAmbiguousName(const std::string &symbolName) const;
+  [[nodiscard]] std::string getAmbiguousNameMessage(const std::string &symbolName) const;
   [[nodiscard]] llvm::Type *getLLVMType(const Type *type);
   void checkForSoftErrors() const;
   [[nodiscard]] bool isLibraryOutput() const;
@@ -210,6 +212,9 @@ public:
   std::map<std::string, SourceFile *> dependencies; // Has to be an ordered map to keep the compilation order deterministic
   std::vector<const SourceFile *> dependants;
   std::map<std::string, NameRegistryEntry> exportedNameRegistry;
+  // Unqualified names that were dropped from the name registry, because multiple imports expose them. Maps each name to the
+  // import entries exposing it, so that a failing lookup can point the user to the colliding imports
+  std::map<std::string, std::vector<const SymbolTableEntry *>> ambiguousNameRegistry;
   std::vector<const Function *> testFunctions;
 
 private:

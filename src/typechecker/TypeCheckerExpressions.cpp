@@ -894,8 +894,11 @@ std::any TypeChecker::visitAtomicExpr(AtomicExprNode *node) {
   // If no local or global was found, search in the name registry
   if (!entry) {
     const NameRegistryEntry *registryEntry = sourceFile->getNameRegistryEntry(node->fqIdentifier);
-    if (!registryEntry)
+    if (!registryEntry) {
+      if (sourceFile->isAmbiguousName(node->fqIdentifier))
+        SOFT_ERROR_ER(node, AMBIGUOUS_SYMBOL, sourceFile->getAmbiguousNameMessage(node->fqIdentifier))
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "The variable '" + node->fqIdentifier + "' could not be found")
+    }
     entry = registryEntry->targetEntry;
     accessScope = registryEntry->targetScope;
   }

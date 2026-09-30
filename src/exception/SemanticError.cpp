@@ -268,6 +268,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Union field must not be a reference";
   case DUPLICATE_UNION_DEFAULT_VALUE:
     return "Duplicate default value in union";
+  case AMBIGUOUS_SYMBOL:
+    return "Ambiguous symbol";
   }
   assert_fail("Unknown error"); // GCOV_EXCL_LINE
   return "Unknown error";       // GCOV_EXCL_LINE
