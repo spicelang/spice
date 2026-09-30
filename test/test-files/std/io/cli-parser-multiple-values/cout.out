@@ -1,2 +1,4 @@
 Unknown argument: third.spice
+Option -v requires a value.
+Option --single requires a value.
 All assertions passed!

@@ -127,91 +127,72 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<string>& stringOption : this.stringOptions {
             if stringOption.isPositional() { continue; }
             if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
-                // get the argument value
-                argNo++;
-                if argNo >= argc {
+                // Check if a value is present
+                if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
-                arg = argv[argNo];
-                stringOption.setTargetValue(arg);
-                stringOption.callCallback(arg);
-                // Take further values, if the option accepts multiple values
-                while stringOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                // Take the value. Options, that accept multiple values, take all following values
+                do {
                     argNo++;
-                    arg = argv[argNo];
-                    stringOption.setTargetValue(arg);
-                    stringOption.callCallback(arg);
-                }
+                    string value = argv[argNo];
+                    stringOption.setTargetValue(value);
+                    stringOption.callCallback(value);
+                } while stringOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed);
                 continue 2; // Continue with next argument
             }
         }
         foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
             if stringObjOption.isPositional() { continue; }
             if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
-                // get the argument value
-                argNo++;
-                if argNo >= argc {
+                // Check if a value is present
+                if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
-                arg = argv[argNo];
-                String parsedArg = String(arg);
-                stringObjOption.setTargetValue(parsedArg);
-                stringObjOption.callCallback(parsedArg);
-                // Take further values, if the option accepts multiple values
-                while stringObjOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                // Take the value. Options, that accept multiple values, take all following values
+                do {
                     argNo++;
-                    parsedArg = String(argv[argNo]);
+                    String parsedArg = String(argv[argNo]);
                     stringObjOption.setTargetValue(parsedArg);
                     stringObjOption.callCallback(parsedArg);
-                }
+                } while stringObjOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed);
                 continue 2; // Continue with next argument
             }
         }
         foreach const CliOption<int>& intOption : this.intOptions {
             if intOption.isPositional() { continue; }
             if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
-                // get the argument value
-                argNo++;
-                if argNo >= argc {
+                // Check if a value is present
+                if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
-                arg = argv[argNo];
-                int parsedArg = toInt(arg);
-                intOption.setTargetValue(parsedArg);
-                intOption.callCallback(parsedArg);
-                // Take further values, if the option accepts multiple values
-                while intOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                // Take the value. Options, that accept multiple values, take all following values
+                do {
                     argNo++;
-                    parsedArg = toInt(argv[argNo]);
+                    int parsedArg = toInt(argv[argNo]);
                     intOption.setTargetValue(parsedArg);
                     intOption.callCallback(parsedArg);
-                }
+                } while intOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed);
                 continue 2; // Continue with next argument
             }
         }
         foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
             if filePathOption.isPositional() { continue; }
             if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
-                // get the argument value
-                argNo++;
-                if argNo >= argc {
+                // Check if a value is present
+                if argNo + 1u >= argc {
                     printf("Option %s requires a value.\n", arg);
                     return EXIT_CODE_ERROR;
                 }
-                arg = argv[argNo];
-                FilePath parsedArg = FilePath(arg);
-                filePathOption.setTargetValue(parsedArg);
-                filePathOption.callCallback(parsedArg);
-                // Take further values, if the option accepts multiple values
-                while filePathOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                // Take the value. Options, that accept multiple values, take all following values
+                do {
                     argNo++;
-                    parsedArg = FilePath(argv[argNo]);
+                    FilePath parsedArg = FilePath(argv[argNo]);
                     filePathOption.setTargetValue(parsedArg);
                     filePathOption.callCallback(parsedArg);
-                }
+                } while filePathOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed);
                 continue 2; // Continue with next argument
             }
         }

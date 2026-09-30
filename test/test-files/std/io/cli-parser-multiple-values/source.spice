@@ -49,5 +49,11 @@ f<int> main() {
     assert state.single == "y";
     assert state.file == "z";
 
+    // An option without a value is an error, no matter whether it accepts multiple values
+    string[3] missingValueArgs = ["prog", "build", "-v"];
+    assert parser.parse(3u, missingValueArgs) != EXIT_CODE_SUCCESS;
+    string[3] missingSingleValueArgs = ["prog", "build", "--single"];
+    assert parser.parse(3u, missingSingleValueArgs) != EXIT_CODE_SUCCESS;
+
     printf("All assertions passed!\n");
 }
