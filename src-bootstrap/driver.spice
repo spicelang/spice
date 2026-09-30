@@ -807,17 +807,18 @@ f<int> parseOnly(Driver& driver, int argc, string[] argv) {
     return driver.parse(argc, argv);
 }
 
-f<bool> testBuildAndRunSubcommands(const string mainFile) {
+#[test]
+f<bool> testBuildAndRunSubcommands() {
     // Build: minimal
     Driver buildMinimal;
-    string[3] buildMinimalArgs = ["spice", "build", mainFile];
+    string[3] buildMinimalArgs = ["spice", "build", "main-file.spice"];
     assert parseAndEnrich(buildMinimal, 3, buildMinimalArgs);
     assert buildMinimal.shouldCompile;
     assert !buildMinimal.shouldInstall;
     assert !buildMinimal.shouldUninstall;
     assert !buildMinimal.shouldExecute;
     assert !buildMinimal.cliOptions.execute;
-    assert buildMinimal.cliOptions.mainSourceFile.toGenericString() == mainFile;
+    assert buildMinimal.cliOptions.mainSourceFile.toGenericString() == "main-file.spice";
     assert buildMinimal.cliOptions.optLevel == OptLevel::O0;
     assert buildMinimal.cliOptions.buildMode == BuildMode::DEBUG;
     assert buildMinimal.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
@@ -831,17 +832,17 @@ f<bool> testBuildAndRunSubcommands(const string mainFile) {
     assert !buildMinimal.cliOptions.instrumentation.emitsDebugInfo();
     // The executable lands in the current dir and is named like the source file, with the extension of the target
     assert buildMinimal.cliOptions.outputDir.toGenericString() == "./";
-    FilePath expectedOutputPath = FilePath("./main");
+    FilePath expectedOutputPath = FilePath("./main-file");
     expectedOutputPath.replaceExtension(getOutputFileExtension(buildMinimal.cliOptions, OutputContainer::EXECUTABLE));
     assert buildMinimal.cliOptions.outputPath.toGenericString() == expectedOutputPath.toGenericString();
 
     // Build: complex
     Driver buildComplex;
-    string[14] buildComplexArgs = ["spice", "b", "-d", "-ir", "-g", "-Os", "-m", "release", "-lto", "--sanitizer", "address", "--output-container", "exec", mainFile];
+    string[14] buildComplexArgs = ["spice", "b", "-d", "-ir", "-g", "-Os", "-m", "release", "-lto", "--sanitizer", "address", "--output-container", "exec", "main-file.spice"];
     assert parseAndEnrich(buildComplex, 14, buildComplexArgs);
     assert buildComplex.shouldCompile;
     assert !buildComplex.shouldExecute;
-    assert buildComplex.cliOptions.mainSourceFile.toGenericString() == mainFile;
+    assert buildComplex.cliOptions.mainSourceFile.toGenericString() == "main-file.spice";
     assert buildComplex.cliOptions.optLevel == OptLevel::Os;
     assert buildComplex.cliOptions.buildMode == BuildMode::RELEASE;
     assert buildComplex.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::FULL;
@@ -855,7 +856,7 @@ f<bool> testBuildAndRunSubcommands(const string mainFile) {
 
     // Build: option values, which need the parser to consume the following argument
     Driver buildOptions;
-    string[17] buildOptionsWithFile = ["spice", "build", "--strip-symbols", "--keep-frame-pointers", "--no-entry", "--static", "--backend", "llvm", "-b", "key=value", "--build-var", "flag", "-j", "8", "--output-container", "lib", mainFile];
+    string[17] buildOptionsWithFile = ["spice", "build", "--strip-symbols", "--keep-frame-pointers", "--no-entry", "--static", "--backend", "llvm", "-b", "key=value", "--build-var", "flag", "-j", "8", "--output-container", "lib", "main-file.spice"];
     assert parseAndEnrich(buildOptions, 17, buildOptionsWithFile);
     assert buildOptions.cliOptions.stripSymbols;
     assert buildOptions.cliOptions.keepFramePointers;
@@ -869,7 +870,7 @@ f<bool> testBuildAndRunSubcommands(const string mainFile) {
 
     // Run: minimal
     Driver runMinimal;
-    string[3] runMinimalArgs = ["spice", "run", mainFile];
+    string[3] runMinimalArgs = ["spice", "run", "main-file.spice"];
     assert parseAndEnrich(runMinimal, 3, runMinimalArgs);
     assert runMinimal.shouldCompile;
     assert !runMinimal.shouldInstall;
@@ -884,7 +885,7 @@ f<bool> testBuildAndRunSubcommands(const string mainFile) {
 
     // Run: complex
     Driver runComplex;
-    string[7] runComplexArgs = ["spice", "r", "-O2", "-j", "8", "-ast", mainFile];
+    string[7] runComplexArgs = ["spice", "r", "-O2", "-j", "8", "-ast", "main-file.spice"];
     assert parseAndEnrich(runComplex, 7, runComplexArgs);
     assert runComplex.shouldExecute;
     assert runComplex.cliOptions.execute;
@@ -894,10 +895,11 @@ f<bool> testBuildAndRunSubcommands(const string mainFile) {
     return true;
 }
 
-f<bool> testTestLintInstallSubcommands(const string mainFile) {
+#[test]
+f<bool> testTestLintInstallSubcommands() {
     // Test: minimal
     Driver testMinimal;
-    string[3] testMinimalArgs = ["spice", "test", mainFile];
+    string[3] testMinimalArgs = ["spice", "test", "main-file.spice"];
     assert parseAndEnrich(testMinimal, 3, testMinimalArgs);
     assert testMinimal.shouldCompile;
     assert testMinimal.shouldExecute;
@@ -909,7 +911,7 @@ f<bool> testTestLintInstallSubcommands(const string mainFile) {
 
     // Test: complex
     Driver testComplex;
-    string[8] testComplexArgs = ["spice", "t", "-s", "-cst", "--sanitizer", "thread", "--disable-verifier", mainFile];
+    string[8] testComplexArgs = ["spice", "t", "-s", "-cst", "--sanitizer", "thread", "--disable-verifier", "main-file.spice"];
     assert parseAndEnrich(testComplex, 8, testComplexArgs);
     assert testComplex.cliOptions.dump.dumpCST;
     assert testComplex.cliOptions.dump.dumpAssembly;
@@ -918,7 +920,7 @@ f<bool> testTestLintInstallSubcommands(const string mainFile) {
 
     // Lint
     Driver lintMinimal;
-    string[3] lintMinimalArgs = ["spice", "lint", mainFile];
+    string[3] lintMinimalArgs = ["spice", "lint", "main-file.spice"];
     assert parseAndEnrich(lintMinimal, 3, lintMinimalArgs);
     assert lintMinimal.shouldCompile;
     assert !lintMinimal.shouldExecute;
@@ -926,7 +928,7 @@ f<bool> testTestLintInstallSubcommands(const string mainFile) {
     assert lintMinimal.cliOptions.buildMode == BuildMode::DEBUG;
 
     Driver lintComplex;
-    string[8] lintComplexArgs = ["spice", "l", "-d", "-ast", "-Os", "-m", "release", mainFile];
+    string[8] lintComplexArgs = ["spice", "l", "-d", "-ast", "-Os", "-m", "release", "main-file.spice"];
     assert parseAndEnrich(lintComplex, 8, lintComplexArgs);
     assert lintComplex.cliOptions.lintOnly;
     assert lintComplex.cliOptions.optLevel == OptLevel::Os;
@@ -936,7 +938,7 @@ f<bool> testTestLintInstallSubcommands(const string mainFile) {
 
     // Install: the executable is built into the bin directory of Spice
     Driver install;
-    string[3] installArgs = ["spice", "install", mainFile];
+    string[3] installArgs = ["spice", "install", "main-file.spice"];
     assert parseAndEnrich(install, 3, installArgs);
     assert install.shouldCompile;
     assert install.shouldInstall;
@@ -949,13 +951,13 @@ f<bool> testTestLintInstallSubcommands(const string mainFile) {
 
     // Uninstall: only the source file is required and nothing gets compiled
     Driver uninstall;
-    string[3] uninstallArgs = ["spice", "uninstall", mainFile];
+    string[3] uninstallArgs = ["spice", "uninstall", "main-file.spice"];
     assert parseAndEnrich(uninstall, 3, uninstallArgs);
     assert !uninstall.shouldCompile;
     assert !uninstall.shouldInstall;
     assert uninstall.shouldUninstall;
     assert !uninstall.shouldExecute;
-    assert uninstall.cliOptions.mainSourceFile.toGenericString() == mainFile;
+    assert uninstall.cliOptions.mainSourceFile.toGenericString() == "main-file.spice";
     return true;
 }
 
@@ -966,42 +968,43 @@ f<DebugInfoLevel> parseDebugInfoLevel(const string firstArg, const string second
     return driver.cliOptions.instrumentation.debugInfoLevel;
 }
 
-f<bool> testInstrumentation(const string mainFile) {
+#[test]
+f<bool> testInstrumentation() {
     // All debug info levels. A level without a value must not swallow the source file
-    assert parseDebugInfoLevel("-g", "-d", mainFile) == DebugInfoLevel::FULL; // Plain alias for --debug-info=full
-    assert parseDebugInfoLevel("--debug-info", "-d", mainFile) == DebugInfoLevel::FULL;
-    assert parseDebugInfoLevel("--debug-info=full", "-d", mainFile) == DebugInfoLevel::FULL;
-    assert parseDebugInfoLevel("--debug-info=line-only", "-d", mainFile) == DebugInfoLevel::LINE_ONLY;
-    assert parseDebugInfoLevel("--debug-info=none", "-d", mainFile) == DebugInfoLevel::NONE;
+    assert parseDebugInfoLevel("-g", "-d", "main-file.spice") == DebugInfoLevel::FULL; // Plain alias for --debug-info=full
+    assert parseDebugInfoLevel("--debug-info", "-d", "main-file.spice") == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=full", "-d", "main-file.spice") == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=line-only", "-d", "main-file.spice") == DebugInfoLevel::LINE_ONLY;
+    assert parseDebugInfoLevel("--debug-info=none", "-d", "main-file.spice") == DebugInfoLevel::NONE;
 
     // The last occurrence wins, no matter if '-g' or '--debug-info' comes last
-    assert parseDebugInfoLevel("-g", "--debug-info=line-only", mainFile) == DebugInfoLevel::LINE_ONLY;
-    assert parseDebugInfoLevel("--debug-info=line-only", "-g", mainFile) == DebugInfoLevel::FULL;
-    assert parseDebugInfoLevel("--debug-info=full", "--debug-info=none", mainFile) == DebugInfoLevel::NONE;
+    assert parseDebugInfoLevel("-g", "--debug-info=line-only", "main-file.spice") == DebugInfoLevel::LINE_ONLY;
+    assert parseDebugInfoLevel("--debug-info=line-only", "-g", "main-file.spice") == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=full", "--debug-info=none", "main-file.spice") == DebugInfoLevel::NONE;
 
     // Code coverage implies debug line info, but keeps an explicitly chosen level
     Driver coverage;
-    string[4] coverageArgs = ["spice", "build", "--coverage", mainFile];
+    string[4] coverageArgs = ["spice", "build", "--coverage", "main-file.spice"];
     assert parseAndEnrich(coverage, 4, coverageArgs);
     assert coverage.cliOptions.instrumentation.codeCoverage;
     assert coverage.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::LINE_ONLY;
     assert coverage.cliOptions.instrumentation.emitsDebugInfo();
     assert !coverage.cliOptions.instrumentation.emitsFullDebugInfo();
     Driver coverageFull;
-    string[5] coverageFullArgs = ["spice", "build", "--coverage", "--debug-info=full", mainFile];
+    string[5] coverageFullArgs = ["spice", "build", "--coverage", "--debug-info=full", "main-file.spice"];
     assert parseAndEnrich(coverageFull, 5, coverageFullArgs);
     assert coverageFull.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::FULL;
     assert coverageFull.cliOptions.instrumentation.emitsFullDebugInfo();
 
     // Sanitizers imply other options
     Driver typeSanitizer;
-    string[5] typeSanitizerArgs = ["spice", "build", "--sanitizer", "type", mainFile];
+    string[5] typeSanitizerArgs = ["spice", "build", "--sanitizer", "type", "main-file.spice"];
     assert parseAndEnrich(typeSanitizer, 5, typeSanitizerArgs);
     assert typeSanitizer.cliOptions.instrumentation.sanitizer == Sanitizer::TYPE;
     assert typeSanitizer.cliOptions.useTBAAMetadata;
     if isLinux() { // The memory sanitizer is only supported for Linux targets
         Driver memorySanitizer;
-        string[5] memorySanitizerArgs = ["spice", "build", "--sanitizer", "memory", mainFile];
+        string[5] memorySanitizerArgs = ["spice", "build", "--sanitizer", "memory", "main-file.spice"];
         assert parseAndEnrich(memorySanitizer, 5, memorySanitizerArgs);
         assert memorySanitizer.cliOptions.instrumentation.sanitizer == Sanitizer::MEMORY;
         assert memorySanitizer.cliOptions.useLifetimeMarkers;
@@ -1009,10 +1012,11 @@ f<bool> testInstrumentation(const string mainFile) {
     return true;
 }
 
-f<bool> testBuildVarsAndTarget(const string mainFile) {
+#[test]
+f<bool> testBuildVarsAndTarget() {
     // Build vars, which are inferred from other options
     Driver release;
-    string[6] releaseArgs = ["spice", "build", "-m", "release", "--static", mainFile];
+    string[6] releaseArgs = ["spice", "build", "-m", "release", "--static", "main-file.spice"];
     assert parseAndEnrich(release, 6, releaseArgs);
     assert release.cliOptions.buildVars.get(String("spice.is_debug")) == "false";
     assert release.cliOptions.buildVars.get(String("spice.is_release")) == "true";
@@ -1024,14 +1028,14 @@ f<bool> testBuildVarsAndTarget(const string mainFile) {
 
     // A build var given on the command line is overwritten by the inferred one
     Driver overwritten;
-    string[7] overwrittenArgsWithFile = ["spice", "build", "-b", "spice.is_debug=maybe", "-b", "a=b", mainFile];
+    string[7] overwrittenArgsWithFile = ["spice", "build", "-b", "spice.is_debug=maybe", "-b", "a=b", "main-file.spice"];
     assert parseAndEnrich(overwritten, 7, overwrittenArgsWithFile);
     assert overwritten.cliOptions.buildVars.get(String("spice.is_debug")) == "true";
     assert overwritten.cliOptions.buildVars.get(String("a")) == "b";
 
     // The target is derived from the triple
     Driver target;
-    string[5] targetArgs = ["spice", "build", "--target", "aarch64-unknown-linux-gnu", mainFile];
+    string[5] targetArgs = ["spice", "build", "--target", "aarch64-unknown-linux-gnu", "main-file.spice"];
     assert parseAndEnrich(target, 5, targetArgs);
     assert target.cliOptions.targetArch == "aarch64";
     assert target.cliOptions.targetOs == "linux";
@@ -1048,6 +1052,7 @@ f<bool> testBuildVarsAndTarget(const string mainFile) {
     return true;
 }
 
+#[test]
 f<bool> testOutputFileExtensions() {
     CliOptions cliOptions;
     cliOptions.targetTriple = llvm::Triple(String("x86_64"), String("unknown"), String("linux"));
@@ -1079,6 +1084,7 @@ f<bool> testOutputFileExtensions() {
     return true;
 }
 
+#[test]
 f<bool> testRejectedArguments() {
     // The source file has to exist
     Driver missingFile;

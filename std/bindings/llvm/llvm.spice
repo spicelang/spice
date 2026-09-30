@@ -29,6 +29,8 @@ type LLVMAttributeRef alias VoidPtr;
 type LLVMMetadataRef alias VoidPtr;
 type LLVMComdatRef alias VoidPtr;
 type LLVMMemoryBufferRef alias VoidPtr;
+type LLVMDIBuilderRef alias VoidPtr;
+type LLVMDbgRecordRef alias VoidPtr;
 
 // ===== Generic helper definitions =====
 type ShortIntLong unsigned short|unsigned int|unsigned long;
@@ -641,6 +643,38 @@ ext f<string> LLVMGetBufferStart(LLVMMemoryBufferRef /*MemBuf*/);
 ext f<unsigned long> LLVMGetBufferSize(LLVMMemoryBufferRef /*MemBuf*/);
 ext p LLVMDisposeMemoryBuffer(LLVMMemoryBufferRef /*MemBuf*/);
 ext f<LLVMBool> LLVMLinkModules2(LLVMModuleRef /*Dest*/, LLVMModuleRef /*Src*/);
+
+// ===== Debug info (llvm-c/DebugInfo.h) =====
+ext f<LLVMDIBuilderRef> LLVMCreateDIBuilder(LLVMModuleRef /*M*/);
+ext p LLVMDisposeDIBuilder(LLVMDIBuilderRef /*Builder*/);
+ext p LLVMDIBuilderFinalize(LLVMDIBuilderRef /*Builder*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateFile(LLVMDIBuilderRef /*Builder*/, string /*Filename*/, unsigned long /*FilenameLen*/, string /*Directory*/, unsigned long /*DirectoryLen*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateCompileUnit(LLVMDIBuilderRef /*Builder*/, int /*Lang*/, LLVMMetadataRef /*FileRef*/, string /*Producer*/, unsigned long /*ProducerLen*/, LLVMBool /*isOptimized*/, string /*Flags*/, unsigned long /*FlagsLen*/, unsigned int /*RuntimeVer*/, string /*SplitName*/, unsigned long /*SplitNameLen*/, int /*Kind*/, unsigned int /*DWOId*/, LLVMBool /*SplitDebugInlining*/, LLVMBool /*DebugInfoForProfiling*/, string /*SysRoot*/, unsigned long /*SysRootLen*/, string /*SDK*/, unsigned long /*SDKLen*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateBasicType(LLVMDIBuilderRef /*Builder*/, string /*Name*/, unsigned long /*NameLen*/, unsigned long /*SizeInBits*/, unsigned int /*Encoding*/, int /*Flags*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreatePointerType(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*PointeeTy*/, unsigned long /*SizeInBits*/, unsigned int /*AlignInBits*/, unsigned int /*AddressSpace*/, string /*Name*/, unsigned long /*NameLen*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateReferenceType(LLVMDIBuilderRef /*Builder*/, unsigned int /*Tag*/, LLVMMetadataRef /*Type*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateArrayType(LLVMDIBuilderRef /*Builder*/, unsigned long /*Size*/, unsigned int /*AlignInBits*/, LLVMMetadataRef /*Ty*/, LLVMMetadataRef* /*Subscripts*/, unsigned int /*NumSubscripts*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateStructType(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, LLVMMetadataRef /*File*/, unsigned int /*LineNumber*/, unsigned long /*SizeInBits*/, unsigned int /*AlignInBits*/, int /*Flags*/, LLVMMetadataRef /*DerivedFrom*/, LLVMMetadataRef* /*Elements*/, unsigned int /*NumElements*/, unsigned int /*RunTimeLang*/, LLVMMetadataRef /*VTableHolder*/, string /*UniqueId*/, unsigned long /*UniqueIdLen*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateUnionType(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, LLVMMetadataRef /*File*/, unsigned int /*LineNumber*/, unsigned long /*SizeInBits*/, unsigned int /*AlignInBits*/, int /*Flags*/, LLVMMetadataRef* /*Elements*/, unsigned int /*NumElements*/, unsigned int /*RunTimeLang*/, string /*UniqueId*/, unsigned long /*UniqueIdLen*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateClassType(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, LLVMMetadataRef /*File*/, unsigned int /*LineNumber*/, unsigned long /*SizeInBits*/, unsigned int /*AlignInBits*/, unsigned long /*OffsetInBits*/, int /*Flags*/, LLVMMetadataRef /*DerivedFrom*/, LLVMMetadataRef* /*Elements*/, unsigned int /*NumElements*/, LLVMMetadataRef /*VTableHolder*/, LLVMMetadataRef /*TemplateParamsNode*/, string /*UniqueIdentifier*/, unsigned long /*UniqueIdentifierLen*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateMemberType(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, LLVMMetadataRef /*File*/, unsigned int /*LineNo*/, unsigned long /*SizeInBits*/, unsigned int /*AlignInBits*/, unsigned long /*OffsetInBits*/, int /*Flags*/, LLVMMetadataRef /*Ty*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateQualifiedType(LLVMDIBuilderRef /*Builder*/, unsigned int /*Tag*/, LLVMMetadataRef /*Type*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateSubroutineType(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*File*/, LLVMMetadataRef* /*ParameterTypes*/, unsigned int /*NumParameterTypes*/, int /*Flags*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateFunction(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, string /*LinkageName*/, unsigned long /*LinkageNameLen*/, LLVMMetadataRef /*File*/, unsigned int /*LineNo*/, LLVMMetadataRef /*Ty*/, LLVMBool /*IsLocalToUnit*/, LLVMBool /*IsDefinition*/, unsigned int /*ScopeLine*/, int /*Flags*/, LLVMBool /*IsOptimized*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateLexicalBlock(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, LLVMMetadataRef /*File*/, unsigned int /*Line*/, unsigned int /*Column*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateParameterVariable(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, unsigned int /*ArgNo*/, LLVMMetadataRef /*File*/, unsigned int /*LineNo*/, LLVMMetadataRef /*Ty*/, LLVMBool /*AlwaysPreserve*/, int /*Flags*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateAutoVariable(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, LLVMMetadataRef /*File*/, unsigned int /*LineNo*/, LLVMMetadataRef /*Ty*/, LLVMBool /*AlwaysPreserve*/, int /*Flags*/, unsigned int /*AlignInBits*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateExpression(LLVMDIBuilderRef /*Builder*/, unsigned long* /*Addr*/, unsigned long /*Length*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateGlobalVariableExpression(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef /*Scope*/, string /*Name*/, unsigned long /*NameLen*/, string /*Linkage*/, unsigned long /*LinkLen*/, LLVMMetadataRef /*File*/, unsigned int /*LineNo*/, LLVMMetadataRef /*Ty*/, LLVMBool /*LocalToUnit*/, LLVMMetadataRef /*Expr*/, LLVMMetadataRef /*Decl*/, unsigned int /*AlignInBits*/);
+ext p LLVMReplaceArrays(LLVMDIBuilderRef /*Builder*/, LLVMMetadataRef* /*T*/, LLVMMetadataRef* /*Elements*/, unsigned int /*NumElements*/);
+ext f<LLVMMetadataRef> LLVMDIBuilderCreateDebugLocation(LLVMContextRef /*Ctx*/, unsigned int /*Line*/, unsigned int /*Column*/, LLVMMetadataRef /*Scope*/, LLVMMetadataRef /*InlinedAt*/);
+ext f<LLVMDbgRecordRef> LLVMDIBuilderInsertDeclareRecordAtEnd(LLVMDIBuilderRef /*Builder*/, LLVMValueRef /*Storage*/, LLVMMetadataRef /*VarInfo*/, LLVMMetadataRef /*Expr*/, LLVMMetadataRef /*DebugLoc*/, LLVMBasicBlockRef /*Block*/);
+ext f<unsigned long> LLVMDITypeGetSizeInBits(LLVMMetadataRef /*DType*/);
+ext f<unsigned int> LLVMDITypeGetAlignInBits(LLVMMetadataRef /*DType*/);
+ext p LLVMSetSubprogram(LLVMValueRef /*Func*/, LLVMMetadataRef /*SP*/);
+ext p LLVMSetCurrentDebugLocation2(LLVMBuilderRef /*Builder*/, LLVMMetadataRef /*Loc*/);
+ext f<LLVMMetadataRef> LLVMGetCurrentDebugLocation2(LLVMBuilderRef /*Builder*/);
+ext p LLVMGlobalSetMetadata(LLVMValueRef /*Global*/, unsigned int /*Kind*/, LLVMMetadataRef /*MD*/);
 
 // ===== Message =====
 
@@ -1766,6 +1800,7 @@ public const unsigned int ATTRIBUTE_RETURN_INDEX = 0;
 public const unsigned int ATTRIBUTE_FUNCTION_INDEX = 4294967295u;
 
 // Module flag behaviors (llvm::Module::ModFlagBehavior)
+public const int MOD_FLAG_BEHAVIOR_WARNING = 2;
 public const int MOD_FLAG_BEHAVIOR_MAX = 7;
 public const int MOD_FLAG_BEHAVIOR_MIN = 8;
 
@@ -1812,6 +1847,227 @@ public f<Metadata> getMDNode(const LLVMContext& context, const Vector<Metadata>&
         LLVMMetadataRef* operandsRef = cast<LLVMMetadataRef*>(operands.getDataPtr());
         return Metadata{ LLVMMDNodeInContext2(context.self, operandsRef, cast<unsigned long>(operands.getSize())) };
     }
+}
+
+// Like llvm::DIType::getSizeInBits
+public f<unsigned long> Metadata.getDITypeSizeInBits() {
+    return LLVMDITypeGetSizeInBits(this.self);
+}
+
+// Like llvm::DIType::getAlignInBits
+public f<unsigned int> Metadata.getDITypeAlignInBits() {
+    return LLVMDITypeGetAlignInBits(this.self);
+}
+
+// Like llvm::GlobalObject::addDebugInfo / setMetadata: attach a metadata node under the given kind
+public p Value.setGlobalMetadata(unsigned int kind, Metadata md) {
+    LLVMGlobalSetMetadata(this.self, kind, md.self);
+}
+
+// Like llvm::Function::setSubprogram
+public p Function.setSubprogram(Metadata subprogram) {
+    LLVMSetSubprogram(this.self, subprogram.self);
+}
+
+// Like llvm::IRBuilder::SetCurrentDebugLocation
+public p IRBuilder.setCurrentDebugLocation(Metadata loc) {
+    LLVMSetCurrentDebugLocation2(this.self, loc.self);
+}
+
+// Like llvm::IRBuilder::getCurrentDebugLocation
+public f<Metadata> IRBuilder.getCurrentDebugLocation() {
+    return Metadata{ LLVMGetCurrentDebugLocation2(this.self) };
+}
+
+// ----- Debug info (DIBuilder) -----
+// The bootstrap debug info generator mirrors src/irgenerator/DebugInfoGenerator.cpp, which uses the LLVM C++ DIBuilder.
+// The C API represents every debug info node (types, scopes, subprograms, ...) as an LLVMMetadataRef, so the Metadata
+// wrapper above is reused for all of them. A few C++-only capabilities have no C-API equivalent (see the notes at the
+// respective call sites in debug-info-generator.spice).
+
+// DWARF source languages (LLVMDWARFSourceLanguage ordinals)
+public const int DW_SOURCE_LANGUAGE_C_PLUS_PLUS_14 = 32;
+// DWARF debug info emission kinds (LLVMDWARFEmissionKind)
+public const int DW_EMISSION_FULL = 1;
+public const int DW_EMISSION_LINE_TABLES_ONLY = 2;
+// DWARF type encodings (llvm::dwarf::DW_ATE_*)
+public const unsigned int DW_ATE_BOOLEAN = 2u;
+public const unsigned int DW_ATE_FLOAT = 4u;
+public const unsigned int DW_ATE_SIGNED = 5u;
+public const unsigned int DW_ATE_SIGNED_CHAR = 6u;
+public const unsigned int DW_ATE_UNSIGNED = 7u;
+public const unsigned int DW_ATE_UNSIGNED_CHAR = 8u;
+// DWARF tags (llvm::dwarf::DW_TAG_*)
+public const unsigned int DW_TAG_REFERENCE_TYPE = 16u;
+public const unsigned int DW_TAG_CONST_TYPE = 38u;
+// Debug info flags (LLVMDIFlags)
+public const int DI_FLAG_ZERO = 0;
+public const int DI_FLAG_PUBLIC = 3;
+public const int DI_FLAG_PROTOTYPED = 256; // 1 << 8
+public const int DI_FLAG_TYPE_PASS_BY_VALUE = 4194304; // 1 << 22
+public const int DI_FLAG_TYPE_PASS_BY_REFERENCE = 8388608; // 1 << 23
+public const int DI_FLAG_NON_TRIVIAL = 67108864; // 1 << 26
+
+public type DIBuilder struct {
+    LLVMDIBuilderRef self = nil<LLVMDIBuilderRef>
+}
+
+public p DIBuilder.ctor(Module module) {
+    this.self = LLVMCreateDIBuilder(module.self);
+}
+
+// Like llvm::DIBuilder::finalize
+public p DIBuilder.finalize() {
+    LLVMDIBuilderFinalize(this.self);
+}
+
+// Like llvm::DIBuilder::createFile
+public f<Metadata> DIBuilder.createFile(const String& filename, const String& directory) {
+    return Metadata{ LLVMDIBuilderCreateFile(this.self, filename.getRaw(), filename.getLength(), directory.getRaw(), directory.getLength()) };
+}
+
+// Like llvm::DIBuilder::createCompileUnit (C API omits the name-table-kind knob, so it stays at the default)
+public f<Metadata> DIBuilder.createCompileUnit(int sourceLang, Metadata file, const String& producer, bool isOptimized, int emissionKind) {
+    return Metadata{ LLVMDIBuilderCreateCompileUnit(this.self, sourceLang, file.self, producer.getRaw(), producer.getLength(),
+        cast<LLVMBool>(isOptimized), "", 0l, 0u, "", 0l, emissionKind, 0u, cast<LLVMBool>(false), cast<LLVMBool>(false), "", 0l, "", 0l) };
+}
+
+// Like llvm::DIBuilder::createBasicType
+public f<Metadata> DIBuilder.createBasicType(const String& name, unsigned long sizeInBits, unsigned int encoding) {
+    return Metadata{ LLVMDIBuilderCreateBasicType(this.self, name.getRaw(), name.getLength(), sizeInBits, encoding, DI_FLAG_ZERO) };
+}
+
+// Like llvm::DIBuilder::createPointerType
+public f<Metadata> DIBuilder.createPointerType(Metadata pointeeType, unsigned long sizeInBits, unsigned int alignInBits = 0u) {
+    return Metadata{ LLVMDIBuilderCreatePointerType(this.self, pointeeType.self, sizeInBits, alignInBits, 0u, "", 0l) };
+}
+
+// Like llvm::DIBuilder::createReferenceType
+public f<Metadata> DIBuilder.createReferenceType(Metadata referencedType, unsigned long sizeInBits) {
+    // The C API createReferenceType takes no size; the pointer-sized reference is implied by the target data layout
+    return Metadata{ LLVMDIBuilderCreateReferenceType(this.self, DW_TAG_REFERENCE_TYPE, referencedType.self) };
+}
+
+// Like llvm::DIBuilder::createArrayType (no subscripts, matching the host's empty subscript array)
+public f<Metadata> DIBuilder.createArrayType(unsigned long size, Metadata itemType) {
+    return Metadata{ LLVMDIBuilderCreateArrayType(this.self, size, 0u, itemType.self, nil<LLVMMetadataRef*>, 0u) };
+}
+
+// Like llvm::DIBuilder::createQualifiedType
+public f<Metadata> DIBuilder.createQualifiedType(unsigned int tag, Metadata baseType) {
+    return Metadata{ LLVMDIBuilderCreateQualifiedType(this.self, tag, baseType.self) };
+}
+
+// Like llvm::DIBuilder::createStructType (DerivedFrom and VTableHolder are unused by the host)
+public f<Metadata> DIBuilder.createStructType(Metadata scope, const String& name, Metadata file, unsigned int lineNumber,
+    unsigned long sizeInBits, unsigned int alignInBits, int flags, const Vector<Metadata>& elements, const String& uniqueId) {
+    unsafe {
+        LLVMMetadataRef* elementsRef = elements.isEmpty() ? nil<LLVMMetadataRef*> : cast<LLVMMetadataRef*>(elements.getDataPtr());
+        return Metadata{ LLVMDIBuilderCreateStructType(this.self, scope.self, name.getRaw(), name.getLength(), file.self,
+            lineNumber, sizeInBits, alignInBits, flags, nil<LLVMMetadataRef>, elementsRef, cast<unsigned int>(elements.getSize()),
+            0u, nil<LLVMMetadataRef>, uniqueId.getRaw(), uniqueId.getLength()) };
+    }
+}
+
+// Like llvm::DIBuilder::createUnionType
+public f<Metadata> DIBuilder.createUnionType(Metadata scope, const String& name, Metadata file, unsigned int lineNumber,
+    unsigned long sizeInBits, unsigned int alignInBits, int flags, const Vector<Metadata>& elements, const String& uniqueId) {
+    unsafe {
+        LLVMMetadataRef* elementsRef = elements.isEmpty() ? nil<LLVMMetadataRef*> : cast<LLVMMetadataRef*>(elements.getDataPtr());
+        return Metadata{ LLVMDIBuilderCreateUnionType(this.self, scope.self, name.getRaw(), name.getLength(), file.self,
+            lineNumber, sizeInBits, alignInBits, flags, elementsRef, cast<unsigned int>(elements.getSize()), 0u,
+            uniqueId.getRaw(), uniqueId.getLength()) };
+    }
+}
+
+// Like llvm::DIBuilder::createClassType (used for anonymous lambda capture structs)
+public f<Metadata> DIBuilder.createClassType(Metadata scope, const String& name, Metadata file, unsigned int lineNumber,
+    unsigned long sizeInBits, unsigned int alignInBits, int flags, const Vector<Metadata>& elements) {
+    unsafe {
+        LLVMMetadataRef* elementsRef = elements.isEmpty() ? nil<LLVMMetadataRef*> : cast<LLVMMetadataRef*>(elements.getDataPtr());
+        return Metadata{ LLVMDIBuilderCreateClassType(this.self, scope.self, name.getRaw(), name.getLength(), file.self,
+            lineNumber, sizeInBits, alignInBits, 0l, flags, nil<LLVMMetadataRef>, elementsRef,
+            cast<unsigned int>(elements.getSize()), nil<LLVMMetadataRef>, nil<LLVMMetadataRef>, "", 0l) };
+    }
+}
+
+// Like llvm::DIBuilder::createMemberType (host always passes FlagZero here)
+public f<Metadata> DIBuilder.createMemberType(Metadata scope, const String& name, Metadata file, unsigned int lineNumber,
+    unsigned long sizeInBits, unsigned int alignInBits, unsigned long offsetInBits, Metadata diType) {
+    return Metadata{ LLVMDIBuilderCreateMemberType(this.self, scope.self, name.getRaw(), name.getLength(), file.self,
+        lineNumber, sizeInBits, alignInBits, offsetInBits, DI_FLAG_ZERO, diType.self) };
+}
+
+// Like llvm::DIBuilder::createSubroutineType (folds the host's getOrCreateTypeArray call in)
+public f<Metadata> DIBuilder.createSubroutineType(Metadata file, const Vector<Metadata>& parameterTypes) {
+    unsafe {
+        LLVMMetadataRef* paramsRef = parameterTypes.isEmpty() ? nil<LLVMMetadataRef*> : cast<LLVMMetadataRef*>(parameterTypes.getDataPtr());
+        return Metadata{ LLVMDIBuilderCreateSubroutineType(this.self, file.self, paramsRef, cast<unsigned int>(parameterTypes.getSize()), DI_FLAG_ZERO) };
+    }
+}
+
+// Like llvm::DIBuilder::createFunction. The C API exposes IsLocalToUnit/IsDefinition booleans instead of DISPFlags, so
+// the subprogram virtuality flags (SPFlagVirtual/SPFlagPureVirtual) cannot be set here.
+public f<Metadata> DIBuilder.createFunction(Metadata scope, const String& name, const String& linkageName, Metadata file,
+    unsigned int lineNo, Metadata diType, bool isLocalToUnit, bool isDefinition, unsigned int scopeLine, int flags, bool isOptimized) {
+    return Metadata{ LLVMDIBuilderCreateFunction(this.self, scope.self, name.getRaw(), name.getLength(), linkageName.getRaw(),
+        linkageName.getLength(), file.self, lineNo, diType.self, cast<LLVMBool>(isLocalToUnit), cast<LLVMBool>(isDefinition),
+        scopeLine, flags, cast<LLVMBool>(isOptimized)) };
+}
+
+// Like llvm::DIBuilder::createLexicalBlock
+public f<Metadata> DIBuilder.createLexicalBlock(Metadata scope, Metadata file, unsigned int line, unsigned int column) {
+    return Metadata{ LLVMDIBuilderCreateLexicalBlock(this.self, scope.self, file.self, line, column) };
+}
+
+// Like llvm::DIBuilder::createParameterVariable
+public f<Metadata> DIBuilder.createParameterVariable(Metadata scope, const String& name, unsigned int argNo, Metadata file,
+    unsigned int lineNo, Metadata diType) {
+    return Metadata{ LLVMDIBuilderCreateParameterVariable(this.self, scope.self, name.getRaw(), name.getLength(), argNo,
+        file.self, lineNo, diType.self, cast<LLVMBool>(true), DI_FLAG_ZERO) };
+}
+
+// Like llvm::DIBuilder::createAutoVariable
+public f<Metadata> DIBuilder.createAutoVariable(Metadata scope, const String& name, Metadata file, unsigned int lineNo, Metadata diType) {
+    return Metadata{ LLVMDIBuilderCreateAutoVariable(this.self, scope.self, name.getRaw(), name.getLength(), file.self, lineNo,
+        diType.self, cast<LLVMBool>(true), DI_FLAG_ZERO, 0u) };
+}
+
+// Like llvm::DIBuilder::createExpression (empty expression)
+public f<Metadata> DIBuilder.createExpression() {
+    return Metadata{ LLVMDIBuilderCreateExpression(this.self, nil<unsigned long*>, 0l) };
+}
+
+// Like llvm::DIBuilder::createGlobalVariableExpression
+public f<Metadata> DIBuilder.createGlobalVariableExpression(Metadata scope, const String& name, const String& linkage,
+    Metadata file, unsigned int lineNo, Metadata diType, bool localToUnit) {
+    const Metadata expr = this.createExpression();
+    return Metadata{ LLVMDIBuilderCreateGlobalVariableExpression(this.self, scope.self, name.getRaw(), name.getLength(),
+        linkage.getRaw(), linkage.getLength(), file.self, lineNo, diType.self, cast<LLVMBool>(localToUnit), expr.self,
+        nil<LLVMMetadataRef>, 0u) };
+}
+
+// Like llvm::DIBuilder::replaceArrays: replace the element list of a (forward-declared) composite type in place
+public p DIBuilder.replaceArrays(Metadata& composite, const Vector<Metadata>& elements) {
+    unsafe {
+        LLVMMetadataRef* elementsRef = elements.isEmpty() ? nil<LLVMMetadataRef*> : cast<LLVMMetadataRef*>(elements.getDataPtr());
+        LLVMReplaceArrays(this.self, &composite.self, elementsRef, cast<unsigned int>(elements.getSize()));
+    }
+}
+
+// Like llvm::DIBuilder::insertDeclare (new debug-record form): declare a local variable at the end of the given block
+public p DIBuilder.insertDeclareAtEnd(Value storage, Metadata varInfo, Metadata expr, Metadata debugLoc, BasicBlock block) {
+    LLVMDIBuilderInsertDeclareRecordAtEnd(this.self, storage.self, varInfo.self, expr.self, debugLoc.self, block.self);
+}
+
+// Like llvm::DILocation::get
+public f<Metadata> getDebugLocation(const LLVMContext& context, unsigned int line, unsigned int column, Metadata scope) {
+    return Metadata{ LLVMDIBuilderCreateDebugLocation(context.self, line, column, scope.self, nil<LLVMMetadataRef>) };
+}
+
+// Metadata kind id for the "dbg" attachment (used to attach debug info to global variables)
+public f<unsigned int> getDebugMetadataKindID(const LLVMContext& context) {
+    return LLVMGetMDKindIDInContext(context.self, "dbg", 3u);
 }
 
 // ----- Comdat -----
