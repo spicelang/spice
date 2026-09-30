@@ -264,6 +264,9 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     return true;
   if (testDriverCliOptions.isGitHubActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
+  // Some test cases check host specifics, that the bootstrap compiler does not replicate (e.g. ANTLR error messages)
+  if (testDriverCliOptions.bootstrapMode && exists(testCase.testPath / CTL_SKIP_BOOTSTRAP))
+    return true;
   // Sanitizer-instrumented binaries cannot run under Valgrind either (the ASan/TSan/MSan/TYSan runtime and Valgrind's
   // instrumentation both intercept the same allocator hooks), so skip them under --leak-detection for the same reason
   // --skip-sanitizer-tests does.

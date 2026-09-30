@@ -68,6 +68,7 @@ Examples: `assembly-linux-amd64.asm`, `assembly-linux-aarch64.asm`,
 - `disabled` — skip the case entirely
 - `skip-gh-actions` — skip on CI
 - `skip-windows`, `skip-macos` — skip on that OS
+- `skip-bootstrap` — skip when running against the bootstrap compiler (`--bootstrap`), e.g. for ANTLR-specific error messages
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests
 - `debug.gdb` — gdb script (used with `debug.out`)
 

@@ -12,7 +12,9 @@ env:
   LLVM_VERSION: "llvmorg-23.1.2"
   GCC_VERSION: "16"
   # Test filter for the bootstrap compiler runs: only the stages the bootstrap compiler already covers. Exclude known
-  # bootstrap compiler gaps here (e.g. -TestSuite.testCase:TestSuite.otherTestCase) and remove them once fixed.
+  # bootstrap compiler gaps here (e.g. -TestSuite.testCase:TestSuite.otherTestCase) and remove them once fixed. Test cases
+  # that check host specifics, the bootstrap compiler does not replicate (e.g. ANTLR error messages), have a
+  # 'skip-bootstrap' marker file instead.
   BOOTSTRAP_TEST_FILTER: >-
     LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*
 
