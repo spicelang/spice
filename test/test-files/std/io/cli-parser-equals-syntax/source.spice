@@ -1,0 +1,61 @@
+import "std/os/os";
+import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+import "std/io/filepath";
+
+// State the options write to
+type State struct {
+    string single = ""
+    String named
+    int count = 0
+    FilePath output
+    string callbackValue = ""
+    string file = ""
+}
+
+f<int> main() {
+    State state;
+    State* s = &state;
+
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    CliSubcommand& build = parser.addSubcommand("build", "Build something");
+    build.addOption("--single", state.single, "Single raw string value");
+    build.addOption("--named", state.named, "Named String value");
+    build.addOption("--count", state.count, "Count value");
+    build.addOption("--output", state.output, "Output file path");
+    CliOption<string>& targetOption = build.addOption("--target", p(const string& value) {
+        s.callbackValue = value;
+    }, "Callback value");
+    targetOption.addAlias("-t");
+    build.addOption("<file>", state.file, "File to build");
+
+    // The "--name=value" syntax attaches the value to the option name, for every option type
+    string[7] args = ["prog", "build", "--single=x", "--count=42", "--output=out.o", "--named=foo", "main.spice"];
+    assert parser.parse(7u, args) == EXIT_CODE_SUCCESS;
+    assert state.single == "x"; // Raw string set-value: the value must stay valid after parsing returns
+    assert state.count == 42;
+    const string outputPath = state.output.toString();
+    assert outputPath == "out.o";
+    assert state.named == "foo";
+    assert state.file == "main.spice";
+
+    // The value may contain further '=' and '-' characters; only the first '=' splits name and value
+    string[4] tripleArgs = ["prog", "build", "--target=x86_64-unknown-linux-gnu", "app.spice"];
+    assert parser.parse(4u, tripleArgs) == EXIT_CODE_SUCCESS;
+    assert state.callbackValue == "x86_64-unknown-linux-gnu";
+    assert state.file == "app.spice";
+
+    // The "=value" syntax also works on an alias
+    state.callbackValue = "";
+    string[4] aliasArgs = ["prog", "build", "-t=native", "alias.spice"];
+    assert parser.parse(4u, aliasArgs) == EXIT_CODE_SUCCESS;
+    assert state.callbackValue == "native";
+
+    // The space-separated syntax keeps working unchanged
+    string[5] spaceArgs = ["prog", "build", "--single", "y", "space.spice"];
+    assert parser.parse(5u, spaceArgs) == EXIT_CODE_SUCCESS;
+    assert state.single == "y";
+    assert state.file == "space.spice";
+
+    printf("All assertions passed!\n");
+}
