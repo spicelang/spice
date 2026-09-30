@@ -247,8 +247,9 @@ public f<int> Driver.parse(int argc, string[] argv) {
         return exitCode;
     }
 
-    // The main source file has to exist
-    if (this.shouldCompile || this.shouldUninstall) && !this.cliOptions.mainSourceFile.exists() {
+    // For uninstall, the main source file has to exist. For the compile path, the missing file is reported by the pipeline
+    // (SourceFile.runParser), matching the host compiler, so it is not checked here.
+    if this.shouldUninstall && !this.cliOptions.mainSourceFile.exists() {
         printf("<main-source-file>: File does not exist: %s\n", this.cliOptions.mainSourceFile.toString());
         return EXIT_CODE_ERROR;
     }
@@ -277,6 +278,7 @@ public p Driver.enrich() {
 
     // Propagate target information
     const llvm::Triple defaultTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+    bool targetExplicitlySelected = true;
     if this.cliOptions.targetTriple.empty() {
         if this.cliOptions.targetArch == TARGET_UNKNOWN { // We have nothing -> obtain native triplet
             this.cliOptions.targetTriple = defaultTriple;
@@ -284,6 +286,7 @@ public p Driver.enrich() {
             this.cliOptions.targetVendor = defaultTriple.getVendorName();
             this.cliOptions.targetOs = defaultTriple.getOSName();
             this.cliOptions.isNativeTarget = true;
+            targetExplicitlySelected = false;
         } else { // We have arch, vendor and os -> obtain triplet
             this.cliOptions.targetTriple = llvm::Triple(this.cliOptions.targetArch, this.cliOptions.targetVendor, this.cliOptions.targetOs);
             this.cliOptions.isNativeTarget = this.cliOptions.targetTriple == defaultTriple;
@@ -294,6 +297,13 @@ public p Driver.enrich() {
         this.cliOptions.targetVendor = triple.getVendorName();
         this.cliOptions.targetOs = triple.getOSName();
         this.cliOptions.isNativeTarget = triple == defaultTriple;
+    }
+
+    // In comparable-output (test) mode, an explicitly selected target is treated as a cross-compilation target, even if it
+    // matches the host triple. This mirrors the host test runner and makes the target info in the emitted IR deterministic,
+    // instead of being stripped as it is for a native build. See the equivalent handling in the host test runner.
+    if targetExplicitlySelected && this.cliOptions.comparableOutput {
+        this.cliOptions.isNativeTarget = false;
     }
 
     // Always preserve IR values names when dumping IR
