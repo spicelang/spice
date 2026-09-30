@@ -136,6 +136,13 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
                 arg = argv[argNo];
                 stringOption.setTargetValue(arg);
                 stringOption.callCallback(arg);
+                // Take further values, if the option accepts multiple values
+                while stringOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                    argNo++;
+                    arg = argv[argNo];
+                    stringOption.setTargetValue(arg);
+                    stringOption.callCallback(arg);
+                }
                 continue 2; // Continue with next argument
             }
         }
@@ -152,6 +159,13 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
                 String parsedArg = String(arg);
                 stringObjOption.setTargetValue(parsedArg);
                 stringObjOption.callCallback(parsedArg);
+                // Take further values, if the option accepts multiple values
+                while stringObjOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                    argNo++;
+                    parsedArg = String(argv[argNo]);
+                    stringObjOption.setTargetValue(parsedArg);
+                    stringObjOption.callCallback(parsedArg);
+                }
                 continue 2; // Continue with next argument
             }
         }
@@ -168,6 +182,13 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
                 int parsedArg = toInt(arg);
                 intOption.setTargetValue(parsedArg);
                 intOption.callCallback(parsedArg);
+                // Take further values, if the option accepts multiple values
+                while intOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                    argNo++;
+                    parsedArg = toInt(argv[argNo]);
+                    intOption.setTargetValue(parsedArg);
+                    intOption.callCallback(parsedArg);
+                }
                 continue 2; // Continue with next argument
             }
         }
@@ -184,6 +205,13 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
                 FilePath parsedArg = FilePath(arg);
                 filePathOption.setTargetValue(parsedArg);
                 filePathOption.callCallback(parsedArg);
+                // Take further values, if the option accepts multiple values
+                while filePathOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                    argNo++;
+                    parsedArg = FilePath(argv[argNo]);
+                    filePathOption.setTargetValue(parsedArg);
+                    filePathOption.callCallback(parsedArg);
+                }
                 continue 2; // Continue with next argument
             }
         }
@@ -215,6 +243,29 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
     }
 
     return EXIT_CODE_SUCCESS; // Parsing was successful, return success exit code
+}
+
+/**
+ * Check if the argument after the given one can be taken as another value of an option, that accepts multiple values.
+ * This is the case, if it is no option and enough arguments remain for the positional arguments, that are still missing.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @param argNo Index of the last consumed argument
+ * @param positionalConsumed Number of positional arguments, that were already consumed
+ * @return true if the next argument is another value, false otherwise
+ */
+f<bool> CliSubcommand.hasAnotherValue(unsigned int argc, string[] argv, unsigned int argNo, unsigned int positionalConsumed) {
+    const unsigned int nextArgNo = argNo + 1u;
+    if nextArgNo >= argc {
+        return false;
+    }
+    const String nextArg = String(argv[nextArgNo]);
+    if nextArg.startsWith("-") {
+        return false;
+    }
+    const unsigned int missingPositionals = cast<unsigned int>(this.positionalTypeTags.getSize()) - positionalConsumed;
+    return argc - nextArgNo > missingPositionals;
 }
 
 f<const String&> CliSubcommand.getPositionalName(unsigned int slot) {

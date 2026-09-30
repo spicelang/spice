@@ -176,7 +176,7 @@ p Parser.expect(TokenType expectedTokenType) {
     if !this.currentTokenIs(expectedTokenType) {
         const Token& token = this.lexer.getToken();
         const String message = "Unexpected token '" + token.text + "'";
-        this.throwParserError(token.codeLoc, ParserErrorType::PARSING_FAILED, message.getRaw());
+        this.throwSyntaxError(token, message.getRaw());
     }
     this.advance();
 }
@@ -556,6 +556,11 @@ p Parser.parseTopLevelDef(ASTEntryNode* entryNode) {
         return;
     }
 
+    // Check if the current token can start a top level definition at all
+    if !this.isTopLevelDefStart(this.tokenAt(0l)) {
+        this.throwUnexpectedTopLevelToken();
+    }
+
     // Determine the discriminating token, skipping an optional topLevelDefAttr ('#[...]') and a qualifier list
     long offset = 0l;
     if this.tokenAt(cast<unsigned long>(offset)) == TokenType::FCT_ATTR_PREAMBLE {
@@ -574,6 +579,12 @@ p Parser.parseTopLevelDef(ASTEntryNode* entryNode) {
     } else if disc == TokenType::P {
         entryNode.topLevelDefs.pushBack(cast<IVisitable*>(this.parseProcDef()));
     } else if disc == TokenType::F {
+        // All top level definitions, starting with 'f', continue with '<' (mainFunctionDef, functionDef or a globalVarDef
+        // of function type)
+        if this.tokenAt(cast<unsigned long>(offset + 1l)) != TokenType::LESS {
+            const unsigned long offendingTokenIdx = this.lexer.peekRelevantIndex(cast<unsigned long>(offset + 1l));
+            this.throwNoViableAlternative(offendingTokenIdx);
+        }
         // mainFunctionDef: 'f' '<' 'int' '>' 'main' ...; everything else starting with 'f' is a functionDef
         const bool isMain = this.tokenAt(cast<unsigned long>(offset + 1l)) == TokenType::LESS
             && this.tokenAt(cast<unsigned long>(offset + 2l)) == TokenType::TYPE_INT
@@ -2898,6 +2909,103 @@ f<char> getEscapedChar(char c) {
         case '"': { return '"'; }
     }
     return '\0';
+}
+
+/**
+ * Check if the given token type can start a top level definition, i.e. if it is in the FIRST set of the loop in the entry
+ * rule of the grammar
+ *
+ * @param tokenType Token type to check
+ * @return Can start a top level definition or not
+ */
+f<bool> Parser.isTopLevelDefStart(TokenType tokenType) {
+    if this.isQualifierType(tokenType) || this.isBaseDataTypeKeyword(tokenType) {
+        return true;
+    }
+    return tokenType == TokenType::F || tokenType == TokenType::P || tokenType == TokenType::IMPORT
+        || tokenType == TokenType::TYPE || tokenType == TokenType::EXT || tokenType == TokenType::FCT_ATTR_PREAMBLE
+        || tokenType == TokenType::MOD_ATTR_PREAMBLE || tokenType == TokenType::IDENTIFIER
+        || tokenType == TokenType::TYPE_IDENTIFIER;
+}
+
+/**
+ * Abort parsing, because the current token can not start a top level definition. Mirrors the error recovery of ANTLR at
+ * the loop of the entry rule: if the token after the current one would be valid, the current token is reported as
+ * extraneous input, otherwise as mismatched input.
+ */
+p Parser.throwUnexpectedTopLevelToken() {
+    const TokenType nextTokenType = this.tokenAt(1l);
+    const bool isNextValid = nextTokenType == TokenType::EOF || this.isTopLevelDefStart(nextTokenType);
+    const unsigned long tokenIdx = this.lexer.peekRelevantIndex(0l);
+    String message = String(isNextValid ? "extraneous input " : "mismatched input ");
+    message += this.getTokenErrorDisplay(tokenIdx);
+    message += " expecting {<EOF>, 'double', 'int', 'short', 'long', 'byte', 'char', 'string', 'bool', 'dyn', 'const', ";
+    message += "'signed', 'unsigned', 'inline', 'public', 'heap', 'compose', 'f', 'p', 'import', 'type', 'ext', '#', '#!', ";
+    message += "IDENTIFIER, TYPE_IDENTIFIER}";
+    this.throwSyntaxError(this.lexer.getTokenAt(tokenIdx), message.getRaw());
+}
+
+/**
+ * Abort parsing, because none of the alternatives at the current position can match. Mirrors ANTLR's no viable alternative
+ * error, which prints the input from the current token up to the offending token.
+ *
+ * @param offendingTokenIdx Index of the first token, that none of the alternatives can match
+ */
+p Parser.throwNoViableAlternative(unsigned long offendingTokenIdx) {
+    const Token& offendingToken = this.lexer.getTokenAt(offendingTokenIdx);
+    // Like ANTLR, the text of the EOF token is not part of the printed input
+    const bool isEof = offendingToken.tokenType == TokenType::EOF;
+    const unsigned long endIdx = isEof ? offendingTokenIdx : offendingTokenIdx + 1l;
+    String input;
+    for unsigned long i = this.lexer.getTokenIndex(); i < endIdx; i++ {
+        if !this.isIgnoredTokenType(this.lexer.getTokenAt(i).tokenType) {
+            input += this.lexer.getSourceCode(i, i + 1l);
+        }
+    }
+    const String message = "no viable alternative at input '" + escapeWhitespace(input) + "'";
+    this.throwSyntaxError(offendingToken, message.getRaw());
+}
+
+/**
+ * Get the representation of a token in syntax error messages, like ANTLR's getTokenErrorDisplay
+ *
+ * @param tokenIdx Index of the token
+ * @return Token display string
+ */
+f<String> Parser.getTokenErrorDisplay(unsigned long tokenIdx) {
+    if this.lexer.getTokenAt(tokenIdx).tokenType == TokenType::EOF {
+        return String("'<EOF>'");
+    }
+    return "'" + escapeWhitespace(this.lexer.getSourceCode(tokenIdx, tokenIdx + 1l)) + "'";
+}
+
+/**
+ * Escape newlines, carriage returns and tabs in the given text, like ANTLR does it for syntax error messages
+ *
+ * @param text Input text
+ * @return Escaped text
+ */
+f<String> escapeWhitespace(const String& text) {
+    String escapedText = text;
+    escapedText.replaceAll("\n", "\\n");
+    escapedText.replaceAll("\r", "\\r");
+    escapedText.replaceAll("\t", "\\t");
+    return escapedText;
+}
+
+/**
+ * Abort parsing with a syntax error at the given token. The host reports syntax errors via ANTLR, which uses zero-based
+ * columns, in contrast to the code locations of tokens.
+ *
+ * @param token Offending token
+ * @param message Error message suffix
+ */
+p Parser.throwSyntaxError(const Token& token, string message) {
+    CodeLoc codeLoc = token.codeLoc;
+    if codeLoc.col > 0l {
+        codeLoc.col--;
+    }
+    this.throwParserError(codeLoc, ParserErrorType::PARSING_FAILED, message);
 }
 
 /**

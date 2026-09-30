@@ -1,0 +1,53 @@
+import "std/os/os";
+import "std/data/vector";
+import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+
+// State the callbacks write to. The callbacks capture a pointer to it
+type State struct {
+    Vector<String> values
+    string single = ""
+    string file = ""
+}
+
+f<int> main() {
+    State state;
+    State* s = &state;
+
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    CliSubcommand& build = parser.addSubcommand("build", "Build something");
+    CliOption<string>& multiOption = build.addOption("--value", p(const string& value) {
+        s.values.pushBack(String(value));
+    }, "Values");
+    multiOption.addAlias("-v");
+    multiOption.allowMultipleValues();
+    build.addOption("--single", state.single, "Single value");
+    build.addOption("<file>", state.file, "File to build");
+
+    // All values up to the next option are taken, but the missing positional argument is left over
+    string[9] args = ["prog", "build", "-v", "a", "b", "c", "--single", "x", "main.spice"];
+    assert parser.parse(9u, args) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 3;
+    assert state.values.get(0) == "a";
+    assert state.values.get(1) == "b";
+    assert state.values.get(2) == "c";
+    assert state.single == "x";
+    assert state.file == "main.spice";
+
+    // Values are left over for the missing positional argument
+    state.values.clear();
+    string[6] trailingArgs = ["prog", "build", "--value", "d", "e", "other.spice"];
+    assert parser.parse(6u, trailingArgs) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 2;
+    assert state.values.get(0) == "d";
+    assert state.values.get(1) == "e";
+    assert state.file == "other.spice";
+
+    // Options, that do not accept multiple values, take only one value
+    string[6] singleArgs = ["prog", "build", "--single", "y", "z", "third.spice"];
+    assert parser.parse(6u, singleArgs) != EXIT_CODE_SUCCESS;
+    assert state.single == "y";
+    assert state.file == "z";
+
+    printf("All assertions passed!\n");
+}

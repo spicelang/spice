@@ -121,7 +121,8 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
  */
 public f<ExternalBinaryFinderResult> findLinker() {
     if isUnixBased() {
-        foreach const string linkerName : ["mold", "lld", "gold", "ld"] {
+        // Use the flavor-specific lld driver, since the generic 'lld' driver refuses to be invoked directly
+        foreach const string linkerName : ["mold", "ld.lld", "ld64.lld", "gold", "ld"] {
             foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
                 String linkerPath = path + linkerName;
                 if fileExists(linkerPath.getRaw()) {

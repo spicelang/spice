@@ -24,7 +24,7 @@ class BootstrapUtil {
 public:
   // Public static methods
   static bool buildBootstrapCompiler();
-  static std::optional<std::string> extractErrorMessage(const std::string &output, const std::filesystem::path &testPath);
+  static std::optional<std::string> extractErrorMessage(const std::string &output);
   static std::optional<std::string> extractSerializedAST(const std::string &output);
   static bool isErrorSupported(const std::filesystem::path &errorRefPath);
   static void eraseDSOLocalMarkers(std::string &irCode);

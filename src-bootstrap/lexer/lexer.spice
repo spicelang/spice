@@ -74,6 +74,32 @@ public f<TokenType> Lexer.peekRelevantType(unsigned long k) {
     return this.tokens.get(this.relevantIndices.get(ord)).tokenType;
 }
 
+/**
+ * Return the index within the token stream of the k-th relevant (non-comment) token at or after the current one,
+ * where k=0 is the current token.
+ *
+ * @param k Zero-based relevant-token lookahead distance
+ * @return The token index at that position (the index of the EOF token when looking past the end)
+ */
+public f<unsigned long> Lexer.peekRelevantIndex(unsigned long k) {
+    unsigned long ord = this.relevantOrdinal.get(this.curIdx) + k;
+    const unsigned long lastOrd = cast<unsigned long>(this.relevantIndices.getSize()) - 1l;
+    if ord > lastOrd {
+        ord = lastOrd;
+    }
+    return this.relevantIndices.get(ord);
+}
+
+/**
+ * Get the token at the given index within the token stream
+ *
+ * @param index Token index
+ * @return Token at that index
+ */
+public f<const Token&> Lexer.getTokenAt(unsigned long index) {
+    return this.tokens.get(index);
+}
+
 /*public p Lexer.ctor(SourceFile* sourceFile) {
     this.ctor(sourceFile.filePath);
 }*/
@@ -502,7 +528,12 @@ f<Token> Lexer.consumeToken() {
  * @param message Error message suffix
  */
 p Lexer.throwLexerError(const CodeLoc& codeLoc, string message) {
-    const LexerError lexerError = LexerError(codeLoc, LexerErrorType::TOKENIZING_FAILED, message);
+    // The host reports tokenizing errors via ANTLR, which uses zero-based columns
+    CodeLoc errorCodeLoc = codeLoc;
+    if errorCodeLoc.col > 0l {
+        errorCodeLoc.col--;
+    }
+    const LexerError lexerError = LexerError(errorCodeLoc, LexerErrorType::TOKENIZING_FAILED, message);
     const String& errorMessage = lexerError.getMessage();
     panic(Error(errorMessage.getRaw()));
 }

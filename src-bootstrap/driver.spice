@@ -652,6 +652,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --build-var
     CliOption<string>& buildVarOption = subCmd.addOption("--build-var", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");
     buildVarOption.addAlias("-b");
+    buildVarOption.allowMultipleValues();
     // --ignore-cache
     subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
     // --use-lifetime-markers

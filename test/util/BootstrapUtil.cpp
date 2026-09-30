@@ -115,14 +115,13 @@ bool BootstrapUtil::buildBootstrapCompiler() {
  *   <line>  <source code line of the panic>
  *   ...
  *
- * Extract the error message and make it comparable to the one of the host compiler, which prints file paths relative to
- * the directory of the main source file.
+ * Extract the error message and make it comparable to the one of the host compiler. Like the host compiler, the bootstrap
+ * compiler already prints the file paths of code locations relative to the directory of the main source file.
  *
  * @param output Combined stdout and stderr output of the bootstrap compiler
- * @param testPath Directory of the test case
  * @return Error message, if the bootstrap compiler reported an error
  */
-std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string &output, const std::filesystem::path &testPath) {
+std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string &output) {
   static const std::regex PANIC_HEADER_REGEX(R"(Program panicked at [^\n]*?:(\d+):\d+: )");
   std::smatch match;
   if (!std::regex_search(output, match, PANIC_HEADER_REGEX))
@@ -137,9 +136,8 @@ std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string 
   std::string message =
       output.substr(messageStart, messageEnd == std::string::npos ? std::string::npos : messageEnd - messageStart);
 
-  // Make paths relative to the test directory, like the host compiler prints them
+  // Normalize path separators on Windows
   CommonUtil::replaceAll(message, "\\", "/");
-  CommonUtil::replaceAll(message, testPath.generic_string() + "/", "./");
   return message;
 }
 
