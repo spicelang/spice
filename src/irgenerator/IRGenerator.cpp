@@ -439,6 +439,10 @@ llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, 
   if (type.is(TY_PTR))
     return llvm::Constant::getNullValue(builder.getPtrTy());
 
+  // The only compile-time value of a function or procedure type is nil, which is represented as a null fat pointer
+  if (type.isOneOf({TY_FUNCTION, TY_PROCEDURE}))
+    return llvm::Constant::getNullValue(llvmTypes.lambdaFatPtrType);
+
   throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
 }
 
