@@ -317,6 +317,13 @@ public p Driver.enrich() {
         this.cliOptions.generateTestMain = true;
     }
 
+    // The host test runner compiles a file of test functions with no normal entry point but an implicit test main. It sets
+    // both flags directly; driven via the CLI, the bootstrap compiler only gets --no-entry, so in comparable-output (test)
+    // mode a --no-entry build additionally requests the synthetic test main, mirroring the host test runner.
+    if this.cliOptions.comparableOutput && this.cliOptions.noEntryFct {
+        this.cliOptions.generateTestMain = true;
+    }
+
     const Sanitizer sanitizer = this.cliOptions.instrumentation.sanitizer;
     // Memory sanitizer is only supported on Linux
     if !this.isTargetLinux() && sanitizer == Sanitizer::MEMORY {
