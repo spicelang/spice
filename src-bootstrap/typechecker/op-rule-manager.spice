@@ -732,16 +732,12 @@ public f<Pair<QualType, Function*>> OpRuleManager.getFieldAssignResultType(ASTNo
     if rhsType.isRef() {
         const QualType rhsContainedType = rhsType.getContained();
         if lhsType.matches(rhsContainedType, false, false, true) {
-            // Check is there is an overloaded operator function available
-            const ExprResult overloadResult = this.isOperatorOverloadingFctAvailable(node, OP_FCT_ASSIGN, binaryOperands(lhs, rhs), 0l);
-            if !overloadResult.ty.is(SuperType::TY_INVALID) {
-                return assignResult(overloadResult.ty);
-            }
-
-            // In case of a return expression, we perform temp stealing
+            // Initializing a field constructs a new value, so we copy via the copy ctor instead of calling an overloaded
+            // assign operator. The rhs may have no entry (e.g. a function call returning a reference), so go by type
             Function* copyCtor = nil<Function*>;
-            if rhsContainedType.is(SuperType::TY_STRUCT) && !rhs.isTemporary() {
-                copyCtor = this.typeChecker.implicitlyCallStructCopyCtor(rhs.entry, rhs.entry.declNode);
+            const QualType rhsContainedNonConstType = rhsContainedType.toNonConst();
+            if rhsContainedNonConstType.is(SuperType::TY_STRUCT) && !rhs.isTemporary() {
+                copyCtor = this.typeChecker.implicitlyCallStructCopyCtor(rhsContainedNonConstType, node);
             }
             return assignResult(lhsType, copyCtor);
         }

@@ -170,8 +170,8 @@ public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeL
             UnionManifestationList& presetManifestations = matchScope.unions.get(unionId);
             Union& presetManifestation = presetManifestations.get(mangledName);
             substantiatedUnion.genericPreset = &presetManifestation.structBase;
-            // ToDo: Register the substantiation with declNode->getUnionManifestations() once the AST node
-            // exposes a per-declaration manifestation list (see ast-nodes.spice).
+            ASTUnionDefNode* unionDefNode = downcast<ASTUnionDefNode>(substantiatedUnion.structBase.declNode);
+            unionDefNode.unionManifestations.pushBack(substantiatedUnion);
             substantiatedUnion.isNewlyInserted = true; // To not iterate over it in the same matching
 
             // Copy union entry

@@ -372,6 +372,73 @@ public f<Vector<Struct*>> Scope.getAllStructManifestationsInDeclarationOrder() {
 }
 
 /**
+ * Retrieve all virtual methods of this struct or interface scope, sorted by their VTable index
+ *
+ * @return Virtual methods
+ */
+public f<Vector<const Function*>> Scope.getVirtualMethods() {
+    assert this.scopeType == ScopeType::STRUCT || this.scopeType == ScopeType::INTERFACE;
+
+    // Collect all virtual methods
+    Vector<const Function*> methods;
+    foreach Pair<const String&, FunctionManifestationList&> fctEntry : this.functions {
+        FunctionManifestationList& manifestationList = fctEntry.getSecond();
+        assert !manifestationList.isEmpty();
+        foreach Pair<const String&, Function&> manifestationEntry : manifestationList {
+            const Function& function = manifestationEntry.getSecond();
+            if function.isVirtualMethod() {
+                methods.pushBack(&function);
+            }
+        }
+    }
+
+    // Sort the list by VTable index, so that the VTable layout matches the slot indices used at the call sites (insertion sort,
+    // the lists are small)
+    for unsigned long i = 1l; i < methods.getSize(); i++ {
+        const Function* current = methods.get(i);
+        unsigned long j = i;
+        while j > 0l {
+            const Function* previous = methods.get(j - 1l);
+            if previous.vtableIndex <= current.vtableIndex {
+                break;
+            }
+            const Function*& slot = methods.get(j);
+            slot = previous;
+            j--;
+        }
+        const Function*& targetSlot = methods.get(j);
+        targetSlot = current;
+    }
+
+    return methods;
+}
+
+/**
+ * Check if this scope is within an async scope
+ *
+ * @return Within async scope or not
+ */
+public f<bool> Scope.isInAsyncScope() {
+    if this.isAsyncScope {
+        return true;
+    }
+    return !this.isRootScope() && this.parent.isInAsyncScope();
+}
+
+/**
+ * Get the scope of the function/procedure/lambda body, this scope is located in
+ *
+ * @return Function scope
+ */
+public f<Scope*> Scope.getFunctionScope() {
+    if this.scopeType == ScopeType::FUNC_PROC_BODY || this.scopeType == ScopeType::LAMBDA_BODY {
+        return this;
+    }
+    assert !this.isRootScope();
+    return this.parent.getFunctionScope();
+}
+
+/**
  * Check if this scope is the root scope of its source file
  *
  * @return Root scope or not

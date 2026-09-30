@@ -3,6 +3,7 @@ import "std/io/filepath";
 
 // Own imports
 import "bootstrap/source-file";
+import "bootstrap/global/global-resource-manager";
 
 public type CacheManager struct {
     FilePath &cacheDir
@@ -19,4 +20,14 @@ public f<bool> CacheManager.lookupSourceFile(SourceFile* sourceFile) {
 
 public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     // ToDo: Implement
+}
+
+/**
+ * Link the executable or restore it from the cache
+ *
+ * @param resourceManager Global resource manager
+ */
+public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceManager) {
+    // ToDo: Look up and cache the executable as soon as the caching is implemented. Until then, always link
+    resourceManager.linker.run();
 }

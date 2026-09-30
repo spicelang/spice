@@ -174,8 +174,8 @@ public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, co
             InterfaceManifestationList& presetManifestations = matchScope.interfaces.get(interfaceId);
             Interface& presetManifestation = presetManifestations.get(mangledName);
             substantiatedInterface.genericPreset = &presetManifestation.structBase;
-            // ToDo: Register the substantiation with declNode->getInterfaceManifestations() once the AST node
-            // exposes a per-declaration manifestation list (see ast-nodes.spice).
+            ASTInterfaceDefNode* interfaceDefNode = downcast<ASTInterfaceDefNode>(substantiatedInterface.structBase.declNode);
+            interfaceDefNode.interfaceManifestations.pushBack(substantiatedInterface);
             substantiatedInterface.isNewlyInserted = true; // To not iterate over it in the same matching
 
             // Copy interface entry

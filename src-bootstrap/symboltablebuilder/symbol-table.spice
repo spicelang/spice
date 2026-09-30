@@ -24,7 +24,7 @@ import "bootstrap/util/compiler-warning";
 import "bootstrap/util/common-util";
 
 // Type aliases
-public type CaptureMap alias UnorderedMap</*name=*/String, /*capture*/Capture>;
+public type CaptureMap alias Map</*name=*/String, /*capture*/Capture>; // Ordered like in the host, since the order determines the capture struct layout
 public type SymbolMap alias UnorderedMap</*name=*/String, /*entry*/SymbolTableEntry>;
 
 /**
@@ -189,6 +189,10 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
         if this.parent == nil<SymbolTable*> {
             return nil<SymbolTableEntry*>;
         }
+        // If we search for the result variable, we want to stop the search when exiting a lambda body
+        if name == RETURN_VARIABLE_NAME && this.scope.scopeType == ScopeType::LAMBDA_BODY {
+            return nil<SymbolTableEntry*>;
+        }
         // If there is a parent scope, continue the search there
         entry = this.parent.lookup(name);
         // Symbol was also not found in all the parent scopes, return nullptr
@@ -200,10 +204,10 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
         const QualType entryType = entry.getQualType();
         const dyn captureSkip = [SuperType::TY_IMPORT, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
         if this.capturingRequired && !this.captures.contains(name) && !entryType.isOneOf(captureSkip, len(captureSkip)) {
-            // ToDo: Make the symbol volatile if it is captured across an async-scope boundary. This needs the
-            // async-scope query exposed on Scope; skipped for now.
+            // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
+            entry.isVolatile = this.scope.isInAsyncScope() && !entry.scope.isInAsyncScope();
             // Add the capture to the current scope
-            this.captures.upsert(name, Capture(entry));
+            this.captures.insert(name, Capture(entry));
         }
     }
     return entry;

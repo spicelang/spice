@@ -35,12 +35,11 @@ f<bool> compileProject(CliOptions& cliOptions) {
     if resourceManager.abortCompilation { return true; }
 
     // Link the target executable (link object files to executable/library)
-    // ToDo: Enable as soon as the back end emits object files
-    /*if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
+    if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
         resourceManager.linker.prepare();
         resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);
         resourceManager.linker.cleanup();
-    }*/
+    }
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();

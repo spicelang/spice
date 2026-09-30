@@ -3004,6 +3004,58 @@ public f<bool> ASTNode.isFctOrProcDef() {
 }
 
 /**
+ * Get the signature of the function/procedure, this node defines (FctDefBaseNode/MainFctDefNode::getFunctionSignature in the
+ * host)
+ *
+ * @param manIdx Manifestation index
+ * @return Function signature
+ */
+public f<String> ASTNode.getFunctionSignature(unsigned long manIdx) {
+    assert this.isFctOrProcDef(); // Must be called on a function/procedure def node
+    if this.kind == ASTNodeKind::MAIN_FCT_DEF {
+        return String("f<int> main()");
+    }
+    ASTFctDefBaseNode* fctDefBaseNode = nil<ASTFctDefBaseNode*>;
+    if this.kind == ASTNodeKind::FCT_DEF {
+        ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(this);
+        fctDefBaseNode = &fctDefNode.node;
+    } else {
+        ASTProcDefNode* procDefNode = downcast<ASTProcDefNode>(this);
+        fctDefBaseNode = &procDefNode.node;
+    }
+    assert manIdx < fctDefBaseNode.manifestations.getSize();
+    const Function* manifestation = fctDefBaseNode.manifestations.get(manIdx);
+    return manifestation.getSignature();
+}
+
+/**
+ * Get the next statement list, this node is part of (the node itself, if it is a statement list)
+ *
+ * @return Next outer statement list
+ */
+public f<ASTStmtLstNode*> ASTNode.getNextOuterStmtLst() {
+    assert this.parent != nil<ASTNode*>;
+    if this.kind == ASTNodeKind::STMT_LST {
+        return downcast<ASTStmtLstNode>(this);
+    }
+    return this.parent.getNextOuterStmtLst();
+}
+
+/**
+ * Get the signature of the function/procedure, this node is located in
+ *
+ * @param manIdx Manifestation index
+ * @return Function signature
+ */
+public f<String> ASTNode.getEnclosingFunctionSignature(unsigned long manIdx) {
+    assert this.parent != nil<ASTNode*>;
+    if this.isFctOrProcDef() {
+        return this.getFunctionSignature(manIdx);
+    }
+    return this.parent.getEnclosingFunctionSignature(manIdx);
+}
+
+/**
  * Check if the node is a struct definition
  *
  * @return Struct definition or not
@@ -3132,6 +3184,11 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
             ASTGlobalVarDefNode* globalVarDefNode = downcast<ASTGlobalVarDefNode>(this);
             ASTNode* constantNode = cast<ASTNode*>(globalVarDefNode.constant);
             return constantNode.getCompileTimeValue(manIdx);
+        }
+        case ASTNodeKind::ENUM_ITEM: {
+            ASTEnumItemNode* enumItemNode = downcast<ASTEnumItemNode>(this);
+            compileTimeValue.setIntValue(cast<int>(enumItemNode.itemValue));
+            return compileTimeValue;
         }
         case ASTNodeKind::TERNARY_EXPR: {
             ASTTernaryExprNode* ternaryExprNode = downcast<ASTTernaryExprNode>(this);

@@ -1,0 +1,53 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+
+/**
+ * For routing through multiple LLVM values at once
+ */
+public type LLVMExprResult struct {
+    public llvm::Value value
+    public llvm::Value constant
+    public llvm::Value ptr
+    public llvm::Value refPtr
+    public const SymbolTableEntry* entry = nil<const SymbolTableEntry*>
+    public IVisitable* node = nil<IVisitable*>
+}
+
+public p LLVMExprResult.ctor() {
+    this.value = llvm::Value();
+    this.constant = llvm::Value();
+    this.ptr = llvm::Value();
+    this.refPtr = llvm::Value();
+    this.entry = nil<const SymbolTableEntry*>;
+    this.node = nil<IVisitable*>;
+}
+
+public f<bool> LLVMExprResult.isTemporary() {
+    return this.entry == nil<const SymbolTableEntry*> || this.entry.anonymous;
+}
+
+// Shorthands for creating an expression result with a single member set
+
+public f<LLVMExprResult> exprResultWithValue(llvm::Value value) {
+    LLVMExprResult exprResult;
+    exprResult.value = value;
+    return exprResult;
+}
+
+public f<LLVMExprResult> exprResultWithConstant(llvm::Value constant) {
+    LLVMExprResult exprResult;
+    exprResult.constant = constant;
+    return exprResult;
+}
+
+public f<LLVMExprResult> exprResultWithPtr(llvm::Value ptr) {
+    LLVMExprResult exprResult;
+    exprResult.ptr = ptr;
+    return exprResult;
+}

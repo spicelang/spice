@@ -25,6 +25,7 @@
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
+#include <util/FileUtil.h>
 #include <util/SystemUtil.h>
 
 #include "driver/TestDriver.h"
@@ -426,9 +427,10 @@ static void execTestCase(const TestCase &testCase) {
  * like the host compiler would be invoked by a user, since it cannot be driven stage by stage from here.
  *
  * The bootstrap compiler is still incomplete, so only the reference outputs it can already produce are checked: the
- * serialized AST and the raised error. A missing error only fails the test for the error kinds listed in
- * BOOTSTRAP_SUPPORTED_ERROR_PREFIXES. Beyond that, each test case checks that the bootstrap compiler runs through all of
- * its implemented stages without crashing or raising an unexpected error.
+ * serialized AST, the raised error, the IR code, and the execution output and exit code of the compiled program. A missing
+ * error only fails the test for the error kinds listed in BOOTSTRAP_SUPPORTED_ERROR_PREFIXES. Beyond that, each test case
+ * checks that the bootstrap compiler runs through all of its implemented stages without crashing or raising an unexpected
+ * error.
  */
 static void execBootstrapTestCase(const TestCase &testCase) {
   // Check if test is disabled
@@ -437,17 +439,30 @@ static void execBootstrapTestCase(const TestCase &testCase) {
 
   const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
   const std::filesystem::path artifactDir = TestUtil::prepareArtifactDir(testCase);
+  const std::filesystem::path executablePath = TestUtil::getExecutablePath(artifactDir);
   const bool checkAST = TestUtil::doesRefExist(testCase.testPath / REF_NAME_SYNTAX_TREE);
+  const bool checkExecutionOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+  const bool checkExecutionExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
+  const bool needsExecutable = checkExecutionOutput || checkExecutionExitCode;
 
   // Assemble the command line, mirroring the one the test runner passes to the host compiler
-  std::vector<std::string> args = {"build"};
-  TestUtil::parseTestArgs(mainSourceFilePath, args);
-  if (exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS))
-    args.emplace_back("--no-entry");
+  const auto buildArgs = [&](const std::filesystem::path &outputPath) {
+    std::vector<std::string> args = {"build", "--test-mode"};
+    TestUtil::parseTestArgs(mainSourceFilePath, args);
+    if (exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS))
+      args.emplace_back("--no-entry");
+    args.emplace_back("--output");
+    args.push_back(outputPath.string());
+    return args;
+  };
+  std::vector<std::string> args = buildArgs(executablePath);
+  // Like the host test runner, only link an executable if it gets executed afterwards
+  if (!needsExecutable) {
+    args.emplace_back("--output-container");
+    args.emplace_back("obj");
+  }
   if (checkAST)
     args.emplace_back("--dump-ast");
-  args.emplace_back("--output");
-  args.push_back(TestUtil::getExecutablePath(artifactDir).string());
   args.push_back(mainSourceFilePath.string());
 
   // Run the bootstrap compiler
@@ -476,6 +491,63 @@ static void execBootstrapTestCase(const TestCase &testCase) {
   // Fail if an error was expected, that the bootstrap compiler is already able to raise
   if (TestUtil::doesRefExist(errorRefPath) && BootstrapUtil::isErrorSupported(errorRefPath))
     FAIL() << "Expected error, but got no error";
+
+  // Check IR code. The host checks the IR after running the optimizer pipeline of each opt level, for which a reference exists.
+  // The bootstrap compiler dumps the optimized IR of every source file into the output dir, so it is compiled once per opt level.
+  for (uint8_t i = 0; i <= 5; i++) {
+    TestUtil::checkRefMatch(
+        testCase.testPath / REF_NAME_OPT_IR[i],
+        [&] {
+          const std::filesystem::path irArtifactDir = artifactDir / ("ir-O" + std::to_string(i));
+          std::filesystem::create_directories(irArtifactDir);
+          std::vector<std::string> irArgs = buildArgs(irArtifactDir / "object.o");
+          irArgs.emplace_back("-O" + std::string(1, BOOTSTRAP_OPT_LEVEL_NAMES[i]));
+          irArgs.emplace_back("--output-container");
+          irArgs.emplace_back("obj");
+          irArgs.emplace_back("--dump-ir");
+          irArgs.emplace_back("--dump-to-files");
+          irArgs.push_back(mainSourceFilePath.string());
+          const auto [irOutput, irExitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, irArgs, true);
+          EXPECT_EQ(0, irExitCode) << "Bootstrap compiler exited with code " << irExitCode << ":\n" << irOutput;
+          // With LTO, the bootstrap compiler dumps the IR of the LTO module after the post-link optimization
+          const bool useLTO = std::ranges::find(irArgs, "-lto") != irArgs.end();
+          const std::string irDumpName =
+              useLTO ? "source-ir-code-lto-post-link.ll" : "source-ir-code-O" + std::to_string(i) + ".ll";
+          const std::filesystem::path irDumpPath = irArtifactDir / irDumpName;
+          if (!exists(irDumpPath))
+            return std::string();
+          return FileUtil::getFileContent(irDumpPath);
+        },
+        [&](std::string &expectedOutput, std::string &actualOutput) {
+          // The LLVM C API, which the bootstrap compiler uses, cannot mark global values as dso_local
+          BootstrapUtil::eraseDSOLocalMarkers(expectedOutput);
+          BootstrapUtil::eraseDSOLocalMarkers(actualOutput);
+        },
+        true);
+  }
+
+  // Check execution output and exit code
+  if (needsExecutable) {
+    // Execute binary
+    std::stringstream cmd;
+    cmd << executablePath.string();
+    const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
+    if (exists(cliFlagsFile))
+      cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
+    const auto [programOutput, programExitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
+
+    // Check if the execution output matches the expected output
+    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&] { return programOutput; });
+
+#if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
+    // Check if the exit code matches the expected one. If no exit code ref file exists, check against 0
+    const bool refExists = TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE,
+                                                   [&] { return std::to_string(programExitCode); });
+    if (!refExists) {
+      EXPECT_EQ(0, programExitCode) << "Program exited with non-zero exit code";
+    }
+#endif
+  }
 
   SUCCEED();
 }

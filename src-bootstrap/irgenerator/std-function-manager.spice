@@ -1,0 +1,337 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/source-file";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/irgenerator/name-mangling";
+import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/model/generic-type";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+
+/**
+ * Helper for the IRGenerator to retrieve the declarations of functions from the C standard library, LLVM intrinsics and the
+ * Spice runtime modules
+ */
+public type StdFunctionManager struct {
+    SourceFile* sourceFile
+    llvm::IRBuilder* builder
+    llvm::Module* module
+}
+
+public p StdFunctionManager.ctor(SourceFile* sourceFile, GlobalResourceManager& resourceManager, llvm::Module* module) {
+    this.sourceFile = sourceFile;
+    this.builder = &sourceFile.builder;
+    this.module = module;
+}
+
+public f<llvm::Function> StdFunctionManager.getPrintfFct() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    llvm::Function printfFct = this.getFunction("printf", this.builder.getInt32Ty(), paramTypes, true);
+    // Set attributes
+    printfFct.setUnnamedAddr(llvm::LLVMUnnamedAddr::LocalUnnamedAddr);
+    printfFct.addFnAttr("nofree");
+    printfFct.addFnAttr("nounwind");
+    printfFct.addParamAttr(0, "captures", 0l); // captures(none)
+    printfFct.addParamAttr(0, "noundef");
+    printfFct.addParamAttr(0, "readonly");
+    printfFct.addRetAttr("noundef");
+    return printfFct;
+}
+
+public f<llvm::Function> StdFunctionManager.getFPrintfFct() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getPtrTy());
+    llvm::Function fprintfFct = this.getFunction("fprintf", this.builder.getInt32Ty(), paramTypes, true);
+    // Set attributes
+    fprintfFct.setUnnamedAddr(llvm::LLVMUnnamedAddr::LocalUnnamedAddr);
+    fprintfFct.addFnAttr("nofree");
+    fprintfFct.addParamAttr(0, "captures", 0l); // captures(none)
+    fprintfFct.addParamAttr(0, "noundef");
+    fprintfFct.addParamAttr(1, "captures", 0l); // captures(none)
+    fprintfFct.addParamAttr(1, "noundef");
+    fprintfFct.addParamAttr(1, "readonly");
+    fprintfFct.addRetAttr("noundef");
+    return fprintfFct;
+}
+
+public f<llvm::Function> StdFunctionManager.getExitFct() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getInt32Ty());
+    llvm::Function exitFct = this.getProcedure("exit", paramTypes);
+    // Set attributes
+    exitFct.addFnAttr("cold");
+    exitFct.addFnAttr("noreturn");
+    exitFct.addFnAttr("nounwind");
+    return exitFct;
+}
+
+public f<llvm::Function> StdFunctionManager.getFreeFct() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    llvm::Function freeFct = this.getProcedure("free", paramTypes);
+    // Set attributes
+    freeFct.addFnAttr("nounwind");
+    freeFct.addParamAttr(0, "captures", 0l); // captures(none)
+    freeFct.addParamAttr(0, "noundef");
+    freeFct.addParamAttr(0, "readonly");
+    return freeFct;
+}
+
+public f<llvm::Function> StdFunctionManager.getMemcmpFct() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getInt64Ty());
+    llvm::Function memcmpFct = this.getFunction("memcmp", this.builder.getInt32Ty(), paramTypes);
+    // Set attributes
+    memcmpFct.addFnAttr("nounwind");
+    memcmpFct.addParamAttr(0, "captures", 0l); // captures(none)
+    memcmpFct.addParamAttr(0, "noundef");
+    memcmpFct.addParamAttr(0, "readonly");
+    memcmpFct.addParamAttr(1, "captures", 0l); // captures(none)
+    memcmpFct.addParamAttr(1, "noundef");
+    memcmpFct.addParamAttr(1, "readonly");
+    memcmpFct.addParamAttr(2, "noundef");
+    memcmpFct.addRetAttr("noundef");
+    return memcmpFct;
+}
+
+public f<llvm::Function> StdFunctionManager.getMemcpyIntrinsic() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getInt64Ty());
+    paramTypes.pushBack(this.builder.getInt1Ty());
+    llvm::Function memcpyFct = this.getProcedure("llvm.memcpy.p0.p0.i64", paramTypes);
+    // Set attributes
+    memcpyFct.addFnAttr("nocallback");
+    memcpyFct.addFnAttr("nofree");
+    memcpyFct.addFnAttr("nounwind");
+    memcpyFct.addFnAttr("willreturn");
+    return memcpyFct;
+}
+
+public f<llvm::Function> StdFunctionManager.getStringGetRawLengthStringFct() {
+    model::ParamList paramLst;
+    paramLst.pushBack(model::Param{QualType(SuperType::TY_STRING), false});
+    const String mangledName = mangleStdFunction("getRawLength", QualType(SuperType::TY_LONG), paramLst);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(mangledName.getRaw(), this.builder.getInt64Ty(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getStringIsRawEqualStringStringFct() {
+    model::ParamList paramLst;
+    paramLst.pushBack(model::Param{QualType(SuperType::TY_STRING), false});
+    paramLst.pushBack(model::Param{QualType(SuperType::TY_STRING), false});
+    const String mangledName = mangleStdFunction("isRawEqual", QualType(SuperType::TY_BOOL), paramLst);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(mangledName.getRaw(), this.builder.getInt1Ty(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getAllocUnsafeLongFct() {
+    QualType unsignedLong = QualType(SuperType::TY_LONG);
+    unsignedLong.makeUnsigned();
+    model::ParamList paramLst;
+    paramLst.pushBack(model::Param{unsignedLong, false});
+    const QualType bytePtrType = QualType(SuperType::TY_BYTE);
+    const String mangledName = mangleStdFunction("sAllocUnsafe", bytePtrType.toPtr(nil<ASTNode*>), paramLst);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getInt64Ty());
+    return this.getFunction(mangledName.getRaw(), this.builder.getPtrTy(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getDeallocBytePtrRefFct() {
+    const QualType byteType = QualType(SuperType::TY_BYTE);
+    QualType heapBytePtrType = byteType.toPtr(nil<ASTNode*>);
+    heapBytePtrType.makeHeap();
+    model::ParamList paramLst;
+    paramLst.pushBack(model::Param{heapBytePtrType.toRef(nil<ASTNode*>), false});
+    const String mangledName = mangleStdFunction("sDealloc", QualType(SuperType::TY_DYN), paramLst);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getProcedure(mangledName.getRaw(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getIterateFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    const llvm::Type iteratorType = spiceFunc.returnType.toLLVMType(this.sourceFile);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getInt64Ty());
+    return this.getFunction(functionName.getRaw(), iteratorType, paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getIteratorFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    const llvm::Type iteratorType = spiceFunc.returnType.toLLVMType(this.sourceFile);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), iteratorType, paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getIteratorGetFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), this.builder.getPtrTy(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getIteratorGetIdxFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    const llvm::Type pairTy = spiceFunc.returnType.toLLVMType(this.sourceFile);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), pairTy, paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getIteratorIsValidFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), this.builder.getInt1Ty(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getIteratorNextFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getProcedure(functionName.getRaw(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getResultIsErrFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), this.builder.getInt1Ty(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getResultUnwrapFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), this.builder.getPtrTy(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getResultGetErrFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), this.builder.getPtrTy(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getResultErrCtorFct(const model::Function* spiceFunc) {
+    const String functionName = mangleFunction(*spiceFunc);
+    const llvm::Type resultType = spiceFunc.returnType.toLLVMType(this.sourceFile);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    return this.getFunction(functionName.getRaw(), resultType, paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getErrTraceResetFct() {
+    const String mangledName = mangleStdFunction("sErrTraceReset", QualType(SuperType::TY_DYN), getErrTraceParamList());
+    return this.getProcedure(mangledName.getRaw(), this.getErrTraceParamTypes());
+}
+
+public f<llvm::Function> StdFunctionManager.getErrTracePushFct() {
+    const String mangledName = mangleStdFunction("sErrTracePush", QualType(SuperType::TY_DYN), getErrTraceParamList());
+    return this.getProcedure(mangledName.getRaw(), this.getErrTraceParamTypes());
+}
+
+public f<llvm::Function> StdFunctionManager.getErrTraceDumpFct() {
+    const model::ParamList paramLst;
+    const String mangledName = mangleStdFunction("sErrTraceDump", QualType(SuperType::TY_DYN), paramLst);
+    const Vector<llvm::Type> paramTypes;
+    return this.getProcedure(mangledName.getRaw(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getDumpStacktraceFct() {
+    // Defaults are resolved by the time a function is mangled, so the params are not optional
+    model::ParamList paramLst;
+    paramLst.pushBack(model::Param{QualType(SuperType::TY_BOOL), false});
+    paramLst.pushBack(model::Param{QualType(SuperType::TY_BOOL), false});
+    const String mangledName = mangleStdFunction("sDumpStacktrace", QualType(SuperType::TY_DYN), paramLst);
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getInt1Ty());
+    paramTypes.pushBack(this.builder.getInt1Ty());
+    return this.getProcedure(mangledName.getRaw(), paramTypes);
+}
+
+public f<llvm::Function> StdFunctionManager.getAcrtIOFuncFct() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getInt32Ty());
+    llvm::Function stdErrPFct = this.getFunction("__acrt_iob_func", this.builder.getPtrTy(), paramTypes);
+    // ToDo: Set dso_local as soon as the LLVM C API allows it
+    // Set attributes
+    stdErrPFct.addFnAttr("nounwind");
+    stdErrPFct.addParamAttr(0, "noundef");
+    stdErrPFct.addRetAttr("noundef");
+    return stdErrPFct;
+}
+
+f<llvm::Function> StdFunctionManager.getFunction(string funcName, llvm::Type returnType, const Vector<llvm::Type>& args, bool varArg = false) {
+    // Check if function already exists in the current module
+    const llvm::Function opFct = this.module.getFunction(funcName);
+    if !opFct.isNull() {
+        return opFct;
+    }
+
+    // Add function to the current module
+    const llvm::Type opFctTy = llvm::getFunctionType(returnType, args, varArg);
+    return this.module.getOrInsertFunction(funcName, opFctTy);
+}
+
+f<llvm::Function> StdFunctionManager.getProcedure(string procName, const Vector<llvm::Type>& args) {
+    return this.getFunction(procName, this.builder.getVoidTy(), args, false);
+}
+
+f<Vector<llvm::Type>> StdFunctionManager.getErrTraceParamTypes() {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getInt32Ty());
+    paramTypes.pushBack(this.builder.getInt32Ty());
+    return paramTypes;
+}
+
+/**
+ * Build the parameter list (string, string, unsigned int, unsigned int) of the error trace runtime functions
+ *
+ * @return Parameter list
+ */
+f<model::ParamList> getErrTraceParamList() {
+    QualType unsignedInt = QualType(SuperType::TY_INT);
+    unsignedInt.makeUnsigned();
+    model::ParamList paramLst;
+    paramLst.pushBack(model::Param{QualType(SuperType::TY_STRING), false});
+    paramLst.pushBack(model::Param{QualType(SuperType::TY_STRING), false});
+    paramLst.pushBack(model::Param{unsignedInt, false});
+    paramLst.pushBack(model::Param{unsignedInt, false});
+    return paramLst;
+}
+
+/**
+ * Mangle a runtime function, that is known by its name and signature only (the host constructs a temporary Function object
+ * and mangles it)
+ *
+ * @param name Function name
+ * @param returnType Return type
+ * @param paramLst Parameter list
+ * @return Mangled name
+ */
+f<String> mangleStdFunction(string name, const QualType& returnType, const model::ParamList& paramLst) {
+    const Vector<GenericType> noTemplateTypes;
+    const model::Function function = model::Function(String(name), nil<SymbolTableEntry*>, QualType(SuperType::TY_DYN), returnType, paramLst, noTemplateTypes, nil<ASTNode*>);
+    return mangleFunction(function);
+}

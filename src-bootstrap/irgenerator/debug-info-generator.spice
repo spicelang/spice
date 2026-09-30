@@ -1,0 +1,47 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/irgenerator/ir-generator";
+import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
+import "bootstrap/reader/code-loc";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+
+/**
+ * Generates the debug info of a source file.
+ *
+ * ToDo: Port the debug info generation of the host (src/irgenerator/DebugInfoGenerator.cpp). Until then, the bootstrap compiler
+ * emits no debug info and all methods are no-ops. They are already called at the same places as in the host.
+ */
+public type DebugInfoGenerator struct {
+    IRGenerator* irGenerator
+}
+
+public p DebugInfoGenerator.ctor(IRGenerator* irGenerator) {
+    this.irGenerator = irGenerator;
+}
+
+public p DebugInfoGenerator.initialize(const String& sourceFileName, const String& sourceFileDir) {}
+
+public p DebugInfoGenerator.generateFunctionDebugInfo(llvm::Function llvmFunction, const model::Function* spiceFunc, bool isLambda = false) {}
+
+public p DebugInfoGenerator.concludeFunctionDebugInfo() {}
+
+public p DebugInfoGenerator.pushLexicalBlock(const ASTNode* node) {}
+
+public p DebugInfoGenerator.popLexicalBlock() {}
+
+public p DebugInfoGenerator.generateGlobalVarDebugInfo(llvm::Value global, const SymbolTableEntry* globalEntry) {}
+
+public p DebugInfoGenerator.generateGlobalStringDebugInfo(llvm::Value global, const String& name, unsigned long length, const CodeLoc& codeLoc) {}
+
+public p DebugInfoGenerator.generateLocalVarDebugInfo(const String& varName, llvm::Value address, unsigned long argNumber = 18446744073709551615ul) {}
+
+public p DebugInfoGenerator.setSourceLocation(const CodeLoc& codeLoc) {}
+
+public p DebugInfoGenerator.setSourceLocation(const ASTNode* node) {}
+
+public p DebugInfoGenerator.finalize() {}

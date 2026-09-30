@@ -1,0 +1,1271 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/irgenerator/ir-generator";
+import "bootstrap/irgenerator/llvm-expr-result";
+import "bootstrap/irgenerator/std-function-manager";
+import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/symbol-table-entry";
+
+public const unsigned long DEFAULT_OP_IDX = 0l;
+
+// ========================================================== Resolver ===========================================================
+
+/**
+ * Kind of a resolver, see Resolver
+ */
+public type ResolverKind enum {
+    NONE,         // Resolves to nil
+    VALUE,        // Resolves to the value of an expression result
+    ADDRESS,      // Resolves to the address of an expression result
+    EXPR_VALUE,   // Resolves to the value of an expression node
+    EXPR_ADDRESS, // Resolves to the address of an expression node
+    FIXED         // Resolves to a fixed value
+}
+
+/**
+ * Lazily resolves an operand of an operator to its value or address. The host passes lambdas (ResolverFct) for this purpose.
+ * Spice lambdas cannot capture the IR generator and the expression results by reference safely, so the few kinds of
+ * resolvers, that the host uses, are modeled explicitly here and resolved via IRGenerator.resolve().
+ */
+public type Resolver struct {
+    public ResolverKind kind
+    public QualType qualType
+    public LLVMExprResult* exprResult = nil<LLVMExprResult*>
+    public IVisitable* expr = nil<IVisitable*>
+    public llvm::Value fixedValue
+}
+
+public p Resolver.ctor() {
+    this.kind = ResolverKind::NONE;
+    this.qualType = QualType(SuperType::TY_INVALID);
+    this.exprResult = nil<LLVMExprResult*>;
+    this.expr = nil<IVisitable*>;
+    this.fixedValue = llvm::Value();
+}
+
+public f<Resolver> noneResolver() {
+    Resolver resolver;
+    resolver.kind = ResolverKind::NONE;
+    return resolver;
+}
+
+public f<Resolver> valueResolver(const QualType& qualType, LLVMExprResult* exprResult) {
+    Resolver resolver;
+    resolver.kind = ResolverKind::VALUE;
+    resolver.qualType = qualType;
+    resolver.exprResult = exprResult;
+    return resolver;
+}
+
+public f<Resolver> addressResolver(LLVMExprResult* exprResult) {
+    Resolver resolver;
+    resolver.kind = ResolverKind::ADDRESS;
+    resolver.exprResult = exprResult;
+    return resolver;
+}
+
+public f<Resolver> exprValueResolver(IVisitable* expr) {
+    Resolver resolver;
+    resolver.kind = ResolverKind::EXPR_VALUE;
+    resolver.expr = expr;
+    return resolver;
+}
+
+public f<Resolver> exprAddressResolver(IVisitable* expr) {
+    Resolver resolver;
+    resolver.kind = ResolverKind::EXPR_ADDRESS;
+    resolver.expr = expr;
+    return resolver;
+}
+
+public f<Resolver> fixedResolver(llvm::Value value) {
+    Resolver resolver;
+    resolver.kind = ResolverKind::FIXED;
+    resolver.fixedValue = value;
+    return resolver;
+}
+
+/**
+ * The resolvers of the operands of a binary or unary operator: lhsV, lhsP, rhsV, rhsP (value and address of the lhs and rhs)
+ */
+public type OperandResolvers struct {
+    public Vector<Resolver> resolvers
+}
+
+public p OperandResolvers.ctor(const Resolver& lhsV, const Resolver& lhsP) {
+    this.resolvers.pushBack(lhsV);
+    this.resolvers.pushBack(lhsP);
+}
+
+public p OperandResolvers.ctor(const Resolver& lhsV, const Resolver& lhsP, const Resolver& rhsV, const Resolver& rhsP) {
+    this.resolvers.pushBack(lhsV);
+    this.resolvers.pushBack(lhsP);
+    this.resolvers.pushBack(rhsV);
+    this.resolvers.pushBack(rhsP);
+}
+
+// =================================================== OpRuleConversionManager ===================================================
+
+/**
+ * Helper class for the IRGenerator to resolve operator instructions for each valid operator/type combination
+ *
+ * Note: The host passes operand values as nested call arguments (e.g. builder.CreateAdd(lhsV(), rhsV())). The host is built
+ * with GCC, which evaluates call arguments from right to left, so the rhs is resolved before the lhs there. The resolvers are
+ * called in the same order here, so that the generated IR matches the one of the host.
+ */
+public type OpRuleConversionManager struct {
+    llvm::IRBuilder* builder
+    IRGenerator* irGenerator
+    StdFunctionManager* stdFunctionManager
+}
+
+public p OpRuleConversionManager.ctor(IRGenerator* irGenerator) {
+    this.builder = irGenerator.builder;
+    this.irGenerator = irGenerator;
+    this.stdFunctionManager = &irGenerator.stdFunctionManager;
+}
+
+// Whether an integer operation on the given types has no signed wrap (only evaluated for integer types, like in the host)
+f<bool> isNSW(const QualType& lhsSTy, const QualType& rhsSTy) {
+    return lhsSTy.isSigned() && rhsSTy.isSigned();
+}
+
+// Check if the given super types match the expected combination (COMB(expectedLhs, expectedRhs) in the host)
+f<bool> isComb(SuperType lhs, SuperType rhs, SuperType expectedLhs, SuperType expectedRhs) {
+    return lhs == expectedLhs && rhs == expectedRhs;
+}
+
+f<llvm::Value> OpRuleConversionManager.lhsV(LLVMExprResult& lhs, const QualType& lhsSTy) {
+    return this.irGenerator.resolveValue(lhsSTy, lhs);
+}
+
+f<llvm::Value> OpRuleConversionManager.rhsV(LLVMExprResult& rhs, const QualType& rhsSTy) {
+    return this.irGenerator.resolveValue(rhsSTy, rhs);
+}
+
+// Resolvers for the operator overload function call of a binary operator
+f<OperandResolvers> getBinaryResolvers(LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
+    const Resolver lhsV = valueResolver(lhsSTy, &lhs);
+    const Resolver lhsP = addressResolver(&lhs);
+    const Resolver rhsV = valueResolver(rhsSTy, &rhs);
+    const Resolver rhsP = addressResolver(&rhs);
+    return OperandResolvers(lhsV, lhsP, rhsV, rhsP);
+}
+
+// Resolvers for the operator overload function call of a unary operator
+f<OperandResolvers> getUnaryResolvers(LLVMExprResult& lhs, const QualType& lhsSTy) {
+    const Resolver lhsV = valueResolver(lhsSTy, &lhs);
+    const Resolver lhsP = addressResolver(&lhs);
+    return OperandResolvers(lhsV, lhsP);
+}
+
+// ----------------------------------------------------- Instruction helpers -----------------------------------------------------
+
+// Like builder.CreateAdd(lhs, rhs, "", false, hasNSW)
+f<llvm::Value> OpRuleConversionManager.createAdd(llvm::Value lhs, llvm::Value rhs, bool hasNSW) {
+    return hasNSW ? this.builder.createNSWAdd(lhs, rhs) : this.builder.createAdd(lhs, rhs);
+}
+
+// Like builder.CreateSub(lhs, rhs, "", false, hasNSW)
+f<llvm::Value> OpRuleConversionManager.createSub(llvm::Value lhs, llvm::Value rhs, bool hasNSW) {
+    return hasNSW ? this.builder.createNSWSub(lhs, rhs) : this.builder.createSub(lhs, rhs);
+}
+
+// Like builder.CreateMul(lhs, rhs, "", false, hasNSW)
+f<llvm::Value> OpRuleConversionManager.createMul(llvm::Value lhs, llvm::Value rhs, bool hasNSW) {
+    return hasNSW ? this.builder.createNSWMul(lhs, rhs) : this.builder.createMul(lhs, rhs);
+}
+
+f<llvm::Value> OpRuleConversionManager.createICmp(llvm::LLVMIntPredicate predicate, llvm::Value lhs, llvm::Value rhs) {
+    return this.builder.createICmp(predicate, lhs, rhs);
+}
+
+f<llvm::Value> OpRuleConversionManager.createFCmp(llvm::LLVMRealPredicate predicate, llvm::Value lhs, llvm::Value rhs) {
+    return this.builder.createFCmp(predicate, lhs, rhs);
+}
+
+// ------------------------------------------------------ Compound assign ops ----------------------------------------------------
+
+public f<LLVMExprResult> OpRuleConversionManager.getPlusEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, DEFAULT_OP_IDX);
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createFAdd(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createAdd(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_INT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createAdd(lhsV, rhsCasted, isNSW(lhsSTy, rhsSTy)));
+    }
+    if isComb(l, r, SuperType::TY_PTR, SuperType::TY_INT) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_LONG) {
+        const QualType elementSTy = lhsSTy.getContained();
+        const llvm::Type elementTy = elementSTy.toLLVMType(this.irGenerator.sourceFile);
+        const llvm::Value rhsVExt = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), this.builder.getInt64Ty(), rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, rhsVExt));
+    }
+    panic(Error("Operator fallthrough: +=")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getMinusEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, DEFAULT_OP_IDX);
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createFSub(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createSub(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_INT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createSub(lhsV, rhsCasted, isNSW(lhsSTy, rhsSTy)));
+    }
+    if isComb(l, r, SuperType::TY_PTR, SuperType::TY_INT) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_LONG) {
+        const QualType elementSTy = lhsSTy.getContained();
+        const llvm::Type elementTy = elementSTy.toLLVMType(this.irGenerator.sourceFile);
+        const llvm::Value rhsVExt = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), this.builder.getInt64Ty(), rhsSTy.isSigned());
+        const llvm::Value rhsVNeg = this.builder.createNeg(rhsVExt);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, rhsVNeg));
+    }
+    panic(Error("Operator fallthrough: -=")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getMulEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, DEFAULT_OP_IDX);
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createFMul(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createMul(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createMul(lhsV, rhsCasted, isNSW(lhsSTy, rhsSTy)));
+    }
+    panic(Error("Operator fallthrough: *=")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getDivEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, DEFAULT_OP_IDX);
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createFDiv(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.generateDiv(lhsSTy, rhsSTy, lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createSDiv(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.generateDiv(lhsSTy, rhsSTy, lhsV, rhsCasted));
+    }
+    panic(Error("Operator fallthrough: /=")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getRemEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        // LLVM generates a call to fmod on Linux systems
+        if this.irGenerator.cliOptions.targetTriple.isOSLinux() {
+            this.irGenerator.resourceManager.linker.requestLibMathLinkage();
+        }
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createFRem(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createSRem(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) {
+        const llvm::Value rhsInt = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createSRem(lhsV, rhsInt));
+    }
+    if isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsCasted));
+    }
+    if isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsV));
+    }
+    panic(Error("Operator fallthrough: %=")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+// Kinds of bitwise/shift compound assign ops, which share the same type combinations
+type BitCompoundOp enum {
+    SHL,
+    SHR,
+    AND,
+    OR,
+    XOR
+}
+
+f<llvm::Value> OpRuleConversionManager.createBitCompoundOp(BitCompoundOp op, const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    switch op {
+        case BitCompoundOp::SHL: { return this.builder.createShl(lhsV, rhsV); }
+        case BitCompoundOp::SHR: { return this.generateSHR(lhsSTy, rhsSTy, lhsV, rhsV); }
+        case BitCompoundOp::AND: { return this.builder.createAnd(lhsV, rhsV); }
+        case BitCompoundOp::OR: { return this.builder.createOr(lhsV, rhsV); }
+        case BitCompoundOp::XOR: { return this.builder.createXor(lhsV, rhsV); }
+    }
+    return llvm::Value();
+}
+
+// Shared implementation of getSHLEqualInst, getSHREqualInst, getAndEqualInst, getOrEqualInst and getXorEqualInst
+f<LLVMExprResult> OpRuleConversionManager.getBitCompoundInst(BitCompoundOp op, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, string opName) {
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) && op == BitCompoundOp::SHR {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createLShr(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE) || (op == BitCompoundOp::XOR && isComb(l, r, SuperType::TY_CHAR, SuperType::TY_CHAR)) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsCasted));
+    }
+    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getSHLEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getBitCompoundInst(BitCompoundOp::SHL, lhs, lhsSTy, rhs, rhsSTy, "<<=");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getSHREqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getBitCompoundInst(BitCompoundOp::SHR, lhs, lhsSTy, rhs, rhsSTy, ">>=");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getAndEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getBitCompoundInst(BitCompoundOp::AND, lhs, lhsSTy, rhs, rhsSTy, "&=");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getOrEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getBitCompoundInst(BitCompoundOp::OR, lhs, lhsSTy, rhs, rhsSTy, "|=");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getXorEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getBitCompoundInst(BitCompoundOp::XOR, lhs, lhsSTy, rhs, rhsSTy, "^=");
+}
+
+// ---------------------------------------------------------- Bitwise ops --------------------------------------------------------
+
+// Shared implementation of getBitwiseOrInst, getBitwiseXorInst and getBitwiseAndInst
+f<LLVMExprResult> OpRuleConversionManager.getBitwiseInst(BitCompoundOp op, ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx, string opName) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, opIdx) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, opIdx);
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE) || isComb(l, r, SuperType::TY_BOOL, SuperType::TY_BOOL) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsV));
+    }
+    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getBitwiseOrInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getBitwiseInst(BitCompoundOp::OR, node, lhs, lhsSTy, rhs, rhsSTy, opIdx, "|");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getBitwiseXorInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getBitwiseInst(BitCompoundOp::XOR, node, lhs, lhsSTy, rhs, rhsSTy, opIdx, "^");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getBitwiseAndInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getBitwiseInst(BitCompoundOp::AND, node, lhs, lhsSTy, rhs, rhsSTy, opIdx, "&");
+}
+
+// --------------------------------------------------------- Equality ops --------------------------------------------------------
+
+// Shared implementation of getEqualInst and getNotEqualInst. The host implements both separately with the same structure
+f<LLVMExprResult> OpRuleConversionManager.getEqualityInst(bool isEqual, ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+    const llvm::Type rhsT = rhsSTy.toLLVMType(this.irGenerator.sourceFile);
+    const llvm::LLVMIntPredicate iPred = isEqual ? llvm::LLVMIntPredicate::EQ : llvm::LLVMIntPredicate::NE;
+    const llvm::LLVMRealPredicate fPred = isEqual ? llvm::LLVMRealPredicate::OEQ : llvm::LLVMRealPredicate::ONE;
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, DEFAULT_OP_IDX);
+    }
+
+    // Check if lhs is of type pointer and rhs is of type long
+    if lhsT.isPointerTy() && rhsT.isIntegerTy(64) {
+        const llvm::Value lhsInt = this.builder.createPtrToInt(this.lhsV(lhs, lhsSTy), rhsT);
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.createICmp(iPred, lhsInt, rhsV));
+    }
+
+    // Check if one value is a string and the other one is a char*
+    if (lhsSTy.is(SuperType::TY_STRING) && rhsSTy.isPtrTo(SuperType::TY_CHAR)) || (lhsSTy.isPtrTo(SuperType::TY_CHAR) && rhsSTy.is(SuperType::TY_STRING)) {
+        return this.generateStringEquality(isEqual, lhs, lhsSTy, rhs, rhsSTy);
+    }
+
+    // Check for primitive type combinations
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createFCmp(fPred, lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_INT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_LONG) {
+        const llvm::Value rhsFP = this.generateIToFp(rhsSTy, this.rhsV(rhs, rhsSTy), lhsT);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createFCmp(fPred, lhsV, rhsFP));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_DOUBLE) {
+        const llvm::Value lhsFP = this.generateIToFp(lhsSTy, this.lhsV(lhs, lhsSTy), rhsT);
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.createFCmp(fPred, lhsFP, rhsV));
+    }
+    const bool sameIntType = isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_CHAR) || isComb(l, r, SuperType::TY_BOOL, SuperType::TY_BOOL) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_PTR);
+    if sameIntType {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createICmp(iPred, lhsV, rhsV));
+    }
+    // Cast the rhs to the lhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_CHAR) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_CHAR) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_CHAR) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createICmp(iPred, lhsV, rhsCasted));
+    }
+    // Cast the lhs to the rhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_INT) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_LONG) {
+        const llvm::Value lhsCasted = this.builder.createIntCast(this.lhsV(lhs, lhsSTy), rhsT, lhsSTy.isSigned());
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.createICmp(iPred, lhsCasted, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_STRING, SuperType::TY_STRING) {
+        return this.generateStringEquality(isEqual, lhs, lhsSTy, rhs, rhsSTy);
+    }
+    if isComb(l, r, SuperType::TY_FUNCTION, SuperType::TY_FUNCTION) || isComb(l, r, SuperType::TY_PROCEDURE, SuperType::TY_PROCEDURE) {
+        const unsigned long typeSize = this.irGenerator.module.getTypeSizeInBits(lhsT) / 8l;
+        const llvm::Function memcmpFct = this.stdFunctionManager.getMemcmpFct();
+        Vector<llvm::Value> args;
+        args.pushBack(this.irGenerator.resolveAddress(lhs));
+        args.pushBack(this.irGenerator.resolveAddress(rhs));
+        args.pushBack(this.builder.getInt64(typeSize));
+        const llvm::Value memcmpResult = this.builder.createCall(memcmpFct, args);
+        return exprResultWithValue(this.createICmp(iPred, memcmpResult, this.builder.getInt32(0)));
+    }
+    panic(Error(isEqual ? "Operator fallthrough: ==" : "Operator fallthrough: !=")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+// Generate call to the function isRawEqual(string, string) of the string std (negated for !=)
+f<LLVMExprResult> OpRuleConversionManager.generateStringEquality(bool isEqual, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
+    const llvm::Function opFct = this.stdFunctionManager.getStringIsRawEqualStringStringFct();
+    Vector<llvm::Value> args;
+    args.pushBack(this.lhsV(lhs, lhsSTy));
+    args.pushBack(this.rhsV(rhs, rhsSTy));
+    const llvm::Value res = this.builder.createCall(opFct, args);
+    if isEqual {
+        return exprResultWithValue(res);
+    }
+    // Negate the result
+    return exprResultWithValue(this.builder.createNot(res));
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getEqualityInst(true, node, lhs, lhsSTy, rhs, rhsSTy);
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getNotEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getEqualityInst(false, node, lhs, lhsSTy, rhs, rhsSTy);
+}
+
+// -------------------------------------------------------- Relational ops -------------------------------------------------------
+
+// Kinds of relational ops
+type RelationalOpKind enum {
+    LESS,
+    GREATER,
+    LESS_EQUAL,
+    GREATER_EQUAL
+}
+
+f<llvm::Value> OpRuleConversionManager.createRelationalFCmp(RelationalOpKind op, llvm::Value lhsV, llvm::Value rhsV) {
+    switch op {
+        case RelationalOpKind::LESS: { return this.createFCmp(llvm::LLVMRealPredicate::OLT, lhsV, rhsV); }
+        case RelationalOpKind::GREATER: { return this.createFCmp(llvm::LLVMRealPredicate::OGT, lhsV, rhsV); }
+        case RelationalOpKind::LESS_EQUAL: { return this.createFCmp(llvm::LLVMRealPredicate::OLE, lhsV, rhsV); }
+        case RelationalOpKind::GREATER_EQUAL: { return this.createFCmp(llvm::LLVMRealPredicate::OGE, lhsV, rhsV); }
+    }
+    return llvm::Value();
+}
+
+f<llvm::Value> OpRuleConversionManager.createRelationalICmp(RelationalOpKind op, const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    switch op {
+        case RelationalOpKind::LESS: { return this.generateLT(lhsSTy, rhsSTy, lhsV, rhsV); }
+        case RelationalOpKind::GREATER: { return this.generateGT(lhsSTy, rhsSTy, lhsV, rhsV); }
+        case RelationalOpKind::LESS_EQUAL: { return this.generateLE(lhsSTy, rhsSTy, lhsV, rhsV); }
+        case RelationalOpKind::GREATER_EQUAL: { return this.generateGE(lhsSTy, rhsSTy, lhsV, rhsV); }
+    }
+    return llvm::Value();
+}
+
+f<llvm::Value> OpRuleConversionManager.createRelationalPtrCmp(RelationalOpKind op, llvm::Value lhsV, llvm::Value rhsV) {
+    switch op {
+        case RelationalOpKind::LESS: { return this.createICmp(llvm::LLVMIntPredicate::ULT, lhsV, rhsV); }
+        case RelationalOpKind::GREATER: { return this.createICmp(llvm::LLVMIntPredicate::UGT, lhsV, rhsV); }
+        case RelationalOpKind::LESS_EQUAL: { return this.createICmp(llvm::LLVMIntPredicate::ULE, lhsV, rhsV); }
+        case RelationalOpKind::GREATER_EQUAL: { return this.createICmp(llvm::LLVMIntPredicate::UGE, lhsV, rhsV); }
+    }
+    return llvm::Value();
+}
+
+// Shared implementation of getLessInst, getGreaterInst, getLessEqualInst and getGreaterEqualInst
+f<LLVMExprResult> OpRuleConversionManager.getRelationalInst(RelationalOpKind op, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, string opName) {
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+    const llvm::Type rhsT = rhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createRelationalFCmp(op, lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_INT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_LONG) {
+        const llvm::Value rhsFP = this.generateIToFp(rhsSTy, this.rhsV(rhs, rhsSTy), lhsT);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createRelationalFCmp(op, lhsV, rhsFP));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_DOUBLE) {
+        const llvm::Value lhsFP = this.generateIToFp(lhsSTy, this.lhsV(lhs, lhsSTy), rhsT);
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.createRelationalFCmp(op, lhsFP, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_CHAR) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createRelationalICmp(op, lhsSTy, rhsSTy, lhsV, rhsV));
+    }
+    // Cast the rhs to the lhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createRelationalICmp(op, lhsSTy, rhsSTy, lhsV, rhsCasted));
+    }
+    // Cast the lhs to the rhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) {
+        const llvm::Value lhsCasted = this.builder.createIntCast(this.lhsV(lhs, lhsSTy), rhsT, lhsSTy.isSigned());
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.createRelationalICmp(op, lhsSTy, rhsSTy, lhsCasted, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_PTR, SuperType::TY_PTR) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createRelationalPtrCmp(op, lhsV, rhsV));
+    }
+    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getLessInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::LESS, lhs, lhsSTy, rhs, rhsSTy, "<");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getGreaterInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::GREATER, lhs, lhsSTy, rhs, rhsSTy, ">");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getLessEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::LESS_EQUAL, lhs, lhsSTy, rhs, rhsSTy, "<=");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getGreaterEqualInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::GREATER_EQUAL, lhs, lhsSTy, rhs, rhsSTy, ">=");
+}
+
+// ---------------------------------------------------------- Shift ops ----------------------------------------------------------
+
+// Shared implementation of getShiftLeftInst and getShiftRightInst
+f<LLVMExprResult> OpRuleConversionManager.getShiftInst(bool isLeft, ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+    const BitCompoundOp op = isLeft ? BitCompoundOp::SHL : BitCompoundOp::SHR;
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, opIdx) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, opIdx);
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_INT) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_LONG) {
+        const llvm::Value rhsInt = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsInt));
+    }
+    panic(Error(isLeft ? "Operator fallthrough: <<" : "Operator fallthrough: >>")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getShiftLeftInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getShiftInst(true, node, lhs, lhsSTy, rhs, rhsSTy, opIdx);
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getShiftRightInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getShiftInst(false, node, lhs, lhsSTy, rhs, rhsSTy, opIdx);
+}
+
+// -------------------------------------------------------- Arithmetic ops -------------------------------------------------------
+
+// Kinds of arithmetic ops, that share the same type combinations
+type ArithmeticOpKind enum {
+    PLUS,
+    MINUS,
+    MUL,
+    DIV
+}
+
+f<llvm::Value> OpRuleConversionManager.createFloatArithmetic(ArithmeticOpKind op, llvm::Value lhsV, llvm::Value rhsV) {
+    switch op {
+        case ArithmeticOpKind::PLUS: { return this.builder.createFAdd(lhsV, rhsV); }
+        case ArithmeticOpKind::MINUS: { return this.builder.createFSub(lhsV, rhsV); }
+        case ArithmeticOpKind::MUL: { return this.builder.createFMul(lhsV, rhsV); }
+        case ArithmeticOpKind::DIV: { return this.builder.createFDiv(lhsV, rhsV); }
+    }
+    return llvm::Value();
+}
+
+f<llvm::Value> OpRuleConversionManager.createIntArithmetic(ArithmeticOpKind op, llvm::Value lhsV, llvm::Value rhsV, const QualType& lhsSTy, const QualType& rhsSTy) {
+    switch op {
+        case ArithmeticOpKind::PLUS: { return this.createAdd(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)); }
+        case ArithmeticOpKind::MINUS: { return this.createSub(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)); }
+        case ArithmeticOpKind::MUL: { return this.createMul(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)); }
+        case ArithmeticOpKind::DIV: { return this.builder.createSDiv(lhsV, rhsV); }
+    }
+    return llvm::Value();
+}
+
+// Shared implementation of getPlusInst, getMinusInst, getMulInst and getDivInst
+f<LLVMExprResult> OpRuleConversionManager.getArithmeticInst(ArithmeticOpKind op, ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx, string opName) {
+    const OperandResolvers resolvers = getBinaryResolvers(lhs, lhsSTy, rhs, rhsSTy);
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+    const llvm::Type rhsT = rhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, opIdx) {
+        return this.callOperatorOverloadFct(node, resolvers, 2l, opIdx);
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    const bool isPlusOrMinus = op == ArithmeticOpKind::PLUS || op == ArithmeticOpKind::MINUS;
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createFloatArithmetic(op, lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_INT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_LONG) {
+        const llvm::Value rhsFP = this.generateIToFp(rhsSTy, this.rhsV(rhs, rhsSTy), lhsT);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createFloatArithmetic(op, lhsV, rhsFP));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_DOUBLE) {
+        const llvm::Value lhsFP = this.generateIToFp(lhsSTy, this.lhsV(lhs, lhsSTy), rhsT);
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.createFloatArithmetic(op, lhsFP, rhsV));
+    }
+    const bool sameType = isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE);
+    const bool charOp = isComb(l, r, SuperType::TY_CHAR, SuperType::TY_CHAR) && op != ArithmeticOpKind::MUL;
+    if sameType || charOp {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createIntArithmetic(op, lhsV, rhsV, lhsSTy, rhsSTy));
+    }
+    // Cast the rhs to the lhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.createIntArithmetic(op, lhsV, rhsCasted, lhsSTy, rhsSTy));
+    }
+    // Cast the lhs to the rhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) {
+        const llvm::Value lhsCasted = this.builder.createIntCast(this.lhsV(lhs, lhsSTy), rhsT, lhsSTy.isSigned());
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.createIntArithmetic(op, lhsCasted, rhsV, lhsSTy, rhsSTy));
+    }
+    // Pointer arithmetic with the integer on the lhs
+    if isPlusOrMinus && (isComb(l, r, SuperType::TY_INT, SuperType::TY_PTR) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_PTR) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_PTR)) {
+        const llvm::Value lhsExt = this.builder.createIntCast(this.lhsV(lhs, lhsSTy), this.builder.getInt64Ty(), lhsSTy.isSigned());
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const QualType elementSTy = rhsSTy.getContained();
+        const llvm::Type elementTy = elementSTy.toLLVMType(this.irGenerator.sourceFile);
+        return exprResultWithValue(this.builder.createGEP(elementTy, rhsV, lhsExt));
+    }
+    // Pointer arithmetic with the integer on the rhs
+    if isPlusOrMinus && (isComb(l, r, SuperType::TY_PTR, SuperType::TY_INT) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_LONG)) {
+        llvm::Value rhsOperand = this.rhsV(rhs, rhsSTy);
+        if op == ArithmeticOpKind::MINUS {
+            rhsOperand = this.builder.createNeg(rhsOperand);
+        }
+        const llvm::Value rhsExt = this.builder.createIntCast(rhsOperand, this.builder.getInt64Ty(), rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        const QualType elementSTy = lhsSTy.getContained();
+        const llvm::Type elementTy = elementSTy.toLLVMType(this.irGenerator.sourceFile);
+        return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, rhsExt));
+    }
+    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getPlusInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getArithmeticInst(ArithmeticOpKind::PLUS, node, lhs, lhsSTy, rhs, rhsSTy, opIdx, "+");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getMinusInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getArithmeticInst(ArithmeticOpKind::MINUS, node, lhs, lhsSTy, rhs, rhsSTy, opIdx, "-");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getMulInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getArithmeticInst(ArithmeticOpKind::MUL, node, lhs, lhsSTy, rhs, rhsSTy, opIdx, "*");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getDivInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy, unsigned long opIdx) {
+    return this.getArithmeticInst(ArithmeticOpKind::DIV, node, lhs, lhsSTy, rhs, rhsSTy, opIdx, "/");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getRemInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+    const llvm::Type rhsT = rhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE) {
+        // LLVM generates a call to fmod on Linux systems
+        if this.irGenerator.cliOptions.targetTriple.isOSLinux() {
+            this.irGenerator.resourceManager.linker.requestLibMathLinkage();
+        }
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.builder.createFRem(lhsV, rhsV));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) {
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsV));
+    }
+    // Cast the rhs to the lhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
+        const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
+        const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
+        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsCasted));
+    }
+    // Cast the lhs to the rhs type
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) {
+        const llvm::Value lhsCasted = this.builder.createIntCast(this.lhsV(lhs, lhsSTy), rhsT, lhsSTy.isSigned());
+        const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
+        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsCasted, rhsV));
+    }
+    panic(Error("Operator fallthrough: %")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+// ---------------------------------------------------------- Unary ops ----------------------------------------------------------
+
+public f<LLVMExprResult> OpRuleConversionManager.getPrefixMinusInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy) {
+    const QualType originalLhsSTy = lhsSTy;
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+
+    switch lhsSTy.getSuperType() {
+        case SuperType::TY_DOUBLE: {
+            return exprResultWithValue(this.builder.createFNeg(this.lhsV(lhs, originalLhsSTy)));
+        }
+        case SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG: {
+            return exprResultWithValue(this.builder.createNeg(this.lhsV(lhs, originalLhsSTy)));
+        }
+        default: {
+            panic(Error("Operator fallthrough: -")); // GCOV_EXCL_LINE
+        }
+    }
+    return LLVMExprResult();
+}
+
+// Shared implementation of getPrefixPlusPlusInst, getPrefixMinusMinusInst, getPostfixPlusPlusInst and getPostfixMinusMinusInst
+f<LLVMExprResult> OpRuleConversionManager.getIncDecInst(bool isInc, LLVMExprResult& lhs, QualType lhsSTy, string opName) {
+    const QualType originalLhsSTy = lhsSTy;
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+
+    switch lhsSTy.getSuperType() {
+        case SuperType::TY_INT: {
+            const llvm::Value one = this.builder.getInt32(1);
+            const llvm::Value lhsV = this.lhsV(lhs, originalLhsSTy);
+            return exprResultWithValue(isInc ? this.createAdd(lhsV, one, lhsSTy.isSigned()) : this.createSub(lhsV, one, lhsSTy.isSigned()));
+        }
+        case SuperType::TY_SHORT: {
+            const llvm::Value one = this.builder.getInt16(1);
+            const llvm::Value lhsV = this.lhsV(lhs, originalLhsSTy);
+            return exprResultWithValue(isInc ? this.createAdd(lhsV, one, lhsSTy.isSigned()) : this.createSub(lhsV, one, lhsSTy.isSigned()));
+        }
+        case SuperType::TY_LONG: {
+            const llvm::Value one = this.builder.getInt64(1);
+            const llvm::Value lhsV = this.lhsV(lhs, originalLhsSTy);
+            return exprResultWithValue(isInc ? this.createAdd(lhsV, one, lhsSTy.isSigned()) : this.createSub(lhsV, one, lhsSTy.isSigned()));
+        }
+        case SuperType::TY_PTR: {
+            const QualType elementSTy = lhsSTy.getContained();
+            const llvm::Type elementTy = elementSTy.toLLVMType(this.irGenerator.sourceFile);
+            const llvm::Value offset = isInc ? this.builder.getInt64(1) : llvm::getConstInt(this.builder.getInt64Ty(), cast<unsigned long>(-1l), true);
+            const llvm::Value lhsV = this.lhsV(lhs, originalLhsSTy);
+            return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, offset));
+        }
+        default: {
+            raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
+        }
+    }
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getPrefixPlusPlusInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy) {
+    return this.getIncDecInst(true, lhs, lhsSTy, "++ (prefix)");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getPrefixMinusMinusInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy) {
+    return this.getIncDecInst(false, lhs, lhsSTy, "-- (prefix)");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getPrefixNotInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy) {
+    const QualType originalLhsSTy = lhsSTy;
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+
+    if lhsSTy.is(SuperType::TY_BOOL) {
+        return exprResultWithValue(this.builder.createNot(this.lhsV(lhs, originalLhsSTy)));
+    }
+    panic(Error("Operator fallthrough: !")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getPrefixBitwiseNotInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy) {
+    const OperandResolvers resolvers = getUnaryResolvers(lhs, lhsSTy);
+    const QualType originalLhsSTy = lhsSTy;
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 1l, DEFAULT_OP_IDX);
+    }
+
+    switch lhsSTy.getSuperType() {
+        case SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE: {
+            return exprResultWithValue(this.builder.createNot(this.lhsV(lhs, originalLhsSTy)));
+        }
+        default: {
+            panic(Error("Operator fallthrough: ~")); // GCOV_EXCL_LINE
+        }
+    }
+    return LLVMExprResult();
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getPostfixPlusPlusInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy) {
+    const OperandResolvers resolvers = getUnaryResolvers(lhs, lhsSTy);
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 1l, DEFAULT_OP_IDX);
+    }
+
+    return this.getIncDecInst(true, lhs, lhsSTy, "++ (postfix)");
+}
+
+public f<LLVMExprResult> OpRuleConversionManager.getPostfixMinusMinusInst(ASTNode* node, LLVMExprResult& lhs, QualType lhsSTy) {
+    const OperandResolvers resolvers = getUnaryResolvers(lhs, lhsSTy);
+
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        return this.callOperatorOverloadFct(node, resolvers, 1l, DEFAULT_OP_IDX);
+    }
+
+    return this.getIncDecInst(false, lhs, lhsSTy, "-- (postfix)");
+}
+
+// ------------------------------------------------------------ Casts ------------------------------------------------------------
+
+public f<LLVMExprResult> OpRuleConversionManager.getCastInst(ASTNode* node, QualType lhsSTy, LLVMExprResult& rhs, QualType rhsSTy) {
+    const QualType originalRhsSTy = rhsSTy;
+    lhsSTy = lhsSTy.removeReferenceWrapper();
+    rhsSTy = rhsSTy.removeReferenceWrapper();
+    const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
+
+    // Handle identity casts
+    if lhsSTy.matches(rhsSTy, false, true, false) {
+        return rhs;
+    }
+
+    const SuperType l = lhsSTy.getSuperType();
+    const SuperType r = rhsSTy.getSuperType();
+    // Identity casts
+    if l == r && (l == SuperType::TY_DOUBLE || l == SuperType::TY_INT || l == SuperType::TY_SHORT || l == SuperType::TY_LONG || l == SuperType::TY_BYTE || l == SuperType::TY_CHAR || l == SuperType::TY_STRING || l == SuperType::TY_BOOL) {
+        return rhs;
+    }
+    if isComb(l, r, SuperType::TY_PTR, SuperType::TY_PTR) {
+        // Handle safe struct-pointer upcasts: cast<Base*>(derived) / cast<Interface*>(struct). The pointer must be
+        // advanced to the embedded subobject (past any vtable prefix) instead of being passed through unchanged.
+        const QualType lhsContained = lhsSTy.getContained();
+        const QualType rhsContained = rhsSTy.getContained();
+        if lhsContained.matchesInterfaceImplementedByStruct(rhsContained) || lhsContained.matchesComposedBaseOfStruct(rhsContained) {
+            const llvm::Value rhsV = this.rhsV(rhs, originalRhsSTy);
+            return exprResultWithValue(this.irGenerator.getUpcastedStructPtr(rhsV, lhsSTy, rhsSTy));
+        }
+        return rhs;
+    }
+    if isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_INT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_DOUBLE, SuperType::TY_LONG) {
+        const llvm::Value rhsV = this.rhsV(rhs, originalRhsSTy);
+        return exprResultWithValue(rhsSTy.isSigned() ? this.builder.createSIToFP(rhsV, lhsT) : this.builder.createUIToFP(rhsV, lhsT));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_DOUBLE) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_DOUBLE) {
+        const llvm::Value rhsV = this.rhsV(rhs, originalRhsSTy);
+        return exprResultWithValue(lhsSTy.isSigned() ? this.builder.createFPToSI(rhsV, lhsT) : this.builder.createFPToUI(rhsV, lhsT));
+    }
+    const bool intCast = isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_INT, SuperType::TY_BYTE) || isComb(l, r, SuperType::TY_INT, SuperType::TY_CHAR) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_INT) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_INT) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_LONG);
+    if intCast {
+        const llvm::Value rhsV = this.rhsV(rhs, originalRhsSTy);
+        return exprResultWithValue(this.builder.createIntCast(rhsV, lhsT, rhsSTy.isSigned()));
+    }
+    if isComb(l, r, SuperType::TY_BYTE, SuperType::TY_CHAR) || isComb(l, r, SuperType::TY_CHAR, SuperType::TY_BYTE) || isComb(l, r, SuperType::TY_STRING, SuperType::TY_PTR) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_STRING) {
+        return exprResultWithValue(this.rhsV(rhs, originalRhsSTy));
+    }
+    if isComb(l, r, SuperType::TY_INT, SuperType::TY_BOOL) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_BOOL) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_BOOL) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BOOL) {
+        // Bool is always unsigned (0 or 1), so zero-extend rather than sign-extend to avoid true -> -1
+        return exprResultWithValue(this.builder.createZExt(this.rhsV(rhs, originalRhsSTy), lhsT));
+    }
+    if isComb(l, r, SuperType::TY_ARRAY, SuperType::TY_PTR) || isComb(l, r, SuperType::TY_ARRAY, SuperType::TY_STRING) {
+        assert lhsSTy.isArrayOf(SuperType::TY_CHAR);
+        assert rhsSTy.isPtrTo(SuperType::TY_CHAR) || rhsSTy.is(SuperType::TY_STRING);
+        const llvm::Type rhsT = rhsSTy.toLLVMType(this.irGenerator.sourceFile);
+        return exprResultWithValue(this.builder.createBitCast(this.rhsV(rhs, originalRhsSTy), rhsT));
+    }
+    if isComb(l, r, SuperType::TY_PTR, SuperType::TY_ARRAY) || isComb(l, r, SuperType::TY_STRING, SuperType::TY_ARRAY) {
+        assert lhsSTy.isPtrTo(SuperType::TY_CHAR) || lhsSTy.is(SuperType::TY_STRING);
+        assert rhsSTy.isArrayOf(SuperType::TY_CHAR);
+        const llvm::Value rhsP = this.irGenerator.resolveAddress(rhs);
+        return exprResultWithValue(this.builder.createInBoundsGEP(this.builder.getInt8Ty(), rhsP, this.builder.getInt32(0)));
+    }
+    if isComb(l, r, SuperType::TY_LONG, SuperType::TY_PTR) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_STRING) {
+        // The type checker only lets a pointer be cast to 'long', which is 64 bit wide on every Spice target, so this
+        // never truncates. On a target with narrower pointers (e.g. wasm32) 'ptrtoint' zero-extends instead.
+        return exprResultWithValue(this.builder.createPtrToInt(this.rhsV(rhs, originalRhsSTy), lhsT));
+    }
+    if isComb(l, r, SuperType::TY_PTR, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_STRING, SuperType::TY_LONG) {
+        return exprResultWithValue(this.builder.createIntToPtr(this.rhsV(rhs, originalRhsSTy), lhsT));
+    }
+    if isComb(l, r, SuperType::TY_PTR, SuperType::TY_FUNCTION) || isComb(l, r, SuperType::TY_PTR, SuperType::TY_PROCEDURE) {
+        assert lhsSTy.isPtrTo(SuperType::TY_BYTE);
+        const llvm::Value rhsP = this.irGenerator.resolveAddress(rhs);
+        const llvm::Value fctPtrPtr = this.irGenerator.insertStructGEP(this.irGenerator.llvmTypes.lambdaFatPtrType, rhsP, 0);
+        const llvm::Value fctPtr = this.irGenerator.insertLoad(this.builder.getPtrTy(), fctPtrPtr);
+        return exprResultWithValue(fctPtr);
+    }
+    panic(Error("Operator fallthrough: (cast)")); // GCOV_EXCL_LINE
+    return LLVMExprResult();
+}
+
+// ----------------------------------------------------- Operator overloading ----------------------------------------------------
+
+public f<bool> OpRuleConversionManager.callsOverloadedOpFct(ASTNode* node, unsigned long opIdx) {
+    const Vector<const model::Function*>& opFctList = this.irGenerator.getOpFctPointers(node);
+    return opFctList.getSize() > opIdx && opFctList.get(opIdx) != nil<const model::Function*>;
+}
+
+/**
+ * Call the overloaded operator function of the given node
+ *
+ * @param node Operator node
+ * @param opV Resolvers for lhsV, lhsP, rhsV and rhsP (the last two only for binary operators)
+ * @param n Number of operands (1 for unary, 2 for binary operators)
+ * @param opIdx Index of the operator
+ * @return Result of the call
+ */
+public f<LLVMExprResult> OpRuleConversionManager.callOperatorOverloadFct(ASTNode* node, const OperandResolvers& opV, unsigned long n, unsigned long opIdx) {
+    assert n == 1l || n == 2l; // Only unary and binary operators are overloadable
+    const unsigned long manIdx = this.irGenerator.manIdx;
+    const Vector<Vector<const model::Function*>>* opFctPointers = node.getOpFctPointers();
+    assert !opFctPointers.isEmpty() && opFctPointers.getSize() > manIdx;
+    const Vector<const model::Function*>& manifestationOpFcts = opFctPointers.get(manIdx);
+    assert !manifestationOpFcts.isEmpty() && manifestationOpFcts.getSize() > opIdx;
+    const model::Function* opFct = manifestationOpFcts.get(opIdx);
+    assert opFct != nil<const model::Function*>;
+
+    const String mangledName = opFct.getMangledName();
+    assert opFct.entry.scope != nil<Scope*>;
+
+    // Get arg values
+    const QualTypeList paramTypes = opFct.getParamTypes();
+    assert paramTypes.getSize() == n;
+    // References and decayed arrays are passed as address, everything else as value
+    Vector<llvm::Value> argValues;
+    for unsigned long i = 0l; i < n; i++ {
+        const QualType& paramType = paramTypes.get(i);
+        const bool passAsAddress = paramType.isRef() || paramType.isDecayedArray();
+        const Resolver& resolver = opV.resolvers.get(passAsAddress ? 2l * i + 1l : 2l * i);
+        argValues.pushBack(this.irGenerator.resolve(resolver));
+    }
+    // Decayed array params expect the address of a writable array, which the resolvers above do not guarantee
+    for unsigned long i = 0l; i < n; i++ {
+        const QualType& paramType = paramTypes.get(i);
+        if paramType.isDecayedArray() {
+            llvm::Value& argValue = argValues.get(i);
+            argValue = this.irGenerator.materializeDecayedArrayArg(argValue, paramType);
+        }
+    }
+
+    // Function is not defined in the current module -> declare it
+    llvm::Module* module = this.irGenerator.module;
+    llvm::Function callee = module.getFunction(mangledName.getRaw());
+    if callee.isNull() {
+        // Get returnType
+        llvm::Type returnType = this.builder.getVoidTy();
+        if !opFct.returnType.is(SuperType::TY_DYN) {
+            returnType = opFct.returnType.toLLVMType(this.irGenerator.sourceFile);
+        }
+
+        // Get arg types
+        Vector<llvm::Type> argTypes;
+        foreach const QualType& paramType : paramTypes {
+            argTypes.pushBack(paramType.getParamLLVMType(this.irGenerator.sourceFile));
+        }
+
+        const llvm::Type fctType = llvm::getFunctionType(returnType, argTypes, false);
+        callee = module.getOrInsertFunction(mangledName.getRaw(), fctType);
+    }
+
+    // Get callee function
+    assert !callee.isNull();
+
+    // Generate function call
+    const llvm::Value res = this.builder.createCall(callee, argValues);
+
+    // If this is a procedure, return true
+    if opFct.isProcedure() {
+        return exprResultWithConstant(this.builder.getTrue());
+    }
+
+    // Attach address to anonymous symbol to keep track of de-allocation
+    const SymbolTableEntry* anonymousSymbol = nil<const SymbolTableEntry*>;
+    llvm::Value resultPtr;
+    if opFct.returnType.is(SuperType::TY_STRUCT) {
+        anonymousSymbol = this.irGenerator.currentScope.symbolTable.lookupAnonymous(node, opIdx);
+        if anonymousSymbol != nil<const SymbolTableEntry*> {
+            resultPtr = this.irGenerator.insertAlloca(res.getType());
+            this.irGenerator.insertStore(res, resultPtr);
+            this.irGenerator.updateAddress(anonymousSymbol, resultPtr);
+        }
+    }
+
+    // If the return type is reference, return the result value as refPtr
+    LLVMExprResult exprResult;
+    exprResult.entry = anonymousSymbol;
+    if opFct.returnType.isRef() {
+        exprResult.ptr = res;
+        exprResult.refPtr = resultPtr;
+        return exprResult;
+    }
+
+    // Otherwise as value
+    exprResult.value = res;
+    exprResult.ptr = resultPtr;
+    return exprResult;
+}
+
+// ----------------------------------------------------------- Helpers -----------------------------------------------------------
+
+// Abort with an unhandled branch error for the given operator (the host throws a CompilerError)
+p raiseOperatorFallthrough(string opName) {
+    const String message = String("Operator fallthrough: ") + opName;
+    panic(Error(message.getRaw()));
+    return LLVMExprResult();
+}
+
+f<llvm::Value> OpRuleConversionManager.generateIToFp(const QualType& srcSTy, llvm::Value srcV, llvm::Type tgtT) {
+    if srcSTy.isSigned() {
+        return this.builder.createSIToFP(srcV, tgtT);
+    } else {
+        return this.builder.createUIToFP(srcV, tgtT);
+    }
+}
+
+f<llvm::Value> OpRuleConversionManager.generateSHR(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    if lhsSTy.isSigned() {
+        return this.builder.createAShr(lhsV, rhsV);
+    } else {
+        return this.builder.createLShr(lhsV, rhsV);
+    }
+}
+
+f<llvm::Value> OpRuleConversionManager.generateLT(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+        return this.createICmp(llvm::LLVMIntPredicate::SLT, lhsV, rhsV);
+    } else {
+        return this.createICmp(llvm::LLVMIntPredicate::ULT, lhsV, rhsV);
+    }
+}
+
+f<llvm::Value> OpRuleConversionManager.generateLE(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+        return this.createICmp(llvm::LLVMIntPredicate::SLE, lhsV, rhsV);
+    } else {
+        return this.createICmp(llvm::LLVMIntPredicate::ULE, lhsV, rhsV);
+    }
+}
+
+f<llvm::Value> OpRuleConversionManager.generateGT(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+        return this.createICmp(llvm::LLVMIntPredicate::SGT, lhsV, rhsV);
+    } else {
+        return this.createICmp(llvm::LLVMIntPredicate::UGT, lhsV, rhsV);
+    }
+}
+
+f<llvm::Value> OpRuleConversionManager.generateGE(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+        return this.createICmp(llvm::LLVMIntPredicate::SGE, lhsV, rhsV);
+    } else {
+        return this.createICmp(llvm::LLVMIntPredicate::UGE, lhsV, rhsV);
+    }
+}
+
+f<llvm::Value> OpRuleConversionManager.generateDiv(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+        return this.builder.createSDiv(lhsV, rhsV);
+    } else {
+        return this.builder.createUDiv(lhsV, rhsV);
+    }
+}
+
+f<llvm::Value> OpRuleConversionManager.generateRem(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
+    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+        return this.builder.createSRem(lhsV, rhsV);
+    } else {
+        return this.builder.createURem(lhsV, rhsV);
+    }
+}

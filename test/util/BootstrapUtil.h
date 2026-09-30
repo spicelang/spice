@@ -17,6 +17,9 @@ const char *const BOOTSTRAP_SERIALIZED_AST_CAPTION = "Serialized ast:\n\n";
 // Extend this list as soon as the bootstrap compiler raises the respective errors.
 static constexpr std::array<const char *, 2> BOOTSTRAP_SUPPORTED_ERROR_PREFIXES = {"[Error|Lexer]", "[Error|Parser]"};
 
+// Names of the opt levels (in the order of the OptLevel enum) for the -O cli option
+static constexpr std::array BOOTSTRAP_OPT_LEVEL_NAMES = {'0', '1', '2', '3', 's', 'z'};
+
 class BootstrapUtil {
 public:
   // Public static methods
@@ -24,6 +27,7 @@ public:
   static std::optional<std::string> extractErrorMessage(const std::string &output, const std::filesystem::path &testPath);
   static std::optional<std::string> extractSerializedAST(const std::string &output);
   static bool isErrorSupported(const std::filesystem::path &errorRefPath);
+  static void eraseDSOLocalMarkers(std::string &irCode);
 };
 
 } // namespace spice::testing
