@@ -841,20 +841,38 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
     const bool isDarwin = osName.startsWith("darwin") || osName.startsWith("macos");
     const bool isWindows = osName.startsWith("win") || osName.startsWith("mingw") || osName.startsWith("cygwin");
 
-    // Collect linker flags
-    Vector<CompileTimeValue> linkerFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINKER_FLAG));
-    Vector<CompileTimeValue> osFlagValues;
+    // Collect and register linker flags.
+    // On Linux, platform-independent flags (core.linker.flag) are wrapped in --start-group/--end-group
+    // so the linker rescans the archive group until all circular symbol references are resolved (e.g.
+    // LLVM's core static archives have mutual dependencies that alphabetical ordering cannot satisfy).
+    const bool wrapInGroup = isLinux;
+
+    // core.linker.flag - platform-independent; wrapped in a group on Linux
+    Vector<CompileTimeValue> coreValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINKER_FLAG));
+    if wrapInGroup && !coreValues.isEmpty() {
+        resourceManager.addLinkerFlag(String("-Wl,--start-group"));
+        this.sourceFile.addSourceLinkerFlag(String("-Wl,--start-group"));
+    }
+    foreach CompileTimeValue value : coreValues {
+        const String& flag = resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
+        resourceManager.addLinkerFlag(flag);
+        this.sourceFile.addSourceLinkerFlag(flag);
+    }
+    if wrapInGroup && !coreValues.isEmpty() {
+        resourceManager.addLinkerFlag(String("-Wl,--end-group"));
+        this.sourceFile.addSourceLinkerFlag(String("-Wl,--end-group"));
+    }
+
+    // Platform-specific flags - always come after the (possibly grouped) core flags
+    Vector<CompileTimeValue> platformValues;
     if isLinux {
-        osFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINUX_LINKER_FLAG));
+        platformValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINUX_LINKER_FLAG));
     } else if isDarwin {
-        osFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_DARWIN_LINKER_FLAG));
+        platformValues = attrs.getAttrValuesByName(String(ATTR_CORE_DARWIN_LINKER_FLAG));
     } else if isWindows {
-        osFlagValues = attrs.getAttrValuesByName(String(ATTR_CORE_WINDOWS_LINKER_FLAG));
+        platformValues = attrs.getAttrValuesByName(String(ATTR_CORE_WINDOWS_LINKER_FLAG));
     }
-    foreach CompileTimeValue osValue : osFlagValues {
-        linkerFlagValues.pushBack(osValue);
-    }
-    foreach CompileTimeValue value : linkerFlagValues {
+    foreach CompileTimeValue value : platformValues {
         const String& flag = resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         resourceManager.addLinkerFlag(flag);
         this.sourceFile.addSourceLinkerFlag(flag);
@@ -1366,10 +1384,13 @@ f<bool> testAttributeRules(GlobalResourceManager& rm) {
     flagAttr.node.visitable = cast<IVisitable*>(&flagAttr);
     builder.visitModAttr(&modAttr);
     assert !rm.errorManager.hasHardError; // the visited attribute was valid
-    assert rm.linker.linkerFlags.getSize() == 2l; // '-lm' (all OSes) and '-ldl' (linux only), but not the darwin flag
-    assert rm.linker.linkerFlags.get(0l) == "-lm";
-    assert rm.linker.linkerFlags.get(1l) == "-ldl";
-    assert file.sourceLinkerFlags.getSize() == 2l;
+    // On Linux, the core flag is wrapped in an archive group, followed by the platform-specific flag
+    assert rm.linker.linkerFlags.getSize() == 4l; // start-group, '-lm' (all OSes), end-group, '-ldl' (linux only); not the darwin flag
+    assert rm.linker.linkerFlags.get(0l) == "-Wl,--start-group";
+    assert rm.linker.linkerFlags.get(1l) == "-lm";
+    assert rm.linker.linkerFlags.get(2l) == "-Wl,--end-group";
+    assert rm.linker.linkerFlags.get(3l) == "-ldl";
+    assert file.sourceLinkerFlags.getSize() == 4l;
     assert rm.linker.linkedFiles.getSize() == 1l;
     const FilePath& extraSource = rm.linker.linkedFiles.get(0l);
     assert extraSource.getFileName() == "driver.spice"; // relative to the source file

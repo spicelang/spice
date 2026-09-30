@@ -244,6 +244,12 @@ void ExternalLinkerInterface::addFileToLinkage(const std::filesystem::path &path
  * @param flag Linker flag
  */
 void ExternalLinkerInterface::addLinkerFlag(const std::string &flag) {
+  // Group boundary markers must not be deduplicated: each archive group gets its own pair,
+  // and deduplication would collapse multiple groups into one misplaced pair.
+  if (flag == "-Wl,--start-group" || flag == "-Wl,--end-group") {
+    linkerFlags.push_back(flag);
+    return;
+  }
   if (std::ranges::find(linkerFlags, flag) == linkerFlags.end())
     linkerFlags.push_back(flag);
 }
