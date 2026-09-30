@@ -153,10 +153,17 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<string>& stringOption : this.stringOptions {
             if stringOption.isPositional() { continue; }
             if this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), optName) {
-                // Take an inline "--name=value" value directly, if present
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
                 if hasInlineValue {
                     stringOption.setTargetValue(inlineValue);
                     stringOption.callCallback(inlineValue);
+                    while stringOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        string value = argv[argNo];
+                        stringOption.setTargetValue(value);
+                        stringOption.callCallback(value);
+                    }
                     continue 2; // Continue with next argument
                 }
                 // Check if a value is present
@@ -177,11 +184,18 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
             if stringObjOption.isPositional() { continue; }
             if this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), optName) {
-                // Take an inline "--name=value" value directly, if present
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
                 if hasInlineValue {
                     String parsedArg = String(inlineValue);
                     stringObjOption.setTargetValue(parsedArg);
                     stringObjOption.callCallback(parsedArg);
+                    while stringObjOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        String nextArg = String(argv[argNo]);
+                        stringObjOption.setTargetValue(nextArg);
+                        stringObjOption.callCallback(nextArg);
+                    }
                     continue 2; // Continue with next argument
                 }
                 // Check if a value is present
@@ -202,11 +216,18 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<int>& intOption : this.intOptions {
             if intOption.isPositional() { continue; }
             if this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), optName) {
-                // Take an inline "--name=value" value directly, if present
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
                 if hasInlineValue {
                     int parsedArg = toInt(inlineValue);
                     intOption.setTargetValue(parsedArg);
                     intOption.callCallback(parsedArg);
+                    while intOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        int nextArg = toInt(argv[argNo]);
+                        intOption.setTargetValue(nextArg);
+                        intOption.callCallback(nextArg);
+                    }
                     continue 2; // Continue with next argument
                 }
                 // Check if a value is present
@@ -227,11 +248,18 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
             if filePathOption.isPositional() { continue; }
             if this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), optName) {
-                // Take an inline "--name=value" value directly, if present
+                // Take an inline "--name=value" value directly, if present. It is the first value; for options that accept
+                // multiple values, the following arguments are taken as further values, like in the space-separated form.
                 if hasInlineValue {
                     FilePath parsedArg = FilePath(inlineValue);
                     filePathOption.setTargetValue(parsedArg);
                     filePathOption.callCallback(parsedArg);
+                    while filePathOption.acceptsMultipleValues() && this.hasAnotherValue(argc, argv, argNo, positionalConsumed) {
+                        argNo++;
+                        FilePath nextArg = FilePath(argv[argNo]);
+                        filePathOption.setTargetValue(nextArg);
+                        filePathOption.callCallback(nextArg);
+                    }
                     continue 2; // Continue with next argument
                 }
                 // Check if a value is present

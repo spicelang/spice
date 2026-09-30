@@ -1,4 +1,5 @@
 import "std/os/os";
+import "std/data/vector";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/filepath";
@@ -10,6 +11,7 @@ type State struct {
     int count = 0
     FilePath output
     string callbackValue = ""
+    Vector<String> tags
     string file = ""
 }
 
@@ -27,6 +29,10 @@ f<int> main() {
         s.callbackValue = value;
     }, "Callback value");
     targetOption.addAlias("-t");
+    CliOption<string>& tagOption = build.addOption("--tag", p(const string& tag) {
+        s.tags.pushBack(String(tag));
+    }, "Tags");
+    tagOption.allowMultipleValues();
     build.addOption("<file>", state.file, "File to build");
 
     // The "--name=value" syntax attaches the value to the option name, for every option type
@@ -56,6 +62,16 @@ f<int> main() {
     assert parser.parse(5u, spaceArgs) == EXIT_CODE_SUCCESS;
     assert state.single == "y";
     assert state.file == "space.spice";
+
+    // An attached value on a multiple-value option is the first value; the following arguments are taken as further values,
+    // while the trailing argument is still left over for the required positional
+    string[6] multiArgs = ["prog", "build", "--tag=a", "b", "c", "multi.spice"];
+    assert parser.parse(6u, multiArgs) == EXIT_CODE_SUCCESS;
+    assert state.tags.getSize() == 3;
+    assert state.tags.get(0) == "a";
+    assert state.tags.get(1) == "b";
+    assert state.tags.get(2) == "c";
+    assert state.file == "multi.spice";
 
     printf("All assertions passed!\n");
 }
