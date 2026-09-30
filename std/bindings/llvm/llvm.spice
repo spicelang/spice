@@ -930,41 +930,63 @@ public f<String> Triple.getOSName() {
 // Like llvm::Triple::getArchTypeName(getArch()): the canonical name of the architecture, e.g. 'aarch64' for 'arm64'
 public f<String> Triple.getArchTypeName() {
     const String archName = this.getArchName();
-    if archName == "arm64" {
-        return String("aarch64");
+    // Aliases of llvm::Triple::parseArch, that do not match the canonical name
+    const dyn aarch64Aliases = ["arm64", "arm64e", "arm64ec", "aarch64_lfi"];
+    for unsigned long i = 0l; i < len(aarch64Aliases); i++ {
+        if archName == aarch64Aliases[i] {
+            return String("aarch64");
+        }
     }
     if archName == "arm64_32" {
         return String("aarch64_32");
     }
-    if this.isX86_64() || archName == "x86_64h" {
-        return String("x86_64");
+    const dyn x86_64Aliases = ["amd64", "x86_64h", "x86_64_lfi"];
+    for unsigned long i = 0l; i < len(x86_64Aliases); i++ {
+        if archName == x86_64Aliases[i] {
+            return String("x86_64");
+        }
     }
-    if this.isX86() {
-        return String("i386");
+    const dyn x86Aliases = ["i386", "i486", "i586", "i686", "i786", "i886", "i986"];
+    for unsigned long i = 0l; i < len(x86Aliases); i++ {
+        if archName == x86Aliases[i] {
+            return String("i386");
+        }
     }
     return archName;
 }
 
 // Like llvm::Triple::getOSTypeName(getOS()): the canonical name of the OS without version, e.g. 'darwin' for 'darwin25.6.0'
 public f<String> Triple.getOSTypeName() {
-    if this.isOSWindows() {
-        return String("windows");
-    }
-    String osName = this.getOSName();
-    // Strip the version suffix
-    unsigned long length = osName.getLength();
-    while length > 0l {
-        const char c = osName[length - 1l];
-        if (c < '0' || c > '9') && c != '.' {
-            break;
+    const String osName = this.getOSName();
+    // OS names and their aliases in the order of llvm/TargetParser/TripleName.def. Like llvm::Triple::parseOS, the first one,
+    // that the OS fragment starts with, wins. This also skips version suffixes, while keeping digits of names like 'ps4'.
+    // 'mingw' and 'cygwin' are no OS names there, but llvm::Triple::normalize() turns them into Windows triples.
+    const dyn osNames = [
+        "darwin", "dragonfly", "freebsd", "fuchsia", "ios", "kfreebsd", "linux", "lv2", "macosx", "macos", "managarm",
+        "netbsd", "openbsd", "solaris", "uefi", "windows", "win32", "zos", "haiku", "rtems", "aix", "cuda", "nvcl", "amdhsa",
+        "ps4", "ps5", "elfiamcu", "tvos", "watchos", "bridgeos", "driverkit", "xros", "visionos", "mesa3d", "amdpal", "hermit",
+        "hurd", "wasip1", "wasip2", "wasip3", "wasi", "emscripten", "shadermodel", "liteos", "serenity", "vulkan",
+        "cheriotrtos", "opencl", "chipstar", "firmware", "qurt", "h2", "mingw", "cygwin"
+    ];
+    for unsigned long i = 0l; i < len(osNames); i++ {
+        const string name = osNames[i];
+        if !osName.startsWith(name) {
+            continue;
         }
-        length--;
+        // Map aliases to their canonical names
+        const String matchedName = String(name);
+        if matchedName == "macos" {
+            return String("macosx");
+        }
+        if matchedName == "win32" || matchedName == "mingw" || matchedName == "cygwin" {
+            return String("windows");
+        }
+        if matchedName == "visionos" {
+            return String("xros");
+        }
+        return matchedName;
     }
-    osName = osName.getSubstring(0, cast<long>(length));
-    if osName == "macos" {
-        return String("macosx");
-    }
-    return osName;
+    return String("unknown");
 }
 
 public f<bool> Triple.empty() {

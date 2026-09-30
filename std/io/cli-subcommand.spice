@@ -228,7 +228,8 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
 
 /**
  * Check if the argument after the given one can be taken as another value of an option, that accepts multiple values.
- * This is the case, if it is no option and enough arguments remain for the positional arguments, that are still missing.
+ * This is the case, if it does not look like an option and enough arguments remain for the positional arguments, that are
+ * still missing.
  *
  * @param argc Number of arguments
  * @param argv Array of argument strings
@@ -238,15 +239,80 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
  */
 f<bool> CliSubcommand.hasAnotherValue(unsigned int argc, string[] argv, unsigned int argNo, unsigned int positionalConsumed) {
     const unsigned int nextArgNo = argNo + 1u;
-    if nextArgNo >= argc {
-        return false;
-    }
-    const String nextArg = String(argv[nextArgNo]);
-    if nextArg.startsWith("-") {
+    if nextArgNo >= argc || this.isOptionLike(argv[nextArgNo]) {
         return false;
     }
     const unsigned int missingPositionals = cast<unsigned int>(this.positionalTypeTags.getSize()) - positionalConsumed;
-    return argc - nextArgNo > missingPositionals;
+    return this.countPositionalCandidates(argc, argv, nextArgNo) > missingPositionals;
+}
+
+/**
+ * Check if the given argument looks like an option, i.e. starts with a dash. Negative numbers and a single dash are values.
+ *
+ * @param arg Argument to check
+ * @return true if the argument looks like an option, false otherwise
+ */
+f<bool> CliSubcommand.isOptionLike(string arg) {
+    String argStr = String(arg);
+    if !argStr.startsWith("-") || argStr.getLength() < 2l {
+        return false;
+    }
+    const char secondChar = argStr[1l];
+    return (secondChar < '0' || secondChar > '9') && secondChar != '.';
+}
+
+/**
+ * Check if the given argument is the name or an alias of an option of this subcommand, that takes a value
+ *
+ * @param arg Argument to check
+ * @return true if the argument is an option, that takes a value, false otherwise
+ */
+f<bool> CliSubcommand.isValueOption(string arg) {
+    foreach const CliOption<string>& stringOption : this.stringOptions {
+        if !stringOption.isPositional() && this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
+            return true;
+        }
+    }
+    foreach const CliOption<String>& stringObjOption : this.stringObjOptions {
+        if !stringObjOption.isPositional() && this.nameOrAliasMatches(stringObjOption.getName(), stringObjOption.getAliases(), arg) {
+            return true;
+        }
+    }
+    foreach const CliOption<int>& intOption : this.intOptions {
+        if !intOption.isPositional() && this.nameOrAliasMatches(intOption.getName(), intOption.getAliases(), arg) {
+            return true;
+        }
+    }
+    foreach const CliOption<FilePath>& filePathOption : this.filePathOptions {
+        if !filePathOption.isPositional() && this.nameOrAliasMatches(filePathOption.getName(), filePathOption.getAliases(), arg) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Count the arguments from the given index on, that can become positional arguments. Arguments, that look like options, and
+ * the values of options, that take a value, are skipped.
+ *
+ * @param argc Number of arguments
+ * @param argv Array of argument strings
+ * @param startArgNo Index of the first argument to count
+ * @return Number of positional argument candidates
+ */
+f<unsigned int> CliSubcommand.countPositionalCandidates(unsigned int argc, string[] argv, unsigned int startArgNo) {
+    unsigned int count = 0u;
+    unsigned int argNo = startArgNo;
+    while argNo < argc {
+        const string arg = argv[argNo];
+        if !this.isOptionLike(arg) {
+            count++;
+        } else if this.isValueOption(arg) {
+            argNo++; // Skip the value of the option
+        }
+        argNo++;
+    }
+    return count;
 }
 
 f<const String&> CliSubcommand.getPositionalName(unsigned int slot) {

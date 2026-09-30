@@ -6,8 +6,10 @@ import "std/io/cli-subcommand";
 // State the callbacks write to. The callbacks capture a pointer to it
 type State struct {
     Vector<String> values
+    Vector<int> numbers
     string single = ""
     string file = ""
+    bool verbose = false
 }
 
 f<int> main() {
@@ -22,6 +24,11 @@ f<int> main() {
     multiOption.addAlias("-v");
     multiOption.allowMultipleValues();
     build.addOption("--single", state.single, "Single value");
+    CliOption<int>& numberOption = build.addOption("--number", p(const int& number) {
+        s.numbers.pushBack(number);
+    }, "Numbers");
+    numberOption.allowMultipleValues();
+    build.addFlag("--verbose", state.verbose, "Verbose output");
     build.addOption("<file>", state.file, "File to build");
 
     // All values up to the next option are taken, but the missing positional argument is left over
@@ -48,6 +55,33 @@ f<int> main() {
     assert parser.parse(6u, singleArgs) != EXIT_CODE_SUCCESS;
     assert state.single == "y";
     assert state.file == "z";
+
+    // Flags after the positional argument are no positional argument candidates
+    state.values.clear();
+    string[6] trailingFlagArgs = ["prog", "build", "-v", "f", "flag.spice", "--verbose"];
+    assert parser.parse(6u, trailingFlagArgs) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 1;
+    assert state.values.get(0) == "f";
+    assert state.file == "flag.spice";
+    assert state.verbose;
+
+    // Values of other options are no positional argument candidates either
+    state.values.clear();
+    string[7] trailingOptionArgs = ["prog", "build", "-v", "g", "option.spice", "--single", "w"];
+    assert parser.parse(7u, trailingOptionArgs) == EXIT_CODE_SUCCESS;
+    assert state.values.getSize() == 1;
+    assert state.values.get(0) == "g";
+    assert state.file == "option.spice";
+    assert state.single == "w";
+
+    // Negative numbers are values, not options
+    string[7] numberArgs = ["prog", "build", "--number", "-1", "2", "-3", "numbers.spice"];
+    assert parser.parse(7u, numberArgs) == EXIT_CODE_SUCCESS;
+    assert state.numbers.getSize() == 3;
+    assert state.numbers.get(0) == -1;
+    assert state.numbers.get(1) == 2;
+    assert state.numbers.get(2) == -3;
+    assert state.file == "numbers.spice";
 
     // An option without a value is an error, no matter whether it accepts multiple values
     string[3] missingValueArgs = ["prog", "build", "-v"];
