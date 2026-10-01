@@ -109,7 +109,6 @@ static void execTestCase(const TestCase &testCase) {
       /* llvmArgs= */ "",
       /* printDebugOutput= */ false,
       CliOptions::DumpSettings{
-          /* dumpCST= */ false,
           /* dumpAST= */ false,
           /* dumpSymbolTables= */ false,
           /* dumpTypes= */ false,
@@ -140,7 +139,7 @@ static void execTestCase(const TestCase &testCase) {
       /* comparableOutput= */ true,
       /* buildVars= */ {},
   };
-  static_assert(sizeof(CliOptions::DumpSettings) == 11, "CliOptions::DumpSettings struct size changed");
+  static_assert(sizeof(CliOptions::DumpSettings) == 10, "CliOptions::DumpSettings struct size changed");
   static_assert(sizeof(CliOptions::InstrumentationSettings) == 3, "CliOptions::InstrumentationSettings struct size changed");
 #if defined(__clang__) && defined(__apple_build_version__)
   // some std types for Apple Clang are smaller than for GCC and Clang
@@ -189,12 +188,6 @@ static void execTestCase(const TestCase &testCase) {
     // Run Lexer and Parser
     mainSourceFile->runLexer();
     mainSourceFile->runParser();
-
-    // Check CST
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_PARSE_TREE, [&] {
-      mainSourceFile->runCSTVisualizer();
-      return mainSourceFile->compilerOutput.cstString;
-    });
 
     // Build and optimize AST
     mainSourceFile->runASTBuilder();

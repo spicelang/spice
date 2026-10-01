@@ -37,7 +37,6 @@ enum CompileStageType : uint8_t {
   NONE,
   LEXER,
   PARSER,
-  CST_VISUALIZER,
   AST_BUILDER,
   AST_VISUALIZER,
   IMPORT_COLLECTOR,
@@ -73,7 +72,6 @@ struct SourceFileAntlrCtx {
 struct TimerOutput {
   uint64_t lexer = 0;
   uint64_t parser = 0;
-  uint64_t cstVisualizer = 0;
   uint64_t astBuilder = 0;
   uint64_t astVisualizer = 0;
   uint64_t importCollector = 0;
@@ -87,7 +85,6 @@ struct TimerOutput {
 };
 
 struct CompilerOutput {
-  std::string cstString;
   std::string astString;
   std::string symbolTableString;
   std::string depGraphString;
@@ -126,7 +123,6 @@ public:
   // Compiler pipeline triggers
   void runLexer();
   void runParser();
-  void runCSTVisualizer();
   void runASTBuilder();
   void runASTVisualizer();
   void runImportCollector();

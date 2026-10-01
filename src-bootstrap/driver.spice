@@ -88,7 +88,6 @@ const string BACKEND_LLVM = "llvm";
 const string BACKEND_TPDE = "tpde";
 
 public type DumpSettings struct {
-    public bool dumpCST = false
     public bool dumpAST = false
     public bool dumpSymbolTable = false
     public bool dumpTypes = false
@@ -708,9 +707,6 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --debug-output
     CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
-    // --dump-cst
-    CliOption<bool>& dumpCstFlag = subCmd.addFlag("--dump-cst", this.cliOptions.dump.dumpCST, "Dump CST as serialized string and SVG image");
-    dumpCstFlag.addAlias("-cst");
     // --dump-ast
     CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump AST as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
@@ -921,9 +917,8 @@ f<bool> testTestLintInstallSubcommands() {
 
     // Test: complex
     Driver testComplex;
-    string[8] testComplexArgs = ["spice", "t", "-s", "-cst", "--sanitizer", "thread", "--disable-verifier", "main-file.spice"];
-    assert parseAndEnrich(testComplex, 8, testComplexArgs);
-    assert testComplex.cliOptions.dump.dumpCST;
+    string[7] testComplexArgs = ["spice", "t", "-s", "--sanitizer", "thread", "--disable-verifier", "main-file.spice"];
+    assert parseAndEnrich(testComplex, 7, testComplexArgs);
     assert testComplex.cliOptions.dump.dumpAssembly;
     assert testComplex.cliOptions.instrumentation.sanitizer == Sanitizer::THREAD;
     assert testComplex.cliOptions.disableVerifier;

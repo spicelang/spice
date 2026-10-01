@@ -20,7 +20,6 @@ const char *const GDB_INFERIOR_MESSAGE = "[Inferior";
 const char *const INPUT_NAME_CLI_FLAGS = "cli-flags.txt";
 
 const char *const REF_NAME_SOURCE = "source.spice";
-const char *const REF_NAME_PARSE_TREE = "parse-tree.dot";
 const char *const REF_NAME_SYNTAX_TREE = "syntax-tree.dot";
 const char *const REF_NAME_DEP_GRAPH = "dependency-graph.dot";
 const char *const REF_NAME_SYMBOL_TABLE = "symbol-table.json";
