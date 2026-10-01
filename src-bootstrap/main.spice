@@ -27,7 +27,7 @@ f<bool> compileProject(CliOptions& cliOptions) {
 
     // Lint-only mode stops here and reports findings without generating any code
     if cliOptions.lintOnly {
-        // ToDo: Port the LintPass (collectAndPrintLintFindings)
+        mainSourceFile.collectAndPrintLintFindings();
         return true;
     }
 

@@ -1,0 +1,176 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/type/any";
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/compiler-pass";
+import "bootstrap/ast/abstract-ast-visitor-intf";
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/source-file";
+import "bootstrap/linter/lint-finding";
+import "bootstrap/linter/rules/naming-convention-rule";
+import "bootstrap/linter/rules/too-many-parameters-rule";
+import "bootstrap/linter/rules/cyclomatic-complexity-rule";
+
+/**
+ * Runs all built-in lint rules over a fully type-checked AST in a single read-only traversal.
+ *
+ * Modeled on PostTypeCheckingVerifier: each overridden visit method fans out to every rule interested in that
+ * node kind, so adding a new rule only requires adding its call to the matching visit method, never a new AST
+ * walk. The host keeps the rules behind a polymorphic LintRule registry; the bootstrap has no heap-allocated
+ * polymorphic collections, so the rules live in linter/rules/ as free functions that this pass dispatches to.
+ */
+public type LintPass struct : IAbstractAstVisitor {
+    compose public CompilerPass compilerPass
+    public Vector<LintFinding> findings
+}
+
+/**
+ * Construct a lint pass for the given source file
+ *
+ * @param resourceManager Global resource manager
+ * @param sourceFile Source file, whose AST is linted
+ */
+public p LintPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
+}
+
+/**
+ * Run all lint rules over the given AST and return the collected findings.
+ *
+ * @param ast Root node of the AST to lint
+ * @return Collected lint findings
+ */
+public f<Vector<LintFinding>> LintPass.lint(ASTEntryNode* ast) {
+    this.visitEntry(ast);
+    return this.findings;
+}
+
+// Generic double-dispatch entry point required by IAbstractAstVisitor
+public f<Any> LintPass.visit(IVisitable* node) {
+    return node.accept(cast<IAbstractAstVisitor*>(this));
+}
+
+// Default behavior of every visit method that is not overridden below: visit all children (like the host's ASTVisitor)
+f<Any> LintPass.visitChildren(ASTNode* node) {
+    foreach ASTNode* child : node.children {
+        assert child != nil<ASTNode*>;
+        assert child.visitable != nil<IVisitable*>;
+        this.visit(child.visitable);
+    }
+    return Any();
+}
+
+// ========================================================== Lint rules =========================================================
+
+public f<Any> LintPass.visitFctDef(ASTFctDefNode* node) {
+    checkNamingFctDef(node, this.findings);
+    checkParamCountFctDef(node, this.findings);
+    checkComplexityFctDef(node, this.findings);
+    return this.visitChildren(cast<ASTNode*>(node));
+}
+
+public f<Any> LintPass.visitProcDef(ASTProcDefNode* node) {
+    checkNamingProcDef(node, this.findings);
+    checkParamCountProcDef(node, this.findings);
+    checkComplexityProcDef(node, this.findings);
+    return this.visitChildren(cast<ASTNode*>(node));
+}
+
+public f<Any> LintPass.visitStructDef(ASTStructDefNode* node) {
+    checkNamingStructDef(node, this.findings);
+    return this.visitChildren(cast<ASTNode*>(node));
+}
+
+public f<Any> LintPass.visitInterfaceDef(ASTInterfaceDefNode* node) {
+    checkNamingInterfaceDef(node, this.findings);
+    return this.visitChildren(cast<ASTNode*>(node));
+}
+
+public f<Any> LintPass.visitUnionDef(ASTUnionDefNode* node) {
+    checkNamingUnionDef(node, this.findings);
+    return this.visitChildren(cast<ASTNode*>(node));
+}
+
+public f<Any> LintPass.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
+    checkNamingGlobalVarDef(node, this.findings);
+    return this.visitChildren(cast<ASTNode*>(node));
+}
+
+// ====================================================== Default visitors ======================================================
+
+public f<Any> LintPass.visitEntry(ASTEntryNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitMainFctDef(ASTMainFctDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitEnumDef(ASTEnumDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitGenericTypeDef(ASTGenericTypeDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAliasDef(ASTAliasDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitExtDecl(ASTExtDeclNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitImportDef(ASTImportDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitUnsafeBlock(ASTUnsafeBlockNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitForLoop(ASTForLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitForeachLoop(ASTForeachLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitWhileLoop(ASTWhileLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitDoWhileLoop(ASTDoWhileLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitIfStmt(ASTIfStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitElseStmt(ASTElseStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitSwitchStmt(ASTSwitchStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitCaseBranch(ASTCaseBranchNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitDefaultBranch(ASTDefaultBranchNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitStmtLst(ASTStmtLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitTypeLst(ASTTypeLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitTypeAltsLst(ASTTypeAltsLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitParamLst(ASTParamLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitArgLst(ASTArgLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitEnumItemLst(ASTEnumItemLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitEnumItem(ASTEnumItemNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitField(ASTFieldNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitSignature(ASTSignatureNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitDeclStmt(ASTDeclStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitExprStmt(ASTExprStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitQualifierLst(ASTQualifierLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitQualifier(ASTQualifierNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitModAttr(ASTModAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAttr(ASTAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitCaseConstant(ASTCaseConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitReturnStmt(ASTReturnStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitBreakStmt(ASTBreakStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitContinueStmt(ASTContinueStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAssertStmt(ASTAssertStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAssignExpr(ASTAssignExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitTernaryExpr(ASTTernaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitLogicalOrExpr(ASTLogicalOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitLogicalAndExpr(ASTLogicalAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitEqualityExpr(ASTEqualityExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitRelationalExpr(ASTRelationalExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitShiftExpr(ASTShiftExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAdditiveExpr(ASTAdditiveExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitCastExpr(ASTCastExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitAtomicExpr(ASTAtomicExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitValue(ASTValueNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitConstant(ASTConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitFctCall(ASTFctCallNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitStructInstantiation(ASTStructInstantiationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitLambdaFunc(ASTLambdaFuncNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitLambdaProc(ASTLambdaProcNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitLambdaExpr(ASTLambdaExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitDataType(ASTDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitBaseDataType(ASTBaseDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitCustomDataType(ASTCustomDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> LintPass.visitFunctionDataType(ASTFunctionDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }

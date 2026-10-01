@@ -1,0 +1,66 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/text/stringstream";
+
+// Own imports
+import "bootstrap/reader/code-loc";
+
+public type LintSeverity enum {
+    INFO,
+    WARNING,
+    ERROR
+}
+
+/**
+ * A single diagnostic produced by a lint rule, e.g. a naming convention violation.
+ */
+public type LintFinding struct {
+    public String ruleId
+    public LintSeverity severity
+    public String findingMessage
+}
+
+/**
+ * Constructor
+ *
+ * @param codeLoc Code location, where the lint finding occurred
+ * @param ruleId Id of the rule that produced this finding, e.g. "naming-convention"
+ * @param severity Severity of the finding
+ * @param message Finding message suffix
+ */
+public p LintFinding.ctor(const CodeLoc& codeLoc, const string ruleId, const LintSeverity severity, const String& message) {
+    this.ruleId = String(ruleId);
+    this.severity = severity;
+    StringStream msg;
+    msg << "[" << getSeverityLabel(severity) << "] " << codeLoc.toPrettyString() << ": " << this.ruleId << ": " << message;
+    this.findingMessage = msg.str();
+}
+
+/**
+ * Print the lint finding to standard output
+ */
+public p LintFinding.print() {
+    string color = "\033[36m"; // INFO: cyan
+    if this.severity == LintSeverity::WARNING {
+        color = "\033[33m"; // yellow
+    } else if this.severity == LintSeverity::ERROR {
+        color = "\033[31m"; // red
+    }
+    printf("%s%s\033[0m\n", color, this.findingMessage);
+}
+
+/**
+ * Get the human-readable label for a lint severity
+ *
+ * @param severity Severity of the finding
+ * @return Label string for the severity
+ */
+f<string> getSeverityLabel(const LintSeverity severity) {
+    switch severity {
+        case LintSeverity::INFO: { return "Info"; }
+        case LintSeverity::WARNING: { return "Lint"; }
+        case LintSeverity::ERROR: { return "Lint error"; }
+        default: { panic(Error("Unknown lint severity")); }
+    }
+}

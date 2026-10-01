@@ -1,0 +1,105 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/text/analysis";
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/linter/lint-finding";
+
+// Flags Spice-source identifiers that violate the naming conventions documented in STYLE_GUIDE.md
+// (functions/procedures/methods: camelCase; structs/interfaces/unions: PascalCase; globals: SNAKE_CASE).
+//
+// This is deliberately a style rule, not a semantic one: unlike unused-symbol or shadowing checks (which stay
+// compiler warnings), naming conventions are opinionated and belong to the opt-in `spice lint` command rather
+// than every `build`/`run`/`test` invocation.
+const string NAMING_CONVENTION_RULE_ID = "naming-convention";
+
+/**
+ * Get the first char of a non-empty string
+ */
+f<char> firstChar(const String& input) {
+    unsafe {
+        return input.getRaw()[0];
+    }
+}
+
+/**
+ * Check whether an identifier is written in camelCase (starts lowercase, no underscores)
+ */
+f<bool> isCamelCase(const String& input) {
+    return !input.isEmpty() && isLower(firstChar(input)) && !input.contains("_");
+}
+
+/**
+ * Check whether an identifier is written in PascalCase (starts uppercase, no underscores)
+ */
+f<bool> isPascalCase(const String& input) {
+    return !input.isEmpty() && isUpper(firstChar(input)) && !input.contains("_");
+}
+
+/**
+ * Check whether an identifier is written in SNAKE_CASE (all uppercase, underscores)
+ */
+f<bool> isSnakeCase(const String& input) {
+    if input.isEmpty() { return false; }
+    const string raw = input.getRaw();
+    const unsigned long length = input.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        char c = '\0';
+        unsafe {
+            c = raw[i];
+        }
+        if !isUpper(c) && c != '_' {
+            return false;
+        }
+    }
+    return true;
+}
+
+public p checkNamingFctDef(ASTFctDefNode* node, Vector<LintFinding>& findings) {
+    // Operator overloads (e.g. "op.plus") intentionally do not follow camelCase
+    if node.node.name.name.startsWith(OP_FCT_PREFIX) { return; }
+    if !isCamelCase(node.node.name.name) {
+        const String message = String("Function name '") + node.node.name.name + "' should be camelCase";
+        findings.pushBack(LintFinding(node.node.name.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+    }
+}
+
+public p checkNamingProcDef(ASTProcDefNode* node, Vector<LintFinding>& findings) {
+    // Constructors are always named "ctor" by language convention
+    if node.isCtor { return; }
+    if !isCamelCase(node.node.name.name) {
+        const String message = String("Procedure name '") + node.node.name.name + "' should be camelCase";
+        findings.pushBack(LintFinding(node.node.name.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+    }
+}
+
+public p checkNamingStructDef(ASTStructDefNode* node, Vector<LintFinding>& findings) {
+    if !isPascalCase(node.structName) {
+        const String message = String("Struct name '") + node.structName + "' should be PascalCase";
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+    }
+}
+
+public p checkNamingInterfaceDef(ASTInterfaceDefNode* node, Vector<LintFinding>& findings) {
+    if !isPascalCase(node.interfaceName) {
+        const String message = String("Interface name '") + node.interfaceName + "' should be PascalCase";
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+    }
+}
+
+public p checkNamingUnionDef(ASTUnionDefNode* node, Vector<LintFinding>& findings) {
+    if !isPascalCase(node.unionName) {
+        const String message = String("Union name '") + node.unionName + "' should be PascalCase";
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+    }
+}
+
+public p checkNamingGlobalVarDef(ASTGlobalVarDefNode* node, Vector<LintFinding>& findings) {
+    if !isSnakeCase(node.varName) {
+        const String message = String("Global variable name '") + node.varName + "' should be SNAKE_CASE";
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+    }
+}

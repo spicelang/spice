@@ -621,6 +621,47 @@ static void execLinterTestCase(const TestCase &testCase) {
   SUCCEED();
 }
 
+/**
+ * Runs a lint test case against the bootstrap compiler: invokes its `lint` subcommand and compares the emitted
+ * findings against lint.out. The bootstrap compiler colorizes its findings, so the captured output is
+ * de-colorized before being matched against the plain-text reference.
+ */
+static void execBootstrapLinterTestCase(const TestCase &testCase) {
+  // Check if test is disabled
+  if (TestUtil::isDisabled(testCase))
+    GTEST_SKIP();
+
+  const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
+
+  // Assemble the command line
+  std::vector<std::string> args = {"lint", mainSourceFilePath.string()};
+
+  // Run the bootstrap compiler
+  const auto [output, exitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
+  if (testDriverCliOptions.isVerbose)                      // GCOV_EXCL_LINE
+    std::cout << "Bootstrap compiler output:\n" << output; // GCOV_EXCL_LINE
+
+  // Check if the bootstrap compiler raised an error
+  const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
+  if (const std::optional<std::string> errorMessage = BootstrapUtil::extractErrorMessage(output)) {
+    if (!TestUtil::doesRefExist(errorRefPath))
+      FAIL() << "Expected no error, but got: " << *errorMessage;
+    TestUtil::checkRefMatch(errorRefPath, [&] { return *errorMessage; });
+    return;
+  }
+  if (exitCode != 0)
+    FAIL() << "Bootstrap compiler exited with code " << exitCode << ":\n" << output;
+
+  // Fail if an error was expected, that the bootstrap compiler is already able to raise
+  if (TestUtil::doesRefExist(errorRefPath) && BootstrapUtil::isErrorSupported(errorRefPath))
+    FAIL() << "Expected error, but got no error";
+
+  // Check lint findings against the reference (de-colorized)
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_LINT_OUTPUT, [&] { return BootstrapUtil::stripAnsiCodes(output); });
+
+  SUCCEED();
+}
+
 class CommonTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(CommonTests, ) { runTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, CommonTests, ::testing::ValuesIn(TestUtil::collectTestCases("common", false)),
@@ -666,10 +707,10 @@ INSTANTIATE_TEST_SUITE_P(, ExampleTests, ::testing::ValuesIn(TestUtil::collectTe
 
 class LinterTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(LinterTests, ) {
-  // The bootstrap compiler has no linter yet
   if (testDriverCliOptions.bootstrapMode)
-    GTEST_SKIP() << "Not supported in bootstrap mode";
-  execLinterTestCase(GetParam());
+    execBootstrapLinterTestCase(GetParam());
+  else
+    execLinterTestCase(GetParam());
 }
 INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTestCases("linter", false)),
                          TestUtil::NameResolver());
