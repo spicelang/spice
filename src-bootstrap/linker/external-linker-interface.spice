@@ -51,20 +51,23 @@ public p ExternalLinkerInterface.prepare() {
     // Sanitizers
     switch this.cliOptions.instrumentation.sanitizer {
         case Sanitizer::ADDRESS: {
-            this.addLinkerFlag("-lasan");
+            this.addLinkerFlag("-fsanitize=address");
         }
         case Sanitizer::THREAD: {
-            this.addLinkerFlag("-ltsan");
+            this.addLinkerFlag("-fsanitize=thread");
         }
         case Sanitizer::MEMORY: {
-            this.addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
-            this.addLinkerFlag("-lclang_rt.msan");
+            this.addLinkerFlag("-fsanitize=memory");
             this.requestLibMathLinkage();
         }
         case Sanitizer::TYPE: {
-            this.addLinkerFlag("-L$(clang -print-resource-dir)/lib/x86_64-unknown-linux-gnu");
-            this.addLinkerFlag("-lclang_rt.tysan");
+            this.addLinkerFlag("-fsanitize=type");
         }
+    }
+
+    // Code coverage
+    if this.cliOptions.instrumentation.codeCoverage {
+        this.addLinkerFlag("--coverage");
     }
 
     // Web Assembly
@@ -99,7 +102,7 @@ public p ExternalLinkerInterface.run() {
  * Cleanup intermediary object files
  */
 public p ExternalLinkerInterface.cleanup() {
-    // Cleanup is only required if we actually linked/archived and did not dump to files
+    // Cleanup intermediary object files
     if this.cliOptions.outputContainer == OutputContainer::OBJECT_FILE || this.cliOptions.dump.dumpToFiles {
         return;
     }
@@ -132,18 +135,21 @@ p ExternalLinkerInterface.link() {
     if !isGccInvoker {
         commandBuilder << " --target=" << this.cliOptions.targetTriple.value;
     }
-    // Append linker flags
+    // Append output path
+    commandBuilder << " -o " << this.outputPath.toString();
+    // Append object files first, so that '-l' archive flags added below are searched
+    // for symbols that are already undefined at the point they appear in the command.
+    foreach const FilePath& objectFilePath : this.linkedFiles {
+        commandBuilder << " ";
+        commandBuilder << objectFilePath.toString();
+    }
+    // Append linker flags after object files (libraries must follow the objects that reference them)
     foreach const String& linkerFlag : this.linkerFlags {
-        commandBuilder << " " << linkerFlag;
+        commandBuilder << " ";
+        commandBuilder << linkerFlag;
     }
     if this.linkLibMath {
         commandBuilder << " -lm";
-    }
-    // Append output path
-    commandBuilder << " -o " << this.outputPath.toString();
-    // Append object files
-    foreach const FilePath& objectFilePath : this.linkedFiles {
-        commandBuilder << " " << objectFilePath.toString();
     }
     const String command = commandBuilder.str();
 
