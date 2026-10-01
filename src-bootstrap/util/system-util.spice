@@ -26,20 +26,23 @@ public type ExternalBinaryFinderResult struct {
  * @return Exit code
  */
 f<int> transformStatusToExitCode(int status) {
-    if isWindows() {
+    if isUnixBased() {
+        // Invalid status -> invalid exit code
+        if status == -1 {
+            return -1;
+        }
+        // Process terminated by signal (WIFSIGNALED): low 7 bits are neither 0 nor 0x7f
+        const int termSignal = status & 0x7f;
+        if termSignal != 0 && termSignal != 0x7f {
+            return 128 + termSignal;
+        }
+        // Process terminated normally (WIFEXITED): WEXITSTATUS
+        return (status >> 8) & 0xff;
+    } else if isWindows() {
         return status;
+    } else {
+        panic(Error("Unsupported platform"));
     }
-    // Invalid status -> invalid exit code
-    if status == -1 {
-        return -1;
-    }
-    // Process terminated by signal (WIFSIGNALED): low 7 bits are neither 0 nor 0x7f
-    const int termSignal = status & 0x7f;
-    if termSignal != 0 && termSignal != 0x7f {
-        return 128 + termSignal;
-    }
-    // Process terminated normally (WIFEXITED): WEXITSTATUS
-    return (status >> 8) & 0xff;
 }
 
 /**
