@@ -268,8 +268,7 @@ public p SourceFile.runASTVisualizer() {
     dotCode << " " << astDotCode.get<String>() << "}";
 
     // Dump the serialized AST string and the SVG file
-    // Copy explicitly, see https://github.com/spicelang/spice/issues/1460
-    this.compilerOutput.astString = String(dotCode.str());
+    this.compilerOutput.astString = dotCode.str();
 
     if this.cliOptions.dump.dumpAST {
         this.visualizerOutput("AST", this.compilerOutput.astString);

@@ -62,7 +62,7 @@ bool BootstrapUtil::buildBootstrapCompiler() {
     const std::string outputPath = executablePath.string();
     const std::string mainSourceFile = mainSourceFilePath.string();
     std::array<const char *, 8> argv = {
-        "spice", "build", "-O0", "-g", "--ignore-cache", "--output", outputPath.c_str(), mainSourceFile.c_str()};
+        "spice", "build", "-O3", "-lto", "--ignore-cache", "--output", outputPath.c_str(), mainSourceFile.c_str()};
     CliOptions cliOptions;
     Driver driver(cliOptions);
     if (driver.parse(argv.size(), argv.data()) != EXIT_SUCCESS)

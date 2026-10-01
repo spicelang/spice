@@ -19,10 +19,10 @@ const string STACK_TRACE_RT_IMPORT_NAME = "__rt_stack_trace";
 public type RuntimeModule enum {
     STRING_RT = 1,
     RESULT_RT = 2,
-    ERROR_RT  = 4,
+    ERROR_RT = 4,
     ERROR_TRACE_RT = 8,
     MEMORY_RT = 16,
-    RTTI_RT   = 32,
+    RTTI_RT = 32,
     STACK_TRACE_RT = 64
 }
 
@@ -86,9 +86,8 @@ public f<string> getIdentifyingTopLevelName(RuntimeModule runtimeModule) {
         case RuntimeModule::MEMORY_RT: { return "sAlloc"; } // sAlloc function
         case RuntimeModule::RTTI_RT: { return TIOBJ_NAME; } // TypeInfo struct
         case RuntimeModule::STACK_TRACE_RT: { return "sDumpStacktrace"; } // sDumpStacktrace function
+        default: { panic(Error("Requested unknown runtime module")); }
     }
-    panic(Error("Requested unknown runtime module"));
-    return "";
 }
 
 type ModuleNamePair struct {
