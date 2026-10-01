@@ -1,0 +1,65 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/type/type-conversion";
+import "std/data/vector";
+
+// Own imports
+import "bootstrap/ast/ast-nodes";
+import "bootstrap/linter/lint-finding";
+
+// Flags functions/procedures whose body has grown too many independent branches to review or test with
+// confidence in one piece. McCabe cyclomatic complexity: starts at 1 for the single straight-line path through
+// the body, +1 for every `if`, loop, and `case` branch. A style/maintainability check, not a correctness one,
+// so it lives in `spice lint` rather than as a compiler warning.
+const string CYCLOMATIC_COMPLEXITY_RULE_ID = "cyclomatic-complexity";
+
+// McCabe's original recommendation for the complexity ceiling of a single routine.
+const long MAX_CYCLOMATIC_COMPLEXITY = 10l;
+
+/**
+ * Count the decision points in a subtree (each if/loop/case branch counts as 1). Walks into every descendant,
+ * including nested lambda bodies, as a deliberate simplification: a lambda dense enough to matter on its own
+ * will usually also push the enclosing function over the threshold.
+ *
+ * @param node Root of the subtree to walk
+ * @return Number of decision points found
+ */
+f<long> countDecisionPoints(ASTNode* node) {
+    long count = 0l;
+    const ASTNodeKind kind = node.kind;
+    if kind == ASTNodeKind::IF_STMT || kind == ASTNodeKind::FOR_LOOP || kind == ASTNodeKind::FOREACH_LOOP ||
+       kind == ASTNodeKind::WHILE_LOOP || kind == ASTNodeKind::DO_WHILE_LOOP || kind == ASTNodeKind::CASE_BRANCH {
+        count++;
+    }
+    foreach ASTNode* child : node.getChildren() {
+        count += countDecisionPoints(child);
+    }
+    return count;
+}
+
+/**
+ * Emit a finding if the given function/procedure body's cyclomatic complexity exceeds MAX_CYCLOMATIC_COMPLEXITY.
+ *
+ * @param fctDefBase Function/procedure base node
+ * @param kindLabel "Function" or "Procedure", for the finding message
+ * @param findings Findings vector to append to
+ */
+p checkComplexity(ASTFctDefBaseNode& fctDefBase, const string kindLabel, Vector<LintFinding>& findings) {
+    // No body (e.g. declarations without a body) means nothing to measure
+    if fctDefBase.body == nil<IVisitable*> { return; }
+    const long complexity = 1l + countDecisionPoints(getASTNode(fctDefBase.body));
+    if complexity > MAX_CYCLOMATIC_COMPLEXITY {
+        const String message = String(kindLabel) + " '" + fctDefBase.name.name + "' has a cyclomatic complexity of " +
+                               toString(complexity) + " (max " + toString(MAX_CYCLOMATIC_COMPLEXITY) + "); consider splitting it up";
+        findings.pushBack(LintFinding(fctDefBase.codeLoc, CYCLOMATIC_COMPLEXITY_RULE_ID, LintSeverity::WARNING, message));
+    }
+}
+
+public p checkComplexityFctDef(ASTFctDefNode* node, Vector<LintFinding>& findings) {
+    checkComplexity(node.node, "Function", findings);
+}
+
+public p checkComplexityProcDef(ASTProcDefNode* node, Vector<LintFinding>& findings) {
+    checkComplexity(node.node, "Procedure", findings);
+}

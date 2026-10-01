@@ -36,6 +36,8 @@ import "bootstrap/importcollector/import-collector";
 import "bootstrap/symboltablebuilder/symbol-table-builder";
 import "bootstrap/typechecker/type-checker";
 import "bootstrap/typechecker/post-type-checking-verifier";
+import "bootstrap/linter/lint-finding";
+import "bootstrap/linter/lint-pass";
 import "bootstrap/irgenerator/ir-generator";
 import "bootstrap/iroptimizer/ir-optimizer";
 import "bootstrap/linker/bitcode-linker";
@@ -92,6 +94,7 @@ public type CompilerOutput struct {
     String typesString
     String cacheStats
     public Vector<CompilerWarning> warnings
+    public Vector<LintFinding> lintFindings
     TimerOutput times
 }
 
@@ -169,6 +172,7 @@ public type SourceFile struct {
     bool typeCheckerPostRunning = false
     bool backEndStarted = false
     bool warningsCollected = false
+    bool lintFindingsCollected = false
 }
 
 public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const FilePath& filePath, bool isStdFile) {
@@ -1047,6 +1051,31 @@ public p SourceFile.collectAndPrintWarnings() {
     // Print warnings for this file
     foreach dyn warning : this.compilerOutput.warnings {
         warning.print();
+    }
+}
+
+public p SourceFile.collectAndPrintLintFindings() {
+    // Skip if restored from cache (no AST available), or if already visited. The latter guard keeps circular
+    // imports from recursing infinitely, since the dependency graph may contain cycles.
+    if this.restoredFromCache || this.lintFindingsCollected {
+        return;
+    }
+    this.lintFindingsCollected = true;
+    // Collect lint findings for all dependencies
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        if !sourceFile.isStdFile {
+            sourceFile.collectAndPrintLintFindings();
+        }
+    }
+    // Collect lint findings for this file
+    if !this.ignoreWarnings {
+        LintPass lintPass = LintPass(this.resourceManager, this);
+        this.compilerOutput.lintFindings = lintPass.lint(this.ast);
+    }
+    // Print lint findings for this file
+    foreach dyn finding : this.compilerOutput.lintFindings {
+        finding.print();
     }
 }
 

@@ -184,4 +184,16 @@ bool BootstrapUtil::isErrorSupported(const std::filesystem::path &errorRefPath) 
  */
 void BootstrapUtil::eraseDSOLocalMarkers(std::string &irCode) { CommonUtil::replaceAll(irCode, " dso_local ", " "); }
 
+/**
+ * Strip ANSI color escape sequences from the given text. The bootstrap compiler colorizes its lint findings on
+ * stdout, so they need to be de-colorized before being compared against the plain-text lint.out references.
+ *
+ * @param text Text to strip
+ * @return Text without ANSI escape sequences
+ */
+std::string BootstrapUtil::stripAnsiCodes(const std::string &text) {
+  static const std::regex ANSI_ESCAPE_REGEX(R"(\x1B\[[0-9;]*m)");
+  return std::regex_replace(text, ANSI_ESCAPE_REGEX, "");
+}
+
 } // namespace spice::testing
