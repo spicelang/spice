@@ -28,7 +28,7 @@ public:
   static std::optional<std::string> extractSerializedAST(const std::string &output);
   static bool isErrorSupported(const std::filesystem::path &errorRefPath);
   static void eraseDSOLocalMarkers(std::string &irCode);
-  static std::string stripAnsiCodes(std::string text);
+  static std::string stripAnsiCodes(const std::string &text);
 };
 
 } // namespace spice::testing

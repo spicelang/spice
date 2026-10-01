@@ -191,7 +191,7 @@ void BootstrapUtil::eraseDSOLocalMarkers(std::string &irCode) { CommonUtil::repl
  * @param text Text to strip
  * @return Text without ANSI escape sequences
  */
-std::string BootstrapUtil::stripAnsiCodes(std::string text) {
+std::string BootstrapUtil::stripAnsiCodes(const std::string &text) {
   static const std::regex ANSI_ESCAPE_REGEX(R"(\x1B\[[0-9;]*m)");
   return std::regex_replace(text, ANSI_ESCAPE_REGEX, "");
 }

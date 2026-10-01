@@ -621,12 +621,14 @@ static void execLinterTestCase(const TestCase &testCase) {
   SUCCEED();
 }
 
+namespace {
+
 /**
  * Runs a lint test case against the bootstrap compiler: invokes its `lint` subcommand and compares the emitted
  * findings against lint.out. The bootstrap compiler colorizes its findings, so the captured output is
  * de-colorized before being matched against the plain-text reference.
  */
-static void execBootstrapLinterTestCase(const TestCase &testCase) {
+void execBootstrapLinterTestCase(const TestCase &testCase) {
   // Check if test is disabled
   if (TestUtil::isDisabled(testCase))
     GTEST_SKIP();
@@ -634,7 +636,7 @@ static void execBootstrapLinterTestCase(const TestCase &testCase) {
   const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
 
   // Assemble the command line
-  std::vector<std::string> args = {"lint", mainSourceFilePath.string()};
+  const std::vector<std::string> args = {"lint", mainSourceFilePath.string()};
 
   // Run the bootstrap compiler
   const auto [output, exitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
@@ -661,6 +663,8 @@ static void execBootstrapLinterTestCase(const TestCase &testCase) {
 
   SUCCEED();
 }
+
+} // namespace
 
 class CommonTests : public ::testing::TestWithParam<TestCase> {};
 TEST_P(CommonTests, ) { runTestCase(GetParam()); }
