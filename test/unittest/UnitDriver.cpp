@@ -137,7 +137,7 @@ TEST(DriverTest, TestSubcommandMinimal) {
 }
 
 TEST(DriverTest, TestSubcommandComplex) {
-  const char *argv[] = {"spice", "t", "-s", "-cst", "--sanitizer=thread", "../../media/test-project/test.spice"};
+  const char *argv[] = {"spice", "t", "-s", "--sanitizer=thread", "../../media/test-project/test.spice"};
   static constexpr int argc = std::size(argv);
   CliOptions cliOptions;
   Driver driver(cliOptions, true);
@@ -153,7 +153,6 @@ TEST(DriverTest, TestSubcommandComplex) {
   ASSERT_EQ(OptLevel::O0, cliOptions.optLevel);
   ASSERT_TRUE(cliOptions.generateTestMain);
   ASSERT_TRUE(cliOptions.noEntryFct);
-  ASSERT_TRUE(cliOptions.dump.dumpCST);                               // -cst
   ASSERT_TRUE(cliOptions.dump.dumpAssembly);                          // -s
   ASSERT_EQ(Sanitizer::THREAD, cliOptions.instrumentation.sanitizer); // --sanitizer=thread
 }

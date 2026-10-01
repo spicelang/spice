@@ -30,8 +30,6 @@ set(SOURCES
         global/TypeNameDisambiguator.cpp
         # Driver
         driver/Driver.cpp
-        # CST visualizer
-        visualizer/CSTVisualizer.cpp
         # AST builder
         ast/ASTNodes.cpp
         ast/AbstractASTVisitor.cpp

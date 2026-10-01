@@ -36,7 +36,6 @@
 #include <util/ThreadPool.h>
 #include <util/Timer.h>
 #include <visualizer/ASTVisualizer.h>
-#include <visualizer/CSTVisualizer.h>
 #include <visualizer/DependencyGraphVisualizer.h>
 
 #include <llvm/IR/Module.h>
@@ -151,36 +150,6 @@ void SourceFile::runParser() {
   previousStage = PARSER;
   timer.stop();
   printStatusMessage("Parser", IO_TOKENS, IO_CST, compilerOutput.times.parser);
-}
-
-void SourceFile::runCSTVisualizer() {
-  // Only execute if enabled
-  if (restoredFromCache || (!cliOptions.dump.dumpCST && !cliOptions.testMode))
-    return;
-  // Check if this stage has already been done
-  if (previousStage >= CST_VISUALIZER)
-    return;
-
-  Timer timer(&compilerOutput.times.cstVisualizer);
-  timer.start();
-
-  // Generate dot code for this source file
-  std::stringstream dotCode;
-  visualizerPreamble(dotCode);
-  CSTVisualizer cstVisualizer(resourceManager, this, antlrCtx.lexer.get(), antlrCtx.parser.get());
-  dotCode << " " << std::any_cast<std::string>(cstVisualizer.visit(antlrCtx.parser->entry())) << "}";
-  antlrCtx.parser->reset();
-
-  // Dump the serialized CST string and the SVG file
-  if (cliOptions.dump.dumpCST || cliOptions.testMode)
-    compilerOutput.cstString = dotCode.str();
-
-  if (cliOptions.dump.dumpCST)
-    visualizerOutput("CST", compilerOutput.cstString);
-
-  previousStage = CST_VISUALIZER;
-  timer.stop();
-  printStatusMessage("CST Visualizer", IO_CST, IO_CST, compilerOutput.times.cstVisualizer);
 }
 
 void SourceFile::runASTBuilder() {
@@ -663,8 +632,6 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   runLexer();
   CHECK_ABORT_FLAG_V()
   runParser();
-  CHECK_ABORT_FLAG_V()
-  runCSTVisualizer();
   CHECK_ABORT_FLAG_V()
   runASTBuilder();
   CHECK_ABORT_FLAG_V()

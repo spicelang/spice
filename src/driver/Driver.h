@@ -100,7 +100,6 @@ struct CliOptions {
   std::string llvmArgs;
   bool printDebugOutput = false;
   struct DumpSettings {
-    bool dumpCST = false;
     bool dumpAST = false;
     bool dumpSymbolTable = false;
     bool dumpTypes = false;
