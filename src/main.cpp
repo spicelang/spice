@@ -32,12 +32,6 @@ bool compileProject(const CliOptions &cliOptions) {
     mainSourceFile->runMiddleEnd();
     CHECK_ABORT_FLAG_B()
 
-    // Lint-only mode stops here and reports findings without generating any code
-    if (cliOptions.lintOnly) {
-      mainSourceFile->collectAndPrintLintFindings();
-      return true;
-    }
-
     mainSourceFile->runBackEnd();
     CHECK_ABORT_FLAG_B()
 

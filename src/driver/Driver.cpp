@@ -26,7 +26,6 @@ Driver::Driver(CliOptions &foreignCliOptions, bool dryRun) : cliOptions(foreignC
   addBuildSubcommand();
   addRunSubcommand();
   addTestSubcommand();
-  addLintSubcommand();
   addInstallSubcommand();
   addUninstallSubcommand();
 
@@ -330,22 +329,6 @@ void Driver::addTestSubcommand() {
 
   // --disable-verifier
   subCmd->add_flag<bool>("--disable-verifier", cliOptions.disableVerifier, "Disable LLVM module and function verification");
-}
-
-/**
- * Add lint subcommand to cli interface
- */
-void Driver::addLintSubcommand() {
-  // Create sub-command itself
-  CLI::App *subCmd = app.add_subcommand("lint", "Checks your Spice program for style and best-practice issues");
-  subCmd->alias("l");
-  subCmd->allow_non_standard_option_names();
-  subCmd->callback([&] {
-    shouldCompile = true;
-    cliOptions.lintOnly = true;
-  });
-
-  addCompileSubcommandOptions(subCmd);
 }
 
 /**

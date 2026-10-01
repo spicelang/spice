@@ -71,12 +71,6 @@ set(SOURCES
         typechecker/UnionManager.cpp
         typechecker/TypeMatcher.cpp
         typechecker/PostTypeCheckingVerifier.cpp
-        # Linter
-        linter/LintFinding.cpp
-        linter/LintPass.cpp
-        linter/rules/NamingConventionRule.cpp
-        linter/rules/TooManyParametersRule.cpp
-        linter/rules/CyclomaticComplexityRule.cpp
         # Dependency graph visualizer
         visualizer/DependencyGraphVisualizer.cpp
         # IR generator

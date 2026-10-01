@@ -135,7 +135,6 @@ struct CliOptions {
   std::map<std::string, std::string> buildVars;
   // New fields must be appended here, at the very end: test/TestRunner.cpp positionally aggregate-initializes
   // CliOptions, so inserting a field anywhere else silently shifts every field after it into the wrong slot.
-  bool lintOnly = false;
   bool keepFramePointers = false;
   bool stripSymbols = false;
 
@@ -177,7 +176,6 @@ private:
   void addBuildSubcommand();
   void addRunSubcommand();
   void addTestSubcommand();
-  void addLintSubcommand();
   void addInstallSubcommand();
   void addUninstallSubcommand();
   void addCompileSubcommandOptions(CLI::App *subCmd) const;
