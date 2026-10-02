@@ -11,6 +11,7 @@ import "std/math/hash";
 import "std/text/json/json-value";
 import "std/text/json/json-parser";
 import "std/text/json/json-serializer";
+import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/driver";
@@ -45,26 +46,28 @@ public f<String> CacheManager.computeCacheKey(const String& sourceCode, const Ve
     // Hash the source text
     components << toString(cast<long>(hash(sourceCode)));
     // Fold in CLI option fields that affect codegen
-    components << toString(cast<long>(cast<byte>(this.cliOptions.buildMode)));
-    components << toString(cast<long>(cast<byte>(this.cliOptions.optLevel)));
-    components << toString(cast<long>(cast<byte>(this.cliOptions.instrumentation.sanitizer)));
-    components << toString(cast<long>(cast<byte>(this.cliOptions.instrumentation.debugInfoLevel)));
+    components << toString(cast<int>(this.cliOptions.buildMode));
+    components << toString(cast<int>(this.cliOptions.optLevel));
+    components << toString(cast<int>(this.cliOptions.instrumentation.sanitizer));
+    components << toString(cast<int>(this.cliOptions.instrumentation.debugInfoLevel));
     components << toString(this.cliOptions.instrumentation.codeCoverage);
     components << this.cliOptions.targetTriple.value;
     components << toString(this.cliOptions.useLTO);
     components << toString(this.cliOptions.keepFramePointers);
-    components << toString(cast<long>(cast<byte>(this.cliOptions.outputContainer)));
+    components << toString(cast<int>(this.cliOptions.outputContainer));
     // Fold in sorted dep keys so any change in a dependency invalidates this entry too
     Vector<String> sortedDepKeys = depCacheKeys;
     // Insertion sort for determinism
     for long i = 1l; i < sortedDepKeys.getSize(); i++ {
         const String key = sortedDepKeys.get(cast<unsigned long>(i));
-        long j = i - 1l;
-        while j >= 0l && isStringLess(key, sortedDepKeys.get(cast<unsigned long>(j))) {
-            sortedDepKeys.set(cast<unsigned long>(j + 1l), sortedDepKeys.get(cast<unsigned long>(j)));
-            j--;
+        long insertPos = i;
+        while insertPos > 0l && isStringLess(key, sortedDepKeys.get(cast<unsigned long>(insertPos - 1l))) {
+            insertPos--;
         }
-        sortedDepKeys.set(cast<unsigned long>(j + 1l), key);
+        if insertPos < i {
+            sortedDepKeys.removeAt(cast<unsigned long>(i));
+            sortedDepKeys.insertAt(cast<unsigned long>(insertPos), key);
+        }
     }
     for unsigned long k = 0l; k < sortedDepKeys.getSize(); k++ {
         components << sortedDepKeys.get(k);
@@ -234,7 +237,7 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     }
     while !worklist.isEmpty() {
         const SourceFile* dep = worklist.get(0l);
-        worklist.remove(0l);
+        worklist.removeAt(cast<unsigned long>(0l));
         // Check if already visited
         bool alreadyVisited = false;
         for unsigned long vi = 0l; vi < visited.getSize(); vi++ {
@@ -335,19 +338,21 @@ f<String> CacheManager.computeExecutableCacheKey(const Vector<String>& objectFil
     Vector<String> sortedPaths = additionalSourcePaths;
     for long i = 1l; i < sortedPaths.getSize(); i++ {
         const String pathKey = sortedPaths.get(cast<unsigned long>(i));
-        long j = i - 1l;
-        while j >= 0l && isStringLess(pathKey, sortedPaths.get(cast<unsigned long>(j))) {
-            sortedPaths.set(cast<unsigned long>(j + 1l), sortedPaths.get(cast<unsigned long>(j)));
-            j--;
+        long insertPos = i;
+        while insertPos > 0l && isStringLess(pathKey, sortedPaths.get(cast<unsigned long>(insertPos - 1l))) {
+            insertPos--;
         }
-        sortedPaths.set(cast<unsigned long>(j + 1l), pathKey);
+        if insertPos < i {
+            sortedPaths.removeAt(cast<unsigned long>(i));
+            sortedPaths.insertAt(cast<unsigned long>(insertPos), pathKey);
+        }
     }
     for unsigned long i = 0l; i < sortedPaths.getSize(); i++ {
         const String& sp = sortedPaths.get(i);
         components << sp << "\0";
         components << this.hashLinkedFile(sp);
     }
-    components << toString(cast<long>(cast<byte>(this.cliOptions.outputContainer)));
+    components << toString(cast<int>(this.cliOptions.outputContainer));
     components << toString(this.cliOptions.staticLinking);
     return toString(cast<long>(hash(components.str())));
 }
