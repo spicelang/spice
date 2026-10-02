@@ -1,0 +1,130 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/text/stringstream";
+import "std/data/vector";
+import "std/io/filepath";
+
+// Own imports
+import "bootstrap/global/global-resource-manager";
+import "bootstrap/compiler-pass";
+import "bootstrap/source-file";
+
+/**
+ * Compute the path of 'path' relative to 'base', mirroring std::filesystem::relative().
+ * 'base' is treated as a reference point (not a directory), so two files in the same
+ * directory produce a '../sibling' result.  Same path gives '.'.
+ */
+f<String> computeRelativePath(const FilePath& path, const FilePath& base) {
+    // Normalize to generic (Unix) strings
+    String pathStr = String(path.toGenericString());
+    String baseStr = String(base.toGenericString());
+
+    // Split pathStr by '/'
+    Vector<String> pComps = Vector<String>();
+    unsigned long pStart = 0l;
+    while true {
+        const long pSlash = pathStr.find('/', pStart);
+        if pSlash < 0l {
+            pComps.pushBack(pathStr.getSubstring(pStart));
+            break;
+        }
+        pComps.pushBack(pathStr.getSubstring(pStart, pSlash - cast<long>(pStart)));
+        pStart = cast<unsigned long>(pSlash) + 1l;
+    }
+
+    // Split baseStr by '/'
+    Vector<String> bComps = Vector<String>();
+    unsigned long bStart = 0l;
+    while true {
+        const long bSlash = baseStr.find('/', bStart);
+        if bSlash < 0l {
+            bComps.pushBack(baseStr.getSubstring(bStart));
+            break;
+        }
+        bComps.pushBack(baseStr.getSubstring(bStart, bSlash - cast<long>(bStart)));
+        bStart = cast<unsigned long>(bSlash) + 1l;
+    }
+
+    // Find common prefix length
+    long commonLen = 0l;
+    while commonLen < pComps.getSize() && commonLen < bComps.getSize() {
+        if pComps[cast<unsigned long>(commonLen)] != bComps[cast<unsigned long>(commonLen)] { break; }
+        commonLen++;
+    }
+
+    // Build result: one '..' per remaining base component, then remaining path components
+    StringStream ss;
+    bool first = true;
+    for long i = commonLen; i < bComps.getSize(); i++ {
+        if !first { ss << "/"; }
+        ss << "..";
+        first = false;
+    }
+    for long i = commonLen; i < pComps.getSize(); i++ {
+        if !first { ss << "/"; }
+        ss << pComps[cast<unsigned long>(i)];
+        first = false;
+    }
+
+    if ss.isEmpty() {
+        return String(".");
+    }
+    return String(ss.str());
+}
+
+/**
+ * Visualizer for the import dependency graph. Mirrors src/visualizer/DependencyGraphVisualizer.{h,cpp}.
+ *
+ * Jobs:
+ * - Walk the SourceFile dependency tree starting from the main file
+ * - Emit one Graphviz dot node per source file, one edge per import relationship
+ */
+public type DependencyGraphVisualizer struct {
+    compose public CompilerPass compilerPass
+    Vector<SourceFile*> printedFiles
+}
+
+public p DependencyGraphVisualizer.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
+    this.compilerPass = CompilerPass(resourceManager, sourceFile);
+    this.printedFiles = Vector<SourceFile*>();
+}
+
+/**
+ * Entry point: generate the dependency graph dot code starting from the root source file.
+ *
+ * @param output Output stream to write the dot node/edge lines into
+ */
+public p DependencyGraphVisualizer.getDependencyGraph(StringStream& output) {
+    assert this.sourceFile.isMainFile;
+    this.printedFiles.clear();
+    this.getDependencyGraphNode(output, this.sourceFile);
+}
+
+/**
+ * Recursively emit dot nodes and edges for currentSourceFile and its transitive dependencies.
+ *
+ * @param output            Output stream
+ * @param currentSourceFile Source file to emit
+ */
+p DependencyGraphVisualizer.getDependencyGraphNode(StringStream& output, SourceFile* currentSourceFile) {
+    // Skip if already printed (handles diamonds / shared dependencies)
+    foreach SourceFile* printedFile : this.printedFiles {
+        if printedFile == currentSourceFile {
+            return;
+        }
+    }
+    this.printedFiles.pushBack(currentSourceFile);
+
+    // Emit a node for this source file using a path relative to the main file
+    const String nodeId = computeRelativePath(currentSourceFile.filePath, this.sourceFile.filePath);
+    output << " \"" << nodeId << "\" [color=\"lightgreen\",label=\"" << currentSourceFile.fileName << "\"];\n";
+
+    // Recurse into dependencies and emit edges
+    foreach dyn depEntry : currentSourceFile.dependencies {
+        SourceFile* dependency = depEntry.getSecond();
+        this.getDependencyGraphNode(output, dependency);
+        const String depNodeId = computeRelativePath(dependency.filePath, this.sourceFile.filePath);
+        output << " \"" << nodeId << "\" -> \"" << depNodeId << "\";\n";
+    }
+}
