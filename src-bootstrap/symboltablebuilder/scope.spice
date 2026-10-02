@@ -688,7 +688,7 @@ public p Scope.collectManifestationFingerprint(StringStream& fingerprint) {
     foreach Pair<const String&, StructManifestationList&> sEntry : this.structs {
         foreach Pair<const String&, Struct&> mEntry : sEntry.getSecond() {
             const Struct& st = mEntry.getSecond();
-            if st.isFullySubstantiated() {
+            if st.structBase.isFullySubstantiated() {
                 fingerprint << (st.used ? "S" : "s");
                 fingerprint << mEntry.getFirst();
                 fingerprint << "\n";
@@ -698,7 +698,7 @@ public p Scope.collectManifestationFingerprint(StringStream& fingerprint) {
     foreach Pair<const String&, InterfaceManifestationList&> iEntry : this.interfaces {
         foreach Pair<const String&, Interface&> mEntry : iEntry.getSecond() {
             const Interface& iface = mEntry.getSecond();
-            if iface.isFullySubstantiated() {
+            if iface.structBase.isFullySubstantiated() {
                 fingerprint << (iface.used ? "I" : "i");
                 fingerprint << mEntry.getFirst();
                 fingerprint << "\n";
