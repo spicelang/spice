@@ -205,8 +205,8 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     // Ensure cache directory exists
     mkDirs(this.cliOptions.cacheDir.toString(), 493); // 0755 = 493
 
-    // Copy object file to cache using a byte-by-byte copy
-    this.copyFileBinary(sourceObjPath, cacheObjPath);
+    // Copy object file to cache
+    copyFile(sourceObjPath, cacheObjPath);
 
     // Collect all transitive dependency cache keys, linker flags, and additional source paths
     Vector<String> depCacheKeys;
@@ -392,7 +392,7 @@ p CacheManager.cacheExecutable(const Vector<String>& objectFileCacheKeys, const 
         return;
     }
     mkDirs(this.cliOptions.cacheDir.toString(), 493);
-    this.copyFileBinary(execPathStr, cachedExecPath);
+    copyFile(execPathStr, cachedExecPath);
 }
 
 /**
@@ -423,7 +423,7 @@ public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceMan
             const String parentDir = outputPathStr.getSubstring(0l, lastSlash);
             mkDirs(parentDir.getRaw(), 493);
         }
-        this.copyFileBinary(String(cachedExecutablePath.toString()), outputPathStr);
+        copyFile(String(cachedExecutablePath.toString()), outputPathStr);
     } else {
         // Link and optionally cache the result
         resourceManager.linker.run();
@@ -431,27 +431,4 @@ public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceMan
             this.cacheExecutable(objectFileCacheKeys, resourceManager.linker.linkerFlags, additionalSourcePaths, resourceManager.linker.outputPath);
         }
     }
-}
-
-/**
- * Copy a file byte by byte. This is the bootstrap equivalent of std::filesystem::copy_file.
- *
- * @param src Source file path
- * @param dst Destination file path
- */
-p CacheManager.copyFileBinary(const String& src, const String& dst) {
-    FilePtr srcFile = fopen(src.getRaw(), "rb");
-    if srcFile == nil<FilePtr> { return; }
-    FilePtr dstFile = fopen(dst.getRaw(), "wb");
-    if dstFile == nil<FilePtr> {
-        fclose(srcFile);
-        return;
-    }
-    int c = fgetc(srcFile);
-    while c != EOF {
-        fputc(c, dstFile);
-        c = fgetc(srcFile);
-    }
-    fclose(srcFile);
-    fclose(dstFile);
 }

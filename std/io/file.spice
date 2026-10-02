@@ -72,6 +72,7 @@ ext f<int> fputs(string /*string*/, FilePtr /*stream*/);
 ext f<int> access(string /*file path*/, int /*mode*/);
 ext f<int> fseek(FilePtr /*stream*/, long /*offset*/, int /*whence*/);
 ext f<unsigned long> ftell(FilePtr /*stream*/);
+ext f<int> rename(string /*old path*/, string /*new path*/);
 
 /**
  * A handle to an open file, wrapping the underlying C file pointer and tracking the end-of-file state
@@ -235,6 +236,67 @@ public f<bool> changeFilePermissions(string path, short mode) {
  */
 public f<bool> deleteFile(string path) {
     return remove(path) == STATUS_OK;
+}
+
+/**
+ * Copies the file at src to dst byte-by-byte, overwriting dst if it already exists.
+ *
+ * @param src Path to the source file
+ * @param dst Path to the destination file
+ * @return True if the copy succeeded, false otherwise
+ */
+public f<bool> copyFile(string src, string dst) {
+    FilePtr srcFile = fopen(src, "rb");
+    if srcFile == nil<FilePtr> { return false; }
+    FilePtr dstFile = fopen(dst, "wb");
+    if dstFile == nil<FilePtr> {
+        fclose(srcFile);
+        return false;
+    }
+    int c = fgetc(srcFile);
+    while c != EOF {
+        fputc(c, dstFile);
+        c = fgetc(srcFile);
+    }
+    fclose(srcFile);
+    fclose(dstFile);
+    return true;
+}
+
+/**
+ * Copies the file at src to dst, overwriting dst if it already exists.
+ *
+ * @param src Path to the source file
+ * @param dst Path to the destination file
+ * @return True if the copy succeeded, false otherwise
+ */
+public f<bool> copyFile(const String& src, const String& dst) {
+    return copyFile(src.getRaw(), dst.getRaw());
+}
+
+/**
+ * Moves the file at src to dst. Attempts an atomic rename first; if that fails
+ * (e.g. across filesystems), falls back to copy followed by delete.
+ *
+ * @param src Path to the source file
+ * @param dst Path to the destination file
+ * @return True if the move succeeded, false otherwise
+ */
+public f<bool> moveFile(string src, string dst) {
+    if rename(src, dst) == STATUS_OK { return true; }
+    if !copyFile(src, dst) { return false; }
+    return deleteFile(src);
+}
+
+/**
+ * Moves the file at src to dst.
+ *
+ * @param src Path to the source file
+ * @param dst Path to the destination file
+ * @return True if the move succeeded, false otherwise
+ */
+public f<bool> moveFile(const String& src, const String& dst) {
+    return moveFile(src.getRaw(), dst.getRaw());
 }
 
 /**
