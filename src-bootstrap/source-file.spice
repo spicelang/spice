@@ -46,6 +46,7 @@ import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
 import "bootstrap/visualizer/ast-visualizer";
+import "bootstrap/visualizer/dependency-graph-visualizer";
 
 type CompileStageType enum {
     NONE,
@@ -55,6 +56,7 @@ type CompileStageType enum {
     SYMBOL_TABLE_BUILDER,
     TYPE_CHECKER_PRE,
     TYPE_CHECKER_POST,
+    DEP_GRAPH_VISUALIZER,
     IR_GENERATOR,
     IR_OPTIMIZER,
     OBJECT_EMITTER,
@@ -76,6 +78,7 @@ type TimerOutput struct {
   unsigned long symbolTableBuilder = 0l
   unsigned long typeCheckerPre = 0l
   unsigned long typeCheckerPost = 0l
+  unsigned long depGraphVisualizer = 0l
   unsigned long irGenerator = 0l
   unsigned long irOptimizer = 0l
   unsigned long objectEmitter = 0l
@@ -310,8 +313,9 @@ public p SourceFile.runImportCollector() {
 }
 
 public p SourceFile.runSymbolTableBuilder() {
-    // Skip if restored from cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::SYMBOL_TABLE_BUILDER {
+    // Note: do NOT skip on restoredFromCache: this is the stage that populates exportedNameRegistry, so non-cache
+    // dependants need it even on a cache hit. Only skip if the stage has already run.
+    if this.previousStage >= CompileStageType::SYMBOL_TABLE_BUILDER {
         return;
     }
 
@@ -431,6 +435,33 @@ p SourceFile.runTypeCheckerPost() {
 p SourceFile.runPostTypeCheckingVerifier() {
     PostTypeCheckingVerifier verifier = PostTypeCheckingVerifier(this.resourceManager, this);
     verifier.verify(this.ast);
+}
+
+public p SourceFile.runDependencyGraphVisualizer() {
+    // Only execute if enabled
+    if this.restoredFromCache { return; }
+    if !this.cliOptions.dump.dumpDependencyGraph && !this.cliOptions.testMode { return; }
+    if this.previousStage >= CompileStageType::DEP_GRAPH_VISUALIZER { return; }
+
+    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.depGraphVisualizer);
+    timer.start();
+
+    // Generate dot code for the full dependency graph
+    StringStream dotCode;
+    this.visualizerPreamble(dotCode);
+    DependencyGraphVisualizer depGraphVisualizer = DependencyGraphVisualizer(this.resourceManager, this);
+    depGraphVisualizer.getDependencyGraph(dotCode);
+    dotCode << "}";
+
+    this.compilerOutput.depGraphString = dotCode.str();
+
+    if this.cliOptions.dump.dumpDependencyGraph {
+        this.visualizerOutput("Dependency Graph", this.compilerOutput.depGraphString);
+    }
+
+    this.previousStage = CompileStageType::DEP_GRAPH_VISUALIZER;
+    timer.stop();
+    this.printStatusMessage("Dependency Graph Visualizer", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.depGraphVisualizer);
 }
 
 public p SourceFile.runIRGenerator() {
@@ -731,6 +762,9 @@ public p SourceFile.runMiddleEnd() {
             anySourceFileRevisitPending = true;
         }
     }
+    // Visualize dependency graph
+    this.runDependencyGraphVisualizer();
+    if this.resourceManager.abortCompilation { return; }
 }
 
 p SourceFile.collectBackEndSourceFiles(Vector<SourceFile*>& backEndSourceFiles) {

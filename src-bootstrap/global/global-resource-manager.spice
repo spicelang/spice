@@ -5,6 +5,7 @@ import "std/data/unordered-map";
 import "std/data/pair";
 import "std/time/timer";
 import "std/io/filepath";
+import "std/io/file";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
@@ -184,7 +185,17 @@ public f<unsigned long> GlobalResourceManager.getNextCustomTypeId() {
 
 public f<unsigned long> GlobalResourceManager.getTotalLineCount() {
     result = 0l;
-    /*foreach const SourceFile* sourceFile : sourceFiles {
-        result += sourceFile.value.getLineCount();
-    }*/
+    foreach Pair<const String&, SourceFile*&> sourceFileEntry : this.sourceFiles {
+        SourceFile* sourceFile = sourceFileEntry.getSecond();
+        const Result<String> contentResult = readFile(sourceFile.filePath.toGenericString());
+        if contentResult.isOk() {
+            const String content = contentResult.unwrap();
+            const unsigned long size = content.getLength();
+            for unsigned long i = 0l; i < size; i++ {
+                if content[i] == '\n' { result++; }
+            }
+            // A non-empty file without a trailing newline has an extra final line
+            if size > 0l && content[size - cast<unsigned long>(1)] != '\n' { result++; }
+        }
+    }
 }
