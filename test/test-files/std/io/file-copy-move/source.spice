@@ -1,0 +1,76 @@
+import "std/io/file";
+
+f<int> main() {
+    // Use unique file names to avoid conflicts with parallel test runs
+    string srcFile = "./test-file-copy-src.txt";
+    string dstFile = "./test-file-copy-dst.txt";
+    string moveFile_ = "./test-file-move-dst.txt";
+
+    // Clean up any leftover files from a previous run
+    bool _ = deleteFile(srcFile);
+    bool __ = deleteFile(dstFile);
+    bool ___ = deleteFile(moveFile_);
+
+    // --- copyFile tests ---
+
+    // Copy non-existent source should fail
+    assert !copyFile(srcFile, dstFile);
+
+    // Write source file, then copy
+    Result<bool> writeResult = writeFile(srcFile, "hello copy");
+    assert writeResult.isOk();
+    assert fileExists(srcFile);
+
+    assert copyFile(srcFile, dstFile);
+    assert fileExists(srcFile); // Source still exists
+    assert fileExists(dstFile);
+
+    // Verify destination content
+    Result<String> readResult = readFile(dstFile);
+    assert readResult.isOk();
+    assert readResult.unwrap() == "hello copy";
+
+    // Copy with String overload
+    String srcStr = String(srcFile);
+    String dstStr2 = String("./test-file-copy-dst2.txt");
+    assert copyFile(srcStr, dstStr2);
+    assert fileExists(dstStr2.getRaw());
+    bool _4 = deleteFile(dstStr2.getRaw());
+
+    // Clean up copy test files
+    bool _5 = deleteFile(srcFile);
+    bool _6 = deleteFile(dstFile);
+
+    // --- moveFile tests ---
+
+    // Move non-existent source should fail
+    assert !moveFile(srcFile, moveFile_);
+
+    // Write source, then move
+    Result<bool> writeResult2 = writeFile(srcFile, "hello move");
+    assert writeResult2.isOk();
+
+    assert moveFile(srcFile, moveFile_);
+    assert !fileExists(srcFile);  // Source is gone
+    assert fileExists(moveFile_); // Destination exists
+
+    // Verify destination content
+    Result<String> readResult2 = readFile(moveFile_);
+    assert readResult2.isOk();
+    assert readResult2.unwrap() == "hello move";
+
+    // Move with String overload
+    String moveSrc = String("./test-file-move-src2.txt");
+    String moveDst = String("./test-file-move-dst2.txt");
+    Result<bool> writeResult3 = writeFile(moveSrc.getRaw(), "hello move2");
+    assert writeResult3.isOk();
+    assert moveFile(moveSrc, moveDst);
+    assert !fileExists(moveSrc.getRaw());
+    assert fileExists(moveDst.getRaw());
+    bool _7 = deleteFile(moveDst.getRaw());
+
+    // Clean up
+    bool _8 = deleteFile(moveFile_);
+
+    printf("All assertions passed!\n");
+}
