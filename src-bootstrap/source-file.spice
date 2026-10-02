@@ -142,6 +142,7 @@ public type SourceFile struct {
     public bool errorReturnTracing = false
     public Vector<String> sourceLinkerFlags
     public Vector<FilePath> sourceAdditionalSourcePaths
+    public Vector<FilePath> cachedObjectFilePaths
     public bool restoredFromCache = false
     public bool reVisitRequested = true
     public CompileStageType previousStage = CompileStageType::NONE
@@ -246,6 +247,13 @@ public p SourceFile.runParser() {
     // Create the global scope
     this.globalScope = __new<Scope>(nil<Scope*>, this, ScopeType::GLOBAL, &this.ast.node.codeLoc);
 
+    // Compute initial cache key without dep keys — will be refined in runImportCollector once all imports run
+    const Result<String> sourceCodeResult = readFile(this.filePath.toString());
+    if sourceCodeResult.isOk() {
+        Vector<String> emptyDepKeys;
+        this.cacheKey = this.resourceManager.cacheManager.computeCacheKey(sourceCodeResult.unwrap(), emptyDepKeys);
+    }
+
     this.previousStage = CompileStageType::LEXER_AND_PARSER;
     timer.stop();
     this.printStatusMessage("Parser", CompileStageIOType::IO_CODE, CompileStageIOType::IO_AST, this.compilerOutput.times.lexerAndParser);
@@ -306,6 +314,16 @@ public p SourceFile.runImportCollector() {
     foreach dyn dependency : this.dependencies {
         SourceFile* sourceFile = dependency.getSecond();
         sourceFile.runFrontEnd();
+    }
+
+    // Refine cache key to include transitive dep keys now that all deps have completed their front end
+    const Result<String> sourceCodeForCache = readFile(this.filePath.toString());
+    if sourceCodeForCache.isOk() {
+        Vector<String> depCacheKeys;
+        foreach dyn depEntry : this.dependencies {
+            depCacheKeys.pushBack(depEntry.getSecond().cacheKey);
+        }
+        this.cacheKey = this.resourceManager.cacheManager.computeCacheKey(sourceCodeForCache.unwrap(), depCacheKeys);
     }
 
     timer.stop();
@@ -660,9 +678,23 @@ public p SourceFile.runObjectEmitter() {
 }
 
 public p SourceFile.concludeCompilation() {
-    // Skip if restored from cache or this stage has already been done
-    // ToDo: Register the cached object files, linker flags and additional sources with the linker for cache-restored files
-    if this.restoredFromCache || this.previousStage >= CompileStageType::FINISHED {
+    // Skip if this stage has already been done
+    if this.previousStage >= CompileStageType::FINISHED {
+        return;
+    }
+
+    // For cache-restored files, register the cached object files, linker flags and additional source paths with the linker
+    if this.restoredFromCache {
+        for unsigned long i = 0l; i < this.cachedObjectFilePaths.getSize(); i++ {
+            this.resourceManager.linker.addFileToLinkage(this.cachedObjectFilePaths.get(i));
+        }
+        for unsigned long i = 0l; i < this.sourceLinkerFlags.getSize(); i++ {
+            this.resourceManager.linker.addLinkerFlag(this.sourceLinkerFlags.get(i));
+        }
+        for unsigned long i = 0l; i < this.sourceAdditionalSourcePaths.getSize(); i++ {
+            this.resourceManager.linker.addAdditionalSourcePath(this.sourceAdditionalSourcePaths.get(i));
+        }
+        this.previousStage = CompileStageType::FINISHED;
         return;
     }
 
@@ -801,6 +833,16 @@ p SourceFile.runBackEndForThisFile() {
     this.runObjectEmitter();
 }
 
+p SourceFile.lookupCache() {
+    if this.restoredFromCache { return; }
+    // Finalize the cache key by folding the generic manifestation fingerprint into it
+    StringStream manifestations;
+    this.globalScope.collectManifestationFingerprint(manifestations);
+    this.cacheKey = this.resourceManager.cacheManager.foldManifestations(this.cacheKey, manifestations);
+    // Try to restore from the object file cache
+    this.restoredFromCache = this.resourceManager.cacheManager.lookupSourceFile(this);
+}
+
 public p SourceFile.runBackEnd() {
     // Flatten the dependency graph into the order the back end used to recurse in: every file comes after all of its
     // dependencies, and files that already ran their back end are skipped.
@@ -813,7 +855,11 @@ public p SourceFile.runBackEnd() {
     }
 
     // Look up all files before compiling any: a key is only final after its lookup and cache entries of dependants refer to it
-    // ToDo: Port SourceFile.lookupCache as soon as the CacheManager is ported
+    if !this.cliOptions.ignoreCache {
+        foreach SourceFile* sourceFile : backEndSourceFiles {
+            sourceFile.lookupCache();
+        }
+    }
 
     // The host spreads the per-file pipelines over a worker pool, except for LTO and the dump modes. The bootstrap compiler
     // has no thread pool yet, so it always takes the serial path.
