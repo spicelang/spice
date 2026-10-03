@@ -439,7 +439,8 @@ static void execBootstrapTestCase(const TestCase &testCase) {
 
   // Assemble the command line, mirroring the one the test runner passes to the host compiler
   const auto buildArgs = [&](const std::filesystem::path &outputPath) {
-    std::vector<std::string> args = {"build", "--test-mode"};
+    // Like the host test runner, bypass the compilation cache: the IR dumps would be empty for files restored from it
+    std::vector<std::string> args = {"build", "--test-mode", "--ignore-cache"};
     TestUtil::parseTestArgs(mainSourceFilePath, args);
     if (exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS))
       args.emplace_back("--no-entry");

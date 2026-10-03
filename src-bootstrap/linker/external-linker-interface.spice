@@ -213,6 +213,12 @@ p ExternalLinkerInterface.archive() {
  * @param path Path to the object file
  */
 public p ExternalLinkerInterface.addFileToLinkage(const FilePath& path) {
+    // Skip files that are already registered, e.g. cached objects of dependencies that also register themselves
+    foreach const FilePath& linkedFile : this.linkedFiles {
+        if linkedFile == path {
+            return;
+        }
+    }
     this.linkedFiles.pushBack(path);
 }
 

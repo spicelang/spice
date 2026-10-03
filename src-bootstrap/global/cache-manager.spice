@@ -1,33 +1,446 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
 // Std imports
+import "std/data/vector";
 import "std/io/filepath";
+import "std/io/file";
+import "std/io/dir";
+import "std/os/os";
+import "std/text/stringstream";
+import "std/math/hash";
+import "std/text/json/json-value";
+import "std/text/json/json-parser";
+import "std/text/json/json-serializer";
+import "std/type/type-conversion";
 
 // Own imports
+import "bootstrap/driver";
 import "bootstrap/source-file";
 import "bootstrap/global/global-resource-manager";
+import "bootstrap/util/common-util";
 
+/**
+ * The CacheManager is responsible for caching and restoring compiled source files and executables.
+ * It stores compiled object files and metadata in a cache directory and restores them on subsequent
+ * compilations when the source code and compile options have not changed.
+ */
 public type CacheManager struct {
-    FilePath &cacheDir
+    CliOptions& cliOptions
 }
 
-public p CacheManager.ctor(FilePath &cacheDir) {
-    this.cacheDir = cacheDir;
-}
-
-public f<bool> CacheManager.lookupSourceFile(SourceFile* sourceFile) {
-    // ToDo: Implement
-    return false;
-}
-
-public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
-    // ToDo: Implement
+public p CacheManager.ctor(CliOptions& cliOptions) {
+    this.cliOptions = cliOptions;
 }
 
 /**
- * Link the executable or restore it from the cache
+ * Compute a cache key for the given source code and transitive dependency cache keys.
+ * The key is derived by hashing the source code, various CLI option fields, and the
+ * sorted list of dependency cache keys.
+ *
+ * @param sourceCode Source code of the file
+ * @param depCacheKeys Transitive dependency cache keys
+ * @return Cache key as a decimal string
+ */
+public f<String> CacheManager.computeCacheKey(const String& sourceCode, const Vector<String>& depCacheKeys) {
+    StringStream components;
+    // Hash the source text
+    components << toString(cast<long>(hash(sourceCode)));
+    // Fold in CLI option fields that affect codegen
+    components << toString(cast<int>(this.cliOptions.buildMode));
+    components << toString(cast<int>(this.cliOptions.optLevel));
+    components << toString(cast<int>(this.cliOptions.instrumentation.sanitizer));
+    components << toString(cast<int>(this.cliOptions.instrumentation.debugInfoLevel));
+    components << toString(this.cliOptions.instrumentation.codeCoverage);
+    components << this.cliOptions.targetTriple.value;
+    components << toString(this.cliOptions.useLTO);
+    components << toString(this.cliOptions.keepFramePointers);
+    components << toString(cast<int>(this.cliOptions.outputContainer));
+    // Fold in sorted dep keys so any change in a dependency invalidates this entry too
+    Vector<String> sortedDepKeys = depCacheKeys;
+    // Insertion sort for determinism
+    for long i = 1l; i < sortedDepKeys.getSize(); i++ {
+        const String key = sortedDepKeys.get(cast<unsigned long>(i));
+        long insertPos = i;
+        while insertPos > 0l && isStringLess(key, sortedDepKeys.get(cast<unsigned long>(insertPos - 1l))) {
+            insertPos--;
+        }
+        if insertPos < i {
+            sortedDepKeys.removeAt(cast<unsigned long>(i));
+            sortedDepKeys.insertAt(cast<unsigned long>(insertPos), key);
+        }
+    }
+    for unsigned long k = 0l; k < sortedDepKeys.getSize(); k++ {
+        components << sortedDepKeys.get(k);
+    }
+    return toString(cast<long>(hash(components.str())));
+}
+
+/**
+ * Derive the cache key of a module's object file from its source key and the generic manifestations
+ * emitted into it. Importers decide which instantiations exist, so the source key alone cannot tell
+ * such objects apart.
+ *
+ * @param sourceCacheKey Key from computeCacheKey()
+ * @param manifestations Fingerprint from Scope::collectManifestationFingerprint()
+ * @return Cache key of the object file
+ */
+public f<String> CacheManager.foldManifestations(const String& sourceCacheKey, const StringStream& manifestations) {
+    const Hash seed = combineHashes(hash(sourceCacheKey), hash(manifestations.str()));
+    return toString(cast<long>(seed));
+}
+
+/**
+ * Look up the cached object file and metadata for the given source file. If a cache hit is found,
+ * populates cachedObjectFilePaths, sourceLinkerFlags, and sourceAdditionalSourcePaths on the source
+ * file and returns true. Returns false on any miss.
+ *
+ * @param sourceFile Source file to look up
+ * @return true if a cache hit was found and restored, false otherwise
+ */
+public f<bool> CacheManager.lookupSourceFile(SourceFile* sourceFile) {
+    const string objExt = isWindows() ? "obj" : "o";
+    StringStream metaPathSS;
+    metaPathSS << this.cliOptions.cacheDir.toString() << "/" << sourceFile.cacheKey << ".json";
+    StringStream objPathSS;
+    objPathSS << this.cliOptions.cacheDir.toString() << "/" << sourceFile.cacheKey << "." << objExt;
+    const String metaPathStr = metaPathSS.str();
+    const String objPathStr = objPathSS.str();
+
+    // Check if both files exist
+    if !fileExists(metaPathStr.getRaw()) || !fileExists(objPathStr.getRaw()) {
+        return false;
+    }
+
+    // Read metadata file
+    const Result<String> readResult = readFile(metaPathStr.getRaw());
+    if !readResult.isOk() {
+        return false;
+    }
+    const String metaContent = readResult.unwrap();
+    const Result<JsonValue*> parseResult = parseJson(metaContent);
+    if !parseResult.isOk() {
+        return false;
+    }
+    JsonValue* metadata = parseResult.unwrap();
+
+    // Verify all transitive dependency object files exist and collect their paths
+    if metadata.hasField("dependencies") {
+        JsonValue* deps = metadata.getField("dependencies");
+        const unsigned long numDeps = deps.getArraySize();
+        for unsigned long di = 0l; di < numDeps; di++ {
+            JsonValue* depItem = deps.getArrayItem(di);
+            const String depKey = depItem.getString();
+            StringStream depObjSS;
+            depObjSS << this.cliOptions.cacheDir.toString() << "/" << depKey << "." << objExt;
+            const String depObjStr = depObjSS.str();
+            if !fileExists(depObjStr.getRaw()) {
+                deleteJsonValue(metadata);
+                return false;
+            }
+            sourceFile.cachedObjectFilePaths.pushBack(FilePath(depObjStr));
+        }
+    }
+
+    // Add this file's own object file last
+    sourceFile.cachedObjectFilePaths.pushBack(FilePath(objPathStr));
+
+    // Restore linker flags
+    if metadata.hasField("linkerFlags") {
+        JsonValue* flags = metadata.getField("linkerFlags");
+        const unsigned long numFlags = flags.getArraySize();
+        for unsigned long fi = 0l; fi < numFlags; fi++ {
+            JsonValue* flagItem = flags.getArrayItem(fi);
+            sourceFile.sourceLinkerFlags.pushBack(flagItem.getString());
+        }
+    }
+
+    // Restore additional source paths
+    if metadata.hasField("additionalSourcePaths") {
+        JsonValue* paths = metadata.getField("additionalSourcePaths");
+        const unsigned long numPaths = paths.getArraySize();
+        for unsigned long pi = 0l; pi < numPaths; pi++ {
+            JsonValue* pathItem = paths.getArrayItem(pi);
+            sourceFile.sourceAdditionalSourcePaths.pushBack(FilePath(pathItem.getString()));
+        }
+    }
+
+    deleteJsonValue(metadata);
+    return true;
+}
+
+/**
+ * Cache the compiled object file and metadata for the given source file.
+ *
+ * @param sourceFile Source file to cache
+ */
+public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
+    // Don't cache if LTO is enabled and this isn't the main file (no object file produced)
+    if this.cliOptions.useLTO && !sourceFile.isMainFile {
+        return;
+    }
+
+    // Determine source object file path (mirrors runObjectEmitter's path logic)
+    StringStream sourceObjSS;
+    const String fileName = sourceFile.filePath.getFileName();
+    sourceObjSS << this.cliOptions.outputDir.toString() << "/" << fileName;
+    const String sourceObjBase = sourceObjSS.str();
+    // Replace or append .o extension: strip existing extension if present, then add .o
+    const long dotPos = fileName.rfind('.');
+    StringStream cachedObjNameSS;
+    if dotPos >= 0l {
+        const String stem = fileName.getSubstring(0l, dotPos);
+        cachedObjNameSS << this.cliOptions.outputDir.toString() << "/" << stem << ".o";
+    } else {
+        cachedObjNameSS << sourceObjBase << ".o";
+    }
+    const String sourceObjPath = cachedObjNameSS.str();
+
+    // Verify source object file exists
+    if !fileExists(sourceObjPath.getRaw()) {
+        return;
+    }
+
+    // Determine cache paths
+    const string objExt = isWindows() ? "obj" : "o";
+    StringStream cacheObjSS;
+    cacheObjSS << this.cliOptions.cacheDir.toString() << "/" << sourceFile.cacheKey << "." << objExt;
+    StringStream cacheMetaSS;
+    cacheMetaSS << this.cliOptions.cacheDir.toString() << "/" << sourceFile.cacheKey << ".json";
+    const String cacheObjPath = cacheObjSS.str();
+    const String cacheMetaPath = cacheMetaSS.str();
+
+    // Ensure cache directory exists
+    mkDirs(this.cliOptions.cacheDir.toString(), 493); // 0755 = 493
+
+    // Copy object file to cache
+    copyFile(sourceObjPath, cacheObjPath);
+
+    // Collect all transitive dependency cache keys, linker flags, and additional source paths
+    Vector<String> depCacheKeys;
+    Vector<String> allLinkerFlags;
+    Vector<String> allAdditionalSourcePaths;
+
+    // Seed with this file's own linker flags and additional source paths
+    for unsigned long i = 0l; i < sourceFile.sourceLinkerFlags.getSize(); i++ {
+        allLinkerFlags.pushBack(sourceFile.sourceLinkerFlags.get(i));
+    }
+    for unsigned long i = 0l; i < sourceFile.sourceAdditionalSourcePaths.getSize(); i++ {
+        const FilePath srcPath = sourceFile.sourceAdditionalSourcePaths.get(i);
+        allAdditionalSourcePaths.pushBack(String(srcPath.toGenericString()));
+    }
+
+    // BFS over dependencies
+    Vector<String> visited;
+    Vector<const SourceFile*> worklist;
+    foreach dyn depEntry : sourceFile.dependencies {
+        worklist.pushBack(depEntry.getSecond());
+    }
+    while !worklist.isEmpty() {
+        const SourceFile* dep = worklist.get(0l);
+        worklist.removeAt(cast<unsigned long>(0l));
+        // Check if already visited
+        bool alreadyVisited = false;
+        for unsigned long vi = 0l; vi < visited.getSize(); vi++ {
+            if visited.get(vi) == dep.cacheKey {
+                alreadyVisited = true;
+                break;
+            }
+        }
+        if alreadyVisited { continue; }
+        visited.pushBack(dep.cacheKey);
+        depCacheKeys.pushBack(dep.cacheKey);
+        for unsigned long fi = 0l; fi < dep.sourceLinkerFlags.getSize(); fi++ {
+            allLinkerFlags.pushBack(dep.sourceLinkerFlags.get(fi));
+        }
+        for unsigned long pi = 0l; pi < dep.sourceAdditionalSourcePaths.getSize(); pi++ {
+            const FilePath depPath = dep.sourceAdditionalSourcePaths.get(pi);
+            allAdditionalSourcePaths.pushBack(String(depPath.toGenericString()));
+        }
+        foreach dyn transEntry : dep.dependencies {
+            worklist.pushBack(transEntry.getSecond());
+        }
+    }
+
+    // Build metadata JSON
+    JsonValue* metadata = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+
+    // "additionalSourcePaths"
+    JsonValue* addlSourcesArr = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
+    for unsigned long i = 0l; i < allAdditionalSourcePaths.getSize(); i++ {
+        addlSourcesArr.addArrayItem(__new<JsonValue>(allAdditionalSourcePaths.get(i)));
+    }
+    setJsonField(metadata, String("additionalSourcePaths"), addlSourcesArr);
+
+    // "cacheKey"
+    setJsonField(metadata, String("cacheKey"), __new<JsonValue>(sourceFile.cacheKey));
+
+    // "dependencies"
+    JsonValue* depsArr = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
+    for unsigned long i = 0l; i < depCacheKeys.getSize(); i++ {
+        depsArr.addArrayItem(__new<JsonValue>(depCacheKeys.get(i)));
+    }
+    setJsonField(metadata, String("dependencies"), depsArr);
+
+    // "fileName"
+    setJsonField(metadata, String("fileName"), __new<JsonValue>(String(sourceFile.fileName)));
+
+    // "linkerFlags"
+    JsonValue* flagsArr = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
+    for unsigned long i = 0l; i < allLinkerFlags.getSize(); i++ {
+        flagsArr.addArrayItem(__new<JsonValue>(allLinkerFlags.get(i)));
+    }
+    setJsonField(metadata, String("linkerFlags"), flagsArr);
+
+    // "sourceFile"
+    setJsonField(metadata, String("sourceFile"), __new<JsonValue>(String(sourceFile.filePath.toGenericString())));
+
+    // Serialize and write
+    JsonSerializer serializer = JsonSerializer();
+    const String metaJson = serializer.serialize(metadata);
+    deleteJsonValue(metadata);
+    writeFile(cacheMetaPath.getRaw(), metaJson.getRaw());
+}
+
+/**
+ * Hash the content of a file. Returns "missing:<path>" if the file cannot be opened.
+ *
+ * @param path Path to the file
+ * @return Hash as decimal string
+ */
+f<String> CacheManager.hashLinkedFile(const String& path) {
+    if !fileExists(path.getRaw()) {
+        return "missing:" + path;
+    }
+    const Result<String> readResult = readFile(path.getRaw());
+    if !readResult.isOk() {
+        return "missing:" + path;
+    }
+    return toString(cast<long>(hash(readResult.unwrap())));
+}
+
+/**
+ * Compute a cache key for the linked executable from the given inputs.
+ *
+ * @param objectFileCacheKeys Cache keys of all linked object files
+ * @param linkerFlags Linker flags used in the link step
+ * @param additionalSourcePaths Additional C/C++ source paths linked in
+ * @return Executable cache key as decimal string
+ */
+f<String> CacheManager.computeExecutableCacheKey(const Vector<String>& objectFileCacheKeys, const Vector<String>& linkerFlags, const Vector<String>& additionalSourcePaths) {
+    StringStream components;
+    for unsigned long i = 0l; i < objectFileCacheKeys.getSize(); i++ {
+        components << objectFileCacheKeys.get(i);
+    }
+    for unsigned long i = 0l; i < linkerFlags.getSize(); i++ {
+        components << linkerFlags.get(i);
+    }
+    // Sort additional source paths for determinism
+    Vector<String> sortedPaths = additionalSourcePaths;
+    for long i = 1l; i < sortedPaths.getSize(); i++ {
+        const String pathKey = sortedPaths.get(cast<unsigned long>(i));
+        long insertPos = i;
+        while insertPos > 0l && isStringLess(pathKey, sortedPaths.get(cast<unsigned long>(insertPos - 1l))) {
+            insertPos--;
+        }
+        if insertPos < i {
+            sortedPaths.removeAt(cast<unsigned long>(i));
+            sortedPaths.insertAt(cast<unsigned long>(insertPos), pathKey);
+        }
+    }
+    for unsigned long i = 0l; i < sortedPaths.getSize(); i++ {
+        const String& sp = sortedPaths.get(i);
+        components << sp << "\0";
+        components << this.hashLinkedFile(sp);
+    }
+    components << toString(cast<int>(this.cliOptions.outputContainer));
+    components << toString(this.cliOptions.staticLinking);
+    return toString(cast<long>(hash(components.str())));
+}
+
+/**
+ * Look up a cached executable for the given set of inputs.
+ *
+ * @param objectFileCacheKeys Cache keys of all object files
+ * @param linkerFlags Linker flags
+ * @param additionalSourcePaths Additional source paths
+ * @param cachedExecutablePath Output: path to the cached executable if found
+ * @return true if a cached executable was found
+ */
+f<bool> CacheManager.lookupExecutable(const Vector<String>& objectFileCacheKeys, const Vector<String>& linkerFlags, const Vector<String>& additionalSourcePaths, FilePath& cachedExecutablePath) {
+    const String execCacheKey = this.computeExecutableCacheKey(objectFileCacheKeys, linkerFlags, additionalSourcePaths);
+    // Determine extension
+    StringStream execNameSS;
+    execNameSS << this.cliOptions.cacheDir.toString() << "/" << execCacheKey;
+    if isWindows() && this.cliOptions.outputContainer == OutputContainer::EXECUTABLE {
+        execNameSS << ".exe";
+    }
+    const String execPath = execNameSS.str();
+    if !fileExists(execPath.getRaw()) {
+        return false;
+    }
+    cachedExecutablePath = FilePath(execPath);
+    return true;
+}
+
+/**
+ * Cache the linked executable.
+ *
+ * @param objectFileCacheKeys Cache keys of all object files
+ * @param linkerFlags Linker flags
+ * @param additionalSourcePaths Additional source paths
+ * @param executablePath Path to the produced executable
+ */
+p CacheManager.cacheExecutable(const Vector<String>& objectFileCacheKeys, const Vector<String>& linkerFlags, const Vector<String>& additionalSourcePaths, const FilePath& executablePath) {
+    const String execCacheKey = this.computeExecutableCacheKey(objectFileCacheKeys, linkerFlags, additionalSourcePaths);
+    StringStream cachedExecSS;
+    cachedExecSS << this.cliOptions.cacheDir.toString() << "/" << execCacheKey;
+    if isWindows() && this.cliOptions.outputContainer == OutputContainer::EXECUTABLE {
+        cachedExecSS << ".exe";
+    }
+    const String cachedExecPath = cachedExecSS.str();
+    const String execPathStr = String(executablePath.toString());
+    if !fileExists(execPathStr.getRaw()) {
+        return;
+    }
+    mkDirs(this.cliOptions.cacheDir.toString(), 493);
+    copyFile(execPathStr, cachedExecPath);
+}
+
+/**
+ * Link the executable or restore it from the cache.
  *
  * @param resourceManager Global resource manager
  */
 public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceManager) {
-    // ToDo: Look up and cache the executable as soon as the caching is implemented. Until then, always link
-    resourceManager.linker.run();
+    // Collect object file cache keys and additional source paths across all source files
+    Vector<String> objectFileCacheKeys;
+    Vector<String> additionalSourcePaths;
+    foreach dyn entry : resourceManager.sourceFiles {
+        SourceFile* sf = entry.getSecond();
+        objectFileCacheKeys.pushBack(sf.cacheKey);
+        for unsigned long i = 0l; i < sf.sourceAdditionalSourcePaths.getSize(); i++ {
+            const FilePath sfPath = sf.sourceAdditionalSourcePaths.get(i);
+            additionalSourcePaths.pushBack(String(sfPath.toGenericString()));
+        }
+    }
+
+    // Check if we have a cached executable
+    FilePath cachedExecutablePath;
+    if !this.cliOptions.ignoreCache && this.lookupExecutable(objectFileCacheKeys, resourceManager.linker.linkerFlags, additionalSourcePaths, cachedExecutablePath) {
+        // Restore cached executable: ensure output directory exists and copy the file
+        const String outputPathStr = String(resourceManager.linker.outputPath.toString());
+        // Create parent directory
+        const long lastSlash = outputPathStr.rfind('/');
+        if lastSlash >= 0l {
+            const String parentDir = outputPathStr.getSubstring(0l, lastSlash);
+            mkDirs(parentDir.getRaw(), 493);
+        }
+        copyFile(String(cachedExecutablePath.toString()), outputPathStr);
+    } else {
+        // Link and optionally cache the result
+        resourceManager.linker.run();
+        if !this.cliOptions.ignoreCache {
+            this.cacheExecutable(objectFileCacheKeys, resourceManager.linker.linkerFlags, additionalSourcePaths, resourceManager.linker.outputPath);
+        }
+    }
 }

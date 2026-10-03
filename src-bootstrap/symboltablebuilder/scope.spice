@@ -4,6 +4,7 @@ import "std/data/map";
 import "std/data/vector";
 import "std/data/pair";
 import "std/text/json/json-value";
+import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -664,4 +665,50 @@ public f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
     }
 
     return varsGoingOutOfScope;
+}
+
+/**
+ * Collect a fingerprint of all fully-substantiated generic manifestations in this scope into the given stream.
+ * The tag encodes the registry (uppercase = used, lowercase = unused).
+ * Only struct and interface child scopes are recursed into, mirroring the IR generator's emission conditions.
+ *
+ * @param fingerprint Stream to append to
+ */
+public p Scope.collectManifestationFingerprint(StringStream& fingerprint) {
+    foreach Pair<const String&, FunctionManifestationList&> fctEntry : this.functions {
+        foreach Pair<const String&, Function&> mEntry : fctEntry.getSecond() {
+            const Function& function = mEntry.getSecond();
+            if function.isFullySubstantiated() {
+                fingerprint << (function.used ? "F" : "f");
+                fingerprint << mEntry.getFirst();
+                fingerprint << "\n";
+            }
+        }
+    }
+    foreach Pair<const String&, StructManifestationList&> sEntry : this.structs {
+        foreach Pair<const String&, Struct&> mEntry : sEntry.getSecond() {
+            const Struct& st = mEntry.getSecond();
+            if st.structBase.isFullySubstantiated() {
+                fingerprint << (st.used ? "S" : "s");
+                fingerprint << mEntry.getFirst();
+                fingerprint << "\n";
+            }
+        }
+    }
+    foreach Pair<const String&, InterfaceManifestationList&> iEntry : this.interfaces {
+        foreach Pair<const String&, Interface&> mEntry : iEntry.getSecond() {
+            const Interface& iface = mEntry.getSecond();
+            if iface.structBase.isFullySubstantiated() {
+                fingerprint << (iface.used ? "I" : "i");
+                fingerprint << mEntry.getFirst();
+                fingerprint << "\n";
+            }
+        }
+    }
+    foreach Pair<const String&, Scope*&> childEntry : this.children {
+        Scope* child = childEntry.getSecond();
+        if child.scopeType == ScopeType::STRUCT || child.scopeType == ScopeType::INTERFACE {
+            child.collectManifestationFingerprint(fingerprint);
+        }
+    }
 }

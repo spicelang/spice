@@ -75,7 +75,7 @@ public type GlobalResourceManager struct {
 public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.cliOptions = cliOptions;
     this.linker = ExternalLinkerInterface(cliOptions);
-    this.cacheManager = CacheManager(cliOptions.cacheDir);
+    this.cacheManager = CacheManager(cliOptions);
     this.runtimeModuleManager = RuntimeModuleManager(*this);
     this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
     this.sourceFileAlloc = BlockAllocator<SourceFile>(this.memoryManager, sizeof<SourceFile>() * 4l);
