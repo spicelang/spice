@@ -123,7 +123,7 @@ public f<String> Function.getSignature(bool withThisType = true, bool withTempla
  * @param withSize Print array sizes
  * @return Function signature
  */
-public f<String> getFunctionSignature(const String& name, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const QualTypeList& concreteTemplateTypes, bool withReturnType = true, bool withThisType = true, bool ignorePublic = false, bool withTypeAliases = true, bool withSize = false) {
+public f<String> getFunctionSignature(const String& name, const QualType& thisType, const QualType& returnType, const ParamList& paramList, const QualTypeList& concreteTemplateTypes, bool withReturnType = true, bool withThisType = true, bool ignorePublic = true, bool withTypeAliases = true, bool withSize = false) {
     StringStream signature;
 
     // Build return type string

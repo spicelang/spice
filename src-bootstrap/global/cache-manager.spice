@@ -18,6 +18,7 @@ import "bootstrap/driver";
 import "bootstrap/source-file";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/util/common-util";
+import "bootstrap/util/system-util";
 
 /**
  * The CacheManager is responsible for caching and restoring compiled source files and executables.
@@ -98,7 +99,7 @@ public f<String> CacheManager.foldManifestations(const String& sourceCacheKey, c
  * @return true if a cache hit was found and restored, false otherwise
  */
 public f<bool> CacheManager.lookupSourceFile(SourceFile* sourceFile) {
-    const string objExt = isWindows() ? "obj" : "o";
+    const string objExt = getOutputFileExtension(this.cliOptions, OutputContainer::OBJECT_FILE);
     StringStream metaPathSS;
     metaPathSS << this.cliOptions.cacheDir.toString() << "/" << sourceFile.cacheKey << ".json";
     StringStream objPathSS;
@@ -201,7 +202,7 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     }
 
     // Determine cache paths
-    const string objExt = isWindows() ? "obj" : "o";
+    const string objExt = getOutputFileExtension(this.cliOptions, OutputContainer::OBJECT_FILE);
     StringStream cacheObjSS;
     cacheObjSS << this.cliOptions.cacheDir.toString() << "/" << sourceFile.cacheKey << "." << objExt;
     StringStream cacheMetaSS;
@@ -213,7 +214,9 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     mkDirs(this.cliOptions.cacheDir.toString(), 493); // 0755 = 493
 
     // Copy object file to cache
-    copyFile(sourceObjPath, cacheObjPath);
+    if !copyFile(sourceObjPath, cacheObjPath) {
+        return;
+    }
 
     // Collect all transitive dependency cache keys, linker flags, and additional source paths
     Vector<String> depCacheKeys;
@@ -371,8 +374,9 @@ f<bool> CacheManager.lookupExecutable(const Vector<String>& objectFileCacheKeys,
     // Determine extension
     StringStream execNameSS;
     execNameSS << this.cliOptions.cacheDir.toString() << "/" << execCacheKey;
-    if isWindows() && this.cliOptions.outputContainer == OutputContainer::EXECUTABLE {
-        execNameSS << ".exe";
+    const string extension = getOutputFileExtension(this.cliOptions, this.cliOptions.outputContainer);
+    if len(extension) > 0 {
+        execNameSS << "." << extension;
     }
     const String execPath = execNameSS.str();
     if !fileExists(execPath.getRaw()) {
@@ -394,8 +398,9 @@ p CacheManager.cacheExecutable(const Vector<String>& objectFileCacheKeys, const 
     const String execCacheKey = this.computeExecutableCacheKey(objectFileCacheKeys, linkerFlags, additionalSourcePaths);
     StringStream cachedExecSS;
     cachedExecSS << this.cliOptions.cacheDir.toString() << "/" << execCacheKey;
-    if isWindows() && this.cliOptions.outputContainer == OutputContainer::EXECUTABLE {
-        cachedExecSS << ".exe";
+    const string extension = getOutputFileExtension(this.cliOptions, this.cliOptions.outputContainer);
+    if len(extension) > 0 {
+        cachedExecSS << "." << extension;
     }
     const String cachedExecPath = cachedExecSS.str();
     const String execPathStr = String(executablePath.toString());

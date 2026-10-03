@@ -34,7 +34,7 @@ static constexpr std::array LINKER_INVOKER_NAMES = {LINKER_INVOKER_NAME_CLANG, L
 // Supported linker names, in order of preference
 static constexpr auto LINKER_NAME_MOLD = "mold";
 static constexpr auto LINKER_NAME_LD_LLD = "ld.lld";
-static constexpr auto LINKER_NAME_LD64_LLD = "ld64.ddl";
+static constexpr auto LINKER_NAME_LD64_LLD = "ld64.lld";
 static constexpr auto LINKER_NAME_GOLD = "gold";
 static constexpr auto LINKER_NAME_LD = "ld";
 static constexpr auto LINKER_NAME_LLD = "lld";

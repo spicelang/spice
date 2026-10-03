@@ -27,6 +27,7 @@ import "bootstrap/exception/error-manager";
 import "bootstrap/model/function" as model;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/system-util";
+import "bootstrap/util/common-util";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
@@ -201,7 +202,10 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     string error = nil<string>;
     const llvm::Target target = llvm::getTargetFromTriple(this.cliOptions.targetTriple, &error);
     if error != nil<string> {
-        panic(Error(error));
+        const String messageSuffix = "Selected target was not found: " + String(error);
+        const CompilerError compilerError = CompilerError(CompilerErrorType::TARGET_NOT_AVAILABLE, messageSuffix.getRaw());
+        const String& message = compilerError.getMessage();
+        panic(Error(message.getRaw()));
     }
 
     // Create target machine
@@ -730,11 +734,6 @@ public p SourceFile.concludeCompilation() {
         this.dumpOutput(this.compilerOutput.cacheStats, String("Cache Statistics"), String("cache-stats.out"));
     }
 
-    // Print warning if verifier is disabled
-    if this.isMainFile && this.cliOptions.disableVerifier {
-        println("\nThe LLVM verifier passes are disabled. Please use the cli option carefully.");
-    }
-
     if this.cliOptions.printDebugOutput {
         println("Finished compiling " + this.fileName);
     }
@@ -744,8 +743,11 @@ public p SourceFile.concludeCompilation() {
 
 public p SourceFile.runFrontEnd() {
     this.runParser();
+    if this.resourceManager.abortCompilation { return; }
     this.runASTVisualizer();
+    if this.resourceManager.abortCompilation { return; }
     this.runImportCollector();
+    if this.resourceManager.abortCompilation { return; }
     this.runSymbolTableBuilder();
 }
 
@@ -794,6 +796,7 @@ public p SourceFile.runMiddleEnd() {
             anySourceFileRevisitPending = true;
         }
     }
+    if this.resourceManager.abortCompilation { return; }
     // Visualize dependency graph
     this.runDependencyGraphVisualizer();
     if this.resourceManager.abortCompilation { return; }
@@ -1337,7 +1340,7 @@ p SourceFile.dumpCompilationStats() {
     const unsigned long totalDuration = this.resourceManager.totalTimer.getDurationInMillis();
     print("\nSuccessfully compiled " + toString(sourceFileCount) + " source file(s)");
     print(" or " + toString(totalLineCount) + " lines in total.\n");
-    print("Total number of blocks allocated via BlockAllocator: " + formatStorageSize(allocatedBytes));
+    print("Total number of blocks allocated via BlockAllocator: " + formatBytes(allocatedBytes));
     print(" in " + toString(allocationCount) + " allocations.\n");
     print("Total number of types: " + toString(totalTypeCount) + "\n");
     print("Total compile time: " + toString(totalDuration) + " ms\n");
@@ -1351,7 +1354,10 @@ p SourceFile.dumpOutput(const String& content, const String& caption, const Stri
         dumpFilePath.makeNative();
         const Result<bool> writeResult = writeFile(dumpFilePath.toString(), content.getRaw());
         if !writeResult.isOk() {
-            panic(Error("Failed to open the dump file"));
+            const String messageSuffix = "Failed to open file: " + dumpFilePath.toString();
+            const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, messageSuffix.getRaw());
+            const String& message = error.getMessage();
+            panic(Error(message.getRaw()));
         }
     } else {
         // Dump to console
@@ -1380,10 +1386,10 @@ p SourceFile.visualizerPreamble(StringStream& output) {
 }
 
 p SourceFile.visualizerOutput(const string outputNameRaw, const String& output) {
-    // The dump file names and captions are lower case
-    const String outputName = toLower(String(outputNameRaw));
-
     if this.cliOptions.dump.dumpToFiles {
+        // The dump file names are lower case
+        const String outputName = toLower(String(outputNameRaw));
+
         // Check if graphviz is installed
         if !isGraphvizInstalled() {
             panic(Error("Please check if you have installed Graphviz and added it to the PATH variable"));
@@ -1402,10 +1408,10 @@ p SourceFile.visualizerOutput(const string outputNameRaw, const String& output) 
         svgFilePath.makeNative();
         const String dotCommand = "dot -T svg -o " + svgFilePath.toString() + " " + dotFilePath.toString();
         exec(dotCommand.getRaw());
-        print("done.\nSVG file can be found at: " + svgFilePath.toString() + "\n");
+        print("done.\nSVG file can be found at: \"" + svgFilePath.toString() + "\"\n");
     } else {
         // Dump to console
-        print("\nSerialized " + outputName + ":\n\n" + output + "\n");
+        print("\nSerialized " + String(outputNameRaw) + ":\n\n" + output + "\n");
     }
 
     // If the abort after dump is requested, set the abort compilation flag

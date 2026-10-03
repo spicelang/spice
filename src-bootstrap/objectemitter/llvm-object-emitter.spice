@@ -30,7 +30,8 @@ public p LLVMObjectEmitter.emit(const FilePath& objectPath) {
     // Emit object file
     String errorMessage;
     if this.sourceFile.targetMachine.emitToFileWithError(*this.module, objectPathString, llvm::LLVMCodeGenFileType::ObjectFile, errorMessage) {
-        const CompilerError error = CompilerError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, errorMessage.getRaw()); // GCOV_EXCL_LINE
+        const String messageSuffix = "File '" + String(objectPathString) + "' could not be opened";                 // GCOV_EXCL_LINE
+        const CompilerError error = CompilerError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, messageSuffix.getRaw()); // GCOV_EXCL_LINE
         const String& message = error.getMessage();                                                               // GCOV_EXCL_LINE
         panic(Error(message.getRaw()));                                                                            // GCOV_EXCL_LINE
     } // GCOV_EXCL_LINE

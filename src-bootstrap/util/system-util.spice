@@ -8,6 +8,8 @@ import "std/iterator/array-iterator";
 
 // Own imports
 import "bootstrap/driver";
+import "bootstrap/exception/compiler-error";
+import "bootstrap/exception/linker-error";
 
 public type ExecResult struct {
     public String output
@@ -105,15 +107,15 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
                 }
             }
         } else if isWindows() {
-            String linkerInvokerLookupCommand = linkerInvoker + " -v";
-            if isCommandAvailable(linkerInvokerLookupCommand.getRaw()) {
+            if isCommandAvailable(linkerInvoker) {
                 return ExternalBinaryFinderResult{linkerInvoker, String(linkerInvoker)};
             }
         } else {
             panic(Error("Unsupported platform"));
         }
     }
-    panic(Error("No supported linker invoker found on the system. Supported are: clang and gcc"));
+    const LinkerError error = LinkerError(LinkerErrorType::LINKER_INVOKER_NOT_FOUND, "No supported linker invoker was found on the system. Supported are: clang and gcc");
+    panic(Error(error.errorMessage.getRaw()));
 }
 
 /**
@@ -122,10 +124,14 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
  *
  * @return Name of path to the linker executable
  */
-public f<ExternalBinaryFinderResult> findLinker() {
+public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions) {
     if isUnixBased() {
         // Use the flavor-specific lld driver, since the generic 'lld' driver refuses to be invoked directly
         foreach const string linkerName : ["mold", "ld.lld", "ld64.lld", "gold", "ld"] {
+            // mold does only support linking for unix and darwin
+            if linkerName == "mold" && cliOptions.targetTriple.isOSWindows() {
+                continue;
+            }
             foreach const string path : ["/usr/bin/", "/usr/local/bin/", "/bin/"] {
                 String linkerPath = path + linkerName;
                 if fileExists(linkerPath.getRaw()) {
@@ -135,15 +141,15 @@ public f<ExternalBinaryFinderResult> findLinker() {
         }
     } else if isWindows() {
         foreach const string linkerName : ["lld", "ld"] {
-            String checkCmd = linkerName + " -v";
-            if isCommandAvailable(checkCmd.getRaw()) {
+            if isCommandAvailable(linkerName) {
                 return ExternalBinaryFinderResult{linkerName, String(linkerName)};
             }
         }
     } else {
         panic(Error("Unsupported platform"));
     }
-    panic(Error("No supported linker found on the system. Supported are: mold, lld, gold and ld"));
+    const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: mold, lld, gold and ld");
+    panic(Error(error.errorMessage.getRaw()));
 }
 
 /**
@@ -164,24 +170,23 @@ public f<ExternalBinaryFinderResult> findArchiver() {
         }
     } else if isWindows() {
         foreach const string archiverName : ["llvm-lib", "lib"] {
-            String checkCmd = archiverName + " -v";
-            if isCommandAvailable(checkCmd.getRaw()) {
+            if isCommandAvailable(archiverName) {
                 return ExternalBinaryFinderResult{archiverName, String(archiverName)};
             }
         }
     } else {
         panic(Error("Unsupported platform"));
     }
-    panic(Error("No supported archiver found on the system. Supported are: llvm-ar and ar"));
+    const LinkerError error = LinkerError(LinkerErrorType::ARCHIVER_NOT_FOUND, "No supported archiver was found on the system. Supported are: llvm-ar and ar");
+    panic(Error(error.errorMessage.getRaw()));
 }
 
 /**
- * Retrieve the dir, where the standard library lives.
- * Returns an empty string if the std was not found.
+ * Retrieve the dir, where the standard library lives, without failing if it is not installed.
  *
- * @return Std directory
+ * @return Std directory, or an empty path if the std was not found
  */
-public f<FilePath> getStdDir() {
+public f<FilePath> findStdDir() {
     if isUnixBased() {
         result = FilePath("/usr/lib/spice/std/");
         if result.exists() { return; }
@@ -195,10 +200,40 @@ public f<FilePath> getStdDir() {
 }
 
 /**
- * Retrieve the dir, where the bootstrap compiler lives.
- * Returns an empty string if the bootstrap compiler was not found.
+ * Retrieve the dir, where the standard library lives.
  *
- * @return
+ * @return Std directory
+ */
+public f<FilePath> getStdDir() {
+    result = findStdDir();
+    if result.isEmpty() {
+        const CompilerError error = CompilerError(CompilerErrorType::STD_NOT_FOUND, "Standard library could not be found. Check if the env var SPICE_STD_DIR exists");
+        const String& message = error.getMessage();
+        panic(Error(message.getRaw()));
+    }
+}
+
+/**
+ * Retrieve the dir, where the std ships the static support libraries that Spice programs link against - currently only the
+ * vendored libbacktrace. Missing rather than found is a perfectly normal outcome, hence an empty path instead of a panic.
+ *
+ * @return Std runtime library directory, or an empty path if there is none
+ */
+public f<FilePath> getStdRuntimeLibDir() {
+    const FilePath stdDir = findStdDir();
+    if stdDir.isEmpty() {
+        return FilePath();
+    }
+    result = stdDir / "runtime" / "lib";
+    if !result.exists() {
+        return FilePath();
+    }
+}
+
+/**
+ * Retrieve the dir, where the bootstrap compiler lives.
+ *
+ * @return Bootstrap compiler directory
  */
 public f<FilePath> getBootstrapCompilerDir() {
     Result<string> value = getEnv("SPICE_BOOTSTRAP_DIR");
@@ -206,7 +241,9 @@ public f<FilePath> getBootstrapCompilerDir() {
         result = FilePath(value.unwrap());
         if result.exists() { return; }
     }
-    return FilePath();
+    const CompilerError error = CompilerError(CompilerErrorType::BOOTSTRAP_NOT_FOUND, "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists");
+    const String& message = error.getMessage();
+    panic(Error(message.getRaw()));
 }
 
 /**

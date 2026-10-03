@@ -10,7 +10,7 @@
 namespace spice::testing {
 
 const char *const PATH_BOOTSTRAP_COMPILER_ARTIFACTS = "./test-tmp/bootstrap-compiler";
-const char *const BOOTSTRAP_SERIALIZED_AST_CAPTION = "Serialized ast:\n\n";
+const char *const BOOTSTRAP_SERIALIZED_AST_CAPTION = "Serialized AST:\n\n";
 
 // Kinds of errors the bootstrap compiler can already raise. Errors of the other kinds (e.g. semantic errors) are raised by
 // stages that are not ported yet, so a test expecting one of them is only checked if the bootstrap compiler raises an error.

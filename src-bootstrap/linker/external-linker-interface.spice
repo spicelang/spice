@@ -125,8 +125,16 @@ p ExternalLinkerInterface.link() {
     StringStream commandBuilder;
     const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
     commandBuilder << linkerInvoker.path;
-    const ExternalBinaryFinderResult linker = findLinker();
+    const ExternalBinaryFinderResult linker = findLinker(this.cliOptions);
     const bool isGccInvoker = linkerInvoker.name == "gcc";
+    const bool isClangInvoker = linkerInvoker.name == "clang";
+    // GCC does not implement MemorySanitizer or TypeSanitizer
+    const Sanitizer sanitizer = this.cliOptions.instrumentation.sanitizer;
+    if !isClangInvoker && (sanitizer == Sanitizer::MEMORY || sanitizer == Sanitizer::TYPE) {
+        const string msg = "Memory and type sanitizers require clang as the linker invoker, but 'gcc' was selected";
+        const LinkerError error = LinkerError(LinkerErrorType::SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER, msg);
+        panic(Error(error.errorMessage.getRaw()));
+    }
     // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
     if !isGccInvoker || linker.name != "ld" {
         commandBuilder << " -fuse-ld=" << linker.path;
@@ -142,6 +150,16 @@ p ExternalLinkerInterface.link() {
     foreach const FilePath& objectFilePath : this.linkedFiles {
         commandBuilder << " ";
         commandBuilder << objectFilePath.toString();
+    }
+    // Append the std's own library search path, so the runtime modules can link against the static support libraries that
+    // ship with the std (currently std/runtime/lib/libbacktrace.a). It goes ahead of the linker flags below, because search
+    // directories are tried in the order given. Only for a native build: those archives are built for the host the std was
+    // installed on, so offering them while linking for another target can only ever produce a mismatch.
+    if this.cliOptions.isNativeTarget {
+        const FilePath stdRuntimeLibDir = getStdRuntimeLibDir();
+        if !stdRuntimeLibDir.isEmpty() {
+            commandBuilder << " -L" << stdRuntimeLibDir.toString();
+        }
     }
     // Append linker flags after object files (libraries must follow the objects that reference them)
     foreach const String& linkerFlag : this.linkerFlags {
@@ -228,7 +246,7 @@ public p ExternalLinkerInterface.addFileToLinkage(const FilePath& path) {
  * @param linkerFlag Linker flag
  */
 public p ExternalLinkerInterface.addLinkerFlag(string linkerFlag) {
-    this.linkerFlags.pushBack(String(linkerFlag));
+    this.addLinkerFlag(String(linkerFlag));
 }
 
 /**
@@ -237,6 +255,15 @@ public p ExternalLinkerInterface.addLinkerFlag(string linkerFlag) {
  * @param linkerFlag Linker flag
  */
 public p ExternalLinkerInterface.addLinkerFlag(const String& linkerFlag) {
+    // Group boundary markers must not be deduplicated: each archive group gets its own pair, and deduplication would
+    // collapse multiple groups into one misplaced pair.
+    if linkerFlag != "-Wl,--start-group" && linkerFlag != "-Wl,--end-group" {
+        foreach const String& existingFlag : this.linkerFlags {
+            if existingFlag == linkerFlag {
+                return;
+            }
+        }
+    }
     this.linkerFlags.pushBack(linkerFlag);
 }
 
@@ -255,7 +282,7 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSour
     }
 
     // Add the file to the linker
-    this.addFileToLinkage(additionalSource);
+    this.addFileToLinkage(additionalSource.canonical());
 }
 
 /**
@@ -271,7 +298,7 @@ public p ExternalLinkerInterface.requestLibMathLinkage() {
  * @return Whether the target is WebAssembly
  */
 f<bool> ExternalLinkerInterface.isTargetWasm() {
-    return this.cliOptions.targetArch == TARGET_WASM32 || this.cliOptions.targetArch == TARGET_WASM64;
+    return this.cliOptions.targetTriple.isWasm();
 }
 
 /**
@@ -280,5 +307,5 @@ f<bool> ExternalLinkerInterface.isTargetWasm() {
  * @return Whether the target is Darwin based
  */
 f<bool> ExternalLinkerInterface.isTargetDarwin() {
-    return this.cliOptions.targetOs.contains("darwin") || this.cliOptions.targetOs.contains("macos");
+    return this.cliOptions.targetTriple.isOSDarwin();
 }
