@@ -1,0 +1,72 @@
+import "std/bindings/llvm/llvm" as llvm;
+import "std/bindings/tpde/tpde" as tpde;
+import "std/data/vector";
+import "std/io/file";
+
+// Build a module with a function, that adds its two arguments
+f<llvm::Function> buildAddFunction(llvm::LLVMContext& context, llvm::Module& module) {
+    llvm::IRBuilder builder = llvm::IRBuilder(context);
+    Vector<llvm::Type> argTypes;
+    argTypes.pushBack(builder.getInt32Ty());
+    argTypes.pushBack(builder.getInt32Ty());
+    llvm::Type funcType = llvm::getFunctionType(builder.getInt32Ty(), argTypes);
+    llvm::Function func = llvm::Function(module, "add", funcType);
+    func.setLinkage(llvm::LLVMLinkage::ExternalLinkage);
+
+    llvm::BasicBlock entry = llvm::BasicBlock(context, "");
+    func.pushBack(entry);
+    builder.setInsertPoint(entry);
+    llvm::Value sum = builder.createAdd(func.getArg(0u), func.getArg(1u), "sum");
+    builder.createRet(sum);
+    return func;
+}
+
+f<int> main() {
+    assert tpde::isAvailable();
+
+    llvm::initializeNativeTarget();
+    llvm::initializeNativeAsmPrinter();
+    const llvm::Triple targetTriple = llvm::getDefaultTargetTriple();
+    string error;
+    llvm::Target target = llvm::getTargetFromTriple(targetTriple, &error);
+    llvm::TargetMachine targetMachine = target.createTargetMachine(targetTriple, "generic", "", llvm::LLVMCodeGenOptLevel::None, llvm::LLVMRelocMode::PIC, llvm::LLVMCodeModel::Default);
+
+    llvm::LLVMContext context;
+    llvm::Module module = llvm::Module("tpde-test", context);
+    module.setDataLayout(targetMachine.createDataLayout());
+    module.setTargetTriple(targetTriple);
+    llvm::Function addFunc = buildAddFunction(context, module);
+    assert !llvm::verifyFunction(addFunc);
+
+    tpde::Compiler compiler = tpde::Compiler(targetTriple);
+    assert compiler.isValid();
+
+    // Compile to memory and check, that the result is a 64-bit ELF object
+    Vector<byte> objectBytes;
+    String errorMessage;
+    assert !compiler.compileToBuffer(module, objectBytes, errorMessage);
+    assert errorMessage.isEmpty();
+    assert objectBytes.getSize() > 64ul; // Larger than the ELF header
+    assert cast<int>(objectBytes.get(0ul)) == 0x7F;
+    assert cast<char>(objectBytes.get(1ul)) == 'E';
+    assert cast<char>(objectBytes.get(2ul)) == 'L';
+    assert cast<char>(objectBytes.get(3ul)) == 'F';
+    assert cast<int>(objectBytes.get(4ul)) == 2; // ELFCLASS64
+    assert cast<int>(objectBytes.get(16ul)) == 1; // ET_REL (relocatable object)
+
+    // Compile to a file and check, that it has the same size
+    const string objectPath = "./tpde-test.o";
+    assert !compiler.compileToFile(module, objectPath, errorMessage);
+    assert fileExists(objectPath);
+    const Result<unsigned long> objectFileSize = getFileSize(objectPath);
+    assert objectFileSize.unwrap() == objectBytes.getSize();
+    assert deleteFile(objectPath);
+
+    // TPDE does not support WebAssembly
+    tpde::Compiler wasmCompiler = tpde::Compiler(llvm::Triple("wasm32-unknown-unknown"));
+    assert !wasmCompiler.isValid();
+    assert wasmCompiler.compileToBuffer(module, objectBytes, errorMessage);
+    assert errorMessage == "The TPDE compiler is not valid";
+
+    printf("All assertions passed!\n");
+}

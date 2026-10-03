@@ -67,3 +67,40 @@ you to rebuild with the option turned on.
 - Any Spice code that requires wide vectors, exception handling, or non-`small` code model will fail to
   compile.
 - Debug info emission (`-g`) works but produces `-O0`-quality info regardless of the `--build-mode`.
+
+## Using TPDE from Spice code
+
+Besides being a backend of the Spice compiler, TPDE can also be used from Spice programs, which build LLVM modules with
+the LLVM bindings (`std/bindings/llvm`). The TPDE bindings (`std/bindings/tpde`) compile such a module to an ELF object,
+in a file or in memory:
+
+```spice
+import "std/bindings/llvm/llvm" as llvm;
+import "std/bindings/tpde/tpde" as tpde;
+
+f<int> main() {
+    llvm::LLVMContext context;
+    llvm::Module module = llvm::Module("example", context);
+    // ... build the module with the LLVM bindings ...
+
+    tpde::Compiler compiler = tpde::Compiler(llvm::getDefaultTargetTriple());
+    if !compiler.isValid() { return 1; } // TPDE does not support the target or is not available
+    String errorMessage;
+    if compiler.compileToFile(module, "example.o", errorMessage) {
+        printf("%s\n", errorMessage.getRaw());
+        return 1;
+    }
+}
+```
+
+TPDE only offers a C++ API, so the bindings compile a small C API wrapper (`std/bindings/tpde/tpde-wrapper.cpp`) along
+with the program. They need the TPDE libraries and headers, which a Spice build with `-DSPICE_ENABLE_TPDE=ON` produces.
+Point the bindings to them with two environment variables, in addition to the ones the LLVM bindings need:
+
+| Variable            | Value                                                                                                                |
+|---------------------|----------------------------------------------------------------------------------------------------------------------|
+| `TPDE_LIBS`         | Paths of the TPDE static libraries, space-separated: `libtpde_llvm.a`, `libtpde.a`, `libfadec.a`, `libdisarm64.a` and, with TPDE logging enabled (default), `libspdlog.a` |
+| `TPDE_INCLUDE_DIRS` | `-I<spice-src>/deps/tpde/tpde-llvm/include`                                                                          |
+
+Without them, or on platforms other than Linux, the bindings still compile and link, but `tpde::isAvailable()` returns
+`false` and every compilation fails with an error message.

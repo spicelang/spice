@@ -25,6 +25,21 @@ add_executable(spicetest ${SOURCES})
 target_link_libraries(spicetest PRIVATE spicecore GTest::gtest GTest::gmock ${LLVM_LIBS})
 if (SPICE_ENABLE_TPDE)
     target_link_libraries(spicetest PRIVATE spice_tpde)
+    # The std TPDE bindings (std/bindings/tpde) link against the TPDE static libraries and compile their C API wrapper
+    # against the TPDE headers. spicetest exports their locations as TPDE_LIBS / TPDE_INCLUDE_DIRS (see main.cpp).
+    set(TPDE_LIB_FILES "")
+    foreach (TPDE_LIB_TARGET tpde_llvm tpde fadec disarm64 spdlog)
+        if (TARGET ${TPDE_LIB_TARGET})
+            get_target_property(TPDE_LIB_TYPE ${TPDE_LIB_TARGET} TYPE)
+            if (TPDE_LIB_TYPE STREQUAL "STATIC_LIBRARY")
+                list(APPEND TPDE_LIB_FILES "$<TARGET_FILE:${TPDE_LIB_TARGET}>")
+            endif ()
+        endif ()
+    endforeach ()
+    list(JOIN TPDE_LIB_FILES " " TPDE_LIB_FILES)
+    target_compile_definitions(spicetest PRIVATE
+            SPICE_TPDE_LIBS="${TPDE_LIB_FILES}"
+            SPICE_TPDE_INCLUDE_DIRS="-I${CMAKE_SOURCE_DIR}/deps/tpde/tpde-llvm/include")
 endif ()
 # Enable pedantic warnings
 target_compile_options(spicetest PRIVATE -Wpedantic -Wall -Werror -Wno-unknown-pragmas ${SPICE_EXTRA_COMPILE_OPTIONS})

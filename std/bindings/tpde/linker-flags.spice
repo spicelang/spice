@@ -1,0 +1,11 @@
+#![
+    // TPDE only emits ELF objects (x86_64/aarch64), so it is only linked on Linux. Elsewhere, and whenever these variables
+    // are not set, tpde-wrapper.cpp falls back to stubs, that report TPDE as unavailable.
+    // Holds the paths of the TPDE static libraries (space-separated), e.g.: <tpde-build>/tpde-llvm/libtpde_llvm.a
+    // <tpde-build>/tpde/libtpde.a <tpde-build>/deps/fadec/libfadec.a <tpde-build>/deps/disarm/libdisarm64.a
+    core.linux.linker.flag = "$TPDE_LIBS",
+    // Holds one or more "-I<dir>" flags (space-separated) for the TPDE headers, e.g.: -I<tpde-src>/tpde-llvm/include
+    core.linux.linker.flag = "$TPDE_INCLUDE_DIRS",
+    // C API wrapper around the TPDE C++ API
+    core.linker.additionalSource = "tpde-wrapper.cpp"
+]
