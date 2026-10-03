@@ -2019,6 +2019,9 @@ public:
   CompileTimeValue compileTimeValue;
 };
 
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(ConstantNode) == 88);
+
 // ====================================================== FctCallNode ============================================================
 
 class FctCallNode final : public ExprNode {

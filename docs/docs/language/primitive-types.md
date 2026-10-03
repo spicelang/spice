@@ -166,7 +166,8 @@ wider of both types, and the result is unsigned if the operand of that type is u
 
 The result of a shift operation and of a compound assignment like `+=` has the signedness of the left operand. Division,
 remainder and comparisons are performed unsigned, if the common type of both operands is unsigned. Unsigned operations
-wrap around on overflow.
+wrap around on overflow. Unary operators that return an integer (e.g. `-`, `~`, `++` and `--`) keep the signedness of
+their operand.
 
 ## The `byte` data type
 Bytes are unsigned whole numbers of 8-bit, which have a range from a min of 0 to a max of 255.

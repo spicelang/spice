@@ -364,7 +364,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getDivEqualInst(ASTNode* node, 
     if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
         const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
-        return exprResultWithValue(this.generateDiv(lhsSTy, rhsSTy, lhsV, rhsCasted));
+        return exprResultWithValue(this.generateDiv(lhsSTy, lhsSTy, lhsV, rhsCasted));
     }
     panic(Error("Operator fallthrough: /=")); // GCOV_EXCL_LINE
     return LLVMExprResult();
@@ -394,12 +394,12 @@ public f<LLVMExprResult> OpRuleConversionManager.getRemEqualInst(ASTNode* node, 
     if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) {
         const llvm::Value rhsInt = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
-        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsInt));
+        return exprResultWithValue(this.generateRem(lhsSTy, lhsSTy, lhsV, rhsInt));
     }
     if isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
         const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
-        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsCasted));
+        return exprResultWithValue(this.generateRem(lhsSTy, lhsSTy, lhsV, rhsCasted));
     }
     if isComb(l, r, SuperType::TY_LONG, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_BYTE, SuperType::TY_BYTE) {
         const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);

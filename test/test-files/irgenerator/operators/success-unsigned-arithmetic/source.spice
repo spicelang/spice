@@ -50,6 +50,15 @@ f<unsigned long> compoundDiv(unsigned long a) {
     return x;
 }
 
+f<unsigned int> compoundMixedWidth(unsigned int a) {
+    // The rhs is converted to the type of the lhs, so the operation is unsigned
+    unsigned int x = a;
+    x /= 2l;
+    unsigned int y = a + 1u;
+    y %= 3l;
+    return x + y;
+}
+
 f<unsigned long> hashMix(unsigned long hash) {
     hash += 0x9e3779b97f4a7c15ul;
     hash = (hash ^ (hash >> 30ul)) * 0xbf58476d1ce4e5b9ul;
@@ -60,16 +69,17 @@ f<unsigned long> hashMix(unsigned long hash) {
 
 f<int> main() {
     const unsigned long big = 0x8000000000000000ul;
-    printf("%lu\n", divTemporary(big, 2ul));
-    printf("%lu\n", divVariableByLiteral(big));
-    printf("%lu\n", remTemporary(big, 0ul));
-    printf("%lu\n", shiftRightTemporary(big, 0ul));
+    printf("%llu\n", divTemporary(big, 2ul));
+    printf("%llu\n", divVariableByLiteral(big));
+    printf("%llu\n", remTemporary(big, 0ul));
+    printf("%llu\n", shiftRightTemporary(big, 0ul));
     printf("%d\n", lessThanTemporary(big, 0ul));
-    printf("%lu\n", extendTemporary(0x80000000u, 0u));
-    printf("%lu\n", wrappingMul(0xfffffffffffffff0ul));
+    printf("%llu\n", extendTemporary(0x80000000u, 0u));
+    printf("%llu\n", wrappingMul(0xfffffffffffffff0ul));
     printf("%u\n", bitwiseNot(0u));
-    printf("%ld\n", mixedRankSigned(-10l, 3u));
-    printf("%lu\n", mixedSameRankUnsigned(-1l, 2ul));
-    printf("%lu\n", compoundDiv(0xfffffffffffffffful));
-    printf("%lu\n", hashMix(1ul));
+    printf("%lld\n", mixedRankSigned(-10l, 3u));
+    printf("%llu\n", mixedSameRankUnsigned(-1l, 2ul));
+    printf("%llu\n", compoundDiv(0xfffffffffffffffful));
+    printf("%u\n", compoundMixedWidth(0xfffffff0u));
+    printf("%llu\n", hashMix(1ul));
 }

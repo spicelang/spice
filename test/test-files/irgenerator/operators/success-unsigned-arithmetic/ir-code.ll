@@ -1,18 +1,19 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-@printf.str.0 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
-@printf.str.1 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
-@printf.str.2 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
-@printf.str.3 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
+@printf.str.0 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
+@printf.str.1 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
+@printf.str.2 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
+@printf.str.3 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
 @printf.str.4 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
-@printf.str.5 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
-@printf.str.6 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
+@printf.str.5 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
+@printf.str.6 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
 @printf.str.7 = private unnamed_addr constant [4 x i8] c"%u\0A\00", align 4
-@printf.str.8 = private unnamed_addr constant [5 x i8] c"%ld\0A\00", align 4
-@printf.str.9 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
-@printf.str.10 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
-@printf.str.11 = private unnamed_addr constant [5 x i8] c"%lu\0A\00", align 4
+@printf.str.8 = private unnamed_addr constant [6 x i8] c"%lld\0A\00", align 4
+@printf.str.9 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
+@printf.str.10 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
+@printf.str.11 = private unnamed_addr constant [4 x i8] c"%u\0A\00", align 4
+@printf.str.12 = private unnamed_addr constant [6 x i8] c"%llu\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i64 @_Z12divTemporarymm(i64 noundef %0, i64 noundef %1) #0 {
@@ -151,6 +152,29 @@ define internal noundef i64 @_Z11compoundDivm(i64 noundef %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
+define internal noundef i32 @_Z18compoundMixedWidthj(i32 noundef %0) #0 {
+  %a = alloca i32, align 4
+  %x = alloca i32, align 4
+  %y = alloca i32, align 4
+  store i32 %0, ptr %a, align 4
+  %2 = load i32, ptr %a, align 4
+  store i32 %2, ptr %x, align 4
+  %3 = load i32, ptr %x, align 4
+  %4 = udiv i32 %3, 2
+  store i32 %4, ptr %x, align 4
+  %5 = load i32, ptr %a, align 4
+  %6 = add i32 %5, 1
+  store i32 %6, ptr %y, align 4
+  %7 = load i32, ptr %y, align 4
+  %8 = urem i32 %7, 3
+  store i32 %8, ptr %y, align 4
+  %9 = load i32, ptr %y, align 4
+  %10 = load i32, ptr %x, align 4
+  %11 = add i32 %10, %9
+  ret i32 %11
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i64 @_Z7hashMixm(i64 noundef %0) #0 {
   %hash = alloca i64, align 8
   store i64 %0, ptr %hash, align 8
@@ -210,8 +234,10 @@ define dso_local noundef i32 @main() #1 {
   %26 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.9, i64 noundef %25)
   %27 = call noundef i64 @_Z11compoundDivm(i64 noundef -1)
   %28 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.10, i64 noundef %27)
-  %29 = call noundef i64 @_Z7hashMixm(i64 noundef 1)
-  %30 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i64 noundef %29)
+  %29 = call noundef i32 @_Z18compoundMixedWidthj(i32 noundef -16)
+  %30 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i32 noundef %29)
+  %31 = call noundef i64 @_Z7hashMixm(i64 noundef 1)
+  %32 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i64 noundef %31)
   ret i32 0
 }
 

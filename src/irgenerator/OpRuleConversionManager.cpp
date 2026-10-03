@@ -199,22 +199,22 @@ LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLV
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsInt)};
+    return {.value = generateDiv(lhsSTy, lhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsShort)};
+    return {.value = generateDiv(lhsSTy, lhsSTy, lhsV(), rhsShort)};
   }
   case COMB(TY_SHORT, TY_SHORT):
     return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsShort)};
+    return {.value = generateDiv(lhsSTy, lhsSTy, lhsV(), rhsShort)};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsLong)};
+    return {.value = generateDiv(lhsSTy, lhsSTy, lhsV(), rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG):
     return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
@@ -243,22 +243,22 @@ LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLV
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsInt)};
+    return {.value = generateRem(lhsSTy, lhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsShort)};
+    return {.value = generateRem(lhsSTy, lhsSTy, lhsV(), rhsShort)};
   }
   case COMB(TY_SHORT, TY_SHORT):
     return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsShort)};
+    return {.value = generateRem(lhsSTy, lhsSTy, lhsV(), rhsShort)};
   }
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsLong)};
+    return {.value = generateRem(lhsSTy, lhsSTy, lhsV(), rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE):
