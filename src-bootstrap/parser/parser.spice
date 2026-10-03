@@ -1082,7 +1082,6 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
 
     // Parse parse function prefix / procedure prefix
     if this.currentTokenIs(TokenType::F) {
-        extDeclNode.hasReturnType = true;
         this.expect(TokenType::F);
         this.expect(TokenType::LESS);
         extDeclNode.returnType = this.parseDataType();

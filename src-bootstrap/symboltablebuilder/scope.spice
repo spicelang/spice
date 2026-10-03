@@ -600,6 +600,7 @@ public p Scope.deepCopyScope(Scope* newScope) {
     newScope.interfaces = this.interfaces;
     newScope.unions = this.unions;
     newScope.genericTypes = this.genericTypes;
+    newScope.temporaryDtorsToCall = this.temporaryDtorsToCall;
     // Deep copy the children. Their parent and symbol table parent point to the new scope (set by the ctor)
     foreach Pair<const String&, Scope*&> childEntry : this.children {
         Scope* oldChild = childEntry.getSecond();

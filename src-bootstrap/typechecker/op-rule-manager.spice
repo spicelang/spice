@@ -844,7 +844,7 @@ f<Pair<QualType, Function*>> OpRuleManager.performStructAssign(ASTNode* node, co
     }
 
     // If RVO is possible, cancel here
-    if !rhsIsRef && isReturn && !rhs.isTemporary() {
+    if isReturn && this.typeChecker.isReturnValueOptimizable(rhs) {
         return assignResult(rhsType);
     }
 

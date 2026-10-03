@@ -804,6 +804,11 @@ f<llvm::Value> IRGenerator.getConst(const CompileTimeValue& compileTimeValue, co
         return llvm::getNullValue(this.builder.getPtrTy());
     }
 
+    // The only compile-time value of a function or procedure type is nil, which is represented as a null fat pointer
+    if qualType.is(SuperType::TY_FUNCTION) || qualType.is(SuperType::TY_PROCEDURE) {
+        return llvm::getNullValue(this.llvmTypes.lambdaFatPtrType);
+    }
+
     panic(Error("Constant fall-through")); // GCOV_EXCL_LINE
     return llvm::Value();
 }

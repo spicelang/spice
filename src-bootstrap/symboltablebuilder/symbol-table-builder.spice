@@ -548,7 +548,7 @@ public f<Any> SymbolTableBuilder.visitExtDecl(ASTExtDeclNode* node) {
     // Add the external declaration to the symbol table
     node.entry = this.rootScope.insert(node.extFunctionName, baseNode);
     // Register the name in the exported name registry
-    const unsigned long typeId = node.hasReturnType ? cast<unsigned long>(SuperType::TY_FUNCTION) : cast<unsigned long>(SuperType::TY_PROCEDURE);
+    const unsigned long typeId = node.returnType != nil<ASTDataTypeNode*> ? cast<unsigned long>(SuperType::TY_FUNCTION) : cast<unsigned long>(SuperType::TY_PROCEDURE);
     this.sourceFile.addNameRegistryEntry(node.extFunctionName, typeId, node.entry, this.rootScope, true, nil<SymbolTableEntry*>);
 
     return Any();
@@ -833,13 +833,10 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
     GlobalResourceManager& resourceManager = this.resourceManager;
 
     // Determine the target OS from the triple of the compilation
-    String osName;
-    if !this.cliOptions.targetTriple.empty() {
-        osName = this.cliOptions.targetTriple.getOSName();
-    }
-    const bool isLinux = osName.startsWith("linux");
-    const bool isDarwin = osName.startsWith("darwin") || osName.startsWith("macos");
-    const bool isWindows = osName.startsWith("win") || osName.startsWith("mingw") || osName.startsWith("cygwin");
+    const llvm::Triple& targetTriple = this.cliOptions.targetTriple;
+    const bool isLinux = targetTriple.isOSLinux();
+    const bool isDarwin = targetTriple.isOSDarwin();
+    const bool isWindows = targetTriple.isOSWindows();
 
     // Collect and register linker flags.
     // On Linux, platform-independent flags (core.linker.flag) are wrapped in --start-group/--end-group

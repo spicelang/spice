@@ -185,7 +185,7 @@ public p DebugInfoGenerator.generateFunctionDebugInfo(llvm::Function llvmFunctio
     // createFunction and the virtual/pure-virtual subprogram flags cannot be represented (see the type doc comment).
     const bool isLocalToUnit = isLambda;
     const llvm::Metadata subprogram = this.diBuilder.createFunction(scope, spiceFunc.name, spiceFunc.getMangledName(), this.diFile,
-        lineNo, functionTy, isLocalToUnit, /*isDefinition=*/true, lineNo, flags, isOptimizedBuild(this.irGenerator));
+        lineNo, functionTy, isLocalToUnit, /*isDefinition=*/true, lineNo, flags, /*isOptimized=*/false);
 
     // Add debug info to LLVM function
     llvmFunction.setSubprogram(subprogram);
@@ -293,7 +293,8 @@ public p DebugInfoGenerator.generateGlobalStringDebugInfo(llvm::Value global, co
     const unsigned int lineNo = cast<unsigned int>(codeLoc.line);
 
     // The C API has no createStringType, so the string is described as a char array (length + 1 for the null-terminator)
-    const llvm::Metadata stringType = this.diBuilder.createArrayType(length + 1l, this.charTy.isNull() ? this.diBuilder.createBasicType(String("char"), 8l, llvm::DW_ATE_UNSIGNED_CHAR) : this.charTy);
+    const unsigned long sizeInBits = (length + 1l) * 8l;
+    const llvm::Metadata stringType = this.diBuilder.createArrayType(sizeInBits, this.charTy.isNull() ? this.diBuilder.createBasicType(String("char"), 8l, llvm::DW_ATE_UNSIGNED_CHAR) : this.charTy);
     const llvm::Metadata gve = this.diBuilder.createGlobalVariableExpression(this.compileUnit, name, name, this.diFile, lineNo, stringType, true);
     global.setGlobalMetadata(llvm::getDebugMetadataKindID(*this.irGenerator.context), gve);
 }
@@ -544,7 +545,3 @@ f<llvm::Metadata> DebugInfoGenerator.getUnionDIType(const ASTNode* node, const Q
     return unionDiType;
 }
 
-// Whether the current build is optimized (host: cliOptions.optLevel > OptLevel::O0)
-f<bool> isOptimizedBuild(IRGenerator* irGenerator) {
-    return irGenerator.cliOptions.optLevel != OptLevel::O0;
-}

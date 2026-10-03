@@ -221,6 +221,9 @@ public p TypeChainElement.getName(StringStream& name, bool withSize, bool ignore
         case SuperType::TY_IMPORT: {
             name << "import";
         }
+        case SuperType::TY_UNRESOLVED: {
+            name << "unresolved";
+        }
         case SuperType::TY_INVALID: {
             name << "invalid";
         }

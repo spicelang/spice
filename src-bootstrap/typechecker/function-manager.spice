@@ -268,9 +268,9 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
                 continue;
             }
 
-            // Copy the function to be able to substantiate types
+            // Copy the function to be able to substantiate types. Unlike in matchFunction, the type mapping is kept: a fully
+            // substantiated manifestation of a generic function still has generic template type slots, which are resolved by it
             Function candidate = presetFunction;
-            candidate.typeMapping.clear();
 
             bool forceSubstantiation = false;
             const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, candidate.typeMapping, strictQualifierMatching, forceSubstantiation, nil<const ASTNode*>);
@@ -597,7 +597,8 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
 
         // If we have a function/procedure type we need to take care of the information, if it takes captures
         const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
-        if requestedType.isOneOf(fctOptions, len(fctOptions)) && requestedType.hasLambdaCaptures() {
+        const QualType requestedBaseType = requestedType.getBase();
+        if requestedBaseType.isOneOf(fctOptions, len(fctOptions)) && requestedType.hasLambdaCaptures() {
             candidateType = candidateType.getWithLambdaCaptures();
             needsSubstantiation = true;
         }
