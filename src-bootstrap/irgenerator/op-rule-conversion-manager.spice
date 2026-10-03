@@ -133,6 +133,34 @@ public p OpRuleConversionManager.ctor(IRGenerator* irGenerator) {
     this.stdFunctionManager = &irGenerator.stdFunctionManager;
 }
 
+/**
+ * Check if an operation on two integer operands has to be performed signed or unsigned. Like in C, both operands are
+ * converted to the wider of both types, so its signedness decides. For operands of the same width, the operation is
+ * unsigned if one of them is unsigned.
+ *
+ * @param lhsSTy Type of the left operand
+ * @param rhsSTy Type of the right operand
+ * @return Signed operation or not
+ */
+f<bool> isSignedOperation(const QualType& lhsSTy, const QualType& rhsSTy) {
+    const unsigned int lhsWidth = getIntegerWidth(lhsSTy);
+    const unsigned int rhsWidth = getIntegerWidth(rhsSTy);
+    if lhsWidth != rhsWidth {
+        return lhsWidth > rhsWidth ? lhsSTy.isSigned() : rhsSTy.isSigned();
+    }
+    return lhsSTy.isSigned() && rhsSTy.isSigned();
+}
+
+// Bit width of an integer type, used to determine the common type of two integer operands
+f<unsigned int> getIntegerWidth(const QualType& integerType) {
+    switch integerType.getSuperType() {
+        case SuperType::TY_LONG: { return 64u; }
+        case SuperType::TY_INT: { return 32u; }
+        case SuperType::TY_SHORT: { return 16u; }
+        default: { return 8u; }
+    }
+}
+
 // Whether an integer operation on the given types has no signed wrap (only evaluated for integer types, like in the host)
 f<bool> isNSW(const QualType& lhsSTy, const QualType& rhsSTy) {
     return lhsSTy.isSigned() && rhsSTy.isSigned();
@@ -331,7 +359,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getDivEqualInst(ASTNode* node, 
     if isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) {
         const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
-        return exprResultWithValue(this.builder.createSDiv(lhsV, rhsV));
+        return exprResultWithValue(this.generateDiv(lhsSTy, rhsSTy, lhsV, rhsV));
     }
     if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
         const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
@@ -361,12 +389,12 @@ public f<LLVMExprResult> OpRuleConversionManager.getRemEqualInst(ASTNode* node, 
     if isComb(l, r, SuperType::TY_INT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_SHORT) {
         const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
-        return exprResultWithValue(this.builder.createSRem(lhsV, rhsV));
+        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsV));
     }
     if isComb(l, r, SuperType::TY_INT, SuperType::TY_SHORT) || isComb(l, r, SuperType::TY_INT, SuperType::TY_LONG) {
         const llvm::Value rhsInt = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
-        return exprResultWithValue(this.builder.createSRem(lhsV, rhsInt));
+        return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsInt));
     }
     if isComb(l, r, SuperType::TY_SHORT, SuperType::TY_INT) || isComb(l, r, SuperType::TY_SHORT, SuperType::TY_LONG) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_INT) || isComb(l, r, SuperType::TY_LONG, SuperType::TY_SHORT) {
         const llvm::Value rhsCasted = this.builder.createIntCast(this.rhsV(rhs, rhsSTy), lhsT, rhsSTy.isSigned());
@@ -759,7 +787,7 @@ f<llvm::Value> OpRuleConversionManager.createIntArithmetic(ArithmeticOpKind op, 
         case ArithmeticOpKind::PLUS: { return this.createAdd(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)); }
         case ArithmeticOpKind::MINUS: { return this.createSub(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)); }
         case ArithmeticOpKind::MUL: { return this.createMul(lhsV, rhsV, isNSW(lhsSTy, rhsSTy)); }
-        case ArithmeticOpKind::DIV: { return this.builder.createSDiv(lhsV, rhsV); }
+        case ArithmeticOpKind::DIV: { return this.generateDiv(lhsSTy, rhsSTy, lhsV, rhsV); }
     }
     return llvm::Value();
 }
@@ -1223,7 +1251,7 @@ f<llvm::Value> OpRuleConversionManager.generateSHR(const QualType& lhsSTy, const
 }
 
 f<llvm::Value> OpRuleConversionManager.generateLT(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
-    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+    if isSignedOperation(lhsSTy, rhsSTy) {
         return this.createICmp(llvm::LLVMIntPredicate::SLT, lhsV, rhsV);
     } else {
         return this.createICmp(llvm::LLVMIntPredicate::ULT, lhsV, rhsV);
@@ -1231,7 +1259,7 @@ f<llvm::Value> OpRuleConversionManager.generateLT(const QualType& lhsSTy, const 
 }
 
 f<llvm::Value> OpRuleConversionManager.generateLE(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
-    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+    if isSignedOperation(lhsSTy, rhsSTy) {
         return this.createICmp(llvm::LLVMIntPredicate::SLE, lhsV, rhsV);
     } else {
         return this.createICmp(llvm::LLVMIntPredicate::ULE, lhsV, rhsV);
@@ -1239,7 +1267,7 @@ f<llvm::Value> OpRuleConversionManager.generateLE(const QualType& lhsSTy, const 
 }
 
 f<llvm::Value> OpRuleConversionManager.generateGT(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
-    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+    if isSignedOperation(lhsSTy, rhsSTy) {
         return this.createICmp(llvm::LLVMIntPredicate::SGT, lhsV, rhsV);
     } else {
         return this.createICmp(llvm::LLVMIntPredicate::UGT, lhsV, rhsV);
@@ -1247,7 +1275,7 @@ f<llvm::Value> OpRuleConversionManager.generateGT(const QualType& lhsSTy, const 
 }
 
 f<llvm::Value> OpRuleConversionManager.generateGE(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
-    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+    if isSignedOperation(lhsSTy, rhsSTy) {
         return this.createICmp(llvm::LLVMIntPredicate::SGE, lhsV, rhsV);
     } else {
         return this.createICmp(llvm::LLVMIntPredicate::UGE, lhsV, rhsV);
@@ -1255,7 +1283,7 @@ f<llvm::Value> OpRuleConversionManager.generateGE(const QualType& lhsSTy, const 
 }
 
 f<llvm::Value> OpRuleConversionManager.generateDiv(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
-    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+    if isSignedOperation(lhsSTy, rhsSTy) {
         return this.builder.createSDiv(lhsV, rhsV);
     } else {
         return this.builder.createUDiv(lhsV, rhsV);
@@ -1263,7 +1291,7 @@ f<llvm::Value> OpRuleConversionManager.generateDiv(const QualType& lhsSTy, const
 }
 
 f<llvm::Value> OpRuleConversionManager.generateRem(const QualType& lhsSTy, const QualType& rhsSTy, llvm::Value lhsV, llvm::Value rhsV) {
-    if lhsSTy.isSigned() && rhsSTy.isSigned() {
+    if isSignedOperation(lhsSTy, rhsSTy) {
         return this.builder.createSRem(lhsV, rhsV);
     } else {
         return this.builder.createURem(lhsV, rhsV);

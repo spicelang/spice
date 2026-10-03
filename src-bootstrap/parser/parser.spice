@@ -2337,14 +2337,17 @@ f<ASTConstantNode*> Parser.parseConstant() {
         this.expect(TokenType::DOUBLE_LIT);
     } else if this.currentTokenIs(TokenType::INT_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_INT;
+        constantNode.isUnsigned = token.text.endsWith("u");
         constantNode.compileTimeValue.setIntValue(cast<int>(this.parseNumeric(token, isNegative, 32)));
         this.expect(TokenType::INT_LIT);
     } else if this.currentTokenIs(TokenType::SHORT_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_SHORT;
+        constantNode.isUnsigned = token.text.endsWith("u");
         constantNode.compileTimeValue.setShortValue(cast<short>(this.parseNumeric(token, isNegative, 16)));
         this.expect(TokenType::SHORT_LIT);
     } else if this.currentTokenIs(TokenType::LONG_LIT) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_LONG;
+        constantNode.isUnsigned = token.text.endsWith("u");
         constantNode.compileTimeValue.setLongValue(this.parseNumeric(token, isNegative, 64));
         this.expect(TokenType::LONG_LIT);
     } else if this.currentTokenIs(TokenType::CHAR_LIT) {

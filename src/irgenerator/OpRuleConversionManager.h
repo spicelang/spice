@@ -98,6 +98,7 @@ private:
   const StdFunctionManager &stdFunctionManager;
 
   // Private methods
+  [[nodiscard]] static bool isSignedOperation(const QualType &lhsSTy, const QualType &rhsSTy);
   [[nodiscard]] llvm::Value *generateIToFp(const QualType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const;
   [[nodiscard]] llvm::Value *generateSHR(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                          llvm::Value *rhsV) const;

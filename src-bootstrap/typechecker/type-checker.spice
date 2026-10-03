@@ -4420,7 +4420,12 @@ public f<Any> TypeChecker.visitConstant(ASTConstantNode* node) {
             panic(Error("Constant fall-through")); // UNHANDLED_BRANCH compiler error in the host
         }
     }
-    return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(superType), this.manIdx), nil<SymbolTableEntry*>});
+    QualType constantType = QualType(superType);
+    // Integer literals with an 'u' suffix are unsigned
+    if node.isUnsigned {
+        constantType.makeUnsigned();
+    }
+    return Any(ExprResult{node.node.setEvaluatedSymbolType(constantType, this.manIdx), nil<SymbolTableEntry*>});
 }
 
 public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {

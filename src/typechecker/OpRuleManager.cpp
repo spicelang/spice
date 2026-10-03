@@ -222,7 +222,8 @@ ExprResult OpRuleManager::getPlusEqualResultType(ASTNode *node, const ExprResult
     return lhs;
   }
 
-  return {validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, std::size(PLUS_EQUAL_OP_RULES), "+=", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, PLUS_EQUAL_OP_RULES, std::size(PLUS_EQUAL_OP_RULES), "+=", lhsType, rhsType), lhsType)};
 }
 
 ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -244,7 +245,8 @@ ExprResult OpRuleManager::getMinusEqualResultType(ASTNode *node, const ExprResul
     return lhs;
   }
 
-  return {validateBinaryOperation(node, MINUS_EQUAL_OP_RULES, std::size(MINUS_EQUAL_OP_RULES), "-=", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, MINUS_EQUAL_OP_RULES, std::size(MINUS_EQUAL_OP_RULES), "-=", lhsType, rhsType), lhsType)};
 }
 
 ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -260,7 +262,8 @@ ExprResult OpRuleManager::getMulEqualResultType(ASTNode *node, const ExprResult 
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, MUL_EQUAL_OP_RULES, std::size(MUL_EQUAL_OP_RULES), "*=", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, MUL_EQUAL_OP_RULES, std::size(MUL_EQUAL_OP_RULES), "*=", lhsType, rhsType), lhsType)};
 }
 
 ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -276,7 +279,8 @@ ExprResult OpRuleManager::getDivEqualResultType(ASTNode *node, const ExprResult 
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, DIV_EQUAL_OP_RULES, std::size(DIV_EQUAL_OP_RULES), "/=", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, DIV_EQUAL_OP_RULES, std::size(DIV_EQUAL_OP_RULES), "/=", lhsType, rhsType), lhsType)};
 }
 
 QualType OpRuleManager::getRemEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -287,7 +291,8 @@ QualType OpRuleManager::getRemEqualResultType(const ASTNode *node, const ExprRes
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, REM_EQUAL_OP_RULES, std::size(REM_EQUAL_OP_RULES), "%=", lhsType, rhsType);
+  return applyIntegerSignedness(
+      validateBinaryOperation(node, REM_EQUAL_OP_RULES, std::size(REM_EQUAL_OP_RULES), "%=", lhsType, rhsType), lhsType);
 }
 
 QualType OpRuleManager::getSHLEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -298,7 +303,8 @@ QualType OpRuleManager::getSHLEqualResultType(const ASTNode *node, const ExprRes
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, SHL_EQUAL_OP_RULES, std::size(SHL_EQUAL_OP_RULES), "<<=", lhsType, rhsType);
+  return applyIntegerSignedness(
+      validateBinaryOperation(node, SHL_EQUAL_OP_RULES, std::size(SHL_EQUAL_OP_RULES), "<<=", lhsType, rhsType), lhsType);
 }
 
 QualType OpRuleManager::getSHREqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -309,7 +315,8 @@ QualType OpRuleManager::getSHREqualResultType(const ASTNode *node, const ExprRes
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, SHR_EQUAL_OP_RULES, std::size(SHR_EQUAL_OP_RULES), ">>=", lhsType, rhsType);
+  return applyIntegerSignedness(
+      validateBinaryOperation(node, SHR_EQUAL_OP_RULES, std::size(SHR_EQUAL_OP_RULES), ">>=", lhsType, rhsType), lhsType);
 }
 
 QualType OpRuleManager::getAndEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -320,7 +327,8 @@ QualType OpRuleManager::getAndEqualResultType(const ASTNode *node, const ExprRes
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, AND_EQUAL_OP_RULES, std::size(AND_EQUAL_OP_RULES), "&=", lhsType, rhsType);
+  return applyIntegerSignedness(
+      validateBinaryOperation(node, AND_EQUAL_OP_RULES, std::size(AND_EQUAL_OP_RULES), "&=", lhsType, rhsType), lhsType);
 }
 
 QualType OpRuleManager::getOrEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -331,7 +339,8 @@ QualType OpRuleManager::getOrEqualResultType(const ASTNode *node, const ExprResu
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, OR_EQUAL_OP_RULES, std::size(OR_EQUAL_OP_RULES), "|=", lhsType, rhsType);
+  return applyIntegerSignedness(
+      validateBinaryOperation(node, OR_EQUAL_OP_RULES, std::size(OR_EQUAL_OP_RULES), "|=", lhsType, rhsType), lhsType);
 }
 
 QualType OpRuleManager::getXorEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -342,7 +351,8 @@ QualType OpRuleManager::getXorEqualResultType(const ASTNode *node, const ExprRes
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, XOR_EQUAL_OP_RULES, std::size(XOR_EQUAL_OP_RULES), "^=", lhsType, rhsType);
+  return applyIntegerSignedness(
+      validateBinaryOperation(node, XOR_EQUAL_OP_RULES, std::size(XOR_EQUAL_OP_RULES), "^=", lhsType, rhsType), lhsType);
 }
 
 QualType OpRuleManager::getLogicalOrResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
@@ -372,7 +382,9 @@ ExprResult OpRuleManager::getBitwiseOrResultType(ASTNode *node, const ExprResult
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, BITWISE_OR_OP_RULES, std::size(BITWISE_OR_OP_RULES), "|", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, BITWISE_OR_OP_RULES, std::size(BITWISE_OR_OP_RULES), "|", lhsType, rhsType), lhsType,
+      rhsType)};
 }
 
 ExprResult OpRuleManager::getBitwiseXorResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
@@ -386,7 +398,9 @@ ExprResult OpRuleManager::getBitwiseXorResultType(ASTNode *node, const ExprResul
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, BITWISE_XOR_OP_RULES, std::size(BITWISE_XOR_OP_RULES), "^", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, BITWISE_XOR_OP_RULES, std::size(BITWISE_XOR_OP_RULES), "^", lhsType, rhsType), lhsType,
+      rhsType)};
 }
 
 ExprResult OpRuleManager::getBitwiseAndResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
@@ -400,7 +414,9 @@ ExprResult OpRuleManager::getBitwiseAndResultType(ASTNode *node, const ExprResul
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, BITWISE_AND_OP_RULES, std::size(BITWISE_AND_OP_RULES), "&", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, BITWISE_AND_OP_RULES, std::size(BITWISE_AND_OP_RULES), "&", lhsType, rhsType), lhsType,
+      rhsType)};
 }
 
 ExprResult OpRuleManager::getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
@@ -494,7 +510,8 @@ ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, std::size(SHIFT_LEFT_OP_RULES), "<<", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, SHIFT_LEFT_OP_RULES, std::size(SHIFT_LEFT_OP_RULES), "<<", lhsType, rhsType), lhsType)};
 }
 
 ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
@@ -508,7 +525,8 @@ ExprResult OpRuleManager::getShiftRightResultType(ASTNode *node, const ExprResul
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, std::size(SHIFT_RIGHT_OP_RULES), ">>", lhsType, rhsType)};
+  return {applyIntegerSignedness(
+      validateBinaryOperation(node, SHIFT_RIGHT_OP_RULES, std::size(SHIFT_RIGHT_OP_RULES), ">>", lhsType, rhsType), lhsType)};
 }
 
 ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
@@ -532,7 +550,8 @@ ExprResult OpRuleManager::getPlusResultType(ASTNode *node, const ExprResult &lhs
     return {rhsType};
   }
 
-  return {validateBinaryOperation(node, PLUS_OP_RULES, std::size(PLUS_OP_RULES), "+", lhsType, rhsType)};
+  return {applyIntegerSignedness(validateBinaryOperation(node, PLUS_OP_RULES, std::size(PLUS_OP_RULES), "+", lhsType, rhsType),
+                                 lhsType, rhsType)};
 }
 
 ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
@@ -551,7 +570,8 @@ ExprResult OpRuleManager::getMinusResultType(ASTNode *node, const ExprResult &lh
     return lhs;
   }
 
-  return {validateBinaryOperation(node, MINUS_OP_RULES, std::size(MINUS_OP_RULES), "-", lhsType, rhsType)};
+  return {applyIntegerSignedness(validateBinaryOperation(node, MINUS_OP_RULES, std::size(MINUS_OP_RULES), "-", lhsType, rhsType),
+                                 lhsType, rhsType)};
 }
 
 ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
@@ -564,7 +584,8 @@ ExprResult OpRuleManager::getMulResultType(ASTNode *node, const ExprResult &lhs,
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, MUL_OP_RULES, std::size(MUL_OP_RULES), "*", lhsType, rhsType)};
+  return {applyIntegerSignedness(validateBinaryOperation(node, MUL_OP_RULES, std::size(MUL_OP_RULES), "*", lhsType, rhsType),
+                                 lhsType, rhsType)};
 }
 
 ExprResult OpRuleManager::getDivResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const {
@@ -577,7 +598,8 @@ ExprResult OpRuleManager::getDivResultType(ASTNode *node, const ExprResult &lhs,
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, DIV_OP_RULES, std::size(DIV_OP_RULES), "/", lhsType, rhsType)};
+  return {applyIntegerSignedness(validateBinaryOperation(node, DIV_OP_RULES, std::size(DIV_OP_RULES), "/", lhsType, rhsType),
+                                 lhsType, rhsType)};
 }
 
 ExprResult OpRuleManager::getRemResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
@@ -585,7 +607,8 @@ ExprResult OpRuleManager::getRemResultType(const ASTNode *node, const ExprResult
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return {validateBinaryOperation(node, REM_OP_RULES, std::size(REM_OP_RULES), "%", lhsType, rhsType)};
+  return {applyIntegerSignedness(validateBinaryOperation(node, REM_OP_RULES, std::size(REM_OP_RULES), "%", lhsType, rhsType),
+                                 lhsType, rhsType)};
 }
 
 QualType OpRuleManager::getPrefixMinusResultType(const ASTNode *node, const ExprResult &lhs) {
@@ -815,12 +838,34 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   return {typeChecker->mapImportedScopeTypeToLocalType(calleeParentScope, returnType), anonymousSymbol};
 }
 
+/**
+ * Apply the signedness of the operands to an integer result type. The op rule tables only contain the super types, so the
+ * result type would always be signed otherwise. Like in C, the result is unsigned if an operand that has the same type as
+ * the result is unsigned: e.g. 'unsigned int + unsigned long' and 'int + unsigned long' are unsigned, but
+ * 'unsigned int + long' is signed, because a long can hold all values of an unsigned int.
+ *
+ * @param resultType Result type of the operation
+ * @param lhs Left side of the operation
+ * @param rhs Right side of the operation, if it should be considered (not for unary, shift and compound assign operations)
+ * @return Result type with the correct signedness
+ */
+QualType OpRuleManager::applyIntegerSignedness(QualType resultType, const QualType &lhs, const QualType &rhs) {
+  if (!resultType.isOneOf({TY_INT, TY_SHORT, TY_LONG}))
+    return resultType;
+  const SuperType resultSuperType = resultType.getSuperType();
+  const bool isLhsUnsigned = lhs.getSuperType() == resultSuperType && lhs.isUnsigned();
+  const bool isRhsUnsigned = !rhs.is(TY_INVALID) && rhs.getSuperType() == resultSuperType && rhs.isUnsigned();
+  if (isLhsUnsigned || isRhsUnsigned)
+    resultType.makeUnsigned();
+  return resultType;
+}
+
 QualType OpRuleManager::validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize,
                                                const char *name, const QualType &lhs) {
   for (size_t i = 0; i < opRulesSize; i++) {
     const UnaryOpRule &rule = opRules[i];
     if (std::get<0>(rule) == lhs.getSuperType())
-      return QualType(std::get<1>(rule));
+      return applyIntegerSignedness(QualType(std::get<1>(rule)), lhs);
   }
   throw getExceptionUnary(node, name, lhs);
 }

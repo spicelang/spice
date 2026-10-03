@@ -206,7 +206,7 @@ LLVMExprResult OpRuleConversionManager::getDivEqualInst(const ASTNode *node, LLV
     return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsShort)};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return {.value = builder.CreateSDiv(lhsV(), rhsV())};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
     return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsShort)};
@@ -239,18 +239,18 @@ LLVMExprResult OpRuleConversionManager::getRemEqualInst(const ASTNode *node, LLV
     return {.value = builder.CreateFRem(lhsV(), rhsV())};
   }
   case COMB(TY_INT, TY_INT):
-    return {.value = builder.CreateSRem(lhsV(), rhsV())};
+    return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): // fallthrough
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateSRem(lhsV(), rhsInt)};
+    return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
     return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsShort)};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return {.value = builder.CreateSRem(lhsV(), rhsV())};
+    return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *rhsShort = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
     return {.value = generateRem(lhsSTy, rhsSTy, lhsV(), rhsShort)};
@@ -1387,14 +1387,14 @@ LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExpr
     return {.value = builder.CreateFDiv(lhsFP, rhsV())};
   }
   case COMB(TY_INT, TY_INT):
-    return {.value = builder.CreateSDiv(lhsV(), rhsV())};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_INT, TY_SHORT): {
     llvm::Value *rhsInt = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateSDiv(lhsV(), rhsInt)};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsInt)};
   }
   case COMB(TY_INT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, lhsSTy.isSigned());
-    return {.value = builder.CreateSDiv(lhsLong, rhsV())};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_SHORT, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
@@ -1402,13 +1402,13 @@ LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExpr
   }
   case COMB(TY_SHORT, TY_INT): {
     llvm::Value *lhsInt = builder.CreateIntCast(lhsV(), rhsT, lhsSTy.isSigned());
-    return {.value = builder.CreateSDiv(lhsInt, rhsV())};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsInt, rhsV())};
   }
   case COMB(TY_SHORT, TY_SHORT):
-    return {.value = builder.CreateSDiv(lhsV(), rhsV())};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
   case COMB(TY_SHORT, TY_LONG): {
     llvm::Value *lhsLong = builder.CreateIntCast(lhsV(), rhsT, lhsSTy.isSigned());
-    return {.value = builder.CreateSDiv(lhsLong, rhsV())};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsLong, rhsV())};
   }
   case COMB(TY_LONG, TY_DOUBLE): {
     llvm::Value *lhsFP = generateIToFp(lhsSTy, lhsV(), rhsT);
@@ -1417,12 +1417,12 @@ LLVMExprResult OpRuleConversionManager::getDivInst(const ASTNode *node, LLVMExpr
   case COMB(TY_LONG, TY_INT): // fallthrough
   case COMB(TY_LONG, TY_SHORT): {
     llvm::Value *rhsLong = builder.CreateIntCast(rhsV(), lhsT, rhsSTy.isSigned());
-    return {.value = builder.CreateSDiv(lhsV(), rhsLong)};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsLong)};
   }
   case COMB(TY_LONG, TY_LONG): // fallthrough
   case COMB(TY_BYTE, TY_BYTE): // fallthrough
   case COMB(TY_CHAR, TY_CHAR):
-    return {.value = builder.CreateSDiv(lhsV(), rhsV())};
+    return {.value = generateDiv(lhsSTy, rhsSTy, lhsV(), rhsV())};
   default:                                                            // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Operator fallthrough: /"); // GCOV_EXCL_LINE
   }
@@ -1798,6 +1798,35 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   return {.value = result, .ptr = resultPtr, .entry = anonymousSymbol};
 }
 
+/**
+ * Check if an operation on two integer operands has to be performed signed or unsigned. Like in C, both operands are
+ * converted to the wider of both types, so its signedness decides. For operands of the same width, the operation is
+ * unsigned if one of them is unsigned.
+ *
+ * @param lhsSTy Type of the left operand
+ * @param rhsSTy Type of the right operand
+ * @return Signed operation or not
+ */
+bool OpRuleConversionManager::isSignedOperation(const QualType &lhsSTy, const QualType &rhsSTy) {
+  const auto getWidth = [](const QualType &type) -> unsigned {
+    switch (type.getSuperType()) {
+    case TY_LONG:
+      return 64;
+    case TY_INT:
+      return 32;
+    case TY_SHORT:
+      return 16;
+    default:
+      return 8;
+    }
+  };
+  const unsigned lhsWidth = getWidth(lhsSTy);
+  const unsigned rhsWidth = getWidth(rhsSTy);
+  if (lhsWidth != rhsWidth)
+    return lhsWidth > rhsWidth ? lhsSTy.isSigned() : rhsSTy.isSigned();
+  return lhsSTy.isSigned() && rhsSTy.isSigned();
+}
+
 llvm::Value *OpRuleConversionManager::generateIToFp(const QualType &srcSTy, llvm::Value *srcV, llvm::Type *tgtT) const {
   if (srcSTy.isSigned())
     return builder.CreateSIToFP(srcV, tgtT);
@@ -1815,7 +1844,7 @@ llvm::Value *OpRuleConversionManager::generateSHR(const QualType &lhsSTy, const 
 
 llvm::Value *OpRuleConversionManager::generateLT(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
-  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+  if (isSignedOperation(lhsSTy, rhsSTy))
     return builder.CreateICmpSLT(lhsV, rhsV);
   else
     return builder.CreateICmpULT(lhsV, rhsV);
@@ -1823,7 +1852,7 @@ llvm::Value *OpRuleConversionManager::generateLT(const QualType &lhsSTy, const Q
 
 llvm::Value *OpRuleConversionManager::generateLE(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
-  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+  if (isSignedOperation(lhsSTy, rhsSTy))
     return builder.CreateICmpSLE(lhsV, rhsV);
   else
     return builder.CreateICmpULE(lhsV, rhsV);
@@ -1831,7 +1860,7 @@ llvm::Value *OpRuleConversionManager::generateLE(const QualType &lhsSTy, const Q
 
 llvm::Value *OpRuleConversionManager::generateGT(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
-  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+  if (isSignedOperation(lhsSTy, rhsSTy))
     return builder.CreateICmpSGT(lhsV, rhsV);
   else
     return builder.CreateICmpUGT(lhsV, rhsV);
@@ -1839,7 +1868,7 @@ llvm::Value *OpRuleConversionManager::generateGT(const QualType &lhsSTy, const Q
 
 llvm::Value *OpRuleConversionManager::generateGE(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                                  llvm::Value *rhsV) const {
-  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+  if (isSignedOperation(lhsSTy, rhsSTy))
     return builder.CreateICmpSGE(lhsV, rhsV);
   else
     return builder.CreateICmpUGE(lhsV, rhsV);
@@ -1847,7 +1876,7 @@ llvm::Value *OpRuleConversionManager::generateGE(const QualType &lhsSTy, const Q
 
 llvm::Value *OpRuleConversionManager::generateDiv(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                                   llvm::Value *rhsV) const {
-  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+  if (isSignedOperation(lhsSTy, rhsSTy))
     return builder.CreateSDiv(lhsV, rhsV);
   else
     return builder.CreateUDiv(lhsV, rhsV);
@@ -1855,7 +1884,7 @@ llvm::Value *OpRuleConversionManager::generateDiv(const QualType &lhsSTy, const 
 
 llvm::Value *OpRuleConversionManager::generateRem(const QualType &lhsSTy, const QualType &rhsSTy, llvm::Value *lhsV,
                                                   llvm::Value *rhsV) const {
-  if (lhsSTy.isSigned() && rhsSTy.isSigned())
+  if (isSignedOperation(lhsSTy, rhsSTy))
     return builder.CreateSRem(lhsV, rhsV);
   else
     return builder.CreateURem(lhsV, rhsV);

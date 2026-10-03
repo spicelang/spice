@@ -604,6 +604,7 @@ public type PrimitiveValueType enum {
 public type ASTConstantNode struct : IVisitable {
     compose public ASTExprNode node
     public PrimitiveValueType primitiveValueType = PrimitiveValueType::TYPE_NONE
+    public bool isUnsigned = false // Only set for integer literals with an 'u' suffix (e.g. 1u, 1us, 1ul)
     public CompileTimeValue compileTimeValue
 }
 
