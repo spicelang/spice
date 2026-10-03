@@ -67,3 +67,43 @@ you to rebuild with the option turned on.
 - Any Spice code that requires wide vectors, exception handling, or non-`small` code model will fail to
   compile.
 - Debug info emission (`-g`) works but produces `-O0`-quality info regardless of the `--build-mode`.
+
+## Using TPDE from Spice code
+
+Besides being a backend of the Spice compiler, TPDE can also be used from Spice programs, which build LLVM modules with
+the LLVM bindings (`std/bindings/llvm`). The TPDE bindings (`std/bindings/tpde`) compile such a module to an ELF object,
+in a file or in memory:
+
+```spice
+import "std/bindings/llvm/llvm" as llvm;
+import "std/bindings/tpde/tpde" as tpde;
+
+f<int> main() {
+    llvm::LLVMContext context;
+    llvm::Module module = llvm::Module("example", context);
+    // ... build the module with the LLVM bindings ...
+
+    tpde::Compiler compiler = tpde::Compiler(llvm::getDefaultTargetTriple());
+    if !compiler.isValid() { return 1; } // TPDE does not support the target or is not available
+    String errorMessage;
+    if compiler.compileToFile(module, "example.o", errorMessage) {
+        printf("%s\n", errorMessage.getRaw());
+        return 1;
+    }
+}
+```
+
+TPDE only offers a C++ API, so the bindings compile a small C API wrapper (`std/bindings/tpde/tpde-wrapper.cpp`) along
+with the program. They need the TPDE libraries and headers, which a Spice build with `-DSPICE_ENABLE_TPDE=ON` produces.
+Point the bindings to them with the `TPDE_FLAGS` environment variable, in addition to the ones the LLVM bindings need.
+It holds the include flag for the TPDE headers and the paths of the TPDE static libraries, space-separated:
+
+```sh
+TPDE_FLAGS="-I<spice-src>/deps/tpde/tpde-llvm/include \
+  <build>/deps/tpde/tpde-llvm/libtpde_llvm.a <build>/deps/tpde/tpde/libtpde.a \
+  <build>/deps/tpde/tpde/deps/fadec/libfadec.a <build>/deps/tpde/tpde/deps/disarm/libdisarm64.a \
+  <build>/deps/tpde/tpde/deps/spdlog/libspdlog.a" # spdlog only with TPDE logging enabled (default)
+```
+
+Without it, or on platforms other than Linux, the bindings still compile and link, but `tpde::isAvailable()` returns
+`false` and every compilation fails with an error message.

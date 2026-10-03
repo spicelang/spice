@@ -1108,6 +1108,11 @@ public p Module.dtor() {
     }
 }
 
+// Raw LLVM C API handle of this module, for bindings that build on top of the LLVM C API (e.g. std/bindings/tpde)
+public const f<byte*> Module.getRef() {
+    return this.self;
+}
+
 // Like llvm::Linker::linkModules: link the source module into this module. The source module is destroyed in the process
 public f<bool> Module.linkInModule(Module& src) {
     const bool failed = LLVMLinkModules2(this.self, src.self) != 0;

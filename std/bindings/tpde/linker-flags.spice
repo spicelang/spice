@@ -1,0 +1,10 @@
+#![
+    // TPDE only emits ELF objects (x86_64/aarch64), so it is only linked on Linux. Elsewhere, and whenever TPDE_FLAGS is not
+    // set, tpde-wrapper.cpp falls back to stubs, that report TPDE as unavailable.
+    // Holds the include flag for the TPDE headers and the paths of the TPDE static libraries (space-separated), e.g.:
+    // -I<tpde-src>/tpde-llvm/include <tpde-build>/tpde-llvm/libtpde_llvm.a <tpde-build>/tpde/libtpde.a ...
+    // Both come from the same variable, so the wrapper only sees the TPDE headers if the TPDE libraries are linked as well.
+    core.linux.linker.flag = "$TPDE_FLAGS",
+    // C API wrapper around the TPDE C++ API
+    core.linker.additionalSource = "tpde-wrapper.cpp"
+]

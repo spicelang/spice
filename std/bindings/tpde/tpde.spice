@@ -1,0 +1,174 @@
+#![core.compiler.warnings.ignore]
+
+// Std imports
+import "std/data/vector";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "std/bindings/tpde/linker-flags";
+
+// ===== External type definitions =====
+type VoidPtr alias byte*;
+type LLVMBool alias int;
+type LLVMModuleRef alias VoidPtr;
+type LLVMMemoryBufferRef alias VoidPtr;
+type TPDECompilerRef alias VoidPtr;
+
+// ===== External functions =====
+// TPDE C API wrapper (see tpde-wrapper.cpp)
+ext f<LLVMBool> TPDEIsAvailable();
+ext f<TPDECompilerRef> TPDECreateCompiler(string /*Triple*/);
+ext p TPDEDisposeCompiler(TPDECompilerRef /*Compiler*/);
+ext f<LLVMBool> TPDECompileToObjectFile(TPDECompilerRef /*Compiler*/, LLVMModuleRef /*M*/, string /*Filename*/, string* /*ErrorMessage*/);
+ext f<LLVMBool> TPDECompileToMemoryBuffer(TPDECompilerRef /*Compiler*/, LLVMModuleRef /*M*/, LLVMMemoryBufferRef* /*OutMemBuf*/, string* /*ErrorMessage*/);
+// LLVM C API
+ext f<byte*> LLVMGetBufferStart(LLVMMemoryBufferRef /*MemBuf*/);
+ext f<unsigned long> LLVMGetBufferSize(LLVMMemoryBufferRef /*MemBuf*/);
+ext p LLVMDisposeMemoryBuffer(LLVMMemoryBufferRef /*MemBuf*/);
+ext p LLVMDisposeMessage(string /*Message*/);
+
+/**
+ * Check if these bindings are backed by TPDE. They are not on platforms TPDE does not support (TPDE only emits ELF objects
+ * for x86_64 and aarch64) and when TPDE_FLAGS was not set while linking.
+ *
+ * @return TPDE available or not
+ */
+public f<bool> isAvailable() {
+    return TPDEIsAvailable() != 0;
+}
+
+// ===== Compiler =====
+
+/**
+ * TPDE compiler for a specific target, like tpde_llvm::LLVMCompiler. It compiles LLVM modules to ELF objects with -O0-quality
+ * code, but a lot faster than the LLVM back end.
+ */
+public type Compiler struct {
+    TPDECompilerRef self
+    llvm::Triple triple
+}
+
+/**
+ * Create a TPDE compiler for the given target triple. Use isValid() to check if TPDE supports the triple.
+ *
+ * @param triple Target triple
+ */
+public p Compiler.ctor(const llvm::Triple& triple) {
+    this.triple = triple;
+    this.self = TPDECreateCompiler(this.triple.value);
+}
+
+/**
+ * A compiler owns its TPDE compiler, so copies create their own one for the same target. Otherwise, they would share it and
+ * it would be disposed as soon as the first of the copies goes out of scope.
+ *
+ * @param other Compiler to copy
+ */
+public p Compiler.ctor(const Compiler& other) {
+    this.triple = other.triple;
+    this.self = nil<TPDECompilerRef>;
+    if other.self != nil<TPDECompilerRef> {
+        this.self = TPDECreateCompiler(this.triple.value);
+    }
+}
+
+/**
+ * Assign another compiler. Like the copy constructor, this creates an own TPDE compiler for the target of the other one.
+ *
+ * @param other Compiler to assign
+ */
+public p operator=(Compiler& this, const Compiler& other) {
+    // Valid compilers never share a TPDE compiler, so the same one means self-assignment
+    if this.self != nil<TPDECompilerRef> && this.self == other.self {
+        return;
+    }
+    if this.self != nil<TPDECompilerRef> {
+        TPDEDisposeCompiler(this.self);
+    }
+    this.triple = other.triple;
+    this.self = nil<TPDECompilerRef>;
+    if other.self != nil<TPDECompilerRef> {
+        this.self = TPDECreateCompiler(this.triple.value);
+    }
+}
+
+/**
+ * Dispose the TPDE compiler
+ */
+public p Compiler.dtor() {
+    if this.self != nil<TPDECompilerRef> {
+        TPDEDisposeCompiler(this.self);
+        this.self = nil<TPDECompilerRef>;
+    }
+}
+
+/**
+ * Check if the compiler could be created. This is not the case, if TPDE does not support the target triple or if the
+ * bindings are not backed by TPDE.
+ *
+ * @return Valid or not
+ */
+public const f<bool> Compiler.isValid() {
+    return this.self != nil<TPDECompilerRef>;
+}
+
+/**
+ * Compile the given module to an ELF object file. The module might be modified during compilation.
+ *
+ * @param module Module to compile
+ * @param filename Output file path
+ * @param errorMessage Error message, if the compilation failed. Cleared if it succeeded
+ * @return True if the compilation failed
+ */
+public f<bool> Compiler.compileToFile(llvm::Module& module, string filename, String& errorMessage) {
+    if !this.isValid() {
+        errorMessage = String("The TPDE compiler is not valid");
+        return true;
+    }
+    errorMessage.clear();
+    string outMessage = nil<string>;
+    const bool errorOccurred = TPDECompileToObjectFile(this.self, module.getRef(), filename, &outMessage) != 0;
+    if outMessage != nil<string> {
+        errorMessage = String(outMessage);
+        LLVMDisposeMessage(outMessage);
+    }
+    return errorOccurred;
+}
+
+/**
+ * Compile the given module to an ELF object in memory. The module might be modified during compilation.
+ *
+ * @param module Module to compile
+ * @param output Bytes of the emitted object
+ * @param errorMessage Error message, if the compilation failed. Cleared if it succeeded
+ * @return True if the compilation failed
+ */
+public f<bool> Compiler.compileToBuffer(llvm::Module& module, Vector<byte>& output, String& errorMessage) {
+    if !this.isValid() {
+        errorMessage = String("The TPDE compiler is not valid");
+        return true;
+    }
+    errorMessage.clear();
+    string outMessage = nil<string>;
+    LLVMMemoryBufferRef buffer = nil<LLVMMemoryBufferRef>;
+    const bool errorOccurred = TPDECompileToMemoryBuffer(this.self, module.getRef(), &buffer, &outMessage) != 0;
+    if outMessage != nil<string> {
+        errorMessage = String(outMessage);
+        LLVMDisposeMessage(outMessage);
+    }
+    if errorOccurred {
+        return true;
+    }
+    // Copy the object bytes out of the buffer. They can contain zero bytes, so the buffer can't be treated as a string
+    const byte* bufferStart = LLVMGetBufferStart(buffer);
+    const unsigned long bufferSize = LLVMGetBufferSize(buffer);
+    output.clear();
+    output.reserve(bufferSize);
+    unsafe {
+        for unsigned long i = 0l; i < bufferSize; i++ {
+            output.pushBack(bufferStart[i]);
+        }
+    }
+    LLVMDisposeMemoryBuffer(buffer);
+    return false;
+}
