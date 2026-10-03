@@ -2015,8 +2015,12 @@ public:
 
   // Public members
   PrimitiveValueType type = PrimitiveValueType::TYPE_NONE;
+  bool isUnsigned = false; // Only set for integer literals with an 'u' suffix (e.g. 1u, 1us, 1ul)
   CompileTimeValue compileTimeValue;
 };
+
+// Make sure we have no unexpected increases in memory consumption
+static_assert(sizeof(ConstantNode) == 88);
 
 // ====================================================== FctCallNode ============================================================
 

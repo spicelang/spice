@@ -663,6 +663,7 @@ private:
                                             bool isReturn);
   std::pair<QualType, Function *> performStructAssign(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,
                                                       const QualType &rhsType, bool isDecl, bool isReturn) const;
+  static QualType applyIntegerSignedness(QualType resultType, const QualType &lhs, const QualType &rhs = QualType(TY_INVALID));
   static QualType validateUnaryOperation(const ASTNode *node, const UnaryOpRule opRules[], size_t opRulesSize, const char *name,
                                          const QualType &lhs);
   static QualType validateBinaryOperation(const ASTNode *node, const BinaryOpRule opRules[], size_t opRulesSize, const char *name,

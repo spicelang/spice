@@ -81,7 +81,11 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   default:                                                          // GCOV_EXCL_LINE
     throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
   }
-  return ExprResult{node->setEvaluatedSymbolType(QualType(superType), manIdx)};
+  QualType constantType(superType);
+  // Integer literals with an 'u' suffix are unsigned
+  if (node->isUnsigned)
+    constantType.makeUnsigned();
+  return ExprResult{node->setEvaluatedSymbolType(constantType, manIdx)};
 }
 
 std::any TypeChecker::visitFctCall(FctCallNode *node) {

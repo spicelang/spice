@@ -1303,12 +1303,15 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
     constantNode->compileTimeValue.doubleValue = isNegative ? -value : value;
   } else if (ctx->INT_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_INT;
+    constantNode->isUnsigned = isUnsignedLiteral(ctx->INT_LIT()->toString());
     constantNode->compileTimeValue.intValue = parseInt(ctx->INT_LIT(), isNegative);
   } else if (ctx->SHORT_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_SHORT;
+    constantNode->isUnsigned = isUnsignedLiteral(ctx->SHORT_LIT()->toString());
     constantNode->compileTimeValue.shortValue = parseShort(ctx->SHORT_LIT(), isNegative);
   } else if (ctx->LONG_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_LONG;
+    constantNode->isUnsigned = isUnsignedLiteral(ctx->LONG_LIT()->toString());
     constantNode->compileTimeValue.longValue = parseLong(ctx->LONG_LIT(), isNegative);
   } else if (ctx->CHAR_LIT()) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_CHAR;
@@ -1756,11 +1759,21 @@ std::string ASTBuilder::parseString(std::string input) {
   return input;
 }
 
+/**
+ * Check if the given integer literal is marked unsigned by its suffix ('u', 'us' or 'ul')
+ *
+ * @param input Integer literal
+ * @return Unsigned or not
+ */
+bool ASTBuilder::isUnsignedLiteral(const std::string &input) {
+  return input.ends_with('u') || input.ends_with("us") || input.ends_with("ul");
+}
+
 template <typename T> T ASTBuilder::parseNumeric(TerminalNode *terminal, const NumericParserCallback<T> &cb) {
   const std::string input = terminal->toString();
 
   // Set to signed if the input string does not end with 'u'
-  const bool isUnsigned = input.ends_with('u') || input.ends_with("us") || input.ends_with("ul");
+  const bool isUnsigned = isUnsignedLiteral(input);
 
   try {
     if (input.length() >= 3) {

@@ -191,6 +191,7 @@ private:
   int64_t parseLong(TerminalNode *terminal, bool isNegative = false);
   int8_t parseChar(TerminalNode *terminal) const;
   static std::string parseString(std::string input);
+  static bool isUnsignedLiteral(const std::string &input);
   template <typename T> T parseNumeric(TerminalNode *terminal, const NumericParserCallback<T> &cb);
   static void replaceEscapeChars(std::string &input);
   std::string getIdentifier(TerminalNode *terminal, bool isTypeIdentifier) const;

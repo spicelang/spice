@@ -880,7 +880,8 @@ f<ExprResult> OpRuleManager.getArithmeticEqualResultType(ASTNode* node, const Ex
         return lhs;
     }
 
-    return toExprResult(this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, ""));
+    const QualType binOpType = this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, "");
+    return toExprResult(applyIntegerSignedness(binOpType, lhsType, rhsType, false));
 }
 
 public f<ExprResult> OpRuleManager.getPlusEqualResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
@@ -908,7 +909,8 @@ f<QualType> OpRuleManager.getSimpleEqualResultType(const ASTNode* node, const Ex
     const QualType lhsType = lhs.ty.removeReferenceWrapper();
     const QualType rhsType = rhs.ty.removeReferenceWrapper();
 
-    return this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, "");
+    const QualType binOpType = this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, "");
+    return applyIntegerSignedness(binOpType, lhsType, rhsType, false);
 }
 
 public f<QualType> OpRuleManager.getRemEqualResultType(const ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
@@ -941,7 +943,8 @@ f<QualType> OpRuleManager.getSimpleBinaryResultType(const ASTNode* node, const E
     const QualType lhsType = lhs.ty.removeReferenceWrapper();
     const QualType rhsType = rhs.ty.removeReferenceWrapper();
 
-    return this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, "");
+    const QualType binOpType = this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, "");
+    return applyIntegerSignedness(binOpType, lhsType, rhsType, true);
 }
 
 public f<QualType> OpRuleManager.getLogicalOrResultType(const ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
@@ -953,7 +956,7 @@ public f<QualType> OpRuleManager.getLogicalAndResultType(const ASTNode* node, co
 }
 
 // Result of a binary operator with operator overloading support and without special cases
-f<ExprResult> OpRuleManager.getOverloadableBinaryResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx, string fctName, const BinaryOpRules& opRules, string name) {
+f<ExprResult> OpRuleManager.getOverloadableBinaryResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx, string fctName, const BinaryOpRules& opRules, string name, bool considerRhsSignedness = true) {
     // Check if there is an overloaded operator function available
     const ExprResult resultType = this.isOperatorOverloadingFctAvailable(node, fctName, binaryOperands(lhs, rhs), opIdx);
     if !resultType.ty.is(SuperType::TY_INVALID) {
@@ -964,7 +967,8 @@ f<ExprResult> OpRuleManager.getOverloadableBinaryResultType(ASTNode* node, const
     const QualType lhsType = lhs.ty.removeReferenceWrapper();
     const QualType rhsType = rhs.ty.removeReferenceWrapper();
 
-    return toExprResult(this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, ""));
+    const QualType binOpType = this.validateBinaryOperation(node, opRules, name, lhsType, rhsType, false, "");
+    return toExprResult(applyIntegerSignedness(binOpType, lhsType, rhsType, considerRhsSignedness));
 }
 
 public f<ExprResult> OpRuleManager.getBitwiseOrResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx) {
@@ -1039,11 +1043,11 @@ public f<QualType> OpRuleManager.getGreaterEqualResultType(const ASTNode* node, 
 }
 
 public f<ExprResult> OpRuleManager.getShiftLeftResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx) {
-    return this.getOverloadableBinaryResultType(node, lhs, rhs, opIdx, OP_FCT_SHL, this.shiftLeftOpRules, "<<");
+    return this.getOverloadableBinaryResultType(node, lhs, rhs, opIdx, OP_FCT_SHL, this.shiftLeftOpRules, "<<", false);
 }
 
 public f<ExprResult> OpRuleManager.getShiftRightResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx) {
-    return this.getOverloadableBinaryResultType(node, lhs, rhs, opIdx, OP_FCT_SHR, this.shiftRightOpRules, ">>");
+    return this.getOverloadableBinaryResultType(node, lhs, rhs, opIdx, OP_FCT_SHR, this.shiftRightOpRules, ">>", false);
 }
 
 public f<ExprResult> OpRuleManager.getPlusResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx) {
@@ -1069,7 +1073,8 @@ public f<ExprResult> OpRuleManager.getPlusResultType(ASTNode* node, const ExprRe
         return toExprResult(rhsType);
     }
 
-    return toExprResult(this.validateBinaryOperation(node, this.plusOpRules, "+", lhsType, rhsType, false, ""));
+    const QualType binOpType = this.validateBinaryOperation(node, this.plusOpRules, "+", lhsType, rhsType, false, "");
+    return toExprResult(applyIntegerSignedness(binOpType, lhsType, rhsType, true));
 }
 
 public f<ExprResult> OpRuleManager.getMinusResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx) {
@@ -1090,7 +1095,8 @@ public f<ExprResult> OpRuleManager.getMinusResultType(ASTNode* node, const ExprR
         return lhs;
     }
 
-    return toExprResult(this.validateBinaryOperation(node, this.minusOpRules, "-", lhsType, rhsType, false, ""));
+    const QualType binOpType = this.validateBinaryOperation(node, this.minusOpRules, "-", lhsType, rhsType, false, "");
+    return toExprResult(applyIntegerSignedness(binOpType, lhsType, rhsType, true));
 }
 
 public f<ExprResult> OpRuleManager.getMulResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx) {
@@ -1355,11 +1361,37 @@ public f<ExprResult> OpRuleManager.isOperatorOverloadingFctAvailable(ASTNode* no
     return ExprResult{localReturnType, anonymousSymbol};
 }
 
+/**
+ * Apply the signedness of the operands to an integer result type. The op rule tables only contain the super types, so the
+ * result type would always be signed otherwise. Like in C, the result is unsigned if an operand that has the same type as
+ * the result is unsigned: e.g. 'unsigned int + unsigned long' and 'int + unsigned long' are unsigned, but
+ * 'unsigned int + long' is signed, because a long can hold all values of an unsigned int.
+ *
+ * @param resultType Result type of the operation
+ * @param lhs Left side of the operation
+ * @param rhs Right side of the operation
+ * @param considerRhs Whether the right side is considered (not for unary, shift and compound assign operations)
+ * @return Result type with the correct signedness
+ */
+f<QualType> applyIntegerSignedness(QualType resultType, const QualType& lhs, const QualType& rhs, bool considerRhs) {
+    const dyn integerTypes = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG];
+    if !resultType.isOneOf(integerTypes, len(integerTypes)) {
+        return resultType;
+    }
+    const SuperType resultSuperType = resultType.getSuperType();
+    const bool isLhsUnsigned = lhs.getSuperType() == resultSuperType && lhs.isUnsigned();
+    const bool isRhsUnsigned = considerRhs && rhs.getSuperType() == resultSuperType && rhs.isUnsigned();
+    if isLhsUnsigned || isRhsUnsigned {
+        resultType.makeUnsigned();
+    }
+    return resultType;
+}
+
 f<QualType> OpRuleManager.validateUnaryOperation(const ASTNode* node, const UnaryOpRules& opRules, string name, const QualType& lhs) {
     for unsigned long i = 0l; i < opRules.getSize(); i++ {
         const UnaryOpRule& rule = opRules[i];
         if rule.lhsType == lhs.getSuperType() {
-            return QualType(rule.resultType);
+            return applyIntegerSignedness(QualType(rule.resultType), lhs, lhs, false);
         }
     }
     throwSemanticError(node, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, getUnaryErrorMessage(name, lhs));

@@ -1,0 +1,43 @@
+// TEST: -O2
+// Hash combining relies on wrapping unsigned arithmetic. If the operations on unsigned temporaries were marked as
+// 'no signed wrap', the optimizer would be allowed to assume they never overflow and could fold the hash to a constant.
+
+f<unsigned long> hashMix(unsigned long hash) {
+    hash += 0x9e3779b97f4a7c15ul;
+    hash = (hash ^ (hash >> 30ul)) * 0xbf58476d1ce4e5b9ul;
+    hash = (hash ^ (hash >> 27ul)) * 0x94d049bb133111ebul;
+    hash ^= (hash >> 31ul);
+    return hash;
+}
+
+p hashCombine(unsigned long& hash, unsigned long value) {
+    hash ^= hashMix(value + 0x9e3779b97f4a7c15ul + (hash << 6ul) + (hash >> 2ul));
+}
+
+f<unsigned long> hashFlags(bool a, bool b, bool c) {
+    unsigned long bits = 0ul;
+    if a { bits |= 1ul << 0ul; }
+    if b { bits |= 1ul << 1ul; }
+    if c { bits |= 1ul << 2ul; }
+    return hashMix(bits);
+}
+
+f<unsigned long> hashList(const unsigned long* values, int count) {
+    unsigned long hash = 0ul;
+    for int i = 0; i < count; i++ {
+        unsigned long seed = 0ul;
+        unsafe {
+            hashCombine(seed, hashMix(values[i] >> 3ul));
+        }
+        hashCombine(seed, hashFlags(i % 2 == 0, i % 3 == 0, false));
+        hashCombine(hash, hashMix(seed));
+    }
+    return hash;
+}
+
+f<int> main() {
+    unsigned long[4] values = [0x1000ul, 0x2008ul, 0x7ff0ul, 0xdeadbeef0ul];
+    printf("%llu\n", hashList(&values[0], 4));
+    printf("%llu\n", hashList(&values[1], 3));
+    printf("%llu\n", hashList(&values[0], 0));
+}

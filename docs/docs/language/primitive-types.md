@@ -155,6 +155,20 @@ Examples:
 0o6666ul
 ```
 
+## Signedness of integer literals and operations
+Integer literals with the suffix `u` (e.g. `1u`, `1us`, `1ul`) are unsigned, all others are signed.
+
+Arithmetic and bitwise operations on `int`, `short` and `long` operands work like in C: both operands are converted to the
+wider of both types, and the result is unsigned if the operand of that type is unsigned. Examples:
+
+- `unsigned long + unsigned long`, `long + unsigned long` and `unsigned int + unsigned long` result in an `unsigned long`
+- `unsigned int + long` results in a `long`, because a `long` can hold all values of an `unsigned int`
+
+The result of a shift operation and of a compound assignment like `+=` has the signedness of the left operand. Division,
+remainder and comparisons are performed unsigned, if the common type of both operands is unsigned. Unsigned operations
+wrap around on overflow. Unary operators that return an integer (e.g. `-`, `~`, `++` and `--`) keep the signedness of
+their operand.
+
 ## The `byte` data type
 Bytes are unsigned whole numbers of 8-bit, which have a range from a min of 0 to a max of 255.
 
