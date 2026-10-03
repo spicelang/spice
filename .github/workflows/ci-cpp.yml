@@ -15,8 +15,37 @@ env:
   # bootstrap compiler gaps here (e.g. -TestSuite.testCase:TestSuite.otherTestCase) and remove them once fixed. Test cases
   # that check host specifics, the bootstrap compiler does not replicate (e.g. ANTLR error messages), have a
   # 'skip-bootstrap' marker file instead.
+  # Known gaps:
+  # - typeid/TBAA/TypeSanitizer: the bootstrap type hash differs from the host's std::hash<Type>
+  # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
+  # - testing_*: the bootstrap test runner does not request the test main (only --no-entry)
+  # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
+  # - tpde_*: the bootstrap compiler has no TPDE backend
   BOOTSTRAP_TEST_FILTER: >-
-    CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*
+    CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*
+    -IRGeneratorTests.builtins_successTypeid:
+    IRGeneratorTests.instrumentation_successTbaaMetadata:
+    IRGeneratorTests.instrumentation_successTysan:
+    IRGeneratorTests.instrumentation_successTysanAndDbgInfo:
+    IRGeneratorTests.instrumentation_successDbgInfoComplex:
+    IRGeneratorTests.instrumentation_successDbgInfoLineOnly:
+    IRGeneratorTests.instrumentation_successDbgInfoSimple:
+    IRGeneratorTests.instrumentation_successAsanAndDbgInfo:
+    IRGeneratorTests.instrumentation_successMsanAndDbgInfo:
+    IRGeneratorTests.instrumentation_successTsanAndDbgInfo:
+    IRGeneratorTests.testing_*:
+    IRGeneratorTests.tpde_*:
+    StdTests.data_containerScopeCleanupLeak
+  # Additional bootstrap compiler gaps that only show up on Windows (appended to the negative patterns above):
+  # - generics_successGenericTypeCtorCall1: the bootstrap compiler crashes with a heap corruption (0xC0000374)
+  # - lto_successLtoSimple: the bootstrap compiler links the LTO modules in a different order
+  # - runtime_resultErrTracePanic: the relative path to the std file in the panic message has one '../' less
+  # - runtime_stackTraceCaptureBasic: StackTraceEntry is registered twice (StackTraceEntry.1 vs. StackTraceEntry)
+  BOOTSTRAP_TEST_FILTER_WINDOWS: >-
+    IRGeneratorTests.generics_successGenericTypeCtorCall1:
+    IRGeneratorTests.lto_successLtoSimple:
+    StdTests.runtime_resultErrTracePanic:
+    StdTests.runtime_stackTraceCaptureBasic
 
 jobs:
   build-linux-x86:
@@ -316,7 +345,7 @@ jobs:
         working-directory: build
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
-        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}:${BOOTSTRAP_TEST_FILTER_WINDOWS// /}" cmake --build . --target spicetest_bootstrap
 
       - name: Save CCache
         uses: actions/cache/save@v6
