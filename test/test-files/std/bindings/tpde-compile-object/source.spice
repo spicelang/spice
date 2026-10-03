@@ -21,6 +21,16 @@ f<llvm::Function> buildAddFunction(llvm::LLVMContext& context, llvm::Module& mod
     return func;
 }
 
+// Compiles with a copy of the compiler, that is disposed when the function returns
+f<unsigned long> compileWithCopy(const tpde::Compiler& original, llvm::Module& module) {
+    tpde::Compiler copy = original;
+    assert copy.isValid();
+    Vector<byte> objectBytes;
+    String errorMessage;
+    assert !copy.compileToBuffer(module, objectBytes, errorMessage);
+    return objectBytes.getSize();
+}
+
 f<int> main() {
     assert tpde::isAvailable();
 
@@ -67,6 +77,20 @@ f<int> main() {
     assert !wasmCompiler.isValid();
     assert wasmCompiler.compileToBuffer(module, objectBytes, errorMessage);
     assert errorMessage == "The TPDE compiler is not valid";
+
+    // A successful compilation clears the error message of a previous one
+    assert !compiler.compileToBuffer(module, objectBytes, errorMessage);
+    assert errorMessage.isEmpty();
+
+    // Copies and assigned compilers own their TPDE compiler, so the original stays usable once they are disposed
+    const unsigned long objectSize = objectBytes.getSize();
+    assert compileWithCopy(compiler, module) == objectSize;
+    wasmCompiler = compiler;
+    assert wasmCompiler.isValid();
+    assert !wasmCompiler.compileToBuffer(module, objectBytes, errorMessage);
+    assert objectBytes.getSize() == objectSize;
+    assert !compiler.compileToBuffer(module, objectBytes, errorMessage);
+    assert objectBytes.getSize() == objectSize;
 
     printf("All assertions passed!\n");
 }

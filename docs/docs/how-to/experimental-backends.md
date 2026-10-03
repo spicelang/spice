@@ -95,12 +95,15 @@ f<int> main() {
 
 TPDE only offers a C++ API, so the bindings compile a small C API wrapper (`std/bindings/tpde/tpde-wrapper.cpp`) along
 with the program. They need the TPDE libraries and headers, which a Spice build with `-DSPICE_ENABLE_TPDE=ON` produces.
-Point the bindings to them with two environment variables, in addition to the ones the LLVM bindings need:
+Point the bindings to them with the `TPDE_FLAGS` environment variable, in addition to the ones the LLVM bindings need.
+It holds the include flag for the TPDE headers and the paths of the TPDE static libraries, space-separated:
 
-| Variable            | Value                                                                                                                |
-|---------------------|----------------------------------------------------------------------------------------------------------------------|
-| `TPDE_LIBS`         | Paths of the TPDE static libraries, space-separated: `libtpde_llvm.a`, `libtpde.a`, `libfadec.a`, `libdisarm64.a` and, with TPDE logging enabled (default), `libspdlog.a` |
-| `TPDE_INCLUDE_DIRS` | `-I<spice-src>/deps/tpde/tpde-llvm/include`                                                                          |
+```sh
+TPDE_FLAGS="-I<spice-src>/deps/tpde/tpde-llvm/include \
+  <build>/deps/tpde/tpde-llvm/libtpde_llvm.a <build>/deps/tpde/tpde/libtpde.a \
+  <build>/deps/tpde/tpde/deps/fadec/libfadec.a <build>/deps/tpde/tpde/deps/disarm/libdisarm64.a \
+  <build>/deps/tpde/tpde/deps/spdlog/libspdlog.a" # spdlog only with TPDE logging enabled (default)
+```
 
-Without them, or on platforms other than Linux, the bindings still compile and link, but `tpde::isAvailable()` returns
+Without it, or on platforms other than Linux, the bindings still compile and link, but `tpde::isAvailable()` returns
 `false` and every compilation fails with an error message.

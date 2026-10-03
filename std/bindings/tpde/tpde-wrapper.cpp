@@ -4,8 +4,9 @@
  * LLVM C API: they take the LLVM C handles, return true on failure and hand out error messages, that have to be
  * released with LLVMDisposeMessage.
  *
- * TPDE emits ELF objects for x86_64 and aarch64 only. Where its headers are not available (e.g. on macOS and Windows,
- * or when TPDE_INCLUDE_DIRS is not set), the functions are stubs, that report TPDE as unavailable.
+ * TPDE emits ELF objects for x86_64 and aarch64 only, so it is only used on Linux. The TPDE headers and libraries both
+ * come from the TPDE_FLAGS environment variable (see linker-flags.spice), so the headers are only visible if the libraries
+ * are linked as well. Otherwise, the functions are stubs, that report TPDE as unavailable.
  */
 #include <cstdint>
 #include <cstdio>
@@ -15,7 +16,7 @@
 
 #include <llvm-c/Core.h>
 
-#if __has_include(<tpde-llvm/LLVMCompiler.hpp>)
+#if defined(__linux__) && __has_include(<tpde-llvm/LLVMCompiler.hpp>)
 #define SPICE_TPDE_AVAILABLE 1
 #include <llvm/IR/Module.h>
 #include <llvm/TargetParser/Triple.h>
@@ -25,8 +26,33 @@
 #endif
 
 extern "C" {
-
 typedef struct TPDEOpaqueCompiler *TPDECompilerRef;
+}
+
+namespace {
+
+#if SPICE_TPDE_AVAILABLE
+// Compile the module to an ELF object in the given buffer. Returns true on success
+bool compileModule(TPDECompilerRef compiler, LLVMModuleRef module, std::vector<uint8_t> &buffer, char **errorMessage) {
+  llvm::Module *mod = llvm::unwrap(module);
+  if (!reinterpret_cast<tpde_llvm::LLVMCompiler *>(compiler)->compile_to_elf(*mod, buffer)) {
+    const std::string message = "TPDE failed to compile module '" + mod->getName().str() + "'";
+    *errorMessage = LLVMCreateMessage(message.c_str());
+    return false;
+  }
+  return true;
+}
+#else
+// Report, that the bindings are not backed by TPDE. Returns true, like the failing API functions
+LLVMBool reportUnavailable(char **errorMessage) {
+  *errorMessage = LLVMCreateMessage("The TPDE bindings were built without TPDE");
+  return 1;
+}
+#endif
+
+} // namespace
+
+extern "C" {
 
 /* Check if this build of the bindings is backed by TPDE */
 LLVMBool TPDEIsAvailable(void) { return SPICE_TPDE_AVAILABLE; }
@@ -39,17 +65,8 @@ TPDECompilerRef TPDECreateCompiler(const char *triple) {
   return reinterpret_cast<TPDECompilerRef>(compiler.release());
 }
 
+/* Dispose a compiler, that was created with TPDECreateCompiler */
 void TPDEDisposeCompiler(TPDECompilerRef compiler) { delete reinterpret_cast<tpde_llvm::LLVMCompiler *>(compiler); }
-
-static bool compileModule(TPDECompilerRef compiler, LLVMModuleRef module, std::vector<uint8_t> &buffer, char **errorMessage) {
-  llvm::Module *mod = llvm::unwrap(module);
-  if (!reinterpret_cast<tpde_llvm::LLVMCompiler *>(compiler)->compile_to_elf(*mod, buffer)) {
-    const std::string message = "TPDE failed to compile module '" + mod->getName().str() + "'";
-    *errorMessage = LLVMCreateMessage(message.c_str());
-    return false;
-  }
-  return true;
-}
 
 /* Compile the module to an ELF object file. The module might be modified during compilation */
 LLVMBool TPDECompileToObjectFile(TPDECompilerRef compiler, LLVMModuleRef module, const char *filename, char **errorMessage) {
@@ -85,19 +102,18 @@ LLVMBool TPDECompileToMemoryBuffer(TPDECompilerRef compiler, LLVMModuleRef modul
 
 #else
 
+/* Stub: TPDE is not available, so there is no compiler for any triple */
 TPDECompilerRef TPDECreateCompiler(const char *) { return nullptr; }
 
+/* Stub: there is no compiler to dispose */
 void TPDEDisposeCompiler(TPDECompilerRef) {}
 
-static LLVMBool reportUnavailable(char **errorMessage) {
-  *errorMessage = LLVMCreateMessage("The TPDE bindings were built without TPDE");
-  return 1;
-}
-
+/* Stub: report, that TPDE is not available */
 LLVMBool TPDECompileToObjectFile(TPDECompilerRef, LLVMModuleRef, const char *, char **errorMessage) {
   return reportUnavailable(errorMessage);
 }
 
+/* Stub: report, that TPDE is not available */
 LLVMBool TPDECompileToMemoryBuffer(TPDECompilerRef, LLVMModuleRef, LLVMMemoryBufferRef *outMemBuf, char **errorMessage) {
   *outMemBuf = nullptr;
   return reportUnavailable(errorMessage);

@@ -29,7 +29,7 @@ ext p LLVMDisposeMessage(string /*Message*/);
 
 /**
  * Check if these bindings are backed by TPDE. They are not on platforms TPDE does not support (TPDE only emits ELF objects
- * for x86_64 and aarch64) and when TPDE_LIBS / TPDE_INCLUDE_DIRS were not set while linking.
+ * for x86_64 and aarch64) and when TPDE_FLAGS was not set while linking.
  *
  * @return TPDE available or not
  */
@@ -45,6 +45,7 @@ public f<bool> isAvailable() {
  */
 public type Compiler struct {
     TPDECompilerRef self
+    llvm::Triple triple
 }
 
 /**
@@ -53,9 +54,47 @@ public type Compiler struct {
  * @param triple Target triple
  */
 public p Compiler.ctor(const llvm::Triple& triple) {
-    this.self = TPDECreateCompiler(triple.value);
+    this.triple = triple;
+    this.self = TPDECreateCompiler(this.triple.value);
 }
 
+/**
+ * A compiler owns its TPDE compiler, so copies create their own one for the same target. Otherwise, they would share it and
+ * it would be disposed as soon as the first of the copies goes out of scope.
+ *
+ * @param other Compiler to copy
+ */
+public p Compiler.ctor(const Compiler& other) {
+    this.triple = other.triple;
+    this.self = nil<TPDECompilerRef>;
+    if other.self != nil<TPDECompilerRef> {
+        this.self = TPDECreateCompiler(this.triple.value);
+    }
+}
+
+/**
+ * Assign another compiler. Like the copy constructor, this creates an own TPDE compiler for the target of the other one.
+ *
+ * @param other Compiler to assign
+ */
+public p operator=(Compiler& this, const Compiler& other) {
+    // Valid compilers never share a TPDE compiler, so the same one means self-assignment
+    if this.self != nil<TPDECompilerRef> && this.self == other.self {
+        return;
+    }
+    if this.self != nil<TPDECompilerRef> {
+        TPDEDisposeCompiler(this.self);
+    }
+    this.triple = other.triple;
+    this.self = nil<TPDECompilerRef>;
+    if other.self != nil<TPDECompilerRef> {
+        this.self = TPDECreateCompiler(this.triple.value);
+    }
+}
+
+/**
+ * Dispose the TPDE compiler
+ */
 public p Compiler.dtor() {
     if this.self != nil<TPDECompilerRef> {
         TPDEDisposeCompiler(this.self);
@@ -78,7 +117,7 @@ public const f<bool> Compiler.isValid() {
  *
  * @param module Module to compile
  * @param filename Output file path
- * @param errorMessage Error message, if the compilation failed
+ * @param errorMessage Error message, if the compilation failed. Cleared if it succeeded
  * @return True if the compilation failed
  */
 public f<bool> Compiler.compileToFile(llvm::Module& module, string filename, String& errorMessage) {
@@ -86,6 +125,7 @@ public f<bool> Compiler.compileToFile(llvm::Module& module, string filename, Str
         errorMessage = String("The TPDE compiler is not valid");
         return true;
     }
+    errorMessage.clear();
     string outMessage = nil<string>;
     const bool errorOccurred = TPDECompileToObjectFile(this.self, module.getRef(), filename, &outMessage) != 0;
     if outMessage != nil<string> {
@@ -100,7 +140,7 @@ public f<bool> Compiler.compileToFile(llvm::Module& module, string filename, Str
  *
  * @param module Module to compile
  * @param output Bytes of the emitted object
- * @param errorMessage Error message, if the compilation failed
+ * @param errorMessage Error message, if the compilation failed. Cleared if it succeeded
  * @return True if the compilation failed
  */
 public f<bool> Compiler.compileToBuffer(llvm::Module& module, Vector<byte>& output, String& errorMessage) {
@@ -108,6 +148,7 @@ public f<bool> Compiler.compileToBuffer(llvm::Module& module, Vector<byte>& outp
         errorMessage = String("The TPDE compiler is not valid");
         return true;
     }
+    errorMessage.clear();
     string outMessage = nil<string>;
     LLVMMemoryBufferRef buffer = nil<LLVMMemoryBufferRef>;
     const bool errorOccurred = TPDECompileToMemoryBuffer(this.self, module.getRef(), &buffer, &outMessage) != 0;
