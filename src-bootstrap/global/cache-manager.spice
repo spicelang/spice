@@ -5,7 +5,6 @@ import "std/data/vector";
 import "std/io/filepath";
 import "std/io/file";
 import "std/io/dir";
-import "std/os/os";
 import "std/text/stringstream";
 import "std/math/hash";
 import "std/text/json/json-value";
@@ -47,15 +46,15 @@ public f<String> CacheManager.computeCacheKey(const String& sourceCode, const Ve
     // Hash the source text
     components << toString(cast<long>(hash(sourceCode)));
     // Fold in CLI option fields that affect codegen
-    components << toString(cast<int>(this.cliOptions.buildMode));
-    components << toString(cast<int>(this.cliOptions.optLevel));
-    components << toString(cast<int>(this.cliOptions.instrumentation.sanitizer));
-    components << toString(cast<int>(this.cliOptions.instrumentation.debugInfoLevel));
+    components << toString(this.cliOptions.buildMode);
+    components << toString(this.cliOptions.optLevel);
+    components << toString(this.cliOptions.instrumentation.sanitizer);
+    components << toString(this.cliOptions.instrumentation.debugInfoLevel);
     components << toString(this.cliOptions.instrumentation.codeCoverage);
     components << this.cliOptions.targetTriple.value;
     components << toString(this.cliOptions.useLTO);
     components << toString(this.cliOptions.keepFramePointers);
-    components << toString(cast<int>(this.cliOptions.outputContainer));
+    components << toString(this.cliOptions.outputContainer);
     // Fold in sorted dep keys so any change in a dependency invalidates this entry too
     Vector<String> sortedDepKeys = depCacheKeys;
     // Insertion sort for determinism
@@ -211,7 +210,9 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     const String cacheMetaPath = cacheMetaSS.str();
 
     // Ensure cache directory exists
-    mkDirs(this.cliOptions.cacheDir.toString(), 493); // 0755 = 493
+    if mkDirs(this.cliOptions.cacheDir.toString(), 493) != 0 { // 0755 = 493
+        return;
+    }
 
     // Copy object file to cache
     if !copyFile(sourceObjPath, cacheObjPath) {
@@ -301,7 +302,8 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     JsonSerializer serializer = JsonSerializer();
     const String metaJson = serializer.serialize(metadata);
     deleteJsonValue(metadata);
-    writeFile(cacheMetaPath.getRaw(), metaJson.getRaw());
+    // A failure to write the metadata file is not fatal, like in the host. The cache entry will just not be found later on
+    const Result<bool> _ = writeFile(cacheMetaPath.getRaw(), metaJson.getRaw());
 }
 
 /**
@@ -355,7 +357,7 @@ f<String> CacheManager.computeExecutableCacheKey(const Vector<String>& objectFil
         components << sp << "\0";
         components << this.hashLinkedFile(sp);
     }
-    components << toString(cast<int>(this.cliOptions.outputContainer));
+    components << toString(this.cliOptions.outputContainer);
     components << toString(this.cliOptions.staticLinking);
     return toString(cast<long>(hash(components.str())));
 }
@@ -407,8 +409,10 @@ p CacheManager.cacheExecutable(const Vector<String>& objectFileCacheKeys, const 
     if !fileExists(execPathStr.getRaw()) {
         return;
     }
-    mkDirs(this.cliOptions.cacheDir.toString(), 493);
-    copyFile(execPathStr, cachedExecPath);
+    if mkDirs(this.cliOptions.cacheDir.toString(), 493) != 0 {
+        return;
+    }
+    const bool _ = copyFile(execPathStr, cachedExecPath); // Errors are ignored, like in the host
 }
 
 /**
@@ -438,9 +442,9 @@ public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceMan
         const long lastSlash = outputPathStr.rfind('/');
         if lastSlash >= 0l {
             const String parentDir = outputPathStr.getSubstring(0l, lastSlash);
-            mkDirs(parentDir.getRaw(), 493);
+            const int _ = mkDirs(parentDir.getRaw(), 493);
         }
-        copyFile(String(cachedExecutablePath.toString()), outputPathStr);
+        const bool _ = copyFile(String(cachedExecutablePath.toString()), outputPathStr); // Errors are ignored, like in the host
     } else {
         // Link and optionally cache the result
         resourceManager.linker.run();

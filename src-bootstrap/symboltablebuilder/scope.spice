@@ -18,6 +18,7 @@ import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/model/function";
 import "bootstrap/model/generic-type";
 import "bootstrap/model/struct";
+import "bootstrap/model/interface";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
@@ -280,6 +281,7 @@ public f<unsigned long> Scope.getFieldCount() {
  * @param declNode AST node where the symbol is declared
  * @return Inserted entry
  */
+#[ignoreUnusedReturnValue]
 public f<SymbolTableEntry*> Scope.insert(const String& name, const ASTNode* declNode) {
     return this.symbolTable.insert(name, declNode);
 }
@@ -537,6 +539,7 @@ public f<JsonValue*> Scope.getSymbolTableJSON() {
  * @param declCodeLoc Code location of the scope
  * @return Child scope (heap allocated)
  */
+#[ignoreUnusedReturnValue]
 public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
     // Reserve stable storage for the child in this scope's pool and construct it in place (no Scope copy).
     Scope* child = this.childAllocator.reserve<Scope>();
@@ -569,6 +572,7 @@ public p Scope.renameChildScope(const String& oldName, const String& newName) {
  * @param newName New block name
  * @return New scope
  */
+#[ignoreUnusedReturnValue]
 public f<Scope*> Scope.copyChildScope(const String& oldName, const String& newName) {
     assert this.children.contains(oldName) && !this.children.contains(newName);
     // Create copy. The host copy-constructs the scope into a new shared_ptr. Here, the copy is constructed in place in the

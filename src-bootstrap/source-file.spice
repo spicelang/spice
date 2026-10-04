@@ -9,7 +9,6 @@ import "std/data/map";
 import "std/data/unordered-map";
 import "std/data/unordered-set";
 import "std/data/vector";
-import "std/data/stack";
 import "std/io/file";
 import "std/io/filepath";
 import "std/text/json/json-value";
@@ -123,7 +122,6 @@ f<llvm::LLVMCodeGenOptLevel> getCodeGenOptLevel(OptLevel optLevel) {
         case OptLevel::O3: { return llvm::LLVMCodeGenOptLevel::Aggressive; }
         default: { return llvm::LLVMCodeGenOptLevel::Default; } // O2, Os, Oz
     }
-    return llvm::LLVMCodeGenOptLevel::Default;
 }
 
 /**
@@ -209,8 +207,8 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     }
 
     // Create target machine
-    const string cpuName = resourceManager.cpuName.getRaw();
-    const string features = resourceManager.cpuFeatures.getRaw();
+    const string cpuName = resourceManager.cpuName;
+    const string features = resourceManager.cpuFeatures;
     const llvm::Triple& targetTriple = this.cliOptions.targetTriple;
     const llvm::LLVMRelocMode relocMode = llvm::LLVMRelocMode::PIC;
     // The host creates the target machine with the default codegen opt level and sets the actual one right before the object
@@ -541,7 +539,7 @@ public p SourceFile.runDefaultIROptimizer() {
 
     // Dump optimized IR code
     if this.cliOptions.dump.dumpIR {
-        const String optLevelStr = toString(cast<int>(this.cliOptions.optLevel));
+        const String optLevelStr = toString(this.cliOptions.optLevel);
         this.dumpOutput(this.compilerOutput.irOptString, String("Optimized IR Code"), "ir-code-O" + optLevelStr + ".ll");
     }
 
@@ -761,7 +759,7 @@ public p SourceFile.runMiddleEnd() {
     // From here on, struct manifestations may be substantiated, and each of them gets its compiler-generated default
     // members decided right at that point (see TypeChecker.createImplicitDefaultMembers). Once the middle end is done,
     // every manifestation exists and was decided on, so the back end must not create any more of them.
-    DefaultMemberCreationSection defaultMemberCreationSection;
+    DefaultMemberCreationSection _;
     // We need two runs here due to generics.
     // The first run to determine all concrete function/struct/interface substantiations
     this.runTypeCheckerPre(); // Visit the dependency tree from bottom to top
@@ -954,6 +952,7 @@ public f<bool> SourceFile.imports(const SourceFile* sourceFile) {
     return false;
 }
 
+#[ignoreUnusedReturnValue]
 public f<SourceFile*> SourceFile.requestRuntimeModule(RuntimeModule runtimeModule) {
     // Check if the module was already imported
     if this.isRuntimeModuleAvailable(runtimeModule) {
@@ -1407,7 +1406,7 @@ p SourceFile.visualizerOutput(const string outputNameRaw, const String& output) 
         dotFilePath.makeNative();
         svgFilePath.makeNative();
         const String dotCommand = "dot -T svg -o " + svgFilePath.toString() + " " + dotFilePath.toString();
-        exec(dotCommand.getRaw());
+        const ExecResult _ = exec(dotCommand.getRaw());
         print("done.\nSVG file can be found at: \"" + svgFilePath.toString() + "\"\n");
     } else {
         // Dump to console

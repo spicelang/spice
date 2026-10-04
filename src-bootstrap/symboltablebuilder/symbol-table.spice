@@ -8,22 +8,15 @@ import "std/text/json/json-value";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/symboltablebuilder/capture";
 import "bootstrap/symboltablebuilder/lifecycle";
-import "bootstrap/model/generic-type";
-import "bootstrap/model/function";
-import "bootstrap/model/struct";
-import "bootstrap/model/interface";
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/common-util";
 import "bootstrap/source-file";
-import "bootstrap/global/global-resource-manager";
 
 // Type aliases
 public type CaptureMap alias Map</*name=*/String, /*capture*/Capture>; // Ordered like in the host, since the order determines the capture struct layout
@@ -125,6 +118,7 @@ public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode
  * @param declNode AST node where the anonymous symbol is declared
  * @return Inserted entry
  */
+#[ignoreUnusedReturnValue]
 public f<SymbolTableEntry*> SymbolTable.insertAnonymous(const QualType& qualType, ASTNode* declNode, unsigned long numericSuffix = 0l) {
     // Check if the anonymous entry already exists
     SymbolTableEntry* existingSymbol = this.lookupAnonymous(declNode, numericSuffix);

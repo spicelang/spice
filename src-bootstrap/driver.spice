@@ -24,8 +24,6 @@ import "bootstrap/util/system-util";
 
 // Constants
 public const string TARGET_UNKNOWN = "unknown";
-public const string TARGET_WASM32 = "wasm32";
-public const string TARGET_WASM64 = "wasm64";
 public const string ENV_VAR_DOCKERIZED = "SPICE_DOCKERIZED";
 
 public type OptLevel enum {
@@ -42,9 +40,6 @@ public type DebugInfoLevel enum {
     LINE_ONLY = 1, // Only emit DWARF line tables, no type, variable or scope info
     FULL = 2       // Emit full debug info, incl. types, variables and lexical scopes
 }
-const string DEBUG_INFO_NONE = "none";
-const string DEBUG_INFO_LINE_ONLY = "line-only";
-const string DEBUG_INFO_FULL = "full";
 
 public type Sanitizer enum {
     NONE = 0,    // No sanitizer
@@ -399,6 +394,18 @@ public p Driver.runBinary() {
 }
 
 /**
+ * Create the given directory, including all missing parent directories. Like create_directories in the host, a failure is fatal
+ *
+ * @param path Path of the directory to create
+ */
+p createDirectories(const FilePath& path) {
+    if mkDirs(path.toString(), MODE_ALL_RWX) != 0 {
+        const String message = String("Could not create directory '") + path.toString() + "'";
+        panic(Error(message.getRaw()));
+    }
+}
+
+/**
  * Complete the cli options, once all arguments were parsed. Here, the paths are derived and the install and uninstall
  * requests are handled.
  */
@@ -409,7 +416,7 @@ p Driver.finalizeOptions() {
         FilePath installPath = binDir;
         installPath /= this.cliOptions.mainSourceFile.getBaseName();
         if !this.dryRun {
-            mkDirs(binDir.toString(), MODE_ALL_RWX);
+            createDirectories(binDir);
         }
         assert this.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
         installPath.replaceExtension(getOutputFileExtension(this.cliOptions, OutputContainer::EXECUTABLE));
@@ -463,8 +470,8 @@ p Driver.finalizeOptions() {
     this.cliOptions.cacheDir = FilePath(getTempDir()) / "spice" / "cache";
 
     // Create directories in case they not exist yet
-    mkDirs(this.cliOptions.cacheDir.toString(), MODE_ALL_RWX);
-    mkDirs(this.cliOptions.outputDir.toString(), MODE_ALL_RWX);
+    createDirectories(this.cliOptions.cacheDir);
+    createDirectories(this.cliOptions.outputDir);
 }
 
 /**

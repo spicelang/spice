@@ -1212,9 +1212,9 @@ public f<ExprResult> OpRuleManager.getPostfixMinusMinusResultType(ASTNode* node,
     return this.getPostfixIncDecResultType(node, lhs, OP_FCT_POSTFIX_MINUS_MINUS, this.postfixMinusMinusOpRules, "--");
 }
 
-public f<QualType> OpRuleManager.getCastResultType(const ASTNode* node, QualType lhsType, const ExprResult& rhs) {
+public f<QualType> OpRuleManager.getCastResultType(const ASTNode* node, const QualType& origLhsType, const ExprResult& rhs) {
     // Remove reference wrappers
-    lhsType = lhsType.removeReferenceWrapper();
+    const QualType lhsType = origLhsType.removeReferenceWrapper();
     const QualType rhsType = rhs.ty.removeReferenceWrapper();
 
     // Only allow to cast the 'heap' qualifier away, if we are in unsafe mode
@@ -1373,11 +1373,12 @@ public f<ExprResult> OpRuleManager.isOperatorOverloadingFctAvailable(ASTNode* no
  * @param considerRhs Whether the right side is considered (not for unary, shift and compound assign operations)
  * @return Result type with the correct signedness
  */
-f<QualType> applyIntegerSignedness(QualType resultType, const QualType& lhs, const QualType& rhs, bool considerRhs) {
+f<QualType> applyIntegerSignedness(const QualType& origResultType, const QualType& lhs, const QualType& rhs, bool considerRhs) {
     const dyn integerTypes = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG];
-    if !resultType.isOneOf(integerTypes, len(integerTypes)) {
-        return resultType;
+    if !origResultType.isOneOf(integerTypes, len(integerTypes)) {
+        return origResultType;
     }
+    QualType resultType = origResultType;
     const SuperType resultSuperType = resultType.getSuperType();
     const bool isLhsUnsigned = lhs.getSuperType() == resultSuperType && lhs.isUnsigned();
     const bool isRhsUnsigned = considerRhs && rhs.getSuperType() == resultSuperType && rhs.isUnsigned();

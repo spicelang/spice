@@ -6,7 +6,6 @@ import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/compiler-pass";
-import "bootstrap/driver";
 import "bootstrap/source-file";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/global/global-resource-manager";

@@ -147,8 +147,8 @@ public f<int> mkDirs(string path, int mode) {
     fullPath.replaceAll('/', '\\');
 
     // Walk the path component by component, creating each missing directory along the way.
-    // A leading separator (or a drive letter like "C:\") produces an empty/short first prefix,
-    // which mkdir rejects; dirExists/mkdir failing on it is harmless, since it always pre-exists.
+    // A leading separator produces an empty first prefix and a drive letter like "C:\" a drive prefix ("C:"). Both are
+    // skipped, since they always pre-exist and mkdir rejects them.
     unsigned long searchStart = 0l;
     while true {
         const long sepIndex = fullPath.find('\\', searchStart);
@@ -156,7 +156,9 @@ public f<int> mkDirs(string path, int mode) {
         const long end = isLast ? cast<long>(fullPath.getLength()) : sepIndex;
         const String prefix = fullPath.getSubstring(0l, end);
 
-        if !prefix.isEmpty() && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 {
+        // Another process may create the directory between the check and mkdir, so only a still missing directory is an error
+        const bool isDrivePrefix = prefix.getLength() == 2l && prefix.endsWith(":");
+        if !prefix.isEmpty() && !isDrivePrefix && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 && !dirExists(prefix.getRaw()) {
             return -1;
         }
 

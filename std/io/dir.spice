@@ -23,30 +23,6 @@ const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
-const int IF_MT  = 0o0170000;
-const int IF_DIR = 0o0040000;
-
-type FileStat struct {         // Total size: 46 bytes
-    unsigned long st_dev       // ID of the device containing file
-    unsigned long st_ino       // Inode number
-    long st_nlink              // Number of hard links
-    unsigned int st_mode       // File type and mode
-    int st_uid                 // User ID of owner
-    int st_gid                 // Group ID of owner
-    unsigned long st_rdev      // Device ID (if special file)
-    long st_size               // Total size in bytes
-    long st_blksize            // Block size for filesystem I/O
-    long st_blocks             // Number of 512B blocks allocated
-    long st_atime              // Time of last access
-    unsigned long st_atimensec // Nsecs of last access
-    long st_mtime              // Time of last modification
-    unsigned long st_mtimensec // Nsecs of last modification
-    long st_ctime              // Time of last status change
-    unsigned long st_ctimensec // Nsecs of last status change
-    long[3] __glibc_reserved0
-    int __glibc_reserved1
-}
-
 type DirEntry struct {
     unsigned long dInodeNo
     long dOffset
@@ -64,8 +40,6 @@ type DirStream struct {
 ext f<int> mkdir(string, int);
 ext f<int> rmdir(string);
 ext f<int> rename(string, string);
-ext f<int> access(string, int);
-ext f<int> stat(string, FileStat*);
 ext f<DirStream*> opendir(string);
 ext f<int> closedir(DirStream*);
 ext f<DirEntry*> readdir(DirStream*);
@@ -110,16 +84,13 @@ public f<int> renameDir(string oldPath, string newPath) {
  * @return Existing or not
  */
 public f<bool> dirExists(string path) {
-    // Check if there exists something, a file or a dir
-    if access(path, F_OK) == 0 {
-        // Check if it is a dir
-        dyn fs = FileStat{};
-        if stat(path, &fs) != 0 {
-            return false;
-        }
-        return (fs.st_mode & IF_MT) == IF_DIR;
+    // Open the path as a directory. Unlike stat, this does not depend on the platform-specific layout of struct stat
+    DirStream* dirStream = opendir(path);
+    if dirStream == nil<DirStream*> {
+        return false;
     }
-    return false;
+    closedir(dirStream);
+    return true;
 }
 
 /**
@@ -149,7 +120,8 @@ public f<int> mkDirs(string path, int mode) {
         const long end = isLast ? cast<long>(fullPath.getLength()) : sepIndex;
         const String prefix = fullPath.getSubstring(0l, end);
 
-        if !prefix.isEmpty() && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 {
+        // Another process may create the directory between the check and mkdir, so only a still missing directory is an error
+        if !prefix.isEmpty() && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 && !dirExists(prefix.getRaw()) {
             return -1;
         }
 

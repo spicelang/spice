@@ -1,6 +1,5 @@
 // Std imports
 import "std/data/vector";
-import "std/data/unordered-map";
 import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
 
@@ -10,8 +9,6 @@ import "bootstrap/reader/code-loc";
 import "bootstrap/model/generic-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/util/common-util";

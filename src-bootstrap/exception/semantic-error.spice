@@ -3,7 +3,6 @@ import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/reader/code-loc";
 
 public type SemanticErrorType enum {
     REFERENCED_UNDEFINED_FUNCTION,

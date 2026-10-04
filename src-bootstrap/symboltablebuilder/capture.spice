@@ -81,8 +81,8 @@ public f<CapturePassMode> Capture.getMode() {
 public f<JsonValue*> Capture.toJSON() {
     result = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
     setJsonField(result, String("name"), __new<JsonValue>(this.capturedSymbol.name));
-    const string accessType = this.accessType == CaptureAccessType::READ_ONLY ? "READ_ONLY" : "READ_WRITE";
-    setJsonField(result, String("accessType"), __new<JsonValue>(String(accessType)));
+    const string accessTypeStr = this.accessType == CaptureAccessType::READ_ONLY ? "READ_ONLY" : "READ_WRITE";
+    setJsonField(result, String("accessType"), __new<JsonValue>(String(accessTypeStr)));
     const string mode = this.captureMode == CapturePassMode::BY_VALUE ? "BY_VALUE" : "BY_REFERENCE";
     setJsonField(result, String("mode"), __new<JsonValue>(String(mode)));
 }

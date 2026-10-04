@@ -41,8 +41,8 @@ public const string LTO_FILE_NAME = "lto-module";
  * Other components of the compiler can request the required global resources from the GlobalResourceManager.
  */
 public type GlobalResourceManager struct {
-    public String cpuName
-    public String cpuFeatures
+    public string cpuName = "generic"
+    public string cpuFeatures = ""
     public llvm::LLVMContext ltoContext
     public llvm::Module ltoModule
     public DefaultMemoryManager memoryManager
@@ -108,11 +108,10 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     }
 
     // Create target machine for LLVM
-    this.cpuName = String("generic");
     if cliOptions.isNativeTarget & cliOptions.useCPUFeatures {
         // Retrieve native CPU name and the supported CPU features
-        this.cpuName = String(llvm::getHostCPUName());
-        this.cpuFeatures = String(llvm::getHostCPUFeatures());
+        this.cpuName = llvm::getHostCPUName();
+        this.cpuFeatures = llvm::getHostCPUFeatures();
     }
 
     // Create lto module

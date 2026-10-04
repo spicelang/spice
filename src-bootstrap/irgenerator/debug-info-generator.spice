@@ -17,10 +17,8 @@ import "bootstrap/model/function" as model; // Aliased, because Function clashes
 import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/model/union";
-import "bootstrap/model/struct-base";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/capture";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";

@@ -2,7 +2,6 @@
 import "std/data/unordered-map";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
 
 // Constants
 public const string ATTR_CORE_LINKER_FLAG = "core.linker.flag";

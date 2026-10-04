@@ -272,7 +272,7 @@ public p ExternalLinkerInterface.addLinkerFlag(const String& linkerFlag) {
  *
  * @param additionalSource Additional source file
  */
-public p ExternalLinkerInterface.addAdditionalSourcePath(FilePath additionalSource) {
+public p ExternalLinkerInterface.addAdditionalSourcePath(const FilePath& additionalSource) {
     // Check if the file exists
     if !additionalSource.exists() {
         const String msg = "The additional source file '" + additionalSource.toGenericString() + "' does not exist";
