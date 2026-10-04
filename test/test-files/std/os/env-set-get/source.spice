@@ -1,0 +1,26 @@
+import "std/os/env";
+
+// Sets the env var from a function, so the string handed to the environment is built in a stack frame, that is gone
+// afterwards
+f<bool> setFromFunction(string name, string value) {
+    return setEnv(name, value);
+}
+
+f<int> main() {
+    assert setFromFunction("SPICE_TEST_ENV_VAR", "first");
+    // Overwrite the stack frame of setFromFunction
+    assert setFromFunction("SPICE_TEST_OTHER_ENV_VAR", "something else entirely");
+    Result<string> value = getEnv("SPICE_TEST_ENV_VAR");
+    assert value.isOk();
+    assert String(value.unwrap()) == "first";
+
+    // Setting it again replaces the value
+    assert setEnv("SPICE_TEST_ENV_VAR", "second");
+    value = getEnv("SPICE_TEST_ENV_VAR");
+    assert String(value.unwrap()) == "second";
+
+    // A var that was never set is reported as missing
+    const Result<string> missing = getEnv("SPICE_TEST_ENV_VAR_NEVER_SET");
+    assert missing.isErr();
+    printf("All assertions passed!\n");
+}
