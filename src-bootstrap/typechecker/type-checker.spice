@@ -3885,8 +3885,8 @@ public f<Any> TypeChecker.visitCastExpr(ASTCastExprNode* node) {
     const ExprResult src = this.visitExpr(node.assignExpr);
     if src.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
 
-    // Check for identity cast
-    if src.ty == dstType {
+    // Check for identity cast (casts that only change the signedness are not considered identity casts)
+    if src.ty == dstType && src.ty.qualifiers.isSigned == dstType.qualifiers.isSigned {
         this.addWarning(baseNode.codeLoc, CompilerWarningType::IDENTITY_CAST, String("You cast from a type to itself. Thus, this can be simplified."));
     }
 
