@@ -231,6 +231,60 @@ public f<FilePath> getStdRuntimeLibDir() {
 }
 
 /**
+ * Build the flags for the std TPDE bindings (std/bindings/tpde) from the TPDE headers and static libraries, that the Linux
+ * release packages ship with the std. Returns an empty string if the given std does not ship them.
+ *
+ * @param stdDir Std directory
+ * @return Value for the TPDE_FLAGS env var, or an empty string
+ */
+public f<String> getStdTPDEFlags(const FilePath& stdDir) {
+    const FilePath tpdeDir = stdDir / "bindings" / "tpde";
+    const FilePath includeDir = tpdeDir / "include";
+    const FilePath libDir = tpdeDir / "lib";
+    FilePath headerPath = includeDir / "tpde-llvm" / "LLVMCompiler.hpp";
+    FilePath tpdeLlvmLibPath = libDir / "libtpde_llvm.a";
+    if !headerPath.exists() || !tpdeLlvmLibPath.exists() {
+        return String();
+    }
+    // The libraries reference each other, so they go into a group, that the linker rescans until all references are resolved
+    result = String("-I") + includeDir.toString() + " -Wl,--start-group";
+    foreach const string libName : ["libtpde_llvm.a", "libtpde.a", "libfadec.a", "libdisarm64.a", "libspdlog.a"] {
+        FilePath libPath = libDir / libName;
+        if libPath.exists() {
+            result += " ";
+            result += libPath.toString();
+        }
+    }
+    result += " -Wl,--end-group";
+}
+
+/**
+ * Point the std TPDE bindings to the TPDE headers and libraries, that the std ships, unless TPDE_FLAGS is set already.
+ * The bindings only use TPDE on Linux, and the shipped libraries are built for the host, so this only applies to native
+ * builds on Linux. Has to be called before the compilation starts, because it changes the process environment.
+ *
+ * @param cliOptions Command line options
+ */
+public p exportStdTPDEFlags(const CliOptions& cliOptions) {
+    if !isLinux() || !cliOptions.isNativeTarget {
+        return;
+    }
+    const Result<string> existingFlags = getEnv("TPDE_FLAGS");
+    if existingFlags.isOk() {
+        return;
+    }
+    const FilePath stdDir = findStdDir();
+    if stdDir.isEmpty() {
+        return;
+    }
+    const String flags = getStdTPDEFlags(stdDir);
+    if !flags.isEmpty() {
+        const bool exported = setEnv("TPDE_FLAGS", flags.getRaw());
+        assert exported;
+    }
+}
+
+/**
  * Retrieve the dir, where the bootstrap compiler lives.
  *
  * @return Bootstrap compiler directory

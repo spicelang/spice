@@ -5,6 +5,7 @@ import "std/os/os";
 import "bootstrap/source-file";
 import "bootstrap/driver";
 import "bootstrap/global/global-resource-manager";
+import "bootstrap/util/system-util";
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
@@ -68,6 +69,9 @@ f<int> main(int argc, string[] argv) {
     }
 
     driver.enrich(); // Prepare the cli options
+
+    // Let the std TPDE bindings find the TPDE libraries, that release packages ship with the std
+    exportStdTPDEFlags(driver.cliOptions);
 
     // Kick off the compiling process
     if !compileProject(driver.cliOptions) {

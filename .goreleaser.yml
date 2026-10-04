@@ -65,6 +65,18 @@ archives:
       - src: deps/libbacktrace/LICENSE
         dst: std/runtime/lib
         strip_parent: true
+      # The TPDE static libraries and headers for the std TPDE bindings (std/bindings/tpde), with their licenses. Only the
+      # Linux compiler jobs build TPDE, so each Linux output gets the ones of its own architecture. The other outputs have
+      # none, so these patterns match nothing there, which GoReleaser only warns about.
+      - src: "bin/spice-{{ .Os }}-{{ .Arch }}/tpde/lib/*.a"
+        dst: std/bindings/tpde/lib
+        strip_parent: true
+      - src: "bin/spice-{{ .Os }}-{{ .Arch }}/tpde/include/tpde-llvm/*.hpp"
+        dst: std/bindings/tpde/include/tpde-llvm
+        strip_parent: true
+      - src: "bin/spice-{{ .Os }}-{{ .Arch }}/tpde/LICENSES/*"
+        dst: std/bindings/tpde/LICENSES
+        strip_parent: true
     format_overrides:
       - goos: windows
         formats: [ "zip" ]
@@ -102,6 +114,19 @@ nfpms:
           mode: 0644
       - src: deps/libbacktrace/LICENSE
         dst: /usr/lib/spice/std/runtime/lib/LICENSE
+      # The TPDE static libraries and headers for the std TPDE bindings (std/bindings/tpde), with their licenses
+      - src: "bin/spice-linux-{{ .Arch }}/tpde/lib/*.a"
+        dst: /usr/lib/spice/std/bindings/tpde/lib/
+        file_info:
+          mode: 0644
+      - src: "bin/spice-linux-{{ .Arch }}/tpde/include/tpde-llvm/*.hpp"
+        dst: /usr/lib/spice/std/bindings/tpde/include/tpde-llvm/
+        file_info:
+          mode: 0644
+      - src: "bin/spice-linux-{{ .Arch }}/tpde/LICENSES/*"
+        dst: /usr/lib/spice/std/bindings/tpde/LICENSES/
+        file_info:
+          mode: 0644
       - src: tools/gdb/spice_printers.py
         dst: /usr/lib/spice/gdb/spice_printers.py
       - src: tools/gdb/spice.gdb

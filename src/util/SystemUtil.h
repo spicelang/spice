@@ -67,6 +67,8 @@ public:
   [[nodiscard]] static std::filesystem::path findStdDir();
   static std::filesystem::path getStdDir();
   [[nodiscard]] static std::filesystem::path getStdRuntimeLibDir();
+  [[nodiscard]] static std::string getStdTPDEFlags(const std::filesystem::path &stdDir);
+  static void exportStdTPDEFlags(const CliOptions &cliOptions);
   static std::filesystem::path getBootstrapDir();
   static std::filesystem::path getSpiceBinDir();
   static size_t getSystemPageSize();
