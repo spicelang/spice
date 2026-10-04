@@ -7019,16 +7019,7 @@ f<bool> TypeChecker.isDeclaredAfter(const SymbolTableEntry* a, const SymbolTable
         return aDeclNode.codeLoc.isAfter(bDeclNode.codeLoc);
     }
     // Secondary sort criteria is the node id
-    return this.getNodeId(aDeclNode) > this.getNodeId(bDeclNode);
-}
-
-// Node id of the given AST node. Like the host's nodeToNodeId[node], nodes that were not created by the parser get the id 0
-f<unsigned long> TypeChecker.getNodeId(const ASTNode* node) {
-    const long nodeAddress = getNodeAddress(node);
-    if !this.resourceManager.nodeToNodeId.contains(nodeAddress) {
-        return 0l;
-    }
-    return this.resourceManager.nodeToNodeId.get(nodeAddress);
+    return this.resourceManager.getNodeId(aDeclNode) > this.resourceManager.getNodeId(bDeclNode);
 }
 
 /**

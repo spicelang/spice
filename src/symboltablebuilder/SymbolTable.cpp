@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
+#include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <util/CodeLoc.h>
@@ -55,17 +56,29 @@ SymbolTableEntry *SymbolTable::insertAnonymous(const QualType &qualType, ASTNode
   if (SymbolTableEntry *anonSymbol = lookupAnonymous(declNode, numericSuffix))
     return anonSymbol;
   // Otherwise, create an anonymous entry
-  std::stringstream name;
-  name << "anon." << declNode->codeLoc.toString() << "." << reinterpret_cast<size_t>(declNode);
-  if (numericSuffix > 0)
-    name << "." << numericSuffix;
-  SymbolTableEntry *anonSymbol = insert(name.str(), declNode, true);
+  SymbolTableEntry *anonSymbol = insert(getAnonymousSymbolName(declNode, numericSuffix), declNode, true);
   anonSymbol->updateType(qualType, false);
   anonSymbol->updateState(DECLARED, declNode);
   anonSymbol->updateState(INITIALIZED, declNode);
   anonSymbol->anonymous = true;
   anonSymbol->used = true;
   return anonSymbol;
+}
+
+/**
+ * Build the name of an anonymous symbol. It is unique per declaration node and numeric suffix. The node id is used instead
+ * of the node address, so that the name and with that the order of anonymous symbols do not change between compiler runs
+ *
+ * @param declNode AST node where the anonymous symbol is declared
+ * @param numericSuffix Custom numeric suffix
+ * @return Name of the anonymous symbol
+ */
+std::string SymbolTable::getAnonymousSymbolName(const ASTNode *declNode, size_t numericSuffix) const {
+  std::stringstream name;
+  name << "anon." << declNode->codeLoc.toString() << "." << scope->sourceFile->resourceManager.getNodeId(declNode);
+  if (numericSuffix > 0)
+    name << "." << numericSuffix;
+  return name.str();
 }
 
 /**
@@ -222,11 +235,7 @@ SymbolTableEntry *SymbolTable::lookupStrictByIndex(unsigned int orderIndex) {
  * @return Anonymous symbol
  */
 SymbolTableEntry *SymbolTable::lookupAnonymous(const ASTNode *declNode, size_t numericSuffix) {
-  std::stringstream name;
-  name << "anon." << declNode->codeLoc.toString() << "." << reinterpret_cast<size_t>(declNode);
-  if (numericSuffix > 0)
-    name << "." << numericSuffix;
-  return lookup(name.str());
+  return lookup(getAnonymousSymbolName(declNode, numericSuffix));
 }
 
 /**

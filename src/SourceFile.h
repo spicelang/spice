@@ -117,6 +117,8 @@ public:
 
   // Friend classes
   friend class RuntimeModuleManager;
+  friend class Scope;
+  friend class SymbolTable;
   friend class Type;
   friend class TypeChecker;
 

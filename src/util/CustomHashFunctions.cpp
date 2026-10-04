@@ -5,6 +5,7 @@
 #include <numeric>
 #include <string>
 
+#include <symboltablebuilder/Scope.h>
 #include <symboltablebuilder/Type.h>
 #include <symboltablebuilder/TypeChain.h>
 
@@ -46,8 +47,9 @@ size_t hash<spice::compiler::TypeChainElement>::operator()(const spice::compiler
   case TY_INTERFACE:
   case TY_UNION:
   case TY_ENUM:
-    // Stable hash based on pointer identity, but randomized for safety
-    hashCombine64(hash, hashPointer(tce.data.bodyScope));
+    // Hash the id of the body scope instead of its address, so that type hashes (e.g. typeid values) do not change between
+    // compiler runs
+    hashCombine64(hash, tce.data.bodyScope != nullptr ? tce.data.bodyScope->scopeId : 0);
     break;
   default:
     break;

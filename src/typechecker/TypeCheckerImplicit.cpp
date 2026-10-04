@@ -834,7 +834,7 @@ void TypeChecker::sortByReverseDeclarationOrder(std::vector<SymbolTableEntry *> 
     if (aDeclNode->codeLoc != bDeclNode->codeLoc)
       return aDeclNode->codeLoc > bDeclNode->codeLoc;
     // Secondary sort criteria is the node id
-    return resourceManager.nodeToNodeId[aDeclNode] > resourceManager.nodeToNodeId[bDeclNode];
+    return resourceManager.getNodeId(aDeclNode) > resourceManager.getNodeId(bDeclNode);
   };
   std::ranges::stable_sort(vars, comp);
 }

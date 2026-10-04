@@ -70,6 +70,7 @@ public type GlobalResourceManager struct {
     public LookupCache<Union> unionLookupCache
     public bool abortCompilation = false
     unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1l // Start at 256 because all primitive types come first
+    unsigned long nextScopeId = 0l
 }
 
 public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
@@ -181,6 +182,25 @@ public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent,
 
 public f<unsigned long> GlobalResourceManager.getNextCustomTypeId() {
     return this.nextCustomTypeId++;
+}
+
+public f<unsigned long> GlobalResourceManager.getNextScopeId() {
+    return this.nextScopeId++;
+}
+
+/**
+ * Get the id of the given AST node. Node ids are assigned in creation order per source file, so unlike the node address,
+ * they are the same in every compiler run
+ *
+ * @param node AST node
+ * @return Node id / 0 if the node was not created by the parser
+ */
+public f<unsigned long> GlobalResourceManager.getNodeId(const ASTNode* node) {
+    const long nodeAddress = getNodeAddress(node);
+    if !this.nodeToNodeId.contains(nodeAddress) {
+        return 0l;
+    }
+    return this.nodeToNodeId.get(nodeAddress);
 }
 
 public f<unsigned long> GlobalResourceManager.getTotalLineCount() {
