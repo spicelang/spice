@@ -64,6 +64,10 @@ def find_llvm_include_dirs() -> str | None:
             match = re.search(r'set\(LLVM_INCLUDE_DIRS "([^"$]+)"\)', config_file.read_text())
             if match:
                 return " ".join(f"-I{include_dir}" for include_dir in match.group(1).split(";"))
+        # An installed LLVMConfig.cmake refers to ${LLVM_INSTALL_PREFIX}/include instead (LLVM_DIR = <prefix>/lib/cmake/llvm)
+        include_dir = Path(llvm_dir).resolve().parent.parent.parent / "include"
+        if (include_dir / "llvm-c").is_dir():
+            return f"-I{include_dir}"
     if llvm_config := shutil.which("llvm-config"):
         include_dir = subprocess.run([llvm_config, "--includedir"], check=True, capture_output=True, text=True).stdout.strip()
         return f"-I{include_dir}"
@@ -78,7 +82,7 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[str], verbose: bool) -> Path:
+def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[str], timeout: int, verbose: bool) -> Path:
     stage_dir = work_dir / f"stage{stage}"
     shutil.rmtree(stage_dir, ignore_errors=True)
     stage_dir.mkdir(parents=True)
@@ -88,7 +92,10 @@ def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[st
 
     log(f"[Stage {stage}] Building with {compiler} ...")
     start = time.monotonic()
-    result = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=not verbose, text=True)
+    try:
+        result = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=not verbose, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        fail(f"[Stage {stage}] Build timed out after {timeout}s: {' '.join(cmd)}")
     # The bootstrap compiler sources emit lots of warnings, so only print the output if something went wrong
     if result.returncode != 0 or not output.is_file():
         if not verbose:
@@ -110,6 +117,8 @@ def main() -> None:
                         help="Maximum number of self-compilations, after stage 0 was built by the host (default: 5)")
     parser.add_argument("--build-flags", default=" ".join(DEFAULT_BUILD_FLAGS),
                         help=f"Flags passed to every 'spice build' invocation (default: '{' '.join(DEFAULT_BUILD_FLAGS)}')")
+    parser.add_argument("--stage-timeout", type=int, default=1800,
+                        help="Timeout in seconds for building a single stage (default: 1800)")
     parser.add_argument("--output", type=Path, default=None,
                         help="Copy the fixed point compiler executable to this path")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print the compiler output of every stage")
@@ -142,13 +151,13 @@ def main() -> None:
     build_flags = args.build_flags.split()
 
     # Stage 0: built by the host compiler
-    compiler = build_stage(host_compiler, 0, work_dir, build_flags, args.verbose)
+    compiler = build_stage(host_compiler, 0, work_dir, build_flags, args.stage_timeout, args.verbose)
     hashes = [sha256(compiler)]
     print(f"  sha256: {hashes[0]}")
 
     # Stage 1..n: built by the previous stage, until two consecutive self-compiled stages are identical
     for stage in range(1, args.max_iterations + 1):
-        compiler = build_stage(compiler, stage, work_dir, build_flags, args.verbose)
+        compiler = build_stage(compiler, stage, work_dir, build_flags, args.stage_timeout, args.verbose)
         hashes.append(sha256(compiler))
         print(f"  sha256: {hashes[-1]}")
         if stage >= 2 and hashes[-1] == hashes[-2]:

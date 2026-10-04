@@ -17,6 +17,8 @@ jobs:
   bootstrap-linux-x86:
     name: Bootstrap fixed point - Linux/x86_64
     runs-on: ubuntu-26.04
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
