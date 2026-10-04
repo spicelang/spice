@@ -6,7 +6,6 @@ import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/source-file";
-import "bootstrap/global/global-resource-manager";
 import "bootstrap/irgenerator/name-mangling";
 import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
 import "bootstrap/ast/ast-nodes";
@@ -25,7 +24,7 @@ public type StdFunctionManager struct {
     llvm::Module* module
 }
 
-public p StdFunctionManager.ctor(SourceFile* sourceFile, GlobalResourceManager& resourceManager, llvm::Module* module) {
+public p StdFunctionManager.ctor(SourceFile* sourceFile, llvm::Module* module) {
     this.sourceFile = sourceFile;
     this.builder = &sourceFile.builder;
     this.module = module;

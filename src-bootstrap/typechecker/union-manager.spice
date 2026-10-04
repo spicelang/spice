@@ -31,6 +31,7 @@ public type UnionRegistry alias Map</*unionId=*/String, /*manifestationList=*/Un
  * @param nodeUnionList List to collect the inserted manifestation into (owned by the declaration node)
  * @return Inserted union manifestation
  */
+#[ignoreUnusedReturnValue]
 public f<Union*> insertUnion(Scope* insertScope, Union& spiceUnion, Vector<Union*>* nodeUnionList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the union
     const String unionId = spiceUnion.name + ":" + spiceUnion.declNode.codeLoc.toString();
@@ -216,9 +217,9 @@ public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeL
 
                 // Instantiate structs/unions nested by value
                 if baseType.is(SuperType::TY_STRUCT) {
-                    baseType.getStruct(node);
+                    const Struct* _ = baseType.getStruct(node);
                 } else if baseType.is(SuperType::TY_UNION) {
-                    baseType.getUnion(node);
+                    const Union* _ = baseType.getUnion(node);
                 }
 
                 i++;
@@ -292,7 +293,7 @@ f<bool> matchTemplateTypes(Union& candidate, const QualTypeList& reqTemplateType
  */
 p substantiateFieldTypes(Union& candidate, const TypeMapping& typeMapping, const ASTNode* node) {
     // Loop over all explicit field types and substantiate the generic ones
-    foreach unsigned long i, QualType& fieldType : candidate.fieldTypes {
+    foreach QualType& fieldType : candidate.fieldTypes {
         if fieldType.hasAnyGenericParts() {
             substantiateTypeWithTypeMapping(fieldType, typeMapping, node);
         }

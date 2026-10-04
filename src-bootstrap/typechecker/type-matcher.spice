@@ -13,7 +13,6 @@ import "bootstrap/model/interface";
 import "bootstrap/model/union";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-qualifiers";
 
 /**
  * Helper functions for FunctionManager, StructManager, InterfaceManager and UnionManager to match generic types.
@@ -201,7 +200,7 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
  * @param node AST node for error messages
  */
 public p substantiateTypesWithTypeMapping(QualTypeList& qualTypes, const TypeMapping& typeMapping, const ASTNode* node) {
-    foreach unsigned long i, QualType& qualType : qualTypes {
+    foreach QualType& qualType : qualTypes {
         if qualType.hasAnyGenericParts() {
             substantiateTypeWithTypeMapping(qualType, typeMapping, node);
         }
@@ -232,7 +231,7 @@ public p substantiateTypeWithTypeMapping(QualType& qualType, const TypeMapping& 
     if baseType.isOneOf(fctOptions, len(fctOptions)) { // The base type is a function or procedure
         // Substantiate each param or return type
         QualTypeList paramAndReturnTypes = qualType.getFunctionParamAndReturnTypes();
-        foreach unsigned long i, QualType& paramOrReturnType : paramAndReturnTypes {
+        foreach QualType& paramOrReturnType : paramAndReturnTypes {
             if paramOrReturnType.hasAnyGenericParts() {
                 substantiateTypeWithTypeMapping(paramOrReturnType, typeMapping, node);
             }
@@ -246,7 +245,7 @@ public p substantiateTypeWithTypeMapping(QualType& qualType, const TypeMapping& 
     assert baseType.is(SuperType::TY_STRUCT) || baseType.is(SuperType::TY_INTERFACE) || baseType.is(SuperType::TY_UNION);
     // Substantiate each template type
     QualTypeList templateTypes = baseType.getTemplateTypes();
-    foreach unsigned long i, QualType& templateType : templateTypes {
+    foreach QualType& templateType : templateTypes {
         if templateType.hasAnyGenericParts() {
             substantiateTypeWithTypeMapping(templateType, typeMapping, node);
         }

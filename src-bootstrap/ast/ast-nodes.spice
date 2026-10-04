@@ -449,7 +449,7 @@ public f<Any> visitChildrenOf(ASTNode* node, IAbstractAstVisitor* visitor) {
     foreach ASTNode* child : node.children {
         assert child != nil<ASTNode*>;
         assert child.visitable != nil<IVisitable*>;
-        child.visitable.accept(visitor);
+        const Any _ = child.visitable.accept(visitor);
     }
     return Any();
 }
@@ -525,6 +525,7 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
     customItemsInitialization(this, manifestationCount);
 }
 
+#[ignoreUnusedReturnValue]
 public f<QualType> ASTExprNode.setEvaluatedSymbolType(const QualType& symbolType, unsigned long idx) {
     assert this.symbolTypes.getSize() > idx;
     QualType& slot = this.symbolTypes.get(idx);

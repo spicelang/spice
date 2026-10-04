@@ -1,6 +1,5 @@
 // Std imports
 import "std/data/vector";
-import "std/data/unordered-map"; // Needed by the TypeMapping alias (generic-type.spice), which is resolved in this file
 import "std/text/stringstream";
 
 // Own imports
@@ -8,9 +7,6 @@ import "bootstrap/ast/ast-nodes";
 import "bootstrap/reader/code-loc";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type";
-import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/global/type-registry";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/model/generic-type";

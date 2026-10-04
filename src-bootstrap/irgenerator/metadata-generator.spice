@@ -47,7 +47,7 @@ public p MetadataGenerator.generateBranchWeightsMetadata(llvm::Value jumpInst, L
 
 public p MetadataGenerator.generateTypeMetadata(llvm::Value inst, const QualType& qualType) {
     TypeRegistry& typeRegistry = this.irGenerator.resourceManager.typeRegistry;
-    const unsigned long typeHash = cast<unsigned long>(typeRegistry.getTypeHash(*qualType.getType()));
+    const unsigned long typeHash = typeRegistry.getTypeHash(*qualType.getType());
 
     llvm::IRBuilder* builder = this.irGenerator.builder;
     Vector<llvm::Metadata> operands;

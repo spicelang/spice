@@ -64,12 +64,12 @@ public f<String> CodeLoc.toPrettyFilePath() {
     if len(ROOT_SOURCE_FILE_PATH) == 0 || len(this.sourceFilePath) == 0 {
         return String(this.sourceFilePath);
     }
-    String sourceFilePath = getRelativePath(String(this.sourceFilePath), String(ROOT_SOURCE_FILE_PATH));
-    if sourceFilePath == "." {
+    String relativePath = getRelativePath(String(this.sourceFilePath), String(ROOT_SOURCE_FILE_PATH));
+    if relativePath == "." {
         const FilePath path = FilePath(this.sourceFilePath);
-        sourceFilePath = "./" + path.getFileName();
+        relativePath = "./" + path.getFileName();
     }
-    return sourceFilePath;
+    return relativePath;
 }
 
 /**

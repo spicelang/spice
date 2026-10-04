@@ -98,5 +98,5 @@ public f<String> formatBytes(unsigned long bytes) {
     }
     const int length = snprintf(nil<char*>, 0l, "%.2f %s", size, units[unitIndex]);
     result = String(length);
-    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.2f %s", size, units[unitIndex]);
+    const int _ = snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.2f %s", size, units[unitIndex]);
 }

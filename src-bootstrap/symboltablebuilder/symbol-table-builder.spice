@@ -2,7 +2,6 @@
 
 // Std imports
 import "std/type/any";
-import "std/type/type-conversion";
 import "std/data/vector";
 import "std/io/filepath";
 import "std/bindings/llvm/llvm" as llvm;
@@ -26,8 +25,6 @@ import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/util/pass-test-util";
-import "bootstrap/util/system-util";
 
 // Reserved names (THIS_VARIABLE_NAME, RETURN_VARIABLE_NAME, CTOR_FUNCTION_NAME and DTOR_FUNCTION_NAME live in symbol-table-entry.spice)
 const string MAIN_FUNCTION_NAME = "main";
@@ -55,10 +52,12 @@ public p SymbolTableBuilder.ctor(GlobalResourceManager& resourceManager, SourceF
 
 // Generic double-dispatch entry point required by IAbstractAstVisitor. source-file.spice calls the concrete
 // visit(ASTEntryNode*) overload below.
+#[ignoreUnusedReturnValue]
 public f<Any> SymbolTableBuilder.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
+#[ignoreUnusedReturnValue]
 public f<Any> SymbolTableBuilder.visit(ASTEntryNode* node) {
     return this.visitEntry(node);
 }
@@ -66,6 +65,7 @@ public f<Any> SymbolTableBuilder.visit(ASTEntryNode* node) {
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 // Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
+#[ignoreUnusedReturnValue]
 f<Any> SymbolTableBuilder.visitChildren(ASTNode* node) {
     return visitChildrenOf(node, cast<IAbstractAstVisitor*>(this));
 }
@@ -120,7 +120,7 @@ p SymbolTableBuilder.visitInExprScope(IVisitable* expr) {
     this.currentScope = exprScope;
 
     // Visit the expression
-    expr.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(expr);
 
     // Leave expression scope
     this.currentScope = exprScope.parent;
@@ -128,12 +128,11 @@ p SymbolTableBuilder.visitInExprScope(IVisitable* expr) {
 
 // Shared implementation of visitFctDef and visitProcDef
 f<Any> SymbolTableBuilder.visitFctOrProcDef(ASTFctDefBaseNode* node, bool isFunction, const String& scopeId) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
     ASTNode* baseNode = cast<ASTNode*>(node);
 
     // Visit attributes
     if node.attrs != nil<IVisitable*> {
-        node.attrs.accept(visitor);
+        this.visit(node.attrs);
     }
 
     // Build function qualifiers
@@ -177,11 +176,11 @@ f<Any> SymbolTableBuilder.visitFctOrProcDef(ASTFctDefBaseNode* node, bool isFunc
 
     // Create symbols for the parameters
     if node.hasParams {
-        node.paramLst.accept(visitor);
+        this.visit(node.paramLst);
     }
 
     // Visit the function body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave function body scope
     this.currentScope = fctScope.parent;
@@ -207,20 +206,19 @@ f<Any> SymbolTableBuilder.visitFctOrProcDef(ASTFctDefBaseNode* node, bool isFunc
 // ─── real logic ───────────────────────────────────────────────────────────────
 
 public f<Any> SymbolTableBuilder.visitEntry(ASTEntryNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Initialize
     this.currentScope = this.rootScope;
 
     // Visit children: module attributes, imports (already handled by the import collector) and top level definitions
     foreach IVisitable* modAttr : node.modAttrs {
-        modAttr.accept(visitor);
+        this.visit(modAttr);
     }
     foreach IVisitable* importDef : node.importDefs {
-        importDef.accept(visitor);
+        this.visit(importDef);
     }
     foreach IVisitable* topLevelDef : node.topLevelDefs {
-        topLevelDef.accept(visitor);
+        this.visit(topLevelDef);
     }
 
     // Check if the main function exists
@@ -233,12 +231,11 @@ public f<Any> SymbolTableBuilder.visitEntry(ASTEntryNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitMainFctDef(ASTMainFctDefNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
     ASTNode* baseNode = cast<ASTNode*>(node);
 
     // Visit attributes
     if node.attrs != nil<IVisitable*> {
-        node.attrs.accept(visitor);
+        this.visit(node.attrs);
     }
 
     // Check if the function is already defined
@@ -263,11 +260,11 @@ public f<Any> SymbolTableBuilder.visitMainFctDef(ASTMainFctDefNode* node) {
 
     // Visit arguments in new scope
     if node.takesArgs {
-        node.paramLst.accept(visitor);
+        this.visit(node.paramLst);
     }
 
     // Visit function body in new scope
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Return to root scope
     this.currentScope = this.rootScope;
@@ -293,12 +290,11 @@ public f<Any> SymbolTableBuilder.visitProcDef(ASTProcDefNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitStructDef(ASTStructDefNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
     ASTNode* baseNode = cast<ASTNode*>(node);
 
     // Visit attributes
     if node.attrs != nil<IVisitable*> {
-        node.attrs.accept(visitor);
+        this.visit(node.attrs);
     }
 
     // Check if this name already exists
@@ -327,7 +323,7 @@ public f<Any> SymbolTableBuilder.visitStructDef(ASTStructDefNode* node) {
 
     // Visit fields
     foreach IVisitable* field : node.fields {
-        field.accept(visitor);
+        this.visit(field);
     }
 
     // Leave the struct scope
@@ -347,12 +343,11 @@ public f<Any> SymbolTableBuilder.visitStructDef(ASTStructDefNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitInterfaceDef(ASTInterfaceDefNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
     ASTNode* baseNode = cast<ASTNode*>(node);
 
     // Visit attributes
     if node.attrs != nil<IVisitable*> {
-        node.attrs.accept(visitor);
+        this.visit(node.attrs);
     }
 
     // Check if this name already exists
@@ -369,7 +364,7 @@ public f<Any> SymbolTableBuilder.visitInterfaceDef(ASTInterfaceDefNode* node) {
 
     // Visit signatures
     foreach IVisitable* signature : node.signatures {
-        signature.accept(visitor);
+        this.visit(signature);
     }
 
     // Leave the interface scope
@@ -389,12 +384,11 @@ public f<Any> SymbolTableBuilder.visitInterfaceDef(ASTInterfaceDefNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitUnionDef(ASTUnionDefNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
     ASTNode* baseNode = cast<ASTNode*>(node);
 
     // Visit attributes
     if node.attrs != nil<IVisitable*> {
-        node.attrs.accept(visitor);
+        this.visit(node.attrs);
     }
 
     // Check if this name already exists
@@ -412,7 +406,7 @@ public f<Any> SymbolTableBuilder.visitUnionDef(ASTUnionDefNode* node) {
 
     // Visit fields
     foreach IVisitable* field : node.fields {
-        field.accept(visitor);
+        this.visit(field);
     }
 
     // Leave the union scope
@@ -446,7 +440,7 @@ public f<Any> SymbolTableBuilder.visitEnumDef(ASTEnumDefNode* node) {
     this.currentScope = enumScope;
 
     // Visit items
-    node.itemLst.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(node.itemLst);
 
     // Leave the enum scope
     this.currentScope = enumScope.parent;
@@ -533,7 +527,7 @@ public f<Any> SymbolTableBuilder.visitExtDecl(ASTExtDeclNode* node) {
 
     // Visit attributes
     if node.attrs != nil<IVisitable*> {
-        node.attrs.accept(cast<IAbstractAstVisitor*>(this));
+        this.visit(node.attrs);
     }
 
     // Check if this name already exists
@@ -561,7 +555,7 @@ public f<Any> SymbolTableBuilder.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
     this.currentScope = bodyScope;
 
     // Visit body
-    node.body.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(node.body);
 
     // Leave unsafe body scope
     this.currentScope = bodyScope.parent;
@@ -570,7 +564,6 @@ public f<Any> SymbolTableBuilder.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the loop body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOR_BODY, &node.codeLoc);
@@ -578,13 +571,13 @@ public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
     this.currentScope = bodyScope;
 
     // Visit loop variable declaration
-    node.initDecl.accept(visitor);
+    this.visit(node.initDecl);
 
     // Visit condition
     this.visitInExprScope(node.condAssign);
 
     // Visit body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave for body scope
     this.currentScope = bodyScope.parent;
@@ -593,7 +586,6 @@ public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitForeachLoop(ASTForeachLoopNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the loop body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOREACH_BODY, &node.codeLoc);
@@ -602,14 +594,14 @@ public f<Any> SymbolTableBuilder.visitForeachLoop(ASTForeachLoopNode* node) {
 
     // Visit index variable declaration
     if node.idxVarDecl != nil<IVisitable*> {
-        node.idxVarDecl.accept(visitor);
+        this.visit(node.idxVarDecl);
     }
 
     // Visit item variable declaration
-    node.itemVarDecl.accept(visitor);
+    this.visit(node.itemVarDecl);
 
     // Visit body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave foreach body scope
     this.currentScope = bodyScope.parent;
@@ -618,7 +610,6 @@ public f<Any> SymbolTableBuilder.visitForeachLoop(ASTForeachLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitWhileLoop(ASTWhileLoopNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the loop body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::WHILE_BODY, &node.codeLoc);
@@ -629,7 +620,7 @@ public f<Any> SymbolTableBuilder.visitWhileLoop(ASTWhileLoopNode* node) {
     this.visitInExprScope(node.condition);
 
     // Visit body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave while body scope
     this.currentScope = bodyScope.parent;
@@ -638,7 +629,6 @@ public f<Any> SymbolTableBuilder.visitWhileLoop(ASTWhileLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the loop body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::WHILE_BODY, &node.codeLoc);
@@ -649,7 +639,7 @@ public f<Any> SymbolTableBuilder.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
     this.visitInExprScope(node.condition);
 
     // Visit body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave do-while body scope
     this.currentScope = bodyScope.parent;
@@ -658,7 +648,6 @@ public f<Any> SymbolTableBuilder.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitIfStmt(ASTIfStmtNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the then body
     Scope* thenBodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::IF_ELSE_BODY, &node.codeLoc);
@@ -669,25 +658,24 @@ public f<Any> SymbolTableBuilder.visitIfStmt(ASTIfStmtNode* node) {
     this.visitInExprScope(node.condition);
 
     // Visit then body (manifestations do not exist yet, so both branches are always visited here)
-    node.thenBody.accept(visitor);
+    this.visit(node.thenBody);
 
     // Leave then body scope
     this.currentScope = thenBodyScope.parent;
 
     // Visit else stmt
     if node.elseStmt != nil<IVisitable*> {
-        node.elseStmt.accept(visitor);
+        this.visit(node.elseStmt);
     }
 
     return Any();
 }
 
 public f<Any> SymbolTableBuilder.visitElseStmt(ASTElseStmtNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Visit if statement in the case of an else if branch
     if node.isElseIf {
-        node.ifStmt.accept(visitor);
+        this.visit(node.ifStmt);
         return Any();
     }
 
@@ -697,7 +685,7 @@ public f<Any> SymbolTableBuilder.visitElseStmt(ASTElseStmtNode* node) {
     this.currentScope = elseBodyScope;
 
     // Visit else body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave else body scope
     this.currentScope = elseBodyScope.parent;
@@ -712,7 +700,7 @@ public f<Any> SymbolTableBuilder.visitCaseBranch(ASTCaseBranchNode* node) {
     this.currentScope = bodyScope;
 
     // Visit case body
-    node.body.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(node.body);
 
     // Leave case body scope
     this.currentScope = bodyScope.parent;
@@ -727,7 +715,7 @@ public f<Any> SymbolTableBuilder.visitDefaultBranch(ASTDefaultBranchNode* node) 
     this.currentScope = bodyScope;
 
     // Visit default body
-    node.body.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(node.body);
 
     // Leave default body scope
     this.currentScope = bodyScope.parent;
@@ -742,7 +730,7 @@ public f<Any> SymbolTableBuilder.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNo
     this.currentScope = bodyScope;
 
     // Visit body
-    node.body.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(node.body);
 
     // Leave anonymous block body scope
     this.currentScope = bodyScope.parent;
@@ -750,6 +738,7 @@ public f<Any> SymbolTableBuilder.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNo
     return Any();
 }
 
+#[ignoreUnusedReturnValue]
 public f<Any> SymbolTableBuilder.visitEnumItem(ASTEnumItemNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
@@ -798,6 +787,7 @@ public f<Any> SymbolTableBuilder.visitSignature(ASTSignatureNode* node) {
     return Any();
 }
 
+#[ignoreUnusedReturnValue]
 public f<Any> SymbolTableBuilder.visitDeclStmt(ASTDeclStmtNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
@@ -809,7 +799,7 @@ public f<Any> SymbolTableBuilder.visitDeclStmt(ASTDeclStmtNode* node) {
 
     // Visit the right side
     if node.hasAssignment {
-        node.assignExpr.accept(cast<IAbstractAstVisitor*>(this));
+        this.visit(node.assignExpr);
     }
 
     // Add variable entry to symbol table
@@ -922,7 +912,6 @@ p SymbolTableBuilder.applyLambdaAttr(ASTLambdaAttrNode* lambdaAttr, Scope* bodyS
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaFunc(ASTLambdaFuncNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the lambda body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
@@ -938,11 +927,11 @@ public f<Any> SymbolTableBuilder.visitLambdaFunc(ASTLambdaFuncNode* node) {
 
     // Create symbols for the parameters
     if node.hasParams {
-        node.paramLst.accept(visitor);
+        this.visit(node.paramLst);
     }
 
     // Visit body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave lambda body scope
     this.currentScope = bodyScope.parent;
@@ -951,7 +940,6 @@ public f<Any> SymbolTableBuilder.visitLambdaFunc(ASTLambdaFuncNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaProc(ASTLambdaProcNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the lambda body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
@@ -964,11 +952,11 @@ public f<Any> SymbolTableBuilder.visitLambdaProc(ASTLambdaProcNode* node) {
 
     // Create symbols for the parameters
     if node.hasParams {
-        node.paramLst.accept(visitor);
+        this.visit(node.paramLst);
     }
 
     // Visit body
-    node.body.accept(visitor);
+    this.visit(node.body);
 
     // Leave lambda body scope
     this.currentScope = bodyScope.parent;
@@ -977,7 +965,6 @@ public f<Any> SymbolTableBuilder.visitLambdaProc(ASTLambdaProcNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaExpr(ASTLambdaExprNode* node) {
-    IAbstractAstVisitor* visitor = cast<IAbstractAstVisitor*>(this);
 
     // Create scope for the lambda body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
@@ -988,11 +975,11 @@ public f<Any> SymbolTableBuilder.visitLambdaExpr(ASTLambdaExprNode* node) {
 
     // Create symbols for the parameters
     if node.hasParams {
-        node.paramLst.accept(visitor);
+        this.visit(node.paramLst);
     }
 
     // Visit lambda expression
-    node.lambdaExpr.accept(visitor);
+    this.visit(node.lambdaExpr);
 
     // Leave lambda body scope
     this.currentScope = bodyScope.parent;
@@ -1002,7 +989,7 @@ public f<Any> SymbolTableBuilder.visitLambdaExpr(ASTLambdaExprNode* node) {
 
 public f<Any> SymbolTableBuilder.visitTernaryExpr(ASTTernaryExprNode* node) {
     // Visit condition, which is evaluated unconditionally
-    node.condition.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(node.condition);
 
     // Visit the branches. Only one of them is evaluated, so each one gets its own scope for its temporaries.
     // The true branch does not exist for shortened ternaries, as the condition takes its place.
@@ -1024,7 +1011,7 @@ f<Any> SymbolTableBuilder.visitOperands(const Vector<IVisitable*>& operands) {
 
     // Visit the first operand, which is evaluated unconditionally
     IVisitable* first = operands.get(0l);
-    first.accept(cast<IAbstractAstVisitor*>(this));
+    this.visit(first);
 
     // All further operands are only evaluated if the ones before did not short-circuit
     for unsigned long i = 1l; i < operands.getSize(); i++ {
@@ -1044,7 +1031,7 @@ public f<Any> SymbolTableBuilder.visitLogicalAndExpr(ASTLogicalAndExprNode* node
 
 public f<Any> SymbolTableBuilder.visitStmtLst(ASTStmtLstNode* node) {
     foreach IVisitable* stmt : node.statements {
-        stmt.accept(cast<IAbstractAstVisitor*>(this));
+        this.visit(stmt);
     }
     return Any();
 }

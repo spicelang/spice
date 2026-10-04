@@ -34,6 +34,7 @@ public type StructRegistry alias Map</*structId=*/String, /*manifestationList=*/
  * @param nodeStructList List to collect the inserted manifestation into (owned by the declaration node)
  * @return Inserted struct manifestation
  */
+#[ignoreUnusedReturnValue]
 public f<Struct*> insertStruct(Scope* insertScope, Struct& spiceStruct, Vector<Struct*>* nodeStructList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
     const String structId = spiceStruct.name + ":" + spiceStruct.declNode.codeLoc.toString();
@@ -222,14 +223,14 @@ public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTyp
 
                 // Instantiate structs
                 if baseType.is(SuperType::TY_STRUCT) {
-                    baseType.getStruct(node);
+                    const Struct* _ = baseType.getStruct(node);
                 }
 
                 i++;
             }
 
             // Instantiate implemented interfaces if required
-            foreach unsigned long j, QualType& interfaceType : substantiatedStruct.interfaceTypes {
+            foreach QualType& interfaceType : substantiatedStruct.interfaceTypes {
                 // Skip non-generic interfaces
                 if !interfaceType.hasAnyGenericParts() {
                     continue;
@@ -341,7 +342,7 @@ p substantiateFieldTypes(Struct& candidate, const TypeMapping& typeMapping, cons
     }
 
     // Loop over all explicit field types and substantiate the generic ones
-    foreach unsigned long j, QualType& fieldType : candidate.fieldTypes {
+    foreach QualType& fieldType : candidate.fieldTypes {
         if fieldType.hasAnyGenericParts() {
             substantiateTypeWithTypeMapping(fieldType, typeMapping, node);
         }

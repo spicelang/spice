@@ -89,6 +89,7 @@ f<T*> Parser.createNode<T>() {
     return node;
 }
 
+#[ignoreUnusedReturnValue]
 f<T*> Parser.concludeNode<T>(T* node) {
     assert !this.parentStack.isEmpty();
     ASTNode* nodeBase = cast<ASTNode*>(node);
@@ -1862,8 +1863,7 @@ f<AssignOp> Parser.parseAssignOp() {
         case TokenType::OR_EQUAL: { return AssignOp::OP_OR_EQUAL; }
         case TokenType::XOR_EQUAL: { return AssignOp::OP_XOR_EQUAL; }
     }
-    panic(Error("Unknown assign operator"));
-    return AssignOp::OP_NONE;
+    panic(Error("Unknown assign operator")); // GCOV_EXCL_LINE
 }
 
 // ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr? COLON logicalOrExpr)?;

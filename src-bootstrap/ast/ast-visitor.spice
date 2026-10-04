@@ -18,6 +18,7 @@ public p AstVisitor.ctor() {}
 
 // Typed double-dispatch entry point.  The runtime type of node determines which
 // accept() override fires, which in turn calls the appropriate visit method.
+#[ignoreUnusedReturnValue]
 public f<Any> AstVisitor.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
@@ -25,6 +26,7 @@ public f<Any> AstVisitor.visit(IVisitable* node) {
 // Depth-first structural traversal — recurses into children via visitChildren.
 // Note: dispatch through ASTNode* is not vtable-based, so this does not invoke typed
 // visitXxx methods. For typed traversal, call visitXxx methods directly with typed pointers.
+#[ignoreUnusedReturnValue]
 public f<Any> AstVisitor.visitChildren(ASTNode* node) {
     foreach ASTNode* child : node.getChildren() {
         this.visitChildren(child);

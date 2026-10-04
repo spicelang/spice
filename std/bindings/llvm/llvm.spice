@@ -1182,6 +1182,7 @@ public p Function.pushBack(BasicBlock bb) {
     LLVMAppendExistingBasicBlock(this.self, bb.self);
 }
 
+#[ignoreUnusedReturnValue]
 public f<Function> Module.getOrInsertFunction(string name, Type fctType) {
     LLVMFunctionRef fctRef = LLVMGetNamedFunction(this.self, name);
     if fctRef == nil<LLVMFunctionRef> {
@@ -1451,6 +1452,7 @@ public f<Value> IRBuilder.createNot(Value value, string name = "") {
     return Value{ LLVMBuildNot(this.self, value.self, name) };
 }
 
+#[ignoreUnusedReturnValue]
 public f<Value> IRBuilder.createCall(Function callee, const Vector<Value>& args, string name = "") {
     unsafe {
         LLVMValueRef* argsRef = cast<LLVMValueRef*>(args.getDataPtr());
@@ -1459,14 +1461,17 @@ public f<Value> IRBuilder.createCall(Function callee, const Vector<Value>& args,
     }
 }
 
+#[ignoreUnusedReturnValue]
 public f<Value> IRBuilder.createRet(Value returnValue) {
     return Value{ LLVMBuildRet(this.self, returnValue.self) };
 }
 
+#[ignoreUnusedReturnValue]
 public f<Value> IRBuilder.createRetVoid() {
     return Value{ LLVMBuildRetVoid(this.self) };
 }
 
+#[ignoreUnusedReturnValue]
 public f<Value> IRBuilder.createBr(BasicBlock bb) {
     return Value{ LLVMBuildBr(this.self, bb.self) };
 }
@@ -1475,6 +1480,7 @@ public f<Value> IRBuilder.createCondBr(Value condition, BasicBlock thenBB, Basic
     return Value{ LLVMBuildCondBr(this.self, condition.self, thenBB.self, elseBB.self) };
 }
 
+#[ignoreUnusedReturnValue]
 public f<Value> IRBuilder.createUnreachable() {
     return Value{ LLVMBuildUnreachable(this.self) };
 }
@@ -2526,6 +2532,7 @@ public f<Value> Module.getNamedGlobal(string name) {
     return Value{ LLVMGetNamedGlobal(this.self, name) };
 }
 
+#[ignoreUnusedReturnValue]
 public f<Value> Module.getOrInsertGlobal(string name, Type ty) {
     LLVMValueRef globalRef = LLVMGetNamedGlobal(this.self, name);
     if globalRef == nil<LLVMValueRef> {
@@ -2761,6 +2768,7 @@ public f<Value> IRBuilder.createSwitch(Value value, BasicBlock defaultDest, unsi
 }
 
 // Call with an explicit function type, e.g. for calls through function pointers or inline assembly
+#[ignoreUnusedReturnValue]
 public f<Value> IRBuilder.createCall(Type fctType, Value callee, const Vector<Value>& args, string name = "") {
     unsafe {
         LLVMValueRef* argsRef = cast<LLVMValueRef*>(args.getDataPtr());

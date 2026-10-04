@@ -1,6 +1,5 @@
 // Std imports
 import "std/data/vector";
-import "std/data/pair";
 import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
 

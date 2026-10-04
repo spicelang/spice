@@ -50,11 +50,13 @@ public f<Vector<LintFinding>> LintPass.lint(ASTEntryNode* ast) {
 }
 
 // Generic double-dispatch entry point required by IAbstractAstVisitor
+#[ignoreUnusedReturnValue]
 public f<Any> LintPass.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
 // Default behavior of every visit method that is not overridden below: visit all children (like the host's ASTVisitor)
+#[ignoreUnusedReturnValue]
 f<Any> LintPass.visitChildren(ASTNode* node) {
     foreach ASTNode* child : node.children {
         assert child != nil<ASTNode*>;
@@ -102,6 +104,7 @@ public f<Any> LintPass.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
 
 // ====================================================== Default visitors ======================================================
 
+#[ignoreUnusedReturnValue]
 public f<Any> LintPass.visitEntry(ASTEntryNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
 public f<Any> LintPass.visitMainFctDef(ASTMainFctDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
 public f<Any> LintPass.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }

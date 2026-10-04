@@ -114,10 +114,12 @@ public p TypeChecker.ctor(GlobalResourceManager& resourceManager, SourceFile* so
 
 // Generic double-dispatch entry point required by IAbstractAstVisitor. source-file.spice calls the concrete
 // visit(ASTEntryNode*) overload below.
+#[ignoreUnusedReturnValue]
 public f<Any> TypeChecker.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
+#[ignoreUnusedReturnValue]
 public f<Any> TypeChecker.visit(ASTEntryNode* node) {
     return this.visitEntry(node);
 }
@@ -125,6 +127,7 @@ public f<Any> TypeChecker.visit(ASTEntryNode* node) {
 // Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor).
 // The host aborts the whole visitor by throwing on a hard error. The bootstrap records the hard error instead and stops
 // visiting further children here, because the following nodes may depend on what the erroneous node failed to set up.
+#[ignoreUnusedReturnValue]
 f<Any> TypeChecker.visitChildren(ASTNode* node) {
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
     foreach ASTNode* child : node.children {
@@ -153,11 +156,6 @@ f<QualType> TypeChecker.getDataType(ASTDataTypeNode* node) {
 f<ExprResult> TypeChecker.visitExpr(IVisitable* node) {
     Any visitResult = this.visit(node);
     return visitResult.get<ExprResult>();
-}
-
-// Return value of a visit method, that evaluates to a type
-f<Any> qualTypeResult(const QualType& qualType) {
-    return Any(qualType);
 }
 
 // Return value of a visit method, that evaluates to an unresolved type after a soft error (SOFT_ERROR_QT in the host)
@@ -281,6 +279,7 @@ f<bool> TypeChecker.coversAllEnumItems(ASTSwitchStmtNode* node) {
  * @param attrs Lambda attributes
  * @return False if the rules are violated, true otherwise
  */
+#[ignoreUnusedReturnValue]
 f<bool> TypeChecker.checkAsyncLambdaCaptureRules(ASTNode* node, const ASTLambdaAttrNode* attrs) {
     // If the async attribute is not set, we can return early
     if attrs == nil<const ASTLambdaAttrNode*> {
@@ -1134,7 +1133,7 @@ f<Any> TypeChecker.visitMainFctDefPrepare(ASTMainFctDefNode* node) {
     // Mark unreachable statements
     ASTNode* baseNode = cast<ASTNode*>(node);
     bool doSetPredecessorsUnreachable = true;
-    baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
+    const bool _ = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
 
     // Retrieve return type
     const QualType returnType = QualType(SuperType::TY_INT);
@@ -1344,7 +1343,7 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
 
     // Mark unreachable statements
     bool doSetPredecessorsUnreachable = true;
-    baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
+    const bool _ = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
 
     // Check if dtor and has params
     if fctDefBase.hasParams && fctDefBase.name.name == DTOR_FUNCTION_NAME {
@@ -1957,6 +1956,7 @@ f<Any> TypeChecker.visitGenericTypeDefPrepare(ASTGenericTypeDefNode* node) {
     return Any();
 }
 
+#[ignoreUnusedReturnValue]
 f<Any> TypeChecker.visitAliasDefPrepare(ASTAliasDefNode* node) {
     assert node.entry != nil<SymbolTableEntry*> && node.aliasedTypeContainerEntry != nil<SymbolTableEntry*>;
 
@@ -2866,7 +2866,7 @@ public f<Any> TypeChecker.visitAssertStmt(ASTAssertStmtNode* node) {
 
 public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
     // Change to unsafe block body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::UNSAFE_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::UNSAFE_BODY);
 
     // Visit body
     this.visit(node.body);
@@ -2876,7 +2876,7 @@ public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
 
 public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
     // Change to for body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
 
     // Visit loop variable declaration
     this.visit(node.initDecl);
@@ -2954,7 +2954,7 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
     }
 
     // Change to foreach body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOREACH_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOREACH_BODY);
 
     // Check iterator type
     if !iteratorType.isIterator(baseNode) {
@@ -3031,7 +3031,7 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
 
 public f<Any> TypeChecker.visitWhileLoop(ASTWhileLoopNode* node) {
     // Change to while body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
 
     // Visit condition
     const ExprResult condition = this.visitInExprScope(node.condition);
@@ -3050,7 +3050,7 @@ public f<Any> TypeChecker.visitWhileLoop(ASTWhileLoopNode* node) {
 
 public f<Any> TypeChecker.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
     // Change to while body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::WHILE_BODY);
 
     // Visit body
     this.visit(node.body);
@@ -3128,7 +3128,7 @@ public f<Any> TypeChecker.visitElseStmt(ASTElseStmtNode* node) {
     }
 
     // Change to else body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::IF_ELSE_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::IF_ELSE_BODY);
 
     // Visit body
     this.visit(node.body);
@@ -3166,7 +3166,7 @@ public f<Any> TypeChecker.visitSwitchStmt(ASTSwitchStmtNode* node) {
 
 public f<Any> TypeChecker.visitCaseBranch(ASTCaseBranchNode* node) {
     // Change to case body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::CASE_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::CASE_BODY);
 
     // Visit constant list
     foreach IVisitable* constant : node.caseConstants {
@@ -3217,7 +3217,7 @@ public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) {
 
 public f<Any> TypeChecker.visitDefaultBranch(ASTDefaultBranchNode* node) {
     // Change to default body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::DEFAULT_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::DEFAULT_BODY);
 
     // Visit body
     this.visit(node.body);
@@ -3227,7 +3227,7 @@ public f<Any> TypeChecker.visitDefaultBranch(ASTDefaultBranchNode* node) {
 
 public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) {
     // Change to anonymous scope body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY);
 
     // Visit body
     this.visit(node.body);
@@ -4388,8 +4388,7 @@ public f<Any> TypeChecker.visitValue(ASTValueNode* node) {
         return Any(ExprResult{node.node.setEvaluatedSymbolType(nilType, this.manIdx), nil<SymbolTableEntry*>});
     }
 
-    panic(Error("Value fall-through")); // UNHANDLED_BRANCH compiler error in the host
-    return Any();
+    panic(Error("Value fall-through")); // GCOV_EXCL_LINE
 }
 
 public f<Any> TypeChecker.visitConstant(ASTConstantNode* node) {
@@ -4707,8 +4706,9 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     return Any(ExprResult{node.node.setEvaluatedSymbolType(returnType, this.manIdx), anonymousSymbol});
 }
 
-f<bool> TypeChecker.visitOrdinaryFctCall(ASTFctCallNode* node, String fqFunctionName) {
+f<bool> TypeChecker.visitOrdinaryFctCall(ASTFctCallNode* node, const String& origFqFunctionName) {
     ASTNode* baseNode = cast<ASTNode*>(node);
+    String fqFunctionName = origFqFunctionName;
     FctCallData& data = node.data.get(this.manIdx);
 
     // Check if this is a well-known ctor/fct call
@@ -4806,8 +4806,8 @@ f<bool> TypeChecker.visitFctPtrCall(ASTFctCallNode* node, const QualType& functi
         const Arg& arg = data.args.get(i);
         const QualType& actualType = arg.getFirst();
         const QualType& expectedType = expectedArgTypes.get(i);
-        TypeMapping typeMapping;
-        if !matchRequestedToCandidateType(expectedType, actualType, typeMapping, noCandidateTemplateTypes, false, false) {
+        TypeMapping tm;
+        if !matchRequestedToCandidateType(expectedType, actualType, tm, noCandidateTemplateTypes, false, false) {
             const String message = String("Expected ") + expectedType.getName(false) + " but got " + actualType.getName(false);
             this.softError(getASTNode(node.argLst.args.get(i)), SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION, message);
             return false;
@@ -5128,7 +5128,7 @@ public f<Any> TypeChecker.visitLambdaProc(ASTLambdaProcNode* node) {
 
     // Mark unreachable statements
     bool doSetPredecessorsUnreachable = true;
-    baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
+    const bool _ = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
 
     // Change to function scope
     Scope* bodyScope = this.currentScope.getChildScope(node.getScopeId());
@@ -6879,12 +6879,13 @@ public f<Function*> TypeChecker.implicitlyCallStructMethod(const SymbolTableEntr
  * @param args Provided arguments by the caller
  * @param node AST node
  */
-public f<Function*> TypeChecker.implicitlyCallStructMethod(QualType thisType, const String& methodName, const ArgList& args, const ASTNode* node) {
-    assert thisType.is(SuperType::TY_STRUCT);
-    Scope* matchScope = thisType.getBodyScope();
+public f<Function*> TypeChecker.implicitlyCallStructMethod(const QualType& origThisType, const String& methodName, const ArgList& args, const ASTNode* node) {
+    assert origThisType.is(SuperType::TY_STRUCT);
+    Scope* matchScope = origThisType.getBodyScope();
     assert matchScope.scopeType == ScopeType::STRUCT;
 
     // Search for dtor
+    QualType thisType = origThisType;
     if matchScope.isImportedBy(this.rootScope) {
         thisType = this.mapLocalTypeToImportedScopeType(matchScope, thisType);
     }

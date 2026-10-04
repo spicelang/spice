@@ -332,27 +332,26 @@ public f<string> getOutputFileExtension(const CliOptions& cliOptions, OutputCont
     const string[4] extensionsWindows = ["exe", "obj", "lib", "dll"];
     const string[4] extensionsLinux = ["", "o", "a", "so"];
 
-    const int container = cast<int>(outputContainer);
     const String triple = String(cliOptions.targetTriple.value);
     if triple.isEmpty() {
         if isWindows() {
-            return extensionsWindows[container];
+            return extensionsWindows[outputContainer];
         } else if isMacOS() {
-            return extensionsMacos[container];
+            return extensionsMacos[outputContainer];
         }
-        return extensionsLinux[container];
+        return extensionsLinux[outputContainer];
     }
 
     if triple.startsWith("wasm") {
-        return extensionsWasm[container];
+        return extensionsWasm[outputContainer];
     }
     if isDarwinTriple(triple) {
-        return extensionsMacos[container];
+        return extensionsMacos[outputContainer];
     }
     if triple.contains("windows") || triple.contains("win32") || triple.contains("mingw") || triple.contains("cygwin") {
-        return extensionsWindows[container];
+        return extensionsWindows[outputContainer];
     }
-    return extensionsLinux[container];
+    return extensionsLinux[outputContainer];
 }
 
 /**

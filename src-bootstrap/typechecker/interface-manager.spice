@@ -35,6 +35,7 @@ public type InterfaceRegistry alias Map</*interfaceId=*/String, /*manifestationL
  * @param nodeInterfaceList List to collect the inserted manifestation into (owned by the declaration node)
  * @return Inserted interface manifestation
  */
+#[ignoreUnusedReturnValue]
 public f<Interface*> insertInterface(Scope* insertScope, Interface& spiceInterface, Vector<Interface*>* nodeInterfaceList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
     const String interfaceId = spiceInterface.name + ":" + spiceInterface.declNode.codeLoc.toString();
@@ -279,7 +280,7 @@ p substantiateSignatures(Interface& candidate, const TypeMapping& typeMapping, c
         }
 
         // Substantiate param types
-        foreach unsigned long i, Param& param : method.paramList {
+        foreach Param& param : method.paramList {
             if param.qualType.isBase(SuperType::TY_GENERIC) {
                 substantiateTypeWithTypeMapping(param.qualType, typeMapping, node);
             }

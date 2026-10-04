@@ -37,11 +37,9 @@ public p BlockAllocator.dtor() {
 
     // Free all memory blocks
     foreach byte* block : this.memoryBlocks {
-        heap byte* heapBlock;
         unsafe {
-            heapBlock = cast<heap byte*>(block);
+            this.memoryManager.deallocate(cast<heap byte*>(block));
         }
-        this.memoryManager.deallocate(heapBlock);
     }
     this.memoryBlocks.clear();
 }
@@ -99,7 +97,7 @@ public f<Vector<Base*>> BlockAllocator.releaseObjects() {
  * @return Total allocated size in bytes
  */
 public f<unsigned long> BlockAllocator.getTotalAllocatedSize() {
-    return cast<unsigned long>(this.memoryBlocks.getSize()) * this.blockSize;
+    return this.memoryBlocks.getSize() * this.blockSize;
 }
 
 /**
@@ -108,7 +106,7 @@ public f<unsigned long> BlockAllocator.getTotalAllocatedSize() {
  * @return Number of allocations
  */
 public f<unsigned long> BlockAllocator.getAllocationCount() {
-    return cast<unsigned long>(this.allocatedObjects.getSize());
+    return this.allocatedObjects.getSize();
 }
 
 public p BlockAllocator.allocateNewBlock() {

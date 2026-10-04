@@ -47,11 +47,13 @@ public p PostTypeCheckingVerifier.verify(ASTEntryNode* ast) {
 }
 
 // Generic double-dispatch entry point required by IAbstractAstVisitor
+#[ignoreUnusedReturnValue]
 public f<Any> PostTypeCheckingVerifier.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
 // Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
+#[ignoreUnusedReturnValue]
 f<Any> PostTypeCheckingVerifier.visitChildren(ASTNode* node) {
     foreach ASTNode* child : node.children {
         assert child != nil<ASTNode*>;
@@ -178,6 +180,7 @@ public f<Any> PostTypeCheckingVerifier.visitLambdaExpr(ASTLambdaExprNode* node) 
 
 // ====================================================== Default visitors ======================================================
 
+#[ignoreUnusedReturnValue]
 public f<Any> PostTypeCheckingVerifier.visitEntry(ASTEntryNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
 public f<Any> PostTypeCheckingVerifier.visitMainFctDef(ASTMainFctDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
 public f<Any> PostTypeCheckingVerifier.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }

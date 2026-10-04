@@ -44,7 +44,6 @@ import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/typechecker/builtin-functions";
 import "bootstrap/typechecker/function-manager";
-import "bootstrap/util/common-util";
 
 // Constants
 public const string ANON_GLOBAL_STRING_NAME = "anon.string.";
@@ -143,7 +142,7 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     this.context = &llvmContext;
     this.builder = &sourceFile.builder;
     this.module = &sourceFile.llvmModule;
-    this.stdFunctionManager = StdFunctionManager(sourceFile, resourceManager, this.module);
+    this.stdFunctionManager = StdFunctionManager(sourceFile, this.module);
     this.conversionManager = OpRuleConversionManager(this);
     this.diGenerator = DebugInfoGenerator(this);
     this.mdGenerator = MetadataGenerator(this);
@@ -181,15 +180,18 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
 // ============================================================= Visit ===========================================================
 
 // Generic double-dispatch entry point required by IAbstractAstVisitor
+#[ignoreUnusedReturnValue]
 public f<Any> IRGenerator.visit(IVisitable* node) {
     return node.accept(cast<IAbstractAstVisitor*>(this));
 }
 
+#[ignoreUnusedReturnValue]
 public f<Any> IRGenerator.visit(ASTEntryNode* node) {
     return this.visitEntry(node);
 }
 
 // Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
+#[ignoreUnusedReturnValue]
 f<Any> IRGenerator.visitChildren(ASTNode* node) {
     foreach ASTNode* child : node.children {
         assert child != nil<ASTNode*>;
@@ -400,6 +402,7 @@ public f<llvm::Value> IRGenerator.insertLoad(const QualType& qualType, llvm::Val
     return load;
 }
 
+#[ignoreUnusedReturnValue]
 public f<llvm::Value> IRGenerator.insertStore(llvm::Value val, llvm::Value ptr, bool isVolatile = false) {
     const llvm::Type ptrType = ptr.getType();
     assert ptrType.isPointerTy();
@@ -445,6 +448,7 @@ public f<llvm::Value> IRGenerator.insertStructGEP(llvm::Type ty, llvm::Value bas
     return this.builder.createStructGEP(ty, basePtr, index, varName.getRaw());
 }
 
+#[ignoreUnusedReturnValue]
 public f<llvm::Value> IRGenerator.resolveValue(IVisitable* node) {
     // Visit the given AST node
     LLVMExprResult exprResult = this.visitExpr(node);
@@ -468,10 +472,12 @@ public f<llvm::Value> IRGenerator.resolveValueInExprScope(IVisitable* expr) {
     return value;
 }
 
+#[ignoreUnusedReturnValue]
 public f<llvm::Value> IRGenerator.resolveValue(IVisitable* node, LLVMExprResult& exprResult) {
     return this.resolveValue(this.getEvaluatedType(node), exprResult);
 }
 
+#[ignoreUnusedReturnValue]
 public f<llvm::Value> IRGenerator.resolveValue(const QualType& qualType, LLVMExprResult& exprResult) {
     // Check if the value is already present
     if !exprResult.value.isNull() {
@@ -499,12 +505,14 @@ public f<llvm::Value> IRGenerator.resolveValue(const QualType& qualType, LLVMExp
     return exprResult.value;
 }
 
+#[ignoreUnusedReturnValue]
 public f<llvm::Value> IRGenerator.resolveAddress(IVisitable* node) {
     // Visit the given AST node
     LLVMExprResult exprResult = this.visitExpr(node);
     return this.resolveAddress(exprResult);
 }
 
+#[ignoreUnusedReturnValue]
 public f<llvm::Value> IRGenerator.resolveAddress(LLVMExprResult& exprResult) {
     // Check if an address is already present
     if !exprResult.ptr.isNull() {
@@ -538,7 +546,6 @@ public f<llvm::Value> IRGenerator.resolve(const Resolver& resolver) {
         case ResolverKind::EXPR_ADDRESS: { return this.resolveAddress(resolver.expr); }
         case ResolverKind::FIXED: { return resolver.fixedValue; }
     }
-    return llvm::Value();
 }
 
 /**
@@ -758,7 +765,6 @@ public f<llvm::Value> IRGenerator.getDefaultValueForSymbolType(const QualType& s
     }
 
     panic(Error("Cannot determine default value for symbol type")); // GCOV_EXCL_LINE
-    return llvm::Value();
 }
 
 // Get the field node, a field entry is declared by, if it is declared by a field node (dynamic_cast<FieldNode*> in the host)
@@ -810,7 +816,6 @@ f<llvm::Value> IRGenerator.getConst(const CompileTimeValue& compileTimeValue, co
     }
 
     panic(Error("Constant fall-through")); // GCOV_EXCL_LINE
-    return llvm::Value();
 }
 
 f<llvm::BasicBlock> IRGenerator.createBlock(const String& blockName = String()) {
@@ -881,6 +886,7 @@ p IRGenerator.verifyModule(const CodeLoc& codeLoc) {
     }
 }
 
+#[ignoreUnusedReturnValue]
 f<LLVMExprResult> IRGenerator.doAssignment(IVisitable* lhsNode, IVisitable* rhsNode, ASTNode* node) {
     // Get entry of left side
     LLVMExprResult exprResult = this.visitExpr(lhsNode);
@@ -894,6 +900,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(IVisitable* lhsNode, IVisitable* rhsN
     return this.doAssignment(lhsAddress, entry, rhsNode, node);
 }
 
+#[ignoreUnusedReturnValue]
 f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolTableEntry* lhsEntry, IVisitable* rhsNode, ASTNode* node, bool isDecl = false) {
     // Get symbol type of right side
     const QualType rhsSType = this.getEvaluatedType(rhsNode);
@@ -901,6 +908,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
     return this.doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, node, isDecl);
 }
 
+#[ignoreUnusedReturnValue]
 f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolTableEntry* lhsEntry, LLVMExprResult& rhs, const QualType& rhsSType, ASTNode* node, bool isDecl) {
     // Deduce some information about the assignment
     const bool isRefAssign = lhsEntry != nil<const SymbolTableEntry*> && isRefEntry(lhsEntry);
@@ -1292,7 +1300,7 @@ p IRGenerator.addCommonFctAttrs(llvm::Function fct, bool isAlwaysInline = false)
         fct.addFnAttr("noinline"); // 'optnone' requires 'noinline'
     }
 
-    if cast<int>(this.cliOptions.optLevel) >= cast<int>(OptLevel::Os) {
+    if this.cliOptions.optLevel >= OptLevel::Os {
         fct.addFnAttr("optsize");
         if this.cliOptions.optLevel == OptLevel::Oz {
             fct.addFnAttr("minsize");
@@ -2008,19 +2016,19 @@ public f<Any> IRGenerator.visitInterfaceDef(ASTInterfaceDefNode* node) {
     return Any();
 }
 
-public f<Any> IRGenerator.visitUnionDef(ASTUnionDefNode* node) {
+public f<Any> IRGenerator.visitUnionDef(ASTUnionDefNode* _) {
     return Any(); // Noop (unions carry no per-definition IR work; their LLVM type is materialized lazily on first use)
 }
 
-public f<Any> IRGenerator.visitEnumDef(ASTEnumDefNode* node) {
+public f<Any> IRGenerator.visitEnumDef(ASTEnumDefNode* _) {
     return Any(); // Noop (enums are high-level semantic-only structures)
 }
 
-public f<Any> IRGenerator.visitGenericTypeDef(ASTGenericTypeDefNode* node) {
+public f<Any> IRGenerator.visitGenericTypeDef(ASTGenericTypeDefNode* _) {
     return Any(); // Noop (generic types are high-level semantic-only structures)
 }
 
-public f<Any> IRGenerator.visitAliasDef(ASTAliasDefNode* node) {
+public f<Any> IRGenerator.visitAliasDef(ASTAliasDefNode* _) {
     return Any(); // Noop (alias definitions are high-level semantic-only structures)
 }
 
@@ -2123,7 +2131,7 @@ public f<Any> IRGenerator.visitExtDecl(ASTExtDeclNode* node) {
 
 public f<Any> IRGenerator.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
     // Change scope
-    ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::UNSAFE_BODY, cast<ASTNode*>(node));
+    ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::UNSAFE_BODY, cast<ASTNode*>(node));
 
     // Visit instructions in the block
     this.visit(node.body);
@@ -2140,7 +2148,7 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
     const llvm::BasicBlock bExit = this.createBlock("for.exit." + codeLine);
 
     // Change scope
-    ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::FOR_BODY, cast<ASTNode*>(node));
+    ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::FOR_BODY, cast<ASTNode*>(node));
 
     // Save the break/continue targets, paired with the scope to clean up to when jumping there
     this.breakTargets.pushBack(BreakContinueTarget{this.currentScope, bExit});
@@ -2191,7 +2199,7 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     const llvm::BasicBlock bExit = this.createBlock("foreach.exit." + codeLine);
 
     // Change scope
-    ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::FOREACH_BODY, cast<ASTNode*>(node));
+    ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::FOREACH_BODY, cast<ASTNode*>(node));
 
     // Save the break/continue targets, paired with the scope to clean up to when jumping there
     this.breakTargets.pushBack(BreakContinueTarget{this.currentScope, bExit});
@@ -2361,7 +2369,7 @@ public f<Any> IRGenerator.visitWhileLoop(ASTWhileLoopNode* node) {
     const llvm::BasicBlock bExit = this.createBlock("while.exit." + codeLine);
 
     // Change scope
-    ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::WHILE_BODY, cast<ASTNode*>(node));
+    ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::WHILE_BODY, cast<ASTNode*>(node));
 
     // Save the break/continue targets, paired with the scope to clean up to when jumping there
     this.breakTargets.pushBack(BreakContinueTarget{this.currentScope, bExit});
@@ -2402,7 +2410,7 @@ public f<Any> IRGenerator.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
     const llvm::BasicBlock bExit = this.createBlock("dowhile.exit." + codeLine);
 
     // Change scope
-    ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::WHILE_BODY, cast<ASTNode*>(node));
+    ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::WHILE_BODY, cast<ASTNode*>(node));
 
     // Save the break/continue targets, paired with the scope to clean up to when jumping there
     this.breakTargets.pushBack(BreakContinueTarget{this.currentScope, bExit});
@@ -2440,7 +2448,7 @@ public f<Any> IRGenerator.visitIfStmt(ASTIfStmtNode* node) {
     const bool doCompileThenBranch = node.doCompileThenBranch(this.manIdx);
     const bool doCompileElseBranch = node.doCompileElseBranch(this.manIdx);
     if doCompileThenBranch && !doCompileElseBranch {
-        ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::IF_ELSE_BODY, cast<ASTNode*>(node));
+        ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::IF_ELSE_BODY, cast<ASTNode*>(node));
         this.visit(node.thenBody);
         return Any(this.builder.getTrue());
     }
@@ -2499,7 +2507,7 @@ public f<Any> IRGenerator.visitElseStmt(ASTElseStmtNode* node) {
         this.visit(node.ifStmt);
     } else { // It is an else branch
         // Change scope
-        ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::IF_ELSE_BODY, cast<ASTNode*>(node));
+        ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::IF_ELSE_BODY, cast<ASTNode*>(node));
 
         // Generate IR for nested statements
         this.visit(node.body);
@@ -2587,7 +2595,7 @@ public f<Any> IRGenerator.visitSwitchStmt(ASTSwitchStmtNode* node) {
 
 public f<Any> IRGenerator.visitCaseBranch(ASTCaseBranchNode* node) {
     // Change to case body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::CASE_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::CASE_BODY);
 
     // A 'break' within this branch targets the enclosing switch; point it at this branch's own scope
     BreakContinueTarget& breakTarget = this.breakTargets.back();
@@ -2601,7 +2609,7 @@ public f<Any> IRGenerator.visitCaseBranch(ASTCaseBranchNode* node) {
 
 public f<Any> IRGenerator.visitDefaultBranch(ASTDefaultBranchNode* node) {
     // Change to default body scope
-    ScopeHandle scopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::DEFAULT_BODY);
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::DEFAULT_BODY);
 
     // A 'break' within this branch targets the enclosing switch; point it at this branch's own scope
     BreakContinueTarget& breakTarget = this.breakTargets.back();
@@ -2617,7 +2625,7 @@ public f<Any> IRGenerator.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* nod
     // Change scope
     node.bodyScope.parent = this.currentScope;                           // Needed for nested scopes in generic functions
     node.bodyScope.symbolTable.parent = &this.currentScope.symbolTable; // Needed for nested scopes in generic functions
-    ScopeHandle scopeHandle = ScopeHandle(this, node.getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, cast<ASTNode*>(node));
+    ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::ANONYMOUS_BLOCK_BODY, cast<ASTNode*>(node));
 
     // Visit instructions in the block
     this.visit(node.body);
@@ -2649,7 +2657,7 @@ public f<Any> IRGenerator.visitStmtLst(ASTStmtLstNode* node) {
     return Any();
 }
 
-public f<Any> IRGenerator.visitTypeAltsLst(ASTTypeAltsLstNode* node) {
+public f<Any> IRGenerator.visitTypeAltsLst(ASTTypeAltsLstNode* _) {
     return Any(); // Noop
 }
 
@@ -2714,15 +2722,15 @@ public f<Any> IRGenerator.visitDeclStmt(ASTDeclStmtNode* node) {
     return Any();
 }
 
-public f<Any> IRGenerator.visitQualifierLst(ASTQualifierLstNode* node) {
+public f<Any> IRGenerator.visitQualifierLst(ASTQualifierLstNode* _) {
     return Any(); // Noop
 }
 
-public f<Any> IRGenerator.visitModAttr(ASTModAttrNode* node) {
+public f<Any> IRGenerator.visitModAttr(ASTModAttrNode* _) {
     return Any(); // Noop
 }
 
-public f<Any> IRGenerator.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) {
+public f<Any> IRGenerator.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* _) {
     return Any(); // Noop
 }
 
@@ -2803,7 +2811,7 @@ public f<Any> IRGenerator.visitContinueStmt(ASTContinueStmtNode* node) {
     return Any();
 }
 
-public f<Any> IRGenerator.visitFallthroughStmt(ASTFallthroughStmtNode* node) {
+public f<Any> IRGenerator.visitFallthroughStmt(ASTFallthroughStmtNode* _) {
     // Jump to destination block
     this.insertJump(this.fallthroughBlocks.top());
 
@@ -2942,7 +2950,6 @@ public f<Any> IRGenerator.visitAssignExpr(ASTAssignExprNode* node) {
 
     // This is a fallthrough case -> throw an error
     panic(Error("AssignStmt fall-through")); // GCOV_EXCL_LINE
-    return Any();
 }
 
 // Enter the expression scope of the given expression, if it has one (the ExprScopeHandle of the host)
@@ -4006,7 +4013,6 @@ public f<Any> IRGenerator.visitValue(ASTValueNode* node) {
     }
 
     panic(Error("Value fall-through")); // GCOV_EXCL_LINE
-    return Any();
 }
 
 public f<Any> IRGenerator.visitConstant(ASTConstantNode* node) {
@@ -4020,12 +4026,14 @@ public f<Any> IRGenerator.visitConstant(ASTConstantNode* node) {
 }
 
 // Check if an argument of the given type matches the expected parameter type (matchFct lambda of the host)
-f<bool> matchArgType(QualType expectedTy, QualType actualTy) {
-    if expectedTy.matches(actualTy, false, true, true) {
+f<bool> matchArgType(const QualType& origExpectedTy, const QualType& origActualTy) {
+    if origExpectedTy.matches(origActualTy, false, true, true) {
         return true;
     }
 
     // Unwrap as far as possible and remove reference wrappers if possible
+    QualType expectedTy = origExpectedTy;
+    QualType actualTy = origActualTy;
     unwrapBoth(expectedTy, actualTy);
     return expectedTy.matchesInterfaceImplementedByStruct(actualTy);
 }
@@ -5000,7 +5008,6 @@ f<Any> IRGenerator.visitBuiltinCall(ASTFctCallNode* node) {
     if name == BUILTIN_FCT_NAME_STDERR { return this.visitBuiltinStdErrCall(node); }
     if name == BUILTIN_FCT_NAME_FRAME_ADDRESS { return this.visitBuiltinFrameAddressCall(node); }
     panic(Error("Builtin function not implemented!")); // GCOV_EXCL_LINE
-    return Any();
 }
 
 f<Any> IRGenerator.visitBuiltinPrintfCall(ASTFctCallNode* node) {
@@ -5368,8 +5375,10 @@ f<llvm::Value> IRGenerator.getStdErrValue() {
 
 // ======================================================= GenImplicit.cpp =======================================================
 
-f<llvm::Value> IRGenerator.doImplicitCast(llvm::Value src, QualType dstSTy, QualType srcSTy) {
-    assert !srcSTy.matches(dstSTy, false, false, false); // We only need to cast implicitly, if the types do not match exactly
+f<llvm::Value> IRGenerator.doImplicitCast(llvm::Value src, const QualType& origDstSTy, const QualType& origSrcSTy) {
+    assert !origSrcSTy.matches(origDstSTy, false, false, false); // We only need to cast implicitly, if the types do not match exactly
+    QualType dstSTy = origDstSTy;
+    QualType srcSTy = origSrcSTy;
 
     // Unpack the pointers until a pointer of another type is met
     unsigned long loadCounter = 0l;
@@ -5616,6 +5625,7 @@ p IRGenerator.generateFctDecl(const model::Function* fct, const Vector<llvm::Val
     }
 }
 
+#[ignoreUnusedReturnValue]
 f<llvm::Value> IRGenerator.generateFctCall(const model::Function* fct, const Vector<llvm::Value>& args) {
     // Retrieve metadata for the function
     const String mangledName = fct.getMangledName();
@@ -6247,7 +6257,7 @@ p IRGenerator.generateTestMain() {
     Vector<llvm::Value> allStartArgs;
     allStartArgs.pushBack(allStartMsg);
     allStartArgs.pushBack(this.getInt32(cast<long>(totalTestCount)));
-    allStartArgs.pushBack(this.getInt32(cast<long>(tests.getSize())));
+    allStartArgs.pushBack(this.getInt32(tests.getSize()));
     this.builder.createCall(printfFct, allStartArgs);
 
     // Generate a call to each test function
@@ -6258,7 +6268,7 @@ p IRGenerator.generateTestMain() {
         const llvm::Value fileNameValue = this.createGlobalStringConst(String("fileName"), fileName, firstTestFunction.getDeclCodeLoc());
         Vector<llvm::Value> fileStartArgs;
         fileStartArgs.pushBack(fileStartMsg);
-        fileStartArgs.pushBack(this.getInt32(cast<long>(testSuite.getSize())));
+        fileStartArgs.pushBack(this.getInt32(testSuite.getSize()));
         fileStartArgs.pushBack(fileNameValue);
         this.builder.createCall(printfFct, fileStartArgs);
 
@@ -6335,7 +6345,7 @@ p IRGenerator.generateTestMain() {
         // Print test suite epilogue
         Vector<llvm::Value> fileEndArgs;
         fileEndArgs.pushBack(fileEndMsg);
-        fileEndArgs.pushBack(this.getInt32(cast<long>(testSuite.getSize())));
+        fileEndArgs.pushBack(this.getInt32(testSuite.getSize()));
         fileEndArgs.pushBack(fileNameValue);
         this.builder.createCall(printfFct, fileEndArgs);
     }
@@ -6344,7 +6354,7 @@ p IRGenerator.generateTestMain() {
     Vector<llvm::Value> allEndArgs;
     allEndArgs.pushBack(allEndMsg);
     allEndArgs.pushBack(this.getInt32(cast<long>(totalTestCount)));
-    allEndArgs.pushBack(this.getInt32(cast<long>(tests.getSize())));
+    allEndArgs.pushBack(this.getInt32(tests.getSize()));
     this.builder.createCall(printfFct, allEndArgs);
 
     // Compute overall result
@@ -6514,6 +6524,7 @@ f<llvm::Value> IRGenerator.generateTypeInfoName(StructBase* spiceStruct) {
     return global;
 }
 
+#[ignoreUnusedReturnValue]
 f<llvm::Value> IRGenerator.generateTypeInfo(StructBase* spiceStruct) {
     // Generate type info name
     const llvm::Value typeInfoName = this.generateTypeInfoName(spiceStruct);
@@ -6584,6 +6595,7 @@ f<llvm::Value> IRGenerator.generateTypeInfo(StructBase* spiceStruct) {
     return global;
 }
 
+#[ignoreUnusedReturnValue]
 f<llvm::Value> IRGenerator.generateVTable(StructBase* spiceStruct) {
     // Retrieve virtual method count
     const Vector<const model::Function*> virtualMethods = spiceStruct.scope.getVirtualMethods();
