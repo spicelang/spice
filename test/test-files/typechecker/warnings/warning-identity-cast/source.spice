@@ -1,4 +1,9 @@
 f<int> main() {
     char* s = "abc";
     printf("%s\n", cast<char*>(s));
+    // Casts that only change the signedness are no identity casts
+    unsigned int u = 5u;
+    printf("%d\n", cast<int>(u));
+    int i = 6;
+    printf("%d\n", cast<unsigned int>(i));
 }
