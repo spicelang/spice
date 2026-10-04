@@ -45,7 +45,17 @@ if (SPICE_ENABLE_TPDE)
     # Spice itself links LLVM statically (see LLVMOptions.cmake). TPDE defaults to shared LLVM; align it
     # with Spice's convention so both sides can be linked into the same executable.
     set(TPDE_LINK_LLVM_STATIC ON CACHE BOOL "" FORCE)
+    # Build TPDE without SPICE_RUN_COVERAGE's gcov instrumentation. The std TPDE bindings link the TPDE static libraries
+    # into Spice programs, which do not link libgcov, and coverage of a third-party dependency is not reported anyway.
+    set(SPICE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+    set(SPICE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+    foreach (COVERAGE_FLAG --coverage -fprofile-arcs -ftest-coverage)
+        string(REPLACE " ${COVERAGE_FLAG}" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+        string(REPLACE " ${COVERAGE_FLAG}" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+    endforeach ()
     add_subdirectory(deps/tpde EXCLUDE_FROM_ALL)
+    set(CMAKE_CXX_FLAGS_DEBUG "${SPICE_CXX_FLAGS_DEBUG}")
+    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${SPICE_CXX_FLAGS_RELWITHDEBINFO}")
     # SPICE_LTO also compiles TPDE with -flto. Release packages ship the TPDE static libraries with the std for the std TPDE
     # bindings, where other toolchains link them, so they have to hold machine code next to GCC's LTO bytecode.
     if (SPICE_LTO AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
