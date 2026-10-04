@@ -57,6 +57,10 @@ public:
   SymbolMap symbols;
   CaptureMap captures;
   bool capturingRequired = false;
+
+private:
+  // Private methods
+  [[nodiscard]] std::string getAnonymousSymbolName(const ASTNode *declNode, size_t numericSuffix) const;
 };
 
 } // namespace spice::compiler

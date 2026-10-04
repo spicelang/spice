@@ -164,8 +164,8 @@ public type SourceFile struct {
     // import entries exposing it, so that a failing lookup can point the user to the colliding imports
     public Map<String, Vector<const SymbolTableEntry*>> ambiguousNameRegistry
     public Vector<const model::Function*> testFunctions
+    public GlobalResourceManager& resourceManager // Public, because Scope and SymbolTable are friend classes in the host
     // Private fields
-    GlobalResourceManager& resourceManager
     CliOptions& cliOptions
     UnorderedMap<long, llvm::Type> typeToLLVMTypeMapping // Maps the address of each type to its LLVM type
     public unsigned int importedRuntimeModules = 0 // Public, because the RuntimeModuleManager is a friend class in the host

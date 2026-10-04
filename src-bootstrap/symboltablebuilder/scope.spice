@@ -70,6 +70,7 @@ public type Scope struct {
     // Public members
     public Scope* parent
     public SourceFile* sourceFile
+    public unsigned long scopeId
     // Child scopes are owned by their parent (mirroring the host's `map<string, shared_ptr<Scope>>`). They are
     // stored as stable pointers into 'childAllocator' rather than by value, so that adding a child never has to
     // copy a Scope (which is not trivially copyable and must never be deep-copied implicitly).
@@ -97,6 +98,7 @@ public type Scope struct {
 public p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, CodeLoc *codeLoc) {
     this.parent = parent;
     this.sourceFile = sourceFile;
+    this.scopeId = sourceFile.resourceManager.getNextScopeId();
     this.scopeType = scopeType;
     this.symbolTable = SymbolTable(parent == nil<Scope*> ? nil<SymbolTable*> : &parent.symbolTable, this);
     this.codeLoc = codeLoc;

@@ -13,6 +13,7 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/symboltablebuilder/type";
+import "bootstrap/symboltablebuilder/scope";
 
 // The TypeRegistry interns every Type and hands back stable `const Type*` pointers, so that type identity can be
 // compared by pointer. It replaces the host's static-singleton unordered_map (which cannot be ported, since Spice
@@ -193,14 +194,13 @@ f<bool> haveSameBodyScopes(const Type* lhs, const Type* rhs) {
     return true;
 }
 
-// Address of the body scope of a type chain element, which is used to hash body scopes by pointer identity like the host
-// (hashPointer)
-f<long> getBodyScopeAddress(const TypeChainElement& tce) {
-    long address = 0l;
-    unsafe {
-        address = cast<long>(cast<byte*>(tce.data.bodyScope));
+// Id of the body scope of a type chain element (0 if there is none)
+f<unsigned long> getBodyScopeId(const TypeChainElement& tce) {
+    const Scope* bodyScope = tce.data.bodyScope;
+    if bodyScope == nil<const Scope*> {
+        return 0l;
     }
-    return address;
+    return bodyScope.scopeId;
 }
 
 /**
@@ -230,8 +230,9 @@ f<Hash> TypeRegistry.hashElement(const TypeChainElement& tce) {
             h = combineHashes(h, hash(tce.data.hasCaptures));
         }
         case SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION, SuperType::TY_ENUM: {
-            // Hash based on pointer identity of the body scope, like the host compiler
-            h = combineHashes(h, hash(getBodyScopeAddress(tce)));
+            // Hash the id of the body scope instead of its address, so that type hashes (e.g. typeid values) do not change
+            // between compiler runs
+            h = combineHashes(h, hash(cast<long>(getBodyScopeId(tce))));
         }
         default: {}
     }

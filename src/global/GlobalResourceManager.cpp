@@ -83,6 +83,20 @@ SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const st
 
 uint64_t GlobalResourceManager::getNextCustomTypeId() { return nextCustomTypeId++; }
 
+uint64_t GlobalResourceManager::getNextScopeId() { return nextScopeId++; }
+
+/**
+ * Get the id of the given AST node. Node ids are assigned in creation order per source file, so unlike the node address,
+ * they are the same in every compiler run
+ *
+ * @param node AST node
+ * @return Node id / 0 if the node was not created by the AST builder
+ */
+size_t GlobalResourceManager::getNodeId(const ASTNode *node) const {
+  const auto it = nodeToNodeId.find(node);
+  return it != nodeToNodeId.end() ? it->second : 0;
+}
+
 /**
  * Determine how many source files may be compiled at the same time, based on the --jobs/-j cli option
  *

@@ -5,12 +5,14 @@
 #include <SourceFile.h>
 #include <ast/ASTNodes.h>
 #include <exception/SemanticError.h>
+#include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 
 namespace spice::compiler {
 
 Scope::Scope(Scope *parent, SourceFile *sourceFile, ScopeType scopeType, const CodeLoc *codeLoc)
-    : parent(parent), sourceFile(sourceFile), codeLoc(codeLoc), type(scopeType) {}
+    : parent(parent), sourceFile(sourceFile), scopeId(sourceFile->resourceManager.getNextScopeId()), codeLoc(codeLoc),
+      type(scopeType) {}
 
 /**
  * Create a child scope and return it
@@ -62,6 +64,7 @@ Scope *Scope::copyChildScope(const std::string &oldName, const std::string &newN
  */
 std::shared_ptr<Scope> Scope::deepCopyScope() { // NOLINT(misc-no-recursion)
   const auto newScope = std::make_shared<Scope>(*this);
+  newScope->scopeId = sourceFile->resourceManager.getNextScopeId();
   for (const auto &[childName, oldChild] : children) {
     newScope->children[childName] = oldChild->deepCopyScope();
     newScope->children[childName]->parent = newScope.get();

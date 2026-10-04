@@ -22,6 +22,8 @@ import "bootstrap/model/struct";
 import "bootstrap/model/interface";
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/common-util";
+import "bootstrap/source-file";
+import "bootstrap/global/global-resource-manager";
 
 // Type aliases
 public type CaptureMap alias Map</*name=*/String, /*capture*/Capture>; // Ordered like in the host, since the order determines the capture struct layout
@@ -130,7 +132,7 @@ public f<SymbolTableEntry*> SymbolTable.insertAnonymous(const QualType& qualType
         return existingSymbol;
     }
     // Otherwise, create an anonymous entry
-    const String name = getAnonymousSymbolName(declNode, numericSuffix);
+    const String name = this.getAnonymousSymbolName(declNode, numericSuffix);
     SymbolTableEntry* anonSymbol = this.insert(name, declNode, true);
     anonSymbol.updateType(qualType, false);
     anonSymbol.updateState(LifecycleState::DECLARED, declNode);
@@ -141,18 +143,17 @@ public f<SymbolTableEntry*> SymbolTable.insertAnonymous(const QualType& qualType
 }
 
 /**
- * Build the name of an anonymous symbol. It is unique per declaration node and numeric suffix.
+ * Build the name of an anonymous symbol. It is unique per declaration node and numeric suffix. The node id is used instead
+ * of the node address, so that the name and with that the order of anonymous symbols do not change between compiler runs
  *
  * @param declNode AST node where the anonymous symbol is declared
  * @param numericSuffix Custom numeric suffix
  * @return Name of the anonymous symbol
  */
-f<String> getAnonymousSymbolName(const ASTNode* declNode, unsigned long numericSuffix) {
-    long nodeAddress = 0l;
-    unsafe {
-        nodeAddress = cast<long>(cast<byte*>(declNode));
-    }
-    String name = String("anon.") + declNode.codeLoc.toString() + "." + toString(nodeAddress);
+f<String> SymbolTable.getAnonymousSymbolName(const ASTNode* declNode, unsigned long numericSuffix) {
+    SourceFile* sourceFile = this.scope.sourceFile;
+    const unsigned long nodeId = sourceFile.resourceManager.getNodeId(declNode);
+    String name = String("anon.") + declNode.codeLoc.toString() + "." + toString(cast<long>(nodeId));
     if numericSuffix > 0l {
         name += ".";
         name += toString(cast<long>(numericSuffix));
@@ -309,7 +310,7 @@ public f<SymbolTableEntry*> SymbolTable.lookupStrictByIndex(const unsigned int o
  * @return Anonymous symbol
  */
 public f<SymbolTableEntry*> SymbolTable.lookupAnonymous(const ASTNode* declNode, unsigned long numericSuffix = 0l) {
-    const String name = getAnonymousSymbolName(declNode, numericSuffix);
+    const String name = this.getAnonymousSymbolName(declNode, numericSuffix);
     return this.lookup(name);
 }
 

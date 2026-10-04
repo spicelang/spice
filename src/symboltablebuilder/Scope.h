@@ -129,6 +129,7 @@ public:
   // Public members
   Scope *parent;
   SourceFile *sourceFile;
+  uint64_t scopeId;
   std::map<std::string, std::shared_ptr<Scope>> children;
   SymbolTable symbolTable = SymbolTable(parent == nullptr ? nullptr : &parent->symbolTable, this);
   const CodeLoc *codeLoc = nullptr;

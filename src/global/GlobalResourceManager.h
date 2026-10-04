@@ -41,6 +41,8 @@ public:
   // Public methods
   SourceFile *createSourceFile(SourceFile *parent, const std::string &depName, const std::filesystem::path &path, bool isStdFile);
   uint64_t getNextCustomTypeId();
+  uint64_t getNextScopeId();
+  [[nodiscard]] size_t getNodeId(const ASTNode *node) const;
   size_t getTotalLineCount() const;
   [[nodiscard]] size_t getCompileJobCount() const;
   ThreadPool &getThreadPool(size_t threadCount);
@@ -68,6 +70,7 @@ public:
 private:
   // Private members
   std::atomic<uint64_t> nextCustomTypeId = UINT8_MAX + 1; // Start at 256 because all primitive types come first
+  std::atomic<uint64_t> nextScopeId = 0;
   // Worker pool for the parallel back end. Created lazily, so single-job builds never spawn a thread.
   std::unique_ptr<ThreadPool> threadPool;
 };
