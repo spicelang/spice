@@ -3,6 +3,8 @@
 #include "driver/TestDriver.h"
 #include "util/BootstrapUtil.h"
 
+#include <cstdlib>
+
 #include <gtest/gtest.h>
 
 // GCOV_EXCL_START
@@ -21,6 +23,11 @@ extern TestDriverCliOptions testDriverCliOptions;
  */
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
+#if defined(SPICE_ENABLE_TPDE) && !defined(OS_WINDOWS)
+  // The std TPDE bindings need the TPDE libraries and headers, that were built along with the TPDE support. Point them to
+  // these, unless the caller does so already. Compiled test programs and the bootstrap compiler inherit the variable.
+  setenv("TPDE_FLAGS", SPICE_TPDE_FLAGS, /*overwrite=*/0);
+#endif
   // Initialize command line parser
   TestDriver driver;
   driver.createInterface();
