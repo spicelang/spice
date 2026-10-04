@@ -10,6 +10,7 @@ fails if this does not happen within the given number of iterations or if any st
 import argparse
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -51,6 +52,21 @@ def find_llvm_lib_dir() -> str | None:
             return str(lib_dir)
     if llvm_config := shutil.which("llvm-config"):
         return subprocess.run([llvm_config, "--libdir"], check=True, capture_output=True, text=True).stdout.strip()
+    return None
+
+
+def find_llvm_include_dirs() -> str | None:
+    # The LLVM std bindings compile a C wrapper, which needs the LLVM headers. In an LLVM build tree, they live in two
+    # directories (source and build tree), which LLVMConfig.cmake lists in LLVM_INCLUDE_DIRS
+    if llvm_dir := os.environ.get("LLVM_DIR"):
+        config_file = Path(llvm_dir) / "LLVMConfig.cmake"
+        if config_file.is_file():
+            match = re.search(r'set\(LLVM_INCLUDE_DIRS "([^"$]+)"\)', config_file.read_text())
+            if match:
+                return " ".join(f"-I{include_dir}" for include_dir in match.group(1).split(";"))
+    if llvm_config := shutil.which("llvm-config"):
+        include_dir = subprocess.run([llvm_config, "--includedir"], check=True, capture_output=True, text=True).stdout.strip()
+        return f"-I{include_dir}"
     return None
 
 
@@ -115,6 +131,12 @@ def main() -> None:
         if llvm_lib_dir is None:
             fail("LLVM library directory not found. Set LLVM_LIB_DIR or LLVM_DIR, or put llvm-config on the PATH")
         os.environ["LLVM_LIB_DIR"] = llvm_lib_dir
+    if "LLVM_INCLUDE_DIRS" not in os.environ:
+        llvm_include_dirs = find_llvm_include_dirs()
+        if llvm_include_dirs is None:
+            fail("LLVM include directories not found. Set LLVM_INCLUDE_DIRS (e.g. '-I<dir1> -I<dir2>') or LLVM_DIR, or put "
+                 "llvm-config on the PATH")
+        os.environ["LLVM_INCLUDE_DIRS"] = llvm_include_dirs
 
     work_dir = args.work_dir.resolve()
     build_flags = args.build_flags.split()
