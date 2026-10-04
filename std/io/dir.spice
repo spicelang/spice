@@ -149,7 +149,8 @@ public f<int> mkDirs(string path, int mode) {
         const long end = isLast ? cast<long>(fullPath.getLength()) : sepIndex;
         const String prefix = fullPath.getSubstring(0l, end);
 
-        if !prefix.isEmpty() && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 {
+        // Another process may create the directory between the check and mkdir, so only a still missing directory is an error
+        if !prefix.isEmpty() && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 && !dirExists(prefix.getRaw()) {
             return -1;
         }
 
