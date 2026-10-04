@@ -1,0 +1,147 @@
+#!/usr/bin/env python3
+"""Bootstrap the self-hosted Spice compiler until it reaches a fixed point.
+
+Stage 0 is the bootstrap compiler (src-bootstrap/) built by the host compiler (src/). Every following stage n is the
+bootstrap compiler built by stage n-1. Stage 0 and stage 1 naturally differ, because they come from different compilers.
+From stage 2 on, every stage is built by a compiler that was built from the very same sources, so stage n and stage n-1
+have to be bit-identical. The script succeeds as soon as two consecutive stages have the same hash (the fixed point) and
+fails if this does not happen within the given number of iterations or if any stage fails to build.
+"""
+import argparse
+import hashlib
+import os
+import shutil
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+GREEN = "\033[0;92m"
+RED = "\033[0;91m"
+NC = "\033[0m"
+
+ROOT_DIR = Path(__file__).resolve().parent
+EXE_NAME = "spice.exe" if sys.platform == "win32" else "spice"
+# Same flags the test runner uses to build the bootstrap compiler (see test/util/BootstrapUtil.cpp)
+DEFAULT_BUILD_FLAGS = ["-O3", "-lto"]
+
+
+def log(msg: str) -> None:
+    print(f"{GREEN}{msg}{NC}", flush=True)
+
+
+def fail(msg: str) -> None:
+    print(f"{RED}{msg}{NC}", file=sys.stderr, flush=True)
+    sys.exit(1)
+
+
+def find_host_compiler() -> Path | None:
+    for build_dir in ("build", "cmake-build-release", "cmake-build-debug"):
+        candidate = ROOT_DIR / build_dir / "src" / EXE_NAME
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def find_llvm_lib_dir() -> str | None:
+    # Derive it from LLVM_DIR (<llvm-build>/lib/cmake/llvm), which the CMake build of the host compiler uses as well
+    if llvm_dir := os.environ.get("LLVM_DIR"):
+        lib_dir = Path(llvm_dir).resolve().parent.parent
+        if lib_dir.is_dir():
+            return str(lib_dir)
+    if llvm_config := shutil.which("llvm-config"):
+        return subprocess.run([llvm_config, "--libdir"], check=True, capture_output=True, text=True).stdout.strip()
+    return None
+
+
+def sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[str], verbose: bool) -> Path:
+    stage_dir = work_dir / f"stage{stage}"
+    shutil.rmtree(stage_dir, ignore_errors=True)
+    stage_dir.mkdir(parents=True)
+    output = stage_dir / EXE_NAME
+    cmd = [str(compiler), "build", *build_flags, "--ignore-cache", "--output", str(output),
+           str(ROOT_DIR / "src-bootstrap" / "main.spice")]
+
+    log(f"[Stage {stage}] Building with {compiler} ...")
+    start = time.monotonic()
+    result = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=not verbose, text=True)
+    # The bootstrap compiler sources emit lots of warnings, so only print the output if something went wrong
+    if result.returncode != 0 or not output.is_file():
+        if not verbose:
+            print(result.stdout, end="")
+            print(result.stderr, end="", file=sys.stderr)
+        fail(f"[Stage {stage}] Build failed with exit code {result.returncode}: {' '.join(cmd)}")
+    log(f"[Stage {stage}] Done in {time.monotonic() - start:.1f}s.")
+    return output
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Bootstrap the self-hosted Spice compiler until it reaches a fixed point.")
+    parser.add_argument("--host-compiler", type=Path, default=None,
+                        help="Path to the host compiler executable (default: first found in build/, cmake-build-release/, "
+                             "cmake-build-debug/)")
+    parser.add_argument("--work-dir", type=Path, default=ROOT_DIR / "build" / "bootstrap",
+                        help="Directory for the stage executables (default: build/bootstrap)")
+    parser.add_argument("--max-iterations", type=int, default=5,
+                        help="Maximum number of self-compilations, after stage 0 was built by the host (default: 5)")
+    parser.add_argument("--build-flags", default=" ".join(DEFAULT_BUILD_FLAGS),
+                        help=f"Flags passed to every 'spice build' invocation (default: '{' '.join(DEFAULT_BUILD_FLAGS)}')")
+    parser.add_argument("--output", type=Path, default=None,
+                        help="Copy the fixed point compiler executable to this path")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print the compiler output of every stage")
+    args = parser.parse_args()
+
+    if args.max_iterations < 2:
+        fail("At least two iterations are required to compare two self-compiled stages")
+
+    host_compiler = args.host_compiler or find_host_compiler()
+    if host_compiler is None or not host_compiler.is_file():
+        fail("Host compiler not found. Build it first (e.g. 'python build.py') or pass --host-compiler")
+    host_compiler = host_compiler.resolve()
+
+    # Environment, the host and bootstrap compilers need to compile the bootstrap compiler
+    os.environ.setdefault("SPICE_STD_DIR", str(ROOT_DIR / "std"))
+    os.environ.setdefault("SPICE_BOOTSTRAP_DIR", str(ROOT_DIR / "src-bootstrap"))
+    if "LLVM_LIB_DIR" not in os.environ:
+        llvm_lib_dir = find_llvm_lib_dir()
+        if llvm_lib_dir is None:
+            fail("LLVM library directory not found. Set LLVM_LIB_DIR or LLVM_DIR, or put llvm-config on the PATH")
+        os.environ["LLVM_LIB_DIR"] = llvm_lib_dir
+
+    work_dir = args.work_dir.resolve()
+    build_flags = args.build_flags.split()
+
+    # Stage 0: built by the host compiler
+    compiler = build_stage(host_compiler, 0, work_dir, build_flags, args.verbose)
+    hashes = [sha256(compiler)]
+    print(f"  sha256: {hashes[0]}")
+
+    # Stage 1..n: built by the previous stage, until two consecutive self-compiled stages are identical
+    for stage in range(1, args.max_iterations + 1):
+        compiler = build_stage(compiler, stage, work_dir, build_flags, args.verbose)
+        hashes.append(sha256(compiler))
+        print(f"  sha256: {hashes[-1]}")
+        if stage >= 2 and hashes[-1] == hashes[-2]:
+            log(f"Fixed point reached: stage {stage - 1} and stage {stage} are identical.")
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(compiler, args.output)
+                log(f"Copied the fixed point compiler to {args.output}")
+            return
+
+    print("\nStage hashes:", file=sys.stderr)
+    for stage, digest in enumerate(hashes):
+        print(f"  stage{stage}: {digest}", file=sys.stderr)
+    fail(f"No fixed point reached within {args.max_iterations} iterations. The stage executables are kept in {work_dir}")
+
+
+if __name__ == "__main__":
+    main()
