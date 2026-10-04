@@ -46,6 +46,15 @@ if (SPICE_ENABLE_TPDE)
     # with Spice's convention so both sides can be linked into the same executable.
     set(TPDE_LINK_LLVM_STATIC ON CACHE BOOL "" FORCE)
     add_subdirectory(deps/tpde EXCLUDE_FROM_ALL)
+    # SPICE_LTO also compiles TPDE with -flto. Release packages ship the TPDE static libraries with the std for the std TPDE
+    # bindings, where other toolchains link them, so they have to hold machine code next to GCC's LTO bytecode.
+    if (SPICE_LTO AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        foreach (TPDE_TARGET tpde tpde_llvm tpde_llvm_impl spdlog)
+            if (TARGET ${TPDE_TARGET})
+                target_compile_options(${TPDE_TARGET} PRIVATE -ffat-lto-objects)
+            endif ()
+        endforeach ()
+    endif ()
     message(STATUS "Spice: TPDE submodule added; will link tpde::tpde_llvm")
 endif ()
 

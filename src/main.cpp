@@ -9,6 +9,7 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <typechecker/MacroDefs.h>
+#include <util/SystemUtil.h>
 
 using namespace spice::compiler;
 
@@ -80,6 +81,9 @@ int main(int argc, const char *argv[]) {
       return EXIT_SUCCESS;
 
     driver.enrich(); // Prepare the cli options
+
+    // Let the std TPDE bindings find the TPDE libraries, that release packages ship with the std
+    SystemUtil::exportStdTPDEFlags(driver.cliOptions);
 
     // Kick off the compilation process
     if (!compileProject(driver.cliOptions))

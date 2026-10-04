@@ -418,6 +418,47 @@ std::filesystem::path SystemUtil::getStdRuntimeLibDir() {
 }
 
 /**
+ * Build the flags for the std TPDE bindings (std/bindings/tpde) from the TPDE headers and static libraries, that the Linux
+ * release packages ship with the std. Returns an empty string if the given std does not ship them.
+ *
+ * @param stdDir Std directory
+ * @return Value for the TPDE_FLAGS env var, or an empty string
+ */
+std::string SystemUtil::getStdTPDEFlags(const std::filesystem::path &stdDir) {
+  const std::filesystem::path tpdeDir = stdDir / "bindings" / "tpde";
+  const std::filesystem::path includeDir = tpdeDir / "include";
+  const std::filesystem::path libDir = tpdeDir / "lib";
+  if (!exists(includeDir / "tpde-llvm" / "LLVMCompiler.hpp") || !exists(libDir / "libtpde_llvm.a"))
+    return {};
+  // The libraries reference each other, so they go into a group, that the linker rescans until all references are resolved
+  std::string flags = "-I" + includeDir.string() + " -Wl,--start-group";
+  for (const char *libName : {"libtpde_llvm.a", "libtpde.a", "libfadec.a", "libdisarm64.a", "libspdlog.a"})
+    if (const std::filesystem::path libPath = libDir / libName; exists(libPath))
+      flags += " " + libPath.string();
+  flags += " -Wl,--end-group";
+  return flags;
+}
+
+/**
+ * Point the std TPDE bindings to the TPDE headers and libraries, that the std ships, unless TPDE_FLAGS is set already.
+ * The bindings only use TPDE on Linux, and the shipped libraries are built for the host, so this only applies to native
+ * builds on Linux. Has to be called before the compilation starts, because it changes the process environment.
+ *
+ * @param cliOptions Command line options
+ */
+void SystemUtil::exportStdTPDEFlags([[maybe_unused]] const CliOptions &cliOptions) {
+#if OS_LINUX
+  if (!cliOptions.isNativeTarget || std::getenv("TPDE_FLAGS") != nullptr)
+    return;
+  const std::filesystem::path stdDir = findStdDir();
+  if (stdDir.empty())
+    return;
+  if (const std::string flags = getStdTPDEFlags(stdDir); !flags.empty())
+    setenv("TPDE_FLAGS", flags.c_str(), /*overwrite=*/0);
+#endif
+}
+
+/**
  * Retrieve the dir, where the bootstrap compiler lives.
  * Returns an empty string if the bootstrap compiler was not found.
  *

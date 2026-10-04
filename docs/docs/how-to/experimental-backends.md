@@ -8,7 +8,8 @@ back-end framework that consumes LLVM IR directly and emits ELF objects at rough
 **10-20× faster than `clang -O0`** — useful for tight edit/compile iteration loops.
 
 This backend is **not** a drop-in replacement for LLVM CodeGen. It performs no optimization and supports only a
-narrow slice of the targets LLVM does. It is opt-in at both build time and runtime.
+narrow slice of the targets LLVM does. It is opt-in at runtime. The Linux release packages of Spice come with it; for
+other builds, it is opt-in at build time as well.
 
 !!! warning "Experimental"
     The TPDE backend is under active development and disabled by default. Expect rough edges, unsupported
@@ -26,6 +27,9 @@ narrow slice of the targets LLVM does. It is opt-in at both build time and runti
 | Link-time optimization  | not supported (`-lto` is rejected)         |
 
 ## Building Spice with TPDE support
+
+The Linux release packages of Spice (`x86_64` and `aarch64`) are built with TPDE support, so this is only needed when
+building Spice from source.
 
 TPDE is pulled in as a git submodule at `deps/tpde/`. To include it in your Spice build, configure CMake with
 the `SPICE_ENABLE_TPDE` option turned on:
@@ -94,8 +98,14 @@ f<int> main() {
 ```
 
 TPDE only offers a C++ API, so the bindings compile a small C API wrapper (`std/bindings/tpde/tpde-wrapper.cpp`) along
-with the program. They need the TPDE libraries and headers, which a Spice build with `-DSPICE_ENABLE_TPDE=ON` produces.
-Point the bindings to them with the `TPDE_FLAGS` environment variable, in addition to the ones the LLVM bindings need.
+with the program. They need the TPDE libraries and headers, in addition to what the LLVM bindings need.
+
+The Linux release packages ship them inside the std, at `std/bindings/tpde/lib` and `std/bindings/tpde/include`, and the
+compiler points the bindings to them on its own. The shipped libraries are built against the LLVM version of the release
+(see `LLVM_VERSION` in the release workflow), so the LLVM the program links against has to be the same version.
+
+When building Spice from source, a build with `-DSPICE_ENABLE_TPDE=ON` produces the TPDE libraries. Point the bindings
+to them with the `TPDE_FLAGS` environment variable, which also takes precedence over the libraries shipped with the std.
 It holds the include flag for the TPDE headers and the paths of the TPDE static libraries, space-separated:
 
 ```sh
@@ -105,5 +115,5 @@ TPDE_FLAGS="-I<spice-src>/deps/tpde/tpde-llvm/include \
   <build>/deps/tpde/tpde/deps/spdlog/libspdlog.a" # spdlog only with TPDE logging enabled (default)
 ```
 
-Without it, or on platforms other than Linux, the bindings still compile and link, but `tpde::isAvailable()` returns
+Without TPDE libraries, or on platforms other than Linux, the bindings still compile and link, but `tpde::isAvailable()` returns
 `false` and every compilation fails with an error message.

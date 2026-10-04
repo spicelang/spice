@@ -25,7 +25,8 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else
+          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -69,6 +70,7 @@ jobs:
             -DSPICE_ALL_TARGETS=ON \
             -DSPICE_LINK_STATIC=ON \
             -DSPICE_LTO=ON \
+            -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_VERSION="${{ github.ref_name }}" \
             -DSPICE_GIT_HASH="${{ github.sha }}" \
             -DSPICE_BUILT_BY="ghactions" \
@@ -84,6 +86,18 @@ jobs:
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
+          # The TPDE static libraries and headers, that the std TPDE bindings (std/bindings/tpde) use. Released Linux
+          # packages ship them inside the std as well, so they travel with this job's binary just like libbacktrace.
+          mkdir -p tpde/lib tpde/include tpde/LICENSES
+          cp deps/tpde/tpde-llvm/libtpde_llvm.a deps/tpde/tpde/libtpde.a deps/tpde/tpde/deps/fadec/libfadec.a \
+            deps/tpde/tpde/deps/disarm/libdisarm64.a deps/tpde/tpde/deps/spdlog/libspdlog.a tpde/lib/
+          cp -r ../deps/tpde/tpde-llvm/include/tpde-llvm tpde/include/
+          # Their licenses must accompany the archives
+          cp ../deps/tpde/LICENSES/Apache-2.0.txt tpde/LICENSES/tpde-Apache-2.0.txt
+          cp ../deps/tpde/LICENSES/LLVM-exception.txt tpde/LICENSES/tpde-LLVM-exception.txt
+          cp ../deps/tpde/deps/fadec/LICENSE tpde/LICENSES/fadec-LICENSE
+          cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
+          cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
 
       - name: Run Checksec
         working-directory: build
@@ -96,6 +110,7 @@ jobs:
           path: |
             ./build/spice**
             ./build/libbacktrace.a
+            ./build/tpde/**
 
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64
@@ -111,7 +126,8 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }}
+          # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else
+          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -155,6 +171,7 @@ jobs:
             -DSPICE_ALL_TARGETS=ON \
             -DSPICE_LINK_STATIC=ON \
             -DSPICE_LTO=ON \
+            -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_VERSION="${{ github.ref_name }}" \
             -DSPICE_GIT_HASH="${{ github.sha }}" \
             -DSPICE_BUILT_BY="ghactions" \
@@ -170,6 +187,18 @@ jobs:
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
+          # The TPDE static libraries and headers, that the std TPDE bindings (std/bindings/tpde) use. Released Linux
+          # packages ship them inside the std as well, so they travel with this job's binary just like libbacktrace.
+          mkdir -p tpde/lib tpde/include tpde/LICENSES
+          cp deps/tpde/tpde-llvm/libtpde_llvm.a deps/tpde/tpde/libtpde.a deps/tpde/tpde/deps/fadec/libfadec.a \
+            deps/tpde/tpde/deps/disarm/libdisarm64.a deps/tpde/tpde/deps/spdlog/libspdlog.a tpde/lib/
+          cp -r ../deps/tpde/tpde-llvm/include/tpde-llvm tpde/include/
+          # Their licenses must accompany the archives
+          cp ../deps/tpde/LICENSES/Apache-2.0.txt tpde/LICENSES/tpde-Apache-2.0.txt
+          cp ../deps/tpde/LICENSES/LLVM-exception.txt tpde/LICENSES/tpde-LLVM-exception.txt
+          cp ../deps/tpde/deps/fadec/LICENSE tpde/LICENSES/fadec-LICENSE
+          cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
+          cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
 
       - name: Run Checksec
         working-directory: build
@@ -182,6 +211,7 @@ jobs:
           path: |
             ./build/spice**
             ./build/libbacktrace.a
+            ./build/tpde/**
 
   build-compiler-windows-x86:
     name: Build compiler - Windows/x86_64
@@ -410,6 +440,8 @@ jobs:
           mv spice-linux-x64 spice-linux-amd64
           mv spice-macos-arm64 spice-darwin-arm64
           chmod -R +x ./
+          # The TPDE libraries, headers and licenses of the Linux jobs are data and go into the std like the rest of it
+          chmod -R a-x,a+X spice-linux-amd64/tpde spice-linux-arm64/tpde
 
       # Each compiler job uploaded the libbacktrace.a it built for its own platform, next to its binary. The
       # archives and the Linux packages pick theirs straight out of bin/ via a template, but the container image is
