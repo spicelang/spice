@@ -302,8 +302,8 @@ CompileTimeValue LogicalAndExprNode::getCompileTimeValue(size_t manIdx) const {
       return CompileTimeValue{.boolValue = false};
   }
 
-  // Return 'false'
-  return CompileTimeValue{.boolValue = false};
+  // All operands evaluate to 'true'
+  return CompileTimeValue{.boolValue = true};
 }
 
 bool BitwiseOrExprNode::hasCompileTimeValue(size_t manIdx) const {
