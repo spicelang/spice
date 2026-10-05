@@ -1,6 +1,6 @@
 // Link external functions
 ext f<string> getenv(string);
-ext f<int> setenv(string, string, int);
+ext f<int> _putenv_s(string, string);
 
 /**
  * Returns the content of an environment variable as string.
@@ -18,5 +18,5 @@ public f<Result<string>> getEnv(string name) {
  * @return Successful or not
  */
 public f<bool> setEnv(string name, string value) {
-    return setenv(name, value, 1) == 0;
+    return _putenv_s(name, value) == 0;
 }

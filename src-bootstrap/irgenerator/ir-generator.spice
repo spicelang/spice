@@ -2771,8 +2771,9 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
         }
     }
 
-    // Clean up all scopes between here and the enclosing function/procedure/lambda body, then terminate the block
-    this.generateScopeCleanupUpTo(cast<ASTNode*>(node), this.currentScope.getFunctionScope());
+    // Clean up all scopes between here and the enclosing function/procedure/lambda body, then terminate the block. A local
+    // variable, that is returned without a copy, is destructed by the caller
+    this.generateScopeCleanupUpTo(cast<ASTNode*>(node), this.currentScope.getFunctionScope(), node.returnedLocals.get(this.manIdx));
     this.blockAlreadyTerminated = true;
 
     // Create return instruction
@@ -5469,7 +5470,14 @@ public f<llvm::Value> IRGenerator.getUpcastedStructPtr(llvm::Value structPtr, co
     return structPtr;
 }
 
-p IRGenerator.generateScopeCleanup(ASTStmtLstNode* node) {
+/**
+ * Generate cleanup code (dtor calls, deallocations) for the scope of the given statement list
+ *
+ * @param node Statement list of the scope
+ * @param returnedLocal Local variable, that is handed over to the caller by the return statement this cleanup is generated
+ *                      for. It must not be destructed. Nil if there is none.
+ */
+p IRGenerator.generateScopeCleanup(ASTStmtLstNode* node, SymbolTableEntry* returnedLocal = nil<SymbolTableEntry*>) {
     this.diGenerator.setSourceLocation(node.closingBraceCodeLoc);
 
     // Do not clean up if the block is already terminated
@@ -5481,7 +5489,9 @@ p IRGenerator.generateScopeCleanup(ASTStmtLstNode* node) {
     const ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
     const Vector<llvm::Value> noArgs;
     foreach const Pair<SymbolTableEntry*, model::Function*>& dtorToCall : resources.dtorFunctionsToCall {
-        this.generateCtorOrDtorCall(dtorToCall.getFirst(), dtorToCall.getSecond(), noArgs);
+        if dtorToCall.getFirst() != returnedLocal {
+            this.generateCtorOrDtorCall(dtorToCall.getFirst(), dtorToCall.getSecond(), noArgs);
+        }
     }
 
     // Deallocate all heap variables that go out of scope and are currently owned
@@ -5555,8 +5565,10 @@ f<bool> isInStatementHeader(const ASTNode* node) {
  *
  * @param node Node the jump originates from
  * @param targetScope Outermost scope that is left by the jump; cleanup is generated for this scope as well
+ * @param returnedLocal Local variable, that is handed over to the caller by the jump (a return statement). It must not be
+ *                      destructed. Nil if there is none.
  */
-p IRGenerator.generateScopeCleanupUpTo(ASTNode* node, const Scope* targetScope) {
+p IRGenerator.generateScopeCleanupUpTo(ASTNode* node, const Scope* targetScope, SymbolTableEntry* returnedLocal = nil<SymbolTableEntry*>) {
     assert targetScope != nil<const Scope*>;
     const Scope* scopeLevel = this.currentScope;
 
@@ -5576,7 +5588,7 @@ p IRGenerator.generateScopeCleanupUpTo(ASTNode* node, const Scope* targetScope) 
 
     ASTStmtLstNode* scope = node.getNextOuterStmtLst();
     while true {
-        this.generateScopeCleanup(scope);
+        this.generateScopeCleanup(scope, returnedLocal);
         if scopeLevel == targetScope {
             break;
         }

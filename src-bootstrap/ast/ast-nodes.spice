@@ -1770,6 +1770,9 @@ public type ASTReturnStmtNode struct : IVisitable {
     public QualType returnType
     public Function* calledCopyCtor = nil<Function*>
     public bool hasReturnValue = false
+    // Local variable, that is handed over to the caller without a copy (per manifestation). Its dtor is skipped on the
+    // cleanup path of this return statement only, all other paths out of its scope still destruct it.
+    public Vector<SymbolTableEntry*> returnedLocals
 }
 
 public p ASTReturnStmtNode.ctor(CodeLoc codeLoc) {
@@ -2808,6 +2811,12 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         ASTStmtLstNode* stmtLstNode = downcast<ASTStmtLstNode>(node);
         while stmtLstNode.resourcesToCleanup.getSize() < manifestationCount {
             stmtLstNode.resourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
+        }
+    }
+    if node.kind == ASTNodeKind::RETURN_STMT {
+        ASTReturnStmtNode* returnStmtNode = downcast<ASTReturnStmtNode>(node);
+        while returnStmtNode.returnedLocals.getSize() < manifestationCount {
+            returnStmtNode.returnedLocals.pushBack(nil<SymbolTableEntry*>);
         }
     }
     if node.kind == ASTNodeKind::ATOMIC_EXPR {

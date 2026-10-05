@@ -2784,14 +2784,17 @@ public f<Any> TypeChecker.visitReturnStmt(ASTReturnStmtNode* node) {
     node.calledCopyCtor = assignResult.getSecond();
 
     // Check if the dtor call on the return value can be skipped
+    SymbolTableEntry*& returnedLocal = node.returnedLocals.get(this.manIdx);
+    returnedLocal = nil<SymbolTableEntry*>;
     if rhsEntry != nil<SymbolTableEntry*> {
         if rhsIsAnonymous {
             // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
             // Safe even if performStructAssign already deleted it: erasing by key is a no-op when absent.
             this.currentScope.symbolTable.deleteAnonymous(rhsEntryName);
         } else if rhsIsOptimizable {
-            // Otherwise omit the destructor call of the local variable, because the caller destructs the value
-            rhsEntry.omitDtorCall = true;
+            // Otherwise omit the destructor call of the local variable on the path of this return statement, because the caller
+            // destructs the value. Other paths out of the scope of the variable (e.g. other returns) still have to destruct it.
+            returnedLocal = rhsEntry;
         }
     }
 
@@ -7054,8 +7057,8 @@ p TypeChecker.doScopeCleanup(ASTStmtLstNode* node) {
             ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
             resources.heapVarsToFree.pushBack(varEntry);
         }
-        // Only generate dtor call for structs and if not omitted
-        if !varType.is(SuperType::TY_STRUCT) || varEntry.omitDtorCall {
+        // Only generate dtor call for structs
+        if !varType.is(SuperType::TY_STRUCT) {
             continue;
         }
         // Variable must be either initialized or a struct field
@@ -7083,9 +7086,9 @@ p TypeChecker.doExprScopeCleanup(IVisitable* node) {
     // Call the dtor of each temporary. We call the dtor in reverse declaration order
     ASTNode* baseNode = getASTNode(node);
     foreach SymbolTableEntry* temporary : temporaries {
-        // Only generate dtor call for initialized structs and if not omitted
+        // Only generate dtor call for initialized structs
         const QualType temporaryType = temporary.getQualType();
-        if !temporaryType.is(SuperType::TY_STRUCT) || temporary.omitDtorCall || !temporary.isInitialized() {
+        if !temporaryType.is(SuperType::TY_STRUCT) || !temporary.isInitialized() {
             continue;
         }
         const ArgList noArgs;

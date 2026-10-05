@@ -136,8 +136,9 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
     }
   }
 
-  // Clean up all scopes between here and the enclosing function/procedure/lambda body, then terminate the block
-  generateScopeCleanupUpTo(node, currentScope->getFunctionScope());
+  // Clean up all scopes between here and the enclosing function/procedure/lambda body, then terminate the block. A local
+  // variable, that is returned without a copy, is destructed by the caller
+  generateScopeCleanupUpTo(node, currentScope->getFunctionScope(), node->returnedLocals.at(manIdx));
   blockAlreadyTerminated = true;
 
   // Create return instruction
