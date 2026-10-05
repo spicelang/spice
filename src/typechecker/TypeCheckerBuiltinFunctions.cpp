@@ -251,22 +251,16 @@ std::any TypeChecker::visitBuiltinOffsetOfCall(FctCallNode *node) const {
   const llvm::DataLayout dataLayout = sourceFile->targetMachine->createDataLayout();
   int64_t offset = 0;
   for (const PostfixUnaryExprNode *access : accessChain) {
-    const QualType baseType =
-        access->postfixUnaryExpr->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().autoDeReference();
+    const QualType baseType = access->postfixUnaryExpr->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().autoDeReference();
     assert(baseType.is(TY_STRUCT));
 
-    // Resolve the struct body scope (substantiate the generic scope if required)
-    Scope *structScope = baseType.getBodyScope();
-    if (structScope->isGenericScope) {
-      const Struct *spiceStruct = baseType.getStruct(node);
-      assert(spiceStruct != nullptr);
-      structScope = spiceStruct->scope;
-    }
-    assert(!structScope->isGenericScope);
+    // Resolve the struct manifestation
+    const Struct *spiceStruct = baseType.getStruct(node);
+    assert(spiceStruct != nullptr && !spiceStruct->scope->isGenericScope);
 
-    // Look up the accessed field to retrieve its index path within the struct
+    // Look up the accessed field to retrieve its index path within the LLVM struct type
     std::vector<size_t> indexPath;
-    const SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupInComposedFields(access->identifier, indexPath);
+    const SymbolTableEntry *fieldEntry = spiceStruct->lookupInComposedFields(access->identifier, indexPath);
     if (fieldEntry == nullptr)
       SOFT_ERROR_ER(memberArg, REFERENCED_UNDEFINED_FIELD,
                     "Field '" + access->identifier + "' not found in struct " + baseType.getSubType())

@@ -1,0 +1,60 @@
+#[core.compiler.alwaysEmitVTable]
+type Inner struct {
+    int a
+    long b
+    heap int* h = nil<heap int*>
+}
+
+p Inner.print() {
+    printf("Inner: a=%d, b=%d\n", this.a, this.b);
+}
+
+type Outer struct {
+    compose Inner inner
+    short c = 3s
+    Inner member
+}
+
+f<bool> hasVTablePtr(const Inner& inner) {
+    unsafe {
+        byte** vtablePtrAddr = cast<byte**>(&inner);
+        return *vtablePtrAddr != nil<byte*>;
+    }
+}
+
+f<int> main() {
+    // Field accesses must not alias the synthesized vtable pointer
+    Inner inner;
+    inner.a = 1;
+    inner.b = 2l;
+    printf("Offsets: a=%d, b=%d, h=%d, size=%d\n", __offsetof(inner, inner.a), __offsetof(inner, inner.b), __offsetof(inner, inner.h), sizeof<Inner>());
+    unsafe {
+        const long base = cast<long>(cast<byte*>(&inner));
+        printf("Actual offsets: a=%d, b=%d\n", cast<long>(cast<byte*>(&inner.a)) - base, cast<long>(cast<byte*>(&inner.b)) - base);
+    }
+    printf("VTable ptr intact: %d\n", hasVTablePtr(inner));
+    inner.print();
+
+    // Default copy ctor
+    Inner copy = inner;
+    printf("Copy VTable ptr intact: %d\n", hasVTablePtr(copy));
+    copy.print();
+
+    // Composed and nested fields
+    Outer outer;
+    outer.a = 4;
+    outer.b = 5l;
+    outer.member.a = 6;
+    outer.member.b = 7l;
+    printf("Outer offsets: a=%d, c=%d, member.a=%d\n", __offsetof(outer, outer.a), __offsetof(outer, outer.c), __offsetof(outer, outer.member.a));
+    printf("Outer: a=%d, b=%d, c=%d\n", outer.a, outer.b, outer.c);
+    printf("Outer VTable ptrs intact: %d, %d\n", hasVTablePtr(outer.inner), hasVTablePtr(outer.member));
+    outer.member.print();
+
+    // Struct literals
+    const Inner constLiteral = Inner{8, 9l, nil<heap int*>};
+    printf("Const literal: a=%d, b=%d\n", constLiteral.a, constLiteral.b);
+    int ten = 10;
+    const Inner literal = Inner{ten, 11l, nil<heap int*>};
+    printf("Literal: a=%d, b=%d\n", literal.a, literal.b);
+}

@@ -768,7 +768,7 @@ public f<unsigned long> Type.getABITypeAlign(SourceFile* sourceFile) {
  * layout of the target
  *
  * @param sourceFile Source file
- * @param indexPath Index path of the field, like SymbolTable.lookupInComposedFields returns it
+ * @param indexPath Index path of the field, like Struct.lookupInComposedFields returns it
  * @return Byte offset of the field
  */
 public f<unsigned long> Type.getFieldOffset(SourceFile* sourceFile, const Vector<unsigned long>& indexPath) {

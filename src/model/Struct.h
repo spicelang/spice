@@ -23,6 +23,8 @@ public:
   static std::string getScopeName(const std::string &name, const QualTypeList &concreteTemplateTypes = {});
   [[nodiscard]] bool hasReferenceFields() const;
   [[nodiscard]] bool hasSynthesizedVTablePtr() const;
+  [[nodiscard]] size_t getFieldElementIndex(size_t orderIndex) const;
+  SymbolTableEntry *lookupInComposedFields(const std::string &name, std::vector<size_t> &indexPath) const;
   const SymbolTableEntry *areAllFieldsInState(LifecycleState state) const;
   const SymbolTableEntry *areAllFieldsInitialized() const;
   void resetFieldSymbolsToDeclared(const ASTNode *node) const;

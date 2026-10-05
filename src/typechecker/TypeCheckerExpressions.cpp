@@ -750,19 +750,14 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     // Retrieve registry entry
     const std::string &structName = lhsBaseTy.getSubType();
-    Scope *structScope = lhsBaseTy.getBodyScope();
-
-    // If we only have the generic struct scope, lookup the concrete manifestation scope
-    if (structScope->isGenericScope) {
-      const Struct *spiceStruct = lhsBaseTy.getStruct(node);
-      assert(spiceStruct != nullptr);
-      structScope = spiceStruct->scope;
-    }
+    const Struct *spiceStruct = lhsBaseTy.getStruct(node);
+    assert(spiceStruct != nullptr);
+    const Scope *structScope = spiceStruct->scope;
     assert(!structScope->isGenericScope); // At this point we always expect a substantiation scope
 
     // Get accessed field
     std::vector<size_t> indexPath;
-    SymbolTableEntry *memberEntry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
+    SymbolTableEntry *memberEntry = spiceStruct->lookupInComposedFields(fieldName, indexPath);
     if (!memberEntry)
       SOFT_ERROR_ER(node, REFERENCED_UNDEFINED_VARIABLE, "Field '" + node->identifier + "' not found in struct " + structName)
     const QualType memberType = memberEntry->getQualType();

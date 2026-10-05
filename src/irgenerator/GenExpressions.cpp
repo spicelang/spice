@@ -850,7 +850,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
         switchToBlock(bPanic);
         llvm::Value *stdErrValue = getStdErrValue();
         const std::string errorMsg = "Program panicked at " + node->codeLoc.toPrettyString() +
-                                      ": active field mismatch on union field access '" + fieldName + "'\n";
+                                     ": active field mismatch on union field access '" + fieldName + "'\n";
         llvm::GlobalVariable *globalString = builder.CreateGlobalString(errorMsg, getUnusedGlobalName(ANON_GLOBAL_STRING_NAME));
         if (cliOptions.comparableOutput)
           globalString->setAlignment(llvm::Align(4));
@@ -882,12 +882,13 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
 
     assert(lhsSTy.is(TY_STRUCT));
 
-    // Retrieve struct scope
-    Scope *structScope = lhsSTy.getBodyScope();
+    // Retrieve struct
+    const Struct *spiceStruct = lhsSTy.getStruct(node);
+    assert(spiceStruct != nullptr);
 
     // Retrieve field entry
     std::vector<size_t> indexPath;
-    lhs.entry = structScope->symbolTable.lookupInComposedFields(fieldName, indexPath);
+    lhs.entry = spiceStruct->lookupInComposedFields(fieldName, indexPath);
     assert(lhs.entry != nullptr);
     const QualType fieldSymbolType = lhs.entry->getQualType();
 

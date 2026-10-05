@@ -63,6 +63,55 @@ bool Struct::hasSynthesizedVTablePtr() const {
 }
 
 /**
+ * Map the order index of a field to the index of the corresponding element in the LLVM struct type. Those differ by one
+ * if the struct carries a synthesized vtable pointer as its first element.
+ *
+ * @param orderIndex Order index of the field
+ * @return Index of the field in the LLVM struct type
+ */
+size_t Struct::getFieldElementIndex(size_t orderIndex) const { return orderIndex + (hasSynthesizedVTablePtr() ? 1 : 0); }
+
+/**
+ * Check if a field exists in this struct or in one of its composed fields and return it if possible.
+ *
+ * @param name Name of the desired field
+ * @param indexPath How to index the found field using LLVM struct element indices (e.g. for GEP)
+ * @return Desired field / nullptr if the field was not found
+ */
+SymbolTableEntry *Struct::lookupInComposedFields(const std::string &name, // NOLINT(misc-no-recursion)
+                                                 std::vector<size_t> &indexPath) const {
+  // Check if we have a field with this name in the current struct
+  if (SymbolTableEntry *result = scope->lookupStrict(name)) {
+    indexPath.push_back(getFieldElementIndex(result->orderIndex));
+    return result;
+  }
+
+  // If it was not found in the current struct, loop through all composed fields
+  for (size_t i = 0; i < scope->getFieldCount(); i++) {
+    const SymbolTableEntry *fieldEntry = scope->lookupField(i);
+
+    // Skip all fields that are not composition fields
+    if (!fieldEntry->getQualType().isComposition())
+      continue;
+
+    // Add the current field's element index to the index path
+    indexPath.push_back(getFieldElementIndex(fieldEntry->orderIndex));
+
+    // Search in the composed struct
+    const Struct *composedStruct = fieldEntry->getQualType().getStruct(fieldEntry->declNode);
+    assert(composedStruct != nullptr);
+    if (SymbolTableEntry *result = composedStruct->lookupInComposedFields(name, indexPath))
+      return result;
+
+    // Remove the current field's element index from the index path
+    indexPath.pop_back();
+  }
+
+  // Field was not found in the current struct, return nullptr
+  return nullptr;
+}
+
+/**
  * Check that all fields are in a certain lifecycle state.
  *
  * @param state Lifecycle state to check for

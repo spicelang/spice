@@ -92,7 +92,7 @@ llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const Qua
       for (size_t i = 0; i < implicitFieldCount; i++) {
         const SymbolTableEntry *implicitField = structScope->lookupField(i);
         if (dstPointee.matches(implicitField->getQualType(), false, true, true)) {
-          structPtr = insertStructGEP(llvmStructType, structPtr, implicitField->orderIndex);
+          structPtr = insertStructGEP(llvmStructType, structPtr, spiceStruct->getFieldElementIndex(implicitField->orderIndex));
           found = true;
           break;
         }
@@ -105,7 +105,7 @@ llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const Qua
     // Case 2: the destination is a composed base struct -> step into the first explicit (composed) field
     const SymbolTableEntry *baseField = structScope->lookupField(implicitFieldCount);
     assert(baseField != nullptr && baseField->getQualType().isComposition());
-    structPtr = insertStructGEP(llvmStructType, structPtr, baseField->orderIndex);
+    structPtr = insertStructGEP(llvmStructType, structPtr, spiceStruct->getFieldElementIndex(baseField->orderIndex));
     walkType = baseField->getQualType();
   }
   return structPtr;
@@ -303,10 +303,13 @@ void IRGenerator::generateCtorOrDtorCall(const SymbolTableEntry *entry, const Fu
     const SymbolTableEntry *thisVar = currentScope->lookupStrict(THIS_VARIABLE_NAME);
     assert(thisVar != nullptr);
     assert(thisVar->getQualType().isPtr() && thisVar->getQualType().getContained().is(TY_STRUCT));
-    llvm::Type *thisType = thisVar->getQualType().getContained().toLLVMType(sourceFile);
+    const QualType structType = thisVar->getQualType().getContained();
+    const Struct *spiceStruct = structType.getStruct(entry->declNode);
+    assert(spiceStruct != nullptr);
+    llvm::Type *thisType = structType.toLLVMType(sourceFile);
     llvm::Value *thisPtr = insertLoad(builder.getPtrTy(), getAddress(thisVar));
     // Add field offset
-    structAddr = insertStructGEP(thisType, thisPtr, entry->orderIndex);
+    structAddr = insertStructGEP(thisType, thisPtr, spiceStruct->getFieldElementIndex(entry->orderIndex));
   } else {
     structAddr = getAddress(entry);
     // For optional parameter initializers we need this exception
@@ -583,7 +586,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       if (const Function *ctorFunction = FunctionManager::lookup(matchScope, CTOR_FUNCTION_NAME, fieldType, {}, false)) {
         if (!thisPtr)
           thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-        llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
+        llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, spiceStruct->getFieldElementIndex(fieldIdx));
         generateCtorOrDtorCall(fieldAddress, ctorFunction, {});
       }
       continue;
@@ -594,7 +597,7 @@ void IRGenerator::generateCtorBodyPreamble(Scope *bodyScope) {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
+      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, spiceStruct->getFieldElementIndex(fieldIdx));
       // Retrieve default value
       llvm::Value *value;
       if (fieldNode->defaultValue != nullptr) {
@@ -630,10 +633,20 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
   llvm::Value *thisPtrPtr = getAddress(thisEntry);
   assert(thisPtrPtr != nullptr);
   llvm::Value *thisPtr = nullptr;
-  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
+  const QualType structSymbolType = thisEntry->getQualType().getBase();
+  llvm::Type *structType = structSymbolType.toLLVMType(sourceFile);
+  const Struct *spiceStruct = structSymbolType.getStruct(nullptr);
+  assert(spiceStruct != nullptr);
 
   // Retrieve the value of the original struct, which is the only function parameter
   llvm::Value *originalThisPtr = builder.GetInsertBlock()->getParent()->getArg(1);
+
+  // The synthesized vtable pointer is no field, so take it over separately
+  if (spiceStruct->hasSynthesizedVTablePtr()) {
+    thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
+    llvm::Value *vtablePtr = insertLoad(builder.getPtrTy(), originalThisPtr);
+    insertStore(vtablePtr, thisPtr);
+  }
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t fieldIdx = 0; fieldIdx < fieldCount; fieldIdx++) {
@@ -641,7 +654,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
 
     // Retrieve the address of the original field (copy source)
-    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, fieldIdx);
+    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, spiceStruct->getFieldElementIndex(fieldIdx));
 
     const QualType &fieldType = fieldSymbol->getQualType();
 
@@ -659,7 +672,7 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
     // Retrieve the address of the new field (copy dest)
     if (!thisPtr)
       thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
+    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, spiceStruct->getFieldElementIndex(fieldIdx));
 
     // For owning heap fields, copy the underlying heap storage
     if (fieldType.isHeap()) {
@@ -718,10 +731,20 @@ void IRGenerator::generateMoveCtorBodyPreamble(const Function *moveCtorFunction)
   llvm::Value *thisPtrPtr = getAddress(thisEntry);
   assert(thisPtrPtr != nullptr);
   llvm::Value *thisPtr = nullptr;
-  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
+  const QualType structSymbolType = thisEntry->getQualType().getBase();
+  llvm::Type *structType = structSymbolType.toLLVMType(sourceFile);
+  const Struct *spiceStruct = structSymbolType.getStruct(nullptr);
+  assert(spiceStruct != nullptr);
 
   // Retrieve the value of the original (source) struct, which is the only function parameter
   llvm::Value *originalThisPtr = builder.GetInsertBlock()->getParent()->getArg(1);
+
+  // The synthesized vtable pointer is no field, so take it over separately
+  if (spiceStruct->hasSynthesizedVTablePtr()) {
+    thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
+    llvm::Value *vtablePtr = insertLoad(builder.getPtrTy(), originalThisPtr);
+    insertStore(vtablePtr, thisPtr);
+  }
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t fieldIdx = 0; fieldIdx < fieldCount; fieldIdx++) {
@@ -729,7 +752,7 @@ void IRGenerator::generateMoveCtorBodyPreamble(const Function *moveCtorFunction)
     assert(fieldSymbol != nullptr && fieldSymbol->isField());
 
     // Retrieve the address of the original field (move source)
-    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, fieldIdx);
+    llvm::Value *originalFieldAddress = insertStructGEP(structType, originalThisPtr, spiceStruct->getFieldElementIndex(fieldIdx));
 
     const QualType &fieldType = fieldSymbol->getQualType();
 
@@ -756,7 +779,7 @@ void IRGenerator::generateMoveCtorBodyPreamble(const Function *moveCtorFunction)
     // Retrieve the address of the new field (move dest)
     if (!thisPtr)
       thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
+    llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, spiceStruct->getFieldElementIndex(fieldIdx));
 
     // For owning heap fields, transfer ownership: copy the pointer to the destination, and null out the source
     if (fieldType.isHeap()) {
@@ -795,7 +818,10 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
   llvm::Value *thisPtrPtr = getAddress(thisEntry);
   assert(thisPtrPtr != nullptr);
   llvm::Value *thisPtr = nullptr;
-  llvm::Type *structType = thisEntry->getQualType().getBase().toLLVMType(sourceFile);
+  const QualType structSymbolType = thisEntry->getQualType().getBase();
+  llvm::Type *structType = structSymbolType.toLLVMType(sourceFile);
+  const Struct *spiceStruct = structSymbolType.getStruct(nullptr);
+  assert(spiceStruct != nullptr);
 
   const size_t fieldCount = structScope->getFieldCount();
   for (size_t i = 0; i < fieldCount; i++) {
@@ -817,7 +843,7 @@ void IRGenerator::generateDtorBodyPreamble(const Function *dtorFunction) {
       // Retrieve field address
       if (!thisPtr)
         thisPtr = insertLoad(builder.getPtrTy(), thisPtrPtr);
-      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, fieldIdx);
+      llvm::Value *fieldAddress = insertStructGEP(structType, thisPtr, spiceStruct->getFieldElementIndex(fieldIdx));
       // Call dealloc function
       generateDeallocCall(fieldAddress);
     }

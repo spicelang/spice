@@ -1,0 +1,12 @@
+Offsets: a=8, b=16, h=24, size=32
+Actual offsets: a=8, b=16
+VTable ptr intact: 1
+Inner: a=1, b=2
+Copy VTable ptr intact: 1
+Inner: a=1, b=2
+Outer offsets: a=8, c=32, member.a=48
+Outer: a=4, b=5, c=3
+Outer VTable ptrs intact: 1, 1
+Inner: a=6, b=7
+Const literal: a=8, b=9
+Literal: a=10, b=11

@@ -344,7 +344,13 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
 
     // Get default values for all fields of the struct
     std::vector<llvm::Constant *> fieldConstants;
-    fieldConstants.reserve(fieldCount);
+    fieldConstants.reserve(fieldCount + 1);
+
+    // Add a null value for the synthesized vtable pointer if required
+    const Struct *spiceStruct = symbolType.getStruct(nullptr);
+    assert(spiceStruct != nullptr);
+    if (spiceStruct->hasSynthesizedVTablePtr())
+      fieldConstants.push_back(llvm::Constant::getNullValue(builder.getPtrTy()));
 
     // Add default value for each struct field
     for (size_t i = 0; i < fieldCount; i++) {

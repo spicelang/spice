@@ -4096,19 +4096,14 @@ public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
 
                 // Retrieve registry entry
                 const String structName = lhsBaseTy.getSubType();
-                Scope* structScope = lhsBaseTy.getBodyScope();
-
-                // If we only have the generic struct scope, lookup the concrete manifestation scope
-                if structScope.isGenericScope {
-                    const Struct* spiceStruct = lhsBaseTy.getStruct(baseNode);
-                    assert spiceStruct != nil<const Struct*>;
-                    structScope = spiceStruct.scope;
-                }
+                Struct* spiceStruct = lhsBaseTy.getStruct(baseNode);
+                assert spiceStruct != nil<Struct*>;
+                Scope* structScope = spiceStruct.scope;
                 assert !structScope.isGenericScope; // At this point we always expect a substantiation scope
 
                 // Get accessed field
                 Vector<unsigned long> indexPath;
-                SymbolTableEntry* memberEntry = structScope.symbolTable.lookupInComposedFields(fieldName, indexPath);
+                SymbolTableEntry* memberEntry = spiceStruct.lookupInComposedFields(fieldName, indexPath);
                 if memberEntry == nil<SymbolTableEntry*> {
                     const String message = String("Field '") + node.identifier + "' not found in struct " + structName;
                     return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
@@ -4830,8 +4825,11 @@ f<bool> TypeChecker.visitMethodCall(ASTFctCallNode* node, Scope* structScope) {
         const String& identifier = node.functionNameFragments.get(i);
 
         // Retrieve field entry, also looking through composed fields
+        const QualType currentStructType = data.thisType.getBase();
+        Struct* spiceStruct = currentStructType.getStruct(baseNode);
+        assert spiceStruct != nil<Struct*>;
         Vector<unsigned long> indexPath;
-        SymbolTableEntry* fieldEntry = currentStructScope.symbolTable.lookupInComposedFields(identifier, indexPath);
+        SymbolTableEntry* fieldEntry = spiceStruct.lookupInComposedFields(identifier, indexPath);
         if fieldEntry == nil<SymbolTableEntry*> {
             const QualType thisBaseType = data.thisType.getBase();
             const String errorMsg = String("The type '") + thisBaseType.getName(false, true) + "' does not have a member with the name '" + identifier + "'";
@@ -5568,18 +5566,13 @@ f<Any> TypeChecker.visitBuiltinOffsetOfCall(ASTFctCallNode* node) {
         baseType = baseType.autoDereference();
         assert baseType.is(SuperType::TY_STRUCT);
 
-        // Resolve the struct body scope (substantiate the generic scope if required)
-        Scope* structScope = baseType.getBodyScope();
-        if structScope.isGenericScope {
-            const Struct* spiceStruct = baseType.getStruct(cast<ASTNode*>(node));
-            assert spiceStruct != nil<Struct*>;
-            structScope = spiceStruct.scope;
-        }
-        assert !structScope.isGenericScope;
+        // Resolve the struct manifestation
+        Struct* spiceStruct = baseType.getStruct(cast<ASTNode*>(node));
+        assert spiceStruct != nil<Struct*> && !spiceStruct.scope.isGenericScope;
 
-        // Look up the accessed field to retrieve its index path within the struct
+        // Look up the accessed field to retrieve its index path within the LLVM struct type
         Vector<unsigned long> indexPath;
-        const SymbolTableEntry* fieldEntry = structScope.symbolTable.lookupInComposedFields(chainAccess.identifier, indexPath);
+        const SymbolTableEntry* fieldEntry = spiceStruct.lookupInComposedFields(chainAccess.identifier, indexPath);
         if fieldEntry == nil<SymbolTableEntry*> {
             return this.softErrorER(memberArg, SemanticErrorType::REFERENCED_UNDEFINED_FIELD, "Field '" + chainAccess.identifier + "' not found in struct " + baseType.getSubType());
         }

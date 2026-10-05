@@ -82,7 +82,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     // Retrieve entry of the first fragment
     const QualType baseType = firstFragEntry->getQualType().getBase();
     assert(firstFragEntry != nullptr && baseType.isOneOf({TY_STRUCT, TY_INTERFACE}));
-    Scope *structScope = baseType.getBodyScope();
+    QualType structType = baseType;
 
     // Get address of the referenced variable / struct instance
     thisPtr = getAddress(firstFragEntry);
@@ -97,14 +97,15 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     for (size_t i = 1; i < node->functionNameFragments.size() - 1; i++) {
       const std::string identifier = node->functionNameFragments.at(i);
       // Retrieve field entry, also looking through composed fields
+      const Struct *spiceStruct = structType.getStruct(node);
+      assert(spiceStruct != nullptr);
       std::vector<size_t> indexPath;
-      const SymbolTableEntry *fieldEntry = structScope->symbolTable.lookupInComposedFields(identifier, indexPath);
+      const SymbolTableEntry *fieldEntry = spiceStruct->lookupInComposedFields(identifier, indexPath);
       assert(fieldEntry != nullptr);
       QualType fieldEntryType = fieldEntry->getQualType();
       assert(fieldEntryType.getBase().isOneOf({TY_STRUCT, TY_INTERFACE}));
-      // Get struct type and scope
-      structScope = fieldEntryType.getBase().getBodyScope();
-      assert(structScope != nullptr);
+      // Get struct type
+      structType = fieldEntryType.getBase();
       // Get address of field. If the field was found directly (no composition involved), keep using the
       // single-index helper, since it elides the GEP entirely for fields at offset 0. Otherwise, step through
       // all composed fields on the way in a single GEP.
@@ -461,6 +462,9 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
     // Collect constants
     std::vector<llvm::Constant *> constants;
+    // A nullptr for the synthesized vtable pointer
+    if (spiceStruct->hasSynthesizedVTablePtr())
+      constants.push_back(llvm::Constant::getNullValue(builder.getPtrTy()));
     // For each interface a nullptr
     for (const QualType &interfaceType : spiceStruct->interfaceTypes)
       constants.push_back(getDefaultValueForSymbolType(interfaceType));
@@ -478,13 +482,17 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     size_t i = 0;
 
+    // Store a nullptr for the synthesized vtable pointer
+    if (spiceStruct->hasSynthesizedVTablePtr())
+      insertStore(llvm::Constant::getNullValue(builder.getPtrTy()), structAddr);
+
     // Store interface values at their corresponding offsets
     for (; i < interfaceCount; i++) {
       const QualType &interfaceType = spiceStruct->interfaceTypes.at(i);
       // Get field value
       llvm::Value *itemValue = getDefaultValueForSymbolType(interfaceType);
       // Get field address
-      llvm::Value *currentFieldAddress = insertStructGEP(structType, structAddr, i);
+      llvm::Value *currentFieldAddress = insertStructGEP(structType, structAddr, spiceStruct->getFieldElementIndex(i));
       // Store the item value
       insertStore(itemValue, currentFieldAddress);
     }
@@ -510,7 +518,7 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
         itemValue = resolveValue(exprResult.node, exprResult);
       }
       // Get field address
-      llvm::Value *currentFieldAddress = insertStructGEP(structType, structAddr, i);
+      llvm::Value *currentFieldAddress = insertStructGEP(structType, structAddr, spiceStruct->getFieldElementIndex(i));
       // Store the item value
       const bool storeVolatile = exprResult.entry != nullptr && exprResult.entry->isVolatile;
       insertStore(itemValue, currentFieldAddress, storeVolatile);

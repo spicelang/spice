@@ -103,6 +103,62 @@ public f<bool> Struct.hasSynthesizedVTablePtr() {
 }
 
 /**
+ * Map the order index of a field to the index of the corresponding element in the LLVM struct type. Those differ by one
+ * if the struct carries a synthesized vtable pointer as its first element.
+ *
+ * @param orderIndex Order index of the field
+ * @return Index of the field in the LLVM struct type
+ */
+public f<unsigned long> Struct.getFieldElementIndex(unsigned long orderIndex) {
+    return this.hasSynthesizedVTablePtr() ? orderIndex + 1l : orderIndex;
+}
+
+/**
+ * Check if a field exists in this struct or in one of its composed fields and return it if possible.
+ *
+ * @param name Name of the desired field
+ * @param indexPath How to index the found field using LLVM struct element indices (e.g. for GEP)
+ * @return Desired field / nullptr if the field was not found
+ */
+public f<SymbolTableEntry*> Struct.lookupInComposedFields(const String& name, Vector<unsigned long>& indexPath) {
+    // Check if we have a field with this name in the current struct
+    SymbolTableEntry* strictResult = this.scope.lookupStrict(name);
+    if strictResult != nil<SymbolTableEntry*> {
+        indexPath.pushBack(this.getFieldElementIndex(strictResult.orderIndex));
+        return strictResult;
+    }
+
+    // If it was not found in the current struct, loop through all composed fields
+    const unsigned long fieldCount = this.scope.getFieldCount();
+    for unsigned long i = 0l; i < fieldCount; i++ {
+        const SymbolTableEntry* fieldEntry = this.scope.lookupField(cast<unsigned int>(i));
+        const QualType fieldType = fieldEntry.getQualType();
+
+        // Skip all fields that are not composition fields
+        if !fieldType.isComposition() {
+            continue;
+        }
+
+        // Add the current field's element index to the index path
+        indexPath.pushBack(this.getFieldElementIndex(fieldEntry.orderIndex));
+
+        // Search in the composed struct
+        Struct* composedStruct = fieldType.getStruct(fieldEntry.declNode);
+        assert composedStruct != nil<Struct*>;
+        SymbolTableEntry* composedResult = composedStruct.lookupInComposedFields(name, indexPath);
+        if composedResult != nil<SymbolTableEntry*> {
+            return composedResult;
+        }
+
+        // Remove the current field's element index from the index path
+        indexPath.popBack();
+    }
+
+    // Field was not found in the current struct, return nullptr
+    return nil<SymbolTableEntry*>;
+}
+
+/**
  * Check that all fields are in a certain lifecycle state.
  *
  * @param state Lifecycle state to check for
