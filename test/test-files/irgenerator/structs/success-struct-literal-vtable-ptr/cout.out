@@ -1,0 +1,6 @@
+Ctor instance has vtable ptr: 1
+Const literal: a=1, vtable ptr ok: 1
+Literal: a=2, vtable ptr ok: 1
+Empty literal: a=0, vtable ptr ok: 1
+Imported const literal: value=3, vtable ptr ok: 1
+Imported literal: value=2, vtable ptr ok: 1

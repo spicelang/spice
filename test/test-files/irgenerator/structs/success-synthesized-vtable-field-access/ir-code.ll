@@ -221,14 +221,14 @@ define dso_local noundef i32 @main() #4 {
   %26 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.7, i32 noundef %23, i32 noundef %25)
   %27 = getelementptr inbounds nuw %struct.Outer, ptr %outer, i32 0, i32 2
   call void @_ZN5Inner5printEv(ptr noundef nonnull align 8 dereferenceable(32) %27)
-  store %struct.Inner { ptr null, i32 8, i64 9, ptr null }, ptr %constLiteral, align 8
+  store %struct.Inner { ptr getelementptr inbounds ({ [2 x ptr] }, ptr @_ZTV5Inner, i64 0, i32 0, i32 2), i32 8, i64 9, ptr null }, ptr %constLiteral, align 8
   %a.addr11 = getelementptr inbounds %struct.Inner, ptr %constLiteral, i64 0, i32 1
   %28 = load i32, ptr %a.addr11, align 4
   %b.addr12 = getelementptr inbounds %struct.Inner, ptr %constLiteral, i64 0, i32 2
   %29 = load i64, ptr %b.addr12, align 8
   %30 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.8, i32 noundef %28, i64 noundef %29)
   store i32 10, ptr %ten, align 4
-  store ptr null, ptr %literal, align 8
+  store ptr getelementptr inbounds ({ [2 x ptr] }, ptr @_ZTV5Inner, i64 0, i32 0, i32 2), ptr %literal, align 8
   %31 = load i32, ptr %ten, align 4
   %32 = getelementptr inbounds nuw %struct.Inner, ptr %literal, i32 0, i32 1
   store i32 %31, ptr %32, align 4

@@ -249,6 +249,8 @@ private:
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct) const;
   llvm::Constant *generateVTable(StructBase *spiceStruct) const;
   void generateVTableInitializer(const StructBase *spiceStruct);
+  llvm::StructType *getVTableType(const StructBase *spiceStruct) const;
+  llvm::Constant *getVTableAddressPoint(const StructBase *spiceStruct) const;
 
   // Generate code instrumentation
   void enableFunctionInstrumentation(llvm::Function *function) const;

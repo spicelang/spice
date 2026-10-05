@@ -690,11 +690,11 @@ public f<llvm::Value> IRGenerator.getDefaultValueForSymbolType(const QualType& s
         Vector<llvm::Value> fieldConstants;
         fieldConstants.reserve(fieldCount + 1l);
 
-        // Add a null value for the synthesized vtable pointer if required
+        // Add the VTable address point for the synthesized vtable pointer if required
         const Struct* spiceStruct = symbolType.getStruct(nil<ASTNode*>);
         assert spiceStruct != nil<const Struct*>;
         if spiceStruct.hasSynthesizedVTablePtr() {
-            fieldConstants.pushBack(llvm::getNullValue(this.builder.getPtrTy()));
+            fieldConstants.pushBack(this.getVTableAddressPoint(&spiceStruct.structBase));
         }
 
         // Add default value for each struct field
@@ -4501,9 +4501,9 @@ public f<Any> IRGenerator.visitStructInstantiation(ASTStructInstantiationNode* n
     if canBeConstant { // All field values are constants, so we can create a global constant struct instantiation
         // Collect constants
         Vector<llvm::Value> constants;
-        // A nullptr for the synthesized vtable pointer
+        // The VTable address point for the synthesized vtable pointer
         if spiceStruct.hasSynthesizedVTablePtr() {
-            constants.pushBack(llvm::getNullValue(this.builder.getPtrTy()));
+            constants.pushBack(this.getVTableAddressPoint(&spiceStruct.structBase));
         }
         // For each interface a nullptr
         foreach const QualType& interfaceType : spiceStruct.interfaceTypes {
@@ -4526,9 +4526,9 @@ public f<Any> IRGenerator.visitStructInstantiation(ASTStructInstantiationNode* n
     const unsigned long fieldCount = spiceStruct.fieldTypes.getSize();
     unsigned long i = 0l;
 
-    // Store a nullptr for the synthesized vtable pointer
+    // Store the VTable address point for the synthesized vtable pointer
     if spiceStruct.hasSynthesizedVTablePtr() {
-        this.insertStore(llvm::getNullValue(this.builder.getPtrTy()), structAddr);
+        this.insertStore(this.getVTableAddressPoint(&spiceStruct.structBase), structAddr);
     }
 
     // Store interface values at their corresponding offsets
@@ -6652,19 +6652,11 @@ f<llvm::Value> IRGenerator.generateTypeInfo(StructBase* spiceStruct) {
 
 #[ignoreUnusedReturnValue]
 f<llvm::Value> IRGenerator.generateVTable(StructBase* spiceStruct) {
-    // Retrieve virtual method count
-    const Vector<const model::Function*> virtualMethods = spiceStruct.scope.getVirtualMethods();
-    const unsigned long virtualMethodCount = virtualMethods.getSize();
-    const unsigned long arrayElementCount = virtualMethodCount + 2l; // +2 for nullptr and TypeInfo
-
     // Generate type info data structures
     this.generateTypeInfo(spiceStruct);
 
     // Generate VTable type
-    const llvm::Type vtableArrayTy = llvm::getArrayType(this.builder.getPtrTy(), arrayElementCount);
-    Vector<llvm::Type> vtableFieldTypes;
-    vtableFieldTypes.pushBack(vtableArrayTy);
-    spiceStruct.vTableData.vtableType = llvm::getStructType(*this.context, vtableFieldTypes, false);
+    spiceStruct.vTableData.vtableType = this.getVTableType(spiceStruct);
 
     const String mangledName = mangleVTable(spiceStruct);
     this.module.getOrInsertGlobal(mangledName.getRaw(), spiceStruct.vTableData.vtableType);
@@ -6713,6 +6705,32 @@ p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
     llvm::Value global = this.module.getNamedGlobal(mangledName.getRaw());
     assert !global.isNull();
     global.setInitializer(initializer);
+}
+
+f<llvm::Type> IRGenerator.getVTableType(const StructBase* spiceStruct) {
+    // Retrieve virtual method count
+    const Vector<const model::Function*> virtualMethods = spiceStruct.scope.getVirtualMethods();
+    const unsigned long arrayElementCount = virtualMethods.getSize() + 2l; // +2 for nullptr and TypeInfo
+
+    const llvm::Type vtableArrayTy = llvm::getArrayType(this.builder.getPtrTy(), arrayElementCount);
+    Vector<llvm::Type> vtableFieldTypes;
+    vtableFieldTypes.pushBack(vtableArrayTy);
+    return llvm::getStructType(*this.context, vtableFieldTypes, false);
+}
+
+f<llvm::Value> IRGenerator.getVTableAddressPoint(const StructBase* spiceStruct) {
+    // Look up the VTable by name in the current module instead of using vTableData.vtable. The latter belongs to the
+    // module of the source file that defines the struct, so for an imported struct a declaration is inserted instead.
+    const llvm::Type vtableType = this.getVTableType(spiceStruct);
+    const String mangledName = mangleVTable(spiceStruct);
+    const llvm::Value vtable = this.module.getOrInsertGlobal(mangledName.getRaw(), vtableType);
+
+    // The address point of the VTable is behind the nullptr and the TypeInfo
+    Vector<llvm::Value> indices;
+    indices.pushBack(this.getInt64(0l));
+    indices.pushBack(this.getInt32(0l));
+    indices.pushBack(this.getInt32(2l));
+    return llvm::getConstInBoundsGEP(vtableType, vtable, indices);
 }
 
 // ====================================================== GenInstrumentation.cpp =================================================

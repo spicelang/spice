@@ -1,0 +1,6 @@
+type T dyn;
+
+#[core.compiler.alwaysEmitVTable]
+public type ImportedBox<T> struct {
+    public T value
+}

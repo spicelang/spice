@@ -1,0 +1,42 @@
+import "source1";
+
+#[core.compiler.alwaysEmitVTable]
+type Local struct {
+    int a
+}
+
+f<byte*> getVTablePtr(const Local& local) {
+    unsafe {
+        byte** vtablePtrAddr = cast<byte**>(&local);
+        return *vtablePtrAddr;
+    }
+}
+
+f<byte*> getVTablePtr(const ImportedBox<int>& box) {
+    unsafe {
+        byte** vtablePtrAddr = cast<byte**>(&box);
+        return *vtablePtrAddr;
+    }
+}
+
+f<int> main() {
+    // Struct literals must carry the same vtable pointer as instances constructed via ctor
+    Local ctorInstance;
+    byte* expectedVTablePtr = getVTablePtr(ctorInstance);
+    printf("Ctor instance has vtable ptr: %d\n", expectedVTablePtr != nil<byte*>);
+
+    const Local constLiteral = Local{1};
+    printf("Const literal: a=%d, vtable ptr ok: %d\n", constLiteral.a, getVTablePtr(constLiteral) == expectedVTablePtr);
+    int two = 2;
+    const Local literal = Local{two};
+    printf("Literal: a=%d, vtable ptr ok: %d\n", literal.a, getVTablePtr(literal) == expectedVTablePtr);
+    const Local emptyLiteral = Local{};
+    printf("Empty literal: a=%d, vtable ptr ok: %d\n", emptyLiteral.a, getVTablePtr(emptyLiteral) == expectedVTablePtr);
+
+    // Struct literals of structs from other source files reference the vtable of the defining module
+    ImportedBox<int> ctorBox;
+    const ImportedBox<int> constBox = ImportedBox<int>{3};
+    printf("Imported const literal: value=%d, vtable ptr ok: %d\n", constBox.value, getVTablePtr(constBox) == getVTablePtr(ctorBox));
+    const ImportedBox<int> box = ImportedBox<int>{two};
+    printf("Imported literal: value=%d, vtable ptr ok: %d\n", box.value, getVTablePtr(box) == getVTablePtr(ctorBox));
+}
