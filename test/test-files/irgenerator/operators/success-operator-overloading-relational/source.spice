@@ -1,0 +1,93 @@
+type Version struct {
+    int major
+    int minor
+}
+
+f<bool> operator<(const Version& v1, const Version& v2) {
+    return v1.major < v2.major || (v1.major == v2.major && v1.minor < v2.minor);
+}
+
+f<bool> operator>(const Version& v1, const Version& v2) {
+    return v2 < v1;
+}
+
+f<bool> operator<=(const Version& v1, const Version& v2) {
+    return !(v2 < v1);
+}
+
+f<bool> operator>=(const Version& v1, const Version& v2) {
+    return !(v1 < v2);
+}
+
+// Shift operator next to the relational ones, to check that '<<' still denotes the shift operator
+f<Version> operator<<(const Version& v, int amount) {
+    return Version{v.major, v.minor + amount};
+}
+
+// Generic operators: '<<T>' is the less operator followed by the template type list
+type T dyn;
+
+type Box<T> struct {
+    T value
+}
+
+f<bool> operator<<T>(const Box<T>& b1, const Box<T>& b2) {
+    return b1.value < b2.value;
+}
+
+f<bool> operator><T>(const Box<T>& b1, const Box<T>& b2) {
+    return b1.value > b2.value;
+}
+
+f<bool> operator<=<T>(const Box<T>& b1, const Box<T>& b2) {
+    return b1.value <= b2.value;
+}
+
+f<bool> operator>=<T>(const Box<T>& b1, const Box<T>& b2) {
+    return b1.value >= b2.value;
+}
+
+f<int> main() {
+    const Version v1 = Version{1, 2};
+    const Version v2 = Version{1, 10};
+    const Version v3 = Version{2, 0};
+
+    // Here we call the overloaded operators
+    assert v1 < v2;
+    assert !(v2 < v1);
+    assert v3 > v2;
+    assert !(v1 > v1);
+    assert v1 <= v1;
+    assert v1 <= v3;
+    assert !(v3 <= v1);
+    assert v2 >= v2;
+    assert v3 >= v1;
+    assert !(v1 >= v2);
+
+    // The shift operator is still available
+    const Version shifted = v1 << 8;
+    assert shifted.minor == 10;
+    assert shifted <= v2 && shifted >= v2;
+
+    // Generic operators
+    const Box<int> b1 = Box<int>{3};
+    const Box<int> b2 = Box<int>{7};
+    assert b1 < b2;
+    assert b2 > b1;
+    assert b1 <= b1;
+    assert b2 >= b1;
+    const Box<double> d1 = Box<double>{1.5};
+    const Box<double> d2 = Box<double>{-2.0};
+    assert d2 < d1;
+    assert !(d2 >= d1);
+
+    // Comparisons of primitives are unaffected
+    const int i1 = 1;
+    const int i2 = 2;
+    assert i1 < i2;
+    assert i2 > i1;
+    assert i2 <= i2;
+    assert i2 >= i1;
+
+    printf("All assertions passed!\n");
+}

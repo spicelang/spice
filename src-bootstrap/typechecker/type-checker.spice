@@ -3749,20 +3749,21 @@ public f<Any> TypeChecker.visitRelationalExpr(ASTRelationalExprNode* node) {
     if lhs.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
 
     // Check operator
-    QualType resultType = QualType(SuperType::TY_INVALID);
+    ExprResult relationalResult = ExprResult{QualType(SuperType::TY_INVALID), nil<SymbolTableEntry*>};
     if node.op == RelationalOp::OP_LESS { // Operator was less
-        resultType = this.opRuleManager.getLessResultType(baseNode, lhs, rhs);
+        relationalResult = this.opRuleManager.getLessResultType(baseNode, lhs, rhs);
     } else if node.op == RelationalOp::OP_GREATER { // Operator was greater
-        resultType = this.opRuleManager.getGreaterResultType(baseNode, lhs, rhs);
+        relationalResult = this.opRuleManager.getGreaterResultType(baseNode, lhs, rhs);
     } else if node.op == RelationalOp::OP_LESS_EQUAL { // Operator was less equal
-        resultType = this.opRuleManager.getLessEqualResultType(baseNode, lhs, rhs);
+        relationalResult = this.opRuleManager.getLessEqualResultType(baseNode, lhs, rhs);
     } else if node.op == RelationalOp::OP_GREATER_EQUAL { // Operator was greater equal
-        resultType = this.opRuleManager.getGreaterEqualResultType(baseNode, lhs, rhs);
+        relationalResult = this.opRuleManager.getGreaterEqualResultType(baseNode, lhs, rhs);
     } else {
         panic(Error("RelationalExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
     }
 
-    return Any(ExprResult{node.node.setEvaluatedSymbolType(resultType, this.manIdx), nil<SymbolTableEntry*>});
+    node.node.setEvaluatedSymbolType(relationalResult.ty, this.manIdx);
+    return Any(relationalResult);
 }
 
 public f<Any> TypeChecker.visitShiftExpr(ASTShiftExprNode* node) {

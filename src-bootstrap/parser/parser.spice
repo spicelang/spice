@@ -46,6 +46,9 @@ public type Parser struct {
     // Number of additional '>' tokens that are still pending due to a previously split SHR ('>>') token.
     // This is needed to close nested generic type lists, since the lexer merges '>>' into a single token.
     unsigned int pendingGreaters = 0
+    // Whether a '<' is still pending due to a previously split SHL ('<<') token. This is needed for the template type list
+    // of a generic less operator, e.g. 'operator<<T>(...)', since the lexer merges '<<' into a single token.
+    bool pendingLess = false
     // Whether a field data type is currently parsed. Its template types are field types as well
     bool isParsingFieldType = false
     unsigned long currentNodeId = 0l
@@ -187,6 +190,20 @@ p Parser.expect(TokenType expectedTokenType) {
 // in O(1) via its precomputed comment-free index, which keeps speculative lookahead cheap.
 f<TokenType> Parser.tokenAt(unsigned long offset) {
     return this.lexer.peekRelevantType(offset);
+}
+
+// Check if a generic type list opens at the current position. A '<' might still be pending from a split SHL ('<<') token.
+f<bool> Parser.isGenericOpenAhead() {
+    return this.pendingLess || this.currentTokenIs(TokenType::LESS);
+}
+
+// Open a generic type list. Uses up a pending '<' from a split SHL ('<<') token, if there is one.
+p Parser.consumeGenericOpen() {
+    if this.pendingLess {
+        this.pendingLess = false;
+        return;
+    }
+    this.expect(TokenType::LESS);
 }
 
 // Close a generic type list. Handles the case where the lexer merged two closing
@@ -672,9 +689,9 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
     fctDefNode.isMethod = fctDefNode.name.nameFragments.getSize() > 1l;
 
     // Parse typeLst (template type list)
-    if this.currentTokenIs(TokenType::LESS) {
+    if this.isGenericOpenAhead() {
         fctDefNode.hasTemplateTypes = true;
-        this.expect(TokenType::LESS);
+        this.consumeGenericOpen();
         fctDefNode.templateTypeLst = this.parseTypeLst();
         this.consumeGenericClose();
     }
@@ -720,9 +737,9 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
     // name->nameFragments.back() == CTOR_FUNCTION_NAME during symbol-table building, not parsing).
 
     // Parse typeLst (template type list)
-    if this.currentTokenIs(TokenType::LESS) {
+    if this.isGenericOpenAhead() {
         procDefNode.hasTemplateTypes = true;
-        this.expect(TokenType::LESS);
+        this.consumeGenericOpen();
         procDefNode.templateTypeLst = this.parseTypeLst();
         this.consumeGenericClose();
     }
@@ -776,9 +793,9 @@ f<ASTFctNameNode*> Parser.parseFctName() {
     return this.concludeNode(fctNameNode);
 }
 
-// overloadableOp: PLUS | MINUS | MUL | DIV | EQUAL | NOT_EQUAL | LESS LESS | GREATER GREATER | BITWISE_AND | BITWISE_OR
-//               | BITWISE_XOR | BITWISE_NOT | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | PLUS_PLUS | MINUS_MINUS
-//               | LBRACKET RBRACKET | ASSIGN;
+// overloadableOp: PLUS | MINUS | MUL | DIV | EQUAL | NOT_EQUAL | LESS | GREATER | LESS_EQUAL | GREATER_EQUAL | LESS LESS
+//               | GREATER GREATER | BITWISE_AND | BITWISE_OR | BITWISE_XOR | BITWISE_NOT | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL
+//               | DIV_EQUAL | PLUS_PLUS | MINUS_MINUS | LBRACKET RBRACKET | ASSIGN;
 // Note: the lexer merges '<<' and '>>' into single SHL / SHR tokens. Returns the mangled op.* function
 // name for the matched operator (matches host's ASTBuilder::visitOverloadableOp mapping).
 f<String> Parser.parseOverloadableOp() {
@@ -796,8 +813,24 @@ f<String> Parser.parseOverloadableOp() {
         name = String(OP_FCT_EQUAL);
     } else if tok == TokenType::NOT_EQUAL {
         name = String(OP_FCT_NOT_EQUAL);
+    } else if tok == TokenType::LESS {
+        name = String(OP_FCT_LESS);
+    } else if tok == TokenType::GREATER {
+        name = String(OP_FCT_GREATER);
+    } else if tok == TokenType::LESS_EQUAL {
+        name = String(OP_FCT_LESS_EQUAL);
+    } else if tok == TokenType::GREATER_EQUAL {
+        name = String(OP_FCT_GREATER_EQUAL);
     } else if tok == TokenType::SHL {
-        name = String(OP_FCT_SHL);
+        // '<<' is the shift left operator, if the parameter list or a template type list follows. Otherwise, it is the less
+        // operator, followed by the opening '<' of a template type list (e.g. 'operator<<T>(...)'), which stays pending
+        const TokenType nextTok = this.tokenAt(1l);
+        if nextTok == TokenType::LPAREN || nextTok == TokenType::LESS {
+            name = String(OP_FCT_SHL);
+        } else {
+            name = String(OP_FCT_LESS);
+            this.pendingLess = true;
+        }
     } else if tok == TokenType::SHR {
         name = String(OP_FCT_SHR);
     } else if tok == TokenType::BITWISE_AND {

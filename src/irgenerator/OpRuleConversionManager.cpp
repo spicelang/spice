@@ -758,10 +758,16 @@ LLVMExprResult OpRuleConversionManager::getLessInst(const ASTNode *node, LLVMExp
                                                     LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
   llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -824,10 +830,16 @@ LLVMExprResult OpRuleConversionManager::getGreaterInst(const ASTNode *node, LLVM
                                                        LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
   llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -890,10 +902,16 @@ LLVMExprResult OpRuleConversionManager::getLessEqualInst(const ASTNode *node, LL
                                                          LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
   llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
@@ -956,10 +974,16 @@ LLVMExprResult OpRuleConversionManager::getGreaterEqualInst(const ASTNode *node,
                                                             LLVMExprResult &rhs, QualType rhsSTy) {
   ResolverFct lhsV = [&] { return irGenerator->resolveValue(lhsSTy, lhs); };
   ResolverFct rhsV = [&] { return irGenerator->resolveValue(rhsSTy, rhs); };
+  ResolverFct lhsP = [&] { return irGenerator->resolveAddress(lhs); };
+  ResolverFct rhsP = [&] { return irGenerator->resolveAddress(rhs); };
   lhsSTy = lhsSTy.removeReferenceWrapper();
   rhsSTy = rhsSTy.removeReferenceWrapper();
   llvm::Type *lhsT = lhsSTy.toLLVMType(irGenerator->sourceFile);
   llvm::Type *rhsT = rhsSTy.toLLVMType(irGenerator->sourceFile);
+
+  // Handle operator overloads
+  if (callsOverloadedOpFct(node, DEFAULT_OP_IDX))
+    return callOperatorOverloadFct<2>(node, {lhsV, lhsP, rhsV, rhsP}, DEFAULT_OP_IDX);
 
   switch (getTypeCombination(lhsSTy, rhsSTy)) {
   case COMB(TY_DOUBLE, TY_DOUBLE):
