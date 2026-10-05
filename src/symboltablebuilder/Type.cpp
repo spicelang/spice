@@ -411,6 +411,11 @@ const Type *Type::removeReferenceWrapper() const { return isRef() ? getContained
 const Type *Type::getBase() const {
   assert(!typeChain.empty());
 
+  // A type chain with a single element is the base type already. All types are interned in the type registry, so there is
+  // no need to look it up again
+  if (typeChain.size() == 1)
+    return this;
+
   // Create new type chain
   const TypeChain newTypeChain = {typeChain.front()};
 
