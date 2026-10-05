@@ -65,6 +65,10 @@ spice run   --backend=tpde main.spice
 If the compiler was built without `SPICE_ENABLE_TPDE`, passing `--backend=tpde` produces a CLI error directing
 you to rebuild with the option turned on.
 
+The self-hosted bootstrap compiler (`src-bootstrap/`) supports `--backend=tpde` as well. It emits objects via the std
+TPDE bindings (see [Using TPDE from Spice code](#using-tpde-from-spice-code)), so it is only backed by TPDE if
+`TPDE_FLAGS` was set while building it. Otherwise, `--backend=tpde` produces a CLI error.
+
 ## Limitations you may hit
 
 - `--dump-assembly` and `--dump-object-file` are not meaningful under TPDE; they return placeholder text.
