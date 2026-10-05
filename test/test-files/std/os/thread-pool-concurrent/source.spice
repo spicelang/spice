@@ -1,0 +1,30 @@
+import "std/os/thread-pool";
+import "std/os/atomic";
+
+type Counter struct {
+    Atomic<unsigned long> value
+}
+
+f<int> main() {
+    Counter counter;
+    counter.value = Atomic<unsigned long>(0ul);
+    Counter* counterPtr = &counter;
+    ThreadPool tp = ThreadPool(8s);
+    for int i = 0; i < 2000; i++ {
+        tp.enqueue(p() [[async]] {
+            counterPtr.value.fetchAdd(1ul);
+        });
+    }
+    tp.start();
+    tp.join();
+    // The pool can be started again after it was joined
+    for int i = 0; i < 100; i++ {
+        tp.enqueue(p() [[async]] {
+            counterPtr.value.fetchAdd(1ul);
+        });
+    }
+    tp.start();
+    tp.join();
+    const unsigned long total = counter.value.load();
+    printf("total=%d running=%d queued=%d\n", total, tp.getRunningJobCount(), tp.getQueuedJobCount());
+}

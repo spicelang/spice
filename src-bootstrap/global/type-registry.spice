@@ -9,6 +9,7 @@ import "std/math/hash";
 // Own imports
 import "bootstrap/util/block-allocator";
 import "bootstrap/util/memory";
+import "bootstrap/util/concurrency";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/type-chain";
@@ -28,6 +29,9 @@ public type TypeRegistry struct {
     BlockAllocator<Type> alloc
     UnorderedMap<Hash, Vector<Type*>> types
     unsigned long typeCount = 0ul
+    // Deriving a type (QualType.toPtr, ...) can insert into the registry while the back end runs in parallel. See
+    // ConditionalLock for why it is not locked unconditionally
+    RecursiveMutex typesMutex
 }
 
 // Address of the active type registry. The host's TypeRegistry is a static singleton, which context-free type creation like
@@ -143,6 +147,8 @@ public p TypeRegistry.clear() {
 f<const Type*> TypeRegistry.getOrInsertType(const Type& candidate) {
     const Hash h = this.getTypeHash(candidate);
     const Type* candidatePtr = &candidate;
+
+    ConditionalLock lock = ConditionalLock(&this.typesMutex);
 
     if this.types.contains(h) {
         // Search the bucket for a structurally equal type

@@ -6,6 +6,7 @@ import "std/data/pair";
 import "std/time/timer";
 import "std/io/filepath";
 import "std/io/file";
+import "std/os/system";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
@@ -28,6 +29,7 @@ import "bootstrap/util/lookup-cache";
 import "bootstrap/reader/code-loc";
 import "bootstrap/util/memory";
 import "bootstrap/util/block-allocator";
+import "bootstrap/util/concurrency";
 import "bootstrap/source-file";
 import "bootstrap/driver";
 
@@ -68,6 +70,7 @@ public type GlobalResourceManager struct {
     public LookupCache<Struct> structLookupCache
     public LookupCache<Interface> interfaceLookupCache
     public LookupCache<Union> unionLookupCache
+    public RecursiveMutex symbolRegistryMutex // Guards the symbol lookup machinery during the parallel back end
     public bool abortCompilation = false
     unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1l // Start at 256 because all primitive types come first
     unsigned long nextScopeId = 0l
@@ -92,6 +95,8 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     setActiveStructLookupCache(&this.structLookupCache);
     setActiveInterfaceLookupCache(&this.interfaceLookupCache);
     setActiveUnionLookupCache(&this.unionLookupCache);
+    // The lookups of the managers lock the symbol registry mutex of the resource manager, while the back end runs in parallel
+    setActiveSymbolRegistryMutex(&this.symbolRegistryMutex);
 
     // Initialize the required LLVM targets
     if cliOptions.isNativeTarget {
@@ -185,6 +190,22 @@ public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent,
 
 public f<unsigned long> GlobalResourceManager.getNextCustomTypeId() {
     return this.nextCustomTypeId++;
+}
+
+/**
+ * Determine how many source files may be compiled at the same time, based on the --jobs/-j cli option
+ *
+ * @return Number of compile jobs (always >= 1)
+ */
+public f<unsigned long> GlobalResourceManager.getCompileJobCount() {
+    // An explicit job count always wins
+    if this.cliOptions.compileJobCount > 0u {
+        return cast<unsigned long>(this.cliOptions.compileJobCount);
+    }
+
+    // Otherwise derive the job count from the machine. If it cannot be determined, fall back to a serial back end.
+    const long coreCount = getCPUCoreCount();
+    return coreCount > 0l ? cast<unsigned long>(coreCount) : 1ul;
 }
 
 public f<unsigned long> GlobalResourceManager.getNextScopeId() {

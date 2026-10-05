@@ -1,0 +1,13 @@
+import "std/type/type-conversion";
+import "source2";
+import "source3";
+
+public f<double> remainder(double lhs, double rhs) {
+    return lhs % rhs;
+}
+
+public f<String> describe(const Rect& rect) {
+    Box<Rect> box = Box<Rect>(rect, String("described"));
+    Box<Rect> copy = box;
+    return copy.label + " " + toString(copy.value.area());
+}

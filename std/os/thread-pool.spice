@@ -1,20 +1,26 @@
 import "std/os/thread";
 import "std/data/vector";
-import "std/data/queue";
+import "std/data/optional";
 import "std/os/atomic";
 import "std/os/cpu";
+import "std/os/message-queue";
+import "std/os/mutex";
 import "std/os/system";
+import "std/type/lambda";
 
 /**
  * A thread pool that can be used to run multiple jobs in parallel.
  * Thread pools in Spice work with a fixed number of worker threads, that are created when the pool is started. After that, an
  * arbitrary number of jobs can be queued to be run by the pool. The pool will then run as many jobs as possible in parallel.
+ * The jobs are started in the order, they were enqueued in.
  */
 public type ThreadPool struct {
     Vector<Thread> workerThreads
-    Queue<p()> queuedJobs
+    MessageQueue<Lambda<p()>> queuedJobs
     Atomic<unsigned short> runningJobs
     unsigned short workerThreadCount
+    // The control flags are written by the controlling thread and read by the worker threads, so they are guarded by a mutex
+    Mutex flagMutex
     bool stopRequested = false
     bool stopOnEmptyQueueRequested = false
     bool pauseRequested = false
@@ -27,7 +33,7 @@ public type ThreadPool struct {
  */
 public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.workerThreads = Vector<Thread>();
-    this.queuedJobs = Queue<p()>();
+    this.queuedJobs = MessageQueue<Lambda<p()>>();
     this.runningJobs = Atomic<unsigned short>(0s);
     this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : cast<unsigned short>(getCPUCoreCount());
 }
@@ -38,25 +44,30 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
 public p ThreadPool.start() {
     p() workerRoutine = p() [[async]] {
         do {
-            // Check if there are jobs to run
-            const bool hasQueuedJobs = !this.queuedJobs.isEmpty();
-            // If we are supposed to stop when the queue is empty and there are no more jobs, abort
-            if this.stopOnEmptyQueueRequested & !hasQueuedJobs {
-                break;
-            }
-            // If we are not supposed to stop and there are jobs, run them
-            if !this.pauseRequested & hasQueuedJobs {
-                p() task = this.queuedJobs.pop();
-                this.runningJobs.store(this.runningJobs.load() + 1s);
-                task();
-                this.runningJobs.store(this.runningJobs.load() - 1s);
+            if !this.getFlag(this.pauseRequested) {
+                // Take the next job off the queue. Checking for and taking a job happens atomically, so that two workers can
+                // never race for the same job.
+                Optional<Lambda<p()>> job = this.queuedJobs.tryPop();
+                if job.isPresent() {
+                    this.runningJobs.fetchAdd(1s);
+                    Lambda<p()>& jobLambda = job.get();
+                    p() task = jobLambda.get();
+                    task();
+                    this.runningJobs.fetchSub(1s);
+                    continue;
+                }
+                // If we are supposed to stop when the queue is empty and there are no more jobs, abort
+                if this.getFlag(this.stopOnEmptyQueueRequested) {
+                    break;
+                }
             }
             // Yield to other threads
             yield();
-        } while !this.stopRequested;
+        } while !this.getFlag(this.stopRequested);
     };
 
-    // Create worker threads
+    // Create worker threads. Reserve the storage upfront, so that running threads are never relocated
+    this.workerThreads.reserve(this.workerThreads.getSize() + cast<unsigned long>(this.workerThreadCount));
     for unsigned short i = 0s; i < this.workerThreadCount; i++ {
         this.workerThreads.pushBack(Thread(workerRoutine));
         Thread& workerThread = this.workerThreads.back();
@@ -69,11 +80,11 @@ public p ThreadPool.start() {
  */
 public p ThreadPool.stop() {
     // Stop worker threads
-    this.stopRequested = true;
+    this.setFlag(this.stopRequested, true);
     // Wait for all worker threads to terminate
     this.joinWorkerThreads();
     // Reset the stop flag
-    this.stopRequested = false;
+    this.setFlag(this.stopRequested, false);
 }
 
 /**
@@ -81,11 +92,11 @@ public p ThreadPool.stop() {
  */
 public p ThreadPool.join() {
     // Stop worker threads
-    this.stopOnEmptyQueueRequested = true;
+    this.setFlag(this.stopOnEmptyQueueRequested, true);
     // Wait for all worker threads to terminate
     this.joinWorkerThreads();
     // Reset the stop flag
-    this.stopOnEmptyQueueRequested = false;
+    this.setFlag(this.stopOnEmptyQueueRequested, false);
 }
 
 /**
@@ -94,6 +105,16 @@ public p ThreadPool.join() {
  * @param job The job routine to enqueue.
  */
 public p ThreadPool.enqueue(const p()& job) {
+    // Take ownership of the captures of the job, since it might run after the frame, that created it, was left
+    this.queuedJobs.push(Lambda<p()>(job));
+}
+
+/**
+ * Enqueue a job to be run by the thread pool.
+ *
+ * @param job The job routine to enqueue.
+ */
+public p ThreadPool.enqueue(const Lambda<p()>& job) {
     this.queuedJobs.push(job);
 }
 
@@ -101,21 +122,21 @@ public p ThreadPool.enqueue(const p()& job) {
  * Pause the thread pool. The worker threads will finish their current job and then wait for the pool to be resumed.
  */
 public p ThreadPool.pause() {
-    this.pauseRequested = true;
+    this.setFlag(this.pauseRequested, true);
 }
 
 /**
  * Resume the thread pool.
  */
 public p ThreadPool.resume() {
-    this.pauseRequested = false;
+    this.setFlag(this.pauseRequested, false);
 }
 
 /**
  * Check if the thread pool is paused.
  */
 public f<bool> ThreadPool.isPaused() {
-    return this.pauseRequested;
+    return this.getFlag(this.pauseRequested);
 }
 
 /**
@@ -143,7 +164,25 @@ public f<unsigned short> ThreadPool.getWorkerThreadCount() {
  * Wait for all worker threads to terminate.
  */
 p ThreadPool.joinWorkerThreads() {
-    foreach const Thread& workerThread : this.workerThreads {
+    foreach Thread& workerThread : this.workerThreads {
         workerThread.join();
     }
+    // The joined threads must not be joined again, so they are dropped. This way, the pool can be started again.
+    this.workerThreads.clear();
+}
+
+/**
+ * Read a control flag of the pool.
+ */
+f<bool> ThreadPool.getFlag(const bool& flag) {
+    LockGuard _ = LockGuard(this.flagMutex);
+    return flag;
+}
+
+/**
+ * Write a control flag of the pool.
+ */
+p ThreadPool.setFlag(bool& flag, bool value) {
+    LockGuard _ = LockGuard(this.flagMutex);
+    flag = value;
 }

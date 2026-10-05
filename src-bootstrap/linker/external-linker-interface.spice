@@ -2,6 +2,7 @@
 import "std/data/vector";
 import "std/io/filepath";
 import "std/io/file";
+import "std/os/mutex";
 import "std/os/os";
 import "std/text/stringstream";
 
@@ -18,6 +19,7 @@ public type ExternalLinkerInterface struct {
     public Vector<String> linkerFlags
     public FilePath outputPath
     public bool linkLibMath = false
+    Mutex linkLibMathMutex // The IR generator requests libm linkage from the worker threads of the parallel back end
 }
 
 public p ExternalLinkerInterface.ctor(CliOptions& cliOptions) {
@@ -289,6 +291,7 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(const FilePath& additio
  * Link against libmath a.k.a. -lm
  */
 public p ExternalLinkerInterface.requestLibMathLinkage() {
+    LockGuard _ = LockGuard(this.linkLibMathMutex);
     this.linkLibMath = true;
 }
 

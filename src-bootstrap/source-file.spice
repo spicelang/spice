@@ -14,6 +14,7 @@ import "std/io/filepath";
 import "std/text/json/json-value";
 import "std/text/json/json-serializer";
 import "std/time/timer";
+import "std/os/thread-pool";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
@@ -42,6 +43,7 @@ import "bootstrap/irgenerator/ir-generator";
 import "bootstrap/iroptimizer/ir-optimizer";
 import "bootstrap/linker/bitcode-linker";
 import "bootstrap/objectemitter/abstract-object-emitter";
+import "bootstrap/util/concurrency";
 import "bootstrap/objectemitter/llvm-object-emitter";
 import "bootstrap/objectemitter/tpde-object-emitter";
 import "bootstrap/typechecker/function-manager";
@@ -872,12 +874,37 @@ public p SourceFile.runBackEnd() {
         }
     }
 
-    // The host spreads the per-file pipelines over a worker pool, except for LTO and the dump modes. The bootstrap compiler
-    // has no thread pool yet, so it always takes the serial path.
-    foreach SourceFile* sourceFile : backEndSourceFiles {
-        sourceFile.runBackEndForThisFile();
-        if this.resourceManager.abortCompilation { return; }
+    // Unlike the front end and the middle end, the back end has no cross-file data dependencies: every source file owns
+    // its own LLVMContext, IRBuilder, TargetMachine and llvm::Module, and references to symbols of other files are emitted
+    // as declarations into the local module. So the per-file pipelines can simply be spread over a worker pool.
+    // Exceptions, in which the back end stays serial:
+    // - LTO, because all source files share the LTO context and module of the GlobalResourceManager
+    // - dump modes, because they write to the console/output dir and their ordering is part of the user-visible output
+    const bool dumpRequested = this.cliOptions.dump.dumpIR || this.cliOptions.dump.dumpAssembly || this.cliOptions.dump.dumpObjectFiles;
+    const unsigned long compileJobCount = this.resourceManager.getCompileJobCount();
+    const unsigned long jobCount = compileJobCount < backEndSourceFiles.getSize() ? compileJobCount : backEndSourceFiles.getSize();
+    const bool runParallel = jobCount > 1ul && !this.cliOptions.useLTO && !dumpRequested;
+
+    if runParallel {
+        ThreadPool threadPool = ThreadPool(cast<unsigned short>(jobCount));
+        foreach SourceFile* sourceFile : backEndSourceFiles {
+            threadPool.enqueue(p() [[async]] {
+                sourceFile.runBackEndForThisFile();
+            });
+        }
+        // Enter the parallel section before the worker threads start and leave it only after all of them were joined. The
+        // host re-throws the error of the first failing source file here. The bootstrap compiler has no exceptions, so a
+        // failing source file panics on its worker thread, which ends the process.
+        ParallelSection parallelSection;
+        threadPool.start();
+        threadPool.join();
+    } else {
+        foreach SourceFile* sourceFile : backEndSourceFiles {
+            sourceFile.runBackEndForThisFile();
+            if this.resourceManager.abortCompilation { return; }
+        }
     }
+    if this.resourceManager.abortCompilation { return; }
 
     // Conclude the compilation of all source files. This registers the emitted object files with the linker and writes the
     // compilation cache, both of which have to happen serially and in a fixed order to stay deterministic.

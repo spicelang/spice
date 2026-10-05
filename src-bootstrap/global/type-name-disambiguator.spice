@@ -3,6 +3,9 @@ import "std/data/vector";
 import "std/data/unordered-map";
 import "std/type/type-conversion";
 
+// Own imports
+import "bootstrap/util/concurrency";
+
 /**
  * Two structs or interfaces that share a simple name but stem from independent declarations (e.g. a package-private
  * `Node<T>` declared separately in two source files, see issue #1253) are distinct types, but render to the same
@@ -18,6 +21,8 @@ import "std/type/type-conversion";
 public type TypeNameDisambiguator struct {
     // Maps a simple type name to the list of distinct type ids claiming it, in first-seen order
     UnorderedMap<String, Vector<unsigned long>> claimedTypeIds
+    // Name mangling claims names while the back end runs in parallel
+    RecursiveMutex claimedTypeIdsMutex
 }
 
 // Address of the active type name disambiguator. Spice only supports globals of primitive type, so the address is stored
@@ -58,6 +63,8 @@ f<TypeNameDisambiguator*> getActiveTypeNameDisambiguator() {
  * @return Disambiguation suffix (empty for the first claimer of the name)
  */
 public f<String> TypeNameDisambiguator.getDisambiguationSuffix(const String& name, unsigned long typeId) {
+    ConditionalLock lock = ConditionalLock(&this.claimedTypeIdsMutex);
+
     if !this.claimedTypeIds.contains(name) {
         this.claimedTypeIds.upsert(name, Vector<unsigned long>());
     }

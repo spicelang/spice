@@ -21,6 +21,7 @@ import "bootstrap/typechecker/type-checker";
 import "bootstrap/typechecker/type-matcher";
 import "bootstrap/util/custom-hash-functions";
 import "bootstrap/util/lookup-cache";
+import "bootstrap/util/concurrency";
 
 // Type aliases
 public type StructManifestationList alias UnorderedMap</*mangledName=*/String, Struct>;
@@ -104,6 +105,9 @@ f<LookupCache<Struct>*> getActiveStructLookupCache() {
  * @return Matched struct or nil
  */
 public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+    // The IR generator reaches this from the worker threads of the parallel back end
+    ConditionalLock lock = ConditionalLock(getSymbolRegistryMutex());
+
     // Do cache lookup
     LookupCache<Struct>* cache = getActiveStructLookupCache();
     const Hash cacheKey = getStructCacheKey(matchScope, qt, reqTemplateTypes);

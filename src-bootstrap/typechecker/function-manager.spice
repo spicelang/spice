@@ -20,6 +20,7 @@ import "bootstrap/typechecker/type-matcher";
 import "bootstrap/typechecker/type-checker";
 import "bootstrap/util/custom-hash-functions";
 import "bootstrap/util/lookup-cache";
+import "bootstrap/util/concurrency";
 
 // Aliases
 public type FunctionManifestationList alias UnorderedMap</*mangledName=*/String, Function>;
@@ -241,6 +242,9 @@ public f<Function*> insertSubstantiation(Scope* insertScope, const Function& new
 public f<const Function*> lookupFunction(Scope* matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, bool strictQualifierMatching) {
     const dyn thisTypeOptions = [SuperType::TY_DYN, SuperType::TY_STRUCT];
     assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
+
+    // The IR generator reaches this from the worker threads of the parallel back end
+    ConditionalLock lock = ConditionalLock(getSymbolRegistryMutex());
 
     // Do cache lookup
     LookupCache<Function>* cache = getActiveFunctionLookupCache();

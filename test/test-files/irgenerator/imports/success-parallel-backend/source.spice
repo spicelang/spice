@@ -1,0 +1,37 @@
+// TEST: -j 4
+import "std/data/vector";
+import "source2";
+import "source3";
+import "source4";
+
+// Compiles several source files, which share structs, generics, interfaces and implicit functions, with the parallel back
+// end. Every source file runs its IR generator, optimizer and object emitter on its own worker thread.
+
+f<int> main() {
+    // Interfaces and their vtables (source2)
+    Rect rect = Rect(3, 4);
+    Square square = Square(5);
+    IShape* shape = &rect;
+    printf("Rect area: %d\n", shape.area());
+    shape = &square;
+    printf("Square area: %d\n", shape.area());
+
+    // Generic struct with a copy ctor, substantiated in several source files (source3)
+    Box<int> intBox = Box<int>(42, String("answer"));
+    Box<int> copiedBox = intBox;
+    printf("%s: %d\n", copiedBox.label.getRaw(), copiedBox.value);
+    Box<Rect> rectBox = makeRectBox(2, 6);
+    printf("%s: %d\n", rectBox.label.getRaw(), rectBox.value.area());
+
+    // Struct instances, passed across source files (source3)
+    Vector<Rect> rects;
+    rects.pushBack(Rect(1, 2));
+    rects.pushBack(Rect(3, 4));
+    rects.pushBack(Rect(5, 6));
+    printf("Sum of areas: %d\n", sumAreas(rects));
+
+    // Operators, which need libm (source4)
+    printf("Remainder: %f\n", remainder(7.5, 2.0));
+    const String description = describe(rect);
+    printf("Describe: %s\n", description.getRaw());
+}
