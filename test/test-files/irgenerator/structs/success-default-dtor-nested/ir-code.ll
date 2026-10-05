@@ -23,6 +23,7 @@ define void @_ZN5Inner4ctorERK5Inner(ptr noundef nonnull align 8 dereferenceable
   %4 = getelementptr inbounds nuw %struct.Inner, ptr %1, i32 0, i32 1
   %5 = getelementptr inbounds nuw %struct.Inner, ptr %3, i32 0, i32 1
   %6 = load ptr, ptr %4, align 8
+  store ptr null, ptr %5, align 8
   %7 = icmp ne ptr %6, null
   br i1 %7, label %nullptrcheck.then, label %nullptrcheck.exit
 

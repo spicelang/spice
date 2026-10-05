@@ -430,9 +430,6 @@ f<llvm::Metadata> DebugInfoGenerator.getStructDIType(const ASTNode* node, const 
     // Insert into cache
     this.structTypeCache.upsert(hashKey, structDiType);
 
-    // A synthesized vtable pointer takes up the first element of the LLVM struct type, which shifts all fields by one
-    const unsigned int fieldElementOffset = spiceStruct.hasSynthesizedVTablePtr() ? 1u : 0u;
-
     // Collect DI types for fields
     Vector<llvm::Metadata> fieldTypes;
     for unsigned long i = 0l; i < spiceStruct.scope.getFieldCount(); i++ {
@@ -445,7 +442,7 @@ f<llvm::Metadata> DebugInfoGenerator.getStructDIType(const ASTNode* node, const 
 
         const QualType fieldType = fieldEntry.getQualType();
         const unsigned int fieldLineNo = cast<unsigned int>(fieldEntry.declNode.codeLoc.line);
-        const unsigned long offsetInBits = dataLayout.getStructElementOffset(structType, cast<unsigned int>(i) + fieldElementOffset) * 8l;
+        const unsigned long offsetInBits = dataLayout.getStructElementOffset(structType, cast<unsigned int>(spiceStruct.getFieldElementIndex(i))) * 8l;
 
         const llvm::Metadata fieldDiType = this.getDITypeForQualType(node, fieldType);
         const llvm::Metadata fieldDiDerivedType = this.diBuilder.createMemberType(structDiType, fieldEntry.name, this.diFile, fieldLineNo,
