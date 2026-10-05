@@ -29,10 +29,10 @@ ext p GetSystemInfo(SystemInfo*);
  *
  * return Number of cores
  */
-public f<int> getCPUCoreCount() {
+public f<long> getCPUCoreCount() {
     SystemInfo info = SystemInfo{};
     GetSystemInfo(&info);
-    return info.dwNumberOfProcessors;
+    return cast<long>(info.dwNumberOfProcessors);
 }
 
 /**
