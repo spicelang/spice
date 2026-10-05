@@ -471,6 +471,13 @@ public f<const Type*> Type.removeReferenceWrapper() {
 public f<const Type*> Type.getBase() {
     assert !this.typeChain.isEmpty();
 
+    // A type chain with a single element is the base type already. All types are interned in the type registry, so there is
+    // no need to look it up again
+    if this.typeChain.getSize() == 1l {
+        const Type* self = this;
+        return self;
+    }
+
     // Create new type chain
     TypeChain newTypeChain;
     newTypeChain.pushBack(this.typeChain.front());
