@@ -41,6 +41,10 @@ public const string OP_FCT_MUL = "op.mul";
 public const string OP_FCT_DIV = "op.div";
 public const string OP_FCT_EQUAL = "op.equal";
 public const string OP_FCT_NOT_EQUAL = "op.notequal";
+public const string OP_FCT_LESS = "op.less";
+public const string OP_FCT_GREATER = "op.greater";
+public const string OP_FCT_LESS_EQUAL = "op.lessequal";
+public const string OP_FCT_GREATER_EQUAL = "op.greaterequal";
 public const string OP_FCT_SHL = "op.shl";
 public const string OP_FCT_SHR = "op.shr";
 public const string OP_FCT_BITWISE_AND = "op.bitwiseand";
@@ -2034,6 +2038,7 @@ public type ASTRelationalExprNode struct : IVisitable {
     compose public ASTExprNode node
     public Vector<IVisitable*> operands
     public RelationalOp op = RelationalOp::OP_NONE
+    public Vector<Vector<const Function*>> opFct // Operator overloading functions
 }
 
 public p ASTRelationalExprNode.ctor(CodeLoc codeLoc) {
@@ -2715,6 +2720,10 @@ public f<Vector<Vector<const Function*>>*> ASTNode.getOpFctPointers() {
             ASTEqualityExprNode* concreteNode = downcast<ASTEqualityExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
+        case ASTNodeKind::RELATIONAL_EXPR: {
+            ASTRelationalExprNode* concreteNode = downcast<ASTRelationalExprNode>(this);
+            opFctPointers = &concreteNode.opFct;
+        }
         case ASTNodeKind::SHIFT_EXPR: {
             ASTShiftExprNode* concreteNode = downcast<ASTShiftExprNode>(this);
             opFctPointers = &concreteNode.opFct;
@@ -2750,7 +2759,7 @@ public f<Vector<Vector<const Function*>>*> ASTNode.getOpFctPointers() {
  */
 f<bool> hasOpFctPointers(ASTNodeKind kind) {
     switch kind {
-        case ASTNodeKind::ASSIGN_EXPR, ASTNodeKind::BITWISE_OR_EXPR, ASTNodeKind::BITWISE_XOR_EXPR, ASTNodeKind::BITWISE_AND_EXPR, ASTNodeKind::EQUALITY_EXPR, ASTNodeKind::SHIFT_EXPR, ASTNodeKind::ADDITIVE_EXPR, ASTNodeKind::MULTIPLICATIVE_EXPR, ASTNodeKind::PREFIX_UNARY_EXPR, ASTNodeKind::POSTFIX_UNARY_EXPR: {
+        case ASTNodeKind::ASSIGN_EXPR, ASTNodeKind::BITWISE_OR_EXPR, ASTNodeKind::BITWISE_XOR_EXPR, ASTNodeKind::BITWISE_AND_EXPR, ASTNodeKind::EQUALITY_EXPR, ASTNodeKind::RELATIONAL_EXPR, ASTNodeKind::SHIFT_EXPR, ASTNodeKind::ADDITIVE_EXPR, ASTNodeKind::MULTIPLICATIVE_EXPR, ASTNodeKind::PREFIX_UNARY_EXPR, ASTNodeKind::POSTFIX_UNARY_EXPR: {
             return true;
         }
         default: {

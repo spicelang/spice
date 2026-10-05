@@ -434,19 +434,20 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(lhs.type)
 
   // Check operator
-  QualType resultType;
+  ExprResult result;
   if (node->op == RelationalExprNode::RelationalOp::OP_LESS) // Operator was less
-    resultType = OpRuleManager::getLessResultType(node, lhs, rhs);
+    result = opRuleManager.getLessResultType(node, lhs, rhs);
   else if (node->op == RelationalExprNode::RelationalOp::OP_GREATER) // Operator was greater
-    resultType = OpRuleManager::getGreaterResultType(node, lhs, rhs);
+    result = opRuleManager.getGreaterResultType(node, lhs, rhs);
   else if (node->op == RelationalExprNode::RelationalOp::OP_LESS_EQUAL) // Operator was less equal
-    resultType = OpRuleManager::getLessEqualResultType(node, lhs, rhs);
+    result = opRuleManager.getLessEqualResultType(node, lhs, rhs);
   else if (node->op == RelationalExprNode::RelationalOp::OP_GREATER_EQUAL) // Operator was greater equal
-    resultType = OpRuleManager::getGreaterEqualResultType(node, lhs, rhs);
+    result = opRuleManager.getGreaterEqualResultType(node, lhs, rhs);
   else
     throw CompilerError(UNHANDLED_BRANCH, "RelationalExpr fall-through"); // GCOV_EXCL_LINE
 
-  return ExprResult{node->setEvaluatedSymbolType(resultType, manIdx)};
+  node->setEvaluatedSymbolType(result.type, manIdx);
+  return result;
 }
 
 std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {

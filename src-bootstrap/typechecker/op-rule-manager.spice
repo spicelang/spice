@@ -1017,29 +1017,45 @@ public f<ExprResult> OpRuleManager.getNotEqualResultType(ASTNode* node, const Ex
     return this.getEqualityResultType(node, lhs, rhs, OP_FCT_NOT_EQUAL, this.notEqualOpRules, "!=");
 }
 
-public f<QualType> OpRuleManager.getLessResultType(const ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
-    return this.getSimpleBinaryResultType(node, lhs, rhs, this.lessOpRules, "<");
+// Result of <, > and <=
+f<ExprResult> OpRuleManager.getRelationalResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, string fctName, const BinaryOpRules& opRules, string name) {
+    // Check if there is an overloaded operator function available
+    const ExprResult resultType = this.isOperatorOverloadingFctAvailable(node, fctName, binaryOperands(lhs, rhs), 0l);
+    if !resultType.ty.is(SuperType::TY_INVALID) {
+        return resultType;
+    }
+    return toExprResult(this.getSimpleBinaryResultType(node, lhs, rhs, opRules, name));
 }
 
-public f<QualType> OpRuleManager.getGreaterResultType(const ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
-    return this.getSimpleBinaryResultType(node, lhs, rhs, this.greaterOpRules, ">");
+public f<ExprResult> OpRuleManager.getLessResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
+    return this.getRelationalResultType(node, lhs, rhs, OP_FCT_LESS, this.lessOpRules, "<");
 }
 
-public f<QualType> OpRuleManager.getLessEqualResultType(const ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
-    return this.getSimpleBinaryResultType(node, lhs, rhs, this.lessEqualOpRules, "<=");
+public f<ExprResult> OpRuleManager.getGreaterResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
+    return this.getRelationalResultType(node, lhs, rhs, OP_FCT_GREATER, this.greaterOpRules, ">");
 }
 
-public f<QualType> OpRuleManager.getGreaterEqualResultType(const ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
+public f<ExprResult> OpRuleManager.getLessEqualResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
+    return this.getRelationalResultType(node, lhs, rhs, OP_FCT_LESS_EQUAL, this.lessEqualOpRules, "<=");
+}
+
+public f<ExprResult> OpRuleManager.getGreaterEqualResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs) {
+    // Check if there is an overloaded operator function available
+    const ExprResult resultType = this.isOperatorOverloadingFctAvailable(node, OP_FCT_GREATER_EQUAL, binaryOperands(lhs, rhs), 0l);
+    if !resultType.ty.is(SuperType::TY_INVALID) {
+        return resultType;
+    }
+
     // Remove reference wrappers
     const QualType lhsType = lhs.ty.removeReferenceWrapper();
     const QualType rhsType = rhs.ty.removeReferenceWrapper();
 
     // Allow 'pointer == pointer' straight away
     if lhsType.isPtr() && rhsType.isPtr() {
-        return QualType(SuperType::TY_BOOL);
+        return toExprResult(QualType(SuperType::TY_BOOL));
     }
 
-    return this.validateBinaryOperation(node, this.greaterEqualOpRules, ">=", lhsType, rhsType, false, "");
+    return toExprResult(this.validateBinaryOperation(node, this.greaterEqualOpRules, ">=", lhsType, rhsType, false, ""));
 }
 
 public f<ExprResult> OpRuleManager.getShiftLeftResultType(ASTNode* node, const ExprResult& lhs, const ExprResult& rhs, unsigned long opIdx) {

@@ -3,8 +3,8 @@ title: Operator Overloading
 ---
 
 Spice allows overloading operators for [custom struct types](structs.md).
-Currently, this works for the operators `+`, `-`, `*`, `/`, `==`, `!=`, `<<`, `>>`, `&`, `|`, `^`, `~` (prefix), `+=`, `-=`,
-`*=`, `/=`, `[]`, `=`, `++` (postfix) and `--` (postfix).
+Currently, this works for the operators `+`, `-`, `*`, `/`, `==`, `!=`, `<`, `>`, `<=`, `>=`, `<<`, `>>`, `&`, `|`, `^`,
+`~` (prefix), `+=`, `-=`, `*=`, `/=`, `[]`, `=`, `++` (postfix) and `--` (postfix).
 
 ## Usage
 
@@ -81,3 +81,34 @@ f<int> main() {
     printf("%d %d %d %d\n", both.bits, either.bits, exclusive.bits, inverted.bits);
 }
 ```
+
+## Relational operators
+
+The relational operators `<`, `>`, `<=` and `>=` can be overloaded as well. Each of them is looked up on its own, so
+define all of the ones you use. This makes struct types usable in containers like `PriorityQueue`, that order their items
+with `<`:
+
+```spice
+type Version struct {
+    int major
+    int minor
+}
+
+f<bool> operator<(const Version& v1, const Version& v2) {
+    return v1.major < v2.major || (v1.major == v2.major && v1.minor < v2.minor);
+}
+
+f<bool> operator>=(const Version& v1, const Version& v2) {
+    return !(v1 < v2);
+}
+
+f<int> main() {
+    Version v1 = Version{1, 2};
+    Version v2 = Version{1, 10};
+    printf("%d %d\n", v1 < v2, v1 >= v2); // 1 0
+}
+```
+
+A generic less operator is written as `operator<<T>(...)`: the `<` operator, followed by the template type list. The shift
+left operator is still recognized, if the parameter list or a template type list follows (`operator<<(...)` or
+`operator<<<T>(...)`).

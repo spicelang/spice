@@ -38,6 +38,10 @@ constexpr const char *const OP_FCT_MUL = "op.mul";
 constexpr const char *const OP_FCT_DIV = "op.div";
 constexpr const char *const OP_FCT_EQUAL = "op.equal";
 constexpr const char *const OP_FCT_NOT_EQUAL = "op.notequal";
+constexpr const char *const OP_FCT_LESS = "op.less";
+constexpr const char *const OP_FCT_GREATER = "op.greater";
+constexpr const char *const OP_FCT_LESS_EQUAL = "op.lessequal";
+constexpr const char *const OP_FCT_GREATER_EQUAL = "op.greaterequal";
 constexpr const char *const OP_FCT_SHL = "op.shl";
 constexpr const char *const OP_FCT_SHR = "op.shr";
 constexpr const char *const OP_FCT_BITWISE_AND = "op.bitwiseand";
@@ -1716,10 +1720,14 @@ public:
   GET_CHILDREN(operands);
   [[nodiscard]] bool hasCompileTimeValue(size_t manIdx) const override;
   [[nodiscard]] CompileTimeValue getCompileTimeValue(size_t manIdx) const override;
+  [[nodiscard]] std::vector<std::vector<const Function *>> *getOpFctPointers() override { return &opFct; }
+  [[nodiscard]] const std::vector<std::vector<const Function *>> *getOpFctPointers() const override { return &opFct; }
+  void customItemsInitialization(const size_t manifestationCount) override { opFct.resize(manifestationCount, {nullptr}); }
 
   // Public members
   std::vector<ExprNode *> operands;
   RelationalOp op = RelationalOp::OP_NONE;
+  std::vector<std::vector<const Function *>> opFct; // Operator overloading functions
 };
 
 // ====================================================== ShiftExprNode ==========================================================

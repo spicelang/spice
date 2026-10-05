@@ -463,40 +463,61 @@ ExprResult OpRuleManager::getNotEqualResultType(ASTNode *node, const ExprResult 
   return ExprResult(validateBinaryOperation(node, NOT_EQUAL_OP_RULES, std::size(NOT_EQUAL_OP_RULES), "!=", lhsType, rhsType));
 }
 
-QualType OpRuleManager::getLessResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+ExprResult OpRuleManager::getLessResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_LESS, {lhs, rhs}, 0);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, LESS_OP_RULES, std::size(LESS_OP_RULES), "<", lhsType, rhsType);
+  return ExprResult(validateBinaryOperation(node, LESS_OP_RULES, std::size(LESS_OP_RULES), "<", lhsType, rhsType));
 }
 
-QualType OpRuleManager::getGreaterResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+ExprResult OpRuleManager::getGreaterResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_GREATER, {lhs, rhs}, 0);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, GREATER_OP_RULES, std::size(GREATER_OP_RULES), ">", lhsType, rhsType);
+  return ExprResult(validateBinaryOperation(node, GREATER_OP_RULES, std::size(GREATER_OP_RULES), ">", lhsType, rhsType));
 }
 
-QualType OpRuleManager::getLessEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+ExprResult OpRuleManager::getLessEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_LESS_EQUAL, {lhs, rhs}, 0);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
-  return validateBinaryOperation(node, LESS_EQUAL_OP_RULES, std::size(LESS_EQUAL_OP_RULES), "<=", lhsType, rhsType);
+  return ExprResult(validateBinaryOperation(node, LESS_EQUAL_OP_RULES, std::size(LESS_EQUAL_OP_RULES), "<=", lhsType, rhsType));
 }
 
-QualType OpRuleManager::getGreaterEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) {
+ExprResult OpRuleManager::getGreaterEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const {
+  // Check if there is an overloaded operator function available
+  const ExprResult resultType = isOperatorOverloadingFctAvailable<2>(node, OP_FCT_GREATER_EQUAL, {lhs, rhs}, 0);
+  if (!resultType.type.is(TY_INVALID))
+    return resultType;
+
   // Remove reference wrappers
   const QualType lhsType = lhs.type.removeReferenceWrapper();
   const QualType rhsType = rhs.type.removeReferenceWrapper();
 
   // Allow 'pointer == pointer' straight away
   if (lhsType.isPtr() && rhsType.isPtr())
-    return QualType(TY_BOOL);
+    return ExprResult(QualType(TY_BOOL));
 
-  return validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, std::size(GREATER_EQUAL_OP_RULES), ">=", lhsType, rhsType);
+  return ExprResult(
+      validateBinaryOperation(node, GREATER_EQUAL_OP_RULES, std::size(GREATER_EQUAL_OP_RULES), ">=", lhsType, rhsType));
 }
 
 ExprResult OpRuleManager::getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs,

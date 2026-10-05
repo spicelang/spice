@@ -626,10 +626,10 @@ public:
   ExprResult getBitwiseAndResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
   ExprResult getEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   ExprResult getNotEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
-  static QualType getLessResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getGreaterResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getLessEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
-  static QualType getGreaterEqualResultType(const ASTNode *node, const ExprResult &lhs, const ExprResult &rhs);
+  ExprResult getLessResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  ExprResult getGreaterResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  ExprResult getLessEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
+  ExprResult getGreaterEqualResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs) const;
   ExprResult getShiftLeftResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
   ExprResult getShiftRightResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;
   ExprResult getPlusResultType(ASTNode *node, const ExprResult &lhs, const ExprResult &rhs, size_t opIdx) const;

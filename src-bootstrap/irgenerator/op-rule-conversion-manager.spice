@@ -648,7 +648,13 @@ f<llvm::Value> OpRuleConversionManager.createRelationalPtrCmp(RelationalOpKind o
 }
 
 // Shared implementation of getLessInst, getGreaterInst, getLessEqualInst and getGreaterEqualInst
-f<LLVMExprResult> OpRuleConversionManager.getRelationalInst(RelationalOpKind op, LLVMExprResult& lhs, const QualType& origLhsSTy, LLVMExprResult& rhs, const QualType& origRhsSTy, string opName) {
+f<LLVMExprResult> OpRuleConversionManager.getRelationalInst(RelationalOpKind op, ASTNode* node, LLVMExprResult& lhs, const QualType& origLhsSTy, LLVMExprResult& rhs, const QualType& origRhsSTy, string opName) {
+    // Handle operator overloads
+    if this.callsOverloadedOpFct(node, DEFAULT_OP_IDX) {
+        const OperandResolvers resolvers = getBinaryResolvers(lhs, origLhsSTy, rhs, origRhsSTy);
+        return this.callOperatorOverloadFct(node, resolvers, 2l, DEFAULT_OP_IDX);
+    }
+
     const QualType lhsSTy = origLhsSTy.removeReferenceWrapper();
     const QualType rhsSTy = origRhsSTy.removeReferenceWrapper();
     const llvm::Type lhsT = lhsSTy.toLLVMType(this.irGenerator.sourceFile);
@@ -697,20 +703,20 @@ f<LLVMExprResult> OpRuleConversionManager.getRelationalInst(RelationalOpKind op,
     return LLVMExprResult();
 }
 
-public f<LLVMExprResult> OpRuleConversionManager.getLessInst(ASTNode* _, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
-    return this.getRelationalInst(RelationalOpKind::LESS, lhs, lhsSTy, rhs, rhsSTy, "<");
+public f<LLVMExprResult> OpRuleConversionManager.getLessInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::LESS, node, lhs, lhsSTy, rhs, rhsSTy, "<");
 }
 
-public f<LLVMExprResult> OpRuleConversionManager.getGreaterInst(ASTNode* _, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
-    return this.getRelationalInst(RelationalOpKind::GREATER, lhs, lhsSTy, rhs, rhsSTy, ">");
+public f<LLVMExprResult> OpRuleConversionManager.getGreaterInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::GREATER, node, lhs, lhsSTy, rhs, rhsSTy, ">");
 }
 
-public f<LLVMExprResult> OpRuleConversionManager.getLessEqualInst(ASTNode* _, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
-    return this.getRelationalInst(RelationalOpKind::LESS_EQUAL, lhs, lhsSTy, rhs, rhsSTy, "<=");
+public f<LLVMExprResult> OpRuleConversionManager.getLessEqualInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::LESS_EQUAL, node, lhs, lhsSTy, rhs, rhsSTy, "<=");
 }
 
-public f<LLVMExprResult> OpRuleConversionManager.getGreaterEqualInst(ASTNode* _, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
-    return this.getRelationalInst(RelationalOpKind::GREATER_EQUAL, lhs, lhsSTy, rhs, rhsSTy, ">=");
+public f<LLVMExprResult> OpRuleConversionManager.getGreaterEqualInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
+    return this.getRelationalInst(RelationalOpKind::GREATER_EQUAL, node, lhs, lhsSTy, rhs, rhsSTy, ">=");
 }
 
 // ---------------------------------------------------------- Shift ops ----------------------------------------------------------
