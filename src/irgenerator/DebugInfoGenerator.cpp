@@ -486,9 +486,9 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
       const QualType &fieldType = fieldEntry->getQualType();
       const uint32_t fieldLineNo = fieldEntry->declNode->codeLoc.line;
       llvm::DIType *fieldDiType = getDITypeForQualType(node, fieldType);
-      llvm::DIDerivedType *fieldDiDerivedType =
-          diBuilder->createMemberType(unionDiType, fieldEntry->name, diFile, fieldLineNo, fieldDiType->getSizeInBits(),
-                                      fieldDiType->getAlignInBits(), payloadOffsetInBits, llvm::DINode::FlagZero, fieldDiType);
+      llvm::DIDerivedType *fieldDiDerivedType = diBuilder->createMemberType(
+          unionDiType, fieldEntry->name, diFile, fieldLineNo, fieldDiType->getSizeInBits(), fieldDiType->getAlignInBits(),
+          payloadOffsetInBits, llvm::DINode::FlagZero, fieldDiType);
 
       fieldTypes.push_back(fieldDiDerivedType);
     }

@@ -251,7 +251,8 @@ std::any TypeChecker::visitBuiltinOffsetOfCall(FctCallNode *node) const {
   const llvm::DataLayout dataLayout = sourceFile->targetMachine->createDataLayout();
   int64_t offset = 0;
   for (const PostfixUnaryExprNode *access : accessChain) {
-    const QualType baseType = access->postfixUnaryExpr->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().autoDeReference();
+    const QualType baseType =
+        access->postfixUnaryExpr->getEvaluatedSymbolType(manIdx).removeReferenceWrapper().autoDeReference();
     assert(baseType.is(TY_STRUCT));
 
     // Resolve the struct manifestation

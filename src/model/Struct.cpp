@@ -81,6 +81,8 @@ size_t Struct::getFieldElementIndex(size_t orderIndex) const { return orderIndex
 SymbolTableEntry *Struct::lookupInComposedFields(const std::string &name, // NOLINT(misc-no-recursion)
                                                  std::vector<size_t> &indexPath) const {
   // Check if we have a field with this name in the current struct
+  // The result is handed out as non-const pointer, which misc-const-correctness does not recognize as pointee mutation
+  // NOLINTNEXTLINE(misc-const-correctness)
   if (SymbolTableEntry *result = scope->lookupStrict(name)) {
     indexPath.push_back(getFieldElementIndex(result->orderIndex));
     return result;
@@ -100,6 +102,7 @@ SymbolTableEntry *Struct::lookupInComposedFields(const std::string &name, // NOL
     // Search in the composed struct
     const Struct *composedStruct = fieldEntry->getQualType().getStruct(fieldEntry->declNode);
     assert(composedStruct != nullptr);
+    // NOLINTNEXTLINE(misc-const-correctness) - see above
     if (SymbolTableEntry *result = composedStruct->lookupInComposedFields(name, indexPath))
       return result;
 
