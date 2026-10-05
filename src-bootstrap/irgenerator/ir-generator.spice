@@ -6047,6 +6047,9 @@ p IRGenerator.generateCopyCtorBodyPreamble(const model::Function* copyCtorFuncti
             // Retrieve original heap address
             const llvm::Value originalHeapAddress = this.insertLoad(this.builder.getPtrTy(), originalFieldAddress);
 
+            // Initialize the new field with nullptr, so that it stays valid if the original heap address is nullptr
+            this.insertStore(llvm::getNullValue(this.builder.getPtrTy()), fieldAddress);
+
             // Insert check for nullptr
             const llvm::BasicBlock bThen = this.createBlock(String("nullptrcheck.then"));
             const llvm::BasicBlock bExit = this.createBlock(String("nullptrcheck.exit"));

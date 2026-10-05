@@ -682,6 +682,9 @@ void IRGenerator::generateCopyCtorBodyPreamble(const Function *copyCtorFunction)
       // Retrieve original heap address
       llvm::Value *originalHeapAddress = insertLoad(builder.getPtrTy(), originalFieldAddress);
 
+      // Initialize the new field with nullptr, so that it stays valid if the original heap address is nullptr
+      insertStore(llvm::Constant::getNullValue(builder.getPtrTy()), fieldAddress);
+
       // Insert check for nullptr
       llvm::BasicBlock *bThen = createBlock("nullptrcheck.then");
       llvm::BasicBlock *bExit = createBlock("nullptrcheck.exit");
