@@ -259,7 +259,8 @@ public f<int> Driver.parse(int argc, string[] argv) {
 public p Driver.enrich() {
     // Make path of given main source file canonical and relative
     this.cliOptions.mainSourceFile.makeGeneric();
-    if !this.dryRun {
+    // The host's test runner enriches the cli options in dry run mode, which keeps the path as given. --test-mode mirrors that
+    if !this.dryRun && !this.cliOptions.testMode {
         // Like std::filesystem::relative in the host, FilePath.relative() returns an empty path if there is no relative path
         // (e.g. the file is on another drive than the working directory). Unlike the host, keep the path as it is then.
         const FilePath relativeMainSourceFile = this.cliOptions.mainSourceFile.relative();
