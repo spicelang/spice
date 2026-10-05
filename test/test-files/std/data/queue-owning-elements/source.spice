@@ -1,0 +1,98 @@
+import "std/data/queue";
+import "std/data/vector";
+import "std/type/type-conversion";
+
+// Counts its live instances, to check that the queue constructs and destructs each element exactly once
+public type Tracked struct {
+    int* liveCount
+    int value
+}
+
+public p Tracked.ctor(int* liveCount, int value) {
+    this.liveCount = liveCount;
+    this.value = value;
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Tracked.ctor(const Tracked& original) {
+    this.liveCount = original.liveCount;
+    this.value = original.value;
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Tracked.dtor() {
+    unsafe { (*this.liveCount)--; }
+}
+
+f<int> main() {
+    // 1. Strings survive a resize, while the queue is wrapped
+    Queue<String> q1;
+    for int i = 0; i < 5; i++ { q1.push(String("item") + toString(i)); }
+    q1.pop(); q1.pop();
+    q1.push(String("item5")); q1.push(String("item6")); // wrapped
+    q1.push(String("item7")); // triggers resize while wrapped
+    assert q1.getSize() == 6;
+    for int i = 2; i <= 7; i++ {
+        const String item = q1.pop();
+        assert item == String("item") + toString(i);
+    }
+    assert q1.isEmpty();
+    printf("Strings across resize: ok\n");
+
+    // 2. Copy ctor and assignment create independent copies of owning elements
+    Queue<Vector<int>> q2;
+    for int i = 0; i < 4; i++ {
+        Vector<int> v;
+        for int j = 0; j <= i; j++ { v.pushBack(j); }
+        q2.push(v);
+    }
+    q2.pop(); // wrapped copies need idxFront != 0
+    Queue<Vector<int>> q3 = Queue<Vector<int>>(q2);
+    Queue<Vector<int>> q4;
+    q4.push(Vector<int>(3l, 42));
+    q4 = q2; // replaces the existing element
+    Vector<int>& front2 = q2.front();
+    front2.pushBack(99);
+    for int i = 1; i < 4; i++ {
+        const Vector<int> v3 = q3.pop();
+        const Vector<int> v4 = q4.pop();
+        assert v3.getSize() == i + 1;
+        assert v4.getSize() == i + 1;
+        assert v3.get(cast<unsigned long>(i)) == i;
+    }
+    assert front2.getSize() == 3l;
+    printf("Copies of vectors: ok\n");
+
+    // 3. Each element is destructed exactly once (pop, clear, assignment, copy, destruction of the queue)
+    int liveCount = 0;
+    {
+        Queue<Tracked> q5;
+        for int i = 0; i < 12; i++ { q5.push(Tracked(&liveCount, i)); }
+        assert liveCount == 12;
+        for int i = 0; i < 4; i++ {
+            const Tracked t = q5.pop();
+            assert t.value == i;
+        }
+        assert liveCount == 8;
+        Queue<Tracked> q6 = Queue<Tracked>(q5);
+        assert liveCount == 16;
+        q6.clear();
+        assert liveCount == 8;
+        {
+            // Temporaries live until the end of their scope
+            q6.push(Tracked(&liveCount, 100));
+        }
+        assert liveCount == 9;
+        q6 = q5; // destructs the pushed element
+        assert q6.getSize() == 8;
+        assert liveCount == 16;
+        q5.pack();
+        assert liveCount == 16;
+        Tracked& front5 = q5.front();
+        assert front5.value == 4;
+        Tracked& back5 = q5.back();
+        assert back5.value == 11;
+    }
+    assert liveCount == 0;
+    printf("Element lifetimes: ok\n");
+}

@@ -1,0 +1,3 @@
+Strings across resize: ok
+Copies of vectors: ok
+Element lifetimes: ok
