@@ -1,0 +1,41 @@
+import "std/io/filepath";
+import "std/os/filesystem";
+
+p printNormal(string path) {
+    const FilePath filePath = FilePath(path);
+    const FilePath normal = filePath.lexicallyNormal();
+    printf("normal(%s) = %s\n", path, normal.toString());
+}
+
+p printRelative(string path, string base) {
+    const FilePath filePath = FilePath(path);
+    const FilePath relative = filePath.lexicallyRelative(FilePath(base));
+    printf("relative(%s, %s) = '%s'\n", path, base, relative.toString());
+}
+
+f<int> main() {
+    // Lexical normalization
+    printNormal("a/./b/../c");
+    printNormal("../a/b/../../..");
+    printNormal("/a/../../b/");
+    printNormal("./");
+    printNormal("C:\\dir\\..\\file.spice");
+
+    // Lexical relative paths
+    printRelative("/a/b/c.spice", "/a");
+    printRelative("/a/b/c.spice", "/a/d/e");
+    printRelative("/a/b", "/a/b");
+    printRelative("a/b", "/a/b");
+    printRelative("C:/dir/file.spice", "D:/dir");
+    printRelative("C:\\dir\\sub\\file.spice", "C:/dir/other");
+
+    // Relative to the current working directory
+    const String workingDir = getCurrentWorkingDir();
+    printf("working dir is absolute: %d\n", !workingDir.isEmpty());
+    const FilePath absolutePath = FilePath(workingDir) / "sub/../dir/file.spice";
+    const FilePath relativeFromAbsolute = absolutePath.relative();
+    printf("relative(<cwd>/sub/../dir/file.spice) = %s\n", relativeFromAbsolute.toString());
+    const FilePath relativePath = FilePath("dir/./file.spice");
+    const FilePath relativeFromRelative = relativePath.relative();
+    printf("relative(dir/./file.spice) = %s\n", relativeFromRelative.toString());
+}

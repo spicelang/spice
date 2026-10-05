@@ -9,3 +9,22 @@ public f<string> getTempDir() {
     Result<string> dir = getEnv("TMPDIR");
     return dir.isOk() ? dir.unwrap() : "/tmp";
 }
+
+// Link external functions
+ext f<string> getcwd(string /*buf*/, unsigned long /*size*/);
+
+// Size of the buffer for the current working directory (PATH_MAX on Linux)
+const unsigned long CWD_BUFFER_SIZE = 4096ul;
+
+/**
+ * Retrieve the current working directory of the process
+ *
+ * @return Absolute path of the current working directory, or an empty string if it could not be determined
+ */
+public f<String> getCurrentWorkingDir() {
+    char[4096] buffer;
+    unsafe {
+        const string cwd = getcwd(cast<string>(&buffer), CWD_BUFFER_SIZE);
+        return cwd != nil<string> ? String(cwd) : String();
+    }
+}
