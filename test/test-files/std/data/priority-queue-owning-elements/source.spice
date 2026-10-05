@@ -1,0 +1,91 @@
+import "std/data/priority-queue";
+import "std/type/type-conversion";
+
+// Item, that owns a string and counts its live instances, to check that the priority queue constructs and destructs each
+// item exactly once
+public type Job struct {
+    int* liveCount
+    int priority
+    String name
+}
+
+public p Job.ctor(int* liveCount, int priority) {
+    this.liveCount = liveCount;
+    this.priority = priority;
+    this.name = String("job") + toString(priority);
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Job.ctor(const Job& original) {
+    this.liveCount = original.liveCount;
+    this.priority = original.priority;
+    this.name = original.name;
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Job.dtor() {
+    unsafe { (*this.liveCount)--; }
+}
+
+public f<bool> operator<(const Job& lhs, const Job& rhs) {
+    return lhs.priority < rhs.priority;
+}
+
+public f<bool> operator!=(const Job& lhs, const Job& rhs) {
+    return lhs.priority != rhs.priority || lhs.name != rhs.name;
+}
+
+f<int> main() {
+    int liveCount = 0;
+    {
+        // 1. Push past the initial capacity in shuffled order, so that items get sifted and relocated
+        PriorityQueue<Job> pq1;
+        for int i = 0; i < 12; i++ {
+            pq1.push(Job(&liveCount, (i * 7) % 12));
+        }
+        assert liveCount == 12;
+        Job& top = pq1.peek();
+        assert top.priority == 11;
+        assert top.name == "job11";
+
+        // 2. Popped items are independent copies, the removed slots are destructed
+        for int expected = 11; expected >= 8; expected-- {
+            const Job job = pq1.pop();
+            assert job.priority == expected;
+            assert job.name == String("job") + toString(expected);
+        }
+        assert liveCount == 8;
+        printf("Push and pop: ok\n");
+
+        // 3. Copy ctor and assignment create independent copies
+        PriorityQueue<Job> pq2 = PriorityQueue<Job>(pq1);
+        assert liveCount == 16;
+        assert pq2 == pq1;
+        PriorityQueue<Job> pq3;
+        {
+            // Temporaries live until the end of their scope
+            pq3.push(Job(&liveCount, 100));
+        }
+        assert liveCount == 17;
+        pq3 = pq1; // destructs the pushed item
+        assert liveCount == 24;
+        assert pq3.getSize() == 8;
+        pq1.clear();
+        assert liveCount == 16;
+        for int expected = 7; expected >= 0; expected-- {
+            const Job job2 = pq2.pop();
+            const Job job3 = pq3.pop();
+            assert job2.priority == expected;
+            assert job3.name == String("job") + toString(expected);
+        }
+        assert liveCount == 0;
+        printf("Copies: ok\n");
+
+        // 4. Remaining items are destructed with the priority queue
+        pq1.push(Job(&liveCount, 1));
+        pq1.push(Job(&liveCount, 2));
+        pq1.pack();
+    }
+    assert liveCount == 0;
+    printf("Item lifetimes: ok\n");
+}

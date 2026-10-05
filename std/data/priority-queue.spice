@@ -18,6 +18,9 @@ type T dyn;
  * Priority queues pre-allocate space using an initial size and a resize factor to not have to
  * re-allocate with every item pushed. A default-constructed priority queue stays in an unallocated
  * state (contents = nil, capacity = 0) until the first push.
+ *
+ * The priority queue owns its items: they are copy-constructed on insertion and destructed on removal, so items that own
+ * resources themselves (e.g. strings or other containers) are safe to store.
  */
 public type PriorityQueue<T> struct {
     heap T* contents = nil<heap T*> // Pointer to the first data element; nil while unallocated
@@ -76,11 +79,12 @@ public p PriorityQueue.ctor(unsigned long initAllocItems = 0l) {
  */
 public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
     this.ctor(original.capacity);
-    if original.size == 0l { return; }
-    // Copying the underlying array verbatim preserves the heap property
-    const unsigned long itemSize = sizeof<T>();
-    unsafe {
-        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), itemSize * original.size);
+    // Copying the underlying array in order preserves the heap property. Copy-construct each item, so items that own
+    // resources get their own copies instead of aliasing the ones of the original (a bitwise copy would do the latter)
+    for unsigned long index = 0ul; index < original.size; index++ {
+        unsafe {
+            __placement_new<T>(&this.contents[index], original.contents[index]);
+        }
     }
     this.size = original.size;
 }
@@ -91,6 +95,10 @@ public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
  * @param newValue Priority queue to copy from
  */
 public p operator=<T>(PriorityQueue<T>& this, const PriorityQueue<T>& newValue) {
+    // Self-assignment: leave the priority queue as is, clearing it first would destroy the items to copy
+    if &this == &newValue { return; }
+    // Destruct our currently owned items before their slots get overwritten
+    this.clear();
     const unsigned long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
         if newValue.capacity == 0l {
@@ -108,11 +116,25 @@ public p operator=<T>(PriorityQueue<T>& this, const PriorityQueue<T>& newValue) 
         }
         this.capacity = newValue.capacity;
     }
-    this.size = newValue.size;
-    if newValue.size == 0l { return; }
-    unsafe {
-        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
+    // Copy-construct each item in order, which preserves the heap property
+    for unsigned long index = 0ul; index < newValue.size; index++ {
+        unsafe {
+            __placement_new<T>(&this.contents[index], newValue.contents[index]);
+        }
     }
+    this.size = newValue.size;
+}
+
+/**
+ * Destructs the priority queue, destructing all owned items and freeing the buffer
+ */
+public p PriorityQueue.dtor() {
+    this.clear();
+    unsafe {
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        sDealloc(oldAddress);
+    }
+    this.capacity = 0l;
 }
 
 /**
@@ -141,19 +163,17 @@ public p PriorityQueue.push(const T& item) {
 #[ignoreUnusedReturnValue]
 public f<T> PriorityQueue.pop() {
     if this.isEmpty() { panic(Error("The priority queue is empty")); }
+    // Swap the root (highest priority) item with the last one and shrink, then restore the heap property
+    this.size--;
+    this.swapItems(0l, this.size);
+    this.siftDown(0l);
     unsafe {
-        // Copy out the root (highest priority) item
-        result = this.contents[0];
-        // Move the last element to the root and shrink, then restore the heap property
-        this.size--;
-        if this.size > 0l {
-            this.contents[0] = this.contents[this.size];
-            this.siftDown(0l);
-        }
-        // Destruct the now-vacated last slot (cf. Vector.removeAt). In both branches this is
-        // the index `this.size`: the moved-from slot when size > 0, or the lone remaining slot
-        // (index 0) when the queue is now empty. Required so owning element types don't leak.
-        sDestruct(this.contents[this.size]);
+        // Copy out the removed item via a reference to its slot and destruct the slot. Assigning the subscript expression
+        // directly would move it bitwise, so destructing the slot afterwards would free resources, that the returned item
+        // still uses
+        T& item = this.contents[this.size];
+        result = item;
+        sDestruct(item);
     }
 }
 
@@ -208,9 +228,15 @@ public f<bool> PriorityQueue.isFull() {
 }
 
 /**
- * Removes all items from the priority queue
+ * Removes all items from the priority queue. The allocated capacity is kept.
  */
 public p PriorityQueue.clear() {
+    // Destruct owned items before dropping them
+    for unsigned long index = 0ul; index < this.size; index++ {
+        unsafe {
+            sDestruct(this.contents[index]);
+        }
+    }
     this.size = 0l;
 }
 
@@ -271,9 +297,7 @@ p PriorityQueue.siftUp(unsigned long index) {
             if !(this.contents[parent] < this.contents[index]) {
                 break;
             }
-            T tmp = this.contents[parent];
-            this.contents[parent] = this.contents[index];
-            this.contents[index] = tmp;
+            this.swapItems(parent, index);
             index = parent;
         }
     }
@@ -298,10 +322,26 @@ p PriorityQueue.siftDown(unsigned long index) {
             if largest == index {
                 break;
             }
-            T tmp = this.contents[index];
-            this.contents[index] = this.contents[largest];
-            this.contents[largest] = tmp;
+            this.swapItems(index, largest);
             index = largest;
+        }
+    }
+}
+
+/**
+ * Swaps two items bitwise. The items are relocated, not copied, so neither copy ctors nor dtors run and items that own
+ * resources keep owning exactly the same ones.
+ */
+p PriorityQueue.swapItems(unsigned long indexA, unsigned long indexB) {
+    if indexA == indexB { return; }
+    const unsigned long itemSize = sizeof<T>();
+    unsafe {
+        byte* itemA = cast<byte*>(&this.contents[indexA]);
+        byte* itemB = cast<byte*>(&this.contents[indexB]);
+        for unsigned long i = 0ul; i < itemSize; i++ {
+            const byte tmp = itemA[i];
+            itemA[i] = itemB[i];
+            itemB[i] = tmp;
         }
     }
 }
