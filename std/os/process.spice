@@ -32,7 +32,9 @@ public f<Result<int>> runProcess(const String& program, const Vector<String>& ar
         return err<int>(Error("Program not found"));
     }
     String output;
-    int exitCode = spawnProcessAndWait(program, args, false, false, output);
+    // Spawn the resolved path, so that the validated program runs. Otherwise, the spawn would search again with its own rules,
+    // which are different on Windows (e.g. the current directory first)
+    int exitCode = spawnProcessAndWait(programPath, args, false, false, output);
     if exitCode == PROCESS_SPAWN_FAILED {
         return err<int>(Error("Program could not be started"));
     }
@@ -53,7 +55,8 @@ public f<Result<ProcessResult>> runProcessCaptured(const String& program, const 
         return err<ProcessResult>(Error("Program not found"));
     }
     ProcessResult processResult;
-    processResult.exitCode = spawnProcessAndWait(program, args, true, includeStdErr, processResult.output);
+    // Spawn the resolved path, so that the validated program runs (see runProcess)
+    processResult.exitCode = spawnProcessAndWait(programPath, args, true, includeStdErr, processResult.output);
     if processResult.exitCode == PROCESS_SPAWN_FAILED {
         return err<ProcessResult>(Error("Program could not be started"));
     }
