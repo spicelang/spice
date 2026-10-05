@@ -18,7 +18,5 @@ public f<Result<string>> getEnv(string name) {
  * @return Successful or not
  */
 public f<bool> setEnv(string name, string value) {
-    // Windows has no setenv. Like setenv, _putenv_s copies name and value into the environment, so neither of them has to
-    // outlive this function
     return _putenv_s(name, value) == 0;
 }
