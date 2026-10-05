@@ -107,7 +107,7 @@ p IROptimizer.addInstrumentationPassToPipeline(llvm::PassBuilder& passBuilder) {
             passBuilder.addPass("msan<eager-checks>");
         }
         case Sanitizer::TYPE: {
-            passBuilder.addPass("typesan");
+            passBuilder.addPass("tysan");
         }
     }
 }
