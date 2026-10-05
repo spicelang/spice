@@ -1,0 +1,7 @@
+echo: exit=0 output=plain with spaces $HOME `id` ; echo injected
+exit code: 3
+with stderr: out
+err
+missing program is error: 1
+found sh: 1
+found missing: 0

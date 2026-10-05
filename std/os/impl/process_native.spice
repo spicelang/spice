@@ -1,0 +1,128 @@
+// Process spawning for process.spice on Unix-based systems (Linux, macOS). Windows has its own process_native_windows.spice,
+// picked by the OS suffix. The two files must offer the same symbols.
+//
+// The child is created via fork() and replaced by the program via execvp(), which searches the PATH and inherits the
+// environment. posix_spawn() would need the 'environ' global, which can't be referenced from Spice. The output of the
+// child is captured through a pipe, so no file flags (which differ between the Unix flavors) are needed.
+
+// Std imports
+import "std/data/vector";
+
+// Link external functions
+ext f<int> fork();
+ext f<int> execvp(string /*file*/, string* /*argv*/);
+ext f<int> pipe(int* /*fds*/);
+ext f<int> dup2(int /*oldFd*/, int /*newFd*/);
+ext f<int> close(int /*fd*/);
+ext f<long> read(int /*fd*/, byte* /*buffer*/, unsigned long /*count*/);
+ext f<int> waitpid(int /*pid*/, int* /*status*/, int /*options*/);
+ext p _exit(int /*status*/);
+ext f<int> fflush(byte* /*stream*/);
+
+// Exit code, that signals, that the process could not be started
+public const int PROCESS_SPAWN_FAILED = -1;
+
+// Exit code of the child, if the program could not be executed (like a shell reports it)
+const int EXEC_FAILED_EXIT_CODE = 127;
+const int STDOUT_FD = 1;
+const int STDERR_FD = 2;
+const unsigned long READ_BUFFER_SIZE = 4096ul;
+
+/**
+ * Spawn a program, wait for it to terminate and optionally capture its output.
+ *
+ * @param program Name or path of the program
+ * @param args Arguments for the program (without the program itself)
+ * @param captureOutput Capture the standard output of the program
+ * @param includeStdErr Capture the standard error stream as well (only if captureOutput is set)
+ * @param output Captured output (output)
+ * @return Exit code of the program, or PROCESS_SPAWN_FAILED if it could not be started
+ */
+public f<int> spawnProcessAndWait(const String& program, const Vector<String>& args, bool captureOutput, bool includeStdErr, String& output) {
+    // Assemble the null-terminated argument vector before forking, so that the child does not have to allocate
+    Vector<string> argv;
+    argv.reserve(args.getSize() + 2l);
+    argv.pushBack(program.getRaw());
+    foreach const String& arg : args {
+        argv.pushBack(arg.getRaw());
+    }
+    argv.pushBack(nil<string>);
+
+    // Create the pipe for the output
+    int[2] pipeFds;
+    unsafe {
+        if captureOutput && pipe(cast<int*>(&pipeFds)) != 0 {
+            return PROCESS_SPAWN_FAILED;
+        }
+    }
+
+    // Flush our buffered output, so that it is not mixed up with the output of the child
+    unsafe {
+        fflush(nil<byte*>);
+    }
+
+    const int pid = fork();
+    if pid < 0 {
+        if captureOutput {
+            close(pipeFds[0]);
+            close(pipeFds[1]);
+        }
+        return PROCESS_SPAWN_FAILED;
+    }
+
+    // Child: redirect the output into the pipe and replace the process with the program
+    if pid == 0 {
+        if captureOutput {
+            close(pipeFds[0]);
+            dup2(pipeFds[1], STDOUT_FD);
+            if includeStdErr {
+                dup2(pipeFds[1], STDERR_FD);
+            }
+            close(pipeFds[1]);
+        }
+        unsafe {
+            execvp(program.getRaw(), argv.getDataPtr());
+        }
+        // Only reached, if the program could not be executed
+        _exit(EXEC_FAILED_EXIT_CODE);
+    }
+
+    // Parent: read the output until the child closes its end of the pipe
+    if captureOutput {
+        close(pipeFds[1]);
+        char[4096] buffer;
+        unsafe {
+            while true {
+                const long bytesRead = read(pipeFds[0], cast<byte*>(&buffer), READ_BUFFER_SIZE);
+                if bytesRead <= 0l {
+                    break;
+                }
+                for long i = 0l; i < bytesRead; i++ {
+                    output += buffer[i];
+                }
+            }
+        }
+        close(pipeFds[0]);
+    }
+
+    // Wait for the child to terminate
+    int status = 0;
+    if waitpid(pid, &status, 0) != pid {
+        return PROCESS_SPAWN_FAILED;
+    }
+    return statusToExitCode(status);
+}
+
+/**
+ * Transform the wait status of a child process into its exit code
+ *
+ * @param status Wait status
+ * @return Exit code. 128 + signal number, if the process was terminated by a signal (like a shell reports it)
+ */
+f<int> statusToExitCode(int status) {
+    const int termSignal = status & 0x7f;
+    if termSignal == 0 {
+        return (status >> 8) & 0xff;
+    }
+    return 128 + termSignal;
+}

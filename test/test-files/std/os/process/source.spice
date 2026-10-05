@@ -1,0 +1,40 @@
+import "std/data/vector";
+import "std/os/process";
+
+f<int> main() {
+    // Arguments are passed verbatim: no shell expands variables, command substitutions or separators
+    Vector<String> echoArgs;
+    echoArgs.pushBack(String("plain"));
+    echoArgs.pushBack(String("with spaces"));
+    echoArgs.pushBack(String("$HOME"));
+    echoArgs.pushBack(String("`id`"));
+    echoArgs.pushBack(String(";"));
+    echoArgs.pushBack(String("echo injected"));
+    Result<ProcessResult> echoResult = runProcessCaptured(String("echo"), echoArgs);
+    ProcessResult& echo = echoResult.unwrap();
+    printf("echo: exit=%d output=%s", echo.exitCode, echo.output.getRaw());
+
+    // The exit code is reported
+    Vector<String> exitArgs;
+    exitArgs.pushBack(String("-c"));
+    exitArgs.pushBack(String("exit 3"));
+    Result<int> exitResult = runProcess(String("sh"), exitArgs);
+    printf("exit code: %d\n", exitResult.unwrap());
+
+    // The standard error stream is only captured on request
+    Vector<String> stdErrArgs;
+    stdErrArgs.pushBack(String("-c"));
+    stdErrArgs.pushBack(String("echo out; echo err 1>&2"));
+    Result<ProcessResult> withStdErrResult = runProcessCaptured(String("sh"), stdErrArgs, true);
+    ProcessResult& withStdErr = withStdErrResult.unwrap();
+    printf("with stderr: %s", withStdErr.output.getRaw());
+
+    // Programs, that do not exist, are reported as error
+    Vector<String> noArgs;
+    Result<int> missingResult = runProcess(String("spice-non-existing-program"), noArgs);
+    printf("missing program is error: %d\n", missingResult.isErr());
+    const String shPath = findProgram(String("sh"));
+    printf("found sh: %d\n", !shPath.isEmpty());
+    const String missingPath = findProgram(String("spice-non-existing-program"));
+    printf("found missing: %d\n", !missingPath.isEmpty());
+}

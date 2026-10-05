@@ -1,0 +1,117 @@
+// Std imports
+import "std/data/vector";
+import "std/io/dir";
+import "std/io/file";
+import "std/io/filepath";
+import "std/os/env";
+import "std/os/os";
+import "std/os/impl/process_native";
+
+/**
+ * Result of a process, that was run via runProcessCaptured()
+ */
+public type ProcessResult struct {
+    public int exitCode
+    public String output // Captured stdout (and stderr, if requested) of the process
+}
+
+/**
+ * Run a program and wait for it to terminate. Its standard streams are connected to the ones of the calling process.
+ *
+ * No shell is involved: the arguments are passed verbatim to the program, so they are never interpreted as shell syntax
+ * (no variable expansion, globbing, redirections, command separators, ...). Use this instead of execCmd() for any
+ * command, whose arguments are influenced by (untrusted) input.
+ *
+ * @param program Name or path of the program. A bare name is searched for on the PATH
+ * @param args Arguments for the program (without the program itself)
+ * @return Exit code of the program, or an error if it could not be found or started
+ */
+public f<Result<int>> runProcess(const String& program, const Vector<String>& args) {
+    const String programPath = findProgram(program);
+    if programPath.isEmpty() {
+        return err<int>(Error("Program not found"));
+    }
+    String output;
+    int exitCode = spawnProcessAndWait(program, args, false, false, output);
+    if exitCode == PROCESS_SPAWN_FAILED {
+        return err<int>(Error("Program could not be started"));
+    }
+    return ok(exitCode);
+}
+
+/**
+ * Run a program, wait for it to terminate and capture its standard output. Like runProcess(), no shell is involved.
+ *
+ * @param program Name or path of the program. A bare name is searched for on the PATH
+ * @param args Arguments for the program (without the program itself)
+ * @param includeStdErr Also capture the standard error stream of the program, interleaved with its standard output
+ * @return Exit code and captured output of the program, or an error if it could not be found or started
+ */
+public f<Result<ProcessResult>> runProcessCaptured(const String& program, const Vector<String>& args, bool includeStdErr = false) {
+    const String programPath = findProgram(program);
+    if programPath.isEmpty() {
+        return err<ProcessResult>(Error("Program not found"));
+    }
+    ProcessResult processResult;
+    processResult.exitCode = spawnProcessAndWait(program, args, true, includeStdErr, processResult.output);
+    if processResult.exitCode == PROCESS_SPAWN_FAILED {
+        return err<ProcessResult>(Error("Program could not be started"));
+    }
+    return ok(processResult);
+}
+
+/**
+ * Search for a program on the PATH, like a shell would do it. On Windows, the '.exe' extension is tried as well.
+ *
+ * @param name Name of the program. A name with a path separator is not searched for, but only checked for existence
+ * @return Path to the program, or an empty string if it could not be found
+ */
+public f<String> findProgram(const String& name) {
+    // Names with a path separator are not searched on the PATH
+    if name.find('/') >= 0l || name.find('\\') >= 0l {
+        return isProgramFile(name) ? name : String();
+    }
+
+    Result<string> pathEnv = getEnv("PATH");
+    if !pathEnv.isOk() {
+        return String();
+    }
+    const String path = String(pathEnv.unwrap());
+    const char separator = isWindows() ? ';' : ':';
+    long start = 0l;
+    while start <= path.getLength() {
+        long separatorIdx = path.find(separator, cast<unsigned long>(start));
+        if separatorIdx < 0l {
+            separatorIdx = path.getLength();
+        }
+        const String dir = path.getSubstring(start, separatorIdx - start);
+        if !dir.isEmpty() {
+            const FilePath candidatePath = FilePath(dir) / name;
+            const String candidate = String(candidatePath.toString());
+            if isProgramFile(candidate) {
+                return candidate;
+            }
+            if isWindows() {
+                const String candidateExe = candidate + ".exe";
+                if isProgramFile(candidateExe) {
+                    return candidateExe;
+                }
+            }
+        }
+        start = separatorIdx + 1l;
+    }
+    return String();
+}
+
+/**
+ * Check if the given path is an existing program file (an executable file on Unix, an existing file on Windows)
+ *
+ * @param path Path to check
+ * @return Program file or not
+ */
+f<bool> isProgramFile(const String& path) {
+    if !fileExists(path.getRaw()) || dirExists(path.getRaw()) {
+        return false;
+    }
+    return isWindows() || isFileExecutable(path.getRaw());
+}
