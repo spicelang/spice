@@ -1,0 +1,79 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/file";
+import "std/io/filepath";
+import "std/bindings/llvm/llvm" as llvm;
+import "std/bindings/tpde/tpde" as tpde;
+
+// Own imports
+import "bootstrap/exception/compiler-error";
+import "bootstrap/objectemitter/abstract-object-emitter";
+
+/**
+ * Object emitter backed by the experimental TPDE compiler back-end framework.
+ *
+ * Consumes an LLVM module directly and emits an ELF object at roughly -O0 code quality but significantly faster than LLVM
+ * CodeGen at -O0. Supported targets: ELF on x86_64 or aarch64; small code model; PIC relocation only; no LTO.
+ *
+ * The host only compiles its TPDE emitter in, if SPICE_ENABLE_TPDE is defined. The bootstrap compiler uses the std TPDE
+ * bindings instead, which are only backed by TPDE, if the TPDE libraries were linked into the bootstrap compiler (see
+ * std/bindings/tpde). The driver rejects the TPDE backend otherwise, so this emitter is only used if TPDE is available.
+ */
+public type TPDEObjectEmitter struct : IAbstractObjectEmitter {
+    llvm::Module* module
+}
+
+public p TPDEObjectEmitter.ctor(llvm::Module* module) {
+    this.module = module;
+}
+
+public p TPDEObjectEmitter.emit(const FilePath& objectPath) {
+    const string objectPathString = objectPath.toString();
+
+    // Create a TPDE compiler for the module's target triple
+    const String tripleString = this.module.getTargetTripleString();
+    const llvm::Triple triple = llvm::Triple(tripleString.getRaw());
+    tpde::Compiler compiler = tpde::Compiler(triple);
+    if !compiler.isValid() {
+        const String message = "The TPDE backend does not support target triple '" + tripleString + "'"; // GCOV_EXCL_LINE
+        raiseObjectEmitterError(CompilerErrorType::WRONG_OUTPUT_TYPE, message);                       // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+
+    // Compile to an in-memory ELF object
+    Vector<byte> objBytes;
+    String errorMessage;
+    if compiler.compileToBuffer(*this.module, objBytes, errorMessage) {
+        raiseObjectEmitterError(CompilerErrorType::WRONG_OUTPUT_TYPE, errorMessage);
+    }
+
+    // Write to the requested path
+    Result<File> fileResult = openFile(objectPathString, "wb");
+    if !fileResult.isOk() {
+        const String message = "File '" + String(objectPathString) + "' could not be opened"; // GCOV_EXCL_LINE
+        raiseObjectEmitterError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, message);       // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
+    File file = fileResult.unwrap();
+    foreach byte objByte : objBytes {
+        file.write(cast<char>(objByte));
+    }
+    file.close();
+}
+
+public p TPDEObjectEmitter.getASMString(String& output) {
+    // TPDE emits ELF bytes directly and does not expose an assembly listing
+    output = String("; Assembly listing is not available under the TPDE backend.\n; Use --backend=llvm to obtain assembly output.\n");
+}
+
+/**
+ * Abort with a compiler error. The bootstrap compiler has no exceptions, so the error is raised as a panic.
+ *
+ * @param errorType Type of the compiler error
+ * @param message Error message suffix
+ */
+p raiseObjectEmitterError(CompilerErrorType errorType, const String& message) {
+    const CompilerError error = CompilerError(errorType, message.getRaw());
+    const String& errorMessage = error.getMessage();
+    panic(Error(errorMessage.getRaw()));
+}

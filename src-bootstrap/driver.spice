@@ -15,6 +15,7 @@ import "std/text/string-ext";
 import "std/time/time";
 import "std/type/type-conversion";
 import "std/bindings/llvm/llvm" as llvm;
+import "std/bindings/tpde/tpde" as tpde;
 
 // Own imports
 import "util/common-util";
@@ -703,8 +704,12 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         if inputString == BACKEND_LLVM {
             this.cliOptions.backend = Backend::LLVM;
         } else if inputString == BACKEND_TPDE {
-            // ToDo: Enable as soon as the bootstrap compiler has a TPDE backend (SPICE_ENABLE_TPDE in the host)
-            raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend is not available in the bootstrap compiler yet");
+            // The host compiles the TPDE backend in with SPICE_ENABLE_TPDE. The bootstrap compiler is backed by TPDE, if the TPDE
+            // libraries were linked into it via TPDE_FLAGS (see std/bindings/tpde)
+            if !tpde::isAvailable() {
+                raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend is not available in this build. Rebuild the compiler with TPDE_FLAGS set.");
+            }
+            this.cliOptions.backend = Backend::TPDE;
         } else {
             raiseCliError(CliErrorType::INVALID_BACKEND, inputString.getRaw());
         }
@@ -1037,6 +1042,15 @@ f<bool> testBuildVarsAndTarget() {
     assert release.cliOptions.buildVars.get(String("spice.backend")) == "llvm";
     assert release.cliOptions.buildVars.contains(String("spice.is_native_target"));
     assert release.cliOptions.buildVars.contains(String("spice.target_triple"));
+
+    // The TPDE backend can only be selected, if the bootstrap compiler is backed by TPDE
+    if tpde::isAvailable() {
+        Driver tpdeBackend;
+        string[7] tpdeBackendArgs = ["spice", "build", "--backend", "TPDE", "--target", "x86_64-unknown-linux-gnu", "main-file.spice"];
+        assert parseAndEnrich(tpdeBackend, 7, tpdeBackendArgs);
+        assert tpdeBackend.cliOptions.backend == Backend::TPDE;
+        assert tpdeBackend.cliOptions.buildVars.get(String("spice.backend")) == "tpde";
+    }
 
     // A build var given on the command line is overwritten by the inferred one
     Driver overwritten;

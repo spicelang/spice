@@ -9,11 +9,12 @@ import "bootstrap/compiler-pass";
 import "bootstrap/source-file";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/global/global-resource-manager";
+import "bootstrap/objectemitter/abstract-object-emitter";
 
 /**
  * Emits the object file or the assembly code of a module with the LLVM codegen backend
  */
-public type LLVMObjectEmitter struct {
+public type LLVMObjectEmitter struct : IAbstractObjectEmitter {
     compose public CompilerPass compilerPass
     llvm::Module* module
 }

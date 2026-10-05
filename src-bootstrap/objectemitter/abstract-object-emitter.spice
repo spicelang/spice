@@ -1,0 +1,24 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/io/filepath";
+
+/**
+ * Interface implemented by every concrete object emitter (LLVM CodeGen, TPDE, ...). Mirrors the host's AbstractObjectEmitter.
+ */
+public type IAbstractObjectEmitter interface {
+    /**
+     * Emit an object file for the module associated with this emitter.
+     *
+     * @param objectPath Filesystem path where the object file should be written
+     */
+    public p emit(const FilePath&);
+
+    /**
+     * Write a textual representation of the emitter's output into output. LLVM CodeGen emits a real assembly listing here,
+     * TPDE (which produces object bytes directly) returns a placeholder note.
+     *
+     * @param output Destination string, filled by the emitter
+     */
+    public p getASMString(String&);
+}
