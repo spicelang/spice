@@ -377,15 +377,15 @@ public f<QualType> TypeChecker.mapLocalTypeToImportedScopeType(const Scope* targ
         return symbolType;
     }
 
-    // Match the scope of the symbol type against all scopes in the name registry of the target file
+    // Check if the target file knows the struct via its name registry
     const QualType baseType = symbolType.getBase();
-    if isStructKnownByNameRegistry(targetSourceFile, baseType.getBodyScope()) {
+    const String structName = baseType.getSubType();
+    if targetSourceFile.isStructKnownByNameRegistry(baseType.getBodyScope(), structName) {
         return symbolType;
     }
 
     // The target file does not know about the struct at all
     // -> show it how to find the struct
-    const String structName = baseType.getSubType();
     const NameRegistryEntry* origRegistryEntry = this.sourceFile.getNameRegistryEntry(structName);
     // If even this file does not know the struct by its unqualified name (deep transitive import), there is
     // nothing to copy over. Skip teaching the target file; the type identity itself is unaffected, and member
@@ -426,9 +426,9 @@ public f<QualType> TypeChecker.mapImportedScopeTypeToLocalType(const Scope* sour
         return symbolType;
     }
 
-    // Match the scope of the symbol type against all scopes in the name registry of this source file
+    // Check if this source file knows the struct via its name registry
     const QualType baseType = symbolType.getBase();
-    if isStructKnownByNameRegistry(this.sourceFile, baseType.getBodyScope()) {
+    if this.sourceFile.isStructKnownByNameRegistry(baseType.getBodyScope(), baseType.getSubType()) {
         return symbolType;
     }
 
@@ -453,37 +453,6 @@ public f<QualType> TypeChecker.mapImportedScopeTypeToLocalType(const Scope* sour
     this.sourceFile.addNameRegistryEntry(structName, typeId, targetEntry, origRegistryEntry.targetScope, false, nil<SymbolTableEntry*>);
 
     return symbolType;
-}
-
-/**
- * Check if the name registry of the given source file knows a struct manifestation with the given body scope
- *
- * @param sourceFile Source file to check
- * @param bodyScope Body scope of the struct manifestation
- * @return Known or not
- */
-f<bool> isStructKnownByNameRegistry(SourceFile* sourceFile, Scope* bodyScope) {
-    foreach Pair<const String&, NameRegistryEntry&> registryEntry : sourceFile.exportedNameRegistry {
-        const NameRegistryEntry& entry = registryEntry.getSecond();
-        if entry.targetEntry == nil<SymbolTableEntry*> {
-            continue;
-        }
-        const QualType entryType = entry.targetEntry.getQualType();
-        if !entryType.isBase(SuperType::TY_STRUCT) {
-            continue;
-        }
-        ASTNode* declNode = entry.targetEntry.declNode;
-        if declNode.kind != ASTNodeKind::STRUCT_DEF {
-            continue;
-        }
-        ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(declNode);
-        foreach Struct* manifestation : structDefNode.structManifestations {
-            if manifestation.scope == bodyScope {
-                return true;
-            }
-        }
-    }
-    return false;
 }
 
 /**

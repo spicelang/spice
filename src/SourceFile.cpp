@@ -819,7 +819,10 @@ void SourceFile::addNameRegistryEntry(const std::string &symbolName, uint64_t ty
                                       bool keepNewOnCollision, SymbolTableEntry *importEntry) {
   const auto it = exportedNameRegistry.find(symbolName);
   if (keepNewOnCollision || it == exportedNameRegistry.end()) { // Overwrite potential existing entry
+    if (it != exportedNameRegistry.end())
+      untrackNameRegistryTargetEntry(it->second.targetEntry);
     exportedNameRegistry[symbolName] = {symbolName, typeId, entry, scope, importEntry};
+    trackNameRegistryTargetEntry(entry);
     if (keepNewOnCollision)
       ambiguousNameRegistry.erase(symbolName);
     return;
@@ -829,6 +832,7 @@ void SourceFile::addNameRegistryEntry(const std::string &symbolName, uint64_t ty
   std::vector<const SymbolTableEntry *> &collidingImports = ambiguousNameRegistry[symbolName];
   collidingImports.push_back(it->second.importEntry);
   collidingImports.push_back(importEntry);
+  untrackNameRegistryTargetEntry(it->second.targetEntry);
   exportedNameRegistry.erase(it);
 }
 
@@ -848,6 +852,31 @@ const NameRegistryEntry *SourceFile::getNameRegistryEntry(const std::string &sym
 }
 
 bool SourceFile::isAmbiguousName(const std::string &symbolName) const { return ambiguousNameRegistry.contains(symbolName); }
+
+/**
+ * Check if the name registry of this source file knows the struct manifestation with the given body scope
+ *
+ * @param bodyScope Body scope of the struct manifestation
+ * @param structName Name of the struct
+ * @return Known or not
+ */
+bool SourceFile::isStructKnownByNameRegistry(Scope *bodyScope, const std::string &structName) const {
+  if (bodyScope == nullptr || bodyScope->parent == nullptr)
+    return false;
+
+  // All manifestations of a struct live in the scope the struct is defined in, next to the struct's symbol table entry.
+  // The name registry entry of a struct points to this symbol table entry, so we can look it up instead of scanning the
+  // whole name registry
+  const SymbolTableEntry *structEntry = bodyScope->parent->lookupStrict(structName);
+  if (structEntry == nullptr || !nameRegistryTargetEntryCounts.contains(structEntry))
+    return false;
+  if (!structEntry->getQualType().isBase(TY_STRUCT))
+    return false;
+
+  // Check if the body scope belongs to one of the manifestations of the struct
+  const std::vector<Struct *> *manifestations = structEntry->declNode->getStructManifestations();
+  return std::ranges::any_of(*manifestations, [&](const Struct *manifestation) { return manifestation->scope == bodyScope; });
+}
 
 /**
  * Build an error message for a name that is not available, because multiple imports expose it. The message lists the
@@ -1015,8 +1044,9 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     std::string newName = importName;
     newName += SCOPE_ACCESS_TOKEN;
     newName += originalName;
-    exportedNameRegistry.emplace(newName,
-                                 NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
+    const NameRegistryEntry newEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry};
+    if (exportedNameRegistry.emplace(newName, newEntry).second)
+      trackNameRegistryTargetEntry(entry.targetEntry);
     // Add the shortened name, considering the name collision. A symbol defined in the importing file itself always
     // shadows imported symbols of the same name. Since this merge runs after the file built its own registry (so that
     // circular imports work), we must explicitly avoid letting an import overwrite or erase such an own symbol - the old
@@ -1029,6 +1059,30 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
       addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
     }
   }
+}
+
+/**
+ * Count a new name registry entry pointing to the given target entry
+ *
+ * @param targetEntry Target entry of the name registry entry
+ */
+void SourceFile::trackNameRegistryTargetEntry(const SymbolTableEntry *targetEntry) {
+  if (targetEntry != nullptr)
+    nameRegistryTargetEntryCounts[targetEntry]++;
+}
+
+/**
+ * Uncount a removed name registry entry pointing to the given target entry
+ *
+ * @param targetEntry Target entry of the name registry entry
+ */
+void SourceFile::untrackNameRegistryTargetEntry(const SymbolTableEntry *targetEntry) {
+  if (targetEntry == nullptr)
+    return;
+  const auto it = nameRegistryTargetEntryCounts.find(targetEntry);
+  assert(it != nameRegistryTargetEntryCounts.end());
+  if (--it->second == 0)
+    nameRegistryTargetEntryCounts.erase(it);
 }
 
 /**

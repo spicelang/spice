@@ -1,0 +1,12 @@
+import "source1" as s1;
+import "source2" as s2;
+
+// Both imports expose a struct named 'Item', so it is only reachable via the qualified names. The struct types still
+// have to be mapped correctly when they cross the file boundaries as arguments and return values.
+f<int> main() {
+    s1::Item item1 = s1::makeItem1(1);
+    s2::Item item2 = s2::makeItem2(2);
+    s1::Box<s1::Item> box = s1::boxItem(item1);
+    s1::Box<int> intBox = s1::Box<int>{3};
+    printf("%d %d %d %d\n", s1::getA(item1), s2::getB(item2), s1::getA(box.value), intBox.value);
+}

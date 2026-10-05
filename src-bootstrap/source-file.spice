@@ -30,6 +30,9 @@ import "bootstrap/util/system-util";
 import "bootstrap/util/common-util";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";
+import "bootstrap/symboltablebuilder/qual-type";
+import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/model/struct";
 import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
 import "bootstrap/lexer/lexer";
 import "bootstrap/parser/parser";
@@ -170,6 +173,8 @@ public type SourceFile struct {
     // Private fields
     CliOptions& cliOptions
     UnorderedMap<long, llvm::Type> typeToLLVMTypeMapping // Maps the address of each type to its LLVM type
+    // Number of name registry entries per target entry address, to answer isStructKnownByNameRegistry without scanning the registry
+    UnorderedMap<long, unsigned long> nameRegistryTargetEntryCounts
     public unsigned int importedRuntimeModules = 0 // Public, because the RuntimeModuleManager is a friend class in the host
     unsigned short totalTypeCheckerRuns = 0s
     // Cycle-safety guards: the pipeline drivers recurse over a dependency graph that may contain cycles (circular
@@ -1005,9 +1010,12 @@ public f<bool> SourceFile.isRuntimeModuleAvailable(RuntimeModule runtimeModule) 
 public p SourceFile.addNameRegistryEntry(const String& symbolName, unsigned long typeId, SymbolTableEntry* entry, Scope* scope, bool keepNewOnCollision, SymbolTableEntry* importEntry) {
     if keepNewOnCollision || !this.exportedNameRegistry.contains(symbolName) { // Overwrite potential existing entry
         if this.exportedNameRegistry.contains(symbolName) {
+            const SymbolTableEntry* oldTargetEntry = this.exportedNameRegistry.get(symbolName).targetEntry;
+            this.untrackNameRegistryTargetEntry(oldTargetEntry);
             this.exportedNameRegistry.remove(symbolName);
         }
         this.exportedNameRegistry.insert(symbolName, NameRegistryEntry{symbolName, typeId, entry, scope, importEntry});
+        this.trackNameRegistryTargetEntry(entry);
         if keepNewOnCollision && this.ambiguousNameRegistry.contains(symbolName) {
             this.ambiguousNameRegistry.remove(symbolName);
         }
@@ -1018,6 +1026,8 @@ public p SourceFile.addNameRegistryEntry(const String& symbolName, unsigned long
         Vector<const SymbolTableEntry*>& collidingImports = this.ambiguousNameRegistry.get(symbolName);
         collidingImports.pushBack(this.exportedNameRegistry.get(symbolName).importEntry);
         collidingImports.pushBack(importEntry);
+        const SymbolTableEntry* oldTargetEntry = this.exportedNameRegistry.get(symbolName).targetEntry;
+        this.untrackNameRegistryTargetEntry(oldTargetEntry);
         this.exportedNameRegistry.remove(symbolName);
     }
 }
@@ -1040,6 +1050,94 @@ public f<const NameRegistryEntry*> SourceFile.getNameRegistryEntry(const String&
 
 public f<bool> SourceFile.isAmbiguousName(const String& symbolName) {
     return this.ambiguousNameRegistry.contains(symbolName);
+}
+
+/**
+ * Check if the name registry of this source file knows the struct manifestation with the given body scope
+ *
+ * @param bodyScope Body scope of the struct manifestation
+ * @param structName Name of the struct
+ * @return Known or not
+ */
+public f<bool> SourceFile.isStructKnownByNameRegistry(Scope* bodyScope, const String& structName) {
+    if bodyScope == nil<Scope*> || bodyScope.parent == nil<Scope*> {
+        return false;
+    }
+
+    // All manifestations of a struct live in the scope the struct is defined in, next to the struct's symbol table entry.
+    // The name registry entry of a struct points to this symbol table entry, so we can look it up instead of scanning the
+    // whole name registry
+    const SymbolTableEntry* structEntry = bodyScope.parent.lookupStrict(structName);
+    if structEntry == nil<const SymbolTableEntry*> || !this.nameRegistryTargetEntryCounts.contains(getEntryAddress(structEntry)) {
+        return false;
+    }
+    const QualType& structType = structEntry.getQualType();
+    if !structType.isBase(SuperType::TY_STRUCT) {
+        return false;
+    }
+
+    // Check if the body scope belongs to one of the manifestations of the struct
+    ASTNode* declNode = structEntry.declNode;
+    if declNode.kind != ASTNodeKind::STRUCT_DEF {
+        return false;
+    }
+    ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(declNode);
+    foreach Struct* manifestation : structDefNode.structManifestations {
+        if manifestation.scope == bodyScope {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Count a new name registry entry pointing to the given target entry
+ *
+ * @param targetEntry Target entry of the name registry entry
+ */
+p SourceFile.trackNameRegistryTargetEntry(const SymbolTableEntry* targetEntry) {
+    if targetEntry == nil<const SymbolTableEntry*> {
+        return;
+    }
+    const long entryAddress = getEntryAddress(targetEntry);
+    if this.nameRegistryTargetEntryCounts.contains(entryAddress) {
+        unsigned long& count = this.nameRegistryTargetEntryCounts.get(entryAddress);
+        count++;
+    } else {
+        this.nameRegistryTargetEntryCounts.upsert(entryAddress, 1ul);
+    }
+}
+
+/**
+ * Uncount a removed name registry entry pointing to the given target entry
+ *
+ * @param targetEntry Target entry of the name registry entry
+ */
+p SourceFile.untrackNameRegistryTargetEntry(const SymbolTableEntry* targetEntry) {
+    if targetEntry == nil<const SymbolTableEntry*> {
+        return;
+    }
+    const long entryAddress = getEntryAddress(targetEntry);
+    assert this.nameRegistryTargetEntryCounts.contains(entryAddress);
+    unsigned long& count = this.nameRegistryTargetEntryCounts.get(entryAddress);
+    count--;
+    if count == 0ul {
+        this.nameRegistryTargetEntryCounts.remove(entryAddress);
+    }
+}
+
+/**
+ * Get the address of the given symbol table entry, to use it as a map key
+ *
+ * @param entry Symbol table entry
+ * @return Address of the entry
+ */
+f<long> getEntryAddress(const SymbolTableEntry* entry) {
+    long entryAddress = 0l;
+    unsafe {
+        entryAddress = cast<long>(cast<byte*>(entry));
+    }
+    return entryAddress;
 }
 
 /**
@@ -1287,6 +1385,7 @@ public p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, co
         newName += originalName;
         if !this.exportedNameRegistry.contains(newName) {
             this.exportedNameRegistry.insert(newName, NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
+            this.trackNameRegistryTargetEntry(entry.targetEntry);
         }
         // Add the shortened name, considering the name collision. A symbol defined in the importing file itself always
         // shadows imported symbols of the same name. Since this merge runs after the file built its own registry (so that

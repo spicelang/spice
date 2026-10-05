@@ -1,0 +1,11 @@
+public type Item struct {
+    public int b
+}
+
+public f<Item> makeItem2(int b) {
+    return Item{b};
+}
+
+public f<int> getB(const Item& item) {
+    return item.b;
+}

@@ -136,16 +136,14 @@ QualType TypeChecker::mapLocalTypeToImportedScopeType(const Scope *targetScope, 
   if (targetSourceFile == sourceFile)
     return symbolType;
 
-  // Match the scope of the symbol type against all scopes in the name registry of the target file
-  for (const NameRegistryEntry &entry : targetSourceFile->exportedNameRegistry | std::views::values)
-    if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
-      for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == symbolType.getBase().getBodyScope())
-          return symbolType;
+  // Check if the target file knows the struct via its name registry
+  const QualType baseType = symbolType.getBase();
+  const std::string &structName = baseType.getSubType();
+  if (targetSourceFile->isStructKnownByNameRegistry(baseType.getBodyScope(), structName))
+    return symbolType;
 
   // The target file does not know about the struct at all
   // -> show it how to find the struct
-  const std::string structName = symbolType.getBase().getSubType();
   const NameRegistryEntry *origRegistryEntry = sourceFile->getNameRegistryEntry(structName);
   // If even this file does not know the struct by its unqualified name (deep transitive import), there is
   // nothing to copy over. Skip teaching the target file; the type identity itself is unaffected, and member
@@ -175,13 +173,10 @@ QualType TypeChecker::mapImportedScopeTypeToLocalType(const Scope *sourceScope, 
   if (sourceSourceFile == sourceFile)
     return symbolType;
 
-  // Match the scope of the symbol type against all scopes in the name registry of this source file
+  // Check if this source file knows the struct via its name registry
   const QualType baseType = symbolType.getBase();
-  for (const auto &entry : sourceFile->exportedNameRegistry | std::views::values)
-    if (entry.targetEntry != nullptr && entry.targetEntry->getQualType().isBase(TY_STRUCT))
-      for (const Struct *manifestation : *entry.targetEntry->declNode->getStructManifestations())
-        if (manifestation->scope == baseType.getBodyScope())
-          return symbolType;
+  if (sourceFile->isStructKnownByNameRegistry(baseType.getBodyScope(), baseType.getSubType()))
+    return symbolType;
 
   // This source file does not know about the struct at all
   // -> show it how to find the struct
