@@ -111,7 +111,14 @@ llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const Qua
   return structPtr;
 }
 
-void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
+/**
+ * Generate cleanup code (dtor calls, deallocations) for the scope of the given statement list
+ *
+ * @param node Statement list of the scope
+ * @param returnedLocal Local variable, that is handed over to the caller by the return statement this cleanup is generated
+ *                      for. It must not be destructed. Nullptr if there is none.
+ */
+void IRGenerator::generateScopeCleanup(const StmtLstNode *node, const SymbolTableEntry *returnedLocal /*=nullptr*/) {
   diGenerator.setSourceLocation(node->closingBraceCodeLoc);
 
   // Do not clean up if the block is already terminated
@@ -121,7 +128,8 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node) {
   // Call all dtor functions
   const auto &[dtorFunctionsToCall, heapVarsToFree] = node->resourcesToCleanup.at(manIdx);
   for (auto [entry, dtor] : dtorFunctionsToCall)
-    generateCtorOrDtorCall(entry, dtor, {});
+    if (entry != returnedLocal)
+      generateCtorOrDtorCall(entry, dtor, {});
 
   // Deallocate all heap variables that go out of scope and are currently owned
   for (const SymbolTableEntry *entry : heapVarsToFree)
@@ -185,8 +193,11 @@ static bool isInStatementHeader(const ASTNode *node) {
  *
  * @param node Node the jump originates from
  * @param targetScope Outermost scope that is left by the jump; cleanup is generated for this scope as well
+ * @param returnedLocal Local variable, that is handed over to the caller by the jump (a return statement). It must not be
+ *                      destructed. Nullptr if there is none.
  */
-void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope) {
+void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope,
+                                           const SymbolTableEntry *returnedLocal /*=nullptr*/) {
   assert(targetScope != nullptr);
   const Scope *scopeLevel = currentScope;
 
@@ -205,7 +216,7 @@ void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const Scope *tar
 
   const StmtLstNode *scope = node->getNextOuterStmtLst();
   while (true) {
-    generateScopeCleanup(scope);
+    generateScopeCleanup(scope, returnedLocal);
     if (scopeLevel == targetScope)
       break;
     assert(scope->parent != nullptr && scopeLevel->parent != nullptr);

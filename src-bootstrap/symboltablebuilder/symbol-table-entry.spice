@@ -30,7 +30,6 @@ public type SymbolTableEntry struct {
     public bool isParam = false
     public bool anonymous = false
     public bool used = false
-    public bool omitDtorCall = false
     public bool isImplicitField = false
     // Private fields
     QualType qualType

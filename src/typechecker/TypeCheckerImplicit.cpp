@@ -864,8 +864,8 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
       implicitlyCallDeallocate(node); // Required to request the memory runtime
       node->resourcesToCleanup.at(manIdx).heapVarsToFree.push_back(var);
     }
-    // Only generate dtor call for structs and if not omitted
-    if (!var->getQualType().is(TY_STRUCT) || var->omitDtorCall)
+    // Only generate dtor call for structs
+    if (!var->getQualType().is(TY_STRUCT))
       continue;
     // Variable must be either initialized or a struct field
     if (!var->getLifecycle().isInitialized() && var->scope->type != ScopeType::STRUCT)
@@ -895,8 +895,8 @@ void TypeChecker::doExprScopeCleanup(const ExprNode *node) const {
 
   // Call the dtor of each temporary. We call the dtor in reverse declaration order
   for (SymbolTableEntry *temporary : temporaries) {
-    // Only generate dtor call for initialized structs and if not omitted
-    if (!temporary->getQualType().is(TY_STRUCT) || temporary->omitDtorCall || !temporary->getLifecycle().isInitialized())
+    // Only generate dtor call for initialized structs
+    if (!temporary->getQualType().is(TY_STRUCT) || !temporary->getLifecycle().isInitialized())
       continue;
     if (Function *dtor = implicitlyCallStructMethod(temporary, DTOR_FUNCTION_NAME, {}, node))
       currentScope->temporaryDtorsToCall.emplace_back(temporary, dtor);

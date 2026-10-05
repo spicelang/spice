@@ -47,7 +47,6 @@ public:
   bool isParam = false;
   bool anonymous = false;
   bool used = false;
-  bool omitDtorCall = false;
   bool isImplicitField = false;
 
 private:

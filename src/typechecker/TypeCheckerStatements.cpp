@@ -156,14 +156,16 @@ std::any TypeChecker::visitReturnStmt(ReturnStmtNode *node) {
   node->calledCopyCtor = copyCtor;
 
   // Check if the dtor call on the return value can be skipped
+  node->returnedLocals.at(manIdx) = nullptr;
   if (rhs.entry != nullptr) {
     if (rhsIsAnonymous) {
       // If there is an anonymous entry attached (e.g. for struct instantiation), delete it.
       // Safe even if performStructAssign already deleted it: map::erase by key is a no-op when absent.
       currentScope->symbolTable.deleteAnonymous(rhsEntryName);
     } else if (rhsIsOptimizable) {
-      // Otherwise omit the destructor call of the local variable, because the caller destructs the value
-      rhs.entry->omitDtorCall = true;
+      // Otherwise omit the destructor call of the local variable on the path of this return statement, because the caller
+      // destructs the value. Other paths out of the scope of the variable (e.g. other returns) still have to destruct it.
+      node->returnedLocals.at(manIdx) = rhs.entry;
     }
   }
 

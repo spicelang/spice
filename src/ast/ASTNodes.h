@@ -1389,12 +1389,16 @@ public:
   // Other methods
   GET_CHILDREN(assignExpr);
   [[nodiscard]] bool returnsOnAllControlPaths(bool *, size_t) const override { return true; }
+  void customItemsInitialization(const size_t manifestationCount) override { returnedLocals.resize(manifestationCount); }
 
   // Public members
   ExprNode *assignExpr = nullptr;
   QualType returnType;
   Function *calledCopyCtor = nullptr;
   bool hasReturnValue = false;
+  // Local variable, that is handed over to the caller without a copy (per manifestation). Its dtor is skipped on the
+  // cleanup path of this return statement only, all other paths out of its scope still destruct it.
+  std::vector<const SymbolTableEntry *> returnedLocals;
 };
 
 // ======================================================== BreakStmtNode ========================================================

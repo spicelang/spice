@@ -1,0 +1,130 @@
+// A function, that returns one of its locals without copying it, hands the local over to the caller. So only the return
+// statement, that returns the local, may skip its dtor call. Every other path out of the scope of the local (returning
+// something else, leaving a loop body, ...) still has to destruct it.
+//
+// Every Tracked and Other counts itself in LIVE. The checks keep nothing alive besides the returned value, that is
+// reported, so the number of live instances has to be 1 during every report, whether a local leaked (more) or was
+// destructed twice (less).
+
+public int LIVE = 0;
+
+type Tracked struct {
+    int id
+}
+
+p Tracked.ctor(int id) {
+    this.id = id;
+    LIVE++;
+}
+
+p Tracked.dtor() {
+    LIVE--;
+}
+
+type Other struct {
+    int id
+}
+
+p Other.ctor(int id) {
+    this.id = id;
+    LIVE++;
+}
+
+p Other.dtor() {
+    LIVE--;
+}
+
+type T Tracked|Other;
+
+p report(string name, const Tracked& result) {
+    printf("%s: id=%d live=%d\n", name, result.id, LIVE);
+}
+
+p report(string name, const Other& result) {
+    printf("%s: id=%d live=%d\n", name, result.id, LIVE);
+}
+
+// The local is returned on one path and a temporary on the other one
+f<Tracked> localOrTemporary(bool returnLocal) {
+    Tracked local = Tracked(1);
+    if !returnLocal {
+        return Tracked(2);
+    }
+    return local;
+}
+
+// The early return sits in a loop, like the ones of Triple.getArchTypeName() in the std LLVM bindings
+f<Tracked> earlyReturnFromForLoop(int match) {
+    const Tracked local = Tracked(1);
+    for int i = 0; i < 3; i++ {
+        if i == match {
+            return Tracked(10 + i);
+        }
+    }
+    return local;
+}
+
+// Each of the two locals is returned on a path of its own, which has to destruct the other one
+f<Tracked> oneOfTwoLocals(bool returnFirst) {
+    Tracked first = Tracked(1);
+    Tracked second = Tracked(2);
+    if returnFirst {
+        return first;
+    }
+    return second;
+}
+
+// The local of the loop body is only returned in the last round, all rounds before have to destruct it at the end of the body
+f<Tracked> localOfLoopBody(int rounds) {
+    int round = 0;
+    while round < 10 {
+        Tracked local = Tracked(round);
+        if round == rounds {
+            return local;
+        }
+        round++;
+    }
+    return Tracked(-1);
+}
+
+// Each manifestation of a generic function has locals of its own
+f<T> genericLocalOrTemporary<T>(bool returnLocal) {
+    T local = T(1);
+    if !returnLocal {
+        return T(2);
+    }
+    return local;
+}
+
+f<int> main() {
+    report("localOrTemporary(true)", localOrTemporary(true));
+    report("localOrTemporary(false)", localOrTemporary(false));
+
+    report("earlyReturnFromForLoop(0)", earlyReturnFromForLoop(0));
+    report("earlyReturnFromForLoop(2)", earlyReturnFromForLoop(2));
+    report("earlyReturnFromForLoop(3)", earlyReturnFromForLoop(3));
+
+    report("oneOfTwoLocals(true)", oneOfTwoLocals(true));
+    report("oneOfTwoLocals(false)", oneOfTwoLocals(false));
+
+    report("localOfLoopBody(0)", localOfLoopBody(0));
+    report("localOfLoopBody(3)", localOfLoopBody(3));
+
+    report("genericLocalOrTemporary<Tracked>(true)", genericLocalOrTemporary<Tracked>(true));
+    report("genericLocalOrTemporary<Tracked>(false)", genericLocalOrTemporary<Tracked>(false));
+    report("genericLocalOrTemporary<Other>(true)", genericLocalOrTemporary<Other>(true));
+    report("genericLocalOrTemporary<Other>(false)", genericLocalOrTemporary<Other>(false));
+
+    // A lambda body is a function scope of its own
+    f<Tracked>(bool) lambda = f<Tracked>(bool returnLocal) {
+        Tracked local = Tracked(1);
+        if !returnLocal {
+            return Tracked(2);
+        }
+        return local;
+    };
+    report("lambda(true)", lambda(true));
+    report("lambda(false)", lambda(false));
+
+    printf("end: live=%d\n", LIVE);
+}
