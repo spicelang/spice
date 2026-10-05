@@ -82,13 +82,12 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.sourceFileAlloc = BlockAllocator<SourceFile>(this.memoryManager, sizeof<SourceFile>() * 4l);
     // Context-free type creation (e.g. QualType(TY_INT)) interns into the type registry of the resource manager
     setActiveTypeRegistry(&this.typeRegistry);
-    // The name disambiguation of types operates on the type name disambiguator of the resource manager. The host clears its
-    // static TypeNameDisambiguator in the destructor, which is implicit here, since each resource manager owns a fresh one
+    // The name disambiguation of types operates on the type name disambiguator of the resource manager
     setActiveTypeNameDisambiguator(&this.typeNameDisambiguator);
     // Hard errors (thrown as SemanticError in the host) are recorded in the error manager of the resource manager
     setActiveErrorManager(&this.errorManager);
-    // The lookups of the managers operate on the lookup caches of the resource manager. The host clears its static lookup
-    // caches in the destructor, which is implicit here, since each resource manager owns fresh ones
+    // The lookups of the managers operate on the lookup caches of the resource manager (static members of the managers in
+    // the host). Like in the host, they are cleared in the destructor
     setActiveFunctionLookupCache(&this.functionLookupCache);
     setActiveStructLookupCache(&this.structLookupCache);
     setActiveInterfaceLookupCache(&this.interfaceLookupCache);
@@ -131,7 +130,12 @@ public p GlobalResourceManager.dtor() {
     }
 
     // Notify all global components to prepare to destroy
-    // ToDo: Implement
+    this.typeRegistry.clear();
+    this.typeNameDisambiguator.clear();
+    this.functionLookupCache.cleanup();
+    this.structLookupCache.cleanup();
+    this.interfaceLookupCache.cleanup();
+    this.unionLookupCache.cleanup();
     // Cleanup all LLVM statics
     llvm::llvm_shutdown();
 }

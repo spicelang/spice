@@ -960,14 +960,6 @@ public f<QualType> QualType.getBase() {
 }
 
 /**
- * Get aliased type for an alias type
- *
- * @param aliasEntry Entry of the alias definition
- * @return Aliased type
- */
-// ToDo: getAliased
-
-/**
  * Get the type, that is aliased by this alias type
  *
  * @param aliasEntry Symbol table entry of the alias

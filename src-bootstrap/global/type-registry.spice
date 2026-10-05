@@ -128,6 +128,15 @@ public f<String> TypeRegistry.dump() {
 }
 
 /**
+ * Clear the type registry. Unlike in the host, the types themselves are owned by the pool, not by the map, so they stay alive
+ * until the type registry is destroyed. This keeps the type pointers valid, that are still held by other components.
+ */
+public p TypeRegistry.clear() {
+    this.types.clear();
+    this.typeCount = 0ul;
+}
+
+/**
  * Core interning routine: hash the candidate type, return the matching cached instance, otherwise allocate a
  * stable copy in the pool, wire its registry back-reference and remember it in the matching hash bucket.
  */
