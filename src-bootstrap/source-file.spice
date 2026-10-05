@@ -41,7 +41,9 @@ import "bootstrap/linter/lint-pass";
 import "bootstrap/irgenerator/ir-generator";
 import "bootstrap/iroptimizer/ir-optimizer";
 import "bootstrap/linker/bitcode-linker";
+import "bootstrap/objectemitter/abstract-object-emitter";
 import "bootstrap/objectemitter/llvm-object-emitter";
+import "bootstrap/objectemitter/tpde-object-emitter";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
@@ -657,11 +659,19 @@ public p SourceFile.runObjectEmitter() {
     this.objectFilePath = this.cliOptions.outputDir / this.filePath.getFileName();
     this.objectFilePath.replaceExtension("o");
 
-    // Emit object for this source file. The bootstrap compiler has no TPDE backend (SPICE_ENABLE_TPDE in the host)
-    LLVMObjectEmitter objectEmitter = LLVMObjectEmitter(this.resourceManager, this);
+    // Pick a concrete emitter based on the selected backend. The driver only accepts the TPDE backend, if the bootstrap compiler
+    // is backed by TPDE (SPICE_ENABLE_TPDE in the host)
+    LLVMObjectEmitter llvmObjectEmitter = LLVMObjectEmitter(this.resourceManager, this);
+    TPDEObjectEmitter tpdeObjectEmitter = TPDEObjectEmitter(this.cliOptions.useLTO ? &this.resourceManager.ltoModule : &this.llvmModule);
+    IAbstractObjectEmitter* objectEmitter = &llvmObjectEmitter;
+    if this.cliOptions.backend == Backend::TPDE {
+        objectEmitter = &tpdeObjectEmitter;
+    }
+
+    // Emit object for this source file
     objectEmitter.emit(this.objectFilePath);
 
-    // Save assembly string in the compiler output
+    // Save assembly string in the compiler output (TPDE emits a placeholder note)
     if this.cliOptions.isNativeTarget && (this.cliOptions.dump.dumpAssembly || this.cliOptions.testMode) {
         objectEmitter.getASMString(this.compilerOutput.asmString);
     }
