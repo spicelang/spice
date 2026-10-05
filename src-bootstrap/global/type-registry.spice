@@ -5,6 +5,7 @@ import "std/data/map";
 import "std/data/pair";
 import "std/text/stringstream";
 import "std/math/hash";
+import "std/os/recursive-mutex";
 
 // Own imports
 import "bootstrap/util/block-allocator";

@@ -1,9 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Std imports
-import "std/os/atomic";
-import "std/os/mutex";
-import "std/os/thread";
+import "std/os/recursive-mutex";
 
 /**
  * Global switch that tells the process-wide caches of the compiler (type registry, function lookup cache, ...) whether
@@ -54,51 +52,11 @@ public f<bool> areConcurrentPassesRunning() {
 }
 
 /**
- * Mutex, which can be acquired multiple times by the thread, that already holds it. It has to be released as often as it
- * was acquired. The std Mutex is not recursive, so the owner and the acquisition depth are tracked on top of it.
+ * RAII lock that is only actually acquired while compiler passes run concurrently.
  *
  * The host uses a std::recursive_mutex for the symbol registry and plain std::mutex instances for the type registry and
- * the type name disambiguator. The bootstrap compiler uses this recursive mutex for all of them, which is a superset of
+ * the type name disambiguator. The bootstrap compiler uses the std RecursiveMutex for all of them, which is a superset of
  * the plain mutex semantics.
- */
-public type RecursiveMutex struct {
-    Mutex mutex
-    Atomic<long> ownerThreadId // 0 as long as no thread holds the mutex
-    unsigned long depth = 0ul  // Only accessed by the owning thread
-}
-
-public p RecursiveMutex.ctor() {
-    this.ownerThreadId = Atomic<long>(0l);
-}
-
-/**
- * Block until the mutex is acquired by the calling thread. Returns immediately, if the calling thread already holds it.
- */
-public p RecursiveMutex.acquire() {
-    const long currentThreadId = getThreadId();
-    if this.ownerThreadId.load() == currentThreadId {
-        this.depth++;
-        return;
-    }
-    this.mutex.acquire();
-    this.ownerThreadId.store(currentThreadId);
-    this.depth = 1ul;
-}
-
-/**
- * Release the mutex once. Other threads can acquire it, as soon as it was released as often as it was acquired.
- */
-public p RecursiveMutex.release() {
-    assert this.depth > 0ul;
-    this.depth--;
-    if this.depth == 0ul {
-        this.ownerThreadId.store(0l);
-        this.mutex.release();
-    }
-}
-
-/**
- * RAII lock that is only actually acquired while compiler passes run concurrently.
  *
  * Outside of a ParallelSection this degrades to a load of a global plus a well-predicted branch, which keeps the
  * single-threaded stages at their current speed.

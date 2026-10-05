@@ -1,0 +1,107 @@
+import "std/os/atomic";
+import "std/os/mutex";
+import "std/os/thread";
+
+/**
+ * Mutex, which can be acquired multiple times by the thread, that already holds it. Every `acquire` has to be matched by a
+ * `release`, and other threads can only acquire the mutex after it was released as often as it was acquired.
+ *
+ * This is useful for code, that takes a lock and may call back into code, that takes the same lock again (e.g. recursive
+ * algorithms over shared data structures). A plain `Mutex` would deadlock in this case.
+ *
+ * It is built on top of `Mutex`: the owning thread and the acquisition depth are tracked alongside it. Like a `Mutex`, a
+ * `RecursiveMutex` is not safe to share by shallow copy — use a reference or a pointer when passing it across functions.
+ */
+public type RecursiveMutex struct {
+    Mutex mutex
+    Atomic<long> ownerThreadId // 0 as long as no thread holds the mutex
+    unsigned long depth = 0ul  // Only accessed by the owning thread
+}
+
+/**
+ * Initialize a fresh, unlocked recursive mutex.
+ */
+public p RecursiveMutex.ctor() {
+    this.ownerThreadId = Atomic<long>(0l);
+}
+
+/**
+ * Block until the mutex is acquired by the calling thread. Returns immediately, if the calling thread already holds it.
+ */
+public p RecursiveMutex.acquire() {
+    const long currentThreadId = getThreadId();
+    if this.isOwnedBy(currentThreadId) {
+        this.depth++;
+        return;
+    }
+    this.mutex.acquire();
+    this.ownerThreadId.store(currentThreadId);
+    this.depth = 1ul;
+}
+
+/**
+ * Try to acquire the mutex without blocking. Succeeds immediately, if the calling thread already holds it.
+ *
+ * @return true if the mutex was acquired, false if another thread holds it
+ */
+public f<bool> RecursiveMutex.tryAcquire() {
+    const long currentThreadId = getThreadId();
+    if this.isOwnedBy(currentThreadId) {
+        this.depth++;
+        return true;
+    }
+    if !this.mutex.tryAcquire() {
+        return false;
+    }
+    this.ownerThreadId.store(currentThreadId);
+    this.depth = 1ul;
+    return true;
+}
+
+/**
+ * Release the mutex once. Other threads can acquire it, as soon as it was released as often as it was acquired.
+ * Must only be called by the thread, that holds the mutex.
+ */
+public p RecursiveMutex.release() {
+    assert this.depth > 0ul;
+    this.depth--;
+    if this.depth == 0ul {
+        this.ownerThreadId.store(0l);
+        this.mutex.release();
+    }
+}
+
+/**
+ * Check if the given thread holds the mutex. The comparison happens while the owner is locked, so it never races with a
+ * concurrent acquisition or release by another thread.
+ *
+ * @param threadId Thread id to check
+ * @return true if the thread with the given id holds the mutex
+ */
+f<bool> RecursiveMutex.isOwnedBy(long threadId) {
+    // Exchanging the value with itself does not change it, but compares it atomically
+    return this.ownerThreadId.compareExchange(threadId, threadId);
+}
+
+/**
+ * RecursiveLockGuard is a RAII wrapper for RecursiveMutex: acquires on construction and releases on destruction, ensuring
+ * the mutex is released even when the protected scope exits via an early return or a panic.
+ */
+public type RecursiveLockGuard struct {
+    RecursiveMutex& mutex
+}
+
+/**
+ * Acquire the mutex
+ */
+public p RecursiveLockGuard.ctor(RecursiveMutex& mutex) {
+    this.mutex = mutex;
+    this.mutex.acquire();
+}
+
+/**
+ * Release the mutex
+ */
+public p RecursiveLockGuard.dtor() {
+    this.mutex.release();
+}

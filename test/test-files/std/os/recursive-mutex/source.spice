@@ -1,0 +1,67 @@
+import "std/os/recursive-mutex";
+import "std/os/thread";
+
+type Counter struct {
+    RecursiveMutex mutex
+    int value = 0
+}
+
+// Takes the lock and calls itself recursively, so the lock is acquired multiple times by the same thread
+p Counter.addRecursive(int remaining) {
+    RecursiveLockGuard _ = RecursiveLockGuard(this.mutex);
+    this.value++;
+    if remaining > 1 {
+        this.addRecursive(remaining - 1);
+    }
+}
+
+type TryResult struct {
+    RecursiveMutex* mutex
+    bool acquired = true
+}
+
+f<int> main() {
+    // Re-entry by the same thread
+    Counter counter;
+    counter.addRecursive(5);
+    printf("After recursion: %d\n", counter.value);
+
+    // tryAcquire succeeds for the owning thread and fails for another thread, while the mutex is held
+    RecursiveMutex mutex;
+    mutex.acquire();
+    printf("Owner tryAcquire: %d\n", mutex.tryAcquire());
+    TryResult tryResult = TryResult{&mutex, true};
+    TryResult* tryResultPtr = &tryResult;
+    Thread tryThread = Thread(p() [[async]] {
+        tryResultPtr.acquired = tryResultPtr.mutex.tryAcquire();
+    });
+    tryThread.run();
+    tryThread.join();
+    printf("Other thread tryAcquire: %d\n", tryResult.acquired);
+    mutex.release();
+    mutex.release();
+
+    // Concurrent recursive increments from multiple threads
+    Counter* counterPtr = &counter;
+    Thread t1 = Thread(p() [[async]] {
+        for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
+    });
+    Thread t2 = Thread(p() [[async]] {
+        for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
+    });
+    Thread t3 = Thread(p() [[async]] {
+        for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
+    });
+    Thread t4 = Thread(p() [[async]] {
+        for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
+    });
+    t1.run();
+    t2.run();
+    t3.run();
+    t4.run();
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    printf("After threads: %d\n", counter.value);
+}

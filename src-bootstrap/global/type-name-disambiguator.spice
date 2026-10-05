@@ -2,6 +2,7 @@
 import "std/data/vector";
 import "std/data/unordered-map";
 import "std/type/type-conversion";
+import "std/os/recursive-mutex";
 
 // Own imports
 import "bootstrap/util/concurrency";

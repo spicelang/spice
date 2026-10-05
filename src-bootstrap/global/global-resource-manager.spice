@@ -8,6 +8,7 @@ import "std/io/filepath";
 import "std/io/file";
 import "std/os/system";
 import "std/bindings/llvm/llvm" as llvm;
+import "std/os/recursive-mutex";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
