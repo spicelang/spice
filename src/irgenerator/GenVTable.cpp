@@ -153,20 +153,18 @@ llvm::StructType *IRGenerator::getVTableType(const StructBase *spiceStruct) cons
   const size_t virtualMethodCount = spiceStruct->scope->getVirtualMethods().size();
   const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
 
-  llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(builder.getPtrTy(), arrayElementCount);
-  return llvm::StructType::get(context, vtableArrayTy, false);
+  return llvm::StructType::get(context, llvm::ArrayType::get(builder.getPtrTy(), arrayElementCount), false);
 }
 
 llvm::Constant *IRGenerator::getVTableAddressPoint(const StructBase *spiceStruct) const {
   // Look up the VTable by name in the current module instead of using vTableData.vtable. The latter belongs to the module
-  // of the source file that defines the struct and is not generated yet, if the struct is defined further down in the
-  // current source file. In both cases, a declaration is inserted, which generateVTable turns into the definition later.
+  // of the source file that defines the struct, so for a struct from another source file a declaration is inserted.
   llvm::StructType *vtableType = getVTableType(spiceStruct);
   llvm::Constant *vtable = module->getOrInsertGlobal(NameMangling::mangleVTable(spiceStruct), vtableType);
 
   // The address point of the VTable is behind the nullptr and the TypeInfo
-  llvm::Constant *indices[3] = {builder.getInt64(0), builder.getInt32(0), builder.getInt32(2)};
-  return llvm::ConstantExpr::getInBoundsGetElementPtr(vtableType, vtable, indices);
+  return llvm::ConstantExpr::getInBoundsGetElementPtr(
+      vtableType, vtable, llvm::ArrayRef<llvm::Constant *>({builder.getInt64(0), builder.getInt32(0), builder.getInt32(2)}));
 }
 
 } // namespace spice::compiler
