@@ -395,9 +395,9 @@ public p Driver.runBinary() {
     // Run executable, inheriting our standard streams so its output goes straight to the terminal
     FilePath executablePath = this.cliOptions.outputPath;
     executablePath.makeNative();
-    const ExecResult execResult = exec(executablePath.toString());
-    if execResult.exitCode != EXIT_CODE_SUCCESS {
-        const String message = "Your Spice executable exited with non-zero exit code " + toString(execResult.exitCode);
+    const int exitCode = run(String(executablePath.toString()));
+    if exitCode != EXIT_CODE_SUCCESS {
+        const String message = "Your Spice executable exited with non-zero exit code " + toString(exitCode);
         raiseCliError(CliErrorType::NON_ZERO_EXIT_CODE, message.getRaw());
     }
 }

@@ -1,0 +1,159 @@
+// Windows version of process_native.spice, picked by the OS suffix. The two files must offer the same symbols.
+//
+// The program is started via _spawnvp(), which searches the PATH and inherits the environment and the standard streams.
+// The CRT joins the arguments into a single command line without quoting them, so they are quoted here the way the
+// program's CRT splits them again (CommandLineToArgvW rules). The output is captured through a pipe, whose write end
+// temporarily replaces the standard output (and error) stream of this process, while the child is spawned.
+
+// Std imports
+import "std/data/vector";
+
+// Link external functions
+ext f<long> _spawnvp(int /*mode*/, string /*cmdName*/, string* /*argv*/);
+ext f<long> _cwait(int* /*termStat*/, long /*procHandle*/, int /*action*/);
+ext f<int> _pipe(int* /*fds*/, unsigned int /*size*/, int /*textMode*/);
+ext f<int> _dup(int /*fd*/);
+ext f<int> _dup2(int /*fd1*/, int /*fd2*/);
+ext f<int> _close(int /*fd*/);
+ext f<int> _read(int /*fd*/, byte* /*buffer*/, unsigned int /*count*/);
+ext f<int> fflush(byte* /*stream*/);
+
+// Exit code, that signals, that the process could not be started
+public const int PROCESS_SPAWN_FAILED = -1;
+
+const int P_WAIT = 0;
+const int P_NOWAIT = 1;
+const int WAIT_CHILD = 0;
+// O_BINARY | O_NOINHERIT: the child must only inherit the write end via the redirected standard streams. Otherwise, the
+// pipe would stay open in the child and reading it would never see the end
+const int PIPE_MODE = 32896;
+const unsigned int PIPE_SIZE = 65536u;
+const int STDOUT_FD = 1;
+const int STDERR_FD = 2;
+const unsigned int READ_BUFFER_SIZE = 4096u;
+
+/**
+ * Spawn a program, wait for it to terminate and optionally capture its output.
+ *
+ * @param program Name or path of the program
+ * @param args Arguments for the program (without the program itself)
+ * @param captureOutput Capture the standard output of the program
+ * @param includeStdErr Capture the standard error stream as well (only if captureOutput is set)
+ * @param output Captured output (output)
+ * @return Exit code of the program, or PROCESS_SPAWN_FAILED if it could not be started
+ */
+public f<int> spawnProcessAndWait(const String& program, const Vector<String>& args, bool captureOutput, bool includeStdErr, String& output) {
+    // Assemble the null-terminated argument vector of quoted arguments. The quoted strings have to outlive the spawn call
+    Vector<String> quotedArgs;
+    quotedArgs.reserve(args.getSize() + 1l);
+    quotedArgs.pushBack(quoteArgument(program));
+    foreach const String& arg : args {
+        quotedArgs.pushBack(quoteArgument(arg));
+    }
+    Vector<string> argv;
+    argv.reserve(quotedArgs.getSize() + 1l);
+    foreach const String& quotedArg : quotedArgs {
+        argv.pushBack(quotedArg.getRaw());
+    }
+    argv.pushBack(nil<string>);
+
+    // Flush our buffered output, so that it is not mixed up with the output of the child
+    unsafe {
+        fflush(nil<byte*>);
+    }
+
+    // Without capturing, the child just inherits our standard streams
+    if !captureOutput {
+        long exitCode;
+        unsafe {
+            exitCode = _spawnvp(P_WAIT, program.getRaw(), argv.getDataPtr());
+        }
+        return exitCode == -1l ? PROCESS_SPAWN_FAILED : cast<int>(exitCode);
+    }
+
+    // Create the pipe and redirect our standard streams into it, while the child is spawned
+    int[2] pipeFds;
+    unsafe {
+        if _pipe(cast<int*>(&pipeFds), PIPE_SIZE, PIPE_MODE) != 0 {
+            return PROCESS_SPAWN_FAILED;
+        }
+    }
+    const int savedStdOut = _dup(STDOUT_FD);
+    const int savedStdErr = _dup(STDERR_FD);
+    _dup2(pipeFds[1], STDOUT_FD);
+    if includeStdErr {
+        _dup2(pipeFds[1], STDERR_FD);
+    }
+    long procHandle;
+    unsafe {
+        procHandle = _spawnvp(P_NOWAIT, program.getRaw(), argv.getDataPtr());
+    }
+    // Restore our standard streams and close our copy of the write end, so that reading sees the end of the output
+    _dup2(savedStdOut, STDOUT_FD);
+    _dup2(savedStdErr, STDERR_FD);
+    _close(savedStdOut);
+    _close(savedStdErr);
+    _close(pipeFds[1]);
+    if procHandle == -1l {
+        _close(pipeFds[0]);
+        return PROCESS_SPAWN_FAILED;
+    }
+
+    // Read the output until the child terminates
+    char[4096] buffer;
+    unsafe {
+        while true {
+            const int bytesRead = _read(pipeFds[0], cast<byte*>(&buffer), READ_BUFFER_SIZE);
+            if bytesRead <= 0 {
+                break;
+            }
+            for int i = 0; i < bytesRead; i++ {
+                output += buffer[i];
+            }
+        }
+    }
+    _close(pipeFds[0]);
+
+    // Wait for the child to terminate
+    int exitCode = 0;
+    if _cwait(&exitCode, procHandle, WAIT_CHILD) == -1l {
+        return PROCESS_SPAWN_FAILED;
+    }
+    return exitCode;
+}
+
+/**
+ * Quote an argument, so that the CRT of the spawned program splits the command line into the original arguments again
+ * (CommandLineToArgvW rules): arguments without whitespace and quotes are kept as they are, all others are wrapped in
+ * quotes, with embedded quotes and the backslashes in front of them escaped.
+ *
+ * @param arg Argument to quote
+ * @return Quoted argument
+ */
+f<String> quoteArgument(const String& arg) {
+    if !arg.isEmpty() && arg.find(' ') < 0l && arg.find('\t') < 0l && arg.find('\n') < 0l && arg.find('"') < 0l {
+        return arg;
+    }
+    String quoted = String("\"");
+    unsigned long backslashCount = 0l;
+    for unsigned long i = 0l; i < arg.getLength(); i++ {
+        const char c = arg[i];
+        if c == '\\' {
+            backslashCount++;
+            continue;
+        }
+        // Backslashes in front of a quote have to be escaped, as well as the quote itself
+        const unsigned long escapedBackslashCount = c == '"' ? backslashCount * 2l + 1l : backslashCount;
+        for unsigned long j = 0l; j < escapedBackslashCount; j++ {
+            quoted += '\\';
+        }
+        quoted += c;
+        backslashCount = 0l;
+    }
+    // Backslashes in front of the closing quote have to be escaped as well
+    for unsigned long j = 0l; j < backslashCount * 2l; j++ {
+        quoted += '\\';
+    }
+    quoted += '"';
+    return quoted;
+}

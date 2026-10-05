@@ -4,7 +4,6 @@ import "std/io/filepath";
 import "std/io/file";
 import "std/os/mutex";
 import "std/os/os";
-import "std/text/stringstream";
 
 // Own imports
 import "bootstrap/driver";
@@ -123,10 +122,8 @@ public p ExternalLinkerInterface.cleanup() {
 p ExternalLinkerInterface.link() {
     assert !this.outputPath.isEmpty();
 
-    // Build the linker command
-    StringStream commandBuilder;
+    // Find the linker invoker and linker
     const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
-    commandBuilder << linkerInvoker.path;
     const ExternalBinaryFinderResult linker = findLinker(this.cliOptions);
     const bool isGccInvoker = linkerInvoker.name == "gcc";
     const bool isClangInvoker = linkerInvoker.name == "clang";
@@ -137,57 +134,75 @@ p ExternalLinkerInterface.link() {
         const LinkerError error = LinkerError(LinkerErrorType::SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER, msg);
         panic(Error(error.errorMessage.getRaw()));
     }
+
+    // Build the linker argument vector. Each entry is passed verbatim to the linker invoker (no shell), so file paths can
+    // never be re-interpreted as shell syntax - this is what prevents command injection via attacker-controlled object-file
+    // or output paths.
+    Vector<String> args;
     // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
     if !isGccInvoker || linker.name != "ld" {
-        commandBuilder << " -fuse-ld=" << linker.path;
+        args.pushBack("-fuse-ld=" + linker.path);
     }
     // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
     if !isGccInvoker {
-        commandBuilder << " --target=" << this.cliOptions.targetTriple.value;
+        args.pushBack(String("--target=") + this.cliOptions.targetTriple.value);
     }
     // Append output path
-    commandBuilder << " -o " << this.outputPath.toString();
-    // Append object files first, so that '-l' archive flags added below are searched
-    // for symbols that are already undefined at the point they appear in the command.
+    args.pushBack(String("-o"));
+    args.pushBack(String(this.outputPath.toString()));
+    // Append object files first, so that '-l' archive flags added below are searched for symbols that are already
+    // undefined at the point they appear in the command.
     foreach const FilePath& objectFilePath : this.linkedFiles {
-        commandBuilder << " ";
-        commandBuilder << objectFilePath.toString();
+        args.pushBack(String(objectFilePath.toString()));
     }
     // Append the std's own library search path, so the runtime modules can link against the static support libraries that
     // ship with the std (currently std/runtime/lib/libbacktrace.a). It goes ahead of the linker flags below, because search
-    // directories are tried in the order given. Only for a native build: those archives are built for the host the std was
-    // installed on, so offering them while linking for another target can only ever produce a mismatch.
+    // directories are tried in the order given. Passed verbatim rather than through expandLinkerFlag(), so that a std path
+    // containing '$' or a backtick is not mistaken for a variable reference or a command substitution. Only for a native
+    // build: those archives are built for the host the std was installed on, so offering them while linking for another
+    // target can only ever produce a mismatch.
     if this.cliOptions.isNativeTarget {
         const FilePath stdRuntimeLibDir = getStdRuntimeLibDir();
         if !stdRuntimeLibDir.isEmpty() {
-            commandBuilder << " -L" << stdRuntimeLibDir.toString();
+            args.pushBack(String("-L") + stdRuntimeLibDir.toString());
         }
     }
-    // Append linker flags after object files (libraries must follow the objects that reference them)
+    // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
+    // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
+    // expand into several argv entries. They go behind the object files (libraries must follow the objects that reference
+    // them).
     foreach const String& linkerFlag : this.linkerFlags {
-        commandBuilder << " ";
-        commandBuilder << linkerFlag;
+        const Vector<String> expandedFlags = expandLinkerFlag(linkerFlag);
+        foreach const String& expandedFlag : expandedFlags {
+            args.pushBack(expandedFlag);
+        }
     }
     if this.linkLibMath {
-        commandBuilder << " -lm";
+        args.pushBack(String("-lm"));
     }
-    const String command = commandBuilder.str();
 
     // Print status message
     if this.cliOptions.printDebugOutput {
+        const String command = renderCommandForDisplay(linkerInvoker.path, args);
         printf("\nLinking with: %s (invoker) / %s (linker)", linkerInvoker.name, linker.name);
         printf("\nLinker command: %s", command.getRaw());
         printf("\nEmitting executable to path: %s\n", this.outputPath.toString());
     }
 
     // Call the linker
-    const ExecResult linkResult = exec(command.getRaw());
+    const ExecResult linkResult = exec(linkerInvoker.path, args);
 
     // Check for linker error
     if linkResult.exitCode != 0 {
+        const String command = renderCommandForDisplay(linkerInvoker.path, args);
         const String msg = "Linker exited with non-zero exit code\nLinker command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
         panic(Error(error.errorMessage.getRaw()));
+    }
+
+    // Print linker result if appropriate
+    if this.cliOptions.printDebugOutput && !linkResult.output.isEmpty() {
+        printf("Linking result: %s\n\n", linkResult.output.getRaw());
     }
 }
 
@@ -197,33 +212,39 @@ p ExternalLinkerInterface.link() {
 p ExternalLinkerInterface.archive() {
     assert !this.outputPath.isEmpty();
 
-    // Build the archiver command
-    StringStream commandBuilder;
+    // Find the archiver
     const ExternalBinaryFinderResult archiver = findArchiver();
-    commandBuilder << archiver.path;
-    // r = insert files into archive; c = create archive if not existing; s = create archive index
-    commandBuilder << " rcs ";
-    commandBuilder << this.outputPath.toString();
+
+    // Build the archiver argument vector (passed verbatim, no shell involved)
+    Vector<String> args;
+    args.pushBack(String("rcs")); // r = insert files into archive; c = create archive if not existing; s = create archive index
+    args.pushBack(String(this.outputPath.toString()));
     foreach const FilePath& path : this.linkedFiles {
-        commandBuilder << " " << path.toString();
+        args.pushBack(String(path.toString()));
     }
-    const String command = commandBuilder.str();
 
     // Print status message
     if this.cliOptions.printDebugOutput {
+        const String command = renderCommandForDisplay(archiver.path, args);
         printf("\nArchiving with: %s", archiver.name);
         printf("\nArchiver command: %s", command.getRaw());
         printf("\nEmitting static library to path: %s\n", this.outputPath.toString());
     }
 
     // Call the archiver
-    const ExecResult archiveResult = exec(command.getRaw());
+    const ExecResult archiveResult = exec(archiver.path, args);
 
     // Check for archiver error
     if archiveResult.exitCode != 0 {
+        const String command = renderCommandForDisplay(archiver.path, args);
         const String msg = "Archiver exited with non-zero exit code\nArchiver command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
         panic(Error(error.errorMessage.getRaw()));
+    }
+
+    // Print archiver result if appropriate
+    if this.cliOptions.printDebugOutput && !archiveResult.output.isEmpty() {
+        printf("Archiving result: %s\n\n", archiveResult.output.getRaw());
     }
 }
 

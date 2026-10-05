@@ -1442,8 +1442,13 @@ p SourceFile.visualizerOutput(const string outputNameRaw, const String& output) 
         svgFilePath.replaceExtension("svg");
         dotFilePath.makeNative();
         svgFilePath.makeNative();
-        const String dotCommand = "dot -T svg -o " + svgFilePath.toString() + " " + dotFilePath.toString();
-        const ExecResult _ = exec(dotCommand.getRaw());
+        Vector<String> dotArgs;
+        dotArgs.pushBack(String("-T"));
+        dotArgs.pushBack(String("svg"));
+        dotArgs.pushBack(String("-o"));
+        dotArgs.pushBack(String(svgFilePath.toString()));
+        dotArgs.pushBack(String(dotFilePath.toString()));
+        const ExecResult _ = exec(String("dot"), dotArgs);
         print("done.\nSVG file can be found at: \"" + svgFilePath.toString() + "\"\n");
     } else {
         // Dump to console

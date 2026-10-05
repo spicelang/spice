@@ -1,6 +1,8 @@
 // Std imports
 import "std/os/os";
-import "std/os/cmd";
+import "std/data/vector";
+import "std/os/process";
+import "std/text/analysis";
 import "std/os/env";
 import "std/io/file";
 import "std/io/filepath";
@@ -22,46 +24,171 @@ public type ExternalBinaryFinderResult struct {
 }
 
 /**
- * Transform the wait status returned by the 'system' call into a process exit code.
+ * Execute an external program without involving a shell.
  *
- * @param status Wait status
- * @return Exit code
+ * Each argument is passed verbatim to the program (via std/os/process), so file paths and other arguments can never be
+ * interpreted as shell syntax. This is the safe variant that must be used for any command whose arguments are
+ * influenced by (untrusted) user input, e.g. the linker invocation.
+ *
+ * @param program Name or path of the program to execute (resolved against PATH if it is a bare name)
+ * @param args Arguments passed to the program (without argv[0], which is added automatically)
+ * @param redirectStdErrToStdOut Capture stderr into the returned output alongside stdout
+ * @return Result struct with the captured output and the process exit code
  */
-f<int> transformStatusToExitCode(int status) {
-    if isUnixBased() {
-        // Invalid status -> invalid exit code
-        if status == -1 {
-            return -1;
-        }
-        // Process terminated by signal (WIFSIGNALED): low 7 bits are neither 0 nor 0x7f
-        const int termSignal = status & 0x7f;
-        if termSignal != 0 && termSignal != 0x7f {
-            return 128 + termSignal;
-        }
-        // Process terminated normally (WIFEXITED): WEXITSTATUS
-        return (status >> 8) & 0xff;
-    } else if isWindows() {
-        return status;
-    } else {
-        panic(Error("Unsupported platform"));
+public f<ExecResult> exec(const String& program, const Vector<String>& args, bool redirectStdErrToStdOut = false) {
+    Result<ProcessResult> processResult = runProcessCaptured(program, args, redirectStdErrToStdOut);
+    if processResult.isErr() {
+        const String message = "Failed to execute '" + program + "'";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        const String& errorMessage = error.getMessage();
+        panic(Error(errorMessage.getRaw()));
     }
+    const ProcessResult& process = processResult.unwrap();
+    return ExecResult{process.output, process.exitCode};
 }
 
 /**
- * Execute external command and return its exit code.
+ * Execute an external binary, inheriting the parent's standard streams.
+ * Unlike exec(), this does not capture the child's output: its stdin, stdout and stderr are connected directly to ours,
+ * so the program behaves as if invoked from the terminal.
  *
- * The command's output is left to flow through to the parent process. Capturing it is not
- * implemented yet, because cross-platform output redirection depends on a temp-dir abstraction
- * that is currently broken on Windows; the 'output' field is therefore left empty. link() and
- * archive() only rely on the exit code to detect failures, so this is sufficient.
- *
- * @param cmd Command to execute
- * @return Result struct
+ * @param executablePath Path to the executable to run
+ * @return Exit code of the executed binary
  */
-public f<ExecResult> exec(const string cmd) {
-    result = ExecResult{};
-    const int status = execCmd(cmd);
-    result.exitCode = transformStatusToExitCode(status);
+public f<int> run(const String& executablePath) {
+    const Vector<String> noArgs;
+    Result<int> exitCode = runProcess(executablePath, noArgs);
+    if exitCode.isErr() {
+        const String message = "Failed to execute: " + executablePath;
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        const String& errorMessage = error.getMessage();
+        panic(Error(errorMessage.getRaw()));
+    }
+    return exitCode.unwrap();
+}
+
+/**
+ * Render a program invocation as a human-readable command string. Used for debug output and error messages only - the
+ * actual execution happens via an argument vector (no shell), so this rendering is never executed.
+ *
+ * @param program Program to execute
+ * @param args Arguments for the program
+ * @return Command string
+ */
+public f<String> renderCommandForDisplay(const String& program, const Vector<String>& args) {
+    String command = program;
+    foreach const String& arg : args {
+        command += " ";
+        command += arg;
+    }
+    return command;
+}
+
+/**
+ * Expand a linker flag that may contain environment-variable references ('$VAR' on Unix, '%VAR%' on Windows) or a
+ * backtick-quoted command substitution (e.g. "`pkg-config --cflags --libs libcurl`"), mirroring what a shell would have
+ * done for these flags. Std bindings rely on both forms (see e.g. std/bindings/llvm/linker-flags.spice and
+ * std/bindings/libcurl/libcurl.spice).
+ *
+ * Unlike a shell, only these two specific substitutions are recognized, and the backtick-quoted command is executed
+ * directly (argv-based, whitespace-split) rather than through a shell - no other shell metacharacters (';', '&&', pipes,
+ * redirects, quoting, globbing, ...) are interpreted, so this cannot be used to inject additional commands.
+ *
+ * A plain env-var reference can itself expand to several whitespace-separated flags (e.g. LLVM_INCLUDE_DIRS is set to
+ * "-I<dir1> -I<dir2>" by CMake/CI). Since there is no shell to word-split the expanded text, it is split explicitly, so
+ * each flag becomes its own argv entry.
+ *
+ * @param flag Raw linker flag, as configured via a 'core.[os.]linker.flag' attribute
+ * @return One or more expanded flags (an expansion can result in several whitespace-separated flags)
+ */
+public f<Vector<String>> expandLinkerFlag(const String& flag) {
+    // Expand environment variable references within the flag ('$VAR' on Unix, '%VAR%' on Windows)
+    String expanded;
+    unsigned long i = 0l;
+    while i < flag.getLength() {
+        const char c = flag[i];
+        if isWindows() && c == '%' {
+            const long end = flag.find('%', i + 1l);
+            if end >= 0l {
+                const String varName = flag.getSubstring(i + 1l, cast<long>(cast<unsigned long>(end) - i - 1l));
+                Result<string> value = getEnv(varName.getRaw());
+                if value.isOk() {
+                    expanded += value.unwrap();
+                }
+                i = cast<unsigned long>(end) + 1l;
+                continue;
+            }
+        } else if !isWindows() && c == '$' {
+            unsigned long j = i + 1l;
+            while j < flag.getLength() && isAlphaNumUnderscore(flag[j]) {
+                j++;
+            }
+            if j > i + 1l {
+                const String varName = flag.getSubstring(i + 1l, cast<long>(j - i - 1l));
+                Result<string> value = getEnv(varName.getRaw());
+                if value.isOk() {
+                    expanded += value.unwrap();
+                }
+                i = j;
+                continue;
+            }
+        }
+        expanded += c;
+        i++;
+    }
+
+    // Backtick command substitution: recognized when the *entire* (env-expanded) flag is a single backtick-quoted command,
+    // matching existing std bindings usage. The command is split on whitespace and executed directly (no shell), so shell
+    // metacharacters inside the backticks are not interpreted.
+    if expanded.getLength() >= 2l && expanded[0l] == '`' && expanded[expanded.getLength() - 1l] == '`' {
+        const String innerCommand = expanded.getSubstring(1l, cast<long>(expanded.getLength() - 2l));
+        Vector<String> tokens = splitAtWhitespace(innerCommand);
+        if tokens.isEmpty() {
+            return Vector<String>();
+        }
+        const String program = tokens.front();
+        Vector<String> cmdArgs;
+        for unsigned long k = 1l; k < tokens.getSize(); k++ {
+            cmdArgs.pushBack(tokens.get(k));
+        }
+        const ExecResult cmdResult = exec(program, cmdArgs);
+        if cmdResult.exitCode != 0 { // GCOV_EXCL_LINE
+            const String message = "Command substitution for linker flag failed: " + innerCommand;      // GCOV_EXCL_LINE
+            const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, message.getRaw()); // GCOV_EXCL_LINE
+            panic(Error(error.errorMessage.getRaw()));                                              // GCOV_EXCL_LINE
+        } // GCOV_EXCL_LINE
+        expanded = cmdResult.output;
+    }
+
+    // Word-split the (possibly command-substituted) text on whitespace, so an expansion that contains several flags (e.g. a
+    // multi-directory LLVM_INCLUDE_DIRS, or a pkg-config command's output) ends up as separate argv entries.
+    return splitAtWhitespace(expanded);
+}
+
+/**
+ * Split a string at whitespace, dropping empty parts
+ *
+ * @param input Input string
+ * @return Non-empty parts
+ */
+f<Vector<String>> splitAtWhitespace(const String& input) {
+    Vector<String> parts;
+    String current;
+    for unsigned long i = 0l; i < input.getLength(); i++ {
+        const char c = input[i];
+        if c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f' {
+            if !current.isEmpty() {
+                parts.pushBack(current);
+                current = String();
+            }
+        } else {
+            current += c;
+        }
+    }
+    if !current.isEmpty() {
+        parts.pushBack(current);
+    }
+    return parts;
 }
 
 /**
@@ -71,15 +198,9 @@ public f<ExecResult> exec(const string cmd) {
  * @return Present or not
  */
 public f<bool> isCommandAvailable(const string cmd) {
-    String checkCmd;
-    if isWindows() {
-        checkCmd = "where " + cmd + " > nul 2>&1";
-    } else if isUnixBased() {
-        checkCmd = "which " + cmd + " > /dev/null 2>&1";
-    } else {
-        panic(Error("Unsupported platform"));
-    }
-    return execCmd(checkCmd.getRaw()) == 0;
+    // Look the program up on PATH without spawning a shell ('which'/'where')
+    const String programPath = findProgram(String(cmd));
+    return !programPath.isEmpty();
 }
 
 /**
