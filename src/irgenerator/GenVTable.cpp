@@ -92,17 +92,11 @@ llvm::Constant *IRGenerator::generateTypeInfo(StructBase *spiceStruct) const {
 }
 
 llvm::Constant *IRGenerator::generateVTable(StructBase *spiceStruct) const {
-  // Retrieve virtual method count
-  const std::vector<const Function *> virtualMethods = spiceStruct->scope->getVirtualMethods();
-  const size_t virtualMethodCount = virtualMethods.size();
-  const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
-
   // Generate type info data structures
   generateTypeInfo(spiceStruct);
 
   // Generate VTable type
-  llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(builder.getPtrTy(), arrayElementCount);
-  spiceStruct->vTableData.vtableType = llvm::StructType::get(context, vtableArrayTy, false);
+  spiceStruct->vTableData.vtableType = getVTableType(spiceStruct);
 
   const std::string mangledName = NameMangling::mangleVTable(spiceStruct);
   module->getOrInsertGlobal(mangledName, spiceStruct->vTableData.vtableType);
@@ -152,6 +146,27 @@ void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) {
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
   assert(global != nullptr);
   global->setInitializer(initializer);
+}
+
+llvm::StructType *IRGenerator::getVTableType(const StructBase *spiceStruct) const {
+  // Retrieve virtual method count
+  const size_t virtualMethodCount = spiceStruct->scope->getVirtualMethods().size();
+  const size_t arrayElementCount = virtualMethodCount + 2; // +2 for nullptr and TypeInfo
+
+  llvm::ArrayType *vtableArrayTy = llvm::ArrayType::get(builder.getPtrTy(), arrayElementCount);
+  return llvm::StructType::get(context, vtableArrayTy, false);
+}
+
+llvm::Constant *IRGenerator::getVTableAddressPoint(const StructBase *spiceStruct) const {
+  // Look up the VTable by name in the current module instead of using vTableData.vtable. The latter belongs to the module
+  // of the source file that defines the struct and is not generated yet, if the struct is defined further down in the
+  // current source file. In both cases, a declaration is inserted, which generateVTable turns into the definition later.
+  llvm::StructType *vtableType = getVTableType(spiceStruct);
+  llvm::Constant *vtable = module->getOrInsertGlobal(NameMangling::mangleVTable(spiceStruct), vtableType);
+
+  // The address point of the VTable is behind the nullptr and the TypeInfo
+  llvm::Constant *indices[3] = {builder.getInt64(0), builder.getInt32(0), builder.getInt32(2)};
+  return llvm::ConstantExpr::getInBoundsGetElementPtr(vtableType, vtable, indices);
 }
 
 } // namespace spice::compiler

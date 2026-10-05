@@ -462,9 +462,9 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
   if (canBeConstant) { // All field values are constants, so we can create a global constant struct instantiation
     // Collect constants
     std::vector<llvm::Constant *> constants;
-    // A nullptr for the synthesized vtable pointer
+    // The VTable address point for the synthesized vtable pointer
     if (spiceStruct->hasSynthesizedVTablePtr())
-      constants.push_back(llvm::Constant::getNullValue(builder.getPtrTy()));
+      constants.push_back(getVTableAddressPoint(spiceStruct));
     // For each interface a nullptr
     for (const QualType &interfaceType : spiceStruct->interfaceTypes)
       constants.push_back(getDefaultValueForSymbolType(interfaceType));
@@ -482,9 +482,9 @@ std::any IRGenerator::visitStructInstantiation(const StructInstantiationNode *no
     const size_t fieldCount = spiceStruct->fieldTypes.size();
     size_t i = 0;
 
-    // Store a nullptr for the synthesized vtable pointer
+    // Store the VTable address point for the synthesized vtable pointer
     if (spiceStruct->hasSynthesizedVTablePtr())
-      insertStore(llvm::Constant::getNullValue(builder.getPtrTy()), structAddr);
+      insertStore(getVTableAddressPoint(spiceStruct), structAddr);
 
     // Store interface values at their corresponding offsets
     for (; i < interfaceCount; i++) {
