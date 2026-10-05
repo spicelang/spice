@@ -1,3 +1,6 @@
+// External functions
+ext f<byte*> memmove(byte*, byte*, unsigned long);
+
 // Constants
 const unsigned long INITIAL_CAPACITY = 5l;
 const unsigned int RESIZE_FACTOR = 2;
@@ -16,6 +19,9 @@ type T dyn;
  * Queues pre-allocate space using an initial size and a resize factor to not have to re-allocate
  * with every item pushed. A default-constructed queue stays in an unallocated state (contents = nil,
  * capacity = 0) until the first push.
+ *
+ * The queue owns its items: they are copy-constructed on insertion and destructed on removal, so items that own
+ * resources themselves (e.g. strings or other containers) are safe to store.
  */
 public type Queue<T> struct {
     heap T* contents = nil<heap T*>  // Pointer to the first data element; nil while unallocated
@@ -77,11 +83,12 @@ public p Queue.ctor(unsigned long initAllocItems = 0l) {
  */
 public p Queue.ctor(const Queue<T>& original) {
     this.ctor(original.capacity);
-    // Copy elements in logical order, normalizing the layout so idxFront = 0
+    // Copy-construct elements in logical order, normalizing the layout so idxFront = 0. The slots are uninitialized, so
+    // they must not be assigned to
     unsafe {
         for unsigned long i = 0l; i < original.size; i++ {
             const unsigned long srcIdx = (original.idxFront + i) % original.capacity;
-            this.contents[i] = original.contents[srcIdx];
+            __placement_new<T>(&this.contents[i], original.contents[srcIdx]);
         }
     }
     this.size = original.size;
@@ -98,6 +105,8 @@ public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
     // Self-assignment: leave the queue as is; normalizing in place would
     // overwrite source slots before the wrapped index reads them.
     if &this == &newValue { return; }
+    // Destruct our currently owned elements before their slots get overwritten
+    this.clear();
     const long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
         if newValue.capacity == 0l {
@@ -115,16 +124,43 @@ public p operator=<T>(Queue<T>& this, const Queue<T>& newValue) {
         }
         this.capacity = newValue.capacity;
     }
-    // Copy elements in logical order, normalizing the layout so idxFront = 0
+    // Copy-construct elements in logical order, normalizing the layout so idxFront = 0
     unsafe {
         for unsigned long i = 0l; i < newValue.size; i++ {
             const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
-            this.contents[i] = newValue.contents[srcIdx];
+            __placement_new<T>(&this.contents[i], newValue.contents[srcIdx]);
         }
     }
     this.size = newValue.size;
     this.idxFront = 0l;
     this.idxBack = this.capacity == 0l ? 0l : newValue.size % this.capacity;
+}
+
+/**
+ * Destructs the queue, destructing all owned elements and freeing the buffer
+ */
+public p Queue.dtor() {
+    this.clear();
+    unsafe {
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        sDealloc(oldAddress);
+    }
+    this.capacity = 0l;
+}
+
+/**
+ * Removes all items from the queue. The allocated capacity is kept.
+ */
+public p Queue.clear() {
+    // Destruct owned elements in logical order before dropping them
+    for unsigned long i = 0l; i < this.size; i++ {
+        unsafe {
+            sDestruct(this.contents[(this.idxFront + i) % this.capacity]);
+        }
+    }
+    this.size = 0l;
+    this.idxFront = 0l;
+    this.idxBack = 0l;
 }
 
 /**
@@ -149,16 +185,20 @@ public p Queue.push(const T& item) {
 }
 
 /**
- * Retrieve the first item and remove it
+ * Retrieve the first item and remove it. The item is returned by value, because its slot in the queue is destructed.
  *
  * @return First item
  */
 #[ignoreUnusedReturnValue]
-public f<T&> Queue.pop() {
+public f<T> Queue.pop() {
     if this.isEmpty() { panic(Error("The queue is empty")); }
     this.size--;
     unsafe {
-        result = this.contents[this.idxFront];
+        // Copy the item via a reference to its slot. Assigning the subscript expression directly would move it bitwise,
+        // so destructing the slot afterwards would free resources, that the returned item still uses
+        T& item = this.contents[this.idxFront];
+        result = item;
+        sDestruct(item);
     }
     this.idxFront++;
     this.idxFront %= this.capacity;
@@ -298,15 +338,22 @@ p Queue.resize(unsigned long itemCount) {
         // Allocate a new chunk of memory with the requested size
         unsigned long newSize = itemSize * itemCount;
         Result<heap byte*> allocResult = sAlloc(newSize);
-        // Take ownership of the old pointer to free it at the end of the scope
-        heap T* oldAddress = this.contents;
-        this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-        // Copy data over to new memory chunk in logical order
-        for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
-            unsigned long oldIndex = this.idxFront + newIndex;
-            oldIndex %= this.capacity;
-            this.contents[newIndex] = oldAddress[oldIndex];
+        heap T* newContents = cast<heap T*>(allocResult.unwrapAndMove());
+        // Relocate the elements bitwise in logical order. They are moved, not copied, so they are neither copy-constructed
+        // in the new slots nor destructed in the old ones. The elements may wrap around the end of the old buffer, so they
+        // are moved in up to two chunks
+        if this.size > 0l {
+            const unsigned long firstChunkSize = this.size < this.capacity - this.idxFront ? this.size : this.capacity - this.idxFront;
+            memmove(cast<byte*>(&newContents[0]), cast<byte*>(&this.contents[this.idxFront]), firstChunkSize * itemSize);
+            if firstChunkSize < this.size {
+                const unsigned long secondChunkSize = this.size - firstChunkSize;
+                memmove(cast<byte*>(&newContents[firstChunkSize]), cast<byte*>(&this.contents[0]), secondChunkSize * itemSize);
+            }
         }
+        // Free the old buffer without destructing the relocated elements
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        sDealloc(oldAddress);
+        this.contents = sMove(newContents);
     }
     // Set new capacity and normalize indices
     this.capacity = itemCount;
