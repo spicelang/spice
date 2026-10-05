@@ -1,0 +1,29 @@
+public type IShape interface {
+    public f<int> area();
+}
+
+public type Rect struct : IShape {
+    public int width
+    public int height
+}
+
+public p Rect.ctor(int width, int height) {
+    this.width = width;
+    this.height = height;
+}
+
+public f<int> Rect.area() {
+    return this.width * this.height;
+}
+
+public type Square struct : IShape {
+    public int side
+}
+
+public p Square.ctor(int side) {
+    this.side = side;
+}
+
+public f<int> Square.area() {
+    return this.side * this.side;
+}

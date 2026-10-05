@@ -1,0 +1,115 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/os/recursive-mutex";
+
+/**
+ * Global switch that tells the process-wide caches of the compiler (type registry, function lookup cache, ...) whether
+ * compiler passes are currently executed on more than one thread.
+ *
+ * Those caches sit on the hottest paths of the single-threaded front end and middle end, where taking a lock for every
+ * access would be pure overhead. The back end on the other hand runs one pipeline per source file in parallel (see
+ * SourceFile.runBackEnd), and there the caches do need protection. ParallelSection flips this switch for exactly the
+ * time span in which worker threads are alive. It is only written while no worker thread is alive, so the creation and
+ * the joining of the worker threads order the accesses to it.
+ */
+bool CONCURRENT_PASSES_RUNNING = false;
+
+/**
+ * RAII marker for a section of the compiler in which passes are executed on multiple threads.
+ *
+ * It has to be entered before the worker threads are handed any work and left only after all of them are joined again,
+ * so that every ConditionalLock taken on a worker thread actually locks.
+ */
+public type ParallelSection struct {
+    bool active = false
+}
+
+public p ParallelSection.ctor() {
+    this.active = true;
+    unsafe {
+        CONCURRENT_PASSES_RUNNING = true;
+    }
+}
+
+public p ParallelSection.dtor() {
+    if this.active {
+        unsafe {
+            CONCURRENT_PASSES_RUNNING = false;
+        }
+    }
+}
+
+/**
+ * Check if compiler passes are currently executed on more than one thread
+ *
+ * @return Concurrent passes running or not
+ */
+public f<bool> areConcurrentPassesRunning() {
+    unsafe {
+        return CONCURRENT_PASSES_RUNNING;
+    }
+}
+
+/**
+ * RAII lock that is only actually acquired while compiler passes run concurrently.
+ *
+ * The host uses a std::recursive_mutex for the symbol registry and plain std::mutex instances for the type registry and
+ * the type name disambiguator. The bootstrap compiler uses the std RecursiveMutex for all of them, which is a superset of
+ * the plain mutex semantics.
+ *
+ * Outside of a ParallelSection this degrades to a load of a global plus a well-predicted branch, which keeps the
+ * single-threaded stages at their current speed.
+ */
+public type ConditionalLock struct {
+    RecursiveMutex* mutex = nil<RecursiveMutex*>
+}
+
+public p ConditionalLock.ctor(RecursiveMutex* mutex) {
+    if areConcurrentPassesRunning() {
+        this.mutex = mutex;
+        this.mutex.acquire();
+    }
+}
+
+public p ConditionalLock.dtor() {
+    if this.mutex != nil<RecursiveMutex*> {
+        this.mutex.release();
+        this.mutex = nil<RecursiveMutex*>;
+    }
+}
+
+// Address of the symbol registry mutex. It guards the process-wide symbol lookup machinery: the lookup caches of the
+// FunctionManager, StructManager, InterfaceManager and UnionManager, plus the manifestation lists and symbol table entries
+// those matchers touch. The host keeps it in a global. Spice only supports globals of primitive type, so it is owned by the
+// GlobalResourceManager instead, which registers it here.
+long ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = 0l;
+
+/**
+ * Make the given mutex the active symbol registry mutex
+ *
+ * @param mutex Symbol registry mutex
+ */
+public p setActiveSymbolRegistryMutex(RecursiveMutex* mutex) {
+    unsafe {
+        ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = cast<long>(cast<byte*>(mutex));
+    }
+}
+
+/**
+ * Get the active symbol registry mutex
+ *
+ * The IR generator lowers struct and interface types through QualType.getStruct/getInterface and looks up implicit
+ * functions (e.g. copy ctors), so all matchers are reachable from the back-end worker threads. By the time the back end
+ * runs, the type checker has already created every manifestation, so these calls degenerate to cache hits and the lock is
+ * barely contended. It is recursive, because struct matching recurses into struct and interface matching for field and
+ * interface types.
+ *
+ * @return Active symbol registry mutex
+ */
+public f<RecursiveMutex*> getSymbolRegistryMutex() {
+    unsafe {
+        result = cast<RecursiveMutex*>(cast<byte*>(ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS));
+    }
+    assert result != nil<RecursiveMutex*>;
+}

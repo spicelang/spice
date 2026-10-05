@@ -1,0 +1,32 @@
+import "std/data/vector";
+import "source2";
+
+// Generic type defs
+type T dyn;
+
+public type Box<T> struct {
+    public T value
+    public String label
+}
+
+public p Box.ctor(const T& value, const String& label) {
+    this.value = value;
+    this.label = label;
+}
+
+public p Box.ctor(const Box<T>& other) {
+    this.value = other.value;
+    this.label = other.label + "'";
+}
+
+public f<Box<Rect>> makeRectBox(int width, int height) {
+    return Box<Rect>(Rect(width, height), String("rect"));
+}
+
+public f<int> sumAreas(const Vector<Rect>& rects) {
+    int total = 0;
+    foreach const Rect& rect : rects {
+        total += rect.area();
+    }
+    return total;
+}

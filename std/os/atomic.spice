@@ -75,3 +75,28 @@ public f<bool> Atomic.compareExchange(const T& expected, const T& desired) {
         this.value = desired;
     }
 }
+/**
+ * Atomically add to the value and return the previous one
+ *
+ * @param delta Value to add
+ * @return Previous value
+ */
+public f<T> Atomic.fetchAdd(const T& delta) {
+    LockGuard _ = LockGuard(this.mutex);
+    T old = this.value;
+    this.value += delta;
+    return old;
+}
+
+/**
+ * Atomically subtract from the value and return the previous one
+ *
+ * @param delta Value to subtract
+ * @return Previous value
+ */
+public f<T> Atomic.fetchSub(const T& delta) {
+    LockGuard _ = LockGuard(this.mutex);
+    T old = this.value;
+    this.value -= delta;
+    return old;
+}

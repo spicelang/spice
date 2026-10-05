@@ -686,6 +686,9 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         this.cliOptions.comparableOutput = true;
         this.cliOptions.namesForIRValues = true;
         this.cliOptions.useCPUFeatures = false; // Disabled because it makes the refs differ on different machines
+        // Compile serially like the host's test runner: the test cases are already spread over processes, so a parallel back
+        // end would only oversubscribe the machine, and the reference outputs stay strictly deterministic this way
+        this.cliOptions.compileJobCount = 1u;
     };
     subCmd.addFlag("--test-mode", testModeCallback, "Compile like the test runner of the host compiler does (test mode, comparable output). For internal use");
 

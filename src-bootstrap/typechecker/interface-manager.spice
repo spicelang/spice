@@ -20,6 +20,7 @@ import "bootstrap/typechecker/type-matcher";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/util/custom-hash-functions";
 import "bootstrap/util/lookup-cache";
+import "bootstrap/util/concurrency";
 
 // Type aliases
 public type InterfaceManifestationList alias UnorderedMap</*mangledName=*/String, Interface>;
@@ -105,6 +106,9 @@ f<LookupCache<Interface>*> getActiveInterfaceLookupCache() {
  * @return Matched interface or nil
  */
 public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
+    // The IR generator reaches this from the worker threads of the parallel back end
+    ConditionalLock lock = ConditionalLock(getSymbolRegistryMutex());
+
     // Do cache lookup
     LookupCache<Interface>* cache = getActiveInterfaceLookupCache();
     const Hash cacheKey = getInterfaceCacheKey(matchScope, reqName, reqTemplateTypes);

@@ -1,0 +1,4 @@
+After recursion: 5
+Owner tryAcquire: 1
+Other thread tryAcquire: 0
+After threads: 12005
