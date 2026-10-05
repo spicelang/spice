@@ -157,11 +157,11 @@ The bootstrap compiler (`src-bootstrap/`) mirrors this design, with these differ
 - **Errors.** The bootstrap compiler has no exceptions. A failing back-end pass panics on its worker thread, which ends the
   process. If several source files fail concurrently, the first panic is reported, so the reported error can depend on
   the scheduling.
-- **Locks.** `src-bootstrap/util/concurrency.spice` provides `ParallelSection`, `ConditionalLock` and a `RecursiveMutex`,
-  built on top of the std `Mutex`, since the std has no recursive mutex. The type registry, the type name disambiguator
-  and the symbol registry all use the recursive mutex. Spice only supports globals of primitive type, so the mutexes are
-  owned by the `GlobalResourceManager` (or the type registry / type name disambiguator it owns), and the symbol registry
-  mutex is registered via its address, like the other process-wide components.
+- **Locks.** `src-bootstrap/util/concurrency.spice` provides `ParallelSection` and `ConditionalLock`. The type registry,
+  the type name disambiguator and the symbol registry all use the `RecursiveMutex` of the std (`std/os/recursive-mutex`),
+  which is a superset of the plain mutex semantics, that the host uses for the first two. Spice only supports globals of
+  primitive type, so the mutexes are owned by the `GlobalResourceManager` (or the type registry / type name disambiguator
+  it owns), and the symbol registry mutex is registered via its address, like the other process-wide components.
 - **libm linkage.** `ExternalLinkerInterface::linkLibMath` is guarded by a mutex instead of being an atomic.
 - **Tests.** `--test-mode` compiles with `-j 1`, like the host's test runner. Test cases can still opt into the parallel
   back end with a `// TEST: -j <n>` header (e.g. `irgenerator/imports/success-parallel-backend`).

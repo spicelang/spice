@@ -1,0 +1,3 @@
+paused: queued=50 done=0 paused=1
+joined: queued=0 done=50 running=0
+stopped: done=50

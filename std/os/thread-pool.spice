@@ -1,6 +1,5 @@
 import "std/os/thread";
 import "std/data/vector";
-import "std/os/atomic";
 import "std/os/cpu";
 import "std/os/mutex";
 import "std/os/system";
@@ -14,15 +13,14 @@ import "std/type/lambda";
  */
 public type ThreadPool struct {
     Vector<Thread> workerThreads
-    // The queued jobs are taken in order. The jobs before nextJobIndex were already taken by a worker thread. The queue is
-    // shared between the worker threads and the controlling thread, so it is guarded by a mutex
-    Mutex queueMutex
+    unsigned short workerThreadCount
+    // The state below is shared between the worker threads and the controlling thread. It is guarded by a single mutex, so
+    // that a worker decides on the next step (take a job, wait or exit) based on a consistent snapshot of it.
+    Mutex mutex
+    // The queued jobs are taken in order. The jobs before nextJobIndex were already taken by a worker thread
     Vector<Lambda<p()>> queuedJobs
     unsigned long nextJobIndex = 0ul
-    Atomic<unsigned short> runningJobs
-    unsigned short workerThreadCount
-    // The control flags are written by the controlling thread and read by the worker threads, so they are guarded by a mutex
-    Mutex flagMutex
+    unsigned short runningJobs = 0s
     bool stopRequested = false
     bool stopOnEmptyQueueRequested = false
     bool pauseRequested = false
@@ -35,7 +33,6 @@ public type ThreadPool struct {
  */
 public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.workerThreads = Vector<Thread>();
-    this.runningJobs = Atomic<unsigned short>(0s);
     this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : cast<unsigned short>(getCPUCoreCount());
 }
 
@@ -44,24 +41,11 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
  */
 public p ThreadPool.start() {
     p() workerRoutine = p() [[async]] {
-        do {
-            if !this.getFlag(this.pauseRequested) {
-                // Take the next job off the queue. Checking for and taking a job happens atomically, so that two workers can
-                // never race for the same job.
-                p() task;
-                if this.takeNextJob(task) {
-                    task();
-                    this.runningJobs.fetchSub(1s);
-                    continue;
-                }
-                // If we are supposed to stop when the queue is empty and there are no more jobs, abort
-                if this.getFlag(this.stopOnEmptyQueueRequested) {
-                    break;
-                }
-            }
-            // Yield to other threads
-            yield();
-        } while !this.getFlag(this.stopRequested);
+        p() task;
+        while this.waitForNextJob(task) {
+            task();
+            this.finishJob();
+        }
     };
 
     // Create worker threads. Reserve the storage upfront, so that running threads are never relocated
@@ -104,7 +88,7 @@ public p ThreadPool.join() {
  */
 public p ThreadPool.enqueue(const p()& job) {
     // Take ownership of the captures of the job, since it might run after the frame, that created it, was left
-    LockGuard _ = LockGuard(this.queueMutex);
+    LockGuard _ = LockGuard(this.mutex);
     this.queuedJobs.pushBack(Lambda<p()>(job));
 }
 
@@ -114,7 +98,7 @@ public p ThreadPool.enqueue(const p()& job) {
  * @param job The job routine to enqueue.
  */
 public p ThreadPool.enqueue(const Lambda<p()>& job) {
-    LockGuard _ = LockGuard(this.queueMutex);
+    LockGuard _ = LockGuard(this.mutex);
     this.queuedJobs.pushBack(job);
 }
 
@@ -136,21 +120,23 @@ public p ThreadPool.resume() {
  * Check if the thread pool is paused.
  */
 public f<bool> ThreadPool.isPaused() {
-    return this.getFlag(this.pauseRequested);
+    LockGuard _ = LockGuard(this.mutex);
+    return this.pauseRequested;
 }
 
 /**
  * Retrieve the number of jobs that are currently running.
  */
 public f<unsigned short> ThreadPool.getRunningJobCount() {
-    return this.runningJobs.load();
+    LockGuard _ = LockGuard(this.mutex);
+    return this.runningJobs;
 }
 
 /**
  * Retrieve the number of jobs that are currently queued.
  */
 public f<unsigned short> ThreadPool.getQueuedJobCount() {
-    LockGuard _ = LockGuard(this.queueMutex);
+    LockGuard _ = LockGuard(this.mutex);
     return cast<unsigned short>(this.queuedJobs.getSize() - this.nextJobIndex);
 }
 
@@ -171,7 +157,7 @@ p ThreadPool.joinWorkerThreads() {
     // The joined threads must not be joined again, so they are dropped. This way, the pool can be started again.
     this.workerThreads.clear();
     // Drop the jobs, that were already taken, if the queue was drained
-    LockGuard _ = LockGuard(this.queueMutex);
+    LockGuard _ = LockGuard(this.mutex);
     if this.nextJobIndex == this.queuedJobs.getSize() {
         this.queuedJobs.clear();
         this.nextJobIndex = 0ul;
@@ -179,37 +165,57 @@ p ThreadPool.joinWorkerThreads() {
 }
 
 /**
- * Take the next job off the queue and count it as running.
+ * Wait until the worker thread can take the next job off the queue or has to exit. Checking the flags and taking a job
+ * happens under the same lock, so that two workers can never race for the same job and a worker never exits, while the
+ * state it decided on changes.
  *
- * @param task Job routine, if there was a queued job
- * @return True if a job was taken, false if the queue is empty
+ * @param task Job routine, if a job was taken
+ * @return True if a job was taken and counted as running, false if the worker thread has to exit
  */
-f<bool> ThreadPool.takeNextJob(p()& task) {
-    LockGuard _ = LockGuard(this.queueMutex);
-    if this.nextJobIndex >= this.queuedJobs.getSize() {
-        return false;
+f<bool> ThreadPool.waitForNextJob(p()& task) {
+    bool decided = false;
+    bool jobTaken = false;
+    while !decided {
+        {
+            LockGuard _ = LockGuard(this.mutex);
+            if this.stopRequested {
+                decided = true;
+            } else if !this.pauseRequested {
+                if this.nextJobIndex < this.queuedJobs.getSize() {
+                    // The job stays owned by the queue, which keeps its captures alive while it runs. Relocating the queue
+                    // keeps the captures in place, so enqueueing more jobs meanwhile is fine.
+                    Lambda<p()>& job = this.queuedJobs.get(this.nextJobIndex);
+                    task = job.get();
+                    this.nextJobIndex++;
+                    this.runningJobs++;
+                    decided = true;
+                    jobTaken = true;
+                } else if this.stopOnEmptyQueueRequested {
+                    // We are supposed to stop when the queue is empty and there are no more jobs
+                    decided = true;
+                }
+            }
+        }
+        // Yield to other threads while waiting
+        if !decided {
+            yield();
+        }
     }
-    // The job stays owned by the queue, which keeps its captures alive while it runs. Relocating the queue keeps the
-    // captures in place, so enqueueing more jobs meanwhile is fine.
-    Lambda<p()>& job = this.queuedJobs.get(this.nextJobIndex);
-    task = job.get();
-    this.nextJobIndex++;
-    this.runningJobs.fetchAdd(1s);
-    return true;
+    return jobTaken;
 }
 
 /**
- * Read a control flag of the pool.
+ * Count a job, that was taken via waitForNextJob, as done.
  */
-f<bool> ThreadPool.getFlag(const bool& flag) {
-    LockGuard _ = LockGuard(this.flagMutex);
-    return flag;
+p ThreadPool.finishJob() {
+    LockGuard _ = LockGuard(this.mutex);
+    this.runningJobs--;
 }
 
 /**
  * Write a control flag of the pool.
  */
 p ThreadPool.setFlag(bool& flag, bool value) {
-    LockGuard _ = LockGuard(this.flagMutex);
+    LockGuard _ = LockGuard(this.mutex);
     flag = value;
 }
