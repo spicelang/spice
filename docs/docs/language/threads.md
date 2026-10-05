@@ -193,6 +193,31 @@ f<int> main() {
 Because both threads increment `this.value` under the same `LockGuard`, no updates are lost. Without the mutex,
 the read-modify-write of `this.value++` would race and the final count would be less than `20000`.
 
+### Recursive mutexes
+
+A plain `Mutex` deadlocks, if the thread, that already holds it, tries to acquire it again. This can happen when a function
+takes a lock and calls code, that takes the same lock (e.g. a recursive function over shared data). For these cases, the
+`std/os/recursive-mutex` module provides a `RecursiveMutex`: the thread, that holds it, can acquire it again, and it is
+released for other threads as soon as it was released as often as it was acquired. `RecursiveLockGuard` is the
+matching RAII guard.
+
+```spice
+import "std/os/recursive-mutex";
+
+type Tree struct {
+    RecursiveMutex m
+    int nodeCount = 0
+}
+
+p Tree.addNodes(int count) {
+    RecursiveLockGuard _ = RecursiveLockGuard(this.m);
+    this.nodeCount++;
+    if count > 1 {
+        this.addNodes(count - 1); // Acquires the mutex again, without deadlocking
+    }
+}
+```
+
 ## Message queues
 
 The `std/os/message-queue` module provides a `MessageQueue<T>` type for passing values between threads. It is a
