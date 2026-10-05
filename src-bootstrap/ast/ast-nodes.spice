@@ -3265,8 +3265,8 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                     return compileTimeValue;
                 }
             }
-            // Return 'false' (mirrors the host)
-            compileTimeValue.setBoolValue(false);
+            // All operands evaluate to 'true'
+            compileTimeValue.setBoolValue(true);
             return compileTimeValue;
         }
         case ASTNodeKind::BITWISE_OR_EXPR, ASTNodeKind::BITWISE_XOR_EXPR, ASTNodeKind::BITWISE_AND_EXPR: {

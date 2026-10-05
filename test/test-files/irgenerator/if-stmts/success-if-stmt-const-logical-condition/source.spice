@@ -1,0 +1,46 @@
+type Config struct {
+    bool enabled = true && true && true
+    bool disabled = true && false && true
+}
+
+// The loop condition is always true, so the function returns on all control paths
+f<int> getValue() {
+    while true && 1 < 2 {
+        return 7;
+    }
+}
+
+f<int> main() {
+    // Branches, that are never taken, are not compiled
+    if true && true {
+        printf("Two true operands\n");
+    } else {
+        this.branch.is.not.compiled();
+    }
+    if true && 1 < 2 && 3 >= 3 {
+        printf("Three true operands\n");
+    } else {
+        this.branch.is.not.compiled();
+    }
+    if true && false && true {
+        this.branch.is.not.compiled();
+    } else {
+        printf("One false operand\n");
+    }
+    if false || 2 > 1 || false {
+        printf("One true operand\n");
+    } else {
+        this.branch.is.not.compiled();
+    }
+
+    // Assertions with constant conditions
+    assert true && true;
+    assert 1 < 2 && 2 > 1 && 2 <= 2 && 3 >= 2;
+
+    // Field default values
+    const Config config;
+    assert config.enabled;
+    assert !config.disabled;
+
+    printf("Value: %d\n", getValue());
+}
