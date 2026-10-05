@@ -1,9 +1,7 @@
 import "std/os/thread";
 import "std/data/vector";
-import "std/data/optional";
 import "std/os/atomic";
 import "std/os/cpu";
-import "std/os/message-queue";
 import "std/os/mutex";
 import "std/os/system";
 import "std/type/lambda";
@@ -16,7 +14,11 @@ import "std/type/lambda";
  */
 public type ThreadPool struct {
     Vector<Thread> workerThreads
-    MessageQueue<Lambda<p()>> queuedJobs
+    // The queued jobs are taken in order. The jobs before nextJobIndex were already taken by a worker thread. The queue is
+    // shared between the worker threads and the controlling thread, so it is guarded by a mutex
+    Mutex queueMutex
+    Vector<Lambda<p()>> queuedJobs
+    unsigned long nextJobIndex = 0ul
     Atomic<unsigned short> runningJobs
     unsigned short workerThreadCount
     // The control flags are written by the controlling thread and read by the worker threads, so they are guarded by a mutex
@@ -33,7 +35,6 @@ public type ThreadPool struct {
  */
 public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
     this.workerThreads = Vector<Thread>();
-    this.queuedJobs = MessageQueue<Lambda<p()>>();
     this.runningJobs = Atomic<unsigned short>(0s);
     this.workerThreadCount = workerThreadCount > 0s ? workerThreadCount : cast<unsigned short>(getCPUCoreCount());
 }
@@ -47,11 +48,8 @@ public p ThreadPool.start() {
             if !this.getFlag(this.pauseRequested) {
                 // Take the next job off the queue. Checking for and taking a job happens atomically, so that two workers can
                 // never race for the same job.
-                Optional<Lambda<p()>> job = this.queuedJobs.tryPop();
-                if job.isPresent() {
-                    this.runningJobs.fetchAdd(1s);
-                    Lambda<p()>& jobLambda = job.get();
-                    p() task = jobLambda.get();
+                p() task;
+                if this.takeNextJob(task) {
                     task();
                     this.runningJobs.fetchSub(1s);
                     continue;
@@ -106,7 +104,8 @@ public p ThreadPool.join() {
  */
 public p ThreadPool.enqueue(const p()& job) {
     // Take ownership of the captures of the job, since it might run after the frame, that created it, was left
-    this.queuedJobs.push(Lambda<p()>(job));
+    LockGuard _ = LockGuard(this.queueMutex);
+    this.queuedJobs.pushBack(Lambda<p()>(job));
 }
 
 /**
@@ -115,7 +114,8 @@ public p ThreadPool.enqueue(const p()& job) {
  * @param job The job routine to enqueue.
  */
 public p ThreadPool.enqueue(const Lambda<p()>& job) {
-    this.queuedJobs.push(job);
+    LockGuard _ = LockGuard(this.queueMutex);
+    this.queuedJobs.pushBack(job);
 }
 
 /**
@@ -150,7 +150,8 @@ public f<unsigned short> ThreadPool.getRunningJobCount() {
  * Retrieve the number of jobs that are currently queued.
  */
 public f<unsigned short> ThreadPool.getQueuedJobCount() {
-    return cast<unsigned short>(this.queuedJobs.getSize());
+    LockGuard _ = LockGuard(this.queueMutex);
+    return cast<unsigned short>(this.queuedJobs.getSize() - this.nextJobIndex);
 }
 
 /**
@@ -169,6 +170,32 @@ p ThreadPool.joinWorkerThreads() {
     }
     // The joined threads must not be joined again, so they are dropped. This way, the pool can be started again.
     this.workerThreads.clear();
+    // Drop the jobs, that were already taken, if the queue was drained
+    LockGuard _ = LockGuard(this.queueMutex);
+    if this.nextJobIndex == this.queuedJobs.getSize() {
+        this.queuedJobs.clear();
+        this.nextJobIndex = 0ul;
+    }
+}
+
+/**
+ * Take the next job off the queue and count it as running.
+ *
+ * @param task Job routine, if there was a queued job
+ * @return True if a job was taken, false if the queue is empty
+ */
+f<bool> ThreadPool.takeNextJob(p()& task) {
+    LockGuard _ = LockGuard(this.queueMutex);
+    if this.nextJobIndex >= this.queuedJobs.getSize() {
+        return false;
+    }
+    // The job stays owned by the queue, which keeps its captures alive while it runs. Relocating the queue keeps the
+    // captures in place, so enqueueing more jobs meanwhile is fine.
+    Lambda<p()>& job = this.queuedJobs.get(this.nextJobIndex);
+    task = job.get();
+    this.nextJobIndex++;
+    this.runningJobs.fetchAdd(1s);
+    return true;
 }
 
 /**
