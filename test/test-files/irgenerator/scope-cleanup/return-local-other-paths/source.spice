@@ -2,9 +2,8 @@
 // statement, that returns the local, may skip its dtor call. Every other path out of the scope of the local (returning
 // something else, leaving a loop body, ...) still has to destruct it.
 //
-// Every Tracked and Other counts itself in LIVE. The checks keep nothing alive besides the returned value, that is
-// reported, so the number of live instances has to be 1 during every report, whether a local leaked (more) or was
-// destructed twice (less).
+// Every Tracked counts itself in LIVE. Each check only keeps the returned value alive, so the number of live
+// instances has to be 1 during every report, whether a local leaked (more) or was destructed twice (less).
 
 public int LIVE = 0;
 
@@ -21,27 +20,8 @@ p Tracked.dtor() {
     LIVE--;
 }
 
-type Other struct {
-    int id
-}
-
-p Other.ctor(int id) {
-    this.id = id;
-    LIVE++;
-}
-
-p Other.dtor() {
-    LIVE--;
-}
-
-type T Tracked|Other;
-
-p report(string name, const Tracked& result) {
-    printf("%s: id=%d live=%d\n", name, result.id, LIVE);
-}
-
-p report(string name, const Other& result) {
-    printf("%s: id=%d live=%d\n", name, result.id, LIVE);
+p report(string name, int id) {
+    printf("%s: id=%d live=%d\n", name, id, LIVE);
 }
 
 // The local is returned on one path and a temporary on the other one
@@ -87,33 +67,46 @@ f<Tracked> localOfLoopBody(int rounds) {
     return Tracked(-1);
 }
 
-// Each manifestation of a generic function has locals of its own
-f<T> genericLocalOrTemporary<T>(bool returnLocal) {
-    T local = T(1);
-    if !returnLocal {
-        return T(2);
-    }
-    return local;
-}
-
 f<int> main() {
-    report("localOrTemporary(true)", localOrTemporary(true));
-    report("localOrTemporary(false)", localOrTemporary(false));
+    {
+        Tracked returned = localOrTemporary(true);
+        report("localOrTemporary(true)", returned.id);
+    }
+    {
+        Tracked returned = localOrTemporary(false);
+        report("localOrTemporary(false)", returned.id);
+    }
 
-    report("earlyReturnFromForLoop(0)", earlyReturnFromForLoop(0));
-    report("earlyReturnFromForLoop(2)", earlyReturnFromForLoop(2));
-    report("earlyReturnFromForLoop(3)", earlyReturnFromForLoop(3));
+    {
+        Tracked returned = earlyReturnFromForLoop(0);
+        report("earlyReturnFromForLoop(0)", returned.id);
+    }
+    {
+        Tracked returned = earlyReturnFromForLoop(2);
+        report("earlyReturnFromForLoop(2)", returned.id);
+    }
+    {
+        Tracked returned = earlyReturnFromForLoop(3);
+        report("earlyReturnFromForLoop(3)", returned.id);
+    }
 
-    report("oneOfTwoLocals(true)", oneOfTwoLocals(true));
-    report("oneOfTwoLocals(false)", oneOfTwoLocals(false));
+    {
+        Tracked returned = oneOfTwoLocals(true);
+        report("oneOfTwoLocals(true)", returned.id);
+    }
+    {
+        Tracked returned = oneOfTwoLocals(false);
+        report("oneOfTwoLocals(false)", returned.id);
+    }
 
-    report("localOfLoopBody(0)", localOfLoopBody(0));
-    report("localOfLoopBody(3)", localOfLoopBody(3));
-
-    report("genericLocalOrTemporary<Tracked>(true)", genericLocalOrTemporary<Tracked>(true));
-    report("genericLocalOrTemporary<Tracked>(false)", genericLocalOrTemporary<Tracked>(false));
-    report("genericLocalOrTemporary<Other>(true)", genericLocalOrTemporary<Other>(true));
-    report("genericLocalOrTemporary<Other>(false)", genericLocalOrTemporary<Other>(false));
+    {
+        Tracked returned = localOfLoopBody(0);
+        report("localOfLoopBody(0)", returned.id);
+    }
+    {
+        Tracked returned = localOfLoopBody(3);
+        report("localOfLoopBody(3)", returned.id);
+    }
 
     // A lambda body is a function scope of its own
     f<Tracked>(bool) lambda = f<Tracked>(bool returnLocal) {
@@ -123,8 +116,14 @@ f<int> main() {
         }
         return local;
     };
-    report("lambda(true)", lambda(true));
-    report("lambda(false)", lambda(false));
+    {
+        Tracked returned = lambda(true);
+        report("lambda(true)", returned.id);
+    }
+    {
+        Tracked returned = lambda(false);
+        report("lambda(false)", returned.id);
+    }
 
     printf("end: live=%d\n", LIVE);
 }

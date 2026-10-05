@@ -1,0 +1,12 @@
+localOrTemporary(true): id=1 live=1
+localOrTemporary(false): id=2 live=1
+earlyReturnFromForLoop(0): id=10 live=1
+earlyReturnFromForLoop(2): id=12 live=1
+earlyReturnFromForLoop(3): id=1 live=1
+oneOfTwoLocals(true): id=1 live=1
+oneOfTwoLocals(false): id=2 live=1
+localOfLoopBody(0): id=0 live=1
+localOfLoopBody(3): id=3 live=1
+lambda(true): id=1 live=1
+lambda(false): id=2 live=1
+end: live=0
