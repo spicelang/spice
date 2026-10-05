@@ -164,6 +164,7 @@ public:
                             bool keepNewOnCollision = true, SymbolTableEntry *importEntry = nullptr);
   [[nodiscard]] const NameRegistryEntry *getNameRegistryEntry(const std::string &symbolName) const;
   [[nodiscard]] bool isAmbiguousName(const std::string &symbolName) const;
+  [[nodiscard]] bool isStructKnownByNameRegistry(Scope *bodyScope, const std::string &structName) const;
   [[nodiscard]] std::string getAmbiguousNameMessage(const std::string &symbolName) const;
   [[nodiscard]] llvm::Type *getLLVMType(const Type *type);
   void checkForSoftErrors() const;
@@ -217,6 +218,8 @@ private:
   GlobalResourceManager &resourceManager;
   const CliOptions &cliOptions;
   std::unordered_map<const Type *, llvm::Type *> typeToLLVMTypeMapping;
+  // Number of name registry entries per target entry, to answer isStructKnownByNameRegistry without scanning the registry
+  std::unordered_map<const SymbolTableEntry *, size_t> nameRegistryTargetEntryCounts;
   uint8_t importedRuntimeModules = 0;
   uint8_t totalTypeCheckerRuns = 0;
   // Cycle-safety guards: the pipeline drivers recurse over a dependency graph that may contain cycles (circular
@@ -231,6 +234,8 @@ private:
   bool haveAllDependantsBeenTypeChecked() const;
   void lookupCache();
   [[nodiscard]] bool dependsOn(const SourceFile *other) const;
+  void trackNameRegistryTargetEntry(const SymbolTableEntry *targetEntry);
+  void untrackNameRegistryTargetEntry(const SymbolTableEntry *targetEntry);
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void mergeNameRegistriesRecursive();
   void dumpCacheStats();

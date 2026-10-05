@@ -1,0 +1,21 @@
+type T dyn;
+
+public type Item struct {
+    public int a
+}
+
+public type Box<T> struct {
+    public T value
+}
+
+public f<Item> makeItem1(int a) {
+    return Item{a};
+}
+
+public f<Box<Item>> boxItem(const Item& item) {
+    return Box<Item>{item};
+}
+
+public f<int> getA(const Item& item) {
+    return item.a;
+}
