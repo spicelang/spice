@@ -55,10 +55,18 @@ public p TPDEObjectEmitter.emit(const FilePath& objectPath) {
         raiseObjectEmitterError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, message);       // GCOV_EXCL_LINE
     } // GCOV_EXCL_LINE
     File file = fileResult.unwrap();
+    bool writeFailed = false;
     foreach byte objByte : objBytes {
-        file.write(cast<char>(objByte));
+        if !file.write(cast<char>(objByte)) {
+            writeFailed = true; // GCOV_EXCL_LINE
+            break;              // GCOV_EXCL_LINE
+        } // GCOV_EXCL_LINE
     }
-    file.close();
+    const bool closeFailed = !file.close();
+    if writeFailed || closeFailed {
+        const String message = "File '" + String(objectPathString) + "' could not be written"; // GCOV_EXCL_LINE
+        raiseObjectEmitterError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, message);        // GCOV_EXCL_LINE
+    } // GCOV_EXCL_LINE
 }
 
 public p TPDEObjectEmitter.getASMString(String& output) {
