@@ -1,0 +1,14 @@
+normal(a/./b/../c) = a/c
+normal(../a/b/../../..) = ../..
+normal(/a/../../b/) = /b
+normal(./) = .
+normal(C:\dir\..\file.spice) = C:/file.spice
+relative(/a/b/c.spice, /a) = 'b/c.spice'
+relative(/a/b/c.spice, /a/d/e) = '../../b/c.spice'
+relative(/a/b, /a/b) = '.'
+relative(a/b, /a/b) = ''
+relative(C:/dir/file.spice, D:/dir) = ''
+relative(C:\dir\sub\file.spice, C:/dir/other) = '../sub/file.spice'
+working dir is absolute: 1
+relative(<cwd>/sub/../dir/file.spice) = dir/file.spice
+relative(dir/./file.spice) = dir/file.spice

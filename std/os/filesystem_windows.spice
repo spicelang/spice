@@ -27,3 +27,22 @@ public f<string> getTempDir() {
     }
     return FALLBACK_TEMP_DIR;
 }
+
+// Link external functions
+ext f<string> _getcwd(string /*buf*/, int /*size*/);
+
+// Size of the buffer for the current working directory
+const int CWD_BUFFER_SIZE = 4096;
+
+/**
+ * Retrieve the current working directory of the process
+ *
+ * @return Absolute path of the current working directory, or an empty string if it could not be determined
+ */
+public f<String> getCurrentWorkingDir() {
+    char[4096] buffer;
+    unsafe {
+        const string cwd = _getcwd(cast<string>(&buffer), CWD_BUFFER_SIZE);
+        return cwd != nil<string> ? String(cwd) : String();
+    }
+}

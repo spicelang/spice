@@ -1,5 +1,7 @@
 import "std/os/os";
 import "std/io/file";
+import "std/data/vector";
+import "std/os/filesystem";
 import "std/io/impl/filepath_native";
 
 const char PATH_SEPARATOR_UNIX = '/';
@@ -359,6 +361,158 @@ public f<bool> FilePath.equivalent(const FilePath& other) {
         return false;
     }
     return a == b;
+}
+
+/**
+ * Lexically normalizes the path, like std::filesystem::path::lexically_normal: the separators are made generic ('/'), '.'
+ * and empty components are dropped and '..' components are resolved against the preceding component. '..' components at
+ * the start of a relative path are kept and '..' components directly after the root are dropped. The file system is not
+ * accessed, so symlinks are not resolved.
+ *
+ * @return The normalized path. '.' for an empty result of a relative path
+ */
+public f<FilePath> FilePath.lexicallyNormal() {
+    String root;
+    Vector<String> components;
+    splitPathComponents(this.path, root, components);
+
+    Vector<String> normalized;
+    foreach const String& component : components {
+        if component == ".." {
+            if !normalized.isEmpty() && normalized.back() != ".." {
+                normalized.popBack();
+            } else if root.isEmpty() {
+                normalized.pushBack(component);
+            }
+            // '..' directly after the root refers to the root itself
+        } else {
+            normalized.pushBack(component);
+        }
+    }
+    return FilePath(joinPathComponents(root, normalized, 0l));
+}
+
+/**
+ * Computes the path relative to the given base path, purely lexically, like std::filesystem::path::lexically_relative.
+ * Both paths are normalized first. The file system is not accessed, so symlinks are not resolved.
+ *
+ * @param base Base path
+ * @return The relative path, '.' if both paths are equal, or an empty path if the roots of both paths differ (e.g. one is
+ *         absolute and the other is not, or they are on different drives)
+ */
+public f<FilePath> FilePath.lexicallyRelative(const FilePath& base) {
+    const FilePath normalizedPath = this.lexicallyNormal();
+    const FilePath normalizedBase = base.lexicallyNormal();
+    String pathRoot;
+    Vector<String> pathComponents;
+    splitPathComponents(normalizedPath.path, pathRoot, pathComponents);
+    String baseRoot;
+    Vector<String> baseComponents;
+    splitPathComponents(normalizedBase.path, baseRoot, baseComponents);
+    if pathRoot != baseRoot {
+        return FilePath();
+    }
+
+    // Skip the common prefix
+    unsigned long commonCount = 0l;
+    while commonCount < pathComponents.getSize() && commonCount < baseComponents.getSize() &&
+            pathComponents.get(commonCount) == baseComponents.get(commonCount) {
+        commonCount++;
+    }
+
+    // Go up for each remaining component of the base, then down the remaining components of the path
+    Vector<String> relativeComponents;
+    for unsigned long i = commonCount; i < baseComponents.getSize(); i++ {
+        relativeComponents.pushBack(String(".."));
+    }
+    for unsigned long i = commonCount; i < pathComponents.getSize(); i++ {
+        relativeComponents.pushBack(pathComponents.get(i));
+    }
+    return FilePath(joinPathComponents(String(), relativeComponents, 0l));
+}
+
+/**
+ * Computes the path relative to the current working directory, like std::filesystem::relative. Both the path and the
+ * working directory are made absolute and canonical, if they exist. Otherwise, they are only normalized lexically.
+ *
+ * @return The relative path, or an empty path if it could not be determined (e.g. the path is on another drive)
+ */
+public f<FilePath> FilePath.relative() {
+    const FilePath workingDir = FilePath(getCurrentWorkingDir());
+    if workingDir.isEmpty() {
+        return FilePath();
+    }
+    String root;
+    Vector<String> components;
+    splitPathComponents(this.path, root, components);
+    const FilePath absolutePath = root.isEmpty() ? workingDir / *this : *this;
+    const FilePath canonicalPath = weaklyCanonical(absolutePath);
+    return canonicalPath.lexicallyRelative(weaklyCanonical(workingDir));
+}
+
+/**
+ * Resolve the path canonically, if it exists. Otherwise, normalize it lexically.
+ *
+ * @param path Path to resolve
+ * @return Resolved path
+ */
+f<FilePath> weaklyCanonical(const FilePath& path) {
+    const FilePath canonicalPath = path.canonical();
+    return canonicalPath.isEmpty() ? path.lexicallyNormal() : canonicalPath.lexicallyNormal();
+}
+
+/**
+ * Split a path into its root ('/' or a drive like 'C:/', empty for relative paths) and its non-empty components other than
+ * '.'. Both separators are accepted.
+ *
+ * @param path Path to split
+ * @param root Root of the path (output)
+ * @param components Components of the path (output)
+ */
+p splitPathComponents(const String& path, String& root, Vector<String>& components) {
+    String generic = path;
+    generic.replaceAll(PATH_SEPARATOR_WINDOWS, PATH_SEPARATOR_UNIX);
+    long start = 0l;
+    if generic.startsWith("/") {
+        root = String("/");
+        start = 1l;
+    } else if generic.getLength() >= 3l && generic[1l] == ':' && generic[2l] == PATH_SEPARATOR_UNIX {
+        root = generic.getSubstring(0l, 3l);
+        start = 3l;
+    }
+    while start <= generic.getLength() {
+        long sepIdx = generic.find(PATH_SEPARATOR_UNIX, start);
+        if sepIdx < 0l {
+            sepIdx = generic.getLength();
+        }
+        const String component = generic.getSubstring(start, sepIdx - start);
+        if !component.isEmpty() && component != "." {
+            components.pushBack(component);
+        }
+        start = sepIdx + 1l;
+    }
+}
+
+/**
+ * Join a root and path components with generic separators.
+ *
+ * @param root Root of the path, empty for relative paths
+ * @param components Components to join
+ * @param startIdx Index of the first component to join
+ * @return Joined path. '.' if both the root and the components are empty
+ */
+f<String> joinPathComponents(const String& root, const Vector<String>& components, unsigned long startIdx) {
+    String joined = root;
+    for unsigned long i = startIdx; i < components.getSize(); i++ {
+        if i > startIdx {
+            joined += PATH_SEPARATOR_UNIX;
+        }
+        joined += components.get(i);
+    }
+    if joined.isEmpty() {
+        joined = String(".");
+    }
+    return joined;
 }
 
 #[test, test.name="FilePath path-safety Smoke test"]

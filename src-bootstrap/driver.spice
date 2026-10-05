@@ -259,7 +259,14 @@ public f<int> Driver.parse(int argc, string[] argv) {
 public p Driver.enrich() {
     // Make path of given main source file canonical and relative
     this.cliOptions.mainSourceFile.makeGeneric();
-    // ToDo: Make path relative
+    if !this.dryRun {
+        // Like std::filesystem::relative in the host, FilePath.relative() returns an empty path if there is no relative path
+        // (e.g. the file is on another drive than the working directory). Unlike the host, keep the path as it is then.
+        const FilePath relativeMainSourceFile = this.cliOptions.mainSourceFile.relative();
+        if !relativeMainSourceFile.isEmpty() {
+            this.cliOptions.mainSourceFile = relativeMainSourceFile;
+        }
+    }
 
     // Propagate llvm args to llvm
     if !this.cliOptions.llvmArgs.isEmpty() {
