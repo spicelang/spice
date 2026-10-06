@@ -33,6 +33,12 @@ You don't have to pull the image first. You also can skip this step.
     docker run --rm -it -v ${pwd}:/spice/out ghcr.io/spicelang/spice
     ```
 
+The image also contains the experimental self-hosted bootstrap compiler, which is written in Spice itself. To use it
+instead of `spice`, override the entrypoint:
+```sh
+docker run --rm -it --entrypoint spice-bootstrap -v $(pwd):/spice/out chillibits/spice
+```
+
 ### Customize
 #### Custom output path
 You can use another output path by replacing `$(pwd)`/`${pwd}` with a custom path.

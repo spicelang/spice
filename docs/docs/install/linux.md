@@ -72,3 +72,9 @@ all resources that Spice needs to run.
 ```sh
 spice [options] <input>
 ```
+
+The release also ships the self-hosted bootstrap compiler, which is written in Spice itself, as `spice-bootstrap`. It is
+experimental and does not support every feature of `spice` yet.
+```sh
+spice-bootstrap [options] <input>
+```
