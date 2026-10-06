@@ -4,15 +4,18 @@ version: 2
 project_name: spice
 
 builds:
-  - main: ./.github/media/dummy.go
-    goos:
+  # The host compiler (src/)
+  - id: spice
+    binary: spice
+    main: ./.github/media/dummy.go
+    goos: &goos
       - linux
       - windows
       - darwin
-    goarch:
+    goarch: &goarch
       - amd64
       - arm64
-    ignore:
+    ignore: &ignore
       # Only offer amd64 support on Windows
       - goos: windows
         goarch: arm64
@@ -22,6 +25,16 @@ builds:
     hooks:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
+  # The self-hosted bootstrap compiler (src-bootstrap/), that the compiler jobs build with the host compiler
+  - id: spice-bootstrap
+    binary: spice-bootstrap
+    main: ./.github/media/dummy.go
+    goos: *goos
+    goarch: *goarch
+    ignore: *ignore
+    hooks:
+      post:
+        - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice-bootstrap{{ .Ext }} {{ .Path }}"
 
 upx:
   - enabled: true
@@ -166,6 +179,7 @@ homebrew_casks:
   - name: spice
     binaries:
       - spice
+      - spice-bootstrap
     homepage: https://www.spicelang.com
     description: Spice programming language.
     license: MIT
@@ -181,6 +195,7 @@ homebrew_casks:
       post:
         install: |
           system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice"]
+          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice-bootstrap"]
     caveats: |
       The Spice standard library is staged alongside the binary in the cask's
       staged path. If the compiler cannot locate it automatically, set:

@@ -25,8 +25,9 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else
-          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
+          # zlib, zstd and ncurses provide the static archives for linking the bootstrap compiler (see std/bindings/llvm).
+          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -99,9 +100,34 @@ jobs:
           cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
           cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
 
+      - name: Build bootstrap compiler
+        working-directory: build
+        env:
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: |
+          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built for the host
+          # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
+          export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-Wl,--end-group"
+          # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
+          ./spice build -O3 -lto --static --ignore-cache \
+            --build-var SPICE_VERSION="${{ github.ref_name }}" \
+            --build-var SPICE_GIT_HASH="${{ github.sha }}" \
+            --build-var SPICE_BUILT_BY="ghactions" \
+            --build-var SPICE_TARGET_OS="linux" \
+            --build-var SPICE_TARGET_ARCH="amd64" \
+            --output spice-bootstrap \
+            ../src-bootstrap/main.spice
+          chmod +x spice-bootstrap
+          ./spice-bootstrap --version
+
       - name: Run Checksec
         working-directory: build
-        run: checksec --file=./spice --output=json | jq
+        run: |
+          checksec --file=./spice --output=json | jq
+          checksec --file=./spice-bootstrap --output=json | jq
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -126,8 +152,9 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else
-          sudo apt-get install ninja-build uuid-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
+          # zlib, zstd and ncurses provide the static archives for linking the bootstrap compiler (see std/bindings/llvm).
+          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -200,9 +227,34 @@ jobs:
           cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
           cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
 
+      - name: Build bootstrap compiler
+        working-directory: build
+        env:
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: |
+          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built for the host
+          # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
+          export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-Wl,--end-group"
+          # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
+          ./spice build -O3 -lto --static --ignore-cache \
+            --build-var SPICE_VERSION="${{ github.ref_name }}" \
+            --build-var SPICE_GIT_HASH="${{ github.sha }}" \
+            --build-var SPICE_BUILT_BY="ghactions" \
+            --build-var SPICE_TARGET_OS="linux" \
+            --build-var SPICE_TARGET_ARCH="aarch64" \
+            --output spice-bootstrap \
+            ../src-bootstrap/main.spice
+          chmod +x spice-bootstrap
+          ./spice-bootstrap --version
+
       - name: Run Checksec
         working-directory: build
-        run: checksec --file=./spice --output=json | jq
+        run: |
+          checksec --file=./spice --output=json | jq
+          checksec --file=./spice-bootstrap --output=json | jq
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -294,6 +346,27 @@ jobs:
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
 
+      - name: Build bootstrap compiler
+        working-directory: build
+        run: |
+          # Forward slashes, like CMake hands these paths to the bootstrap compiler build in the C++ CI
+          $workspace = "${{ github.workspace }}" -replace '\\', '/'
+          $env:SPICE_STD_DIR = "$workspace/std"
+          $env:SPICE_BOOTSTRAP_DIR = "$workspace/src-bootstrap"
+          $env:LLVM_LIB_DIR = "$workspace/llvm/build/lib"
+          $env:LLVM_INCLUDE_DIRS = "-I$workspace/llvm/llvm/include -I$workspace/llvm/build/include"
+          # Linked statically like the host compiler, so it runs without the MinGW runtime DLLs
+          ./spice.exe build -O3 -lto --static --ignore-cache `
+            --build-var SPICE_VERSION="${{ github.ref_name }}" `
+            --build-var SPICE_GIT_HASH="${{ github.sha }}" `
+            --build-var SPICE_BUILT_BY="ghactions" `
+            --build-var SPICE_TARGET_OS="windows" `
+            --build-var SPICE_TARGET_ARCH="amd64" `
+            --output spice-bootstrap.exe `
+            ../src-bootstrap/main.spice
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          ./spice-bootstrap.exe --version
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -366,6 +439,28 @@ jobs:
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
+
+      - name: Build bootstrap compiler
+        working-directory: build
+        env:
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: |
+          # Linked dynamically like the host compiler, macOS does not support static executables
+          ./spice build -O3 -lto --ignore-cache \
+            --build-var SPICE_VERSION="${{ github.ref_name }}" \
+            --build-var SPICE_GIT_HASH="${{ github.sha }}" \
+            --build-var SPICE_BUILT_BY="ghactions" \
+            --build-var SPICE_TARGET_OS="macos" \
+            --build-var SPICE_TARGET_ARCH="aarch64" \
+            --output spice-bootstrap \
+            ../src-bootstrap/main.spice
+          chmod +x spice-bootstrap
+          ./spice-bootstrap --version
+          # The shared libraries it needs at runtime
+          otool -L spice-bootstrap
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
