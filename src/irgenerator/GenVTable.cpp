@@ -156,6 +156,8 @@ llvm::Function *IRGenerator::getOrCreateCovariantReturnThunk(const Function *met
   // this interface. Virtual calls expect the interface to be returned, which might be returned in another way than the
   // struct. Therefore, the VTable points to a thunk, that calls the method and returns the interface part of the struct.
   const std::string thunkName = target->getName().str() + ".covthunk";
+  // The result is handed out as non-const pointer, which misc-const-correctness does not recognize as pointee mutation
+  // NOLINTNEXTLINE(misc-const-correctness)
   if (llvm::Function *existing = module->getFunction(thunkName))
     return existing;
 

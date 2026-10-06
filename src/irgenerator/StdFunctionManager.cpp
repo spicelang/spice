@@ -233,6 +233,8 @@ llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type
 llvm::Function *StdFunctionManager::getSpiceFunction(const char *funcName, const QualType &returnType,
                                                      const std::vector<llvm::Type *> &args) const {
   // Check if function already exists in the current module
+  // The result is handed out as non-const pointer, which misc-const-correctness does not recognize as pointee mutation
+  // NOLINTNEXTLINE(misc-const-correctness)
   if (llvm::Function *fct = module->getFunction(funcName))
     return fct;
 

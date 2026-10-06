@@ -150,6 +150,8 @@ ReturnABIInfo ABIInfo::classifyReturnTypeWebAssembly(llvm::Type *type) const {
  * Get the integer type for the eightbyte at the given offset in the given type, like Clang's GetINTEGERTypeAtOffset
  */
 llvm::Type *ABIInfo::getIntegerTypeAtOffset(llvm::Type *type, uint64_t offset) const {
+  // The result is handed out as non-const pointer, which misc-const-correctness does not recognize as pointee mutation
+  // NOLINTNEXTLINE(misc-const-correctness)
   if (llvm::Type *scalarType = getScalarTypeAtOffset(type, offset)) {
     // Pointers and 64-bit integers fill the whole eightbyte
     if (scalarType->isPointerTy() || scalarType->isIntegerTy(64))
@@ -233,7 +235,7 @@ void ABIInfo::collectScalars(llvm::Type *type, uint64_t offset, // NOLINT(*-no-r
 uint64_t ABIInfo::getHomogeneousFPAggregateMemberCount(llvm::Type *type) const {
   std::vector<std::pair<llvm::Type *, uint64_t>> scalars;
   collectScalars(type, 0, scalars);
-  for (llvm::Type *scalarType : scalars | std::views::keys)
+  for (const llvm::Type *scalarType : scalars | std::views::keys)
     if (!scalarType->isDoubleTy())
       return 0;
   // There must not be any padding
