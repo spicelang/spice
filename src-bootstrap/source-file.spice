@@ -900,7 +900,7 @@ public p SourceFile.runBackEnd() {
         // Enter the parallel section before the worker threads start and leave it only after all of them were joined. The
         // host re-throws the error of the first failing source file here. The bootstrap compiler has no exceptions, so a
         // failing source file panics on its worker thread, which ends the process.
-        ParallelSection parallelSection;
+        ParallelSection _;
         threadPool.start();
         threadPool.join();
     } else {

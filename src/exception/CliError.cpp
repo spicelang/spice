@@ -29,12 +29,6 @@ const char *CliError::what() const noexcept { return errorMessage.c_str(); }
  */
 std::string CliError::getMessagePrefix(CliErrorType errorType) {
   switch (errorType) {
-  case INCOMPLETE_TARGET_TRIPLE:
-    return "Incomplete target triple";
-  case INVALID_TARGET_TRIPLE:
-    return "Invalid target triple";
-  case SOURCE_FILE_MISSING:
-    return "Source file missing";
   case INCOMPATIBLE_OPTIONS:
     return "Incompatible options";
   case NON_ZERO_EXIT_CODE:

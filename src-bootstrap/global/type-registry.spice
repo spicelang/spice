@@ -149,7 +149,7 @@ f<const Type*> TypeRegistry.getOrInsertType(const Type& candidate) {
     const Hash h = this.getTypeHash(candidate);
     const Type* candidatePtr = &candidate;
 
-    ConditionalLock lock = ConditionalLock(&this.typesMutex);
+    ConditionalLock _ = ConditionalLock(&this.typesMutex);
 
     if this.types.contains(h) {
         // Search the bucket for a structurally equal type

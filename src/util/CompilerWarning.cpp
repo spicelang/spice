@@ -82,8 +82,6 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
     return "Lambda violates async lambda capture rules";
   case UNINSTALL_FAILED:
     return "Uninstall failed";
-  case VERIFIER_DISABLED:
-    return "Verifier disabled";
   }
   assert_fail("Unknown warning"); // GCOV_EXCL_LINE
   return "Unknown warning";       // GCOV_EXCL_LINE
