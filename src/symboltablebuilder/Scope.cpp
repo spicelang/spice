@@ -153,7 +153,7 @@ void Scope::collectWarnings(std::vector<CompilerWarning> &warnings) const { // N
   for (const SymbolTableEntry &entry : symbolTable.symbols | std::views::values) {
     // Do not produce a warning if the symbol is used or has a special name
     const std::string &name = entry.name;
-    if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME))
+    if (entry.used || name.starts_with(UNUSED_VARIABLE_NAME) || name == THIS_VARIABLE_NAME)
       continue;
 
     const QualType entryType = entry.getQualType();

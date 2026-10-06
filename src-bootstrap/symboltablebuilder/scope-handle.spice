@@ -33,15 +33,6 @@ public p ScopeHandle.ctor(CompilerPass* pass, const String& childScopeId, ScopeT
     this.pass.changeToScope(currentScope.getChildScope(childScopeId), scopeType);
 }
 
-public p ScopeHandle.ctor(IRGenerator* generator, Scope* childScope, ScopeType scopeType, const ASTNode* node) {
-    assert scopeType != ScopeType::FUNC_PROC_BODY; // Functions/procedures manage scopes manually
-    this.pass = &generator.compilerPass;
-    this.scopeType = scopeType;
-    this.generator = generator;
-    this.pass.changeToScope(childScope, scopeType);
-    generator.diGenerator.pushLexicalBlock(node);
-}
-
 public p ScopeHandle.ctor(IRGenerator* generator, const String& childScopeId, ScopeType scopeType, const ASTNode* node) {
     assert scopeType != ScopeType::FUNC_PROC_BODY; // Functions/procedures manage scopes manually
     this.pass = &generator.compilerPass;

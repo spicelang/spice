@@ -37,13 +37,6 @@ const char *Lifecycle::getCurrentStateName() const {
 }
 
 /**
- * Check if the symbol is dead
- *
- * @return Dead or not
- */
-bool Lifecycle::isDead() const { return getCurrentState() == DEAD; }
-
-/**
  * Check if the symbol is declared
  *
  * @return Declared or not
@@ -56,13 +49,6 @@ bool Lifecycle::isDeclared() const { return getCurrentState() == DECLARED; }
  * @return Initialized or not
  */
 bool Lifecycle::isInitialized() const { return getCurrentState() == INITIALIZED; }
-
-/**
- * Check if the symbol was moved
- *
- * @return Moved or not
- */
-bool Lifecycle::wasMoved() const { return getCurrentState() == MOVED; }
 
 /**
  * Check if the symbol is in an owning state

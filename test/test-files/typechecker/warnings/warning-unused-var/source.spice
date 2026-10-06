@@ -1,4 +1,16 @@
+type Counter struct {
+    int count
+}
+
+// No warning for the unused 'this' parameter
+p Counter.reset() {
+    printf("reset\n");
+}
+
 f<int> main() {
     int unusedVar = 12; // warning
     double _ = 13.34;   // no warning
+    Counter counter = Counter{0};
+    counter.reset();
+    printf("%d", counter.count);
 }

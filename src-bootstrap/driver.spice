@@ -68,8 +68,7 @@ public type OutputContainer enum {
     EXECUTABLE = 0,     // On Linux and macOS no extension, on Windows .exe files
     OBJECT_FILE = 1,    // On Linux and macOS .o files and on Windows .obj files
     STATIC_LIBRARY = 2, // On Linux and macOS .a files and on Windows .lib files
-    SHARED_LIBRARY = 3, // On Linux .so, on macOS .dylib and on Windows .dll files
-    MAX
+    SHARED_LIBRARY = 3 // On Linux .so, on macOS .dylib and on Windows .dll files
 }
 const string OUTPUT_CONTAINER_EXECUTABLE = "exec";
 const string OUTPUT_CONTAINER_OBJECT_FILE = "obj";

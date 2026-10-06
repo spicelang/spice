@@ -116,13 +116,6 @@ public f<SourceFile*> Scope.getSourceFile() {
 }
 
 /**
- * Get the parent scope (nil for the global scope)
- */
-public f<Scope*> Scope.getParent() {
-    return this.parent;
-}
-
-/**
  * Get the kind of this scope
  */
 public f<ScopeType> Scope.getScopeType() {
@@ -144,7 +137,7 @@ public p Scope.collectWarnings(Vector<CompilerWarning>& warnings) {
         const SymbolTableEntry& entry = symbol.getSecond();
         // Do not produce a warning if the symbol is used or has a special name
         const String& name = entry.name;
-        if entry.used || name.startsWith(UNUSED_VARIABLE_NAME) {
+        if entry.used || name.startsWith(UNUSED_VARIABLE_NAME) || name == THIS_VARIABLE_NAME {
             continue;
         }
 
