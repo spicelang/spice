@@ -36,7 +36,7 @@ else:
 
 # Step 2: clone LLVM
 log("[Step 2] Cloning LLVM (could take a while) ...")
-run("git", "clone", "--depth", "1", "--branch", "llvmorg-23.1.2",
+run("git", "clone", "--depth", "1", "--branch", "llvmorg-23.1.3",
     "https://github.com/llvm/llvm-project", "llvm")
 log("done.")
 
