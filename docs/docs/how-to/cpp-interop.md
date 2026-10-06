@@ -102,9 +102,11 @@ with the C ABI.
 
 ## Returning structs by value
 
-Structs, that are returned by value, follow the C calling convention of the target, exactly like Clang lowers them:
-small structs are returned in registers, larger ones via a hidden pointer to memory of the caller. Therefore, external
-C functions can return structs by value and Spice functions, that return structs, can be called from C:
+On x86-64 (Linux, macOS and Windows), AArch64 and WebAssembly, structs, that are returned by value, follow the C calling
+convention of the target, exactly like Clang lowers them: small structs are returned in registers, larger ones via a
+hidden pointer to memory of the caller. On all other targets, structs are always returned via memory, which can differ
+from the C calling convention. On the supported targets, external C functions can return structs by value and Spice
+functions, that return structs, can be called from C:
 
 ```spice
 type Point struct {
@@ -115,8 +117,9 @@ type Point struct {
 ext f<Point> getOrigin();
 ```
 
-!!! note "Passing structs to C functions"
-    Struct parameters are not lowered to the C calling convention yet. Pass pointers to structs to C functions instead.
+!!! note "Passing structs by value"
+    Struct parameters are not lowered to the C calling convention yet. This applies to Spice code calling C functions and
+    to C code calling Spice functions. Pass pointers to structs instead.
 
 ## Linking an external C library
 

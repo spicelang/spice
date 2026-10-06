@@ -100,7 +100,7 @@ std::any IRGenerator::visitMainFctDef(const MainFctDefNode *node) {
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     assert(paramSymbol != nullptr);
     // Decayed array params already carry the address of the array, so they do not need a local copy
-    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+    if (bindDecayedArrayParam(arg, argNumber, paramName, paramSymbol))
       continue;
     // Allocate space for it
     llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
@@ -253,7 +253,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
       auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
       assert(paramSymbol != nullptr);
       // Decayed array params already carry the address of the array, so they do not need a local copy
-      if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+      if (bindDecayedArrayParam(arg, argNumber, paramName, paramSymbol))
         continue;
       // Allocate space for it
       llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
@@ -402,7 +402,7 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
       auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
       assert(paramSymbol != nullptr);
       // Decayed array params already carry the address of the array, so they do not need a local copy
-      if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+      if (bindDecayedArrayParam(arg, argNumber, paramName, paramSymbol))
         continue;
       // Allocate space for it
       llvm::Value *paramAddress = insertAlloca(paramSymbol->getQualType(), paramName);
@@ -463,11 +463,13 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
  * address of the array, it can be used as the address of the parameter directly, without allocating a local copy.
  *
  * @param arg Argument of the LLVM function
+ * @param argNumber Index of the parameter in the source, which differs from the argument number if there is an sret parameter
  * @param paramName Name of the parameter
  * @param paramSymbol Symbol table entry of the parameter
  * @return Whether the argument was bound (false if the parameter does not carry a decayed array)
  */
-bool IRGenerator::bindDecayedArrayParam(llvm::Argument &arg, const std::string &paramName, const SymbolTableEntry *paramSymbol) {
+bool IRGenerator::bindDecayedArrayParam(llvm::Argument &arg, size_t argNumber, const std::string &paramName,
+                                        const SymbolTableEntry *paramSymbol) {
   if (paramSymbol == nullptr || !paramSymbol->getQualType().isDecayedArray())
     return false;
 
@@ -475,7 +477,7 @@ bool IRGenerator::bindDecayedArrayParam(llvm::Argument &arg, const std::string &
   updateAddress(paramSymbol, &arg);
   // Set source location and generate debug info to declare the variable
   diGenerator.setSourceLocation(paramSymbol->declNode);
-  diGenerator.generateLocalVarDebugInfo(paramName, &arg, arg.getArgNo() + 1);
+  diGenerator.generateLocalVarDebugInfo(paramName, &arg, argNumber + 1);
   return true;
 }
 

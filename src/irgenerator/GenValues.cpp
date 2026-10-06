@@ -648,7 +648,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
     const size_t argNumber = arg.getArgNo() - argOffset;
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     // Decayed array params already carry the address of the array, so they do not need a local copy
-    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+    if (bindDecayedArrayParam(arg, argNumber, paramName, paramSymbol))
       continue;
     // Allocate space for it
     llvm::Type *paramType = arg.getType();
@@ -804,7 +804,7 @@ std::any IRGenerator::visitLambdaProc(const LambdaProcNode *node) {
     const size_t argNumber = arg.getArgNo();
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     // Decayed array params already carry the address of the array, so they do not need a local copy
-    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+    if (bindDecayedArrayParam(arg, argNumber, paramName, paramSymbol))
       continue;
     // Allocate space for it
     llvm::Type *paramType = funcType->getParamType(argNumber);
@@ -960,7 +960,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
     const size_t argNumber = arg.getArgNo() - argOffset;
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     // Decayed array params already carry the address of the array, so they do not need a local copy
-    if (bindDecayedArrayParam(arg, paramName, paramSymbol))
+    if (bindDecayedArrayParam(arg, argNumber, paramName, paramSymbol))
       continue;
     // Allocate space for it
     llvm::Type *paramType = arg.getType();

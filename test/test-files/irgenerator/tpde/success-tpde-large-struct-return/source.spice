@@ -2,8 +2,8 @@
 
 // Regression test for returning structs by value under the TPDE backend.
 //
-// TPDE can only return values that fit into the return registers, so the TPDE emitter rewrites functions returning larger
-// aggregates to return them via an sret pointer. This covers small, large and mixed int/float structs, returned from
+// TPDE can only return values that fit into the return registers. The IR generator lowers larger aggregates to be
+// returned via an sret pointer, like Clang does it. This covers small, large and mixed int/float structs, returned from
 // functions, methods, generic functions and lambdas, called directly and via function pointers.
 
 type Small struct {

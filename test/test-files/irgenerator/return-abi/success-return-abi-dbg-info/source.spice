@@ -1,0 +1,20 @@
+// TEST: -g
+
+// The debug info of parameters of functions, that return via an sret pointer, uses the parameter index of the source.
+// A decayed array parameter followed by another parameter must not get conflicting argument numbers.
+
+type Large struct {
+    long a
+    long b
+    long c
+}
+
+f<Large> make(int[2] values, long offset) {
+    return Large{values[0] + offset, values[1] + offset, offset};
+}
+
+f<int> main() {
+    int[2] values = [1, 2];
+    const Large large = make(values, 3l);
+    printf("%d %d %d\n", large.a, large.b, large.c);
+}
