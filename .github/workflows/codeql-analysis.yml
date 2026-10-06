@@ -1,4 +1,3 @@
-# CodeQL workflow
 name: CodeQL
 
 on:

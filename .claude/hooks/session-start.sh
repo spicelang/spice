@@ -2,7 +2,7 @@
 # SessionStart hook for Claude Code on the web.
 # Installs the toolchain and gets LLVM 23 ready so the spicetest/spice CMake
 # targets can be configured immediately. Mirrors the Linux job in
-# .github/workflows/ci-cpp.yml. Idempotent: safe to re-run, and cheap on a
+# .github/workflows/ci.yml. Idempotent: safe to re-run, and cheap on a
 # cached container since it skips work that is already done.
 set -euo pipefail
 
@@ -18,7 +18,7 @@ LLVM_PKG_CMAKE_DIR="/usr/lib/llvm-${LLVM_MAJOR}/lib/cmake/llvm"
 LLVM_SRC_DIR="$CLAUDE_PROJECT_DIR/llvm"
 LLVM_BUILD_DIR="$LLVM_SRC_DIR/build"
 
-# 1. System dependencies (matches "Setup Dependencies" step in ci-cpp.yml,
+# 1. System dependencies (matches "Setup Dependencies" step in ci.yml,
 #    plus a few tools llvm.sh itself needs to add the apt.llvm.org repo).
 #    software-properties-common is installed first since it provides
 #    add-apt-repository itself, which a fresh image may not have yet.
@@ -93,7 +93,7 @@ else
 fi
 
 # 3. Persist LLVM_DIR for the rest of the session (matches the LLVM_DIR env
-#    var used by the "Build test target" step in ci-cpp.yml)
+#    var used by the "Build test target" step in ci.yml)
 echo "export LLVM_DIR=\"$LLVM_DIR\"" >> "$CLAUDE_ENV_FILE"
 
 # 4. Third-party deps (matches "Download Libs" step)

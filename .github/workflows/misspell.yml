@@ -1,4 +1,3 @@
-# Workflow to detect typos in docs and source code
 name: Misspell
 
 on:

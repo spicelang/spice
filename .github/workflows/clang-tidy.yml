@@ -1,4 +1,3 @@
-# Clang-Tidy CI
 name: Clang-Tidy
 
 on:

@@ -6,7 +6,7 @@
   <p align="center">
     <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/spicelang/spice?include_prereleases"></a>
     <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img alt="Docker pulls" src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
-	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml"><img alt="CI status" src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
+	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci.yml"><img alt="CI status" src="https://github.com/spicelang/spice/actions/workflows/ci.yml/badge.svg"></a>
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml"><img alt="CodeQL status" src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/ci-asan.yml"><img alt="ASAN status" src="https://github.com/spicelang/spice/actions/workflows/ci-asan.yml/badge.svg"></a>
 	<a target="_blank" href="https://github.com/spicelang/spice/actions/workflows/valgrind.yml"><img alt="Valgrind status" src="https://github.com/spicelang/spice/actions/workflows/valgrind.yml/badge.svg"></a>

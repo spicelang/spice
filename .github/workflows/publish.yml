@@ -1,4 +1,3 @@
-# Publish Spice
 name: Release
 
 on:
@@ -353,7 +352,7 @@ jobs:
       - name: Build bootstrap compiler
         working-directory: build
         run: |
-          # Forward slashes, like CMake hands these paths to the bootstrap compiler build in the C++ CI
+          # Forward slashes, like CMake hands these paths to the bootstrap compiler build in the CI workflow
           $workspace = "${{ github.workspace }}" -replace '\\', '/'
           $env:SPICE_STD_DIR = "$workspace/std"
           $env:SPICE_BOOTSTRAP_DIR = "$workspace/src-bootstrap"
