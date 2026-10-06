@@ -2328,10 +2328,27 @@ public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
  * @return Has return value receiver or not
  */
 public f<bool> ASTFctCallNode.hasReturnValueReceiver() {
-    const ASTNode* current = this.parent;
+    ASTNode* current = this.parent;
     while current.kind != ASTNodeKind::ASSIGN_EXPR {
         if current.kind == ASTNodeKind::EXPR_STMT {
             return false;
+        }
+        // The call is (part of) an argument of another call, so the return value is used
+        if current.kind == ASTNodeKind::ARG_LST {
+            return true;
+        }
+        // Incrementing or decrementing the returned value counts as a use
+        if current.kind == ASTNodeKind::PREFIX_UNARY_EXPR {
+            const PrefixUnaryOp op = downcast<ASTPrefixUnaryExprNode>(current).op;
+            if op == PrefixUnaryOp::OP_PLUS_PLUS || op == PrefixUnaryOp::OP_MINUS_MINUS {
+                return true;
+            }
+        }
+        if current.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
+            const PostfixUnaryOp op = downcast<ASTPostfixUnaryExprNode>(current).op;
+            if op == PostfixUnaryOp::OP_PLUS_PLUS || op == PostfixUnaryOp::OP_MINUS_MINUS {
+                return true;
+            }
         }
         // As soon as we have a node with more than one child, we know that the return value is used
         if current.children.getSize() > 1l {
