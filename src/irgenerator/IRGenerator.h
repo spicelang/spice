@@ -8,6 +8,7 @@
 #include <CompilerPass.h>
 #include <ast/ASTNodes.h>
 #include <ast/ParallelizableASTVisitor.h>
+#include <irgenerator/ABIInfo.h>
 #include <irgenerator/DebugInfoGenerator.h>
 #include <irgenerator/MetadataGenerator.h>
 #include <irgenerator/OpRuleConversionManager.h>
@@ -157,6 +158,14 @@ public:
   // LLVM function management for Spice functions
   [[nodiscard]] llvm::Function *getLLVMFunction(const Function *spiceFunc);
   void setLLVMFunction(const Function *spiceFunc, llvm::Function *llvmFunction);
+  // ABI lowering of return values
+  [[nodiscard]] ReturnABIInfo getReturnABIInfo(const QualType &returnType) const;
+  [[nodiscard]] llvm::FunctionType *getFunctionType(const QualType &returnType, const std::vector<llvm::Type *> &paramTypes,
+                                                    bool isVarArg = false) const;
+  [[nodiscard]] unsigned int getArgOffset(const QualType &returnType) const;
+  llvm::CallInst *insertCall(llvm::FunctionCallee callee, std::vector<llvm::Value *> args, const QualType &returnType,
+                             llvm::Value *&resultAddr, llvm::Value *sretAddr = nullptr);
+  void insertReturn(llvm::Value *returnValue);
 
   // Builtin function handlers
   std::any visitBuiltinCall(const FctCallNode *node);
@@ -203,10 +212,15 @@ private:
   void unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType);
   bool bindDecayedArrayParam(llvm::Argument &arg, const std::string &paramName, const SymbolTableEntry *paramSymbol);
   llvm::Value *materializeDecayedArrayArg(llvm::Value *argValue, const QualType &paramType);
-  void setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const;
+  void setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo, unsigned int argOffset = 0) const;
   void setFunctionReturnValAttrs(llvm::Function *function, const QualType &returnType) const;
-  void setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes) const;
+  void setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes,
+                       unsigned int argOffset = 0) const;
   void setCallReturnValAttrs(llvm::CallInst *callInst, const QualType &returnType) const;
+  void addSRetParamAttrs(llvm::Function *function, llvm::Type *type) const;
+  void addSRetParamAttrs(llvm::CallInst *callInst, llvm::Type *type) const;
+  [[nodiscard]] static llvm::Argument *getSRetArg(llvm::Function *function);
+  llvm::AllocaInst *insertCoercionAlloca(llvm::Type *type, llvm::Type *coercedType);
   llvm::Attribute::AttrKind getExtAttrKindForType(const QualType &type) const;
   bool isSymbolDSOLocal(bool isPublic) const;
   llvm::GlobalValue::LinkageTypes getSymbolLinkageType(bool isPublic) const;
@@ -222,10 +236,8 @@ private:
   void generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope, const SymbolTableEntry *returnedLocal = nullptr);
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
   llvm::CallInst *generateFctCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
-  llvm::Value *generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const;
   void generateProcDeclAndCall(const Function *proc, const std::vector<llvm::Value *> &args) const;
-  void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor,
-                              const std::vector<llvm::Value *> &args);
+  void generateCtorOrDtorCall(const SymbolTableEntry *entry, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args);
   void generateCtorOrDtorCall(llvm::Value *structAddr, const Function *ctorOrDtor, const std::vector<llvm::Value *> &args) const;
   void generateDeallocCall(llvm::Value *variableAddress) const;
   llvm::Function *generateImplicitFunction(const std::function<void(void)> &generateBody, const Function *spiceFunc);
@@ -249,6 +261,7 @@ private:
   llvm::Constant *generateTypeInfo(StructBase *spiceStruct) const;
   llvm::Constant *generateVTable(StructBase *spiceStruct) const;
   void generateVTableInitializer(const StructBase *spiceStruct);
+  llvm::Function *getOrCreateCovariantReturnThunk(const Function *method, llvm::Function *target);
   llvm::StructType *getVTableType(const StructBase *spiceStruct) const;
   llvm::Constant *getVTableAddressPoint(const StructBase *spiceStruct) const;
 
@@ -259,6 +272,7 @@ private:
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
   llvm::Module *module;
+  ABIInfo abiInfo;
   OpRuleConversionManager conversionManager;
   const StdFunctionManager stdFunctionManager;
   DebugInfoGenerator diGenerator = DebugInfoGenerator(this);

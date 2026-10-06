@@ -14,12 +14,15 @@ namespace spice::compiler {
 // Forward declarations
 class Function;
 class GlobalResourceManager;
+class IRGenerator;
+class QualType;
 class SourceFile;
 
 class StdFunctionManager {
 public:
   // Constructors
-  StdFunctionManager(SourceFile *sourceFile, GlobalResourceManager &resourceManager, llvm::Module *module);
+  StdFunctionManager(SourceFile *sourceFile, GlobalResourceManager &resourceManager, llvm::Module *module,
+                     const IRGenerator *irGenerator);
 
   // Public methods for function retrieval
   [[nodiscard]] llvm::Function *getPrintfFct() const;
@@ -50,14 +53,16 @@ public:
 
 private:
   // Members
-  SourceFile *sourceFile;
   llvm::LLVMContext &context;
   llvm::IRBuilder<> &builder;
   llvm::Module *module;
+  const IRGenerator *irGenerator;
 
   // Private methods
   llvm::Function *getFunction(const char *funcName, llvm::Type *returnType, llvm::ArrayRef<llvm::Type *> args,
                               bool varArg = false) const;
+  [[nodiscard]] llvm::Function *getSpiceFunction(const char *funcName, const QualType &returnType,
+                                                 const std::vector<llvm::Type *> &args) const;
   [[nodiscard]] llvm::Function *getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args) const;
 };
 

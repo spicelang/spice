@@ -47,8 +47,8 @@ define internal void @_Z8activate14GtkApplicationPh(%struct.GtkApplication nound
   %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
   store %struct.GtkApplication %0, ptr %app, align 8
   store ptr %1, ptr %data, align 8
-  %3 = call noundef %struct.GtkWindow @_ZN14GtkApplication9newWindowEv(ptr noundef nonnull align 8 dereferenceable(8) %app)
-  store %struct.GtkWindow %3, ptr %window, align 8
+  %3 = call ptr @_ZN14GtkApplication9newWindowEv(ptr noundef nonnull align 8 dereferenceable(8) %app)
+  store ptr %3, ptr %window, align 8
   call void @_ZN9GtkWindow8setTitleEPKc(ptr noundef nonnull align 8 dereferenceable(8) %window, ptr noundef @anon.string.1)
   call void @_ZN9GtkWindow14setDefaultSizeEii(ptr noundef nonnull align 8 dereferenceable(8) %window, i32 noundef 350, i32 noundef 140)
   call void @_ZN6GtkBox4ctorEi(ptr noundef nonnull align 8 dereferenceable(8) %box, i32 noundef 0)
@@ -81,7 +81,7 @@ define internal void @_Z8activate14GtkApplicationPh(%struct.GtkApplication nound
   ret void
 }
 
-declare %struct.GtkWindow @_ZN14GtkApplication9newWindowEv(ptr)
+declare ptr @_ZN14GtkApplication9newWindowEv(ptr)
 
 declare void @_ZN9GtkWindow8setTitleEPKc(ptr, ptr)
 

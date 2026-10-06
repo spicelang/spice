@@ -193,6 +193,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Get return type
     llvm::Type *returnType = manifestation->returnType.toLLVMType(sourceFile);
+    const unsigned int argOffset = getArgOffset(manifestation->returnType);
 
     // Get function linkage
     if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_TEST))
@@ -200,7 +201,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Create function or implement declared function
     const std::string mangledName = manifestation->getMangledName();
-    llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
+    llvm::FunctionType *funcType = getFunctionType(manifestation->returnType, paramTypes);
     module->getOrInsertFunction(mangledName, funcType);
     llvm::Function *func = module->getFunction(mangledName);
     updateAddress(node->entry, func);
@@ -213,7 +214,7 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     addCommonFctAttrs(func, manifestation->entry->getQualType().isInline());
     enableFunctionInstrumentation(func);
     // Set attributes to function parameters and return value
-    setParamAttrs(func, paramInfoList);
+    setParamAttrs(func, paramInfoList, argOffset);
     setFunctionReturnValAttrs(func, manifestation->returnType);
 
     // Add debug info
@@ -232,8 +233,10 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultEntry != nullptr);
     if (resultEntry->isInitialized()) {
-      // Allocate result variable
-      llvm::Value *resultAddr = insertAlloca(manifestation->returnType, RETURN_VARIABLE_NAME);
+      // Allocate result variable. If the value is returned via memory, the result variable lives in the caller's memory
+      llvm::Value *resultAddr = getSRetArg(func);
+      if (resultAddr == nullptr)
+        resultAddr = insertAlloca(manifestation->returnType, RETURN_VARIABLE_NAME);
       // Update the symbol table entry
       updateAddress(resultEntry, resultAddr);
       // Generate debug info
@@ -242,8 +245,11 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
 
     // Store function argument values
     for (auto &arg : func->args()) {
+      // Skip the sret parameter
+      if (arg.getArgNo() < argOffset)
+        continue;
       // Get information about the parameter
-      const size_t argNumber = arg.getArgNo();
+      const size_t argNumber = arg.getArgNo() - argOffset;
       auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
       assert(paramSymbol != nullptr);
       // Decayed array params already carry the address of the array, so they do not need a local copy
@@ -274,9 +280,11 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Create return statement if the block is not terminated yet
     if (!blockAlreadyTerminated) {
       llvm::Value *result = getDefaultValueForSymbolType(manifestation->returnType);
-      if (resultEntry->isInitialized())
-        result = insertLoad(returnType, getAddress(resultEntry));
-      builder.CreateRet(result);
+      if (resultEntry->isInitialized()) {
+        llvm::Value *resultAddr = getAddress(resultEntry);
+        result = resultAddr == getSRetArg(func) ? nullptr : insertLoad(returnType, resultAddr);
+      }
+      insertReturn(result);
     }
 
     // Conclude debug info for function
@@ -510,10 +518,11 @@ llvm::Value *IRGenerator::materializeDecayedArrayArg(llvm::Value *argValue, cons
   return argAddress;
 }
 
-void IRGenerator::setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo) const {
-  assert(function->arg_size() == paramInfo.size());
-  for (size_t i = 0; i < paramInfo.size(); i++) {
-    const QualType &paramType = paramInfo.at(i).second->getQualType();
+void IRGenerator::setParamAttrs(llvm::Function *function, const ParamInfoList &paramInfo, unsigned int argOffset) const {
+  assert(function->arg_size() == argOffset + paramInfo.size());
+  for (size_t paramIdx = 0; paramIdx < paramInfo.size(); paramIdx++) {
+    const size_t i = argOffset + paramIdx;
+    const QualType &paramType = paramInfo.at(paramIdx).second->getQualType();
 
     // NoUndef attribute
     function->addParamAttr(i, llvm::Attribute::NoUndef);
@@ -522,7 +531,7 @@ void IRGenerator::setParamAttrs(llvm::Function *function, const ParamInfoList &p
       llvm::Type *pointeeType = paramType.getContained().toLLVMType(sourceFile);
       assert(pointeeType != nullptr);
       // NonNull and dereferenceable attributes. Only 'this' is guaranteed to point to a valid object, other pointers may be nil
-      if (paramInfo.at(i).first == THIS_VARIABLE_NAME) {
+      if (paramInfo.at(paramIdx).first == THIS_VARIABLE_NAME) {
         function->addParamAttr(i, llvm::Attribute::NonNull);
         function->addDereferenceableParamAttr(i, module->getDataLayout().getTypeStoreSize(pointeeType));
       }
@@ -540,11 +549,35 @@ void IRGenerator::setFunctionReturnValAttrs(llvm::Function *function, const Qual
   if (returnType.is(TY_DYN))
     return;
 
+  // Values, that are returned via memory, have attributes on the sret parameter. Coerced values might contain padding
+  const ReturnABIInfo returnABI = getReturnABIInfo(returnType);
+  if (returnABI.isIndirect()) {
+    addSRetParamAttrs(function, returnABI.type);
+    return;
+  }
+  if (returnABI.isCoerced())
+    return;
+
   // NoUndef attribute
   function->addRetAttr(llvm::Attribute::NoUndef);
   // ZExt or SExt attribute
   if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(returnType); extAttrKind != llvm::Attribute::None)
     function->addRetAttr(extAttrKind);
+}
+
+void IRGenerator::addSRetParamAttrs(llvm::Function *function, llvm::Type *type) const {
+  function->addParamAttr(0, llvm::Attribute::DeadOnUnwind);
+  function->addParamAttr(0, llvm::Attribute::NoAlias);
+  function->addParamAttr(0, llvm::Attribute::Writable);
+  function->addParamAttr(0, llvm::Attribute::getWithStructRetType(context, type));
+  function->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(type)));
+}
+
+void IRGenerator::addSRetParamAttrs(llvm::CallInst *callInst, llvm::Type *type) const {
+  callInst->addParamAttr(0, llvm::Attribute::DeadOnUnwind);
+  callInst->addParamAttr(0, llvm::Attribute::Writable);
+  callInst->addParamAttr(0, llvm::Attribute::getWithStructRetType(context, type));
+  callInst->addParamAttr(0, llvm::Attribute::getWithAlignment(context, module->getDataLayout().getABITypeAlign(type)));
 }
 
 llvm::Attribute::AttrKind IRGenerator::getExtAttrKindForType(const QualType &type) const {
@@ -700,12 +733,9 @@ std::any IRGenerator::visitGlobalVarDef(const GlobalVarDefNode *node) {
 }
 
 std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
-  // Get return type
   const Function *spiceFunc = node->extFunction;
   assert(spiceFunc != nullptr);
-  llvm::Type *returnType = builder.getVoidTy();
-  if (!spiceFunc->returnType.is(TY_DYN))
-    returnType = spiceFunc->returnType.toLLVMType(sourceFile);
+  const unsigned int argOffset = getArgOffset(spiceFunc->returnType);
 
   // Get arg types
   const QualTypeList paramTypes = spiceFunc->getParamTypes();
@@ -716,7 +746,7 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
 
   // Declare function
   const bool isVarArg = node->argTypeLst && node->argTypeLst->hasEllipsis;
-  llvm::FunctionType *functionType = llvm::FunctionType::get(returnType, argTypes, isVarArg);
+  llvm::FunctionType *functionType = getFunctionType(spiceFunc->returnType, argTypes, isVarArg);
   const std::string mangledName = spiceFunc->getMangledName();
   module->getOrInsertFunction(mangledName, functionType);
   llvm::Function *fct = module->getFunction(mangledName);
@@ -726,10 +756,10 @@ std::any IRGenerator::visitExtDecl(const ExtDeclNode *node) {
 
   // Add noundef attribute to all parameters and, for sub-32-bit integers, the ABI-required sext/zext attribute
   for (size_t i = 0; i < paramTypes.size(); i++) {
-    fct->addParamAttr(i, llvm::Attribute::NoUndef);
+    fct->addParamAttr(argOffset + i, llvm::Attribute::NoUndef);
     if (const llvm::Attribute::AttrKind extAttrKind = getExtAttrKindForType(paramTypes.at(i));
         extAttrKind != llvm::Attribute::None)
-      fct->addParamAttr(i, extAttrKind);
+      fct->addParamAttr(argOffset + i, extAttrKind);
   }
 
   // Add the same noundef/sext/zext treatment to the return value

@@ -35,20 +35,19 @@ define dso_local noundef i32 @main() #0 {
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %6)
   store i32 9, ptr %7, align 4
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %intVector, ptr noundef %7)
-  %9 = call %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr %intVector)
-  store %struct.VectorIterator %9, ptr %8, align 8
+  call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %8, ptr %intVector)
   br label %foreach.head.L12
 
 foreach.head.L12:                                 ; preds = %foreach.tail.L12, %0
-  %10 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %8)
-  br i1 %10, label %foreach.body.L12, label %foreach.exit.L12
+  %9 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %8)
+  br i1 %9, label %foreach.body.L12, label %foreach.exit.L12
 
 foreach.body.L12:                                 ; preds = %foreach.head.L12
-  %11 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %8)
-  %12 = load i32, ptr %11, align 4
-  store i32 %12, ptr %item, align 4
-  %13 = load i32, ptr %item, align 4
-  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %13)
+  %10 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %8)
+  %11 = load i32, ptr %10, align 4
+  store i32 %11, ptr %item, align 4
+  %12 = load i32, ptr %item, align 4
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %12)
   br label %foreach.tail.L12
 
 foreach.tail.L12:                                 ; preds = %foreach.body.L12
@@ -64,7 +63,7 @@ declare void @_ZN6VectorIiE4ctorEv(ptr noundef nonnull align 8 dereferenceable(3
 
 declare void @_ZN6VectorIiE8pushBackERKi(ptr, ptr)
 
-declare %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr)
+declare void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind noalias writable sret(%struct.VectorIterator) align 8, ptr)
 
 declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 

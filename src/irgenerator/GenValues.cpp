@@ -233,11 +233,6 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (llvm::Function *fct = module->getFunction(mangledName)) {
     fctType = fct->getFunctionType();
   } else {
-    // Get returnType
-    llvm::Type *returnType = builder.getVoidTy();
-    if (!returnSType.is(TY_DYN))
-      returnType = returnSType.toLLVMType(sourceFile);
-
     // Get arg types
     std::vector<llvm::Type *> argTypes;
     if (data.isMethodCall() || data.isCtorCall())
@@ -247,13 +242,17 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (data.isFctPtrCall())
       argTypes.push_back(builder.getPtrTy()); // Trailing capture pointer (always present in the uniform lambda ABI)
 
-    fctType = llvm::FunctionType::get(returnType, argTypes, false);
-    if (!data.isFctPtrCall() && !data.isVirtualMethodCall())
+    fctType = getFunctionType(returnSType, argTypes);
+    if (!data.isFctPtrCall() && !data.isVirtualMethodCall()) {
       module->getOrInsertFunction(mangledName, fctType);
+      if (const ReturnABIInfo returnABI = getReturnABIInfo(returnSType); returnABI.isIndirect())
+        addSRetParamAttrs(module->getFunction(mangledName), returnABI.type);
+    }
   }
   assert(fctType != nullptr);
 
-  llvm::CallInst *callInst;
+  // Retrieve the callee
+  llvm::Value *callee;
   if (data.isVirtualMethodCall()) {
     assert(data.callee->isVirtual);
     assert(thisPtr != nullptr);
@@ -262,32 +261,27 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     const size_t vtableIndex = data.callee->vtableIndex;
     // Lookup function pointer in VTable
     fctPtr = insertInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt64(vtableIndex), "vfct.addr");
-    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
-
-    // Generate function call
-    callInst = builder.CreateCall({fctType, fct}, argValues);
+    callee = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
   } else if (data.isFctPtrCall()) {
     assert(firstFragEntry != nullptr);
     QualType firstFragType = firstFragEntry->getQualType();
     if (!fctPtr)
       fctPtr = getAddress(firstFragEntry);
     autoDeReferencePtr(fctPtr, firstFragType);
-    llvm::Value *fct = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
-
-    // Generate function call
-    callInst = builder.CreateCall({fctType, fct}, argValues);
+    callee = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
   } else {
     // Get callee function
-    llvm::Function *callee = module->getFunction(mangledName);
+    callee = module->getFunction(mangledName);
     assert(callee != nullptr);
-
-    // Generate function call
-    callInst = builder.CreateCall(callee, argValues);
   }
+
+  // Generate function call. If the value is returned via memory or coerced, the call result lives in memory
+  llvm::Value *resultAddr = nullptr;
+  llvm::CallInst *callInst = insertCall({fctType, callee}, argValues, returnSType, resultAddr);
 
   // Set argument and return value attributes
   if (!data.isFctPtrCall()) {
-    setCallArgAttrs(callInst, spiceFunc, paramSTypes);
+    setCallArgAttrs(callInst, spiceFunc, paramSTypes, getArgOffset(returnSType));
     setCallReturnValAttrs(callInst, returnSType);
   }
 
@@ -311,8 +305,11 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       if (data.isCtorCall()) {
         updateAddress(anonymousSymbol, thisPtr);
       } else {
-        resultPtr = insertAlloca(callInst->getType());
-        insertStore(callInst, resultPtr);
+        resultPtr = resultAddr;
+        if (resultPtr == nullptr) {
+          resultPtr = insertAlloca(callInst->getType());
+          insertStore(callInst, resultPtr);
+        }
         updateAddress(anonymousSymbol, resultPtr);
       }
     }
@@ -326,17 +323,24 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   if (returnSType.isRef())
     return LLVMExprResult{.ptr = callInst, .refPtr = resultPtr, .entry = anonymousSymbol};
 
+  // In case the value is returned via memory or coerced, return its address
+  if (resultAddr != nullptr)
+    return LLVMExprResult{.ptr = resultAddr, .entry = anonymousSymbol};
+
   // Otherwise return the value
   return LLVMExprResult{.value = callInst, .ptr = resultPtr, .entry = anonymousSymbol};
 }
 
-void IRGenerator::setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes) const {
+void IRGenerator::setCallArgAttrs(llvm::CallInst *callInst, const Function *spiceFunc, const QualTypeList &paramSTypes,
+                                  unsigned int argOffset) const {
   const bool isFctPtr = spiceFunc == nullptr;
   const bool isMethod = !isFctPtr && !spiceFunc->thisType.is(TY_DYN);
   const size_t expectedParamCount = isMethod || isFctPtr ? paramSTypes.size() + 1 : paramSTypes.size();
-  assert(callInst->arg_size() == expectedParamCount);
-  for (size_t i = 0; i < expectedParamCount; i++) {
-    const QualType &paramType = i == 0 && isMethod ? spiceFunc->thisType.toPtr(nullptr) : paramSTypes.at(isMethod ? i - 1 : i);
+  assert(callInst->arg_size() == argOffset + expectedParamCount);
+  for (size_t paramIdx = 0; paramIdx < expectedParamCount; paramIdx++) {
+    const size_t i = argOffset + paramIdx;
+    const bool isThis = paramIdx == 0 && isMethod;
+    const QualType &paramType = isThis ? spiceFunc->thisType.toPtr(nullptr) : paramSTypes.at(isMethod ? paramIdx - 1 : paramIdx);
 
     // NoUndef attribute
     callInst->addParamAttr(i, llvm::Attribute::NoUndef);
@@ -345,7 +349,7 @@ void IRGenerator::setCallArgAttrs(llvm::CallInst *callInst, const Function *spic
       llvm::Type *pointeeType = paramType.getContained().toLLVMType(sourceFile);
       assert(pointeeType != nullptr);
       // NonNull and dereferenceable attributes. Only 'this' is guaranteed to point to a valid object, other pointers may be nil
-      if (i == 0 && isMethod) {
+      if (isThis) {
         callInst->addParamAttr(i, llvm::Attribute::NonNull);
         callInst->addDereferenceableParamAttr(i, callInst->getModule()->getDataLayout().getTypeStoreSize(pointeeType));
       }
@@ -361,6 +365,10 @@ void IRGenerator::setCallArgAttrs(llvm::CallInst *callInst, const Function *spic
 
 void IRGenerator::setCallReturnValAttrs(llvm::CallInst *callInst, const QualType &returnType) const {
   if (returnType.is(TY_DYN))
+    return;
+
+  // Values, that are returned via memory, have attributes on the sret argument. Coerced values might contain padding
+  if (!getReturnABIInfo(returnType).isDirect())
     return;
 
   // NoUndef attribute
@@ -572,7 +580,8 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Append the trailing capture-struct pointer (always passed as pointer)
   paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
   paramTypes.push_back(builder.getPtrTy());
-  const size_t capturesArgIdx = paramTypes.size() - 1;
+  const unsigned int argOffset = getArgOffset(spiceFunc.returnType);
+  const size_t capturesArgIdx = argOffset + paramTypes.size() - 1;
 
   // Get return type
   llvm::Type *returnType = spiceFunc.returnType.toLLVMType(sourceFile);
@@ -580,7 +589,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Create function or implement declared function
   spiceFunc.mangleSuffix = "." + std::to_string(manIdx);
   const std::string mangledName = spiceFunc.getMangledName();
-  llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
+  llvm::FunctionType *funcType = getFunctionType(spiceFunc.returnType, paramTypes);
   module->getOrInsertFunction(mangledName, funcType);
   llvm::Function *lambda = module->getFunction(mangledName);
 
@@ -589,6 +598,8 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   lambda->setDSOLocal(true);
   addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
+  if (const ReturnABIInfo returnABI = getReturnABIInfo(spiceFunc.returnType); returnABI.isIndirect())
+    addSRetParamAttrs(lambda, returnABI.type);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
@@ -618,7 +629,10 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   const SymbolTableEntry *resultEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
   assert(resultEntry != nullptr);
   if (resultEntry->isInitialized()) {
-    llvm::Value *resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
+    // If the value is returned via memory, the result variable lives in the caller's memory
+    llvm::Value *resultAddr = getSRetArg(lambda);
+    if (resultAddr == nullptr)
+      resultAddr = insertAlloca(returnType, RETURN_VARIABLE_NAME);
     updateAddress(resultEntry, resultAddr);
     // Generate debug info
     diGenerator.generateLocalVarDebugInfo(RETURN_VARIABLE_NAME, resultAddr);
@@ -627,17 +641,20 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Store function argument values
   llvm::Value *captureStructPtrPtr = nullptr;
   for (auto &arg : lambda->args()) {
+    // Skip the sret parameter
+    if (arg.getArgNo() < argOffset)
+      continue;
     // Get parameter info
-    const size_t argNumber = arg.getArgNo();
+    const size_t argNumber = arg.getArgNo() - argOffset;
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     // Decayed array params already carry the address of the array, so they do not need a local copy
     if (bindDecayedArrayParam(arg, paramName, paramSymbol))
       continue;
     // Allocate space for it
-    llvm::Type *paramType = funcType->getParamType(argNumber);
+    llvm::Type *paramType = arg.getType();
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = argNumber == capturesArgIdx;
+    const bool isCapturesStruct = arg.getArgNo() == capturesArgIdx;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -668,9 +685,11 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   // Create return statement if the block is not terminated yet
   if (!blockAlreadyTerminated) {
     llvm::Value *result = getDefaultValueForSymbolType(spiceFunc.returnType);
-    if (resultEntry->isInitialized())
-      result = insertLoad(returnType, getAddress(resultEntry));
-    builder.CreateRet(result);
+    if (resultEntry->isInitialized()) {
+      llvm::Value *resultAddr = getAddress(resultEntry);
+      result = resultAddr == getSRetArg(lambda) ? nullptr : insertLoad(returnType, resultAddr);
+    }
+    insertReturn(result);
   }
 
   // Pop capture addresses
@@ -889,16 +908,13 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Append the trailing capture-struct pointer (always passed as pointer)
   paramInfoList.emplace_back(CAPTURES_PARAM_NAME, nullptr);
   paramTypes.push_back(builder.getPtrTy());
-  const size_t capturesArgIdx = paramTypes.size() - 1;
-
-  // Get return type
-  llvm::Type *returnType = builder.getVoidTy();
-  if (spiceFunc.isFunction())
-    returnType = spiceFunc.returnType.toLLVMType(sourceFile);
+  const QualType returnSType = spiceFunc.isFunction() ? spiceFunc.returnType : QualType(TY_DYN);
+  const unsigned int argOffset = getArgOffset(returnSType);
+  const size_t capturesArgIdx = argOffset + paramTypes.size() - 1;
 
   // Create function or implement declared function
   const std::string mangledName = spiceFunc.getMangledName();
-  llvm::FunctionType *funcType = llvm::FunctionType::get(returnType, paramTypes, false);
+  llvm::FunctionType *funcType = getFunctionType(returnSType, paramTypes);
   module->getOrInsertFunction(mangledName, funcType);
   llvm::Function *lambda = module->getFunction(mangledName);
 
@@ -907,6 +923,8 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   lambda->setDSOLocal(true);
   addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
+  if (const ReturnABIInfo returnABI = getReturnABIInfo(returnSType); returnABI.isIndirect())
+    addSRetParamAttrs(lambda, returnABI.type);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
@@ -935,17 +953,20 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   // Save values of parameters to locals
   llvm::Value *captureStructPtrPtr = nullptr;
   for (auto &arg : lambda->args()) {
+    // Skip the sret parameter
+    if (arg.getArgNo() < argOffset)
+      continue;
     // Get information about the parameter
-    const size_t argNumber = arg.getArgNo();
+    const size_t argNumber = arg.getArgNo() - argOffset;
     auto [paramName, paramSymbol] = paramInfoList.at(argNumber);
     // Decayed array params already carry the address of the array, so they do not need a local copy
     if (bindDecayedArrayParam(arg, paramName, paramSymbol))
       continue;
     // Allocate space for it
-    llvm::Type *paramType = funcType->getParamType(argNumber);
+    llvm::Type *paramType = arg.getType();
     llvm::Value *paramAddress = insertAlloca(paramType, paramName);
     // Update the symbol table entry
-    const bool isCapturesStruct = argNumber == capturesArgIdx;
+    const bool isCapturesStruct = arg.getArgNo() == capturesArgIdx;
     if (isCapturesStruct)
       captureStructPtrPtr = paramAddress;
     else
@@ -972,7 +993,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
 
   // Visit lambda expression
   llvm::Value *exprResult = resolveValue(node->lambdaExpr);
-  builder.CreateRet(exprResult);
+  insertReturn(exprResult);
 
   // Pop capture addresses
   if (hasCaptures)
@@ -1041,6 +1062,12 @@ llvm::Function *IRGenerator::getOrCreateFatFctPtrThunk(llvm::Function *target) {
   for (size_t i = 0; i < targetType->getNumParams(); i++)
     fwdArgs.push_back(thunk->getArg(i));
   llvm::CallInst *call = builder.CreateCall(target, fwdArgs);
+  // Forward the sret pointer, if the target returns via memory
+  if (getSRetArg(target) != nullptr) {
+    llvm::Type *sretType = target->getParamStructRetType(0);
+    addSRetParamAttrs(thunk, sretType);
+    addSRetParamAttrs(call, sretType);
+  }
   if (targetType->getReturnType()->isVoidTy())
     builder.CreateRetVoid();
   else

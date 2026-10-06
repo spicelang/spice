@@ -979,7 +979,15 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     llvm::Function *getErrFct = stdFunctionManager.getResultGetErrFct(node->errPropGetErrFct);
     llvm::Value *errorPtr = builder.CreateCall(getErrFct, operandPtr);
     llvm::Function *errCtorFct = stdFunctionManager.getResultErrCtorFct(node->errPropCtorFct);
-    llvm::Value *propagatedResult = builder.CreateCall(errCtorFct, errorPtr);
+    // If the enclosing function returns via memory, construct the result directly in the memory of its caller
+    const QualType &propagatedResultType = node->errPropCtorFct->returnType;
+    llvm::Argument *sretArg = getSRetArg(builder.GetInsertBlock()->getParent());
+    llvm::Value *propagatedResultAddr = nullptr;
+    llvm::Value *propagatedResult = insertCall(errCtorFct, {errorPtr}, propagatedResultType, propagatedResultAddr, sretArg);
+    if (sretArg != nullptr && propagatedResultAddr == sretArg)
+      propagatedResult = nullptr;
+    else if (propagatedResultAddr != nullptr)
+      propagatedResult = insertLoad(propagatedResultType, propagatedResultAddr);
 
     // Record this propagation hop in the error return trace, if tracing is enabled for this file
     if (sourceFile->errorReturnTracing) {
@@ -995,7 +1003,7 @@ std::any IRGenerator::visitPostfixUnaryExpr(const PostfixUnaryExprNode *node) {
     // Clean up all scopes between here and the enclosing function/procedure/lambda body, then return the error
     generateScopeCleanupUpTo(node, currentScope->getFunctionScope());
     blockAlreadyTerminated = true;
-    builder.CreateRet(propagatedResult);
+    insertReturn(propagatedResult);
 
     // Switch to exit block: unwrap the payload, which becomes the value of the whole expression
     switchToBlock(bExit);

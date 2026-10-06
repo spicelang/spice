@@ -37,29 +37,30 @@ define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal noundef %struct.Test @_Z6choosebRK4Test(i1 noundef zeroext %0, ptr noundef %1) #0 {
+define internal void @_Z6choosebRK4Test(ptr dead_on_unwind noalias writable sret(%struct.Test) align 1 %0, i1 noundef zeroext %1, ptr noundef %2) #0 {
   %cond = alloca i1, align 1
   %ref = alloca ptr, align 8
-  %3 = alloca %struct.Test, align 8
   %4 = alloca %struct.Test, align 8
-  store i1 %0, ptr %cond, align 1
-  store ptr %1, ptr %ref, align 8
-  %5 = load i1, ptr %cond, align 1
-  br i1 %5, label %cond.true.L11C12, label %cond.false.L11C12
+  %5 = alloca %struct.Test, align 8
+  store i1 %1, ptr %cond, align 1
+  store ptr %2, ptr %ref, align 8
+  %6 = load i1, ptr %cond, align 1
+  br i1 %6, label %cond.true.L11C12, label %cond.false.L11C12
 
-cond.true.L11C12:                                 ; preds = %2
-  call void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %3)
+cond.true.L11C12:                                 ; preds = %3
+  call void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %4)
   br label %cond.exit.L11C12
 
-cond.false.L11C12:                                ; preds = %2
-  %6 = load ptr, ptr %ref, align 8
-  call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %4, ptr %6)
+cond.false.L11C12:                                ; preds = %3
+  %7 = load ptr, ptr %ref, align 8
+  call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %5, ptr %7)
   br label %cond.exit.L11C12
 
 cond.exit.L11C12:                                 ; preds = %cond.false.L11C12, %cond.true.L11C12
-  %cond.result = phi ptr [ %3, %cond.true.L11C12 ], [ %4, %cond.false.L11C12 ]
-  %7 = load %struct.Test, ptr %cond.result, align 1
-  ret %struct.Test %7
+  %cond.result = phi ptr [ %4, %cond.true.L11C12 ], [ %5, %cond.false.L11C12 ]
+  %8 = load %struct.Test, ptr %cond.result, align 1
+  store %struct.Test %8, ptr %0, align 1
+  ret void
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
@@ -68,11 +69,9 @@ define dso_local noundef i32 @main() #2 {
   %viaTemp = alloca %struct.Test, align 8
   %viaRef = alloca %struct.Test, align 8
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %t)
-  %1 = call noundef %struct.Test @_Z6choosebRK4Test(i1 noundef zeroext true, ptr noundef %t)
-  store %struct.Test %1, ptr %viaTemp, align 1
+  call void @_Z6choosebRK4Test(ptr dead_on_unwind writable sret(%struct.Test) align 1 %viaTemp, i1 noundef zeroext true, ptr noundef %t)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %viaTemp)
-  %2 = call noundef %struct.Test @_Z6choosebRK4Test(i1 noundef zeroext false, ptr noundef %t)
-  store %struct.Test %2, ptr %viaRef, align 1
+  call void @_Z6choosebRK4Test(ptr dead_on_unwind writable sret(%struct.Test) align 1 %viaRef, i1 noundef zeroext false, ptr noundef %t)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %viaRef)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %t)
   ret i32 0

@@ -14,11 +14,10 @@ define dso_local noundef i32 @main() #0 {
   %1 = alloca %struct.ArrayIterator, align 8
   %index = alloca i64, align 8
   %item = alloca i32, align 4
-  %pair.addr = alloca %struct.Pair, align 8
+  %2 = alloca %struct.Pair, align 8
   store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], ptr %intArray, align 4
-  %2 = getelementptr inbounds [7 x i32], ptr %intArray, i64 0, i32 0
-  %3 = call noundef %struct.ArrayIterator @_Z7iterateIiE13ArrayIteratorIiEPim(ptr noundef %2, i64 noundef 7)
-  store %struct.ArrayIterator %3, ptr %1, align 8
+  %3 = getelementptr inbounds [7 x i32], ptr %intArray, i64 0, i32 0
+  call void @_Z7iterateIiE13ArrayIteratorIiEPim(ptr dead_on_unwind writable sret(%struct.ArrayIterator) align 8 %1, ptr noundef %3, i64 noundef 7)
   store i64 0, ptr %index, align 8
   br label %foreach.head.L5
 
@@ -27,15 +26,15 @@ foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
   br i1 %4, label %foreach.body.L5, label %foreach.exit.L5
 
 foreach.body.L5:                                  ; preds = %foreach.head.L5
-  %pair = call %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr %1)
-  store %struct.Pair %pair, ptr %pair.addr, align 8
-  %5 = load i64, ptr %pair.addr, align 8
-  store i64 %5, ptr %index, align 8
-  %item.addr = getelementptr inbounds nuw %struct.Pair, ptr %pair.addr, i32 0, i32 1
-  %6 = load ptr, ptr %item.addr, align 8
-  %7 = load i64, ptr %index, align 8
-  %8 = load i32, ptr %6, align 4
-  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %7, i32 noundef %8)
+  %5 = call { i64, ptr } @_ZN13ArrayIteratorIiE6getIdxEv(ptr %1)
+  store { i64, ptr } %5, ptr %2, align 8
+  %6 = load i64, ptr %2, align 8
+  store i64 %6, ptr %index, align 8
+  %item.addr = getelementptr inbounds nuw %struct.Pair, ptr %2, i32 0, i32 1
+  %7 = load ptr, ptr %item.addr, align 8
+  %8 = load i64, ptr %index, align 8
+  %9 = load i32, ptr %7, align 4
+  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %8, i32 noundef %9)
   br label %foreach.tail.L5
 
 foreach.tail.L5:                                  ; preds = %foreach.body.L5
@@ -46,11 +45,11 @@ foreach.exit.L5:                                  ; preds = %foreach.head.L5
   ret i32 0
 }
 
-declare %struct.ArrayIterator @_Z7iterateIiE13ArrayIteratorIiEPim(ptr, i64)
+declare void @_Z7iterateIiE13ArrayIteratorIiEPim(ptr dead_on_unwind noalias writable sret(%struct.ArrayIterator) align 8, ptr, i64)
 
 declare i1 @_ZN13ArrayIteratorIiE7isValidEv(ptr)
 
-declare %struct.Pair @_ZN13ArrayIteratorIiE6getIdxEv(ptr)
+declare { i64, ptr } @_ZN13ArrayIteratorIiE6getIdxEv(ptr)
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1

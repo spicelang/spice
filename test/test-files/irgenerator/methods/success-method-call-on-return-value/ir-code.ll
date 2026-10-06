@@ -27,13 +27,16 @@ define internal void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferencea
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal noundef %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
+define internal { double, i8 } @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %0) #0 {
   %this = alloca ptr, align 8
+  %2 = alloca %struct.Stamp, align 8
   store ptr %0, ptr %this, align 8
-  %2 = load ptr, ptr %this, align 8
-  %stamp.addr = getelementptr inbounds %struct.Letter, ptr %2, i64 0, i32 1
-  %3 = load %struct.Stamp, ptr %stamp.addr, align 8
-  ret %struct.Stamp %3
+  %3 = load ptr, ptr %this, align 8
+  %stamp.addr = getelementptr inbounds %struct.Letter, ptr %3, i64 0, i32 1
+  %4 = load %struct.Stamp, ptr %stamp.addr, align 8
+  store %struct.Stamp %4, ptr %2, align 8
+  %5 = load { double, i8 }, ptr %2, align 8
+  ret { double, i8 } %5
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
@@ -46,8 +49,8 @@ define dso_local noundef i32 @main() #2 {
   %1 = load i1, ptr %glued.addr, align 1
   %2 = zext i1 %1 to i32
   %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %2)
-  %4 = call noundef %struct.Stamp @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %letter)
-  store %struct.Stamp %4, ptr %stamp, align 8
+  %4 = call { double, i8 } @_ZN6Letter8getStampEv(ptr noundef nonnull align 8 dereferenceable(24) %letter)
+  store { double, i8 } %4, ptr %stamp, align 8
   call void @_ZN5Stamp5printEv(ptr noundef nonnull align 8 dereferenceable(16) %stamp)
   ret i32 0
 }

@@ -11,20 +11,19 @@ source_filename = "source.spice"
 define dso_local noundef i32 @main() #0 {
   %s = alloca %struct.Socket, align 8
   %n = alloca %struct.NestedSocket, align 8
-  %1 = call noundef %struct.Socket @_Z16openServerSockett(i16 noundef zeroext 8080)
-  store %struct.Socket %1, ptr %s, align 8
+  call void @_Z16openServerSockett(ptr dead_on_unwind writable sret(%struct.Socket) align 8 %s, i16 noundef zeroext 8080)
   %nested.addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 2
   call void @llvm.memcpy.p0.p0.i64(ptr %n, ptr %nested.addr, i64 16, i1 false)
   %testString.addr = getelementptr inbounds %struct.NestedSocket, ptr %n, i64 0, i32 0
-  %2 = load ptr, ptr %testString.addr, align 8
-  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %2)
+  %1 = load ptr, ptr %testString.addr, align 8
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1)
   %sock.addr = getelementptr inbounds %struct.Socket, ptr %s, i64 0, i32 0
-  %4 = load i32, ptr %sock.addr, align 4
-  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %4)
+  %3 = load i32, ptr %sock.addr, align 4
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %3)
   ret i32 0
 }
 
-declare %struct.Socket @_Z16openServerSockett(i16)
+declare void @_Z16openServerSockett(ptr dead_on_unwind noalias writable sret(%struct.Socket) align 8, i16)
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #1

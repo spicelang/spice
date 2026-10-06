@@ -4,6 +4,7 @@
 
 #include <SourceFile.h>
 #include <driver/Driver.h>
+#include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
 #include <model/Function.h>
 #include <symboltablebuilder/ScopeHandle.h>
@@ -19,8 +20,9 @@ const std::string PRODUCER_STRING = "spice version " + std::string(SPICE_VERSION
 
 IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), context(cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context),
-      builder(sourceFile->builder), module(sourceFile->llvmModule.get()), conversionManager(sourceFile, this),
-      stdFunctionManager(sourceFile, resourceManager, module) {
+      builder(sourceFile->builder), module(sourceFile->llvmModule.get()),
+      abiInfo(cliOptions.targetTriple, module->getDataLayout()), conversionManager(sourceFile, this),
+      stdFunctionManager(sourceFile, resourceManager, module, this) {
   // Attach information to the module
   module->setTargetTriple(cliOptions.targetTriple);
   module->setDataLayout(sourceFile->targetMachine->createDataLayout());
@@ -908,6 +910,152 @@ llvm::Function *IRGenerator::getLLVMFunction(const Function *spiceFunc) {
 void IRGenerator::setLLVMFunction(const Function *spiceFunc, llvm::Function *llvmFunction) {
   assert(llvmFunction != nullptr);
   llvmFunctions[spiceFunc] = llvmFunction;
+}
+
+/**
+ * Get the information, how a value of the given type is returned from a function on the current target
+ *
+ * @param returnType Return type of the function, dyn for procedures
+ * @return Return ABI info
+ */
+ReturnABIInfo IRGenerator::getReturnABIInfo(const QualType &returnType) const {
+  if (returnType.is(TY_DYN))
+    return {.kind = ReturnABIKind::DIRECT, .type = builder.getVoidTy()};
+  llvm::Type *type = returnType.toLLVMType(sourceFile);
+  // Types with a copy ctor or dtor are non-trivial for the purpose of calls and therefore returned via memory
+  const bool isNonTrivial =
+      type->isAggregateType() && (!returnType.isTriviallyCopyable(nullptr) || !returnType.isTriviallyDestructible(nullptr));
+  return abiInfo.classifyReturnType(type, isNonTrivial);
+}
+
+/**
+ * Get the LLVM function type for a function with the given return and param types, with the return value lowered to the
+ * calling convention of the target. If the value is returned via memory, the sret pointer is the first parameter.
+ *
+ * @param returnType Return type of the function, dyn for procedures
+ * @param paramTypes LLVM types of the parameters, including the 'this' pointer for methods
+ * @param isVarArg Variadic function or not
+ * @return Lowered LLVM function type
+ */
+llvm::FunctionType *IRGenerator::getFunctionType(const QualType &returnType, const std::vector<llvm::Type *> &paramTypes,
+                                                 bool isVarArg) const {
+  const ReturnABIInfo returnABI = getReturnABIInfo(returnType);
+  switch (returnABI.kind) {
+  case ReturnABIKind::DIRECT:
+    return llvm::FunctionType::get(returnABI.type, paramTypes, isVarArg);
+  case ReturnABIKind::COERCED:
+    return llvm::FunctionType::get(returnABI.coercedType, paramTypes, isVarArg);
+  case ReturnABIKind::INDIRECT: {
+    std::vector<llvm::Type *> loweredParamTypes = {builder.getPtrTy()};
+    loweredParamTypes.insert(loweredParamTypes.end(), paramTypes.begin(), paramTypes.end());
+    return llvm::FunctionType::get(builder.getVoidTy(), loweredParamTypes, isVarArg);
+  }
+  default:                                                               // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "ReturnABIKind fall-through"); // GCOV_EXCL_LINE
+  }
+}
+
+/**
+ * Get the index of the first actual parameter of a function with the given return type. It is shifted by one, if the
+ * function has an sret parameter.
+ *
+ * @param returnType Return type of the function, dyn for procedures
+ * @return Index of the first actual parameter
+ */
+unsigned int IRGenerator::getArgOffset(const QualType &returnType) const {
+  return getReturnABIInfo(returnType).isIndirect() ? 1 : 0;
+}
+
+/**
+ * Insert a call to a function, that returns a value of the given type, lowered to the calling convention of the target.
+ * If the value is returned via memory or coerced, its address is returned via resultAddr. Otherwise, resultAddr is
+ * set to nullptr and the call itself is the returned value.
+ *
+ * @param callee Callee with its lowered function type
+ * @param args Arguments, not including the sret pointer
+ * @param returnType Return type of the callee, dyn for procedures
+ * @param resultAddr Address of the returned value, if it is returned via memory or coerced
+ * @param sretAddr Memory to return the value to, if it is returned via memory. A new temporary is used, if nullptr
+ * @return Call instruction
+ */
+llvm::CallInst *IRGenerator::insertCall(llvm::FunctionCallee callee, std::vector<llvm::Value *> args, const QualType &returnType,
+                                        llvm::Value *&resultAddr, llvm::Value *sretAddr) {
+  const ReturnABIInfo returnABI = getReturnABIInfo(returnType);
+  resultAddr = nullptr;
+  if (returnABI.isIndirect()) {
+    resultAddr = sretAddr != nullptr ? sretAddr : insertAlloca(returnABI.type);
+    args.insert(args.begin(), resultAddr);
+  }
+
+  llvm::CallInst *callInst = builder.CreateCall(callee, args);
+
+  if (returnABI.isIndirect()) {
+    addSRetParamAttrs(callInst, returnABI.type);
+  } else if (returnABI.isCoerced()) {
+    // Store the coerced value to memory, which can be accessed as the actual return type
+    resultAddr = insertCoercionAlloca(returnABI.type, returnABI.coercedType);
+    insertStore(callInst, resultAddr);
+  }
+  return callInst;
+}
+
+/**
+ * Insert a return instruction for the current function, lowered to the calling convention of the target
+ *
+ * @param returnValue Value to return or nullptr. For functions with an sret parameter, nullptr means, that the value
+ *                    was already stored to the sret memory
+ */
+void IRGenerator::insertReturn(llvm::Value *returnValue) {
+  llvm::Function *function = builder.GetInsertBlock()->getParent();
+
+  // Store the value to the memory of the caller
+  if (llvm::Argument *sretArg = getSRetArg(function)) {
+    if (returnValue != nullptr)
+      insertStore(returnValue, sretArg);
+    builder.CreateRetVoid();
+    return;
+  }
+
+  if (returnValue == nullptr) {
+    builder.CreateRetVoid();
+    return;
+  }
+
+  // Coerce the value to the return type via memory
+  llvm::Type *returnType = function->getReturnType();
+  if (returnValue->getType() != returnType) {
+    llvm::Value *coercionAddr = insertCoercionAlloca(returnValue->getType(), returnType);
+    insertStore(returnValue, coercionAddr);
+    returnValue = insertLoad(returnType, coercionAddr);
+  }
+  builder.CreateRet(returnValue);
+}
+
+/**
+ * Get the sret parameter of the given function
+ *
+ * @param function LLVM function
+ * @return sret parameter or nullptr, if the function does not return via memory
+ */
+llvm::Argument *IRGenerator::getSRetArg(llvm::Function *function) {
+  if (function->arg_empty() || !function->hasParamAttribute(0, llvm::Attribute::StructRet))
+    return nullptr;
+  return function->getArg(0);
+}
+
+/**
+ * Allocate memory, that can hold a value of both given types
+ *
+ * @param type Actual type of the value
+ * @param coercedType Type, the value is coerced to
+ * @return Memory address
+ */
+llvm::AllocaInst *IRGenerator::insertCoercionAlloca(llvm::Type *type, llvm::Type *coercedType) {
+  const llvm::DataLayout &dataLayout = module->getDataLayout();
+  const bool isCoercedTypeLarger = dataLayout.getTypeAllocSize(coercedType) > dataLayout.getTypeAllocSize(type);
+  llvm::AllocaInst *alloca = insertAlloca(isCoercedTypeLarger ? coercedType : type);
+  alloca->setAlignment(std::max(dataLayout.getPrefTypeAlign(type), dataLayout.getPrefTypeAlign(coercedType)));
+  return alloca;
 }
 
 std::string IRGenerator::getIRString(llvm::Module *llvmModule, const CliOptions &cliOptions) {

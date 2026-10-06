@@ -16,42 +16,40 @@ define dso_local noundef i32 @main() #0 {
   %1 = alloca %struct.NumberIterator.0, align 8
   %l = alloca ptr, align 8
   %2 = alloca ptr, align 8
-  %3 = call noundef %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16 noundef signext 3, i16 noundef signext 8)
-  store %struct.NumberIterator %3, ptr %shortIterator, align 8
+  call void @_Z5rangeIsE14NumberIteratorIsEss(ptr dead_on_unwind writable sret(%struct.NumberIterator) align 8 %shortIterator, i16 noundef signext 3, i16 noundef signext 8)
   br label %foreach.head.L5
 
 foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
-  %4 = call i1 @_ZN14NumberIteratorIsE7isValidEv(ptr %shortIterator)
-  br i1 %4, label %foreach.body.L5, label %foreach.exit.L5
+  %3 = call i1 @_ZN14NumberIteratorIsE7isValidEv(ptr %shortIterator)
+  br i1 %3, label %foreach.body.L5, label %foreach.exit.L5
 
 foreach.body.L5:                                  ; preds = %foreach.head.L5
-  %5 = call ptr @_ZN14NumberIteratorIsE3getEv(ptr %shortIterator)
-  %6 = load i16, ptr %5, align 2
-  store i16 %6, ptr %s, align 2
-  %7 = load i16, ptr %s, align 2
-  %8 = sext i16 %7 to i32
-  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %8)
-  %10 = load i16, ptr %s, align 2
-  %11 = and i16 %10, 1
-  %12 = sext i16 %11 to i32
-  %13 = icmp eq i32 %12, 1
-  br i1 %13, label %if.then.L7, label %if.exit.L7
+  %4 = call ptr @_ZN14NumberIteratorIsE3getEv(ptr %shortIterator)
+  %5 = load i16, ptr %4, align 2
+  store i16 %5, ptr %s, align 2
+  %6 = load i16, ptr %s, align 2
+  %7 = sext i16 %6 to i32
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %7)
+  %9 = load i16, ptr %s, align 2
+  %10 = and i16 %9, 1
+  %11 = sext i16 %10 to i32
+  %12 = icmp eq i32 %11, 1
+  br i1 %12, label %if.then.L7, label %if.exit.L7
 
 if.then.L7:                                       ; preds = %foreach.body.L5
-  %14 = call noundef %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64 noundef 1, i64 noundef 2)
-  store %struct.NumberIterator.0 %14, ptr %1, align 8
+  call void @_Z5rangeIlE14NumberIteratorIlEll(ptr dead_on_unwind writable sret(%struct.NumberIterator.0) align 8 %1, i64 noundef 1, i64 noundef 2)
   br label %foreach.head.L8
 
 foreach.head.L8:                                  ; preds = %foreach.tail.L8, %if.then.L7
-  %15 = call i1 @_ZN14NumberIteratorIlE7isValidEv(ptr %1)
-  br i1 %15, label %foreach.body.L8, label %foreach.exit.L8
+  %13 = call i1 @_ZN14NumberIteratorIlE7isValidEv(ptr %1)
+  br i1 %13, label %foreach.body.L8, label %foreach.exit.L8
 
 foreach.body.L8:                                  ; preds = %foreach.head.L8
-  %16 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr %1)
-  store ptr %16, ptr %2, align 8
-  %17 = load ptr, ptr %2, align 8
-  %18 = load i64, ptr %17, align 8
-  %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 noundef %18)
+  %14 = call ptr @_ZN14NumberIteratorIlE3getEv(ptr %1)
+  store ptr %14, ptr %2, align 8
+  %15 = load ptr, ptr %2, align 8
+  %16 = load i64, ptr %15, align 8
+  %17 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i64 noundef %16)
   br label %foreach.tail.L5
 
 foreach.tail.L8:                                  ; No predecessors!
@@ -69,11 +67,11 @@ foreach.tail.L5:                                  ; preds = %if.exit.L7, %foreac
   br label %foreach.head.L5
 
 foreach.exit.L5:                                  ; preds = %foreach.head.L5
-  %20 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
+  %18 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2)
   ret i32 0
 }
 
-declare %struct.NumberIterator @_Z5rangeIsE14NumberIteratorIsEss(i16, i16)
+declare void @_Z5rangeIsE14NumberIteratorIsEss(ptr dead_on_unwind noalias writable sret(%struct.NumberIterator) align 8, i16, i16)
 
 declare i1 @_ZN14NumberIteratorIsE7isValidEv(ptr)
 
@@ -82,7 +80,7 @@ declare ptr @_ZN14NumberIteratorIsE3getEv(ptr)
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
 
-declare %struct.NumberIterator.0 @_Z5rangeIlE14NumberIteratorIlEll(i64, i64)
+declare void @_Z5rangeIlE14NumberIteratorIlEll(ptr dead_on_unwind noalias writable sret(%struct.NumberIterator.0) align 8, i64, i64)
 
 declare i1 @_ZN14NumberIteratorIlE7isValidEv(ptr)
 

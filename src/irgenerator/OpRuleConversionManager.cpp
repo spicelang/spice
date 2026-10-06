@@ -1665,8 +1665,7 @@ LLVMExprResult OpRuleConversionManager::getCastInst(const ASTNode *node, QualTyp
     // advanced to the embedded subobject (past any vtable prefix) instead of being passed through unchanged.
     const QualType lhsContained = lhsSTy.getContained();
     const QualType rhsContained = rhsSTy.getContained();
-    if (lhsContained.matchesInterfaceImplementedByStruct(rhsContained) ||
-        lhsContained.matchesComposedBaseOfStruct(rhsContained))
+    if (lhsContained.matchesInterfaceImplementedByStruct(rhsContained) || lhsContained.matchesComposedBaseOfStruct(rhsContained))
       return {.value = irGenerator->getUpcastedStructPtr(rhsV(), lhsSTy, rhsSTy)};
     return rhs;
   }
@@ -1763,9 +1762,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   const QualTypeList &paramTypes = opFct->getParamTypes();
   assert(paramTypes.size() == N);
   // References and decayed arrays are passed as address, everything else as value
-  const auto passAsAddress = [](const QualType &paramType) {
-    return paramType.isRef() || paramType.isDecayedArray();
-  };
+  const auto passAsAddress = [](const QualType &paramType) { return paramType.isRef() || paramType.isDecayedArray(); };
   llvm::Value *argValues[N];
   argValues[0] = passAsAddress(paramTypes[0]) ? opV[1]() : opV[0]();
   if constexpr (N == 2)
@@ -1776,27 +1773,26 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
       argValues[i] = irGenerator->materializeDecayedArrayArg(argValues[i], paramTypes[i]);
 
   // Function is not defined in the current module -> declare it
+  const QualType returnType = opFct->isProcedure() ? QualType(TY_DYN) : opFct->returnType;
   if (!irGenerator->module->getFunction(mangledName)) {
-    // Get returnType
-    llvm::Type *returnType = builder.getVoidTy();
-    if (!opFct->returnType.is(TY_DYN))
-      returnType = opFct->returnType.toLLVMType(irGenerator->sourceFile);
-
     // Get arg types
     std::vector<llvm::Type *> argTypes;
     for (const QualType &paramType : opFct->getParamTypes())
       argTypes.push_back(paramType.getParamLLVMType(irGenerator->sourceFile));
 
-    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, argTypes, false);
+    llvm::FunctionType *fctType = irGenerator->getFunctionType(returnType, argTypes);
     irGenerator->module->getOrInsertFunction(mangledName, fctType);
+    if (const ReturnABIInfo returnABI = irGenerator->getReturnABIInfo(returnType); returnABI.isIndirect())
+      irGenerator->addSRetParamAttrs(irGenerator->module->getFunction(mangledName), returnABI.type);
   }
 
   // Get callee function
   llvm::Function *callee = irGenerator->module->getFunction(mangledName);
   assert(callee != nullptr);
 
-  // Generate function call
-  llvm::Value *result = builder.CreateCall(callee, argValues);
+  // Generate function call. If the value is returned via memory or coerced, the call result lives in memory
+  llvm::Value *resultAddr = nullptr;
+  llvm::Value *result = irGenerator->insertCall(callee, {argValues, argValues + N}, returnType, resultAddr);
 
   // If this is a procedure, return true
   if (opFct->isProcedure())
@@ -1808,8 +1804,11 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   if (opFct->returnType.is(TY_STRUCT)) {
     anonymousSymbol = irGenerator->currentScope->symbolTable.lookupAnonymous(node, opIdx);
     if (anonymousSymbol != nullptr) {
-      resultPtr = irGenerator->insertAlloca(result->getType());
-      irGenerator->insertStore(result, resultPtr);
+      resultPtr = resultAddr;
+      if (resultPtr == nullptr) {
+        resultPtr = irGenerator->insertAlloca(result->getType());
+        irGenerator->insertStore(result, resultPtr);
+      }
       irGenerator->updateAddress(anonymousSymbol, resultPtr);
     }
   }
@@ -1817,6 +1816,10 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
   // If the return type is reference, return the result value as refPtr
   if (opFct->returnType.isRef())
     return {.ptr = result, .refPtr = resultPtr, .entry = anonymousSymbol};
+
+  // In case the value is returned via memory or coerced, return its address
+  if (resultAddr != nullptr)
+    return {.ptr = resultAddr, .entry = anonymousSymbol};
 
   // Otherwise as value
   return {.value = result, .ptr = resultPtr, .entry = anonymousSymbol};
