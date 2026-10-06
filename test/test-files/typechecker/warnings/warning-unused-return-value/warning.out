@@ -1,1 +1,1 @@
-[Warning] ./source.spice:6:5: Unused return value: The return value of the function call is unused
+[Warning] ./source.spice:18:5: Unused return value: The return value of the function call is unused

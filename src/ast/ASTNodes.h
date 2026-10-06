@@ -186,6 +186,7 @@ public:
   [[nodiscard]] virtual bool isUnionDef() const { return false; }
   [[nodiscard]] virtual bool isParam() const { return false; }
   [[nodiscard]] virtual bool isStmtLst() const { return false; }
+  [[nodiscard]] virtual bool isArgLst() const { return false; }
   [[nodiscard]] virtual bool isAssignExpr() const { return false; }
   [[nodiscard]] virtual bool isExprStmt() const { return false; }
 
@@ -1040,6 +1041,7 @@ public:
 
   // Other methods
   GET_CHILDREN(args);
+  [[nodiscard]] bool isArgLst() const override { return true; }
 
   // Public members
   std::vector<ExprNode *> args;

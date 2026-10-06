@@ -573,6 +573,20 @@ bool FctCallNode::hasReturnValueReceiver() const {
   while (!node->isAssignExpr()) {
     if (node->isExprStmt())
       return false;
+    // The call is (part of) an argument of another call, so the return value is used
+    if (node->isArgLst())
+      return true;
+    // Incrementing or decrementing the returned value counts as a use
+    if (const auto *prefixUnaryExpr = dynamic_cast<const PrefixUnaryExprNode *>(node)) {
+      const PrefixUnaryExprNode::PrefixUnaryOp op = prefixUnaryExpr->op;
+      if (op == PrefixUnaryExprNode::PrefixUnaryOp::OP_PLUS_PLUS || op == PrefixUnaryExprNode::PrefixUnaryOp::OP_MINUS_MINUS)
+        return true;
+    }
+    if (const auto *postfixUnaryExpr = dynamic_cast<const PostfixUnaryExprNode *>(node)) {
+      const PostfixUnaryExprNode::PostfixUnaryOp op = postfixUnaryExpr->op;
+      if (op == PostfixUnaryExprNode::PostfixUnaryOp::OP_PLUS_PLUS || op == PostfixUnaryExprNode::PostfixUnaryOp::OP_MINUS_MINUS)
+        return true;
+    }
     // As soon as we have a node with more than one child, we know that the return value is used
     if (node->getChildren().size() > 1)
       return true;

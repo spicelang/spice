@@ -1,7 +1,28 @@
+int COUNTER = 0;
+
 f<string> unusedReturnValue() {
     return "unused";
 }
 
+f<string> identity(string s) {
+    return s;
+}
+
+f<int&> getCounter() {
+    return COUNTER;
+}
+
+p consume(string _) {}
+
 f<int> main() {
     unusedReturnValue();
+    // Calls used as the sole argument of another call must not be flagged
+    consume(unusedReturnValue());
+    consume(identity(unusedReturnValue()));
+    // Incrementing or decrementing the returned reference must not be flagged
+    getCounter()++;
+    getCounter()--;
+    ++getCounter();
+    --getCounter();
+    printf("%d\n", COUNTER);
 }
