@@ -49,7 +49,7 @@ jobs:
       - name: Clone LLVM
         run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
 
-      # Shares the cache entry with the C++ CI, so the LLVM build options have to stay in sync with ci-cpp.yml
+      # Shares the cache entry with the CI workflow, so the LLVM build options have to stay in sync with ci.yml
       - name: Cache LLVM
         id: cache-llvm
         uses: actions/cache@v6

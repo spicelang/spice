@@ -5,7 +5,7 @@
   <p align="center">
     <a target="_blank" href="https://github.com/spicelang/spice/releases/latest"><img src="https://img.shields.io/github/v/release/chillibits/spice?include_prereleases"></a>
     <a target="_blank" href="https://hub.docker.com/r/chillibits/spice"><img src="https://img.shields.io/docker/pulls/chillibits/spice"></a>
-    <a target="_blank" href="https://github.com/spicelang/spice/blob/main/.github/workflows/ci-cpp.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci-cpp.yml/badge.svg"></a>
+    <a target="_blank" href="https://github.com/spicelang/spice/blob/main/.github/workflows/ci.yml"><img src="https://github.com/spicelang/spice/actions/workflows/ci.yml/badge.svg"></a>
 	<a target="_blank" href="https://github.com/spicelang/spice/blob/main/.github/workflows/codeql-analysis.yml"><img src="https://github.com/spicelang/spice/actions/workflows/codeql-analysis.yml/badge.svg"></a>
     <a target="_blank" href="https://goreportcard.com/report/github.com/spicelang/spice"><img src="https://goreportcard.com/badge/github.com/spicelang/spice"></a>
     <a target="_blank" href="https://makeapullrequest.com"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg"></a>
