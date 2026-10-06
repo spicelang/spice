@@ -110,7 +110,9 @@ jobs:
         run: |
           # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built for the host
           # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
-          export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-Wl,--end-group"
+          # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
+          # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
+          export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
           # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
           ./spice build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
@@ -237,7 +239,9 @@ jobs:
         run: |
           # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built for the host
           # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
-          export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-Wl,--end-group"
+          # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
+          # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
+          export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
           # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
           ./spice build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
