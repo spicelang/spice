@@ -134,6 +134,9 @@ void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) {
   for (const Function *virtualMethod : virtualMethods) {
     llvm::Function *llvmFunc = getLLVMFunction(virtualMethod);
     assert(spiceStruct->scope->type == ScopeType::INTERFACE || llvmFunc != nullptr);
+    // Virtual calls expect the return type of the interface method, so methods with another return type need a thunk
+    if (llvmFunc != nullptr && !virtualMethod->virtualReturnType.is(TY_DYN))
+      llvmFunc = getOrCreateCovariantReturnThunk(virtualMethod, llvmFunc);
     arrayValues.push_back(llvmFunc ? llvmFunc : llvm::Constant::getNullValue(ptrTy));
   }
 
@@ -146,6 +149,70 @@ void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) {
   llvm::GlobalVariable *global = module->getNamedGlobal(mangledName);
   assert(global != nullptr);
   global->setInitializer(initializer);
+}
+
+llvm::Function *IRGenerator::getOrCreateCovariantReturnThunk(const Function *method, llvm::Function *target) {
+  // A struct method may implement an interface method, that returns an interface, by returning a struct, which implements
+  // this interface. Virtual calls expect the interface to be returned, which might be returned in another way than the
+  // struct. Therefore, the VTable points to a thunk, that calls the method and returns the interface part of the struct.
+  const std::string thunkName = target->getName().str() + ".covthunk";
+  // The result is handed out as non-const pointer, which misc-const-correctness does not recognize as pointee mutation
+  // NOLINTNEXTLINE(misc-const-correctness)
+  if (llvm::Function *existing = module->getFunction(thunkName))
+    return existing;
+
+  // Build the thunk signature: the target's params with the return type of the interface method
+  const QualType &returnType = method->returnType;
+  const QualType &virtualReturnType = method->virtualReturnType;
+  const unsigned int targetArgOffset = getArgOffset(returnType);
+  const llvm::FunctionType *targetType = target->getFunctionType();
+  const std::vector<llvm::Type *> paramTypes(targetType->param_begin() + targetArgOffset, targetType->param_end());
+  llvm::FunctionType *thunkType = getFunctionType(virtualReturnType, paramTypes);
+  llvm::Function *thunk = llvm::Function::Create(thunkType, llvm::Function::PrivateLinkage, thunkName, module);
+  thunk->setDSOLocal(true);
+  addCommonFctAttrs(thunk);
+  if (const ReturnABIInfo returnABI = getReturnABIInfo(virtualReturnType); returnABI.isIndirect())
+    addSRetParamAttrs(thunk, returnABI.memoryType);
+
+  // Save insert markers, because the thunk body might be emitted in the middle of generating another function
+  llvm::BasicBlock *bOrig = builder.GetInsertBlock();
+  llvm::BasicBlock *allocaInsertBlockOrig = allocaInsertBlock;
+  llvm::AllocaInst *allocaInsertInstOrig = allocaInsertInst;
+  const bool blockAlreadyTerminatedOrig = blockAlreadyTerminated;
+  const llvm::DebugLoc debugLocOrig = builder.getCurrentDebugLocation();
+  builder.SetCurrentDebugLocation(llvm::DebugLoc());
+
+  llvm::BasicBlock *bEntry = createBlock("entry");
+  switchToBlock(bEntry, thunk);
+  allocaInsertBlock = bEntry;
+  allocaInsertInst = nullptr;
+
+  // Forward all arguments except the sret pointer of the thunk
+  const unsigned int thunkArgOffset = getArgOffset(virtualReturnType);
+  std::vector<llvm::Value *> fwdArgs;
+  fwdArgs.reserve(paramTypes.size());
+  for (size_t i = 0; i < paramTypes.size(); i++)
+    fwdArgs.push_back(thunk->getArg(thunkArgOffset + i));
+  llvm::Value *resultAddr = nullptr;
+  llvm::CallInst *call = insertCall(target, fwdArgs, returnType, resultAddr);
+  if (resultAddr == nullptr) {
+    resultAddr = insertAlloca(call->getType());
+    insertStore(call, resultAddr);
+  }
+
+  // Return the interface part of the returned struct
+  llvm::Value *interfacePtr = getUpcastedStructPtr(resultAddr, virtualReturnType, returnType);
+  insertReturn(insertLoad(virtualReturnType.toLLVMType(sourceFile), interfacePtr));
+
+  // Restore insert markers
+  if (bOrig != nullptr)
+    builder.SetInsertPoint(bOrig);
+  builder.SetCurrentDebugLocation(debugLocOrig);
+  blockAlreadyTerminated = blockAlreadyTerminatedOrig;
+  allocaInsertBlock = allocaInsertBlockOrig;
+  allocaInsertInst = allocaInsertInstOrig;
+
+  return thunk;
 }
 
 llvm::StructType *IRGenerator::getVTableType(const StructBase *spiceStruct) const {

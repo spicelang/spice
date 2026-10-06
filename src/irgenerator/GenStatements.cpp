@@ -114,6 +114,9 @@ std::any IRGenerator::visitCaseConstant(const CaseConstantNode *node) {
 }
 
 std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
+  // If the value is returned via memory, it is directly put into the memory of the caller
+  llvm::Argument *sretArg = getSRetArg(builder.GetInsertBlock()->getParent());
+
   llvm::Value *returnValue = nullptr;
   if (node->hasReturnValue) { // Return value is attached to the return statement
     const ExprNode *returnExpr = node->assignExpr;
@@ -121,18 +124,22 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
       // Perform a copy
       llvm::Value *originalAddress = resolveAddress(returnExpr);
       llvm::Type *returnTy = node->returnType.toLLVMType(sourceFile);
-      llvm::Value *newAddress = insertAlloca(returnTy);
+      llvm::Value *newAddress = sretArg != nullptr ? static_cast<llvm::Value *>(sretArg) : insertAlloca(returnTy);
       generateCtorOrDtorCall(newAddress, node->calledCopyCtor, {originalAddress});
-      returnValue = insertLoad(returnTy, newAddress);
+      if (sretArg == nullptr)
+        returnValue = insertLoad(returnTy, newAddress);
     } else {
       returnValue = node->returnType.isRef() ? resolveAddress(returnExpr) : resolveValue(returnExpr);
     }
   } else { // Try to load result variable value
     const SymbolTableEntry *resultEntry = currentScope->lookup(RETURN_VARIABLE_NAME);
     if (resultEntry != nullptr) {
-      llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(sourceFile);
       llvm::Value *returnValueAddr = getAddress(resultEntry);
-      returnValue = insertLoad(resultSTy, returnValueAddr);
+      // The result variable of functions, that return via memory, already lives in the memory of the caller
+      if (returnValueAddr != sretArg) {
+        llvm::Type *resultSTy = resultEntry->getQualType().toLLVMType(sourceFile);
+        returnValue = insertLoad(resultSTy, returnValueAddr);
+      }
     }
   }
 
@@ -142,13 +149,7 @@ std::any IRGenerator::visitReturnStmt(const ReturnStmtNode *node) {
   blockAlreadyTerminated = true;
 
   // Create return instruction
-  if (returnValue != nullptr) {
-    // Return with value
-    builder.CreateRet(returnValue);
-  } else {
-    // Return without value
-    builder.CreateRetVoid();
-  }
+  insertReturn(returnValue);
 
   return nullptr;
 }

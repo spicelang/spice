@@ -1,0 +1,153 @@
+// Return values are lowered to the C calling convention of the target, like Clang does it: aggregates, that do not fit
+// into the return registers, are returned via an sret pointer, small ones are coerced to the types, that are returned
+// in the return registers. Types with a copy ctor or dtor are always returned via an sret pointer.
+
+type IntPair struct {
+    int a
+    int b
+}
+
+type IntTriple struct {
+    int a
+    int b
+    int c
+}
+
+type ByteTriple struct {
+    byte a
+    byte b
+    byte c
+}
+
+type BoolPair struct {
+    bool a
+    bool b
+}
+
+type DoublePair struct {
+    double x
+    double y
+}
+
+type SingleDouble struct {
+    double x
+}
+
+type DoubleLong struct {
+    double x
+    long n
+}
+
+type IntLong struct {
+    int a
+    long b
+}
+
+type LongByte struct {
+    long a
+    byte b
+}
+
+type IntArray struct {
+    int[3] values
+}
+
+type Large struct {
+    long a
+    long b
+    long c
+}
+
+#[core.compiler.packed=true]
+type Packed struct {
+    byte a
+    long b
+}
+
+type NonTrivial struct {
+    int value
+}
+
+p NonTrivial.dtor() {}
+
+f<IntPair> makeIntPair() {
+    return IntPair{1, 2};
+}
+
+f<IntTriple> makeIntTriple() {
+    return IntTriple{3, 4, 5};
+}
+
+f<ByteTriple> makeByteTriple() {
+    return ByteTriple{cast<byte>(6), cast<byte>(7), cast<byte>(8)};
+}
+
+f<BoolPair> makeBoolPair() {
+    return BoolPair{true, false};
+}
+
+f<DoublePair> makeDoublePair() {
+    return DoublePair{1.5, 2.5};
+}
+
+f<SingleDouble> makeSingleDouble() {
+    return SingleDouble{3.5};
+}
+
+f<DoubleLong> makeDoubleLong() {
+    return DoubleLong{4.5, 9l};
+}
+
+f<IntLong> makeIntLong() {
+    return IntLong{10, 11l};
+}
+
+f<LongByte> makeLongByte() {
+    return LongByte{12l, cast<byte>(13)};
+}
+
+f<IntArray> makeIntArray() {
+    return IntArray{[14, 15, 16]};
+}
+
+f<Large> makeLarge() {
+    return Large{17l, 18l, 19l};
+}
+
+f<Packed> makePacked() {
+    return Packed{cast<byte>(20), 21l};
+}
+
+f<NonTrivial> makeNonTrivial() {
+    return NonTrivial{22};
+}
+
+f<int> main() {
+    const IntPair intPair = makeIntPair();
+    assert intPair.a == 1 && intPair.b == 2;
+    const IntTriple intTriple = makeIntTriple();
+    assert intTriple.a == 3 && intTriple.b == 4 && intTriple.c == 5;
+    const ByteTriple byteTriple = makeByteTriple();
+    assert byteTriple.a == cast<byte>(6) && byteTriple.b == cast<byte>(7) && byteTriple.c == cast<byte>(8);
+    const BoolPair boolPair = makeBoolPair();
+    assert boolPair.a && !boolPair.b;
+    const DoublePair doublePair = makeDoublePair();
+    assert doublePair.x == 1.5 && doublePair.y == 2.5;
+    const SingleDouble singleDouble = makeSingleDouble();
+    assert singleDouble.x == 3.5;
+    const DoubleLong doubleLong = makeDoubleLong();
+    assert doubleLong.x == 4.5 && doubleLong.n == 9l;
+    const IntLong intLong = makeIntLong();
+    assert intLong.a == 10 && intLong.b == 11l;
+    const LongByte longByte = makeLongByte();
+    assert longByte.a == 12l && longByte.b == cast<byte>(13);
+    const IntArray intArray = makeIntArray();
+    assert intArray.values[0] == 14 && intArray.values[1] == 15 && intArray.values[2] == 16;
+    const Large large = makeLarge();
+    assert large.a == 17l && large.b == 18l && large.c == 19l;
+    const Packed packed = makePacked();
+    assert packed.a == cast<byte>(20) && packed.b == 21l;
+    const NonTrivial nonTrivial = makeNonTrivial();
+    assert nonTrivial.value == 22;
+    printf("All assertions passed!\n");
+}

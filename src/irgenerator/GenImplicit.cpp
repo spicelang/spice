@@ -234,8 +234,8 @@ void IRGenerator::generateFctDecl(const Function *fct, const std::vector<llvm::V
     std::vector<llvm::Type *> paramTypes;
     for (const llvm::Value *argValue : args)
       paramTypes.push_back(argValue->getType());
-    llvm::Type *returnType = fct->isFunction() ? fct->returnType.toLLVMType(sourceFile) : builder.getVoidTy();
-    llvm::FunctionType *fctType = llvm::FunctionType::get(returnType, paramTypes, false);
+    assert(fct->isProcedure());
+    llvm::FunctionType *fctType = llvm::FunctionType::get(builder.getVoidTy(), paramTypes, false);
     module->getOrInsertFunction(mangledName, fctType);
 
     if (fct->isMethod()) {
@@ -282,11 +282,6 @@ llvm::CallInst *IRGenerator::generateFctCall(const Function *fct, const std::vec
   }
 
   return callInst;
-}
-
-llvm::Value *IRGenerator::generateFctDeclAndCall(const Function *fct, const std::vector<llvm::Value *> &args) const {
-  generateFctDecl(fct, args);
-  return generateFctCall(fct, args);
 }
 
 void IRGenerator::generateProcDeclAndCall(const Function *proc, const std::vector<llvm::Value *> &args) const {

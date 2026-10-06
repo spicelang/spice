@@ -32,6 +32,7 @@ public type Function struct {
     public String name
     public QualType thisType
     public QualType returnType
+    public QualType virtualReturnType // Return type of the implemented interface method, if it differs
     public ParamList paramList
     public Vector<GenericType> templateTypes
     public TypeMapping typeMapping
@@ -56,6 +57,7 @@ public p Function.ctor(const String& name, SymbolTableEntry* entry, const QualTy
     this.entry = entry;
     this.thisType = thisType;
     this.returnType = returnType;
+    this.virtualReturnType = QualType(SuperType::TY_DYN);
     this.paramList = paramList;
     this.templateTypes = templateTypes;
     this.declNode = declNode;

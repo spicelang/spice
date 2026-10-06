@@ -26,17 +26,16 @@ define internal void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
   store ptr null, ptr %2, align 8
-  %3 = call noundef %struct.Result @_Z6sAllocm(i64 noundef 10)
-  store %struct.Result %3, ptr %res, align 8
-  %4 = load ptr, ptr %this, align 8
-  %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %4, i64 0, i32 0
-  %5 = call noundef ptr @_ZN6ResultIPVhE13unwrapAndMoveEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
-  store ptr %5, ptr %data.addr, align 8
+  call void @_Z6sAllocm(ptr dead_on_unwind writable sret(%struct.Result) align 8 %res, i64 noundef 10)
+  %3 = load ptr, ptr %this, align 8
+  %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %3, i64 0, i32 0
+  %4 = call noundef ptr @_ZN6ResultIPVhE13unwrapAndMoveEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
+  store ptr %4, ptr %data.addr, align 8
   call void @_ZN6ResultIPVhE4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %res)
   ret void
 }
 
-declare %struct.Result @_Z6sAllocm(i64)
+declare void @_Z6sAllocm(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, i64)
 
 declare ptr @_ZN6ResultIPVhE13unwrapAndMoveEv(ptr)
 

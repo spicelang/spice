@@ -15,6 +15,8 @@
 # check and yields nothing but false positives on the LLVM APIs used throughout the IR generator. It has to be disabled
 # here rather than via NOLINT: the diagnostics are reported inside LLVM's own operator| / operator|= (BitmaskEnum.h),
 # not at the call site in our sources, so a NOLINT next to our code does not suppress them.
+#
+# portability-avoid-pragma-once is disabled, because STYLE_GUIDE.md requires '#pragma once' header guards.
 Checks: >
   -*,
   bugprone-*,
@@ -24,6 +26,7 @@ Checks: >
   -clang-analyzer-optin.core.EnumCastOutOfRange,
   performance-*,
   portability-*,
+  -portability-avoid-pragma-once,
   misc-*,
   -misc-non-private-member-variables-in-classes,
   -misc-no-recursion,

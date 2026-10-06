@@ -68,6 +68,7 @@ public:
   std::string name;
   QualType thisType = QualType(TY_DYN);
   QualType returnType = QualType(TY_DYN);
+  QualType virtualReturnType = QualType(TY_DYN); // Return type of the implemented interface method, if it differs
   ParamList paramList;
   std::vector<GenericType> templateTypes;
   TypeMapping typeMapping;

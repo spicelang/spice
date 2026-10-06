@@ -73,6 +73,7 @@ set(SOURCES
         visualizer/DependencyGraphVisualizer.cpp
         # IR generator
         irgenerator/IRGenerator.cpp
+        irgenerator/ABIInfo.cpp
         irgenerator/GenTopLevelDefinitions.cpp
         irgenerator/GenControlStructures.cpp
         irgenerator/GenStatements.cpp

@@ -1,0 +1,357 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/bindings/llvm/llvm" as llvm;
+
+public type ReturnABIKind enum {
+    DIRECT,   // Returned as is
+    COERCED,  // Returned in registers as another type with the same memory representation
+    INDIRECT  // Returned via a hidden sret pointer to caller-allocated memory, passed as first argument
+}
+
+public type ReturnABIInfo struct {
+    public ReturnABIKind kind = ReturnABIKind::DIRECT
+    public llvm::Type memoryType  // Type of the return value in memory
+    public llvm::Type coercedType // Type, that is returned in registers (only set for COERCED)
+}
+
+public f<bool> ReturnABIInfo.isDirect() {
+    return this.kind == ReturnABIKind::DIRECT;
+}
+
+public f<bool> ReturnABIInfo.isCoerced() {
+    return this.kind == ReturnABIKind::COERCED;
+}
+
+public f<bool> ReturnABIInfo.isIndirect() {
+    return this.kind == ReturnABIKind::INDIRECT;
+}
+
+// Register class of an eightbyte in the x86-64 SysV ABI
+type ArgClass enum {
+    NO_CLASS,
+    INTEGER,
+    SSE,
+    MEMORY
+}
+
+// Scalar of an aggregate together with its offset
+type Scalar struct {
+    llvm::Type llvmType
+    unsigned long offset
+}
+
+f<ArgClass> mergeClasses(ArgClass accumulated, ArgClass field) {
+    if accumulated == field || field == ArgClass::NO_CLASS {
+        return accumulated;
+    }
+    if accumulated == ArgClass::NO_CLASS {
+        return field;
+    }
+    if accumulated == ArgClass::MEMORY || field == ArgClass::MEMORY {
+        return ArgClass::MEMORY;
+    }
+    return ArgClass::INTEGER; // INTEGER and SSE
+}
+
+/**
+ * Lowers return values to the C calling convention of the target, like Clang does it. Aggregates, that do not fit into
+ * the return registers, are returned via an sret pointer, small ones are coerced to the types, that are returned in the
+ * return registers. Types, that are non-trivial for the purpose of calls (custom copy ctor or dtor), are always returned
+ * via an sret pointer, like in the Itanium C++ ABI.
+ *
+ * Mirrors the host's ABIInfo.
+ */
+public type ABIInfo struct {
+    llvm::Triple targetTriple
+    llvm::Module* module
+    llvm::LLVMContext* context
+}
+
+public p ABIInfo.ctor(const llvm::Triple& targetTriple, llvm::Module* module, llvm::LLVMContext* context) {
+    this.targetTriple = targetTriple;
+    this.module = module;
+    this.context = context;
+}
+
+/**
+ * Classify how a value of the given type is returned from a function
+ *
+ * @param llvmType Type of the return value
+ * @param isNonTrivial True if the type has a custom copy ctor or dtor (also transitively via its fields)
+ * @return Return ABI info
+ */
+public f<ReturnABIInfo> ABIInfo.classifyReturnType(llvm::Type llvmType, bool isNonTrivial) {
+    // Only aggregates are subject to lowering
+    if !llvmType.isAggregateType() {
+        return direct(llvmType);
+    }
+
+    // Types, that can't be copied trivially, are always returned via memory, so that they keep their address
+    if isNonTrivial {
+        return indirect(llvmType);
+    }
+
+    // Empty aggregates do not occupy any return register
+    if this.module.getTypeAllocSize(llvmType) == 0l {
+        return direct(llvmType);
+    }
+
+    if this.targetTriple.isX86_64() {
+        return this.targetTriple.isOSWindows() ? this.classifyReturnTypeWin64(llvmType) : this.classifyReturnTypeX86_64SysV(llvmType);
+    }
+    if this.targetTriple.isAArch64() {
+        return this.classifyReturnTypeAArch64(llvmType);
+    }
+    if this.targetTriple.isWasm() {
+        return this.classifyReturnTypeWebAssembly(llvmType);
+    }
+    // Like the default ABI of Clang, return all other aggregates via memory
+    return indirect(llvmType);
+}
+
+f<ReturnABIInfo> ABIInfo.classifyReturnTypeX86_64SysV(llvm::Type llvmType) {
+    // Aggregates larger than two eightbytes are returned via memory
+    const unsigned long size = this.module.getTypeAllocSize(llvmType);
+    if size > 16l {
+        return indirect(llvmType);
+    }
+
+    // Classify both eightbytes, based on the scalars they contain
+    ArgClass[2] classes = [ArgClass::NO_CLASS, ArgClass::NO_CLASS];
+    Vector<Scalar> scalars;
+    this.collectScalars(llvmType, 0l, scalars);
+    foreach const Scalar& scalar : scalars {
+        llvm::Type scalarType = scalar.llvmType;
+        ArgClass scalarClass = ArgClass::MEMORY;
+        if scalarType.isIntegerTy() || scalarType.isPointerTy() {
+            scalarClass = ArgClass::INTEGER;
+        } else if scalarType.isDoubleTy() {
+            scalarClass = ArgClass::SSE;
+        }
+        // Unaligned fields, e.g. in packed structs, force the aggregate to be returned via memory
+        if scalar.offset % cast<unsigned long>(this.module.getABITypeAlign(scalarType)) != 0l {
+            scalarClass = ArgClass::MEMORY;
+        }
+        const unsigned long firstEightbyte = scalar.offset / 8l;
+        const unsigned long lastEightbyte = (scalar.offset + this.module.getTypeStoreSize(scalarType) - 1l) / 8l;
+        for unsigned long i = firstEightbyte; i <= lastEightbyte && i < 2l; i++ {
+            classes[i] = mergeClasses(classes[i], scalarClass);
+        }
+    }
+    if classes[0] == ArgClass::MEMORY || classes[1] == ArgClass::MEMORY {
+        return indirect(llvmType);
+    }
+    if classes[0] == ArgClass::NO_CLASS && classes[1] == ArgClass::NO_CLASS {
+        return direct(llvmType);
+    }
+    // Leading padding is passed in a general purpose register
+    if classes[0] == ArgClass::NO_CLASS {
+        classes[0] = ArgClass::INTEGER;
+    }
+
+    // Build the type, that is returned in registers. Spice has no single precision floating point type, so an SSE
+    // eightbyte always holds a double
+    llvm::Type loType = this.getEightbyteType(llvmType, 0l, classes[0]);
+    if classes[1] == ArgClass::NO_CLASS {
+        return coerced(llvmType, loType);
+    }
+    const llvm::Type hiType = this.getEightbyteType(llvmType, 8l, classes[1]);
+    // The high part has to start at offset 8, so widen the low part, if the high part would start earlier otherwise
+    const unsigned long hiAlign = cast<unsigned long>(this.module.getABITypeAlign(hiType));
+    const unsigned long hiStart = (this.module.getTypeAllocSize(loType) + hiAlign - 1l) / hiAlign * hiAlign;
+    if hiStart != 8l {
+        loType = llvm::getInt64Ty(*this.context);
+    }
+    Vector<llvm::Type> elementTypes;
+    elementTypes.pushBack(loType);
+    elementTypes.pushBack(hiType);
+    return coerced(llvmType, llvm::getStructType(*this.context, elementTypes));
+}
+
+f<llvm::Type> ABIInfo.getEightbyteType(llvm::Type llvmType, unsigned long offset, ArgClass argClass) {
+    if argClass == ArgClass::SSE {
+        return llvm::getDoubleTy(*this.context);
+    }
+    return this.getIntegerTypeAtOffset(llvmType, offset);
+}
+
+f<ReturnABIInfo> ABIInfo.classifyReturnTypeWin64(llvm::Type llvmType) {
+    // Aggregates of size 1, 2, 4 or 8 bytes are returned in RAX, all others via memory
+    const unsigned long size = this.module.getTypeAllocSize(llvmType);
+    if size > 8l || (size & (size - 1l)) != 0l {
+        return indirect(llvmType);
+    }
+    return coerced(llvmType, llvm::getIntNTy(*this.context, cast<unsigned int>(size * 8l)));
+}
+
+f<ReturnABIInfo> ABIInfo.classifyReturnTypeAArch64(llvm::Type llvmType) {
+    // Homogeneous floating point aggregates with up to four members are returned in the floating point registers
+    const unsigned long memberCount = this.getHomogeneousFPAggregateMemberCount(llvmType);
+    if memberCount > 0l && memberCount <= 4l {
+        return direct(llvmType);
+    }
+
+    // Aggregates of up to 16 bytes are returned in general purpose registers, all others via memory
+    const unsigned long size = this.module.getTypeAllocSize(llvmType);
+    if size > 16l {
+        return indirect(llvmType);
+    }
+    if size <= 8l {
+        return coerced(llvmType, llvm::getIntNTy(*this.context, cast<unsigned int>(size * 8l)));
+    }
+    if this.module.getABITypeAlign(llvmType) < 16 {
+        return coerced(llvmType, llvm::getArrayType(llvm::getInt64Ty(*this.context), 2l));
+    }
+    return coerced(llvmType, llvm::getIntNTy(*this.context, 128));
+}
+
+f<ReturnABIInfo> ABIInfo.classifyReturnTypeWebAssembly(llvm::Type llvmType) {
+    // Structs with a single scalar element are returned as this element, all other aggregates via memory
+    const llvm::Type elementType = this.getSingleElementType(llvmType);
+    if !elementType.isNull() {
+        return coerced(llvmType, elementType);
+    }
+    return indirect(llvmType);
+}
+
+/**
+ * Get the integer type for the eightbyte at the given offset in the given type, like Clang's GetINTEGERTypeAtOffset
+ */
+f<llvm::Type> ABIInfo.getIntegerTypeAtOffset(llvm::Type llvmType, unsigned long offset) {
+    llvm::Type scalarType = this.getScalarTypeAtOffset(llvmType, offset);
+    if !scalarType.isNull() {
+        // Pointers and 64-bit integers fill the whole eightbyte
+        if scalarType.isPointerTy() || scalarType.isIntegerTy(64) {
+            return scalarType;
+        }
+        // Smaller integers can be used, if the rest of the eightbyte contains only padding. Booleans are bytes in memory
+        if scalarType.isIntegerTy(1) || scalarType.isIntegerTy(8) || scalarType.isIntegerTy(16) || scalarType.isIntegerTy(32) {
+            const unsigned int bitWidth = scalarType.isIntegerTy(1) ? 8 : scalarType.getIntegerBitWidth();
+            if this.bitsContainNoUserData(llvmType, offset * 8l + cast<unsigned long>(bitWidth), offset * 8l + 64l) {
+                return llvm::getIntNTy(*this.context, bitWidth);
+            }
+        }
+    }
+    // Fall back to an integer, that covers the rest of the eightbyte
+    const unsigned long size = this.module.getTypeAllocSize(llvmType);
+    const unsigned long restSize = size - offset < 8l ? size - offset : 8l;
+    return llvm::getIntNTy(*this.context, cast<unsigned int>(restSize * 8l));
+}
+
+/**
+ * Get the scalar type, that starts at exactly the given offset in the given type
+ *
+ * @return Scalar type or a null type, if there is none
+ */
+f<llvm::Type> ABIInfo.getScalarTypeAtOffset(llvm::Type llvmType, unsigned long offset) {
+    if llvmType.isStructTy() {
+        if offset >= this.module.getTypeAllocSize(llvmType) {
+            return llvm::Type();
+        }
+        const unsigned int elementIdx = this.module.getStructElementContainingOffset(llvmType, offset);
+        const unsigned long elementOffset = this.module.getStructElementOffset(llvmType, elementIdx);
+        return this.getScalarTypeAtOffset(llvmType.getStructElementType(elementIdx), offset - elementOffset);
+    }
+    if llvmType.isArrayTy() {
+        const llvm::Type elementType = llvmType.getArrayElementType();
+        const unsigned long elementSize = this.module.getTypeAllocSize(elementType);
+        if elementSize == 0l || offset >= elementSize * llvmType.getArrayNumElements() {
+            return llvm::Type();
+        }
+        return this.getScalarTypeAtOffset(elementType, offset % elementSize);
+    }
+    return offset == 0l ? llvmType : llvm::Type();
+}
+
+/**
+ * Check if none of the scalars in the given type overlaps the given bit range, like Clang's BitsContainNoUserData
+ */
+f<bool> ABIInfo.bitsContainNoUserData(llvm::Type llvmType, unsigned long startBit, unsigned long endBit) {
+    Vector<Scalar> scalars;
+    this.collectScalars(llvmType, 0l, scalars);
+    foreach const Scalar& scalar : scalars {
+        const unsigned long scalarStartBit = scalar.offset * 8l;
+        const unsigned long scalarEndBit = scalarStartBit + this.module.getTypeStoreSize(scalar.llvmType) * 8l;
+        if scalarStartBit < endBit && scalarEndBit > startBit {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Collect all scalars in the given type, together with their offsets
+ */
+p ABIInfo.collectScalars(llvm::Type llvmType, unsigned long offset, Vector<Scalar>& scalars) {
+    if llvmType.isStructTy() {
+        const unsigned int elementCount = llvmType.getStructNumElements();
+        for unsigned int i = 0; i < elementCount; i++ {
+            const unsigned long elementOffset = this.module.getStructElementOffset(llvmType, i);
+            this.collectScalars(llvmType.getStructElementType(i), offset + elementOffset, scalars);
+        }
+    } else if llvmType.isArrayTy() {
+        const llvm::Type elementType = llvmType.getArrayElementType();
+        const unsigned long elementSize = this.module.getTypeAllocSize(elementType);
+        const unsigned long elementCount = llvmType.getArrayNumElements();
+        for unsigned long i = 0l; i < elementCount; i++ {
+            this.collectScalars(elementType, offset + i * elementSize, scalars);
+        }
+    } else {
+        scalars.pushBack(Scalar{llvmType, offset});
+    }
+}
+
+/**
+ * Get the number of members of the given homogeneous floating point aggregate. Spice has no single precision floating
+ * point type, so these are aggregates, that consist of doubles only.
+ *
+ * @return Number of members or 0, if the type is no homogeneous floating point aggregate
+ */
+f<unsigned long> ABIInfo.getHomogeneousFPAggregateMemberCount(llvm::Type llvmType) {
+    Vector<Scalar> scalars;
+    this.collectScalars(llvmType, 0l, scalars);
+    foreach const Scalar& scalar : scalars {
+        llvm::Type scalarType = scalar.llvmType;
+        if !scalarType.isDoubleTy() {
+            return 0l;
+        }
+    }
+    // There must not be any padding
+    if scalars.getSize() * 8l != this.module.getTypeAllocSize(llvmType) {
+        return 0l;
+    }
+    return scalars.getSize();
+}
+
+/**
+ * Get the type of the only scalar of a struct, like Clang's isSingleElementStruct
+ *
+ * @return Element type or a null type, if the type is no single element struct
+ */
+f<llvm::Type> ABIInfo.getSingleElementType(llvm::Type llvmType) {
+    Vector<Scalar> scalars;
+    this.collectScalars(llvmType, 0l, scalars);
+    if scalars.getSize() != 1l {
+        return llvm::Type();
+    }
+    const llvm::Type elementType = scalars.get(0l).llvmType;
+    // The element must fill the whole struct
+    if this.module.getTypeAllocSize(elementType) != this.module.getTypeAllocSize(llvmType) {
+        return llvm::Type();
+    }
+    return elementType;
+}
+
+f<ReturnABIInfo> direct(llvm::Type llvmType) {
+    return ReturnABIInfo{ReturnABIKind::DIRECT, llvmType, llvm::Type()};
+}
+
+f<ReturnABIInfo> coerced(llvm::Type llvmType, llvm::Type coercedType) {
+    return ReturnABIInfo{ReturnABIKind::COERCED, llvmType, coercedType};
+}
+
+f<ReturnABIInfo> indirect(llvm::Type llvmType) {
+    return ReturnABIInfo{ReturnABIKind::INDIRECT, llvmType, llvm::Type()};
+}

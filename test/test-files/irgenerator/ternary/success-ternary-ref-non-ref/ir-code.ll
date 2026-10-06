@@ -37,28 +37,26 @@ define internal void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %0) #0 {
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal noundef %struct.Test @_Z3fooRK4Test(ptr noundef %0) #0 {
+define internal void @_Z3fooRK4Test(ptr dead_on_unwind noalias writable sret(%struct.Test) align 1 %0, ptr noundef %1) #0 {
   %t = alloca ptr, align 8
   %copy = alloca %struct.Test, align 8
-  %2 = alloca %struct.Test, align 8
-  store ptr %0, ptr %t, align 8
+  store ptr %1, ptr %t, align 8
   %3 = load ptr, ptr %t, align 8
   call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %copy, ptr %3)
   br i1 false, label %cond.true.L12C12, label %cond.false.L12C12
 
-cond.true.L12C12:                                 ; preds = %1
+cond.true.L12C12:                                 ; preds = %2
   br label %cond.exit.L12C12
 
-cond.false.L12C12:                                ; preds = %1
+cond.false.L12C12:                                ; preds = %2
   %4 = load ptr, ptr %t, align 8
   br label %cond.exit.L12C12
 
 cond.exit.L12C12:                                 ; preds = %cond.false.L12C12, %cond.true.L12C12
   %cond.result = phi ptr [ %copy, %cond.true.L12C12 ], [ %4, %cond.false.L12C12 ]
-  call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %2, ptr %cond.result)
-  %5 = load %struct.Test, ptr %2, align 1
+  call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 1 %0, ptr %cond.result)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %copy)
-  ret %struct.Test %5
+  ret void
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
@@ -66,8 +64,7 @@ define dso_local noundef i32 @main() #2 {
   %t = alloca %struct.Test, align 8
   %1 = alloca %struct.Test, align 8
   call void @_ZN4Test4ctorEv(ptr noundef nonnull align 1 %t)
-  %2 = call noundef %struct.Test @_Z3fooRK4Test(ptr noundef %t)
-  store %struct.Test %2, ptr %1, align 1
+  call void @_Z3fooRK4Test(ptr dead_on_unwind writable sret(%struct.Test) align 1 %1, ptr noundef %t)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %1)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 1 %t)
   ret i32 0

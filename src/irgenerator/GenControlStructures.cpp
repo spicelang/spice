@@ -92,20 +92,26 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     llvm::Value *iterablePtr = resolveAddress(iteratorAssignNode);
 
     llvm::Value *iterator;
+    llvm::Value *iteratorAddr = nullptr;
+    const QualType &iteratorType = node->getIteratorFct->returnType;
     if (!node->getIteratorFct->isMethod() && node->getIteratorFct->getParamTypes().front().isArray()) { // Array as iterable
       // Call iterate() function from std/iterator/array-iterator
       llvm::Function *iterateFct = stdFunctionManager.getIterateFct(node->getIteratorFct);
       const size_t arraySize = iteratorAssignNode->getEvaluatedSymbolType(manIdx).getArraySize();
       assert(arraySize > 0);
-      iterator = builder.CreateCall(iterateFct, {iterablePtr, builder.getInt64(arraySize)});
+      iterator = insertCall(iterateFct, {iterablePtr, builder.getInt64(arraySize)}, iteratorType, iteratorAddr);
     } else { // Struct as iterable
       // Call .getIterator() on iterable
       llvm::Function *getIteratorFct = stdFunctionManager.getIteratorFct(node->getIteratorFct);
-      iterator = builder.CreateCall(getIteratorFct, iterablePtr);
+      iterator = insertCall(getIteratorFct, {iterablePtr}, iteratorType, iteratorAddr);
     }
 
-    // Resolve address of iterator
-    LLVMExprResult callResult = {.value = iterator, .node = iteratorAssignNode};
+    // Resolve address of iterator. If it is returned via memory or coerced, it already lives in memory
+    LLVMExprResult callResult = {.node = iteratorAssignNode};
+    if (iteratorAddr != nullptr)
+      callResult.ptr = iteratorAddr;
+    else
+      callResult.value = iterator;
     iteratorPtr = resolveAddress(callResult);
 
     // If an anonymous symbol exists, set its address
@@ -162,13 +168,16 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     // Allocate space to save pair
     const QualType &pairSTy = node->getIdxFct->returnType;
     llvm::Type *pairTy = pairSTy.toLLVMType(sourceFile);
-    llvm::Value *pairPtr = insertAlloca(pairSTy, "pair.addr");
-    // Call .getIdx() on iterator
+    // Call .getIdx() on iterator. If the pair is returned via memory or coerced, it already lives in memory
     assert(node->getIdxFct);
     llvm::Function *getIdxFct = stdFunctionManager.getIteratorGetIdxFct(node->getIdxFct);
-    llvm::Value *pair = builder.CreateCall(getIdxFct, iteratorPtr);
-    pair->setName("pair");
-    insertStore(pair, pairPtr);
+    llvm::Value *pairPtr = nullptr;
+    llvm::Value *pair = insertCall(getIdxFct, {iteratorPtr}, pairSTy, pairPtr);
+    if (pairPtr == nullptr) {
+      pairPtr = insertAlloca(pairSTy, "pair.addr");
+      pair->setName("pair");
+      insertStore(pair, pairPtr);
+    }
     // Store idx to idx var
     llvm::Value *idxAddrInPair = insertStructGEP(pairTy, pairPtr, 0, "idx.addr");
     LLVMExprResult idxResult = {.ptr = idxAddrInPair};

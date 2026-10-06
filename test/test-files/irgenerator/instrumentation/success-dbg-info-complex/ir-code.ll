@@ -55,8 +55,8 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
   %11 = alloca %struct.VectorIterator, align 8
   %idx = alloca i64, align 8
   %item2 = alloca ptr, align 8
-  %pair.addr = alloca %struct.Pair, align 8
-  %12 = alloca ptr, align 8
+  %12 = alloca %struct.Pair, align 8
+  %13 = alloca ptr, align 8
     #dbg_declare(ptr %_argc, !22, !DIExpression(), !23)
   store i32 %0, ptr %_argc, align 4, !dbg !23
     #dbg_declare(ptr %_argv, !24, !DIExpression(), !23)
@@ -69,19 +69,18 @@ define dso_local noundef i32 @main(i32 %0, ptr %1) #0 !dbg !14 {
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr noundef %4), !dbg !37
   store i32 9876, ptr %5, align 4, !dbg !38
   call void @_ZN6VectorIiE8pushBackERKi(ptr noundef nonnull align 8 dereferenceable(32) %vi, ptr noundef %5), !dbg !38
-  %13 = call noundef i64 @_ZN6VectorIiE7getSizeEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !39
-  %14 = icmp eq i64 %13, 3, !dbg !40
-  br i1 %14, label %assert.exit.L12, label %assert.then.L12, !dbg !40, !prof !41
+  %14 = call noundef i64 @_ZN6VectorIiE7getSizeEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !39
+  %15 = icmp eq i64 %14, 3, !dbg !40
+  br i1 %15, label %assert.exit.L12, label %assert.then.L12, !dbg !40, !prof !41
 
 assert.then.L12:                                  ; preds = %2
-  %15 = load ptr, ptr @stderr, align 8, !dbg !40
-  %16 = call i32 (ptr, ptr, ...) @fprintf(ptr %15, ptr @anon.string.0), !dbg !40
+  %16 = load ptr, ptr @stderr, align 8, !dbg !40
+  %17 = call i32 (ptr, ptr, ...) @fprintf(ptr %16, ptr @anon.string.0), !dbg !40
   call void @exit(i32 1), !dbg !40
   unreachable, !dbg !40
 
 assert.exit.L12:                                  ; preds = %2
-  %17 = call noundef %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !42
-  store %struct.VectorIterator %17, ptr %it, align 8, !dbg !42
+  call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %it, ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !42
     #dbg_declare(ptr %it, !43, !DIExpression(), !42)
   %18 = call noundef zeroext i1 @_ZN14VectorIteratorIiE7isValidEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !49
   br i1 %18, label %assert.exit.L16, label %assert.then.L16, !dbg !49, !prof !41
@@ -141,8 +140,8 @@ assert.then.L21:                                  ; preds = %assert.exit.L20
 
 assert.exit.L21:                                  ; preds = %assert.exit.L20
   call void @_ZN14VectorIteratorIiE4nextEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !58
-  %39 = call noundef %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !59
-  store %struct.Pair %39, ptr %pair, align 8, !dbg !59
+  %39 = call { i64, ptr } @_ZN14VectorIteratorIiE6getIdxEv(ptr noundef nonnull align 8 dereferenceable(24) %it), !dbg !59
+  store { i64, ptr } %39, ptr %pair, align 8, !dbg !59
     #dbg_declare(ptr %pair, !60, !DIExpression(), !59)
   %40 = call noundef ptr @_ZN4PairImRiE8getFirstEv(ptr noundef nonnull align 8 dereferenceable(16) %pair), !dbg !69
   %41 = load i64, ptr %40, align 8, !dbg !70
@@ -270,22 +269,21 @@ assert.then.L45:                                  ; preds = %assert.exit.L43
   unreachable, !dbg !92
 
 assert.exit.L45:                                  ; preds = %assert.exit.L43
-  %86 = call noundef %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !93
-  store %struct.VectorIterator %86, ptr %8, align 8, !dbg !93
+  call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %8, ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !93
     #dbg_declare(ptr %item, !95, !DIExpression(), !93)
   br label %foreach.head.L48, !dbg !93
 
 foreach.head.L48:                                 ; preds = %foreach.tail.L48, %assert.exit.L45
-  %87 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %8), !dbg !96
-  br i1 %87, label %foreach.body.L48, label %foreach.exit.L48, !dbg !96
+  %86 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %8), !dbg !96
+  br i1 %86, label %foreach.body.L48, label %foreach.exit.L48, !dbg !96
 
 foreach.body.L48:                                 ; preds = %foreach.head.L48
-  %88 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %8), !dbg !96
-  %89 = load i32, ptr %88, align 4, !dbg !96
-  store i32 %89, ptr %item, align 4, !dbg !96
-  %90 = load i32, ptr %item, align 4, !dbg !97
-  %91 = add nsw i32 %90, 1, !dbg !97
-  store i32 %91, ptr %item, align 4, !dbg !97
+  %87 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %8), !dbg !96
+  %88 = load i32, ptr %87, align 4, !dbg !96
+  store i32 %88, ptr %item, align 4, !dbg !96
+  %89 = load i32, ptr %item, align 4, !dbg !97
+  %90 = add nsw i32 %89, 1, !dbg !97
+  store i32 %90, ptr %item, align 4, !dbg !97
   br label %foreach.tail.L48, !dbg !98
 
 foreach.tail.L48:                                 ; preds = %foreach.body.L48
@@ -293,59 +291,58 @@ foreach.tail.L48:                                 ; preds = %foreach.body.L48
   br label %foreach.head.L48, !dbg !96
 
 foreach.exit.L48:                                 ; preds = %foreach.head.L48
-  %92 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 0), !dbg !99
-  %93 = load i32, ptr %92, align 4, !dbg !100
-  %94 = icmp eq i32 %93, 123, !dbg !100
-  br i1 %94, label %assert.exit.L51, label %assert.then.L51, !dbg !100, !prof !41
+  %91 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 0), !dbg !99
+  %92 = load i32, ptr %91, align 4, !dbg !100
+  %93 = icmp eq i32 %92, 123, !dbg !100
+  br i1 %93, label %assert.exit.L51, label %assert.then.L51, !dbg !100, !prof !41
 
 assert.then.L51:                                  ; preds = %foreach.exit.L48
-  %95 = load ptr, ptr @stderr, align 8, !dbg !100
-  %96 = call i32 (ptr, ptr, ...) @fprintf(ptr %95, ptr @anon.string.16), !dbg !100
+  %94 = load ptr, ptr @stderr, align 8, !dbg !100
+  %95 = call i32 (ptr, ptr, ...) @fprintf(ptr %94, ptr @anon.string.16), !dbg !100
   call void @exit(i32 1), !dbg !100
   unreachable, !dbg !100
 
 assert.exit.L51:                                  ; preds = %foreach.exit.L48
-  %97 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 1), !dbg !101
-  %98 = load i32, ptr %97, align 4, !dbg !102
-  %99 = icmp eq i32 %98, 4321, !dbg !102
-  br i1 %99, label %assert.exit.L52, label %assert.then.L52, !dbg !102, !prof !41
+  %96 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 1), !dbg !101
+  %97 = load i32, ptr %96, align 4, !dbg !102
+  %98 = icmp eq i32 %97, 4321, !dbg !102
+  br i1 %98, label %assert.exit.L52, label %assert.then.L52, !dbg !102, !prof !41
 
 assert.then.L52:                                  ; preds = %assert.exit.L51
-  %100 = load ptr, ptr @stderr, align 8, !dbg !102
-  %101 = call i32 (ptr, ptr, ...) @fprintf(ptr %100, ptr @anon.string.17), !dbg !102
+  %99 = load ptr, ptr @stderr, align 8, !dbg !102
+  %100 = call i32 (ptr, ptr, ...) @fprintf(ptr %99, ptr @anon.string.17), !dbg !102
   call void @exit(i32 1), !dbg !102
   unreachable, !dbg !102
 
 assert.exit.L52:                                  ; preds = %assert.exit.L51
-  %102 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 2), !dbg !103
-  %103 = load i32, ptr %102, align 4, !dbg !104
-  %104 = icmp eq i32 %103, 9876, !dbg !104
-  br i1 %104, label %assert.exit.L53, label %assert.then.L53, !dbg !104, !prof !41
+  %101 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 2), !dbg !103
+  %102 = load i32, ptr %101, align 4, !dbg !104
+  %103 = icmp eq i32 %102, 9876, !dbg !104
+  br i1 %103, label %assert.exit.L53, label %assert.then.L53, !dbg !104, !prof !41
 
 assert.then.L53:                                  ; preds = %assert.exit.L52
-  %105 = load ptr, ptr @stderr, align 8, !dbg !104
-  %106 = call i32 (ptr, ptr, ...) @fprintf(ptr %105, ptr @anon.string.18), !dbg !104
+  %104 = load ptr, ptr @stderr, align 8, !dbg !104
+  %105 = call i32 (ptr, ptr, ...) @fprintf(ptr %104, ptr @anon.string.18), !dbg !104
   call void @exit(i32 1), !dbg !104
   unreachable, !dbg !104
 
 assert.exit.L53:                                  ; preds = %assert.exit.L52
-  %107 = call noundef %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !105
-  store %struct.VectorIterator %107, ptr %9, align 8, !dbg !105
+  call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %9, ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !105
     #dbg_declare(ptr %item1, !107, !DIExpression(), !105)
   br label %foreach.head.L56, !dbg !105
 
 foreach.head.L56:                                 ; preds = %foreach.tail.L56, %assert.exit.L53
-  %108 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %9), !dbg !108
-  br i1 %108, label %foreach.body.L56, label %foreach.exit.L56, !dbg !108
+  %106 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %9), !dbg !108
+  br i1 %106, label %foreach.body.L56, label %foreach.exit.L56, !dbg !108
 
 foreach.body.L56:                                 ; preds = %foreach.head.L56
-  %109 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %9), !dbg !108
+  %107 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %9), !dbg !108
     #dbg_declare(ptr %10, !107, !DIExpression(), !108)
-  store ptr %109, ptr %10, align 8, !dbg !108
-  %110 = load ptr, ptr %10, align 8, !dbg !109
-  %111 = load i32, ptr %110, align 4, !dbg !109
-  %112 = add nsw i32 %111, 1, !dbg !109
-  store i32 %112, ptr %110, align 4, !dbg !109
+  store ptr %107, ptr %10, align 8, !dbg !108
+  %108 = load ptr, ptr %10, align 8, !dbg !109
+  %109 = load i32, ptr %108, align 4, !dbg !109
+  %110 = add nsw i32 %109, 1, !dbg !109
+  store i32 %110, ptr %108, align 4, !dbg !109
   br label %foreach.tail.L56, !dbg !110
 
 foreach.tail.L56:                                 ; preds = %foreach.body.L56
@@ -353,68 +350,67 @@ foreach.tail.L56:                                 ; preds = %foreach.body.L56
   br label %foreach.head.L56, !dbg !108
 
 foreach.exit.L56:                                 ; preds = %foreach.head.L56
-  %113 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 0), !dbg !111
-  %114 = load i32, ptr %113, align 4, !dbg !112
-  %115 = icmp eq i32 %114, 124, !dbg !112
-  br i1 %115, label %assert.exit.L59, label %assert.then.L59, !dbg !112, !prof !41
+  %111 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 0), !dbg !111
+  %112 = load i32, ptr %111, align 4, !dbg !112
+  %113 = icmp eq i32 %112, 124, !dbg !112
+  br i1 %113, label %assert.exit.L59, label %assert.then.L59, !dbg !112, !prof !41
 
 assert.then.L59:                                  ; preds = %foreach.exit.L56
-  %116 = load ptr, ptr @stderr, align 8, !dbg !112
-  %117 = call i32 (ptr, ptr, ...) @fprintf(ptr %116, ptr @anon.string.19), !dbg !112
+  %114 = load ptr, ptr @stderr, align 8, !dbg !112
+  %115 = call i32 (ptr, ptr, ...) @fprintf(ptr %114, ptr @anon.string.19), !dbg !112
   call void @exit(i32 1), !dbg !112
   unreachable, !dbg !112
 
 assert.exit.L59:                                  ; preds = %foreach.exit.L56
-  %118 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 1), !dbg !113
-  %119 = load i32, ptr %118, align 4, !dbg !114
-  %120 = icmp eq i32 %119, 4322, !dbg !114
-  br i1 %120, label %assert.exit.L60, label %assert.then.L60, !dbg !114, !prof !41
+  %116 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 1), !dbg !113
+  %117 = load i32, ptr %116, align 4, !dbg !114
+  %118 = icmp eq i32 %117, 4322, !dbg !114
+  br i1 %118, label %assert.exit.L60, label %assert.then.L60, !dbg !114, !prof !41
 
 assert.then.L60:                                  ; preds = %assert.exit.L59
-  %121 = load ptr, ptr @stderr, align 8, !dbg !114
-  %122 = call i32 (ptr, ptr, ...) @fprintf(ptr %121, ptr @anon.string.20), !dbg !114
+  %119 = load ptr, ptr @stderr, align 8, !dbg !114
+  %120 = call i32 (ptr, ptr, ...) @fprintf(ptr %119, ptr @anon.string.20), !dbg !114
   call void @exit(i32 1), !dbg !114
   unreachable, !dbg !114
 
 assert.exit.L60:                                  ; preds = %assert.exit.L59
-  %123 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 2), !dbg !115
-  %124 = load i32, ptr %123, align 4, !dbg !116
-  %125 = icmp eq i32 %124, 9877, !dbg !116
-  br i1 %125, label %assert.exit.L61, label %assert.then.L61, !dbg !116, !prof !41
+  %121 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 2), !dbg !115
+  %122 = load i32, ptr %121, align 4, !dbg !116
+  %123 = icmp eq i32 %122, 9877, !dbg !116
+  br i1 %123, label %assert.exit.L61, label %assert.then.L61, !dbg !116, !prof !41
 
 assert.then.L61:                                  ; preds = %assert.exit.L60
-  %126 = load ptr, ptr @stderr, align 8, !dbg !116
-  %127 = call i32 (ptr, ptr, ...) @fprintf(ptr %126, ptr @anon.string.21), !dbg !116
+  %124 = load ptr, ptr @stderr, align 8, !dbg !116
+  %125 = call i32 (ptr, ptr, ...) @fprintf(ptr %124, ptr @anon.string.21), !dbg !116
   call void @exit(i32 1), !dbg !116
   unreachable, !dbg !116
 
 assert.exit.L61:                                  ; preds = %assert.exit.L60
-  %128 = call noundef %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !117
-  store %struct.VectorIterator %128, ptr %11, align 8, !dbg !117
+  call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %11, ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !117
     #dbg_declare(ptr %idx, !119, !DIExpression(), !117)
   store i64 0, ptr %idx, align 8, !dbg !117
     #dbg_declare(ptr %item2, !121, !DIExpression(), !117)
   br label %foreach.head.L63, !dbg !117
 
 foreach.head.L63:                                 ; preds = %foreach.tail.L63, %assert.exit.L61
-  %129 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %11), !dbg !122
-  br i1 %129, label %foreach.body.L63, label %foreach.exit.L63, !dbg !122
+  %126 = call i1 @_ZN14VectorIteratorIiE7isValidEv(ptr %11), !dbg !122
+  br i1 %126, label %foreach.body.L63, label %foreach.exit.L63, !dbg !122
 
 foreach.body.L63:                                 ; preds = %foreach.head.L63
-  %pair3 = call %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr %11), !dbg !122
-  store %struct.Pair %pair3, ptr %pair.addr, align 8, !dbg !122
-  %130 = load i64, ptr %pair.addr, align 8, !dbg !122
-  store i64 %130, ptr %idx, align 8, !dbg !122
-  %item.addr = getelementptr inbounds nuw %struct.Pair, ptr %pair.addr, i32 0, i32 1, !dbg !122
-    #dbg_declare(ptr %12, !121, !DIExpression(), !122)
-  %131 = load ptr, ptr %item.addr, align 8, !dbg !122
-  store ptr %131, ptr %12, align 8, !dbg !122
-  %132 = load i64, ptr %idx, align 8, !dbg !123
-  %133 = trunc i64 %132 to i32, !dbg !123
-  %134 = load ptr, ptr %12, align 8, !dbg !123
-  %135 = load i32, ptr %134, align 4, !dbg !123
-  %136 = add nsw i32 %135, %133, !dbg !123
-  store i32 %136, ptr %134, align 4, !dbg !123
+  %127 = call { i64, ptr } @_ZN14VectorIteratorIiE6getIdxEv(ptr %11), !dbg !122
+  store { i64, ptr } %127, ptr %12, align 8, !dbg !122
+  %128 = load i64, ptr %12, align 8, !dbg !122
+  store i64 %128, ptr %idx, align 8, !dbg !122
+  %item.addr = getelementptr inbounds nuw %struct.Pair, ptr %12, i32 0, i32 1, !dbg !122
+    #dbg_declare(ptr %13, !121, !DIExpression(), !122)
+  %129 = load ptr, ptr %item.addr, align 8, !dbg !122
+  store ptr %129, ptr %13, align 8, !dbg !122
+  %130 = load i64, ptr %idx, align 8, !dbg !123
+  %131 = trunc i64 %130 to i32, !dbg !123
+  %132 = load ptr, ptr %13, align 8, !dbg !123
+  %133 = load i32, ptr %132, align 4, !dbg !123
+  %134 = add nsw i32 %133, %131, !dbg !123
+  store i32 %134, ptr %132, align 4, !dbg !123
   br label %foreach.tail.L63, !dbg !124
 
 foreach.tail.L63:                                 ; preds = %foreach.body.L63
@@ -422,43 +418,43 @@ foreach.tail.L63:                                 ; preds = %foreach.body.L63
   br label %foreach.head.L63, !dbg !122
 
 foreach.exit.L63:                                 ; preds = %foreach.head.L63
-  %137 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 0), !dbg !125
-  %138 = load i32, ptr %137, align 4, !dbg !126
-  %139 = icmp eq i32 %138, 124, !dbg !126
-  br i1 %139, label %assert.exit.L66, label %assert.then.L66, !dbg !126, !prof !41
+  %135 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 0), !dbg !125
+  %136 = load i32, ptr %135, align 4, !dbg !126
+  %137 = icmp eq i32 %136, 124, !dbg !126
+  br i1 %137, label %assert.exit.L66, label %assert.then.L66, !dbg !126, !prof !41
 
 assert.then.L66:                                  ; preds = %foreach.exit.L63
-  %140 = load ptr, ptr @stderr, align 8, !dbg !126
-  %141 = call i32 (ptr, ptr, ...) @fprintf(ptr %140, ptr @anon.string.22), !dbg !126
+  %138 = load ptr, ptr @stderr, align 8, !dbg !126
+  %139 = call i32 (ptr, ptr, ...) @fprintf(ptr %138, ptr @anon.string.22), !dbg !126
   call void @exit(i32 1), !dbg !126
   unreachable, !dbg !126
 
 assert.exit.L66:                                  ; preds = %foreach.exit.L63
-  %142 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 1), !dbg !127
-  %143 = load i32, ptr %142, align 4, !dbg !128
-  %144 = icmp eq i32 %143, 4323, !dbg !128
-  br i1 %144, label %assert.exit.L67, label %assert.then.L67, !dbg !128, !prof !41
+  %140 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 1), !dbg !127
+  %141 = load i32, ptr %140, align 4, !dbg !128
+  %142 = icmp eq i32 %141, 4323, !dbg !128
+  br i1 %142, label %assert.exit.L67, label %assert.then.L67, !dbg !128, !prof !41
 
 assert.then.L67:                                  ; preds = %assert.exit.L66
-  %145 = load ptr, ptr @stderr, align 8, !dbg !128
-  %146 = call i32 (ptr, ptr, ...) @fprintf(ptr %145, ptr @anon.string.23), !dbg !128
+  %143 = load ptr, ptr @stderr, align 8, !dbg !128
+  %144 = call i32 (ptr, ptr, ...) @fprintf(ptr %143, ptr @anon.string.23), !dbg !128
   call void @exit(i32 1), !dbg !128
   unreachable, !dbg !128
 
 assert.exit.L67:                                  ; preds = %assert.exit.L66
-  %147 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 2), !dbg !129
-  %148 = load i32, ptr %147, align 4, !dbg !130
-  %149 = icmp eq i32 %148, 9879, !dbg !130
-  br i1 %149, label %assert.exit.L68, label %assert.then.L68, !dbg !130, !prof !41
+  %145 = call noundef ptr @_ZN6VectorIiE3getEj(ptr noundef nonnull align 8 dereferenceable(32) %vi, i32 noundef 2), !dbg !129
+  %146 = load i32, ptr %145, align 4, !dbg !130
+  %147 = icmp eq i32 %146, 9879, !dbg !130
+  br i1 %147, label %assert.exit.L68, label %assert.then.L68, !dbg !130, !prof !41
 
 assert.then.L68:                                  ; preds = %assert.exit.L67
-  %150 = load ptr, ptr @stderr, align 8, !dbg !130
-  %151 = call i32 (ptr, ptr, ...) @fprintf(ptr %150, ptr @anon.string.24), !dbg !130
+  %148 = load ptr, ptr @stderr, align 8, !dbg !130
+  %149 = call i32 (ptr, ptr, ...) @fprintf(ptr %148, ptr @anon.string.24), !dbg !130
   call void @exit(i32 1), !dbg !130
   unreachable, !dbg !130
 
 assert.exit.L68:                                  ; preds = %assert.exit.L67
-  %152 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !131
+  %150 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0), !dbg !131
   call void @_ZN6VectorIiE4dtorEv(ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !132
   ret i32 0, !dbg !132
 }
@@ -475,7 +471,7 @@ declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly ca
 ; Function Attrs: cold noreturn nounwind
 declare void @exit(i32) #2
 
-declare %struct.VectorIterator @_ZN6VectorIiE11getIteratorEv(ptr)
+declare void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind noalias writable sret(%struct.VectorIterator) align 8, ptr)
 
 declare i1 @_ZN14VectorIteratorIiE7isValidEv(ptr)
 
@@ -483,7 +479,7 @@ declare ptr @_ZN14VectorIteratorIiE3getEv(ptr)
 
 declare void @_ZN14VectorIteratorIiE4nextEv(ptr)
 
-declare %struct.Pair @_ZN14VectorIteratorIiE6getIdxEv(ptr)
+declare { i64, ptr } @_ZN14VectorIteratorIiE6getIdxEv(ptr)
 
 declare ptr @_ZN4PairImRiE8getFirstEv(ptr)
 

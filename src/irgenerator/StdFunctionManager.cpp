@@ -5,6 +5,7 @@
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <global/GlobalResourceManager.h>
+#include <irgenerator/IRGenerator.h>
 #include <irgenerator/NameMangling.h>
 #include <model/Function.h>
 
@@ -12,9 +13,10 @@
 
 namespace spice::compiler {
 
-StdFunctionManager::StdFunctionManager(SourceFile *sourceFile, GlobalResourceManager &resourceManager, llvm::Module *module)
-    : sourceFile(sourceFile), context(resourceManager.cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context),
-      builder(sourceFile->builder), module(module) {}
+StdFunctionManager::StdFunctionManager(SourceFile *sourceFile, GlobalResourceManager &resourceManager, llvm::Module *module,
+                                       const IRGenerator *irGenerator)
+    : context(resourceManager.cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context), builder(sourceFile->builder),
+      module(module), irGenerator(irGenerator) {}
 
 llvm::Function *StdFunctionManager::getPrintfFct() const {
   llvm::Function *printfFct = getFunction("printf", builder.getInt32Ty(), builder.getPtrTy(), true);
@@ -123,14 +125,12 @@ llvm::Function *StdFunctionManager::getDeallocBytePtrRefFct() const {
 
 llvm::Function *StdFunctionManager::getIterateFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(sourceFile);
-  return getFunction(functionName.c_str(), iteratorType, {builder.getPtrTy(), builder.getInt64Ty()});
+  return getSpiceFunction(functionName.c_str(), spiceFunc->returnType, {builder.getPtrTy(), builder.getInt64Ty()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *iteratorType = spiceFunc->returnType.toLLVMType(sourceFile);
-  return getFunction(functionName.c_str(), iteratorType, builder.getPtrTy());
+  return getSpiceFunction(functionName.c_str(), spiceFunc->returnType, {builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc) const {
@@ -140,8 +140,7 @@ llvm::Function *StdFunctionManager::getIteratorGetFct(const Function *spiceFunc)
 
 llvm::Function *StdFunctionManager::getIteratorGetIdxFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *pairTy = spiceFunc->returnType.toLLVMType(sourceFile);
-  return getFunction(functionName.c_str(), pairTy, builder.getPtrTy());
+  return getSpiceFunction(functionName.c_str(), spiceFunc->returnType, {builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getIteratorIsValidFct(const Function *spiceFunc) const {
@@ -171,8 +170,7 @@ llvm::Function *StdFunctionManager::getResultGetErrFct(const Function *spiceFunc
 
 llvm::Function *StdFunctionManager::getResultErrCtorFct(const Function *spiceFunc) const {
   const std::string functionName = NameMangling::mangleFunction(*spiceFunc);
-  llvm::Type *resultType = spiceFunc->returnType.toLLVMType(sourceFile);
-  return getFunction(functionName.c_str(), resultType, builder.getPtrTy());
+  return getSpiceFunction(functionName.c_str(), spiceFunc->returnType, {builder.getPtrTy()});
 }
 
 llvm::Function *StdFunctionManager::getErrTraceResetFct() const {
@@ -182,8 +180,7 @@ llvm::Function *StdFunctionManager::getErrTraceResetFct() const {
       {QualType(TY_STRING), false}, {QualType(TY_STRING), false}, {unsignedInt, false}, {unsignedInt, false}};
   const Function function("sErrTraceReset", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
-  return getProcedure(mangledName.c_str(),
-                      {builder.getPtrTy(), builder.getPtrTy(), builder.getInt32Ty(), builder.getInt32Ty()});
+  return getProcedure(mangledName.c_str(), {builder.getPtrTy(), builder.getPtrTy(), builder.getInt32Ty(), builder.getInt32Ty()});
 }
 
 llvm::Function *StdFunctionManager::getErrTracePushFct() const {
@@ -193,8 +190,7 @@ llvm::Function *StdFunctionManager::getErrTracePushFct() const {
       {QualType(TY_STRING), false}, {QualType(TY_STRING), false}, {unsignedInt, false}, {unsignedInt, false}};
   const Function function("sErrTracePush", nullptr, QualType(TY_DYN), QualType(TY_DYN), paramLst, {}, nullptr);
   const std::string mangledName = NameMangling::mangleFunction(function);
-  return getProcedure(mangledName.c_str(),
-                      {builder.getPtrTy(), builder.getPtrTy(), builder.getInt32Ty(), builder.getInt32Ty()});
+  return getProcedure(mangledName.c_str(), {builder.getPtrTy(), builder.getPtrTy(), builder.getInt32Ty(), builder.getInt32Ty()});
 }
 
 llvm::Function *StdFunctionManager::getErrTraceDumpFct() const {
@@ -232,6 +228,22 @@ llvm::Function *StdFunctionManager::getFunction(const char *funcName, llvm::Type
   llvm::FunctionType *opFctTy = llvm::FunctionType::get(returnType, args, varArg);
   module->getOrInsertFunction(funcName, opFctTy);
   return module->getFunction(funcName);
+}
+
+llvm::Function *StdFunctionManager::getSpiceFunction(const char *funcName, const QualType &returnType,
+                                                     const std::vector<llvm::Type *> &args) const {
+  // Check if function already exists in the current module
+  // The result is handed out as non-const pointer, which misc-const-correctness does not recognize as pointee mutation
+  // NOLINTNEXTLINE(misc-const-correctness)
+  if (llvm::Function *fct = module->getFunction(funcName))
+    return fct;
+
+  // Add function with the return value lowered to the calling convention of the target to the current module
+  module->getOrInsertFunction(funcName, irGenerator->getFunctionType(returnType, args));
+  llvm::Function *fct = module->getFunction(funcName);
+  if (const ReturnABIInfo returnABI = irGenerator->getReturnABIInfo(returnType); returnABI.isIndirect())
+    irGenerator->addSRetParamAttrs(fct, returnABI.memoryType);
+  return fct;
 }
 
 llvm::Function *StdFunctionManager::getProcedure(const char *procName, llvm::ArrayRef<llvm::Type *> args) const {

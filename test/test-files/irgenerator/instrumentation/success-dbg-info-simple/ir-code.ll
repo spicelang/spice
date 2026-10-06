@@ -23,24 +23,25 @@ define void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal noundef %struct.TestStruct @_Z3fctRi(ptr noundef %0) #1 !dbg !46 {
+define internal void @_Z3fctRi(ptr dead_on_unwind noalias writable sret(%struct.TestStruct) align 8 %0, ptr noundef %1) #1 !dbg !46 {
   %ref = alloca ptr, align 8
-  %2 = alloca %struct.String, align 8
+  %3 = alloca %struct.String, align 8
   %ts = alloca %struct.TestStruct, align 8
     #dbg_declare(ptr %ref, !50, !DIExpression(), !51)
-  store ptr %0, ptr %ref, align 8, !dbg !51
-  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.0), !dbg !52
+  store ptr %1, ptr %ref, align 8, !dbg !51
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %3, ptr noundef @anon.string.0), !dbg !52
   store i64 6, ptr %ts, align 8, !dbg !53
-  %3 = load %struct.String, ptr %2, align 8, !dbg !53
-  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !53
-  store %struct.String %3, ptr %4, align 8, !dbg !53
-  %5 = load ptr, ptr %ref, align 8, !dbg !53
-  %6 = load i32, ptr %5, align 4, !dbg !53
-  %7 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !53
-  store i32 %6, ptr %7, align 4, !dbg !53
+  %4 = load %struct.String, ptr %3, align 8, !dbg !53
+  %5 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 1, !dbg !53
+  store %struct.String %4, ptr %5, align 8, !dbg !53
+  %6 = load ptr, ptr %ref, align 8, !dbg !53
+  %7 = load i32, ptr %6, align 4, !dbg !53
+  %8 = getelementptr inbounds nuw %struct.TestStruct, ptr %ts, i32 0, i32 2, !dbg !53
+  store i32 %7, ptr %8, align 4, !dbg !53
     #dbg_declare(ptr %ts, !54, !DIExpression(), !53)
-  %8 = load %struct.TestStruct, ptr %ts, align 8, !dbg !55
-  ret %struct.TestStruct %8, !dbg !56
+  %9 = load %struct.TestStruct, ptr %ts, align 8, !dbg !55
+  store %struct.TestStruct %9, ptr %0, align 8, !dbg !56
+  ret void, !dbg !56
 }
 
 declare void @_ZN6String4ctorEPKc(ptr, ptr)
@@ -51,18 +52,17 @@ define dso_local noundef i32 @main() #2 !dbg !57 {
   %res = alloca %struct.TestStruct, align 8
     #dbg_declare(ptr %test, !60, !DIExpression(), !61)
   store i32 987654, ptr %test, align 4, !dbg !61
-  %1 = call noundef %struct.TestStruct @_Z3fctRi(ptr noundef %test), !dbg !62
-  store %struct.TestStruct %1, ptr %res, align 8, !dbg !62
+  call void @_Z3fctRi(ptr dead_on_unwind writable sret(%struct.TestStruct) align 8 %res, ptr noundef %test), !dbg !62
     #dbg_declare(ptr %res, !63, !DIExpression(), !62)
   %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !64
-  %2 = load i64, ptr %lng.addr, align 8, !dbg !64
-  %3 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %2), !dbg !64
-  %4 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !65
-  %5 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4), !dbg !65
-  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %5), !dbg !65
+  %1 = load i64, ptr %lng.addr, align 8, !dbg !64
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %1), !dbg !64
+  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !65
+  %4 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %3), !dbg !65
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %4), !dbg !65
   %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !66
-  %7 = load i32, ptr %i.addr, align 4, !dbg !66
-  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %7), !dbg !66
+  %6 = load i32, ptr %i.addr, align 4, !dbg !66
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6), !dbg !66
   call void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %res), !dbg !67
   ret i32 0, !dbg !67
 }

@@ -6,6 +6,7 @@ import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
+import "bootstrap/irgenerator/abi-info";
 import "bootstrap/irgenerator/ir-generator";
 import "bootstrap/irgenerator/llvm-expr-result";
 import "bootstrap/irgenerator/std-function-manager";
@@ -1156,30 +1157,30 @@ public f<LLVMExprResult> OpRuleConversionManager.callOperatorOverloadFct(ASTNode
     }
 
     // Function is not defined in the current module -> declare it
+    const QualType returnType = opFct.isProcedure() ? QualType(SuperType::TY_DYN) : opFct.returnType;
     llvm::Module* module = this.irGenerator.module;
     llvm::Function callee = module.getFunction(mangledName.getRaw());
     if callee.isNull() {
-        // Get returnType
-        llvm::Type returnType = this.builder.getVoidTy();
-        if !opFct.returnType.is(SuperType::TY_DYN) {
-            returnType = opFct.returnType.toLLVMType(this.irGenerator.sourceFile);
-        }
-
         // Get arg types
         Vector<llvm::Type> argTypes;
         foreach const QualType& paramType : paramTypes {
             argTypes.pushBack(paramType.getParamLLVMType(this.irGenerator.sourceFile));
         }
 
-        const llvm::Type fctType = llvm::getFunctionType(returnType, argTypes, false);
+        const llvm::Type fctType = this.irGenerator.getFunctionType(returnType, argTypes);
         callee = module.getOrInsertFunction(mangledName.getRaw(), fctType);
+        const ReturnABIInfo returnABI = this.irGenerator.getReturnABIInfo(returnType);
+        if returnABI.isIndirect() {
+            this.irGenerator.addSRetParamAttrs(callee, returnABI.memoryType);
+        }
     }
 
     // Get callee function
     assert !callee.isNull();
 
-    // Generate function call
-    const llvm::Value res = this.builder.createCall(callee, argValues);
+    // Generate function call. If the value is returned via memory or coerced, the call result lives in memory
+    llvm::Value resultAddr;
+    const llvm::Value res = this.irGenerator.insertCall(callee, argValues, returnType, resultAddr);
 
     // If this is a procedure, return true
     if opFct.isProcedure() {
@@ -1192,8 +1193,11 @@ public f<LLVMExprResult> OpRuleConversionManager.callOperatorOverloadFct(ASTNode
     if opFct.returnType.is(SuperType::TY_STRUCT) {
         anonymousSymbol = this.irGenerator.currentScope.symbolTable.lookupAnonymous(node, opIdx);
         if anonymousSymbol != nil<const SymbolTableEntry*> {
-            resultPtr = this.irGenerator.insertAlloca(res.getType());
-            this.irGenerator.insertStore(res, resultPtr);
+            resultPtr = resultAddr;
+            if resultPtr.isNull() {
+                resultPtr = this.irGenerator.insertAlloca(res.getType());
+                this.irGenerator.insertStore(res, resultPtr);
+            }
             this.irGenerator.updateAddress(anonymousSymbol, resultPtr);
         }
     }
@@ -1204,6 +1208,12 @@ public f<LLVMExprResult> OpRuleConversionManager.callOperatorOverloadFct(ASTNode
     if opFct.returnType.isRef() {
         exprResult.ptr = res;
         exprResult.refPtr = resultPtr;
+        return exprResult;
+    }
+
+    // In case the value is returned via memory or coerced, return its address
+    if !resultAddr.isNull() {
+        exprResult.ptr = resultAddr;
         return exprResult;
     }
 

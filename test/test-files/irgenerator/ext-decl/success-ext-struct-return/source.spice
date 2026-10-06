@@ -1,0 +1,31 @@
+// Structs, that are returned by value from C functions, are lowered to the C calling convention of the target
+#![core.linker.additionalSource = "lib.c"]
+
+type Point struct {
+    double x
+    double y
+}
+
+type Triple struct {
+    int a
+    int b
+    int c
+}
+
+type Large struct {
+    long a
+    long b
+    long c
+    long d
+}
+
+ext f<Point> getOrigin();
+ext f<Triple> getTriple();
+ext f<Large> getLarge(long);
+
+f<int> main() {
+    const Point point = getOrigin();
+    const Triple triple = getTriple();
+    const Large large = getLarge(10l);
+    printf("%f %f %d %d %d %d %d %d %d\n", point.x, point.y, triple.a, triple.b, triple.c, large.a, large.b, large.c, large.d);
+}
