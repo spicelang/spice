@@ -146,24 +146,6 @@ public f<String> Lexer.getSourceCode(unsigned long startIdx, unsigned long endId
 }
 
 /**
- * Look ahead at the k-th upcoming token without consuming it.
- * k=1 refers to the token directly following the current one.
- *
- * @param k One-based lookahead distance
- * @return The peeked token
- */
-public f<const Token&> Lexer.peek(unsigned long k) {
-    assert k >= 1l;
-    // Clamp past-the-end lookahead to the terminating EOF token
-    const unsigned long lastIdx = cast<unsigned long>(this.tokens.getSize()) - 1l;
-    unsigned long index = this.curIdx + k;
-    if index > lastIdx {
-        index = lastIdx;
-    }
-    return this.tokens.get(index);
-}
-
-/**
  * Read the next raw token directly from the reader, skipping leading whitespace.
  * This does not touch the lookahead buffer and is the single source of truth for
  * turning characters into tokens.
@@ -183,26 +165,6 @@ f<Token> Lexer.readRawToken() {
     token.codeLoc.sourceIntervalStart = cast<long>(token.startOffset);
     token.codeLoc.sourceIntervalStop = cast<long>(token.endOffset) - 1l;
     return token;
-}
-
-public p Lexer.expect(TokenType expectedType) {
-    if this.getToken().tokenType != expectedType {
-        panic(Error("The type of the current token does not match the expected type"));
-    }
-    this.advance();
-}
-
-public p Lexer.expectOneOf(const Vector<TokenType>& expectedTypes) {
-    foreach TokenType expectedType : expectedTypes.getIterator() {
-        if this.getToken().tokenType == expectedType {
-            return;
-        }
-    }
-    panic(Error("The type of the current token was not amongst the expected types"));
-}
-
-public f<bool> Lexer.isEOF() {
-    return this.getToken().tokenType == TokenType::EOF;
 }
 
 public f<CodeLoc> Lexer.getCodeLoc() {
@@ -842,9 +804,4 @@ f<Token> Lexer.consumeBlockOrDocComment(const CodeLoc& codeLoc) {
     }
 
     return Token(isDocComment ? TokenType::DOC_COMMENT : TokenType::BLOCK_COMMENT, comment, codeLoc);
-}
-
-public f<bool> Lexer.isCurrentTokenIgnored() {
-    const TokenType tokenType = this.getToken().tokenType;
-    return tokenType == TokenType::LINE_COMMENT || tokenType == TokenType::BLOCK_COMMENT || tokenType == TokenType::DOC_COMMENT;
 }

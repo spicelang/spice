@@ -358,33 +358,6 @@ public f<bool> Function.isNormalFunction() {
 }
 
 /**
- * Check if the current function is a normal procedure (no method)
- *
- * @return Normal procedure or not
- */
-public f<bool> Function.isNormalProcedure() {
-    return this.isProcedure() && !this.isMethod();
-}
-
-/**
- * Check if the current function is a method function
- *
- * @return Method function or not
- */
-public f<bool> Function.isMethodFunction() {
-    return this.isFunction() && this.isMethod();
-}
-
-/**
- * Check if the current function is a method procedure
- *
- * @return Method procedure or not
- */
-public f<bool> Function.isMethodProcedure() {
-    return this.isProcedure() && this.isMethod();
-}
-
-/**
  * Check if the current function is a virtual method
  *
  * @return Virtual method or not

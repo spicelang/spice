@@ -64,7 +64,7 @@ f<TypeNameDisambiguator*> getActiveTypeNameDisambiguator() {
  * @return Disambiguation suffix (empty for the first claimer of the name)
  */
 public f<String> TypeNameDisambiguator.getDisambiguationSuffix(const String& name, unsigned long typeId) {
-    ConditionalLock lock = ConditionalLock(&this.claimedTypeIdsMutex);
+    ConditionalLock _lock = ConditionalLock(&this.claimedTypeIdsMutex);
 
     if !this.claimedTypeIds.contains(name) {
         this.claimedTypeIds.upsert(name, Vector<unsigned long>());

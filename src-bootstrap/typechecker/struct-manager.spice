@@ -106,7 +106,7 @@ f<LookupCache<Struct>*> getActiveStructLookupCache() {
  */
 public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTypeList& reqTemplateTypes, const ASTNode* node) {
     // The IR generator reaches this from the worker threads of the parallel back end
-    ConditionalLock lock = ConditionalLock(getSymbolRegistryMutex());
+    ConditionalLock _lock = ConditionalLock(getSymbolRegistryMutex());
 
     // Do cache lookup
     LookupCache<Struct>* cache = getActiveStructLookupCache();

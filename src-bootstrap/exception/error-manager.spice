@@ -16,16 +16,6 @@ public p SoftError.ctor(const CodeLoc& codeLoc, const String& message) {
     this.message = message;
 }
 
-public p SoftError.ctor(const SoftError& other) {
-    this.codeLoc = other.codeLoc;
-    this.message = other.message;
-}
-
-public p operator=(SoftError& this, const SoftError& other) {
-    this.codeLoc = other.codeLoc;
-    this.message = other.message;
-}
-
 /**
  * Collects the errors of a compilation.
  *

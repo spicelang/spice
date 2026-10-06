@@ -72,7 +72,6 @@ type CompileStageType enum {
 
 type CompileStageIOType enum {
     IO_CODE,
-    IO_CST,
     IO_AST,
     IO_IR,
     IO_OBJECT_FILE

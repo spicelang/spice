@@ -244,7 +244,7 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
     assert reqThisType.isOneOf(thisTypeOptions, len(thisTypeOptions));
 
     // The IR generator reaches this from the worker threads of the parallel back end
-    ConditionalLock lock = ConditionalLock(getSymbolRegistryMutex());
+    ConditionalLock _lock = ConditionalLock(getSymbolRegistryMutex());
 
     // Do cache lookup
     LookupCache<Function>* cache = getActiveFunctionLookupCache();

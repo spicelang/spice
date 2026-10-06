@@ -27,8 +27,6 @@ public type TypeChainElement struct {
     public QualTypeList paramTypes // First type is the return type
 }
 
-public p TypeChainElement.ctor() {}
-
 public p TypeChainElement.ctor(SuperType superType) {
     this.superType = superType;
     this.typeId = cast<unsigned long>(superType);

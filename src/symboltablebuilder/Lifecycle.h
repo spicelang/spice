@@ -41,10 +41,8 @@ public:
   void addEvent(const LifecycleEvent &event);
   [[nodiscard]] LifecycleState getCurrentState() const;
   [[nodiscard]] const char *getCurrentStateName() const;
-  [[nodiscard]] [[maybe_unused]] bool isDead() const;
   [[nodiscard]] [[maybe_unused]] bool isDeclared() const;
   [[nodiscard]] bool isInitialized() const;
-  [[nodiscard]] bool wasMoved() const;
   [[nodiscard]] bool isInOwningState() const;
 
 private:

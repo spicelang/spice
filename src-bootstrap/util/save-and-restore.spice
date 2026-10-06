@@ -11,11 +11,6 @@ public type SaveAndRestore<T> struct {
     T oldValue
 }
 
-public p SaveAndRestore.ctor(T& value) {
-    this.value = value;
-    this.oldValue = value;
-}
-
 public p SaveAndRestore.ctor(T& value, const T& newValue) {
     this.value = value;
     this.oldValue = value;
