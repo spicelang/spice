@@ -1,5 +1,4 @@
-# C++ CI with AddressSanitizer
-name: C++ CI - ASAN
+name: CI - ASAN
 
 on:
   # Every Monday at 03:00 UTC
@@ -14,7 +13,7 @@ env:
 
 jobs:
   build-linux-x86-asan:
-    name: C++ CI - Linux/x86_64 with ASAN
+    name: CI - Linux/x86_64 with ASAN
     runs-on: ubuntu-26.04
 
     steps:

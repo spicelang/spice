@@ -1,5 +1,4 @@
-# Bootstrap CI
-name: Bootstrap CI
+name: Bootstrap fixed point
 
 on:
   push:
@@ -15,7 +14,7 @@ env:
 
 jobs:
   bootstrap-linux-x86:
-    name: Bootstrap fixed point - Linux/x86_64
+    name: Linux/x86_64
     runs-on: ubuntu-26.04
     permissions:
       contents: read
@@ -38,7 +37,7 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
-      # Only restore the ccache of the C++ CI, which builds the same host compiler, to not compete with its cache entries
+      # Only restore the ccache of the CI workflow, which builds the same host compiler, to not compete with its cache entries
       - name: Restore CCache
         uses: actions/cache/restore@v6
         with:

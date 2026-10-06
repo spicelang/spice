@@ -1,4 +1,3 @@
-# Label pull requests based on the files that are modified.
 name: Labeler
 
 on:

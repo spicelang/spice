@@ -1,5 +1,4 @@
-# C++ CI
-name: C++ CI
+name: CI
 
 on:
   push:
@@ -47,7 +46,7 @@ env:
 
 jobs:
   build-linux-x86:
-    name: C++ CI - Linux/x86_64
+    name: Linux/x86_64
     runs-on: ubuntu-26.04
 
     steps:
@@ -144,7 +143,7 @@ jobs:
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
   build-linux-aarch64:
-    name: C++ CI - Linux/AArch64
+    name: Linux/AArch64
     runs-on: ubuntu-26.04-arm
 
     steps:
@@ -241,7 +240,7 @@ jobs:
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
   build-windows-x86:
-    name: C++ CI - Windows/x86_64
+    name: Windows/x86_64
     runs-on: windows-2025-vs2026
 
     steps:
@@ -353,7 +352,7 @@ jobs:
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
 
   build-macos-aarch64:
-    name: C++ CI - MacOS/AArch64
+    name: MacOS/AArch64
     runs-on: macos-26
 
     steps:
