@@ -685,7 +685,10 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
         case ASTNodeKind::ALIAS_DEF: {
             // An alias additionally needs its aliased type resolved, so prepare it fully on demand. visitAliasDefPrepare is
             // idempotent: the real prepare pass for the alias's own file skips it once the type is no longer invalid.
-            this.visitAliasDefPrepare(downcast<ASTAliasDefNode>(declNode));
+            // The aliased type has to be resolved in the context of the file declaring the alias, not the referencing one,
+            // because the referencing file does not necessarily import the types the alias refers to.
+            TypeChecker declTypeChecker = TypeChecker(this.resourceManager, entry.scope.sourceFile, TypeCheckerMode::TC_MODE_PRE);
+            declTypeChecker.visitAliasDefPrepare(downcast<ASTAliasDefNode>(declNode));
         }
         default: {}
     }

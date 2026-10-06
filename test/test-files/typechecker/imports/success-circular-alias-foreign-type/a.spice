@@ -1,0 +1,11 @@
+import "box" as box;
+import "user" as user;
+
+// Box is only imported here, not in the user file
+public type IntBox alias Box<int>;
+
+public f<int> viaUser() {
+    IntBox box;
+    box.value = 5;
+    return user::unbox(box);
+}

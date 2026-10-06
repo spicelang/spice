@@ -1,0 +1,6 @@
+import "a" as a;
+
+// Uses the alias IntBox defined in the cyclically-imported file a, whose aliased type is unknown in this file
+public f<int> unbox(const IntBox& box) {
+    return box.value + 1;
+}
