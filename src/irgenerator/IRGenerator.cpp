@@ -920,7 +920,7 @@ void IRGenerator::setLLVMFunction(const Function *spiceFunc, llvm::Function *llv
  */
 ReturnABIInfo IRGenerator::getReturnABIInfo(const QualType &returnType) const {
   if (returnType.is(TY_DYN))
-    return {.kind = ReturnABIKind::DIRECT, .type = builder.getVoidTy()};
+    return {.kind = ReturnABIKind::DIRECT, .memoryType = builder.getVoidTy()};
   llvm::Type *type = returnType.toLLVMType(sourceFile);
   // Types with a copy ctor or dtor are non-trivial for the purpose of calls and therefore returned via memory
   const bool isNonTrivial =
@@ -942,7 +942,7 @@ llvm::FunctionType *IRGenerator::getFunctionType(const QualType &returnType, con
   const ReturnABIInfo returnABI = getReturnABIInfo(returnType);
   switch (returnABI.kind) {
   case ReturnABIKind::DIRECT:
-    return llvm::FunctionType::get(returnABI.type, paramTypes, isVarArg);
+    return llvm::FunctionType::get(returnABI.memoryType, paramTypes, isVarArg);
   case ReturnABIKind::COERCED:
     return llvm::FunctionType::get(returnABI.coercedType, paramTypes, isVarArg);
   case ReturnABIKind::INDIRECT: {
@@ -983,17 +983,17 @@ llvm::CallInst *IRGenerator::insertCall(llvm::FunctionCallee callee, std::vector
   const ReturnABIInfo returnABI = getReturnABIInfo(returnType);
   resultAddr = nullptr;
   if (returnABI.isIndirect()) {
-    resultAddr = sretAddr != nullptr ? sretAddr : insertAlloca(returnABI.type);
+    resultAddr = sretAddr != nullptr ? sretAddr : insertAlloca(returnABI.memoryType);
     args.insert(args.begin(), resultAddr);
   }
 
   llvm::CallInst *callInst = builder.CreateCall(callee, args);
 
   if (returnABI.isIndirect()) {
-    addSRetParamAttrs(callInst, returnABI.type);
+    addSRetParamAttrs(callInst, returnABI.memoryType);
   } else if (returnABI.isCoerced()) {
     // Store the coerced value to memory, which can be accessed as the actual return type
-    resultAddr = insertCoercionAlloca(returnABI.type, returnABI.coercedType);
+    resultAddr = insertCoercionAlloca(returnABI.memoryType, returnABI.coercedType);
     insertStore(callInst, resultAddr);
   }
   return callInst;

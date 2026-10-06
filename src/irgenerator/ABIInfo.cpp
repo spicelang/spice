@@ -77,7 +77,7 @@ ReturnABIInfo ABIInfo::classifyReturnTypeX86_64SysV(llvm::Type *type) const {
     ArgClass scalarClass;
     if (scalarType->isIntegerTy() || scalarType->isPointerTy())
       scalarClass = ArgClass::INTEGER;
-    else if (scalarType->isDoubleTy() || scalarType->isFloatTy())
+    else if (scalarType->isDoubleTy())
       scalarClass = ArgClass::SSE;
     else
       scalarClass = ArgClass::MEMORY;
@@ -97,9 +97,10 @@ ReturnABIInfo ABIInfo::classifyReturnTypeX86_64SysV(llvm::Type *type) const {
   if (classes[0] == ArgClass::NO_CLASS)
     classes[0] = ArgClass::INTEGER;
 
-  // Build the type, that is returned in registers
+  // Build the type, that is returned in registers. Spice has no single precision floating point type, so an SSE
+  // eightbyte always holds a double
   const auto getEightbyteType = [&](uint64_t offset, ArgClass argClass) {
-    return argClass == ArgClass::SSE ? getSSETypeAtOffset(type, offset) : getIntegerTypeAtOffset(type, offset);
+    return argClass == ArgClass::SSE ? llvm::Type::getDoubleTy(type->getContext()) : getIntegerTypeAtOffset(type, offset);
   };
   llvm::Type *loType = getEightbyteType(0, classes[0]);
   if (classes[1] == ArgClass::NO_CLASS)
@@ -108,8 +109,7 @@ ReturnABIInfo ABIInfo::classifyReturnTypeX86_64SysV(llvm::Type *type) const {
   // The high part has to start at offset 8, so widen the low part, if the high part would start earlier otherwise
   const uint64_t hiStart = llvm::alignTo(dataLayout.getTypeAllocSize(loType), dataLayout.getABITypeAlign(hiType));
   if (hiStart != 8)
-    loType =
-        loType->isFloatingPointTy() ? llvm::Type::getDoubleTy(type->getContext()) : llvm::Type::getInt64Ty(type->getContext());
+    loType = llvm::Type::getInt64Ty(type->getContext());
   return coerced(type, llvm::StructType::get(type->getContext(), {loType, hiType}));
 }
 
@@ -122,10 +122,9 @@ ReturnABIInfo ABIInfo::classifyReturnTypeWin64(llvm::Type *type) const {
 }
 
 ReturnABIInfo ABIInfo::classifyReturnTypeAArch64(llvm::Type *type) const {
-  // Homogeneous floating point aggregates are returned in the floating point registers
-  llvm::Type *baseType = nullptr;
-  uint64_t memberCount = 0;
-  if (isHomogeneousFPAggregate(type, baseType, memberCount) && memberCount <= 4)
+  // Homogeneous floating point aggregates with up to four members are returned in the floating point registers
+  const uint64_t memberCount = getHomogeneousFPAggregateMemberCount(type);
+  if (memberCount > 0 && memberCount <= 4)
     return direct(type);
 
   // Aggregates of up to 16 bytes are returned in general purpose registers, all others via memory
@@ -165,24 +164,6 @@ llvm::Type *ABIInfo::getIntegerTypeAtOffset(llvm::Type *type, uint64_t offset) c
   // Fall back to an integer, that covers the rest of the eightbyte
   const uint64_t size = dataLayout.getTypeAllocSize(type);
   return llvm::IntegerType::get(type->getContext(), std::min<uint64_t>(size - offset, 8) * 8);
-}
-
-/**
- * Get the floating point type for the eightbyte at the given offset in the given type, like Clang's GetSSETypeAtOffset
- */
-llvm::Type *ABIInfo::getSSETypeAtOffset(llvm::Type *type, uint64_t offset) const {
-  llvm::LLVMContext &context = type->getContext();
-  const llvm::Type *scalarType = getScalarTypeAtOffset(type, offset);
-  if (scalarType != nullptr && scalarType->isFloatTy()) {
-    // A single float, followed by padding, is returned as float
-    if (bitsContainNoUserData(type, offset * 8 + 32, offset * 8 + 64))
-      return llvm::Type::getFloatTy(context);
-    // Two floats are returned as vector of two floats
-    const llvm::Type *nextScalarType = getScalarTypeAtOffset(type, offset + 4);
-    if (nextScalarType != nullptr && nextScalarType->isFloatTy())
-      return llvm::FixedVectorType::get(llvm::Type::getFloatTy(context), 2);
-  }
-  return llvm::Type::getDoubleTy(context);
 }
 
 /**
@@ -244,22 +225,21 @@ void ABIInfo::collectScalars(llvm::Type *type, uint64_t offset, // NOLINT(*-no-r
 }
 
 /**
- * Check if the given type is a homogeneous floating point aggregate (all scalars have the same floating point type)
+ * Get the number of members of the given homogeneous floating point aggregate. Spice has no single precision floating
+ * point type, so these are aggregates, that consist of doubles only.
+ *
+ * @return Number of members or 0, if the type is no homogeneous floating point aggregate
  */
-bool ABIInfo::isHomogeneousFPAggregate(llvm::Type *type, llvm::Type *&baseType, uint64_t &memberCount) const {
+uint64_t ABIInfo::getHomogeneousFPAggregateMemberCount(llvm::Type *type) const {
   std::vector<std::pair<llvm::Type *, uint64_t>> scalars;
   collectScalars(type, 0, scalars);
-  if (scalars.empty())
-    return false;
-  baseType = scalars.front().first;
-  if (!baseType->isFloatingPointTy())
-    return false;
   for (llvm::Type *scalarType : scalars | std::views::keys)
-    if (scalarType != baseType)
-      return false;
-  memberCount = scalars.size();
+    if (!scalarType->isDoubleTy())
+      return 0;
   // There must not be any padding
-  return memberCount * dataLayout.getTypeAllocSize(baseType) == dataLayout.getTypeAllocSize(type);
+  if (scalars.size() * 8 != dataLayout.getTypeAllocSize(type))
+    return 0;
+  return scalars.size();
 }
 
 /**
@@ -279,12 +259,12 @@ llvm::Type *ABIInfo::getSingleElementType(llvm::Type *type) const {
   return elementType;
 }
 
-ReturnABIInfo ABIInfo::direct(llvm::Type *type) { return {.kind = ReturnABIKind::DIRECT, .type = type}; }
+ReturnABIInfo ABIInfo::direct(llvm::Type *type) { return {.kind = ReturnABIKind::DIRECT, .memoryType = type}; }
 
 ReturnABIInfo ABIInfo::coerced(llvm::Type *type, llvm::Type *coercedType) {
-  return {.kind = ReturnABIKind::COERCED, .type = type, .coercedType = coercedType};
+  return {.kind = ReturnABIKind::COERCED, .memoryType = type, .coercedType = coercedType};
 }
 
-ReturnABIInfo ABIInfo::indirect(llvm::Type *type) { return {.kind = ReturnABIKind::INDIRECT, .type = type}; }
+ReturnABIInfo ABIInfo::indirect(llvm::Type *type) { return {.kind = ReturnABIKind::INDIRECT, .memoryType = type}; }
 
 } // namespace spice::compiler

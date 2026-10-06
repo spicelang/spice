@@ -995,6 +995,10 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
                 // Set to virtual, since it overrides the interface method
                 spiceFunction.isVirtual = true;
                 spiceFunction.vtableIndex = vtableIndex++;
+                // Methods, that return a struct implementing the interface method's return type, are called through a thunk
+                if spiceFunction.returnType != returnType {
+                    spiceFunction.virtualReturnType = returnType;
+                }
             }
         }
 

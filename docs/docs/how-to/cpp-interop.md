@@ -100,6 +100,24 @@ f<int> main() {
 The alias keeps the code readable and makes function signatures self-documenting while remaining fully compatible
 with the C ABI.
 
+## Returning structs by value
+
+Structs, that are returned by value, follow the C calling convention of the target, exactly like Clang lowers them:
+small structs are returned in registers, larger ones via a hidden pointer to memory of the caller. Therefore, external
+C functions can return structs by value and Spice functions, that return structs, can be called from C:
+
+```spice
+type Point struct {
+    double x
+    double y
+}
+
+ext f<Point> getOrigin();
+```
+
+!!! note "Passing structs to C functions"
+    Struct parameters are not lowered to the C calling convention yet. Pass pointers to structs to C functions instead.
+
 ## Linking an external C library
 
 Use the module-level `core.linker.flag` attribute to pass flags to the linker. Place it at the top of any

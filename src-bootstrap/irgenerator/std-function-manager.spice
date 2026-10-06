@@ -6,6 +6,8 @@ import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/source-file";
+import "bootstrap/irgenerator/abi-info";
+import "bootstrap/irgenerator/ir-generator";
 import "bootstrap/irgenerator/name-mangling";
 import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
 import "bootstrap/ast/ast-nodes";
@@ -22,12 +24,14 @@ public type StdFunctionManager struct {
     SourceFile* sourceFile
     llvm::IRBuilder* builder
     llvm::Module* module
+    IRGenerator* irGenerator
 }
 
-public p StdFunctionManager.ctor(SourceFile* sourceFile, llvm::Module* module) {
+public p StdFunctionManager.ctor(SourceFile* sourceFile, llvm::Module* module, IRGenerator* irGenerator) {
     this.sourceFile = sourceFile;
     this.builder = &sourceFile.builder;
     this.module = module;
+    this.irGenerator = irGenerator;
 }
 
 public f<llvm::Function> StdFunctionManager.getPrintfFct() {
@@ -165,19 +169,17 @@ public f<llvm::Function> StdFunctionManager.getDeallocBytePtrRefFct() {
 
 public f<llvm::Function> StdFunctionManager.getIterateFct(const model::Function* spiceFunc) {
     const String functionName = mangleFunction(*spiceFunc);
-    const llvm::Type iteratorType = spiceFunc.returnType.toLLVMType(this.sourceFile);
     Vector<llvm::Type> paramTypes;
     paramTypes.pushBack(this.builder.getPtrTy());
     paramTypes.pushBack(this.builder.getInt64Ty());
-    return this.getFunction(functionName.getRaw(), iteratorType, paramTypes);
+    return this.getSpiceFunction(functionName.getRaw(), spiceFunc.returnType, paramTypes);
 }
 
 public f<llvm::Function> StdFunctionManager.getIteratorFct(const model::Function* spiceFunc) {
     const String functionName = mangleFunction(*spiceFunc);
-    const llvm::Type iteratorType = spiceFunc.returnType.toLLVMType(this.sourceFile);
     Vector<llvm::Type> paramTypes;
     paramTypes.pushBack(this.builder.getPtrTy());
-    return this.getFunction(functionName.getRaw(), iteratorType, paramTypes);
+    return this.getSpiceFunction(functionName.getRaw(), spiceFunc.returnType, paramTypes);
 }
 
 public f<llvm::Function> StdFunctionManager.getIteratorGetFct(const model::Function* spiceFunc) {
@@ -189,10 +191,9 @@ public f<llvm::Function> StdFunctionManager.getIteratorGetFct(const model::Funct
 
 public f<llvm::Function> StdFunctionManager.getIteratorGetIdxFct(const model::Function* spiceFunc) {
     const String functionName = mangleFunction(*spiceFunc);
-    const llvm::Type pairTy = spiceFunc.returnType.toLLVMType(this.sourceFile);
     Vector<llvm::Type> paramTypes;
     paramTypes.pushBack(this.builder.getPtrTy());
-    return this.getFunction(functionName.getRaw(), pairTy, paramTypes);
+    return this.getSpiceFunction(functionName.getRaw(), spiceFunc.returnType, paramTypes);
 }
 
 public f<llvm::Function> StdFunctionManager.getIteratorIsValidFct(const model::Function* spiceFunc) {
@@ -232,10 +233,9 @@ public f<llvm::Function> StdFunctionManager.getResultGetErrFct(const model::Func
 
 public f<llvm::Function> StdFunctionManager.getResultErrCtorFct(const model::Function* spiceFunc) {
     const String functionName = mangleFunction(*spiceFunc);
-    const llvm::Type resultType = spiceFunc.returnType.toLLVMType(this.sourceFile);
     Vector<llvm::Type> paramTypes;
     paramTypes.pushBack(this.builder.getPtrTy());
-    return this.getFunction(functionName.getRaw(), resultType, paramTypes);
+    return this.getSpiceFunction(functionName.getRaw(), spiceFunc.returnType, paramTypes);
 }
 
 public f<llvm::Function> StdFunctionManager.getErrTraceResetFct() {
@@ -289,6 +289,22 @@ f<llvm::Function> StdFunctionManager.getFunction(string funcName, llvm::Type ret
     // Add function to the current module
     const llvm::Type opFctTy = llvm::getFunctionType(returnType, args, varArg);
     return this.module.getOrInsertFunction(funcName, opFctTy);
+}
+
+f<llvm::Function> StdFunctionManager.getSpiceFunction(string funcName, const QualType& returnType, const Vector<llvm::Type>& args) {
+    // Check if function already exists in the current module
+    const llvm::Function existingFct = this.module.getFunction(funcName);
+    if !existingFct.isNull() {
+        return existingFct;
+    }
+
+    // Add function with the return value lowered to the calling convention of the target to the current module
+    llvm::Function fct = this.module.getOrInsertFunction(funcName, this.irGenerator.getFunctionType(returnType, args));
+    const ReturnABIInfo returnABI = this.irGenerator.getReturnABIInfo(returnType);
+    if returnABI.isIndirect() {
+        this.irGenerator.addSRetParamAttrs(fct, returnABI.memoryType);
+    }
+    return fct;
 }
 
 f<llvm::Function> StdFunctionManager.getProcedure(string procName, const Vector<llvm::Type>& args) {

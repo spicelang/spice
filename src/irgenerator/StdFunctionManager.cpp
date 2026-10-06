@@ -240,7 +240,7 @@ llvm::Function *StdFunctionManager::getSpiceFunction(const char *funcName, const
   module->getOrInsertFunction(funcName, irGenerator->getFunctionType(returnType, args));
   llvm::Function *fct = module->getFunction(funcName);
   if (const ReturnABIInfo returnABI = irGenerator->getReturnABIInfo(returnType); returnABI.isIndirect())
-    irGenerator->addSRetParamAttrs(fct, returnABI.type);
+    irGenerator->addSRetParamAttrs(fct, returnABI.memoryType);
   return fct;
 }
 

@@ -246,7 +246,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     if (!data.isFctPtrCall() && !data.isVirtualMethodCall()) {
       module->getOrInsertFunction(mangledName, fctType);
       if (const ReturnABIInfo returnABI = getReturnABIInfo(returnSType); returnABI.isIndirect())
-        addSRetParamAttrs(module->getFunction(mangledName), returnABI.type);
+        addSRetParamAttrs(module->getFunction(mangledName), returnABI.memoryType);
     }
   }
   assert(fctType != nullptr);
@@ -599,7 +599,7 @@ std::any IRGenerator::visitLambdaFunc(const LambdaFuncNode *node) {
   addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
   if (const ReturnABIInfo returnABI = getReturnABIInfo(spiceFunc.returnType); returnABI.isIndirect())
-    addSRetParamAttrs(lambda, returnABI.type);
+    addSRetParamAttrs(lambda, returnABI.memoryType);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {
@@ -924,7 +924,7 @@ std::any IRGenerator::visitLambdaExpr(const LambdaExprNode *node) {
   addCommonFctAttrs(lambda);
   enableFunctionInstrumentation(lambda);
   if (const ReturnABIInfo returnABI = getReturnABIInfo(returnSType); returnABI.isIndirect())
-    addSRetParamAttrs(lambda, returnABI.type);
+    addSRetParamAttrs(lambda, returnABI.memoryType);
 
   // In case of captures, add attribute to captures argument
   if (hasCaptures) {

@@ -1,13 +1,14 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
 
-%struct.ExampleContainedType = type { i1 }
 %struct.ExampleTypeIterator = type { %interface.IIterator, %struct.ExampleContainedType, i1 }
 %interface.IIterator = type { ptr }
+%struct.ExampleContainedType = type { i32 }
 %struct.Pair = type { i64, ptr }
 %struct.ExampleIterableType = type { %interface.IIterable }
 %interface.IIterable = type { ptr }
 
+@printf.str.0 = private unnamed_addr constant [19 x i8] c"Copy Ctor called!\0A\00", align 4
 @_ZTS19ExampleIterableType = private constant [22 x i8] c"19ExampleIterableType\00", align 4
 @_ZTV8TypeInfo = external global ptr
 @_ZTI9IIterableI20ExampleContainedTypeE = external global ptr
@@ -17,35 +18,33 @@ source_filename = "source.spice"
 @_ZTI9IIteratorI20ExampleContainedTypeE = external global ptr
 @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, align 8
 @_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE = private unnamed_addr constant { [6 x ptr] } { [6 x ptr] [ptr null, ptr @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE6getIdxEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv, ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv] }, align 8
-@anon.string.0 = private unnamed_addr constant [61 x i8] c"Assertion failed: Condition 'ct.copied' evaluated to false.\0A\00", align 4
-@anon.string.1 = private unnamed_addr constant [58 x i8] c"Assertion failed: Condition 'i == 1' evaluated to false.\0A\00", align 4
-@printf.str.0 = private unnamed_addr constant [24 x i8] c"All assertions passed!\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 1 dereferenceable(1) %0) #0 {
+define internal void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %0) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  store i1 false, ptr %2, align 1
+  store i32 321, ptr %2, align 4
   ret void
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define internal void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %0, ptr noundef %1) #0 {
+define internal void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
-  %_ = alloca ptr, align 8
+  %other = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
-  store ptr %1, ptr %_, align 8
+  store ptr %1, ptr %other, align 8
   %3 = load ptr, ptr %this, align 8
-  store i1 false, ptr %3, align 1
-  %4 = load ptr, ptr %this, align 8
-  %copied.addr = getelementptr inbounds %struct.ExampleContainedType, ptr %4, i64 0, i32 0
-  store i1 true, ptr %copied.addr, align 1
+  store i32 321, ptr %3, align 4
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
 
+; Function Attrs: nofree nounwind
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #1 {
+define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %0) #2 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
@@ -54,13 +53,13 @@ define void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 derefer
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #1 {
+define void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %0) #2 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
   store ptr getelementptr inbounds ({ [6 x ptr] }, ptr @_ZTV19ExampleTypeIteratorI20ExampleContainedTypeE, i64 0, i32 0, i32 2), ptr %2, align 8
   %3 = getelementptr inbounds nuw %struct.ExampleTypeIterator, ptr %2, i32 0, i32 1
-  call void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 1 dereferenceable(1) %3)
+  call void @_ZN20ExampleContainedType4ctorEv(ptr noundef nonnull align 4 dereferenceable(4) %3)
   %4 = getelementptr inbounds nuw %struct.ExampleTypeIterator, ptr %2, i32 0, i32 2
   store i1 true, ptr %4, align 1
   ret void
@@ -125,70 +124,11 @@ define internal void @_ZN19ExampleIterableType11getIteratorEv(ptr dead_on_unwind
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #2 {
+define dso_local noundef i32 @main() #3 {
   %eit = alloca %struct.ExampleIterableType, align 8
-  %i = alloca i32, align 4
-  %1 = alloca %struct.ExampleTypeIterator, align 8
-  %ct = alloca %struct.ExampleContainedType, align 8
   call void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %eit)
-  store i32 0, ptr %i, align 4
-  call void @_ZN19ExampleIterableType11getIteratorEv(ptr dead_on_unwind writable sret(%struct.ExampleTypeIterator) align 8 %1, ptr %eit)
-  br label %foreach.head.L46
-
-foreach.head.L46:                                 ; preds = %foreach.tail.L46, %0
-  %2 = call i1 @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE7isValidEv(ptr %1)
-  br i1 %2, label %foreach.body.L46, label %foreach.exit.L46
-
-foreach.body.L46:                                 ; preds = %foreach.head.L46
-  %3 = call ptr @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE3getEv(ptr %1)
-  call void @_ZN20ExampleContainedType4ctorERK20ExampleContainedType(ptr noundef nonnull align 1 dereferenceable(1) %ct, ptr %3)
-  %copied.addr = getelementptr inbounds %struct.ExampleContainedType, ptr %ct, i64 0, i32 0
-  %4 = load i1, ptr %copied.addr, align 1
-  br i1 %4, label %assert.exit.L47, label %assert.then.L47, !prof !5
-
-assert.then.L47:                                  ; preds = %foreach.body.L46
-  %5 = call ptr @__acrt_iob_func(i32 2)
-  %6 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.0)
-  call void @exit(i32 1)
-  unreachable
-
-assert.exit.L47:                                  ; preds = %foreach.body.L46
-  %7 = load i32, ptr %i, align 4
-  %8 = add nsw i32 %7, 1
-  store i32 %8, ptr %i, align 4
-  br label %foreach.tail.L46
-
-foreach.tail.L46:                                 ; preds = %assert.exit.L47
-  call void @_ZN19ExampleTypeIteratorI20ExampleContainedTypeE4nextEv(ptr %1)
-  br label %foreach.head.L46
-
-foreach.exit.L46:                                 ; preds = %foreach.head.L46
-  %9 = load i32, ptr %i, align 4
-  %10 = icmp eq i32 %9, 1
-  br i1 %10, label %assert.exit.L50, label %assert.then.L50, !prof !5
-
-assert.then.L50:                                  ; preds = %foreach.exit.L46
-  %11 = call ptr @__acrt_iob_func(i32 2)
-  %12 = call i32 (ptr, ptr, ...) @fprintf(ptr %11, ptr @anon.string.1)
-  call void @exit(i32 1)
-  unreachable
-
-assert.exit.L50:                                  ; preds = %foreach.exit.L46
-  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret i32 0
 }
-
-; Function Attrs: nofree
-declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
-
-; Function Attrs: nounwind
-declare dso_local noundef ptr @__acrt_iob_func(i32 noundef) #4
-
-; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #5
-
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #6
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define private i64 @_ZN19ExampleIterableType11getIteratorEv.covthunk(ptr %0) #0 {
@@ -203,12 +143,9 @@ entry:
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { mustprogress noinline nounwind optnone uwtable }
-attributes #2 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #3 = { nofree }
-attributes #4 = { nounwind }
-attributes #5 = { cold noreturn nounwind }
-attributes #6 = { nofree nounwind }
+attributes #1 = { nofree nounwind }
+attributes #2 = { mustprogress noinline nounwind optnone uwtable }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2, !3}
 !llvm.ident = !{!4}
@@ -218,4 +155,3 @@ attributes #6 = { nofree nounwind }
 !2 = !{i32 7, !"uwtable", i32 2}
 !3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!5 = !{!"branch_weights", i32 1048575, i32 1}

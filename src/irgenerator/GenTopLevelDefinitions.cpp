@@ -552,7 +552,7 @@ void IRGenerator::setFunctionReturnValAttrs(llvm::Function *function, const Qual
   // Values, that are returned via memory, have attributes on the sret parameter. Coerced values might contain padding
   const ReturnABIInfo returnABI = getReturnABIInfo(returnType);
   if (returnABI.isIndirect()) {
-    addSRetParamAttrs(function, returnABI.type);
+    addSRetParamAttrs(function, returnABI.memoryType);
     return;
   }
   if (returnABI.isCoerced())

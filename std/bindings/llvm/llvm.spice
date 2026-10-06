@@ -442,6 +442,8 @@ ext f<LLVMTypeRef> LLVMStructCreateNamed(LLVMContextRef /*C*/, string /*Name*/);
 ext f<string> LLVMGetStructName(LLVMTypeRef /*Ty*/);
 ext p LLVMStructSetBody(LLVMTypeRef /*StructTy*/, LLVMTypeRef* /*ElementTypes*/, unsigned int /*ElementCount*/, LLVMBool /*Packed*/);
 ext f<LLVMTypeRef> LLVMStructGetTypeAtIndex(LLVMTypeRef /*StructTy*/, unsigned int /*i*/);
+ext f<unsigned int> LLVMCountStructElementTypes(LLVMTypeRef /*StructTy*/);
+ext f<LLVMTypeRef> LLVMIntTypeInContext(LLVMContextRef /*C*/, unsigned int /*NumBits*/);
 ext p LLVMDumpValue(LLVMValueRef /*Val*/);
 ext f<LLVMBool> LLVMVerifyModule(LLVMModuleRef /*M*/, LLVMVerifierFailureAction /*Action*/, string* /*OutMessage*/);
 ext f<LLVMBool> LLVMVerifyFunction(LLVMFunctionRef /*Fn*/, LLVMVerifierFailureAction /*Action*/);
@@ -537,6 +539,7 @@ ext f<unsigned long> LLVMABISizeOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*T
 ext f<unsigned int> LLVMPreferredAlignmentOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned int> LLVMABIAlignmentOfType(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*Ty*/);
 ext f<unsigned long> LLVMOffsetOfElement(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*StructTy*/, unsigned int /*Element*/);
+ext f<unsigned int> LLVMElementAtOffset(LLVMTargetDataRef /*TD*/, LLVMTypeRef /*StructTy*/, unsigned long /*Offset*/);
 ext p LLVMParseCommandLineOptions(int /*argc*/, const string* /*argv*/, string /*Overview*/);
 ext f<LLVMErrorRef> LLVMCreateStringError(string /*ErrMsg*/);
 ext f<string> LLVMGetErrorMessage(LLVMErrorRef /*Err*/);
@@ -604,6 +607,8 @@ ext f<LLVMAttributeRef> LLVMCreateStringAttribute(LLVMContextRef /*C*/, string /
 ext f<LLVMAttributeRef> LLVMCreateTypeAttribute(LLVMContextRef /*C*/, unsigned int /*KindID*/, LLVMTypeRef /*TypeRef*/);
 ext p LLVMAddAttributeAtIndex(LLVMValueRef /*F*/, unsigned int /*Idx*/, LLVMAttributeRef /*A*/);
 ext p LLVMAddCallSiteAttribute(LLVMValueRef /*C*/, unsigned int /*Idx*/, LLVMAttributeRef /*A*/);
+ext f<LLVMAttributeRef> LLVMGetEnumAttributeAtIndex(LLVMValueRef /*F*/, unsigned int /*Idx*/, unsigned int /*KindID*/);
+ext f<LLVMTypeRef> LLVMGetTypeAttributeValue(LLVMAttributeRef /*A*/);
 ext f<LLVMValueRef> LLVMBuildSwitch(LLVMBuilderRef /*B*/, LLVMValueRef /*V*/, LLVMBasicBlockRef /*Else*/, unsigned int /*NumCases*/);
 ext p LLVMAddCase(LLVMValueRef /*Switch*/, LLVMValueRef /*OnVal*/, LLVMBasicBlockRef /*Dest*/);
 ext p LLVMAddIncoming(LLVMValueRef /*PhiNode*/, LLVMValueRef* /*IncomingValues*/, LLVMBasicBlockRef* /*IncomingBlocks*/, unsigned int /*Count*/);
@@ -785,6 +790,10 @@ public f<Type> getInt32Ty(const LLVMContext& context) {
 
 public f<Type> getInt64Ty(const LLVMContext& context) {
     return Type{ LLVMInt64TypeInContext(context.self) };
+}
+
+public f<Type> getIntNTy(const LLVMContext& context, unsigned int numBits) {
+    return Type{ LLVMIntTypeInContext(context.self, numBits) };
 }
 
 public f<Type> getDoubleTy(const LLVMContext& context) {
@@ -2135,6 +2144,14 @@ public f<bool> Type.isStructTy() {
     return this.getKind() == LLVMTypeKind::StructTypeKind;
 }
 
+public f<bool> Type.isAggregateType() {
+    return this.isStructTy() || this.isArrayTy();
+}
+
+public f<unsigned int> Type.getStructNumElements() {
+    return LLVMCountStructElementTypes(this.self);
+}
+
 public f<unsigned long> Type.getArrayNumElements() {
     return LLVMGetArrayLength2(this.self);
 }
@@ -2508,6 +2525,21 @@ public p Function.addDereferenceableParamAttr(unsigned int argNo, unsigned long 
     }
 }
 
+public p Function.addParamTypeAttr(unsigned int argNo, string kindName, Type ty) {
+    LLVMAddAttributeAtIndex(this.self, argNo + 1, LLVMCreateTypeAttribute(this.getContextRef(), getAttrKind(kindName), ty.self));
+}
+
+public f<bool> Function.hasParamAttr(unsigned int argNo, string kindName) {
+    return argNo < this.argSize() && LLVMGetEnumAttributeAtIndex(this.self, argNo + 1, getAttrKind(kindName)) != nil<LLVMAttributeRef>;
+}
+
+// Get the type of a type attribute (e.g. sret) of the given parameter
+public f<Type> Function.getParamTypeAttr(unsigned int argNo, string kindName) {
+    const LLVMAttributeRef attr = LLVMGetEnumAttributeAtIndex(this.self, argNo + 1, getAttrKind(kindName));
+    assert attr != nil<LLVMAttributeRef>;
+    return Type{ LLVMGetTypeAttributeValue(attr) };
+}
+
 public p Function.addRetAttr(string kindName) {
     LLVMAddAttributeAtIndex(this.self, ATTRIBUTE_RETURN_INDEX, createEnumAttr(this.getContextRef(), kindName));
 }
@@ -2649,6 +2681,20 @@ public f<unsigned long> Module.getTypeSizeInBits(Type ty) {
 
 public f<unsigned int> Module.getABITypeAlign(Type ty) {
     return LLVMABIAlignmentOfType(LLVMGetModuleDataLayout(this.self), ty.self);
+}
+
+public f<unsigned int> Module.getPrefTypeAlign(Type ty) {
+    return LLVMPreferredAlignmentOfType(LLVMGetModuleDataLayout(this.self), ty.self);
+}
+
+// Equivalent to getStructLayout(structTy)->getElementOffset(idx)
+public f<unsigned long> Module.getStructElementOffset(Type structTy, unsigned int idx) {
+    return LLVMOffsetOfElement(LLVMGetModuleDataLayout(this.self), structTy.self, idx);
+}
+
+// Equivalent to getStructLayout(structTy)->getElementContainingOffset(offset)
+public f<unsigned int> Module.getStructElementContainingOffset(Type structTy, unsigned long offset) {
+    return LLVMElementAtOffset(LLVMGetModuleDataLayout(this.self), structTy.self, offset);
 }
 
 public f<unsigned int> Module.getPointerSize() {

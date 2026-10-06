@@ -170,7 +170,7 @@ llvm::Function *IRGenerator::getOrCreateCovariantReturnThunk(const Function *met
   thunk->setDSOLocal(true);
   addCommonFctAttrs(thunk);
   if (const ReturnABIInfo returnABI = getReturnABIInfo(virtualReturnType); returnABI.isIndirect())
-    addSRetParamAttrs(thunk, returnABI.type);
+    addSRetParamAttrs(thunk, returnABI.memoryType);
 
   // Save insert markers, because the thunk body might be emitted in the middle of generating another function
   llvm::BasicBlock *bOrig = builder.GetInsertBlock();

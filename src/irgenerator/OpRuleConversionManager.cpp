@@ -1783,7 +1783,7 @@ LLVMExprResult OpRuleConversionManager::callOperatorOverloadFct(const ASTNode *n
     llvm::FunctionType *fctType = irGenerator->getFunctionType(returnType, argTypes);
     irGenerator->module->getOrInsertFunction(mangledName, fctType);
     if (const ReturnABIInfo returnABI = irGenerator->getReturnABIInfo(returnType); returnABI.isIndirect())
-      irGenerator->addSRetParamAttrs(irGenerator->module->getFunction(mangledName), returnABI.type);
+      irGenerator->addSRetParamAttrs(irGenerator->module->getFunction(mangledName), returnABI.memoryType);
   }
 
   // Get callee function

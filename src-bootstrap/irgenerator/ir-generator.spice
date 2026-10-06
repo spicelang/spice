@@ -21,6 +21,7 @@ import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/semantic-error";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/global/runtime-module-manager";
+import "bootstrap/irgenerator/abi-info";
 import "bootstrap/irgenerator/debug-info-generator";
 import "bootstrap/irgenerator/llvm-expr-result";
 import "bootstrap/irgenerator/metadata-generator";
@@ -117,6 +118,7 @@ public type IRGenerator struct : IAbstractAstVisitor {
     public llvm::LLVMContext* context
     public llvm::IRBuilder* builder
     public llvm::Module* module
+    ABIInfo abiInfo
     public OpRuleConversionManager conversionManager
     public StdFunctionManager stdFunctionManager
     public DebugInfoGenerator diGenerator
@@ -142,7 +144,8 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     this.context = &llvmContext;
     this.builder = &sourceFile.builder;
     this.module = &sourceFile.llvmModule;
-    this.stdFunctionManager = StdFunctionManager(sourceFile, this.module);
+    this.abiInfo = ABIInfo(this.cliOptions.targetTriple, this.module, this.context);
+    this.stdFunctionManager = StdFunctionManager(sourceFile, this.module, this);
     this.conversionManager = OpRuleConversionManager(this);
     this.diGenerator = DebugInfoGenerator(this);
     this.mdGenerator = MetadataGenerator(this);
@@ -1376,6 +1379,186 @@ public p IRGenerator.setLLVMFunction(const model::Function* spiceFunc, llvm::Fun
 }
 
 /**
+ * Get the information, how a value of the given type is returned from a function on the current target
+ *
+ * @param returnType Return type of the function, dyn for procedures
+ * @return Return ABI info
+ */
+public f<ReturnABIInfo> IRGenerator.getReturnABIInfo(const QualType& returnType) {
+    if returnType.is(SuperType::TY_DYN) {
+        return ReturnABIInfo{ReturnABIKind::DIRECT, this.builder.getVoidTy(), llvm::Type()};
+    }
+    llvm::Type llvmType = returnType.toLLVMType(this.sourceFile);
+    // Types with a copy ctor or dtor are non-trivial for the purpose of calls and therefore returned via memory
+    const bool isNonTrivial = llvmType.isAggregateType() &&
+        (!returnType.isTriviallyCopyable(nil<const ASTNode*>) || !returnType.isTriviallyDestructible(nil<const ASTNode*>));
+    return this.abiInfo.classifyReturnType(llvmType, isNonTrivial);
+}
+
+/**
+ * Get the LLVM function type for a function with the given return and param types, with the return value lowered to the
+ * calling convention of the target. If the value is returned via memory, the sret pointer is the first parameter.
+ *
+ * @param returnType Return type of the function, dyn for procedures
+ * @param paramTypes LLVM types of the parameters, including the 'this' pointer for methods
+ * @param isVarArg Variadic function or not
+ * @return Lowered LLVM function type
+ */
+public f<llvm::Type> IRGenerator.getFunctionType(const QualType& returnType, const Vector<llvm::Type>& paramTypes, bool isVarArg = false) {
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
+    if returnABI.isCoerced() {
+        return llvm::getFunctionType(returnABI.coercedType, paramTypes, isVarArg);
+    }
+    if returnABI.isIndirect() {
+        Vector<llvm::Type> loweredParamTypes;
+        loweredParamTypes.pushBack(this.builder.getPtrTy());
+        foreach const llvm::Type& paramType : paramTypes {
+            loweredParamTypes.pushBack(paramType);
+        }
+        return llvm::getFunctionType(this.builder.getVoidTy(), loweredParamTypes, isVarArg);
+    }
+    return llvm::getFunctionType(returnABI.memoryType, paramTypes, isVarArg);
+}
+
+/**
+ * Get the index of the first actual parameter of a function with the given return type. It is shifted by one, if the
+ * function has an sret parameter.
+ *
+ * @param returnType Return type of the function, dyn for procedures
+ * @return Index of the first actual parameter
+ */
+public f<unsigned int> IRGenerator.getArgOffset(const QualType& returnType) {
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
+    return returnABI.isIndirect() ? 1 : 0;
+}
+
+/**
+ * Insert a call to a function, that returns a value of the given type, lowered to the calling convention of the target.
+ * If the value is returned via memory or coerced, its address is returned via resultAddr. Otherwise, resultAddr is
+ * set to a null value and the call itself is the returned value.
+ *
+ * @param fctType Lowered function type of the callee
+ * @param callee Callee
+ * @param args Arguments, not including the sret pointer
+ * @param returnType Return type of the callee, dyn for procedures
+ * @param resultAddr Address of the returned value, if it is returned via memory or coerced
+ * @param sretAddr Memory to return the value to, if it is returned via memory. A new temporary is used, if null
+ * @return Call instruction
+ */
+public f<llvm::Value> IRGenerator.insertCall(llvm::Type fctType, llvm::Value callee, const Vector<llvm::Value>& args,
+                                            const QualType& returnType, llvm::Value& resultAddr, llvm::Value sretAddr = llvm::Value()) {
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
+    resultAddr = llvm::Value();
+    Vector<llvm::Value> loweredArgs;
+    if returnABI.isIndirect() {
+        resultAddr = sretAddr.isNull() ? this.insertAlloca(returnABI.memoryType) : sretAddr;
+        loweredArgs.pushBack(resultAddr);
+    }
+    foreach const llvm::Value& arg : args {
+        loweredArgs.pushBack(arg);
+    }
+
+    llvm::Value callInst = this.builder.createCall(fctType, callee, loweredArgs);
+
+    if returnABI.isIndirect() {
+        this.addSRetCallParamAttrs(callInst, returnABI.memoryType);
+    } else if returnABI.isCoerced() {
+        // Store the coerced value to memory, which can be accessed as the actual return type
+        resultAddr = this.insertCoercionAlloca(returnABI.memoryType, returnABI.coercedType);
+        this.insertStore(callInst, resultAddr);
+    }
+    return callInst;
+}
+
+/**
+ * Insert a call to the given function, that returns a value of the given type (see the overload above)
+ */
+public f<llvm::Value> IRGenerator.insertCall(llvm::Function callee, const Vector<llvm::Value>& args, const QualType& returnType,
+                                            llvm::Value& resultAddr, llvm::Value sretAddr = llvm::Value()) {
+    return this.insertCall(callee.getFunctionType(), callee.asValue(), args, returnType, resultAddr, sretAddr);
+}
+
+/**
+ * Insert a return instruction for the current function, lowered to the calling convention of the target
+ *
+ * @param returnValue Value to return or a null value. For functions with an sret parameter, a null value means, that the
+ *                    value was already stored to the sret memory
+ */
+public p IRGenerator.insertReturn(llvm::Value returnValue) {
+    const llvm::BasicBlock currentBlock = this.builder.getInsertBlock();
+    llvm::Function function = currentBlock.getParent();
+
+    // Store the value to the memory of the caller
+    const llvm::Value sretArg = getSRetArg(function);
+    if !sretArg.isNull() {
+        if !returnValue.isNull() {
+            this.insertStore(returnValue, sretArg);
+        }
+        this.builder.createRetVoid();
+        return;
+    }
+
+    if returnValue.isNull() {
+        this.builder.createRetVoid();
+        return;
+    }
+
+    // Coerce the value to the return type via memory
+    const llvm::Type returnType = function.getReturnType();
+    const llvm::Type valueType = returnValue.getType();
+    if !valueType.isSameAs(returnType) {
+        const llvm::Value coercionAddr = this.insertCoercionAlloca(valueType, returnType);
+        this.insertStore(returnValue, coercionAddr);
+        returnValue = this.insertLoad(returnType, coercionAddr);
+    }
+    this.builder.createRet(returnValue);
+}
+
+/**
+ * Allocate memory, that can hold a value of both given types
+ *
+ * @param llvmType Actual type of the value
+ * @param coercedType Type, the value is coerced to
+ * @return Memory address
+ */
+f<llvm::Value> IRGenerator.insertCoercionAlloca(llvm::Type llvmType, llvm::Type coercedType) {
+    const bool isCoercedTypeLarger = this.module.getTypeAllocSize(coercedType) > this.module.getTypeAllocSize(llvmType);
+    llvm::Value alloca = this.insertAlloca(isCoercedTypeLarger ? coercedType : llvmType);
+    const unsigned int typeAlign = this.module.getPrefTypeAlign(llvmType);
+    const unsigned int coercedTypeAlign = this.module.getPrefTypeAlign(coercedType);
+    alloca.setAlignment(typeAlign > coercedTypeAlign ? typeAlign : coercedTypeAlign);
+    return alloca;
+}
+
+/**
+ * Get the sret parameter of the given function
+ *
+ * @param function LLVM function
+ * @return sret parameter or a null value, if the function does not return via memory
+ */
+public f<llvm::Value> getSRetArg(llvm::Function function) {
+    if !function.hasParamAttr(0, "sret") {
+        return llvm::Value();
+    }
+    return function.getArg(0);
+}
+
+public p IRGenerator.addSRetParamAttrs(llvm::Function function, llvm::Type llvmType) {
+    function.addParamAttr(0, "dead_on_unwind");
+    function.addParamAttr(0, "noalias");
+    function.addParamAttr(0, "writable");
+    function.addParamTypeAttr(0, "sret", llvmType);
+    function.addParamAttr(0, "align", cast<unsigned long>(this.module.getABITypeAlign(llvmType)));
+}
+
+public p IRGenerator.addSRetCallParamAttrs(llvm::Value callInst, llvm::Type llvmType) {
+    callInst.addCallParamAttr(0, "dead_on_unwind");
+    callInst.addCallParamAttr(0, "writable");
+    callInst.addCallParamTypeAttr(0, "sret", llvmType);
+    callInst.addCallParamAttr(0, "align", cast<unsigned long>(this.module.getABITypeAlign(llvmType)));
+}
+
+/**
  * Print the given module to a string
  *
  * @param llvmModule LLVM module
@@ -1629,9 +1812,11 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
 
         // Get return type
         llvm::Type returnType = this.builder.getVoidTy();
+        const QualType returnSType = isFunction ? manifestation.returnType : QualType(SuperType::TY_DYN);
         if isFunction {
             returnType = manifestation.returnType.toLLVMType(this.sourceFile);
         }
+        const unsigned int argOffset = this.getArgOffset(returnSType);
 
         // Get function linkage
         if isFunction && node.attrs != nil<IVisitable*> {
@@ -1645,7 +1830,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
 
         // Create function or implement declared function
         const String mangledName = manifestation.getMangledName();
-        const llvm::Type fctType = llvm::getFunctionType(returnType, paramTypes, false);
+        const llvm::Type fctType = this.getFunctionType(returnSType, paramTypes);
         this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
         llvm::Function func = this.module.getFunction(mangledName.getRaw());
         this.updateAddress(node.entry, func.asValue());
@@ -1658,7 +1843,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
         this.addCommonFctAttrs(func, entryType.isInline());
         this.enableFunctionInstrumentation(func);
         // Set attributes to function parameters and return value
-        this.setParamAttrs(func, paramInfoList);
+        this.setParamAttrs(func, paramInfoList, argOffset);
         if isFunction {
             this.setFunctionReturnValAttrs(func, manifestation.returnType);
         }
@@ -1681,8 +1866,11 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
             resultEntry = this.currentScope.lookupStrict(String(RETURN_VARIABLE_NAME));
             assert resultEntry != nil<const SymbolTableEntry*>;
             if resultEntry.isInitialized() {
-                // Allocate result variable
-                const llvm::Value resultAddr = this.insertAlloca(manifestation.returnType, String(RETURN_VARIABLE_NAME));
+                // Allocate result variable. If the value is returned via memory, the result variable lives in the caller's memory
+                llvm::Value resultAddr = getSRetArg(func);
+                if resultAddr.isNull() {
+                    resultAddr = this.insertAlloca(manifestation.returnType, String(RETURN_VARIABLE_NAME));
+                }
                 // Update the symbol table entry
                 this.updateAddress(resultEntry, resultAddr);
                 // Generate debug info
@@ -1690,10 +1878,10 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
             }
         }
 
-        // Store function argument values
-        const unsigned int argCount = func.argSize();
+        // Store function argument values. The sret parameter is skipped
+        const unsigned int argCount = func.argSize() - argOffset;
         for unsigned int argNumber = 0; argNumber < argCount; argNumber++ {
-            const llvm::Value arg = func.getArg(argNumber);
+            const llvm::Value arg = func.getArg(argOffset + argNumber);
             // Get information about the parameter
             const ParamInfo& paramInfo = paramInfoList.get(argNumber);
             const SymbolTableEntry* paramSymbol = paramInfo.entry;
@@ -1742,9 +1930,10 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
             if isFunction {
                 llvm::Value res = this.getDefaultValueForSymbolType(manifestation.returnType);
                 if resultEntry.isInitialized() {
-                    res = this.insertLoad(returnType, this.getAddress(resultEntry));
+                    const llvm::Value resultAddr = this.getAddress(resultEntry);
+                    res = resultAddr.isSameAs(getSRetArg(func)) ? llvm::Value() : this.insertLoad(returnType, resultAddr);
                 }
-                this.builder.createRet(res);
+                this.insertReturn(res);
             } else {
                 this.builder.createRetVoid();
             }
@@ -1836,10 +2025,11 @@ public f<llvm::Value> IRGenerator.materializeDecayedArrayArg(llvm::Value argValu
     return argAddress;
 }
 
-p IRGenerator.setParamAttrs(llvm::Function function, const ParamInfoList& paramInfo) {
-    assert cast<unsigned long>(function.argSize()) == paramInfo.getSize();
-    for unsigned int i = 0; i < cast<unsigned int>(paramInfo.getSize()); i++ {
-        const ParamInfo& info = paramInfo.get(i);
+p IRGenerator.setParamAttrs(llvm::Function function, const ParamInfoList& paramInfo, unsigned int argOffset = 0) {
+    assert cast<unsigned long>(function.argSize()) == cast<unsigned long>(argOffset) + paramInfo.getSize();
+    for unsigned int paramIdx = 0; paramIdx < cast<unsigned int>(paramInfo.getSize()); paramIdx++ {
+        const unsigned int i = argOffset + paramIdx;
+        const ParamInfo& info = paramInfo.get(paramIdx);
         const QualType& paramType = info.entry.getQualType();
 
         // NoUndef attribute
@@ -1868,6 +2058,16 @@ p IRGenerator.setParamAttrs(llvm::Function function, const ParamInfoList& paramI
 
 p IRGenerator.setFunctionReturnValAttrs(llvm::Function function, const QualType& returnType) {
     if returnType.is(SuperType::TY_DYN) {
+        return;
+    }
+
+    // Values, that are returned via memory, have attributes on the sret parameter. Coerced values might contain padding
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
+    if returnABI.isIndirect() {
+        this.addSRetParamAttrs(function, returnABI.memoryType);
+        return;
+    }
+    if returnABI.isCoerced() {
         return;
     }
 
@@ -2077,13 +2277,9 @@ public f<Any> IRGenerator.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
 }
 
 public f<Any> IRGenerator.visitExtDecl(ASTExtDeclNode* node) {
-    // Get return type
     const model::Function* spiceFunc = node.extFunction;
     assert spiceFunc != nil<const model::Function*>;
-    llvm::Type returnType = this.builder.getVoidTy();
-    if !spiceFunc.returnType.is(SuperType::TY_DYN) {
-        returnType = spiceFunc.returnType.toLLVMType(this.sourceFile);
-    }
+    const unsigned int argOffset = this.getArgOffset(spiceFunc.returnType);
 
     // Get arg types
     const QualTypeList paramTypes = spiceFunc.getParamTypes();
@@ -2099,7 +2295,7 @@ public f<Any> IRGenerator.visitExtDecl(ASTExtDeclNode* node) {
         const ASTTypeLstWithEllipsisNode* argTypeLst = downcast<ASTTypeLstWithEllipsisNode>(node.argTypeLst);
         isVarArg = argTypeLst.hasEllipsis;
     }
-    const llvm::Type functionType = llvm::getFunctionType(returnType, argTypes, isVarArg);
+    const llvm::Type functionType = this.getFunctionType(spiceFunc.returnType, argTypes, isVarArg);
     const String mangledName = spiceFunc.getMangledName();
     this.module.getOrInsertFunction(mangledName.getRaw(), functionType);
     llvm::Function fct = this.module.getFunction(mangledName.getRaw());
@@ -2109,10 +2305,10 @@ public f<Any> IRGenerator.visitExtDecl(ASTExtDeclNode* node) {
 
     // Add noundef attribute to all parameters and, for sub-32-bit integers, the ABI-required sext/zext attribute
     for unsigned int i = 0; i < cast<unsigned int>(paramTypes.getSize()); i++ {
-        fct.addParamAttr(i, "noundef");
+        fct.addParamAttr(argOffset + i, "noundef");
         const string extAttrKind = this.getExtAttrKindForType(paramTypes.get(i));
         if extAttrKind != nil<string> {
-            fct.addParamAttr(i, extAttrKind);
+            fct.addParamAttr(argOffset + i, extAttrKind);
         }
     }
 
@@ -2219,6 +2415,7 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
         const llvm::Value iterablePtr = this.resolveAddress(iteratorAssignNode);
 
         llvm::Value iterator;
+        llvm::Value iteratorAddr;
         const QualTypeList getIteratorParamTypes = node.getIteratorFct.getParamTypes();
         bool isArrayIterable = false;
         if !node.getIteratorFct.isMethod() {
@@ -2234,18 +2431,22 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
             Vector<llvm::Value> args;
             args.pushBack(iterablePtr);
             args.pushBack(this.builder.getInt64(arraySize));
-            iterator = this.builder.createCall(iterateFct, args);
+            iterator = this.insertCall(iterateFct, args, node.getIteratorFct.returnType, iteratorAddr);
         } else { // Struct as iterable
             // Call .getIterator() on iterable
             const llvm::Function getIteratorFct = this.stdFunctionManager.getIteratorFct(node.getIteratorFct);
             Vector<llvm::Value> args;
             args.pushBack(iterablePtr);
-            iterator = this.builder.createCall(getIteratorFct, args);
+            iterator = this.insertCall(getIteratorFct, args, node.getIteratorFct.returnType, iteratorAddr);
         }
 
-        // Resolve address of iterator
+        // Resolve address of iterator. If it is returned via memory or coerced, it already lives in memory
         LLVMExprResult callResult;
-        callResult.value = iterator;
+        if !iteratorAddr.isNull() {
+            callResult.ptr = iteratorAddr;
+        } else {
+            callResult.value = iterator;
+        }
         callResult.node = iteratorAssignNode;
         iteratorPtr = this.resolveAddress(callResult);
 
@@ -2308,16 +2509,18 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     // Get the current iterator values
     LLVMExprResult itemResult;
     if hasIdx {
-        // Allocate space to save pair
         const QualType& pairSTy = node.getIdxFct.returnType;
         const llvm::Type pairTy = pairSTy.toLLVMType(this.sourceFile);
-        const llvm::Value pairPtr = this.insertAlloca(pairSTy, String("pair.addr"));
-        // Call .getIdx() on iterator
+        // Call .getIdx() on iterator. If the pair is returned via memory or coerced, it already lives in memory
         assert node.getIdxFct != nil<model::Function*>;
         const llvm::Function getIdxFct = this.stdFunctionManager.getIteratorGetIdxFct(node.getIdxFct);
-        llvm::Value pair = this.builder.createCall(getIdxFct, iteratorArgs);
-        pair.setName("pair");
-        this.insertStore(pair, pairPtr);
+        llvm::Value pairPtr;
+        llvm::Value pair = this.insertCall(getIdxFct, iteratorArgs, pairSTy, pairPtr);
+        if pairPtr.isNull() {
+            pairPtr = this.insertAlloca(pairSTy, String("pair.addr"));
+            pair.setName("pair");
+            this.insertStore(pair, pairPtr);
+        }
         // Store idx to idx var
         const llvm::Value idxAddrInPair = this.insertStructGEP(pairTy, pairPtr, 0, String("idx.addr"));
         LLVMExprResult idxResult;
@@ -2753,6 +2956,10 @@ public f<Any> IRGenerator.visitCaseConstant(ASTCaseConstantNode* node) {
 }
 
 public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
+    // If the value is returned via memory, it is directly put into the memory of the caller
+    const llvm::BasicBlock currentBlock = this.builder.getInsertBlock();
+    const llvm::Value sretArg = getSRetArg(currentBlock.getParent());
+
     llvm::Value returnValue;
     if node.hasReturnValue { // Return value is attached to the return statement
         IVisitable* returnExpr = node.assignExpr;
@@ -2760,21 +2967,26 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
             // Perform a copy
             const llvm::Value originalAddress = this.resolveAddress(returnExpr);
             const llvm::Type returnTy = node.returnType.toLLVMType(this.sourceFile);
-            const llvm::Value newAddress = this.insertAlloca(returnTy);
+            const llvm::Value newAddress = sretArg.isNull() ? this.insertAlloca(returnTy) : sretArg;
             Vector<llvm::Value> ctorArgs;
             ctorArgs.pushBack(originalAddress);
             this.generateCtorOrDtorCall(newAddress, node.calledCopyCtor, ctorArgs);
-            returnValue = this.insertLoad(returnTy, newAddress);
+            if sretArg.isNull() {
+                returnValue = this.insertLoad(returnTy, newAddress);
+            }
         } else {
             returnValue = node.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
         }
     } else { // Try to load result variable value
         const SymbolTableEntry* resultEntry = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
         if resultEntry != nil<const SymbolTableEntry*> {
-            const QualType& resultType = resultEntry.getQualType();
-            const llvm::Type resultSTy = resultType.toLLVMType(this.sourceFile);
             const llvm::Value returnValueAddr = this.getAddress(resultEntry);
-            returnValue = this.insertLoad(resultSTy, returnValueAddr);
+            // The result variable of functions, that return via memory, already lives in the memory of the caller
+            if !returnValueAddr.isSameAs(sretArg) {
+                const QualType& resultType = resultEntry.getQualType();
+                const llvm::Type resultSTy = resultType.toLLVMType(this.sourceFile);
+                returnValue = this.insertLoad(resultSTy, returnValueAddr);
+            }
         }
     }
 
@@ -2784,13 +2996,7 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
     this.blockAlreadyTerminated = true;
 
     // Create return instruction
-    if !returnValue.isNull() {
-        // Return with value
-        this.builder.createRet(returnValue);
-    } else {
-        // Return without value
-        this.builder.createRetVoid();
-    }
+    this.insertReturn(returnValue);
 
     return Any();
 }
@@ -3867,7 +4073,17 @@ f<LLVMExprResult> IRGenerator.generateErrorPropagation(ASTPostfixUnaryExprNode* 
     const llvm::Function errCtorFct = this.stdFunctionManager.getResultErrCtorFct(node.errPropCtorFct);
     Vector<llvm::Value> errCtorArgs;
     errCtorArgs.pushBack(errorPtr);
-    const llvm::Value propagatedResult = this.builder.createCall(errCtorFct, errCtorArgs);
+    // If the enclosing function returns via memory, construct the result directly in the memory of its caller
+    const QualType& propagatedResultType = node.errPropCtorFct.returnType;
+    const llvm::BasicBlock currentBlock = this.builder.getInsertBlock();
+    const llvm::Value sretArg = getSRetArg(currentBlock.getParent());
+    llvm::Value propagatedResultAddr;
+    llvm::Value propagatedResult = this.insertCall(errCtorFct, errCtorArgs, propagatedResultType, propagatedResultAddr, sretArg);
+    if !sretArg.isNull() && propagatedResultAddr.isSameAs(sretArg) {
+        propagatedResult = llvm::Value();
+    } else if !propagatedResultAddr.isNull() {
+        propagatedResult = this.insertLoad(propagatedResultType, propagatedResultAddr);
+    }
 
     // Record this propagation hop in the error return trace, if tracing is enabled for this file
     if this.sourceFile.errorReturnTracing {
@@ -3877,7 +4093,7 @@ f<LLVMExprResult> IRGenerator.generateErrorPropagation(ASTPostfixUnaryExprNode* 
     // Clean up all scopes between here and the enclosing function/procedure/lambda body, then return the error
     this.generateScopeCleanupUpTo(cast<ASTNode*>(node), this.currentScope.getFunctionScope());
     this.blockAlreadyTerminated = true;
-    this.builder.createRet(propagatedResult);
+    this.insertReturn(propagatedResult);
 
     // Switch to exit block: unwrap the payload, which becomes the value of the whole expression
     this.switchToBlock(bExit);
@@ -4237,12 +4453,6 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
     if !data.isFctPtrCall() && !existingFct.isNull() {
         fctType = existingFct.getFunctionType();
     } else {
-        // Get returnType
-        llvm::Type returnType = this.builder.getVoidTy();
-        if !returnSType.is(SuperType::TY_DYN) {
-            returnType = returnSType.toLLVMType(this.sourceFile);
-        }
-
         // Get arg types
         Vector<llvm::Type> argTypes;
         if data.isMethodCall() || data.isCtorCall() {
@@ -4255,14 +4465,19 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
             argTypes.pushBack(this.builder.getPtrTy()); // Trailing capture pointer (always present in the uniform lambda ABI)
         }
 
-        fctType = llvm::getFunctionType(returnType, argTypes, false);
+        fctType = this.getFunctionType(returnSType, argTypes);
         if !data.isFctPtrCall() && !data.isVirtualMethodCall() {
             this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
+            const ReturnABIInfo returnABI = this.getReturnABIInfo(returnSType);
+            if returnABI.isIndirect() {
+                this.addSRetParamAttrs(this.module.getFunction(mangledName.getRaw()), returnABI.memoryType);
+            }
         }
     }
     assert !fctType.isNull();
 
-    llvm::Value callInst;
+    // Retrieve the callee
+    llvm::Value callee;
     if data.isVirtualMethodCall() {
         assert data.callee.isVirtual;
         assert !thisPtr.isNull();
@@ -4271,10 +4486,7 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
         const unsigned long vtableIndex = data.callee.vtableIndex;
         // Lookup function pointer in VTable
         fctPtr = this.insertInBoundsGEP(this.builder.getPtrTy(), vtablePtr, this.builder.getInt64(vtableIndex), String("vfct.addr"));
-        const llvm::Value fct = this.insertLoad(this.builder.getPtrTy(), fctPtr, false, String("fct"));
-
-        // Generate function call
-        callInst = this.builder.createCall(fctType, fct, argValues);
+        callee = this.insertLoad(this.builder.getPtrTy(), fctPtr, false, String("fct"));
     } else if data.isFctPtrCall() {
         assert firstFragEntry != nil<const SymbolTableEntry*>;
         QualType firstFragType = firstFragEntry.getQualType();
@@ -4282,22 +4494,21 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
             fctPtr = this.getAddress(firstFragEntry);
         }
         this.autoDeReferencePtr(fctPtr, firstFragType);
-        const llvm::Value fct = this.insertLoad(this.builder.getPtrTy(), fctPtr, false, String("fct"));
-
-        // Generate function call
-        callInst = this.builder.createCall(fctType, fct, argValues);
+        callee = this.insertLoad(this.builder.getPtrTy(), fctPtr, false, String("fct"));
     } else {
         // Get callee function
-        const llvm::Function callee = this.module.getFunction(mangledName.getRaw());
-        assert !callee.isNull();
-
-        // Generate function call
-        callInst = this.builder.createCall(callee, argValues);
+        const llvm::Function calleeFct = this.module.getFunction(mangledName.getRaw());
+        assert !calleeFct.isNull();
+        callee = calleeFct.asValue();
     }
+
+    // Generate function call. If the value is returned via memory or coerced, the call result lives in memory
+    llvm::Value resultAddr;
+    const llvm::Value callInst = this.insertCall(fctType, callee, argValues, returnSType, resultAddr);
 
     // Set argument and return value attributes
     if !data.isFctPtrCall() {
-        this.setCallArgAttrs(callInst, spiceFunc, paramSTypes);
+        this.setCallArgAttrs(callInst, spiceFunc, paramSTypes, this.getArgOffset(returnSType));
         this.setCallReturnValAttrs(callInst, returnSType);
     }
 
@@ -4315,8 +4526,11 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
             if data.isCtorCall() {
                 this.updateAddress(anonymousSymbol, thisPtr);
             } else {
-                resultPtr = this.insertAlloca(callInst.getType());
-                this.insertStore(callInst, resultPtr);
+                resultPtr = resultAddr;
+                if resultPtr.isNull() {
+                    resultPtr = this.insertAlloca(callInst.getType());
+                    this.insertStore(callInst, resultPtr);
+                }
                 this.updateAddress(anonymousSymbol, resultPtr);
             }
         }
@@ -4339,13 +4553,20 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
         return exprResultAny(res);
     }
 
+    // In case the value is returned via memory or coerced, return its address
+    if !resultAddr.isNull() {
+        res.ptr = resultAddr;
+        return exprResultAny(res);
+    }
+
     // Otherwise return the value
     res.value = callInst;
     res.ptr = resultPtr;
     return exprResultAny(res);
 }
 
-p IRGenerator.setCallArgAttrs(llvm::Value callInst, const model::Function* spiceFunc, const QualTypeList& paramSTypes) {
+p IRGenerator.setCallArgAttrs(llvm::Value callInst, const model::Function* spiceFunc, const QualTypeList& paramSTypes,
+                              unsigned int argOffset = 0) {
     const bool isFctPtr = spiceFunc == nil<const model::Function*>;
     const bool isMethod = !isFctPtr && !spiceFunc.thisType.is(SuperType::TY_DYN);
     const unsigned long expectedParamCount = isMethod || isFctPtr ? paramSTypes.getSize() + 1l : paramSTypes.getSize();
@@ -4356,7 +4577,7 @@ p IRGenerator.setCallArgAttrs(llvm::Value callInst, const model::Function* spice
         } else {
             paramType = paramSTypes.get(isMethod ? i - 1l : i);
         }
-        const unsigned int argNo = cast<unsigned int>(i);
+        const unsigned int argNo = argOffset + cast<unsigned int>(i);
 
         // NoUndef attribute
         callInst.addCallParamAttr(argNo, "noundef");
@@ -4384,6 +4605,12 @@ p IRGenerator.setCallArgAttrs(llvm::Value callInst, const model::Function* spice
 
 p IRGenerator.setCallReturnValAttrs(llvm::Value callInst, const QualType& returnType) {
     if returnType.is(SuperType::TY_DYN) {
+        return;
+    }
+
+    // Values, that are returned via memory, have attributes on the sret argument. Coerced values might contain padding
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
+    if !returnABI.isDirect() {
         return;
     }
 
@@ -4643,7 +4870,9 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
     // Append the trailing capture-struct pointer (always passed as pointer)
     paramInfoList.pushBack(ParamInfo{String(CAPTURES_PARAM_NAME), nil<const SymbolTableEntry*>});
     paramTypes.pushBack(this.builder.getPtrTy());
-    const unsigned int capturesArgIdx = cast<unsigned int>(paramTypes.getSize()) - 1;
+    const QualType returnSType = isFunction ? spiceFunc.returnType : QualType(SuperType::TY_DYN);
+    const unsigned int argOffset = this.getArgOffset(returnSType);
+    const unsigned int capturesArgIdx = argOffset + cast<unsigned int>(paramTypes.getSize()) - 1;
 
     // Get return type
     llvm::Type returnType = this.builder.getVoidTy();
@@ -4656,7 +4885,7 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
         spiceFunc.mangleSuffix = "." + toString(this.manIdx);
     }
     const String mangledName = spiceFunc.getMangledName();
-    const llvm::Type funcType = llvm::getFunctionType(returnType, paramTypes, false);
+    const llvm::Type funcType = this.getFunctionType(returnSType, paramTypes);
     this.module.getOrInsertFunction(mangledName.getRaw(), funcType);
     llvm::Function lambda = this.module.getFunction(mangledName.getRaw());
 
@@ -4664,6 +4893,10 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
     lambda.setLinkage(llvm::LLVMLinkage::InternalLinkage);
     this.addCommonFctAttrs(lambda);
     this.enableFunctionInstrumentation(lambda);
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnSType);
+    if returnABI.isIndirect() {
+        this.addSRetParamAttrs(lambda, returnABI.memoryType);
+    }
 
     // In case of captures, add attribute to captures argument
     if hasCaptures {
@@ -4695,19 +4928,23 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
         resultEntry = this.currentScope.lookupStrict(String(RETURN_VARIABLE_NAME));
         assert resultEntry != nil<const SymbolTableEntry*>;
         if resultEntry.isInitialized() {
-            const llvm::Value resultAddr = this.insertAlloca(returnType, String(RETURN_VARIABLE_NAME));
+            // If the value is returned via memory, the result variable lives in the caller's memory
+            llvm::Value resultAddr = getSRetArg(lambda);
+            if resultAddr.isNull() {
+                resultAddr = this.insertAlloca(returnType, String(RETURN_VARIABLE_NAME));
+            }
             this.updateAddress(resultEntry, resultAddr);
             // Generate debug info
             this.diGenerator.generateLocalVarDebugInfo(String(RETURN_VARIABLE_NAME), resultAddr);
         }
     }
 
-    // Store function argument values
+    // Store function argument values. The sret parameter is skipped
     llvm::Value captureStructPtrPtr;
-    const unsigned int argCount = lambda.argSize();
+    const unsigned int argCount = lambda.argSize() - argOffset;
     const Vector<llvm::Type> funcParamTypes = funcType.getParamTypes();
     for unsigned int argNumber = 0; argNumber < argCount; argNumber++ {
-        const llvm::Value arg = lambda.getArg(argNumber);
+        const llvm::Value arg = lambda.getArg(argOffset + argNumber);
         // Get parameter info
         const ParamInfo& paramInfo = paramInfoList.get(argNumber);
         const SymbolTableEntry* paramSymbol = paramInfo.entry;
@@ -4716,10 +4953,10 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
             continue;
         }
         // Allocate space for it
-        const llvm::Type paramType = funcParamTypes.get(argNumber);
+        const llvm::Type paramType = funcParamTypes.get(argOffset + argNumber);
         const llvm::Value paramAddress = this.insertAlloca(paramType, paramInfo.name);
         // Update the symbol table entry
-        const bool isCapturesStruct = argNumber == capturesArgIdx;
+        const bool isCapturesStruct = argOffset + argNumber == capturesArgIdx;
         if isCapturesStruct {
             captureStructPtrPtr = paramAddress;
         } else {
@@ -4757,9 +4994,10 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
             if isFunction {
                 llvm::Value res = this.getDefaultValueForSymbolType(spiceFunc.returnType);
                 if resultEntry.isInitialized() {
-                    res = this.insertLoad(returnType, this.getAddress(resultEntry));
+                    const llvm::Value resultAddr = this.getAddress(resultEntry);
+                    res = resultAddr.isSameAs(getSRetArg(lambda)) ? llvm::Value() : this.insertLoad(returnType, resultAddr);
                 }
-                this.builder.createRet(res);
+                this.insertReturn(res);
             } else {
                 this.builder.createRetVoid();
             }
@@ -4767,7 +5005,7 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
     } else {
         // Visit lambda expression
         const llvm::Value exprResult = this.resolveValue(lambdaExpr);
-        this.builder.createRet(exprResult);
+        this.insertReturn(exprResult);
     }
 
     // Pop capture addresses
@@ -4864,6 +5102,13 @@ f<llvm::Function> IRGenerator.getOrCreateFatFctPtrThunk(llvm::Function target) {
         fwdArgs.pushBack(thunk.getArg(i));
     }
     const llvm::Value call = this.builder.createCall(target, fwdArgs);
+    // Forward the sret pointer, if the target returns via memory
+    const llvm::Value targetSRetArg = getSRetArg(target);
+    if !targetSRetArg.isNull() {
+        const llvm::Type sretType = target.getParamTypeAttr(0, "sret");
+        this.addSRetParamAttrs(thunk, sretType);
+        this.addSRetCallParamAttrs(call, sretType);
+    }
     const llvm::Type targetReturnType = targetType.getReturnType();
     if targetReturnType.isVoidTy() {
         this.builder.createRetVoid();
@@ -5627,11 +5872,8 @@ p IRGenerator.generateFctDecl(const model::Function* fct, const Vector<llvm::Val
         foreach const llvm::Value& argValue : args {
             paramTypes.pushBack(argValue.getType());
         }
-        llvm::Type returnType = this.builder.getVoidTy();
-        if fct.isFunction() {
-            returnType = fct.returnType.toLLVMType(this.sourceFile);
-        }
-        const llvm::Type fctType = llvm::getFunctionType(returnType, paramTypes, false);
+        assert fct.isProcedure();
+        const llvm::Type fctType = llvm::getFunctionType(this.builder.getVoidTy(), paramTypes, false);
         this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
 
         if fct.isMethod() {
@@ -5683,11 +5925,6 @@ f<llvm::Value> IRGenerator.generateFctCall(const model::Function* fct, const Vec
     }
 
     return callInst;
-}
-
-f<llvm::Value> IRGenerator.generateFctDeclAndCall(const model::Function* fct, const Vector<llvm::Value>& args) {
-    this.generateFctDecl(fct, args);
-    return this.generateFctCall(fct, args);
 }
 
 p IRGenerator.generateProcDeclAndCall(const model::Function* proc, const Vector<llvm::Value>& args) {
@@ -6691,8 +6928,12 @@ p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
     arrayValues.pushBack(llvm::getNullValue(ptrTy)); // nullptr as safety guard
     arrayValues.pushBack(spiceStruct.vTableData.typeInfo); // TypeInfo to identify the type for the VTable
     foreach const model::Function* virtualMethod : virtualMethods {
-        const llvm::Function llvmFunc = this.getLLVMFunction(virtualMethod);
+        llvm::Function llvmFunc = this.getLLVMFunction(virtualMethod);
         assert spiceStruct.scope.scopeType == ScopeType::INTERFACE || !llvmFunc.isNull();
+        // Virtual calls expect the return type of the interface method, so methods with another return type need a thunk
+        if !llvmFunc.isNull() && !virtualMethod.virtualReturnType.is(SuperType::TY_DYN) {
+            llvmFunc = this.getOrCreateCovariantReturnThunk(virtualMethod, llvmFunc);
+        }
         arrayValues.pushBack(!llvmFunc.isNull() ? llvmFunc.asValue() : llvm::getNullValue(ptrTy));
     }
 
@@ -6705,6 +6946,77 @@ p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
     llvm::Value global = this.module.getNamedGlobal(mangledName.getRaw());
     assert !global.isNull();
     global.setInitializer(initializer);
+}
+
+f<llvm::Function> IRGenerator.getOrCreateCovariantReturnThunk(const model::Function* method, llvm::Function target) {
+    // A struct method may implement an interface method, that returns an interface, by returning a struct, which implements
+    // this interface. Virtual calls expect the interface to be returned, which might be returned in another way than the
+    // struct. Therefore, the VTable points to a thunk, that calls the method and returns the interface part of the struct.
+    const String thunkName = target.getName() + ".covthunk";
+    const llvm::Function existing = this.module.getFunction(thunkName.getRaw());
+    if !existing.isNull() {
+        return existing;
+    }
+
+    // Build the thunk signature: the target's params with the return type of the interface method
+    const QualType& returnType = method.returnType;
+    const QualType& virtualReturnType = method.virtualReturnType;
+    const unsigned int targetArgOffset = this.getArgOffset(returnType);
+    const llvm::Type targetType = target.getFunctionType();
+    const Vector<llvm::Type> targetParamTypes = targetType.getParamTypes();
+    Vector<llvm::Type> paramTypes;
+    for unsigned long i = cast<unsigned long>(targetArgOffset); i < targetParamTypes.getSize(); i++ {
+        paramTypes.pushBack(targetParamTypes.get(i));
+    }
+    const llvm::Type thunkType = this.getFunctionType(virtualReturnType, paramTypes);
+    const llvm::Function thunk = this.module.createFunction(thunkType, llvm::LLVMLinkage::PrivateLinkage, thunkName.getRaw());
+    this.addCommonFctAttrs(thunk);
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(virtualReturnType);
+    if returnABI.isIndirect() {
+        this.addSRetParamAttrs(thunk, returnABI.memoryType);
+    }
+
+    // Save insert markers, because the thunk body might be emitted in the middle of generating another function
+    const llvm::BasicBlock bOrig = this.builder.getInsertBlock();
+    const llvm::BasicBlock allocaInsertBlockOrig = this.allocaInsertBlock;
+    const llvm::Value allocaInsertInstOrig = this.allocaInsertInst;
+    const bool blockAlreadyTerminatedOrig = this.blockAlreadyTerminated;
+    const llvm::Metadata debugLocOrig = this.builder.getCurrentDebugLocation();
+    this.builder.setCurrentDebugLocation(llvm::Metadata{});
+
+    const llvm::BasicBlock bEntry = this.createBlock(String("entry"));
+    this.switchToBlock(bEntry, thunk);
+    this.allocaInsertBlock = bEntry;
+    this.allocaInsertInst = llvm::Value();
+
+    // Forward all arguments except the sret pointer of the thunk
+    const unsigned int thunkArgOffset = this.getArgOffset(virtualReturnType);
+    Vector<llvm::Value> fwdArgs;
+    fwdArgs.reserve(paramTypes.getSize());
+    for unsigned int i = 0; i < cast<unsigned int>(paramTypes.getSize()); i++ {
+        fwdArgs.pushBack(thunk.getArg(thunkArgOffset + i));
+    }
+    llvm::Value resultAddr;
+    const llvm::Value call = this.insertCall(target, fwdArgs, returnType, resultAddr);
+    if resultAddr.isNull() {
+        resultAddr = this.insertAlloca(call.getType());
+        this.insertStore(call, resultAddr);
+    }
+
+    // Return the interface part of the returned struct
+    const llvm::Value interfacePtr = this.getUpcastedStructPtr(resultAddr, virtualReturnType, returnType);
+    this.insertReturn(this.insertLoad(virtualReturnType.toLLVMType(this.sourceFile), interfacePtr));
+
+    // Restore insert markers
+    if !bOrig.isNull() {
+        this.builder.setInsertPoint(bOrig);
+    }
+    this.builder.setCurrentDebugLocation(debugLocOrig);
+    this.blockAlreadyTerminated = blockAlreadyTerminatedOrig;
+    this.allocaInsertBlock = allocaInsertBlockOrig;
+    this.allocaInsertInst = allocaInsertInstOrig;
+
+    return thunk;
 }
 
 f<llvm::Type> IRGenerator.getVTableType(const StructBase* spiceStruct) {

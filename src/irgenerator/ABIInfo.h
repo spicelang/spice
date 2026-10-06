@@ -24,7 +24,7 @@ enum class ReturnABIKind : uint8_t {
 
 struct ReturnABIInfo {
   ReturnABIKind kind = ReturnABIKind::DIRECT;
-  llvm::Type *type = nullptr;        // Type of the return value in memory
+  llvm::Type *memoryType = nullptr;  // Type of the return value in memory
   llvm::Type *coercedType = nullptr; // Type, that is returned in registers (only set for COERCED)
 
   [[nodiscard]] bool isDirect() const { return kind == ReturnABIKind::DIRECT; }
@@ -53,11 +53,10 @@ private:
   [[nodiscard]] ReturnABIInfo classifyReturnTypeAArch64(llvm::Type *type) const;
   [[nodiscard]] ReturnABIInfo classifyReturnTypeWebAssembly(llvm::Type *type) const;
   [[nodiscard]] llvm::Type *getIntegerTypeAtOffset(llvm::Type *type, uint64_t offset) const;
-  [[nodiscard]] llvm::Type *getSSETypeAtOffset(llvm::Type *type, uint64_t offset) const;
   [[nodiscard]] llvm::Type *getScalarTypeAtOffset(llvm::Type *type, uint64_t offset) const;
   [[nodiscard]] bool bitsContainNoUserData(llvm::Type *type, uint64_t startBit, uint64_t endBit) const;
   void collectScalars(llvm::Type *type, uint64_t offset, std::vector<std::pair<llvm::Type *, uint64_t>> &scalars) const;
-  [[nodiscard]] bool isHomogeneousFPAggregate(llvm::Type *type, llvm::Type *&baseType, uint64_t &memberCount) const;
+  [[nodiscard]] uint64_t getHomogeneousFPAggregateMemberCount(llvm::Type *type) const;
   [[nodiscard]] llvm::Type *getSingleElementType(llvm::Type *type) const;
   [[nodiscard]] static ReturnABIInfo direct(llvm::Type *type);
   [[nodiscard]] static ReturnABIInfo coerced(llvm::Type *type, llvm::Type *coercedType);
