@@ -1,0 +1,104 @@
+// TEST: --backend=tpde
+
+// Regression test for returning structs by value under the TPDE backend.
+//
+// TPDE can only return values that fit into the return registers, so the TPDE emitter rewrites functions returning larger
+// aggregates to return them via an sret pointer. This covers small, large and mixed int/float structs, returned from
+// functions, methods, generic functions and lambdas, called directly and via function pointers.
+
+type Small struct {
+    long a
+    long b
+}
+
+type Large struct {
+    long a
+    long b
+    long c
+    long d
+    long e
+}
+
+type Mixed struct {
+    double x
+    double y
+    double z
+    long n
+}
+
+type T dyn;
+
+type Wrapper<T> struct {
+    T value
+    long tag
+}
+
+f<Small> makeSmall(long a) {
+    return Small{a, a + 1l};
+}
+
+f<Large> makeLarge(long a) {
+    return Large{a, a + 1l, a + 2l, a + 3l, a + 4l};
+}
+
+f<Mixed> makeMixed(double x) {
+    return Mixed{x, x * 2.0, x * 3.0, 7l};
+}
+
+f<Large> Large.plus(long offset) {
+    return Large{this.a + offset, this.b + offset, this.c + offset, this.d + offset, this.e + offset};
+}
+
+f<Wrapper<T>> wrap<T>(const T& value) {
+    return Wrapper<T>{value, 3l};
+}
+
+f<long> sumLarge(const Large& l) {
+    return l.a + l.b + l.c + l.d + l.e;
+}
+
+f<Large> pickLarge(bool first) {
+    if first {
+        return makeLarge(1l);
+    }
+    return makeLarge(100l);
+}
+
+f<int> main() {
+    long total = 0l;
+
+    // Small struct, returned in registers
+    const Small small = makeSmall(4l);
+    total += small.a + small.b; // 9
+
+    // Large struct, returned via sret
+    const Large large = makeLarge(1l);
+    total += sumLarge(large); // 15
+
+    // Large struct with multiple return statements
+    total += sumLarge(pickLarge(true)); // 15
+
+    // Method returning a large struct
+    Large base = makeLarge(0l);
+    total += sumLarge(base.plus(2l)); // 20
+
+    // Mixed int/float struct, returned via sret
+    const Mixed mixed = makeMixed(1.5);
+    total += cast<long>(mixed.x + mixed.y + mixed.z) + mixed.n; // 9 + 7 = 16
+
+    // Generic function returning a large struct
+    const Wrapper<Large> wrapper = wrap(large);
+    total += sumLarge(wrapper.value) + wrapper.tag; // 15 + 3 = 18
+
+    // Indirect call via a function pointer
+    f<Large>(long) fctPtr = makeLarge;
+    total += sumLarge(fctPtr(2l)); // 20
+
+    // Lambda returning a large struct
+    f<Large>(long) lambda = f<Large>(long a) {
+        return Large{a, a, a, a, a};
+    };
+    total += sumLarge(lambda(1l)); // 5
+
+    return cast<int>(total); // 9 + 15 + 15 + 20 + 16 + 18 + 20 + 5 = 118
+}
