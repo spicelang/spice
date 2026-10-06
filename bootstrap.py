@@ -74,6 +74,38 @@ def find_llvm_include_dirs() -> str | None:
     return None
 
 
+def uses_tpde_backend(build_flags: list[str]) -> bool:
+    for i, flag in enumerate(build_flags):
+        if flag.lower() == "--backend=tpde":
+            return True
+        if flag == "--backend" and i + 1 < len(build_flags) and build_flags[i + 1].lower() == "tpde":
+            return True
+    return False
+
+
+def find_tpde_flags(host_compiler: Path) -> str | None:
+    # Each stage compiler only supports the TPDE backend, if the TPDE libraries are linked into it via TPDE_FLAGS (see
+    # std/bindings/tpde). Take them from the CMake build tree of the host compiler (built with -DSPICE_ENABLE_TPDE=ON) and
+    # build the flags with the same layout the host derives from a std that ships them (see SystemUtil::getStdTPDEFlags)
+    include_dir = ROOT_DIR / "deps" / "tpde" / "tpde-llvm" / "include"
+    if not (include_dir / "tpde-llvm" / "LLVMCompiler.hpp").is_file():
+        return None
+    build_dirs = [host_compiler.parent.parent] + [ROOT_DIR / d for d in ("build", "cmake-build-release", "cmake-build-debug")]
+    for build_dir in build_dirs:
+        tpde_dir = build_dir / "deps" / "tpde"
+        libs = [tpde_dir / "tpde-llvm" / "libtpde_llvm.a", tpde_dir / "tpde" / "libtpde.a",
+                tpde_dir / "tpde" / "deps" / "fadec" / "libfadec.a", tpde_dir / "tpde" / "deps" / "disarm" / "libdisarm64.a"]
+        if not all(lib.is_file() for lib in libs[:3]):
+            continue
+        libs = [lib for lib in libs if lib.is_file()]
+        # spdlog carries a 'd' suffix in debug builds
+        spdlog_dir = tpde_dir / "tpde" / "deps" / "spdlog"
+        libs += [lib for lib in (spdlog_dir / "libspdlog.a", spdlog_dir / "libspdlogd.a") if lib.is_file()][:1]
+        # The libraries reference each other, so they go into a group, that the linker rescans until all references resolve
+        return f"-I{include_dir} -Wl,--start-group {' '.join(str(lib) for lib in libs)} -Wl,--end-group"
+    return None
+
+
 def sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as f:
@@ -116,13 +148,22 @@ def main() -> None:
     parser.add_argument("--max-iterations", type=int, default=5,
                         help="Maximum number of self-compilations, after stage 0 was built by the host (default: 5)")
     parser.add_argument("--build-flags", default=" ".join(DEFAULT_BUILD_FLAGS),
-                        help=f"Flags passed to every 'spice build' invocation (default: '{' '.join(DEFAULT_BUILD_FLAGS)}')")
+                        help=f"Flags passed to every 'spice build' invocation (default: '{' '.join(DEFAULT_BUILD_FLAGS)}'). "
+                             "With '--backend=tpde', the TPDE libraries are taken from the host compiler's build tree, "
+                             "unless TPDE_FLAGS is set")
     parser.add_argument("--stage-timeout", type=int, default=1800,
                         help="Timeout in seconds for building a single stage (default: 1800)")
     parser.add_argument("--output", type=Path, default=None,
                         help="Copy the fixed point compiler executable to this path")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print the compiler output of every stage")
-    args = parser.parse_args()
+    # argparse treats a value starting with '-' as an option, so glue the value to the option name, to also allow e.g.
+    # '--build-flags "--backend=tpde"' and not only '--build-flags="--backend=tpde"'
+    argv = sys.argv[1:]
+    for i in range(len(argv) - 1):
+        if argv[i] == "--build-flags":
+            argv[i:i + 2] = [f"--build-flags={argv[i + 1]}"]
+            break
+    args = parser.parse_args(argv)
 
     if args.max_iterations < 2:
         fail("At least two iterations are required to compare two self-compiled stages")
@@ -149,6 +190,19 @@ def main() -> None:
 
     work_dir = args.work_dir.resolve()
     build_flags = args.build_flags.split()
+
+    # The TPDE backend is used to build every stage from stage 1 on, so the stage compilers must be backed by TPDE as well
+    if uses_tpde_backend(build_flags):
+        if not sys.platform.startswith("linux"):
+            fail("The TPDE backend is only supported on Linux")
+        if "-lto" in build_flags:
+            fail("The TPDE backend does not support LTO. Remove -lto from --build-flags")
+        if "TPDE_FLAGS" not in os.environ:
+            tpde_flags = find_tpde_flags(host_compiler)
+            if tpde_flags is None:
+                fail("TPDE libraries not found. Build the host compiler with -DSPICE_ENABLE_TPDE=ON or set TPDE_FLAGS "
+                     "(e.g. '-I<tpde-include-dir> <libtpde_llvm.a> <libtpde.a> ...')")
+            os.environ["TPDE_FLAGS"] = tpde_flags
 
     # Stage 0: built by the host compiler
     compiler = build_stage(host_compiler, 0, work_dir, build_flags, args.stage_timeout, args.verbose)
