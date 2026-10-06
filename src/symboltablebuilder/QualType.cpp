@@ -126,15 +126,6 @@ Struct *QualType::getStructAndAdjustType(const ASTNode *node, const QualTypeList
 }
 
 /**
- * Get the struct instance for a struct type
- * Adopt information from the struct to this type.
- *
- * @param node Accessing AST node
- * @return Struct instance
- */
-Struct *QualType::getStructAndAdjustType(const ASTNode *node) { return getStructAndAdjustType(node, type->getTemplateTypes()); }
-
-/**
  * Get the interface instance for an interface type
  *
  * @param node Accessing AST node
@@ -266,14 +257,6 @@ bool QualType::isPtrTo(SuperType superType) const { return isPtr() && getContain
  * @return Reference or not
  */
 bool QualType::isRef() const { return type->isRef(); }
-
-/**
- * Check if the underlying type is a reference to a certain super type
- *
- * @param superType Super type
- * @return Reference to super type or not
- */
-bool QualType::isRefTo(SuperType superType) const { return isRef() && getContained().is(superType); }
 
 /**
  * Check if the underlying type is an array
