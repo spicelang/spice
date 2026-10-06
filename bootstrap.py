@@ -160,7 +160,7 @@ def main() -> None:
     # '--build-flags "--backend=tpde"' and not only '--build-flags="--backend=tpde"'
     argv = sys.argv[1:]
     for i in range(len(argv) - 1):
-        if argv[i] == "--build-flags":
+        if argv[i] == "--build-flags" and argv[i + 1] not in ("-v", "--verbose"):
             argv[i:i + 2] = [f"--build-flags={argv[i + 1]}"]
             break
     args = parser.parse_args(argv)
@@ -197,7 +197,7 @@ def main() -> None:
             fail("The TPDE backend is only supported on Linux")
         if "-lto" in build_flags:
             fail("The TPDE backend does not support LTO. Remove -lto from --build-flags")
-        if "TPDE_FLAGS" not in os.environ:
+        if not os.environ.get("TPDE_FLAGS"):
             tpde_flags = find_tpde_flags(host_compiler)
             if tpde_flags is None:
                 fail("TPDE libraries not found. Build the host compiler with -DSPICE_ENABLE_TPDE=ON or set TPDE_FLAGS "
