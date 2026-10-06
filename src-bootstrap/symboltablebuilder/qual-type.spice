@@ -221,17 +221,6 @@ public f<Struct*> QualType.getStructAndAdjustType(const ASTNode* node, const Qua
 }
 
 /**
- * Get the struct instance for a struct type
- * Adopt information from the struct to this type.
- *
- * @param node Accessing AST node
- * @return Struct instance
- */
-public f<Struct*> QualType.getStructAndAdjustType(const ASTNode* node) {
-    return this.getStructAndAdjustType(node, this.getTemplateTypes());
-}
-
-/**
  * Get the interface instance for an interface type
  *
  * @param node Accessing AST node
@@ -362,18 +351,6 @@ public f<bool> QualType.isPtrTo(SuperType superType) {
  */
 public f<bool> QualType.isRef() {
     return this.rawType.isRef();
-}
-
-/**
- * Check if the underlying type is a reference to a certain super type
- *
- * @param superType Super type
- * @return Reference to super type or not
- */
-public f<bool> QualType.isRefTo(SuperType superType) {
-    if !this.isRef() { return false; }
-    const QualType contained = this.getContained();
-    return contained.is(superType);
 }
 
 /**

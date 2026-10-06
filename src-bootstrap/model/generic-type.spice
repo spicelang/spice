@@ -4,8 +4,6 @@ import "std/data/unordered-map";
 // Own imports
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/qual-type";
-// Not used directly, but required to resolve the UnorderedMap of the TypeMapping alias within the import cycle of the model
-import "bootstrap/global/type-registry";
 
 // Type aliases
 public type TypeMapping alias UnorderedMap</*typeName=*/String, /*concreteType=*/QualType>;

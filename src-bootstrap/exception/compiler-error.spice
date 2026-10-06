@@ -14,7 +14,6 @@ public type CompilerErrorType enum {
     STD_NOT_FOUND,
     BOOTSTRAP_NOT_FOUND,
     UNHANDLED_BRANCH,
-    TYPE_CHECKER_RUNS_EXCEEDED,
     TARGET_NOT_AVAILABLE,
     OOM,
     INVALID_FUNCTION,
@@ -77,7 +76,6 @@ f<string> CompilerError.getMessagePrefix(const CompilerErrorType errorType) {
         case CompilerErrorType::STD_NOT_FOUND: { return "Std lib not found"; }
         case CompilerErrorType::BOOTSTRAP_NOT_FOUND: { return "Bootstrap compiler not found"; }
         case CompilerErrorType::UNHANDLED_BRANCH: { return "Unhandled code branch"; }
-        case CompilerErrorType::TYPE_CHECKER_RUNS_EXCEEDED: { return "Type-checker runs exceeded"; }
         case CompilerErrorType::TARGET_NOT_AVAILABLE: { return "Selected target not available"; }
         case CompilerErrorType::OOM: { return "An out of memory error occurred"; }
         case CompilerErrorType::INVALID_FUNCTION: { return "Invalid function"; }

@@ -1,0 +1,5 @@
+type T dyn;
+
+public type Box<T> struct {
+    public T value
+}

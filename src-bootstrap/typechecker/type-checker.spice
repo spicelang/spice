@@ -685,7 +685,10 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
         case ASTNodeKind::ALIAS_DEF: {
             // An alias additionally needs its aliased type resolved, so prepare it fully on demand. visitAliasDefPrepare is
             // idempotent: the real prepare pass for the alias's own file skips it once the type is no longer invalid.
-            this.visitAliasDefPrepare(downcast<ASTAliasDefNode>(declNode));
+            // The aliased type has to be resolved in the context of the file declaring the alias, not the referencing one,
+            // because the referencing file does not necessarily import the types the alias refers to.
+            TypeChecker declTypeChecker = TypeChecker(this.resourceManager, entry.scope.sourceFile, TypeCheckerMode::TC_MODE_PRE);
+            declTypeChecker.visitAliasDefPrepare(downcast<ASTAliasDefNode>(declNode));
         }
         default: {}
     }
@@ -3863,7 +3866,7 @@ public f<Any> TypeChecker.visitCastExpr(ASTCastExprNode* node) {
     if src.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
 
     // Check for identity cast (casts that only change the signedness are not considered identity casts)
-    if src.ty == dstType && src.ty.qualifiers.isSigned == dstType.qualifiers.isSigned {
+    if src.ty == dstType && src.ty.qualifiers == dstType.qualifiers {
         this.addWarning(baseNode.codeLoc, CompilerWarningType::IDENTITY_CAST, String("You cast from a type to itself. Thus, this can be simplified."));
     }
 

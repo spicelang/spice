@@ -49,8 +49,6 @@ std::string CompilerError::getMessagePrefix(CompilerErrorType errorType) {
     return "Bootstrap compiler not found";
   case UNHANDLED_BRANCH:            // LCOV_EXCL_LINE
     return "Unhandled code branch"; // LCOV_EXCL_LINE
-  case TYPE_CHECKER_RUNS_EXCEEDED:
-    return "Type-checker runs exceeded";
   case TARGET_NOT_AVAILABLE:
     return "Selected target not available";
   case OOM:

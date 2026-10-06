@@ -74,7 +74,6 @@ public:
   [[nodiscard]] Struct *getStruct(const ASTNode *node, const QualTypeList &templateTypes) const;
   [[nodiscard]] Struct *getStruct(const ASTNode *node) const;
   [[nodiscard]] Struct *getStructAndAdjustType(const ASTNode *node, const QualTypeList &templateTypes);
-  [[nodiscard]] Struct *getStructAndAdjustType(const ASTNode *node);
   [[nodiscard]] Interface *getInterface(const ASTNode *node, const QualTypeList &templateTypes) const;
   [[nodiscard]] Interface *getInterface(const ASTNode *node) const;
   [[nodiscard]] Union *getUnion(const ASTNode *node, const QualTypeList &templateTypes) const;
@@ -91,7 +90,6 @@ public:
   [[nodiscard]] bool isPtr() const;
   [[nodiscard]] bool isPtrTo(SuperType superType) const;
   [[nodiscard]] bool isRef() const;
-  [[nodiscard]] bool isRefTo(SuperType superType) const;
   [[nodiscard]] bool isArray() const;
   [[nodiscard]] bool isArrayOf(SuperType superType) const;
   [[nodiscard]] bool isDecayedArray() const;

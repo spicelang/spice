@@ -4,6 +4,7 @@
 
 #include <ast/ASTNodes.h>
 #include <global/TypeRegistry.h>
+#include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
 
@@ -87,7 +88,10 @@ void TypeChecker::assignDeferredOpaqueType(SymbolTableEntry *entry) {
   } else if (auto *aliasDef = dynamic_cast<AliasDefNode *>(declNode)) {
     // An alias additionally needs its aliased type resolved, so prepare it fully on demand. visitAliasDefPrepare is
     // idempotent: the real prepare pass for the alias's own file skips it once the type is no longer invalid.
-    visitAliasDefPrepare(aliasDef);
+    // The aliased type has to be resolved in the context of the file declaring the alias, not the referencing one,
+    // because the referencing file does not necessarily import the types the alias refers to.
+    TypeChecker declTypeChecker(resourceManager, entry->scope->sourceFile, TC_MODE_PRE);
+    declTypeChecker.visitAliasDefPrepare(aliasDef);
   }
 }
 

@@ -125,19 +125,6 @@ public p CompileTimeValue.setLongValue(long value) {
     this.storage = value;
 }
 
-public f<byte> CompileTimeValue.getByteValue() {
-    unsafe {
-        const byte* valuePtr = this.getStorageAddress();
-        return *valuePtr;
-    }
-}
-public p CompileTimeValue.setByteValue(byte value) {
-    unsafe {
-        byte* valuePtr = this.getStorageAddress();
-        *valuePtr = value;
-    }
-}
-
 public f<char> CompileTimeValue.getCharValue() {
     unsafe {
         const char* valuePtr = cast<char*>(this.getStorageAddress());

@@ -560,7 +560,7 @@ std::any TypeChecker::visitCastExpr(CastExprNode *node) {
   HANDLE_UNRESOLVED_TYPE_ER(src.type)
 
   // Check for identity cast (casts that only change the signedness are not considered identity casts)
-  if (src.type == dstType && src.type.getQualifiers().isSigned == dstType.getQualifiers().isSigned) {
+  if (src.type == dstType && src.type.getQualifiers() == dstType.getQualifiers()) {
     const CompilerWarning warning(node->codeLoc, IDENTITY_CAST, "You cast from a type to itself. Thus, this can be simplified.");
     sourceFile->compilerOutput.warnings.push_back(warning);
   }
