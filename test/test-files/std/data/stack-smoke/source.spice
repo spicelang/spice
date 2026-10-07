@@ -1,5 +1,19 @@
 import "std/data/stack";
 
+// Struct whose equality only considers the value, not the tag
+type Tagged struct {
+    int value
+    int tag
+}
+
+public f<bool> operator==(const Tagged& lhs, const Tagged& rhs) {
+    return lhs.value == rhs.value;
+}
+
+public f<bool> operator!=(const Tagged& lhs, const Tagged& rhs) {
+    return !(lhs == rhs);
+}
+
 f<int> main() {
     Stack<int> s;
     assert s.isEmpty();
@@ -41,6 +55,16 @@ f<int> main() {
     assert a == b;
     b.pop();
     assert a != b;
+
+    // Equality compares the elements with their operator==, not their bytes
+    Stack<Tagged> tagged1;
+    Stack<Tagged> tagged2;
+    tagged1.push(Tagged{1, 100}); tagged1.push(Tagged{2, 200});
+    tagged2.push(Tagged{1, 101}); tagged2.push(Tagged{2, 201});
+    assert tagged1 == tagged2;
+    tagged2.pop();
+    tagged2.push(Tagged{3, 200});
+    assert tagged1 != tagged2;
 
     printf("Stack smoke tests passed!\n");
 }

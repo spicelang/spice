@@ -207,9 +207,15 @@ public p Stack.pack() {
 public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     // Compare the sizes
     if lhs.size != rhs.size { return false; }
-    // Compare the contents
-    const unsigned long itemSize = sizeof<T>();
-    return sCompare(lhs.contents, rhs.contents, itemSize * lhs.size);
+    // Compare the contents element-wise, since a byte-wise comparison is wrong for non-trivial types
+    for unsigned long index = 0l; index < lhs.size; index++ {
+        unsafe {
+            if lhs.contents[index] != rhs.contents[index] {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 /**
