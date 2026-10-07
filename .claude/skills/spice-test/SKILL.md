@@ -68,16 +68,14 @@ like a user would (`build [// TEST: args] --output ... source.spice`), run from
 and `LLVM_LIB_DIR` (the build links the LLVM bindings); the
 `spicetest_bootstrap` CMake target sets them. Building takes about a minute.
 
-The bootstrap compiler is incomplete, so only what it can already produce is
-checked: `syntax-tree.dot` (via `--dump-ast`) and `exception.out`. It reports
-errors via a panic, so the message is taken from the panic output, with test
-paths rewritten to `./` like the host prints them. A missing expected error
-fails only for the kinds listed in `BOOTSTRAP_SUPPORTED_ERROR_PREFIXES`
-(`test/util/BootstrapUtil.h`); extend that list as stages get ported. Other
-cases pass if the bootstrap compiler finishes without crashing or raising an
-unexpected error. `LinterTests` are skipped.
-CI (`ci.yml`, all platforms) runs this mode for the lexer, parser, symbol
-table builder and type checker suites, minus a list of known-failing cases.
+It checks `syntax-tree.dot` (via `--dump-ast`), `exception.out`, `warning.out`,
+the IR references, `cout.out` and `exit-code.out`. It reports errors via a
+panic, so the message is taken from the panic output, with test paths rewritten
+to `./` like the host prints them. Every expected error must be raised. Warnings
+are taken from the console output, and only the ones of the main source file
+are compared, like the host test runner does. `LinterTests` run in this mode
+only. CI (`ci.yml`, all platforms) runs this mode for all reference test suites,
+minus a list of known-failing cases in `BOOTSTRAP_TEST_FILTER*`.
 `--update-refs` and `--coverage` are rejected, so host refs are never
 overwritten with bootstrap output.
 

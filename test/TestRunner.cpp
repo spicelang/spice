@@ -418,11 +418,9 @@ static void execTestCase(const TestCase &testCase) {
  * Runs a test case against the bootstrap compiler, built at the start of the test run. The bootstrap compiler is invoked
  * like the host compiler would be invoked by a user, since it cannot be driven stage by stage from here.
  *
- * The bootstrap compiler is still incomplete, so only the reference outputs it can already produce are checked: the
- * serialized AST, the raised error, the IR code, and the execution output and exit code of the compiled program. A missing
- * error only fails the test for the error kinds listed in BOOTSTRAP_SUPPORTED_ERROR_PREFIXES. Beyond that, each test case
- * checks that the bootstrap compiler runs through all of its implemented stages without crashing or raising an unexpected
- * error.
+ * The following reference outputs are checked: the serialized AST, the raised error, the warnings of the main source file,
+ * the IR code, and the execution output and exit code of the compiled program. Beyond that, each test case checks that the
+ * bootstrap compiler runs through all stages without crashing or raising an unexpected error.
  */
 static void execBootstrapTestCase(const TestCase &testCase) {
   // Check if test is disabled
@@ -449,8 +447,11 @@ static void execBootstrapTestCase(const TestCase &testCase) {
     return args;
   };
   std::vector<std::string> args = buildArgs(executablePath);
-  // Like the host test runner, only link an executable if it gets executed afterwards
-  if (!needsExecutable) {
+  // Like the host test runner, only link an executable if it gets executed afterwards. If an error is expected, keep the
+  // executable output container, like the host test runner does: some errors (e.g. a missing main function) are only raised
+  // for executables
+  const bool expectsError = TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT);
+  if (!needsExecutable && !expectsError) {
     args.emplace_back("--output-container");
     args.emplace_back("obj");
   }
@@ -481,9 +482,12 @@ static void execBootstrapTestCase(const TestCase &testCase) {
     return astString.value_or("");
   });
 
-  // Fail if an error was expected, that the bootstrap compiler is already able to raise
-  if (TestUtil::doesRefExist(errorRefPath) && BootstrapUtil::isErrorSupported(errorRefPath))
+  // Fail if an error was expected
+  if (TestUtil::doesRefExist(errorRefPath))
     FAIL() << "Expected error, but got no error";
+
+  // Check warnings
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] { return BootstrapUtil::extractWarnings(output); });
 
   // Check IR code. The host checks the IR after running the optimizer pipeline of each opt level, for which a reference exists.
   // The bootstrap compiler dumps the optimized IR of every source file into the output dir, so it is compiled once per opt level.
@@ -590,8 +594,8 @@ void execBootstrapLinterTestCase(const TestCase &testCase) {
   if (exitCode != 0)
     FAIL() << "Bootstrap compiler exited with code " << exitCode << ":\n" << output;
 
-  // Fail if an error was expected, that the bootstrap compiler is already able to raise
-  if (TestUtil::doesRefExist(errorRefPath) && BootstrapUtil::isErrorSupported(errorRefPath))
+  // Fail if an error was expected
+  if (TestUtil::doesRefExist(errorRefPath))
     FAIL() << "Expected error, but got no error";
 
   // Check lint findings against the reference (de-colorized)
