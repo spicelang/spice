@@ -447,8 +447,11 @@ static void execBootstrapTestCase(const TestCase &testCase) {
     return args;
   };
   std::vector<std::string> args = buildArgs(executablePath);
-  // Like the host test runner, only link an executable if it gets executed afterwards
-  if (!needsExecutable) {
+  // Like the host test runner, only link an executable if it gets executed afterwards. If an error is expected, keep the
+  // executable output container, like the host test runner does: some errors (e.g. a missing main function) are only raised
+  // for executables
+  const bool expectsError = TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT);
+  if (!needsExecutable && !expectsError) {
     args.emplace_back("--output-container");
     args.emplace_back("obj");
   }
