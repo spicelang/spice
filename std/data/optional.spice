@@ -85,7 +85,10 @@ public inline f<bool> Optional.isPresent() {
  * @return Equal or not equal
  */
 public f<bool> operator==<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
-    return lhs.isPresent == rhs.isPresent && lhs.data == rhs.data;
+    if lhs.isPresent != rhs.isPresent { return false; }
+    // Two empty optionals are equal, regardless of any stale payload left behind by clear()
+    if !lhs.isPresent { return true; }
+    return lhs.data == rhs.data;
 }
 
 /**
