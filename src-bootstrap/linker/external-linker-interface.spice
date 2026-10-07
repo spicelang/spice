@@ -37,6 +37,12 @@ public p ExternalLinkerInterface.prepare() {
         this.addLinkerFlag("-static");
     }
 
+    // Windows linkers stamp the link time into the PE header. Leave it out, so that the same input always links to the same
+    // binary (reproducible builds, bootstrap fixed point)
+    if this.isTargetWindows() {
+        this.addLinkerFlag("-Wl,--no-insert-timestamp");
+    }
+
     // The following flags only make sense if we want to emit an executable
     if this.cliOptions.outputContainer != OutputContainer::EXECUTABLE {
         return;
@@ -332,4 +338,13 @@ f<bool> ExternalLinkerInterface.isTargetWasm() {
  */
 f<bool> ExternalLinkerInterface.isTargetDarwin() {
     return this.cliOptions.targetTriple.isOSDarwin();
+}
+
+/**
+ * Check if the configured target is a Windows based target
+ *
+ * @return Whether the target is Windows based
+ */
+f<bool> ExternalLinkerInterface.isTargetWindows() {
+    return this.cliOptions.targetTriple.isOSWindows();
 }
