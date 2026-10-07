@@ -152,11 +152,11 @@ public f<Vector<String>> expandLinkerFlag(const String& flag) {
             cmdArgs.pushBack(tokens.get(k));
         }
         const ExecResult cmdResult = exec(program, cmdArgs);
-        if cmdResult.exitCode != 0 { // GCOV_EXCL_LINE
-            const String message = "Command substitution for linker flag failed: " + innerCommand;      // GCOV_EXCL_LINE
-            const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, message.getRaw()); // GCOV_EXCL_LINE
-            panic(Error(error.errorMessage.getRaw()));                                              // GCOV_EXCL_LINE
-        } // GCOV_EXCL_LINE
+        if cmdResult.exitCode != 0 {                                                                // LCOV_EXCL_LINE
+            const String message = "Command substitution for linker flag failed: " + innerCommand;  // LCOV_EXCL_LINE
+            const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, message.getRaw()); // LCOV_EXCL_LINE
+            panic(Error(error.errorMessage.getRaw()));                                              // LCOV_EXCL_LINE
+        }                                                                                           // LCOV_EXCL_LINE
         expanded = cmdResult.output;
     }
 

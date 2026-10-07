@@ -271,8 +271,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
   case AMBIGUOUS_SYMBOL:
     return "Ambiguous symbol";
   }
-  assert_fail("Unknown error"); // GCOV_EXCL_LINE
-  return "Unknown error";       // GCOV_EXCL_LINE
+  assert_fail("Unknown error"); // LCOV_EXCL_LINE
+  return "Unknown error";       // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

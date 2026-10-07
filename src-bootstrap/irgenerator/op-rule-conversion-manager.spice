@@ -258,7 +258,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getPlusEqualInst(ASTNode* node,
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, rhsVExt));
     }
-    panic(Error("Operator fallthrough: +=")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: +=")); // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getMinusEqualInst(ASTNode* node, LLVMExprResult& lhs, const QualType& origLhsSTy, LLVMExprResult& rhs, const QualType& origRhsSTy) {
@@ -297,7 +297,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getMinusEqualInst(ASTNode* node
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, rhsVNeg));
     }
-    panic(Error("Operator fallthrough: -=")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: -=")); // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getMulEqualInst(ASTNode* node, LLVMExprResult& lhs, const QualType& origLhsSTy, LLVMExprResult& rhs, const QualType& origRhsSTy) {
@@ -328,7 +328,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getMulEqualInst(ASTNode* node, 
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.createMul(lhsV, rhsCasted, isNSW(lhsSTy, rhsSTy)));
     }
-    panic(Error("Operator fallthrough: *=")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: *=")); // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getDivEqualInst(ASTNode* node, LLVMExprResult& lhs, const QualType& origLhsSTy, LLVMExprResult& rhs, const QualType& origRhsSTy) {
@@ -364,7 +364,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getDivEqualInst(ASTNode* node, 
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.generateDiv(lhsSTy, lhsSTy, lhsV, rhsCasted));
     }
-    panic(Error("Operator fallthrough: /=")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: /=")); // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getRemEqualInst(ASTNode* _, LLVMExprResult& lhs, const QualType& origLhsSTy, LLVMExprResult& rhs, const QualType& origRhsSTy) {
@@ -403,7 +403,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getRemEqualInst(ASTNode* _, LLV
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsV, rhsV));
     }
-    panic(Error("Operator fallthrough: %=")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: %=")); // LCOV_EXCL_LINE
 }
 
 // Kinds of bitwise/shift compound assign ops, which share the same type combinations
@@ -448,8 +448,8 @@ f<LLVMExprResult> OpRuleConversionManager.getBitCompoundInst(BitCompoundOp op, L
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsCasted));
     }
-    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
-    return LLVMExprResult();
+    raiseOperatorFallthrough(opName); // LCOV_EXCL_LINE
+    return LLVMExprResult();          // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getSHLEqualInst(ASTNode* _, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
@@ -492,8 +492,8 @@ f<LLVMExprResult> OpRuleConversionManager.getBitwiseInst(BitCompoundOp op, ASTNo
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsV));
     }
-    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
-    return LLVMExprResult();
+    raiseOperatorFallthrough(opName); // LCOV_EXCL_LINE
+    return LLVMExprResult();          // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getBitwiseOrInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy, unsigned long opIdx) {
@@ -586,7 +586,7 @@ f<LLVMExprResult> OpRuleConversionManager.getEqualityInst(bool isEqual, ASTNode*
         const llvm::Value memcmpResult = this.builder.createCall(memcmpFct, args);
         return exprResultWithValue(this.createICmp(iPred, memcmpResult, this.builder.getInt32(0)));
     }
-    panic(Error(isEqual ? "Operator fallthrough: ==" : "Operator fallthrough: !=")); // GCOV_EXCL_LINE
+    panic(Error(isEqual ? "Operator fallthrough: ==" : "Operator fallthrough: !=")); // LCOV_EXCL_LINE
 }
 
 // Generate call to the function isRawEqual(string, string) of the string std (negated for !=)
@@ -700,8 +700,8 @@ f<LLVMExprResult> OpRuleConversionManager.getRelationalInst(RelationalOpKind op,
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.createRelationalPtrCmp(op, lhsV, rhsV));
     }
-    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
-    return LLVMExprResult();
+    raiseOperatorFallthrough(opName); // LCOV_EXCL_LINE
+    return LLVMExprResult();          // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getLessInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy) {
@@ -747,7 +747,7 @@ f<LLVMExprResult> OpRuleConversionManager.getShiftInst(bool isLeft, ASTNode* nod
         const llvm::Value lhsV = this.lhsV(lhs, lhsSTy);
         return exprResultWithValue(this.createBitCompoundOp(op, lhsSTy, rhsSTy, lhsV, rhsInt));
     }
-    panic(Error(isLeft ? "Operator fallthrough: <<" : "Operator fallthrough: >>")); // GCOV_EXCL_LINE
+    panic(Error(isLeft ? "Operator fallthrough: <<" : "Operator fallthrough: >>")); // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getShiftLeftInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy, unsigned long opIdx) {
@@ -856,8 +856,8 @@ f<LLVMExprResult> OpRuleConversionManager.getArithmeticInst(ArithmeticOpKind op,
         const llvm::Type elementTy = elementSTy.toLLVMType(this.irGenerator.sourceFile);
         return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, rhsExt));
     }
-    raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
-    return LLVMExprResult();
+    raiseOperatorFallthrough(opName); // LCOV_EXCL_LINE
+    return LLVMExprResult();          // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getPlusInst(ASTNode* node, LLVMExprResult& lhs, const QualType& lhsSTy, LLVMExprResult& rhs, const QualType& rhsSTy, unsigned long opIdx) {
@@ -910,7 +910,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getRemInst(ASTNode* _, LLVMExpr
         const llvm::Value rhsV = this.rhsV(rhs, rhsSTy);
         return exprResultWithValue(this.generateRem(lhsSTy, rhsSTy, lhsCasted, rhsV));
     }
-    panic(Error("Operator fallthrough: %")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: %")); // LCOV_EXCL_LINE
 }
 
 // ---------------------------------------------------------- Unary ops ----------------------------------------------------------
@@ -927,7 +927,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getPrefixMinusInst(ASTNode* _, 
             return exprResultWithValue(this.builder.createNeg(this.lhsV(lhs, originalLhsSTy)));
         }
         default: {
-            panic(Error("Operator fallthrough: -")); // GCOV_EXCL_LINE
+            panic(Error("Operator fallthrough: -")); // LCOV_EXCL_LINE
         }
     }
 }
@@ -961,10 +961,10 @@ f<LLVMExprResult> OpRuleConversionManager.getIncDecInst(bool isInc, LLVMExprResu
             return exprResultWithValue(this.builder.createGEP(elementTy, lhsV, offset));
         }
         default: {
-            raiseOperatorFallthrough(opName); // GCOV_EXCL_LINE
+            raiseOperatorFallthrough(opName); // LCOV_EXCL_LINE
         }
     }
-    return LLVMExprResult();
+    return LLVMExprResult(); // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getPrefixPlusPlusInst(ASTNode* _, LLVMExprResult& lhs, const QualType& lhsSTy) {
@@ -982,7 +982,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getPrefixNotInst(ASTNode* _, LL
     if lhsSTy.is(SuperType::TY_BOOL) {
         return exprResultWithValue(this.builder.createNot(this.lhsV(lhs, originalLhsSTy)));
     }
-    panic(Error("Operator fallthrough: !")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: !")); // LCOV_EXCL_LINE
 }
 
 public f<LLVMExprResult> OpRuleConversionManager.getPrefixBitwiseNotInst(ASTNode* node, LLVMExprResult& lhs, const QualType& origLhsSTy) {
@@ -1000,7 +1000,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getPrefixBitwiseNotInst(ASTNode
             return exprResultWithValue(this.builder.createNot(this.lhsV(lhs, originalLhsSTy)));
         }
         default: {
-            panic(Error("Operator fallthrough: ~")); // GCOV_EXCL_LINE
+            panic(Error("Operator fallthrough: ~")); // LCOV_EXCL_LINE
         }
     }
 }
@@ -1104,7 +1104,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getCastInst(ASTNode* _, const Q
         const llvm::Value fctPtr = this.irGenerator.insertLoad(this.builder.getPtrTy(), fctPtrPtr);
         return exprResultWithValue(fctPtr);
     }
-    panic(Error("Operator fallthrough: (cast)")); // GCOV_EXCL_LINE
+    panic(Error("Operator fallthrough: (cast)")); // LCOV_EXCL_LINE
 }
 
 // ----------------------------------------------------- Operator overloading ----------------------------------------------------

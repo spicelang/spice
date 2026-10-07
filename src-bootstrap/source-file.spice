@@ -1474,7 +1474,7 @@ p SourceFile.dumpCompilationStats() {
     const unsigned long totalDuration = this.resourceManager.totalTimer.getDurationInMillis();
     print("\nSuccessfully compiled " + toString(sourceFileCount) + " source file(s)");
     print(" or " + toString(totalLineCount) + " lines in total.\n");
-    print("Total number of blocks allocated via BlockAllocator: " + formatBytes(allocatedBytes));
+    print("Total number of blocks allocated via BlockAllocator: " + formatStorageSize(allocatedBytes));
     print(" in " + toString(allocationCount) + " allocations.\n");
     print("Total number of types: " + toString(totalTypeCount) + "\n");
     print("Total compile time: " + toString(totalDuration) + " ms\n");

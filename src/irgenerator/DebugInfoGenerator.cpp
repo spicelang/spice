@@ -504,7 +504,7 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     baseDiType = fatPtrTy;
     break;
   default:
-    throw CompilerError(UNHANDLED_BRANCH, "Debug Info Type fallthrough"); // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Debug Info Type fallthrough"); // LCOV_EXCL_LINE
   }
 
   if (ty.isConst())

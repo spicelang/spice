@@ -45,8 +45,8 @@ TypeQualifiers TypeQualifiers::of(uint16_t superType) {
   case TY_UNRESOLVED:
     // Return all-false qualifiers to not match anything
     return {/*const*/ false, /*signed*/ false, /*unsigned*/ false};
-  default:                                                                 // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "Symbol qualifier fallthrough"); // GCOV_EXCL_LINE
+  default:                                                                 // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Symbol qualifier fallthrough"); // LCOV_EXCL_LINE
   }
 }
 
@@ -136,8 +136,8 @@ bool TypeQualifiers::getBit(uint8_t index) const {
     return isInline;
   case BIT_INDEX_COMPOSITION:
     return isComposition;
-  default:                                                          // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // GCOV_EXCL_LINE
+  default:                                                          // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // LCOV_EXCL_LINE
   }
 }
 
@@ -157,8 +157,8 @@ bool TypeQualifiers::setBit(uint8_t index, bool value) {
     return isInline = value;
   case BIT_INDEX_COMPOSITION:
     return isComposition = value;
-  default:                                                          // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // GCOV_EXCL_LINE
+  default:                                                          // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Bit index fallthrough"); // LCOV_EXCL_LINE
   }
 }
 

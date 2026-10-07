@@ -96,6 +96,6 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
         case CompilerWarningType::NON_TRIVIAL_TYPE_PASSED_BY_VALUE: { return "Non-trivial type passed by value"; }
         case CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION: { return "Lambda violates async lambda capture rules"; }
         case CompilerWarningType::UNINSTALL_FAILED: { return "Uninstall failed"; }
-        default: { panic(Error("Unknown warning")); }
+        default: { panic(Error("Unknown warning")); } // LCOV_EXCL_LINE
     }
 }

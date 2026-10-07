@@ -264,7 +264,7 @@ llvm::Constant *IRGenerator::packConstantAsByteArray(llvm::Constant *value, llvm
   } else {
     // See the function comment: this is a rare case in practice (most union field defaults are numeric), so it is
     // deliberately unsupported for now rather than silently producing a wrong default value.
-    throw CompilerError(INTERNAL_ERROR, "Unsupported default value for a union field of this type"); // GCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Unsupported default value for a union field of this type"); // LCOV_EXCL_LINE
   }
   bits = bits.zext(numBytes * 8);
 
@@ -419,7 +419,7 @@ llvm::Constant *IRGenerator::getDefaultValueForSymbolType(const QualType &symbol
     return llvm::ConstantStruct::get(structType, llvm::Constant::getNullValue(builder.getPtrTy()));
   }
 
-  throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // GCOV_EXCL_LINE
+  throw CompilerError(INTERNAL_ERROR, "Cannot determine default value for symbol type"); // LCOV_EXCL_LINE
 }
 
 llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, const QualType &type, const ASTNode *node) const {
@@ -453,7 +453,7 @@ llvm::Constant *IRGenerator::getConst(const CompileTimeValue &compileTimeValue, 
   if (type.isOneOf({TY_FUNCTION, TY_PROCEDURE}))
     return llvm::Constant::getNullValue(llvmTypes.lambdaFatPtrType);
 
-  throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // LCOV_EXCL_LINE
 }
 
 llvm::BasicBlock *IRGenerator::createBlock(const std::string &blockName /*=""*/) const {
@@ -952,8 +952,8 @@ llvm::FunctionType *IRGenerator::getFunctionType(const QualType &returnType, con
     loweredParamTypes.insert(loweredParamTypes.end(), paramTypes.begin(), paramTypes.end());
     return llvm::FunctionType::get(builder.getVoidTy(), loweredParamTypes, isVarArg);
   }
-  default:                                                               // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "ReturnABIKind fall-through"); // GCOV_EXCL_LINE
+  default:                                                               // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "ReturnABIKind fall-through"); // LCOV_EXCL_LINE
   }
 }
 

@@ -56,6 +56,6 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
         case CliErrorType::INVALID_SANITIZER: { return "Invalid sanitizer"; }
         case CliErrorType::INVALID_BACKEND: { return "Invalid backend"; }
         case CliErrorType::INVALID_DEBUG_INFO_LEVEL: { return "Invalid debug info level"; }
-        default: { panic(Error("Unknown error")); }
+        default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

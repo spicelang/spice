@@ -187,8 +187,8 @@ std::any TypeChecker::visitDataType(DataTypeNode *node) {
       type = type.toArr(node, hardcodedSize);
       break;
     }
-    default:                                                               // GCOV_EXCL_LINE
-      throw CompilerError(UNHANDLED_BRANCH, "Modifier type fall-through"); // GCOV_EXCL_LINE
+    default:                                                               // LCOV_EXCL_LINE
+      throw CompilerError(UNHANDLED_BRANCH, "Modifier type fall-through"); // LCOV_EXCL_LINE
     }
     tmQueue.pop();
   }

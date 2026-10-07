@@ -49,7 +49,7 @@ std::any ASTBuilder::visitEntry(SpiceParser::EntryContext *ctx) {
       entryNode->modAttrs.push_back(std::any_cast<ModAttrNode *>(visit(modAttrCtx)));
     else if (const auto *eofCtx = dynamic_cast<TerminalNode *>(child);
              !eofCtx || eofCtx->getSymbol()->getType() != SpiceParser::EOF)
-      assert_fail("Unknown top level definition type"); // GCOV_EXCL_LINE
+      assert_fail("Unknown top level definition type"); // LCOV_EXCL_LINE
   }
 
   // Hand over all switch statements of this file
@@ -407,7 +407,7 @@ std::any ASTBuilder::visitForeachHead(SpiceParser::ForeachHeadContext *ctx) {
     foreachLoopNode->idxVarDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt(0)));
     foreachLoopNode->itemVarDecl = std::any_cast<DeclStmtNode *>(visit(ctx->declStmt(1)));
   } else {
-    assert_fail("Invalid number of decl statements in foreach loop"); // GCOV_EXCL_LINE
+    assert_fail("Invalid number of decl statements in foreach loop"); // LCOV_EXCL_LINE
   }
   foreachLoopNode->iteratorAssign = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
 
@@ -534,7 +534,7 @@ std::any ASTBuilder::visitStmtLst(SpiceParser::StmtLstContext *ctx) {
     else if (auto *anonymousScopeCtx = dynamic_cast<SpiceParser::AnonymousBlockStmtContext *>(stmt))
       stmtLstNode->statements.push_back(std::any_cast<AnonymousBlockStmtNode *>(visit(anonymousScopeCtx)));
     else
-      assert(is<TerminalNode *>(stmt)); // GCOV_EXCL_LINE
+      assert(is<TerminalNode *>(stmt)); // LCOV_EXCL_LINE
   }
 
   return concludeNode(stmtLstNode);
@@ -676,8 +676,8 @@ std::any ASTBuilder::visitStmt(SpiceParser::StmtContext *ctx) {
     return static_cast<StmtNode *>(std::any_cast<ContinueStmtNode *>(visit(ctx->continueStmt())));
   if (ctx->fallthroughStmt())
     return static_cast<StmtNode *>(std::any_cast<FallthroughStmtNode *>(visit(ctx->fallthroughStmt())));
-  assert_fail("Unknown statement type"); // GCOV_EXCL_LINE
-  return nullptr;                        // GCOV_EXCL_LINE
+  assert_fail("Unknown statement type"); // LCOV_EXCL_LINE
+  return nullptr;                        // LCOV_EXCL_LINE
 }
 
 std::any ASTBuilder::visitDeclStmt(SpiceParser::DeclStmtContext *ctx) {
@@ -747,7 +747,7 @@ std::any ASTBuilder::visitQualifier(SpiceParser::QualifierContext *ctx) {
     else if (symbolType == SpiceParser::COMPOSE)
       qualifierNode->type = QualifierNode::QualifierType::TY_COMPOSITION;
     else
-      assert_fail("Unknown qualifier type"); // GCOV_EXCL_LINE
+      assert_fail("Unknown qualifier type"); // LCOV_EXCL_LINE
   }
 
   return concludeNode(qualifierNode);
@@ -853,7 +853,7 @@ std::any ASTBuilder::visitCaseConstant(SpiceParser::CaseConstantContext *ctx) {
     }
     caseConstantNode->fqIdentifier = fqIdentifier.str();
   } else {
-    assert_fail("Unknown case constant type"); // GCOV_EXCL_LINE
+    assert_fail("Unknown case constant type"); // LCOV_EXCL_LINE
   }
 
   return concludeNode(caseConstantNode);
@@ -933,7 +933,7 @@ std::any ASTBuilder::visitAssignExpr(SpiceParser::AssignExprContext *ctx) {
     visit(ctx->assignOp());
     assignExprNode->rhs = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   } else {
-    assert_fail("Invalid assign expression"); // GCOV_EXCL_LINE
+    assert_fail("Invalid assign expression"); // LCOV_EXCL_LINE
   }
 
   return concludeExprNode(assignExprNode);
@@ -1087,7 +1087,7 @@ std::any ASTBuilder::visitShiftExpr(SpiceParser::ShiftExprContext *ctx) {
       continue;
     }
 
-    assert_fail("Invalid terminal symbol for additive expression"); // GCOV_EXCL_LINE
+    assert_fail("Invalid terminal symbol for additive expression"); // LCOV_EXCL_LINE
   }
   assert(!seenFirstLess && !seenFirstGreater);
 
@@ -1113,7 +1113,7 @@ std::any ASTBuilder::visitAdditiveExpr(SpiceParser::AdditiveExprContext *ctx) {
     else if (terminal->getSymbol()->getType() == SpiceParser::MINUS)
       additiveExprNode->opQueue.emplace(AdditiveExprNode::AdditiveOp::OP_MINUS, TY_INVALID);
     else
-      assert_fail("Invalid terminal symbol for additive expression"); // GCOV_EXCL_LINE
+      assert_fail("Invalid terminal symbol for additive expression"); // LCOV_EXCL_LINE
   }
 
   return concludeExprNode(additiveExprNode);
@@ -1140,7 +1140,7 @@ std::any ASTBuilder::visitMultiplicativeExpr(SpiceParser::MultiplicativeExprCont
     else if (terminal->getSymbol()->getType() == SpiceParser::REM)
       multiplicativeExprNode->opQueue.emplace(MultiplicativeExprNode::MultiplicativeOp::OP_REM, TY_INVALID);
     else
-      assert_fail("Invalid terminal symbol for multiplicative expression"); // GCOV_EXCL_LINE
+      assert_fail("Invalid terminal symbol for multiplicative expression"); // LCOV_EXCL_LINE
   }
 
   return concludeExprNode(multiplicativeExprNode);
@@ -1192,7 +1192,7 @@ std::any ASTBuilder::visitPrefixUnaryExpr(SpiceParser::PrefixUnaryExprContext *c
 
     prefixUnaryExprNode->prefixUnaryExpr = std::any_cast<ExprNode *>(visit(ctx->prefixUnaryExpr()));
   } else {
-    assert_fail("Unknown prefix unary expression type"); // GCOV_EXCL_LINE
+    assert_fail("Unknown prefix unary expression type"); // LCOV_EXCL_LINE
   }
 
   return concludeExprNode(prefixUnaryExprNode);
@@ -1224,7 +1224,7 @@ std::any ASTBuilder::visitPostfixUnaryExpr(SpiceParser::PostfixUnaryExprContext 
       postfixUnaryExprNode->op = PostfixUnaryExprNode::PostfixUnaryOp::OP_ERR_PROPAGATION;
     }
   } else {
-    assert_fail("Unknown postfix unary expression type"); // GCOV_EXCL_LINE
+    assert_fail("Unknown postfix unary expression type"); // LCOV_EXCL_LINE
   }
 
   return concludeExprNode(postfixUnaryExprNode);
@@ -1258,7 +1258,7 @@ std::any ASTBuilder::visitAtomicExpr(SpiceParser::AtomicExprContext *ctx) {
   } else if (ctx->assignExpr()) {
     atomicExprNode->assignExpr = std::any_cast<ExprNode *>(visit(ctx->assignExpr()));
   } else {
-    assert_fail("Unknown atomic expression type"); // GCOV_EXCL_LINE
+    assert_fail("Unknown atomic expression type"); // LCOV_EXCL_LINE
   }
 
   return concludeExprNode(atomicExprNode);
@@ -1284,7 +1284,7 @@ std::any ASTBuilder::visitValue(SpiceParser::ValueContext *ctx) {
     valueNode->isNil = true;
     valueNode->nilType = std::any_cast<DataTypeNode *>(visit(ctx->dataType()));
   } else {
-    assert_fail("Unknown value type"); // GCOV_EXCL_LINE
+    assert_fail("Unknown value type"); // LCOV_EXCL_LINE
   }
 
   return concludeNode(valueNode);
@@ -1329,7 +1329,7 @@ std::any ASTBuilder::visitConstant(SpiceParser::ConstantContext *ctx) {
     constantNode->type = ConstantNode::PrimitiveValueType::TYPE_BOOL;
     constantNode->compileTimeValue.boolValue = false;
   } else {
-    assert_fail("Unknown constant type"); // GCOV_EXCL_LINE
+    assert_fail("Unknown constant type"); // LCOV_EXCL_LINE
   }
 
   return concludeNode(constantNode);
@@ -1665,7 +1665,7 @@ std::any ASTBuilder::visitOverloadableOp(SpiceParser::OverloadableOpContext *ctx
   else if (ctx->ASSIGN())
     fctNameNode->name = OP_FCT_ASSIGN;
   else
-    assert_fail("Unsupported overloadable operator"); // GCOV_EXCL_LINE
+    assert_fail("Unsupported overloadable operator"); // LCOV_EXCL_LINE
 
   fctNameNode->fqName = fctNameNode->name;
   fctNameNode->nameFragments.push_back(fctNameNode->name);

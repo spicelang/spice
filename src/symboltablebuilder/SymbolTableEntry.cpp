@@ -37,10 +37,10 @@ void SymbolTableEntry::updateType(const QualType &newType, [[maybe_unused]] bool
  */
 void SymbolTableEntry::updateState(const LifecycleState &newState, const ASTNode *node) {
   const LifecycleState oldState = lifecycle.getCurrentState();
-  if (newState == DEAD && oldState == DECLARED)                                                      // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Cannot destroy uninitialized variable '" + name + "'");     // GCOV_EXCL_LINE
-  if (newState == DEAD && oldState == DEAD)                                                          // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Cannot destroy already destroyed variable '" + name + "'"); // GCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DECLARED)                                                      // LCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Cannot destroy uninitialized variable '" + name + "'");     // LCOV_EXCL_LINE
+  if (newState == DEAD && oldState == DEAD)                                                          // LCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Cannot destroy already destroyed variable '" + name + "'"); // LCOV_EXCL_LINE
   lifecycle.addEvent({newState, node});
 }
 

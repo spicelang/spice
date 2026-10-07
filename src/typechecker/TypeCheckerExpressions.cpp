@@ -101,7 +101,7 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
     return ExprResult{node->setEvaluatedSymbolType(rhsType, manIdx)};
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "AssignExpr fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "AssignExpr fall-through"); // LCOV_EXCL_LINE
 }
 
 /**
@@ -416,7 +416,7 @@ std::any TypeChecker::visitEqualityExpr(EqualityExprNode *node) {
   else if (node->op == EqualityExprNode::EqualityOp::OP_NOT_EQUAL) // Operator was not equal
     result = opRuleManager.getNotEqualResultType(node, lhs, rhs);
   else
-    throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "EqualityExpr fall-through"); // LCOV_EXCL_LINE
 
   node->setEvaluatedSymbolType(result.type, manIdx);
   return result;
@@ -444,7 +444,7 @@ std::any TypeChecker::visitRelationalExpr(RelationalExprNode *node) {
   else if (node->op == RelationalExprNode::RelationalOp::OP_GREATER_EQUAL) // Operator was greater equal
     result = opRuleManager.getGreaterEqualResultType(node, lhs, rhs);
   else
-    throw CompilerError(UNHANDLED_BRANCH, "RelationalExpr fall-through"); // GCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "RelationalExpr fall-through"); // LCOV_EXCL_LINE
 
   node->setEvaluatedSymbolType(result.type, manIdx);
   return result;
@@ -471,7 +471,7 @@ std::any TypeChecker::visitShiftExpr(ShiftExprNode *node) {
     else if (op == ShiftExprNode::ShiftOp::OP_SHIFT_RIGHT)
       currentResult = opRuleManager.getShiftRightResultType(node, currentResult, operandResult, i);
     else
-      throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // GCOV_EXCL_LINE
+      throw CompilerError(UNHANDLED_BRANCH, "ShiftExpr fall-through"); // LCOV_EXCL_LINE
 
     // Push the new item and pop the old one on the other side of the queue
     node->opQueue.emplace(op, currentResult.type);
@@ -503,7 +503,7 @@ std::any TypeChecker::visitAdditiveExpr(AdditiveExprNode *node) {
     else if (op == AdditiveExprNode::AdditiveOp::OP_MINUS)
       currentResult = opRuleManager.getMinusResultType(node, currentResult, operandResult, i);
     else
-      throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // GCOV_EXCL_LINE
+      throw CompilerError(UNHANDLED_BRANCH, "AdditiveExpr fall-through"); // LCOV_EXCL_LINE
 
     // Push the new item and pop the old one on the other side of the queue
     node->opQueue.emplace(op, currentResult.type);
@@ -536,7 +536,7 @@ std::any TypeChecker::visitMultiplicativeExpr(MultiplicativeExprNode *node) {
     else if (op == MultiplicativeExprNode::MultiplicativeOp::OP_REM)
       currentResult = OpRuleManager::getRemResultType(node, currentResult, operandResult);
     else
-      throw CompilerError(UNHANDLED_BRANCH, "Multiplicative fall-through"); // GCOV_EXCL_LINE
+      throw CompilerError(UNHANDLED_BRANCH, "Multiplicative fall-through"); // LCOV_EXCL_LINE
 
     // Push the new item and pop the old one on the other side of the queue
     node->opQueue.emplace(op, currentResult.type);
@@ -630,8 +630,8 @@ std::any TypeChecker::visitPrefixUnaryExpr(PrefixUnaryExprNode *node) {
   case PrefixUnaryExprNode::PrefixUnaryOp::OP_ADDRESS_OF:
     operandType = OpRuleManager::getPrefixBitwiseAndResultType(node, operand);
     break;
-  default:                                                                 // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExpr fall-through"); // GCOV_EXCL_LINE
+  default:                                                                 // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "PrefixUnaryExpr fall-through"); // LCOV_EXCL_LINE
   }
 
   return ExprResult{node->setEvaluatedSymbolType(operandType, manIdx), operandEntry};
@@ -852,8 +852,8 @@ std::any TypeChecker::visitPostfixUnaryExpr(PostfixUnaryExprNode *node) {
 
     break;
   }
-  default:                                                                  // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // GCOV_EXCL_LINE
+  default:                                                                  // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "PostfixUnaryExpr fall-through"); // LCOV_EXCL_LINE
   }
 
   if (operandType.is(TY_INVALID)) {

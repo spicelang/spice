@@ -40,8 +40,8 @@ std::string LinkerError::getMessagePrefix(LinkerErrorType errorType) {
   case SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER:
     return "Sanitizer not supported by linker invoker";
   }
-  assert_fail("Unknown error"); // GCOV_EXCL_LINE
-  return "Unknown error";       // GCOV_EXCL_LINE
+  assert_fail("Unknown error"); // LCOV_EXCL_LINE
+  return "Unknown error";       // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

@@ -86,7 +86,7 @@ public f<string> getIdentifyingTopLevelName(RuntimeModule runtimeModule) {
         case RuntimeModule::MEMORY_RT: { return "sAlloc"; } // sAlloc function
         case RuntimeModule::RTTI_RT: { return TIOBJ_NAME; } // TypeInfo struct
         case RuntimeModule::STACK_TRACE_RT: { return "sDumpStacktrace"; } // sDumpStacktrace function
-        default: { panic(Error("Requested unknown runtime module")); }
+        default: { panic(Error("Requested unknown runtime module")); } // LCOV_EXCL_LINE
     }
 }
 
@@ -175,8 +175,8 @@ public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requ
         case RuntimeModule::STACK_TRACE_RT: {
             return ModuleNamePair{STACK_TRACE_RT_IMPORT_NAME, "stack_trace_rt"};
         }
-        default: {
-            panic(Error("Requested unknown runtime module"));
-        }
+        default: {                                            // LCOV_EXCL_LINE
+            panic(Error("Requested unknown runtime module")); // LCOV_EXCL_LINE
+        }                                                     // LCOV_EXCL_LINE
     }
 }

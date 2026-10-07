@@ -299,9 +299,9 @@ void NameMangling::mangleTypeChainElement(std::stringstream &out, const TypeChai
     out << "E";
     break;
   }
-  default:                                                                                                // GCOV_EXCL_LINE
-    const std::string message = "Type " + chainElement.getName(false, true, true) + " cannot be mangled"; // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, message);                                                         // GCOV_EXCL_LINE
+  default:                                                                                                // LCOV_EXCL_LINE
+    const std::string message = "Type " + chainElement.getName(false, true, true) + " cannot be mangled"; // LCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, message);                                                         // LCOV_EXCL_LINE
   }
 }
 

@@ -51,7 +51,7 @@ std::any TypeChecker::visitValue(ValueNode *node) {
     return ExprResult{node->setEvaluatedSymbolType(nilType, manIdx)};
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // LCOV_EXCL_LINE
 }
 
 std::any TypeChecker::visitConstant(ConstantNode *node) {
@@ -78,8 +78,8 @@ std::any TypeChecker::visitConstant(ConstantNode *node) {
   case ConstantNode::PrimitiveValueType::TYPE_BOOL:
     superType = TY_BOOL;
     break;
-  default:                                                          // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // GCOV_EXCL_LINE
+  default:                                                          // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Constant fall-through"); // LCOV_EXCL_LINE
   }
   QualType constantType(superType);
   // Integer literals with an 'u' suffix are unsigned

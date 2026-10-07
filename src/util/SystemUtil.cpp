@@ -62,8 +62,8 @@ ExecResult SystemUtil::exec(const std::string &command, bool redirectStdErrToStd
 #error "Unsupported platform"
 #endif
 
-  if (!pipe)                                                                // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, "Failed to execute command: " + command); // GCOV_EXCL_LINE
+  if (!pipe)                                                                // LCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to execute command: " + command); // LCOV_EXCL_LINE
 
   std::array<char, 128> buffer{};
   std::stringstream result;
@@ -88,16 +88,16 @@ int SystemUtil::run(const std::string &executablePath) {
   const char *argv[] = {executablePath.c_str(), nullptr};
   pid_t pid;
   if (posix_spawn(&pid, executablePath.c_str(), nullptr, nullptr, const_cast<char *const *>(argv), environ) != 0)
-    throw CompilerError(IO_ERROR, "Failed to execute: " + executablePath); // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to execute: " + executablePath); // LCOV_EXCL_LINE
   int status;
   if (waitpid(pid, &status, 0) == -1)
-    throw CompilerError(IO_ERROR, "Failed to wait for: " + executablePath); // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to wait for: " + executablePath); // LCOV_EXCL_LINE
   return transformStatusToExitCode(status);
 #elif OS_WINDOWS
   // _P_WAIT inherits the parent's standard streams and returns the child's exit code
   const intptr_t exitCode = _spawnl(_P_WAIT, executablePath.c_str(), executablePath.c_str(), nullptr);
   if (exitCode == -1)
-    throw CompilerError(IO_ERROR, "Failed to execute: " + executablePath); // GCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to execute: " + executablePath); // LCOV_EXCL_LINE
   return static_cast<int>(exitCode);
 #else
 #error "Unsupported platform"
@@ -131,8 +131,8 @@ ExecResult SystemUtil::exec(const std::string &program, const std::vector<std::s
 
   // Redirect the child's stdout (and optionally stderr) into a temporary file so we can capture it
   llvm::SmallString<128> outputFilePath;
-  if (const std::error_code ec = llvm::sys::fs::createTemporaryFile("spice-exec", "out", outputFilePath)) // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, "Could not create temporary file for command output: " + ec.message()); // GCOV_EXCL_LINE
+  if (const std::error_code ec = llvm::sys::fs::createTemporaryFile("spice-exec", "out", outputFilePath)) // LCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Could not create temporary file for command output: " + ec.message()); // LCOV_EXCL_LINE
 
   // Redirects layout is [stdin, stdout, stderr]; std::nullopt inherits the parent's descriptor, a path redirects to a
   // file. LLVM merges stdout and stderr when both reference the same path.
@@ -149,10 +149,10 @@ ExecResult SystemUtil::exec(const std::string &program, const std::vector<std::s
   const int exitCode =
       llvm::sys::ExecuteAndWait(resolvedProgram, execArgs, std::nullopt, redirects, 0, 0, &errorMsg, &executionFailed);
 
-  if (executionFailed) {                                                                  // GCOV_EXCL_LINE
-    llvm::sys::fs::remove(outputFilePath.str());                                          // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, "Failed to execute '" + program + "': " + errorMsg);    // GCOV_EXCL_LINE
-  } // GCOV_EXCL_LINE
+  if (executionFailed) {                                                                  // LCOV_EXCL_LINE
+    llvm::sys::fs::remove(outputFilePath.str());                                          // LCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to execute '" + program + "': " + errorMsg);    // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   // Read back the captured output and clean up the temporary file
   std::string output = FileUtil::getFileContent(outputFilePath.str().str());
@@ -238,8 +238,8 @@ std::vector<std::string> SystemUtil::expandLinkerFlag(const std::string &flag) {
       return {};
     const std::vector<std::string> cmdArgs(tokens.begin() + 1, tokens.end());
     const auto [output, exitCode] = exec(tokens.front(), cmdArgs);
-    if (exitCode != 0) // GCOV_EXCL_LINE
-      throw LinkerError(LINKER_ERROR, "Command substitution for linker flag failed: " + innerCommand); // GCOV_EXCL_LINE
+    if (exitCode != 0) // LCOV_EXCL_LINE
+      throw LinkerError(LINKER_ERROR, "Command substitution for linker flag failed: " + innerCommand); // LCOV_EXCL_LINE
     expanded = output;
   }
 
@@ -392,8 +392,8 @@ std::filesystem::path SystemUtil::findStdDir() {
 std::filesystem::path SystemUtil::getStdDir() {
   if (std::filesystem::path stdPath = findStdDir(); !stdPath.empty())
     return stdPath;
-  constexpr auto msg = "Standard library could not be found. Check if the env var SPICE_STD_DIR exists"; // GCOV_EXCL_LINE
-  throw CompilerError(STD_NOT_FOUND, msg);                                                               // GCOV_EXCL_LINE
+  constexpr auto msg = "Standard library could not be found. Check if the env var SPICE_STD_DIR exists"; // LCOV_EXCL_LINE
+  throw CompilerError(STD_NOT_FOUND, msg);                                                               // LCOV_EXCL_LINE
 }
 
 /**
@@ -469,8 +469,8 @@ std::filesystem::path SystemUtil::getBootstrapDir() {
     if (const std::filesystem::path stdPath(std::getenv("SPICE_BOOTSTRAP_DIR")); exists(stdPath))
       return stdPath;
   }
-  constexpr auto msg = "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists"; // GCOV_EXCL_LINE
-  throw CompilerError(BOOTSTRAP_NOT_FOUND, msg);                                                                 // GCOV_EXCL_LINE
+  constexpr auto msg = "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists"; // LCOV_EXCL_LINE
+  throw CompilerError(BOOTSTRAP_NOT_FOUND, msg);                                                                 // LCOV_EXCL_LINE
 }
 
 /**

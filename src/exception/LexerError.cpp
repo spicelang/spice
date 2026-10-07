@@ -35,8 +35,8 @@ std::string LexerError::getMessagePrefix(LexerErrorType errorType) {
   case TOKENIZING_FAILED:
     return "Tokenizing failed";
   }
-  assert_fail("Unknown error"); // GCOV_EXCL_LINE
-  return "Unknown error"; // GCOV_EXCL_LINE
+  assert_fail("Unknown error"); // LCOV_EXCL_LINE
+  return "Unknown error"; // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

@@ -156,9 +156,9 @@ void ExternalLinkerInterface::link() const {
   // Print status message
   if (cliOptions.printDebugOutput) {
     const std::string command = SystemUtil::renderCommandForDisplay(linkerInvokerPath, args);
-    std::cout << "\nLinking with: " << linkerInvokerName << " (invoker) / " << linkerName << " (linker)"; // GCOV_EXCL_LINE
-    std::cout << "\nLinker command: " << command;                                                         // GCOV_EXCL_LINE
-    std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n";                        // GCOV_EXCL_LINE
+    std::cout << "\nLinking with: " << linkerInvokerName << " (invoker) / " << linkerName << " (linker)"; // LCOV_EXCL_LINE
+    std::cout << "\nLinker command: " << command;                                                         // LCOV_EXCL_LINE
+    std::cout << "\nEmitting executable to path: " << outputPath.string() << "\n";                        // LCOV_EXCL_LINE
   }
 
   // Call the linker
@@ -168,19 +168,19 @@ void ExternalLinkerInterface::link() const {
   timer.stop();
 
   // Check for linker error
-  if (exitCode != 0) {                                                                                    // GCOV_EXCL_LINE
-    const std::string command = SystemUtil::renderCommandForDisplay(linkerInvokerPath, args);             // GCOV_EXCL_LINE
-    const std::string errorMessage = "Linker exited with non-zero exit code\nLinker command: " + command; // GCOV_EXCL_LINE
-    throw LinkerError(LINKER_ERROR, errorMessage);                                                        // GCOV_EXCL_LINE
-  } // GCOV_EXCL_LINE
+  if (exitCode != 0) {                                                                                    // LCOV_EXCL_LINE
+    const std::string command = SystemUtil::renderCommandForDisplay(linkerInvokerPath, args);             // LCOV_EXCL_LINE
+    const std::string errorMessage = "Linker exited with non-zero exit code\nLinker command: " + command; // LCOV_EXCL_LINE
+    throw LinkerError(LINKER_ERROR, errorMessage);                                                        // LCOV_EXCL_LINE
+  } // LCOV_EXCL_LINE
 
   // Print linker result if appropriate
-  if (cliOptions.printDebugOutput && !output.empty())    // GCOV_EXCL_LINE
-    std::cout << "Linking result: " << output << "\n\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && !output.empty())    // LCOV_EXCL_LINE
+    std::cout << "Linking result: " << output << "\n\n"; // LCOV_EXCL_LINE
 
   // Print link time
-  if (cliOptions.printDebugOutput)                                                    // GCOV_EXCL_LINE
-    std::cout << "Total link time: " << timer.getDurationMilliseconds() << " ms\n\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput)                                                    // LCOV_EXCL_LINE
+    std::cout << "Total link time: " << timer.getDurationMilliseconds() << " ms\n\n"; // LCOV_EXCL_LINE
 }
 
 /**
@@ -201,9 +201,9 @@ void ExternalLinkerInterface::archive() const {
 
   // Print status message
   if (cliOptions.printDebugOutput) {
-    std::cout << "\nArchiving with: " << archiverName;                                      // GCOV_EXCL_LINE
-    std::cout << "\nArchiver command: " << SystemUtil::renderCommandForDisplay(archiverPath, args);     // GCOV_EXCL_LINE
-    std::cout << "\nEmitting static library to path: " << outputPath.string() << "\n";      // GCOV_EXCL_LINE
+    std::cout << "\nArchiving with: " << archiverName;                                      // LCOV_EXCL_LINE
+    std::cout << "\nArchiver command: " << SystemUtil::renderCommandForDisplay(archiverPath, args);     // LCOV_EXCL_LINE
+    std::cout << "\nEmitting static library to path: " << outputPath.string() << "\n";      // LCOV_EXCL_LINE
   }
 
   // Call the archiver
@@ -213,19 +213,19 @@ void ExternalLinkerInterface::archive() const {
   timer.stop();
 
   // Check for linker error
-  if (exitCode != 0) {                                                                                        // GCOV_EXCL_LINE
-    const std::string command = SystemUtil::renderCommandForDisplay(archiverPath, args);                      // GCOV_EXCL_LINE
-    const std::string errorMessage = "Archiver exited with non-zero exit code\nArchiver command: " + command; // GCOV_EXCL_LINE
-    throw LinkerError(LINKER_ERROR, errorMessage);                                                            // GCOV_EXCL_LINE
+  if (exitCode != 0) {                                                                                        // LCOV_EXCL_LINE
+    const std::string command = SystemUtil::renderCommandForDisplay(archiverPath, args);                      // LCOV_EXCL_LINE
+    const std::string errorMessage = "Archiver exited with non-zero exit code\nArchiver command: " + command; // LCOV_EXCL_LINE
+    throw LinkerError(LINKER_ERROR, errorMessage);                                                            // LCOV_EXCL_LINE
   }
 
   // Print linker result if appropriate
-  if (cliOptions.printDebugOutput && !output.empty())      // GCOV_EXCL_LINE
-    std::cout << "Archiving result: " << output << "\n\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && !output.empty())      // LCOV_EXCL_LINE
+    std::cout << "Archiving result: " << output << "\n\n"; // LCOV_EXCL_LINE
 
   // Print link time
-  if (cliOptions.printDebugOutput)                                                       // GCOV_EXCL_LINE
-    std::cout << "Total archive time: " << timer.getDurationMilliseconds() << " ms\n\n"; // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput)                                                       // LCOV_EXCL_LINE
+    std::cout << "Total archive time: " << timer.getDurationMilliseconds() << " ms\n\n"; // LCOV_EXCL_LINE
 }
 
 /**

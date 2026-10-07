@@ -47,7 +47,7 @@ std::any IRGenerator::visitValue(const ValueNode *node) {
     return LLVMExprResult{.constant = nilValue};
   }
 
-  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // GCOV_EXCL_LINE
+  throw CompilerError(UNHANDLED_BRANCH, "Value fall-through"); // LCOV_EXCL_LINE
 }
 
 std::any IRGenerator::visitConstant(const ConstantNode *node) {

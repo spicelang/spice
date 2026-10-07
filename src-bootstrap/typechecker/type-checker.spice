@@ -4363,7 +4363,7 @@ public f<Any> TypeChecker.visitValue(ASTValueNode* node) {
         return Any(ExprResult{node.node.setEvaluatedSymbolType(nilType, this.manIdx), nil<SymbolTableEntry*>});
     }
 
-    panic(Error("Value fall-through")); // GCOV_EXCL_LINE
+    panic(Error("Value fall-through")); // LCOV_EXCL_LINE
 }
 
 public f<Any> TypeChecker.visitConstant(ASTConstantNode* node) {

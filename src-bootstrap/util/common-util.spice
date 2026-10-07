@@ -85,22 +85,3 @@ public p setJsonField(JsonValue* object, const String& key, JsonValue* value) {
     assert idx == size || object.getObjectKey(idx) != key; // Overwriting fields is not supported
     object.insertObjectField(idx, key, value);
 }
-
-/**
- * Format the given number of bytes into a human-readable string with two decimal places, using 1024 as the unit step.
- *
- * @param bytes Number of bytes
- * @return Formatted string, e.g. "1.50 KB"
- */
-public f<String> formatBytes(unsigned long bytes) {
-    const string[5] units = ["B", "KB", "MB", "GB", "TB"];
-    double size = cast<double>(bytes);
-    unsigned int unitIndex = 0;
-    while size >= 1024.0 && unitIndex < len(units) - 1 {
-        size /= 1024.0;
-        unitIndex++;
-    }
-    const int length = snprintf(nil<char*>, 0l, "%.2f %s", size, units[unitIndex]);
-    result = String(length);
-    const int _ = snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.2f %s", size, units[unitIndex]);
-}

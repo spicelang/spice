@@ -143,11 +143,11 @@ void TypeChainElement::getName(std::stringstream &name, bool withSize, bool igno
   case TY_UNRESOLVED:
     name << "unresolved";
     break;
-  case TY_INVALID:                                                                        // GCOV_EXCL_LINE
-    name << "invalid";                                                                    // GCOV_EXCL_LINE
-    break;                                                                                // GCOV_EXCL_LINE
-  default:                                                                                // GCOV_EXCL_LINE
-    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element"); // GCOV_EXCL_LINE
+  case TY_INVALID:                                                                        // LCOV_EXCL_LINE
+    name << "invalid";                                                                    // LCOV_EXCL_LINE
+    break;                                                                                // LCOV_EXCL_LINE
+  default:                                                                                // LCOV_EXCL_LINE
+    throw CompilerError(INTERNAL_ERROR, "Could not get name of this type chain element"); // LCOV_EXCL_LINE
   }
 }
 
