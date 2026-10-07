@@ -24,6 +24,7 @@ struct TestDriverCliOptions {
   bool enableCoverage = false;
   bool bootstrapMode = false;
   bool bootstrapCoverage = false;
+  bool bootstrapBuildOnly = false;
   std::string bootstrapCompilerPath;
 };
 

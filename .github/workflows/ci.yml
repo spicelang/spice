@@ -132,7 +132,7 @@ jobs:
         working-directory: build
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
-        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap_parallel
 
       - name: Bootstrap until fixed point
         env:
@@ -243,7 +243,7 @@ jobs:
         working-directory: build
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
-        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap_parallel
 
       - name: Bootstrap until fixed point
         env:
@@ -369,7 +369,7 @@ jobs:
         working-directory: build
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
-        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}:${BOOTSTRAP_TEST_FILTER_WINDOWS// /}" cmake --build . --target spicetest_bootstrap
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}:${BOOTSTRAP_TEST_FILTER_WINDOWS// /}" cmake --build . --target spicetest_bootstrap_parallel
 
       - name: Bootstrap until fixed point
         env:
@@ -473,7 +473,7 @@ jobs:
         working-directory: build
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
-        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+        run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap_parallel
 
       - name: Bootstrap until fixed point
         env:

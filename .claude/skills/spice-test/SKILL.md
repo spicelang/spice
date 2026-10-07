@@ -55,6 +55,9 @@ These are `spicetest`'s own flags (not GoogleTest):
   (see below).
 - `--bootstrap-compiler=<path>` — bootstrap mode with an already built bootstrap
   compiler, skipping the build.
+- `--bootstrap-build-only` — only build the bootstrap compiler into
+  `test-tmp/bootstrap-compiler/`, without running any test case. Used to build it
+  once before running the test cases in parallel against it.
 - `--bootstrap-coverage` — bootstrap mode with a bootstrap compiler built with
   `-O0 --coverage` (instead of `-O3 -lto`). Its gcov data lands in
   `test-tmp/bootstrap-compiler/`; `coverage-bootstrap.py` (run from the build
@@ -67,6 +70,10 @@ like a user would (`build [// TEST: args] --output ... source.spice`), run from
 `test/` like the normal mode. It needs `SPICE_STD_DIR`, `SPICE_BOOTSTRAP_DIR`
 and `LLVM_LIB_DIR` (the build links the LLVM bindings); the
 `spicetest_bootstrap` CMake target sets them. Building takes about a minute.
+The `spicetest_bootstrap_parallel` target builds the bootstrap compiler once
+(`--bootstrap-build-only`), then runs the test cases against it in parallel via
+gtest-parallel (`--bootstrap-compiler`), like `spicetest_parallel` does for the
+host compiler. CI uses the parallel target.
 
 It checks `syntax-tree.dot` (via `--dump-ast`), `exception.out`, `warning.out`,
 the IR references, `cout.out` and `exit-code.out`. It reports errors via a
@@ -81,6 +88,8 @@ overwritten with bootstrap output.
 
 ```sh
 cmake --build cmake-build-debug --target spicetest_bootstrap
+# or in parallel (one process per test case):
+cmake --build cmake-build-debug --target spicetest_bootstrap_parallel
 # or, iterating on a pre-built bootstrap compiler:
 cd test && SPICE_STD_DIR=$PWD/../std ../cmake-build-debug/test/spicetest \
   --bootstrap-compiler=$PWD/test-tmp/bootstrap-compiler/spice --gtest_filter='ParserTests*'

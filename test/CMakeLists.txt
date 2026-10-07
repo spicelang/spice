@@ -91,3 +91,29 @@ add_custom_target(spicetest_bootstrap
         DEPENDS spicetest
         USES_TERMINAL
         COMMENT "Running spicetest against the bootstrap compiler")
+
+############ spicetest_bootstrap_parallel #############
+
+# Build the bootstrap compiler once, then run the reference test suites against it in parallel via gtest-parallel (one process
+# per test case). Like for spicetest_parallel, every test case writes its build artifacts to its own directory.
+set(SPICE_BOOTSTRAP_COMPILER_PATH ${CMAKE_CURRENT_BINARY_DIR}/test-tmp/bootstrap-compiler/spice${CMAKE_EXECUTABLE_SUFFIX})
+if (PYTHON3_EXECUTABLE)
+    add_custom_target(spicetest_bootstrap_parallel
+            COMMAND ${CMAKE_COMMAND} -E env
+            SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
+            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
+            LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
+            LLVM_INCLUDE_DIRS=${LLVM_INCLUDE_FLAGS}
+            $<TARGET_FILE:spicetest> --bootstrap-build-only ${SPICE_TEST_ARGS}
+            COMMAND ${CMAKE_COMMAND} -E env
+            SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
+            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
+            LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
+            LLVM_INCLUDE_DIRS=${LLVM_INCLUDE_FLAGS}
+            ${PYTHON3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/deps/gtest-parallel/gtest-parallel $<TARGET_FILE:spicetest> --
+            --bootstrap-compiler=${SPICE_BOOTSTRAP_COMPILER_PATH} ${SPICE_TEST_ARGS}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            DEPENDS spicetest
+            USES_TERMINAL
+            COMMENT "Running spicetest against the bootstrap compiler in parallel via gtest-parallel")
+endif ()
