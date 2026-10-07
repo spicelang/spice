@@ -66,5 +66,30 @@ f<int> main() {
     tagged2.push(Tagged{3, 200});
     assert tagged1 != tagged2;
 
+    // Ownership of non-trivial elements
+    Stack<String> owned;
+    owned.push(String("first"));
+    owned.push(String("second"));
+    owned.push(String("third"));
+    const String popped = owned.pop();
+    assert popped == "third";
+    assert owned.getSize() == 2;
+    // Copy construction deep-copies the elements
+    Stack<String> copied = Stack<String>(owned);
+    owned.pop();
+    owned.push(String("changed"));
+    assert copied.top() == "second";
+    assert copied.getSize() == 2;
+    // Copy assignment destructs the old elements and deep-copies the new ones
+    Stack<String> assigned;
+    assigned.push(String("old"));
+    assigned = copied;
+    assert assigned == copied;
+    copied.clear();
+    assert copied.isEmpty();
+    assert assigned.pop() == "second";
+    assert assigned.pop() == "first";
+    assert assigned.isEmpty();
+
     printf("Stack smoke tests passed!\n");
 }
