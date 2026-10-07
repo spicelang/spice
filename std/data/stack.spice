@@ -75,9 +75,12 @@ public p Stack.ctor(unsigned long initAllocItems = 0l) {
 public p Stack.ctor(const Stack<T>& original) {
     this.ctor(original.capacity);
     if original.size == 0l { return; }
-    const unsigned long itemSize = sizeof<T>();
-    unsafe {
-        sCopy(cast<heap byte*>(original.contents), cast<heap byte*>(this.contents), itemSize * original.size);
+    // Copy-construct each element individually, so non-trivial elements get their own owned resources
+    // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
+    for unsigned long index = 0l; index < original.size; index++ {
+        unsafe {
+            __placement_new<T>(&this.contents[index], original.contents[index]);
+        }
     }
     this.size = original.size;
 }
@@ -89,6 +92,8 @@ public p Stack.ctor(const Stack<T>& original) {
  */
 public p operator=<T>(Stack<T>& this, const Stack<T>& newValue) {
     const unsigned long itemSize = sizeof<T>();
+    // Destruct our currently owned elements before they get overwritten
+    this.clear();
     if newValue.capacity != this.capacity {
         if newValue.capacity == 0l {
             // Drop our buffer to match the unallocated source
@@ -107,9 +112,37 @@ public p operator=<T>(Stack<T>& this, const Stack<T>& newValue) {
     }
     this.size = newValue.size;
     if newValue.size == 0l { return; }
-    unsafe {
-        sCopy(cast<heap byte*>(newValue.contents), cast<heap byte*>(this.contents), itemSize * newValue.size);
+    // Copy-construct each element individually, so non-trivial elements get their own owned resources
+    // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
+    for unsigned long index = 0l; index < newValue.size; index++ {
+        unsafe {
+            __placement_new<T>(&this.contents[index], newValue.contents[index]);
+        }
     }
+}
+
+/**
+ * Destructs the stack, destructing all owned elements and freeing the buffer
+ */
+public p Stack.dtor() {
+    this.clear();
+    unsafe {
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        sDealloc(oldAddress);
+    }
+    this.capacity = 0l;
+}
+
+/**
+ * Removes all items from the stack. The allocated capacity is kept.
+ */
+public p Stack.clear() {
+    for unsigned long index = 0l; index < this.size; index++ {
+        unsafe {
+            sDestruct(this.contents[index]);
+        }
+    }
+    this.size = 0l;
 }
 
 /**
@@ -129,14 +162,19 @@ public p Stack.push(const T& item) {
 }
 
 /**
- * Retrieve item and remove it from the stack
+ * Retrieve the topmost item and remove it. The item is returned by value, because its slot in the stack is destructed.
+ *
+ * @return Topmost item
  */
 #[ignoreUnusedReturnValue]
-public f<T&> Stack.pop() {
+public f<T> Stack.pop() {
     if this.isEmpty() { panic(Error("The stack is empty")); }
-    // Pop the element from the stack
     unsafe {
-        return this.contents[--this.size];
+        // Copy the item via a reference to its slot. Assigning the subscript expression directly would move it bitwise,
+        // so destructing the slot afterwards would free resources, that the returned item still uses
+        T& item = this.contents[--this.size];
+        result = item;
+        sDestruct(item);
     }
 }
 
