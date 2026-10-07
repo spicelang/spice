@@ -120,23 +120,38 @@ def print_stage_diff(previous: Path, current: Path, max_ranges: int = 10) -> Non
     old, new = previous.read_bytes(), current.read_bytes()
     print(f"\nDifferences between {previous.parent.name} ({len(old)} bytes) and {current.parent.name} ({len(new)} bytes):",
           file=sys.stderr)
-    ranges = []
+    # Only the first ranges are kept for printing, the totals are counted over all of them
+    shown_ranges = []
+    range_count = 0
+    diff_bytes = 0
+
+    def add_range(begin: int, end: int) -> None:
+        nonlocal range_count, diff_bytes
+        if len(shown_ranges) < max_ranges:
+            shown_ranges.append((begin, end))
+        range_count += 1
+        diff_bytes += end - begin
+
+    common_length = min(len(old), len(new))
     start = None
-    for offset in range(min(len(old), len(new))):
+    for offset in range(common_length):
         if old[offset] != new[offset]:
             if start is None:
                 start = offset
         elif start is not None:
-            ranges.append((start, offset))
+            add_range(start, offset)
             start = None
-    if start is not None:
-        ranges.append((start, min(len(old), len(new))))
-    for begin, end in ranges[:max_ranges]:
+    # The bytes beyond the end of the shorter executable differ as well
+    if len(old) != len(new):
+        add_range(common_length if start is None else start, max(len(old), len(new)))
+    elif start is not None:
+        add_range(start, common_length)
+
+    for begin, end in shown_ranges:
         print(f"  0x{begin:08x}-0x{end:08x} ({end - begin} bytes)", file=sys.stderr)
-    if len(ranges) > max_ranges:
-        print(f"  ... {len(ranges) - max_ranges} more ranges", file=sys.stderr)
-    print(f"  {len(ranges)} differing ranges, {sum(end - begin for begin, end in ranges)} differing bytes in total",
-          file=sys.stderr)
+    if range_count > max_ranges:
+        print(f"  ... {range_count - max_ranges} more ranges", file=sys.stderr)
+    print(f"  {range_count} differing ranges, {diff_bytes} differing bytes in total", file=sys.stderr)
 
 
 def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[str], timeout: int, verbose: bool) -> Path:
