@@ -103,11 +103,6 @@ void SourceFile::runLexer() {
   if (previousStage >= LEXER)
     return;
 
-  // Start measuring the total compile time. This happens after the check above, so that a circular import, that re-enters
-  // the front end of the main source file, does not restart the measurement
-  if (isMainFile)
-    resourceManager.totalTimer.start();
-
   Timer timer(&compilerOutput.times.lexer);
   timer.start();
 
@@ -830,7 +825,6 @@ void SourceFile::runBackEnd() {
 
   if (isMainFile) {
     resourceManager.backEndTimer.stop();
-    resourceManager.totalTimer.stop();
     if (cliOptions.printDebugOutput)
       dumpCompilationStats();
   }
@@ -1174,7 +1168,7 @@ void SourceFile::dumpCompilationStats() const {
   const size_t frontEndDuration = resourceManager.frontEndTimer.getDurationMilliseconds();
   const size_t middleEndDuration = resourceManager.middleEndTimer.getDurationMilliseconds();
   const size_t backEndDuration = resourceManager.backEndTimer.getDurationMilliseconds();
-  const size_t totalDuration = resourceManager.totalTimer.getDurationMilliseconds();
+  const size_t totalDuration = frontEndDuration + middleEndDuration + backEndDuration;
   std::cout << "\nSuccessfully compiled " << std::to_string(sourceFileCount) << " source file(s)";
   std::cout << " or " << std::to_string(totalLineCount) << " lines in total.\n";
   std::cout << "Total number of blocks allocated via BlockAllocator: " << CommonUtil::formatBytes(allocatedBytes);
@@ -1183,10 +1177,9 @@ void SourceFile::dumpCompilationStats() const {
   resourceManager.astNodeAlloc.printAllocatedClassStatistic();
 #endif
   std::cout << "Total number of types: " << std::to_string(totalTypeCount) << "\n";
-  std::cout << "Wall time of the front end: " << std::to_string(frontEndDuration) << " ms\n";
-  std::cout << "Wall time of the middle end: " << std::to_string(middleEndDuration) << " ms\n";
-  std::cout << "Wall time of the back end: " << std::to_string(backEndDuration) << " ms\n";
-  std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms\n";
+  std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms (frontend: " << std::to_string(frontEndDuration);
+  std::cout << " ms, middle end: " << std::to_string(middleEndDuration) << " ms, backend: " << std::to_string(backEndDuration);
+  std::cout << " ms)\n";
 }
 
 void SourceFile::dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const {

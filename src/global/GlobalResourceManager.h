@@ -62,7 +62,6 @@ public:
   ExternalLinkerInterface linker;
   CacheManager cacheManager;
   RuntimeModuleManager runtimeModuleManager;
-  Timer totalTimer;
   // Wall times of the front end, middle end and back end over all source files
   Timer frontEndTimer;
   Timer middleEndTimer;

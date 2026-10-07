@@ -231,11 +231,6 @@ public p SourceFile.runParser() {
         return;
     }
 
-    // Start measuring the total compile time. This happens after the check above, so that a circular import, that
-    // re-enters the front end of the main source file, does not restart the measurement
-    if this.isMainFile {
-        this.resourceManager.totalTimer.start();
-    }
 
     Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.lexerAndParser);
     timer.start();
@@ -944,7 +939,6 @@ public p SourceFile.runBackEnd() {
 
     if this.isMainFile {
         this.resourceManager.backEndTimer.stop();
-        this.resourceManager.totalTimer.stop();
         if this.cliOptions.printDebugOutput {
             this.dumpCompilationStats();
         }
@@ -1501,16 +1495,14 @@ p SourceFile.dumpCompilationStats() {
     const unsigned long frontEndDuration = this.resourceManager.frontEndTimer.getDurationInMillis();
     const unsigned long middleEndDuration = this.resourceManager.middleEndTimer.getDurationInMillis();
     const unsigned long backEndDuration = this.resourceManager.backEndTimer.getDurationInMillis();
-    const unsigned long totalDuration = this.resourceManager.totalTimer.getDurationInMillis();
+    const unsigned long totalDuration = frontEndDuration + middleEndDuration + backEndDuration;
     print("\nSuccessfully compiled " + toString(sourceFileCount) + " source file(s)");
     print(" or " + toString(totalLineCount) + " lines in total.\n");
     print("Total number of blocks allocated via BlockAllocator: " + formatStorageSize(allocatedBytes));
     print(" in " + toString(allocationCount) + " allocations.\n");
     print("Total number of types: " + toString(totalTypeCount) + "\n");
-    print("Wall time of the front end: " + toString(frontEndDuration) + " ms\n");
-    print("Wall time of the middle end: " + toString(middleEndDuration) + " ms\n");
-    print("Wall time of the back end: " + toString(backEndDuration) + " ms\n");
-    print("Total compile time: " + toString(totalDuration) + " ms\n");
+    print("Total compile time: " + toString(totalDuration) + " ms (frontend: " + toString(frontEndDuration));
+    print(" ms, middle end: " + toString(middleEndDuration) + " ms, backend: " + toString(backEndDuration) + " ms)\n");
 }
 
 p SourceFile.dumpOutput(const String& content, const String& caption, const String& fileSuffix) {
