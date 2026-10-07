@@ -13,18 +13,15 @@ env:
   # Test filter for the bootstrap compiler runs: only the stages the bootstrap compiler already covers. Exclude known
   # bootstrap compiler gaps here (e.g. -TestSuite.testCase:TestSuite.otherTestCase) and remove them once fixed. Test cases
   # that check host specifics, the bootstrap compiler does not replicate (e.g. ANTLR error messages), have a
-  # 'skip-bootstrap' marker file instead.
+  # 'skip-bootstrap' marker file instead. Test cases that check typeid values (the bootstrap type hash differs from the
+  # host's std::hash<Type>) follow the bootstrap compiler and have a 'skip-host' marker file.
   # Known gaps:
-  # - typeid/TBAA/TypeSanitizer: the bootstrap type hash differs from the host's std::hash<Type>
   # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
   # - testing_*: the bootstrap test runner does not request the test main (only --no-entry)
   # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   BOOTSTRAP_TEST_FILTER: >-
     CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*
-    -IRGeneratorTests.builtins_successTypeid:
-    IRGeneratorTests.instrumentation_successTbaaMetadata:
-    IRGeneratorTests.instrumentation_successTysan:
-    IRGeneratorTests.instrumentation_successTysanAndDbgInfo:
+    -IRGeneratorTests.instrumentation_successTysanAndDbgInfo:
     IRGeneratorTests.instrumentation_successDbgInfoComplex:
     IRGeneratorTests.instrumentation_successDbgInfoLineOnly:
     IRGeneratorTests.instrumentation_successDbgInfoSimple:

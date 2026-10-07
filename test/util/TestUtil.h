@@ -42,6 +42,7 @@ const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_SKIP_WINDOWS = "skip-windows";
 const char *const CTL_SKIP_MACOS = "skip-macos";
 const char *const CTL_SKIP_BOOTSTRAP = "skip-bootstrap";
+const char *const CTL_SKIP_HOST = "skip-host";
 const char *const CTL_SKIP_WITHOUT_TPDE = "skip-without-tpde";
 const char *const CTL_RUN_BUILTIN_TESTS = "run-builtin-tests";
 const char *const CTL_DEBUG_SCRIPT = "debug.gdb";
