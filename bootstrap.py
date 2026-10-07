@@ -114,6 +114,46 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def print_stage_diff(previous: Path, current: Path, max_ranges: int = 10) -> None:
+    # Show where two stage executables differ, which hints at the source of the non-determinism (e.g. a few bytes in the
+    # file header for a link timestamp vs. many ranges across the code for non-deterministic code generation)
+    old, new = previous.read_bytes(), current.read_bytes()
+    print(f"\nDifferences between {previous.parent.name} ({len(old)} bytes) and {current.parent.name} ({len(new)} bytes):",
+          file=sys.stderr)
+    # Only the first ranges are kept for printing, the totals are counted over all of them
+    shown_ranges = []
+    range_count = 0
+    diff_bytes = 0
+
+    def add_range(begin: int, end: int) -> None:
+        nonlocal range_count, diff_bytes
+        if len(shown_ranges) < max_ranges:
+            shown_ranges.append((begin, end))
+        range_count += 1
+        diff_bytes += end - begin
+
+    common_length = min(len(old), len(new))
+    start = None
+    for offset in range(common_length):
+        if old[offset] != new[offset]:
+            if start is None:
+                start = offset
+        elif start is not None:
+            add_range(start, offset)
+            start = None
+    # The bytes beyond the end of the shorter executable differ as well
+    if len(old) != len(new):
+        add_range(common_length if start is None else start, max(len(old), len(new)))
+    elif start is not None:
+        add_range(start, common_length)
+
+    for begin, end in shown_ranges:
+        print(f"  0x{begin:08x}-0x{end:08x} ({end - begin} bytes)", file=sys.stderr)
+    if range_count > max_ranges:
+        print(f"  ... {range_count - max_ranges} more ranges", file=sys.stderr)
+    print(f"  {range_count} differing ranges, {diff_bytes} differing bytes in total", file=sys.stderr)
+
+
 def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[str], timeout: int, verbose: bool) -> Path:
     stage_dir = work_dir / f"stage{stage}"
     shutil.rmtree(stage_dir, ignore_errors=True)
@@ -225,6 +265,7 @@ def main() -> None:
     print("\nStage hashes:", file=sys.stderr)
     for stage, digest in enumerate(hashes):
         print(f"  stage{stage}: {digest}", file=sys.stderr)
+    print_stage_diff(work_dir / f"stage{args.max_iterations - 1}" / EXE_NAME, compiler)
     fail(f"No fixed point reached within {args.max_iterations} iterations. The stage executables are kept in {work_dir}")
 
 

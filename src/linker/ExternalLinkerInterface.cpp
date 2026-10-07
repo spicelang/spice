@@ -26,6 +26,11 @@ void ExternalLinkerInterface::prepare() {
     addLinkerFlag("-static");
   }
 
+  // Windows linkers stamp the link time into the PE header. Leave it out, so that the same input always links to the same
+  // binary (reproducible builds, bootstrap fixed point)
+  if (cliOptions.targetTriple.isOSWindows())
+    addLinkerFlag("-Wl,--no-insert-timestamp");
+
   // The following flags only make sense if we want to emit an executable
   if (cliOptions.outputContainer != OutputContainer::EXECUTABLE)
     return;
