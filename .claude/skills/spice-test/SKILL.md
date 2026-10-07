@@ -55,6 +55,10 @@ These are `spicetest`'s own flags (not GoogleTest):
   (see below).
 - `--bootstrap-compiler=<path>` — bootstrap mode with an already built bootstrap
   compiler, skipping the build.
+- `--bootstrap-coverage` — bootstrap mode with a bootstrap compiler built with
+  `-O0 --coverage` (instead of `-O3 -lto`). Its gcov data lands in
+  `test-tmp/bootstrap-compiler/`; `coverage-bootstrap.py` (run from the build
+  dir, `LLVM_COV` pointing at `llvm-cov`) turns it into an HTML report.
 
 ## Bootstrap mode
 

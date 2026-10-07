@@ -27,6 +27,10 @@ base_args = [
     "assert",
     "--gcov-ignore-parse-errors",
     "negative_hits.warn_once_per_file",
+    # The coverage-instrumented bootstrap compiler (see coverage-bootstrap.py) also covers std lib files, which would
+    # mix the std lib usage of the bootstrap compiler into this report
+    "--exclude-directories",
+    ".*bootstrap-compiler.*",
     "--filter",
     "../std/.*",
     "-r",

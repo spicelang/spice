@@ -54,10 +54,17 @@ void TestDriver::addOptions() {
   CLI::Option *bootstrapCompilerOpt = app.add_option<std::string>(
       "--bootstrap-compiler", testDriverCliOptions.bootstrapCompilerPath,
       "Run the test cases against the given, already built bootstrap compiler executable (implies --bootstrap)");
+  // --bootstrap-coverage
+  CLI::Option *bootstrapCoverageOpt =
+      app.add_flag<bool>("--bootstrap-coverage", testDriverCliOptions.bootstrapCoverage,
+                         "Build the bootstrap compiler with Spice code coverage instrumentation enabled, then run the test "
+                         "cases against it (implies --bootstrap)");
   // The reference files hold the output of the host compiler, so they must never be overwritten with bootstrap output. The
   // coverage mode instruments the programs compiled by the host compiler, which the bootstrap mode does not compile at all.
   bootstrapOpt->excludes(updateRefsOpt)->excludes(coverageOpt);
   bootstrapCompilerOpt->excludes(updateRefsOpt)->excludes(coverageOpt);
+  // Instrumenting the bootstrap compiler requires building it, so it cannot be combined with a pre-built one
+  bootstrapCoverageOpt->excludes(updateRefsOpt)->excludes(coverageOpt)->excludes(bootstrapCompilerOpt);
 }
 
 /**
@@ -70,7 +77,7 @@ void TestDriver::addOptions() {
 int TestDriver::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
-    if (!testDriverCliOptions.bootstrapCompilerPath.empty())
+    if (!testDriverCliOptions.bootstrapCompilerPath.empty() || testDriverCliOptions.bootstrapCoverage)
       testDriverCliOptions.bootstrapMode = true;
     return 0;
   } catch (const CLI::ParseError &parseError) {

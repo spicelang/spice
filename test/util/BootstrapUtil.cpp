@@ -7,6 +7,7 @@
 #include <cstring>
 #include <iostream>
 #include <regex>
+#include <vector>
 
 #include <SourceFile.h>
 #include <driver/Driver.h>
@@ -61,11 +62,16 @@ bool BootstrapUtil::buildBootstrapCompiler() {
   try {
     const std::string outputPath = executablePath.string();
     const std::string mainSourceFile = mainSourceFilePath.string();
-    std::array<const char *, 8> argv = {
-        "spice", "build", "-O3", "-lto", "--ignore-cache", "--output", outputPath.c_str(), mainSourceFile.c_str()};
+    std::vector<const char *> argv = {"spice", "build"};
+    // Coverage instrumentation does not support LTO. Without optimizations, the coverage counters map best to the source
+    if (testDriverCliOptions.bootstrapCoverage)
+      argv.insert(argv.end(), {"-O0", "--coverage"});
+    else
+      argv.insert(argv.end(), {"-O3", "-lto"});
+    argv.insert(argv.end(), {"--ignore-cache", "--output", outputPath.c_str(), mainSourceFile.c_str()});
     CliOptions cliOptions;
     Driver driver(cliOptions);
-    if (driver.parse(argv.size(), argv.data()) != EXIT_SUCCESS)
+    if (driver.parse(static_cast<int>(argv.size()), argv.data()) != EXIT_SUCCESS)
       return false;
     driver.enrich();
 
