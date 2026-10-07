@@ -13,6 +13,9 @@ class Triple;
 
 namespace spice::compiler {
 
+// Which compiler implementation this is. Tells the host compiler (src/) and the self-hosted compiler (src-bootstrap/) apart
+const char *const COMPILER_IMPLEMENTATION = "host";
+
 /**
  * Util for general simplification of tasks
  */

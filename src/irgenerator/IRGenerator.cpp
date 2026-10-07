@@ -10,13 +10,15 @@
 #include <symboltablebuilder/ScopeHandle.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
+#include <util/CommonUtil.h>
 
 #include <llvm/IR/Module.h>
 #include <llvm/IR/Verifier.h>
 
 namespace spice::compiler {
 
-const std::string PRODUCER_STRING = "spice version " + std::string(SPICE_VERSION) + " (https://github.com/spicelang/spice)";
+const std::string PRODUCER_STRING =
+    "spice version " + std::string(SPICE_VERSION) + " [" + COMPILER_IMPLEMENTATION + "] (https://github.com/spicelang/spice)";
 
 IRGenerator::IRGenerator(GlobalResourceManager &resourceManager, SourceFile *sourceFile)
     : CompilerPass(resourceManager, sourceFile), context(cliOptions.useLTO ? resourceManager.ltoContext : sourceFile->context),

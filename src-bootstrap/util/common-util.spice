@@ -21,6 +21,9 @@ public f<String> getLastFragment(const String &haystack, const string needle) {
     return index != -1l ? haystack.getSubstring(index + getRawLength(needle)) : haystack;
 }
 
+// Which compiler implementation this is. Tells the self-hosted compiler (src-bootstrap/) and the host compiler (src/) apart
+public const string COMPILER_IMPLEMENTATION = "self-hosted";
+
 /**
  * Generate the version info string for the Spice driver
  *
@@ -35,6 +38,7 @@ public f<String> buildVersionInfo() {
 
     StringStream versionString;
     versionString << "Spice version: " << version << " " << targetOs << "/" << targetArch << endl();
+    versionString << "Compiler:      " << COMPILER_IMPLEMENTATION << endl();
     versionString << "Git hash:      " << gitHash << endl();
     versionString << "LLVM version:  " << llvm::getVersionString() << endl();
     versionString << "built by:      " << builtBy << endl() << endl();

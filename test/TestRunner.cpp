@@ -515,6 +515,8 @@ static void execBootstrapTestCase(const TestCase &testCase) {
           // The LLVM C API, which the bootstrap compiler uses, cannot mark global values as dso_local
           BootstrapUtil::eraseDSOLocalMarkers(expectedOutput);
           BootstrapUtil::eraseDSOLocalMarkers(actualOutput);
+          // The bootstrap compiler names itself differently in the producer string
+          BootstrapUtil::normalizeProducerString(actualOutput);
         },
         true);
   }

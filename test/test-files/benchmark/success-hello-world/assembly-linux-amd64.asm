@@ -27,5 +27,5 @@ main:                                   # @main
 	.asciz	"Hello World!"
 	.size	.Lprintf.str.0, 13
 
-	.ident	"spice version dev (https://github.com/spicelang/spice)"
+	.ident	"spice version dev [host] (https://github.com/spicelang/spice)"
 	.section	".note.GNU-stack","",@progbits

@@ -36,4 +36,4 @@ attributes #2 = { nofree nounwind }
 !1 = !{i32 7, !"PIE Level", i32 2}
 !2 = !{i32 7, !"uwtable", i32 2}
 !3 = !{i32 7, !"frame-pointer", i32 2}
-!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!4 = !{!"spice version dev [host] (https://github.com/spicelang/spice)"}

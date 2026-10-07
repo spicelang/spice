@@ -191,6 +191,17 @@ bool BootstrapUtil::isErrorSupported(const std::filesystem::path &errorRefPath) 
 void BootstrapUtil::eraseDSOLocalMarkers(std::string &irCode) { CommonUtil::replaceAll(irCode, " dso_local ", " "); }
 
 /**
+ * Replace the implementation marker in the producer string of the bootstrap compiler with the one of the host compiler.
+ * Both compilers name themselves in the producer string, so the IR of the host and the bootstrap compiler differs there.
+ *
+ * @param irCode IR code
+ */
+void BootstrapUtil::normalizeProducerString(std::string &irCode) {
+  const std::string hostMarker = " [" + std::string(COMPILER_IMPLEMENTATION) + "] (https://github.com/spicelang/spice)";
+  CommonUtil::replaceAll(irCode, " [self-hosted] (https://github.com/spicelang/spice)", hostMarker);
+}
+
+/**
  * Strip ANSI color escape sequences from the given text. The bootstrap compiler colorizes its lint findings on
  * stdout, so they need to be de-colorized before being compared against the plain-text lint.out references.
  *

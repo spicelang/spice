@@ -135,6 +135,7 @@ int CommonUtil::getCurrentYear() {
 std::string CommonUtil::buildVersionInfo() {
   std::stringstream versionString;
   versionString << "Spice version: " << SPICE_VERSION << " " << SPICE_TARGET_OS << "/" << SPICE_TARGET_ARCH << "\n";
+  versionString << "Compiler:      " << COMPILER_IMPLEMENTATION << "\n";
   versionString << "Git hash:      " << SPICE_GIT_HASH << "\n";
   versionString << "LLVM version:  " << LLVM_VERSION_STRING << "\n";
   versionString << "built by:      " << SPICE_BUILT_BY << "\n\n";
