@@ -351,6 +351,13 @@ public p ExternalLinkerInterface.startAdditionalSourceCompilation() {
     if this.cliOptions.outputContainer != OutputContainer::EXECUTABLE && this.cliOptions.outputContainer != OutputContainer::SHARED_LIBRARY {
         return;
     }
+    // On Windows, the std spawns a process by redirecting the standard streams of this whole process into a pipe, which is not
+    // thread-safe (see std/os/impl/process_native_windows.spice). With concurrent spawns, the write end of a pipe can stay
+    // in our own standard output, so that reading the output of the child never ends. So on Windows, the additional sources
+    // are compiled at link time. The host compiler spawns processes without touching its own standard streams.
+    if isWindows() {
+        return;
+    }
     if !this.additionalSourceCompilations.isEmpty() {
         return;
     }
