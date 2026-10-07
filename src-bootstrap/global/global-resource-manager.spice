@@ -66,6 +66,10 @@ public type GlobalResourceManager struct {
     public TypeRegistry typeRegistry // Interns all types and hands out stable `const Type*` handles
     public TypeNameDisambiguator typeNameDisambiguator // Hands out disambiguation suffixes for same-named types
     public Timer totalTimer
+    // Wall times of the front end, middle end and back end over all source files
+    public Timer frontEndTimer
+    public Timer middleEndTimer
+    public Timer backEndTimer
     public ErrorManager errorManager
     // Lookup caches of the managers (static members of the managers in the host)
     public LookupCache<model::Function> functionLookupCache

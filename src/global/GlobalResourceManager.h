@@ -63,6 +63,10 @@ public:
   CacheManager cacheManager;
   RuntimeModuleManager runtimeModuleManager;
   Timer totalTimer;
+  // Wall times of the front end, middle end and back end over all source files
+  Timer frontEndTimer;
+  Timer middleEndTimer;
+  Timer backEndTimer;
   ErrorManager errorManager;
   // Set by the dump logic to stop the pipeline after a requested dump. The back end may write it from a worker thread.
   std::atomic<bool> abortCompilation = false;

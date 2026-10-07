@@ -226,13 +226,15 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
 }
 
 public p SourceFile.runParser() {
-    if this.isMainFile {
-        this.resourceManager.totalTimer.start();
-    }
-
     // Check if this stage has already been done
     if this.previousStage >= CompileStageType::LEXER_AND_PARSER {
         return;
+    }
+
+    // Start measuring the total compile time. This happens after the check above, so that a circular import, that
+    // re-enters the front end of the main source file, does not restart the measurement
+    if this.isMainFile {
+        this.resourceManager.totalTimer.start();
     }
 
     Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.lexerAndParser);
@@ -756,6 +758,13 @@ public p SourceFile.concludeCompilation() {
 }
 
 public p SourceFile.runFrontEnd() {
+    // The front end of the main source file covers the front ends of all its (transitive) dependencies. A circular import
+    // re-enters the front end of the main source file, so only measure the outermost call, which starts with its parser
+    const bool measureWallTime = this.isMainFile && this.previousStage == CompileStageType::NONE;
+    if measureWallTime {
+        this.resourceManager.frontEndTimer.start();
+    }
+
     this.runParser();
     if this.resourceManager.abortCompilation { return; }
     this.runASTVisualizer();
@@ -763,9 +772,18 @@ public p SourceFile.runFrontEnd() {
     this.runImportCollector();
     if this.resourceManager.abortCompilation { return; }
     this.runSymbolTableBuilder();
+    if this.resourceManager.abortCompilation { return; }
+
+    if measureWallTime {
+        this.resourceManager.frontEndTimer.stop();
+    }
 }
 
 public p SourceFile.runMiddleEnd() {
+    if this.isMainFile {
+        this.resourceManager.middleEndTimer.start();
+    }
+
     // Merge the exported name registries of all (transitive) dependencies into the respective importing files. This is
     // the deferred tail of the front-end: it must run after every reachable file has built its own registry, which is
     // why it cannot live inside the per-file front-end recursion (a circular import would otherwise merge a dependency
@@ -814,6 +832,10 @@ public p SourceFile.runMiddleEnd() {
     // Visualize dependency graph
     this.runDependencyGraphVisualizer();
     if this.resourceManager.abortCompilation { return; }
+
+    if this.isMainFile {
+        this.resourceManager.middleEndTimer.stop();
+    }
 }
 
 p SourceFile.collectBackEndSourceFiles(Vector<SourceFile*>& backEndSourceFiles) {
@@ -861,6 +883,10 @@ p SourceFile.lookupCache() {
 }
 
 public p SourceFile.runBackEnd() {
+    if this.isMainFile {
+        this.resourceManager.backEndTimer.start();
+    }
+
     // Flatten the dependency graph into the order the back end used to recurse in: every file comes after all of its
     // dependencies, and files that already ran their back end are skipped.
     Vector<SourceFile*> backEndSourceFiles;
@@ -917,6 +943,7 @@ public p SourceFile.runBackEnd() {
     }
 
     if this.isMainFile {
+        this.resourceManager.backEndTimer.stop();
         this.resourceManager.totalTimer.stop();
         if this.cliOptions.printDebugOutput {
             this.dumpCompilationStats();
@@ -1471,12 +1498,18 @@ p SourceFile.dumpCompilationStats() {
     const unsigned long totalTypeCount = this.resourceManager.typeRegistry.getTypeCount();
     const unsigned long allocatedBytes = this.resourceManager.astNodeAlloc.getTotalAllocatedSize();
     const unsigned long allocationCount = this.resourceManager.astNodeAlloc.getAllocationCount();
+    const unsigned long frontEndDuration = this.resourceManager.frontEndTimer.getDurationInMillis();
+    const unsigned long middleEndDuration = this.resourceManager.middleEndTimer.getDurationInMillis();
+    const unsigned long backEndDuration = this.resourceManager.backEndTimer.getDurationInMillis();
     const unsigned long totalDuration = this.resourceManager.totalTimer.getDurationInMillis();
     print("\nSuccessfully compiled " + toString(sourceFileCount) + " source file(s)");
     print(" or " + toString(totalLineCount) + " lines in total.\n");
     print("Total number of blocks allocated via BlockAllocator: " + formatStorageSize(allocatedBytes));
     print(" in " + toString(allocationCount) + " allocations.\n");
     print("Total number of types: " + toString(totalTypeCount) + "\n");
+    print("Wall time of the front end: " + toString(frontEndDuration) + " ms\n");
+    print("Wall time of the middle end: " + toString(middleEndDuration) + " ms\n");
+    print("Wall time of the back end: " + toString(backEndDuration) + " ms\n");
     print("Total compile time: " + toString(totalDuration) + " ms\n");
 }
 
