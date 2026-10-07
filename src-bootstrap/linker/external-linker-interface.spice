@@ -46,6 +46,12 @@ public p ExternalLinkerInterface.ctor(CliOptions& cliOptions) {
     this.outputPath = cliOptions.outputPath;
 }
 
+public p ExternalLinkerInterface.dtor() {
+    // The compilation threads write into the members of this linker, so wait for them before it goes away. This is only
+    // relevant, if the compilation was aborted before the linker ran (the host waits for them in the future destructors).
+    this.joinAdditionalSourceCompilationThreads();
+}
+
 /**
  * Prepare the linker for the linking process by assembling the required linker flags
  */

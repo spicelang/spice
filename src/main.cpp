@@ -1,7 +1,5 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
-#include <memory>
-
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <exception/CliError.h>
@@ -15,9 +13,6 @@
 
 using namespace spice::compiler;
 
-// Resource manager of the successful compilation, which is deliberately not destroyed (see compileProject)
-static GlobalResourceManager *keptResourceManager = nullptr;
-
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
@@ -27,8 +22,7 @@ static GlobalResourceManager *keptResourceManager = nullptr;
 bool compileProject(const CliOptions &cliOptions) {
   try {
     // Instantiate GlobalResourceManager
-    auto resourceManagerPtr = std::make_unique<GlobalResourceManager>(cliOptions);
-    GlobalResourceManager &resourceManager = *resourceManagerPtr;
+    GlobalResourceManager resourceManager(cliOptions);
 
     // Create source file instance for main source file
     SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
@@ -55,11 +49,6 @@ bool compileProject(const CliOptions &cliOptions) {
 
     // Print compiler warnings
     mainSourceFile->collectAndPrintWarnings();
-
-    // Freeing all the compiler data structures takes a noticeable amount of time, which is wasted right before the process
-    // exits. So keep them alive. The pointer is kept in a global variable, so that leak checkers still consider the memory
-    // reachable.
-    keptResourceManager = resourceManagerPtr.release();
 
     return true;
   } catch (LexerError &e) {
