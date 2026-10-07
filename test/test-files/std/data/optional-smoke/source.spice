@@ -39,6 +39,12 @@ f<int> main() {
     assert a != c;
     assert empty1 == empty2;
     assert a != empty1;
+    // Two cleared optionals are equal, even if they held different payloads before
+    Optional<int> cleared1 = Optional<int>(1);
+    Optional<int> cleared2 = Optional<int>(2);
+    cleared1.clear();
+    cleared2.clear();
+    assert cleared1 == cleared2;
 
     printf("Optional smoke tests passed!\n");
 }
