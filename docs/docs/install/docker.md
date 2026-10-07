@@ -39,6 +39,8 @@ instead of `spice`, override the entrypoint:
 docker run --rm -it --entrypoint spice-bootstrap -v $(pwd):/spice/out chillibits/spice
 ```
 
+The `Compiler` line of the `--version` output tells which of the two compilers you are running (`host` or `self-hosted`).
+
 ### Customize
 #### Custom output path
 You can use another output path by replacing `$(pwd)`/`${pwd}` with a custom path.

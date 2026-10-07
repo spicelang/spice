@@ -45,6 +45,7 @@ import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/typechecker/builtin-functions";
 import "bootstrap/typechecker/function-manager";
+import "bootstrap/util/common-util";
 
 // Constants
 public const string ANON_GLOBAL_STRING_NAME = "anon.string.";
@@ -70,7 +71,7 @@ const string TEST_CASE_SKIPPED_MSG = "\033[1m\033[33m[ SKIPPED  ]\033[0m\033[22m
  */
 public f<String> getProducerString() {
     const string version = __get_build_var<string>("SPICE_VERSION", "dev");
-    return String("spice version ") + version + " (https://github.com/spicelang/spice)";
+    return String("spice version ") + version + " [" + COMPILER_IMPLEMENTATION + "] (https://github.com/spicelang/spice)";
 }
 
 public type Likelihood enum {

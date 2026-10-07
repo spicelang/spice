@@ -38,3 +38,5 @@ experimental and does not support every feature of `spice` yet.
 ```sh
 spice-bootstrap [options] <input>
 ```
+
+The `Compiler` line of the `--version` output tells which of the two compilers you are running (`host` or `self-hosted`).
