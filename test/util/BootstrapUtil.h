@@ -25,7 +25,7 @@ public:
   static std::optional<std::string> extractSerializedGraph(const std::string &output, const char *graphName);
   static std::string extractWarnings(const std::string &output);
   static void eraseDSOLocalMarkers(std::string &irCode);
-  static void normalizeProducerString(std::string &irCode);
+  static void normalizeProducerString(std::string &code);
   static std::string stripAnsiCodes(const std::string &text);
   static bool emitsDebugInfo(const std::vector<std::string> &args);
 };

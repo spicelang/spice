@@ -601,7 +601,12 @@ static void execBootstrapTestCase(const TestCase &testCase) {
 
   // Check assembly code
   if (checkAssembly)
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_ASM, [&] { return readDump(dumpDir, "assembly-code.s"); });
+    TestUtil::checkRefMatch(
+        testCase.testPath / REF_NAME_ASM, [&] { return readDump(dumpDir, "assembly-code.s"); },
+        [](std::string &, std::string &actualOutput) {
+          // The bootstrap compiler names itself differently in the producer string
+          BootstrapUtil::normalizeProducerString(actualOutput);
+        });
 
   // Check warnings
   TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] { return BootstrapUtil::extractWarnings(output); });

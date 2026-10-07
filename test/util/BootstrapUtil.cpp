@@ -201,13 +201,14 @@ void BootstrapUtil::eraseDSOLocalMarkers(std::string &irCode) { CommonUtil::repl
 
 /**
  * Replace the implementation marker in the producer string of the bootstrap compiler with the one of the host compiler.
- * Both compilers name themselves in the producer string, so the IR of the host and the bootstrap compiler differs there.
+ * Both compilers name themselves in the producer string, so the IR and assembly code of the host and the bootstrap compiler
+ * differ there.
  *
- * @param irCode IR code
+ * @param code IR or assembly code
  */
-void BootstrapUtil::normalizeProducerString(std::string &irCode) {
+void BootstrapUtil::normalizeProducerString(std::string &code) {
   const std::string hostMarker = " [" + std::string(COMPILER_IMPLEMENTATION) + "] (https://github.com/spicelang/spice)";
-  CommonUtil::replaceAll(irCode, " [self-hosted] (https://github.com/spicelang/spice)", hostMarker);
+  CommonUtil::replaceAll(code, " [self-hosted] (https://github.com/spicelang/spice)", hostMarker);
 }
 
 /**
