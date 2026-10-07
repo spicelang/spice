@@ -113,5 +113,16 @@ f<int> main() {
     assert strings[3] == "d";
     assert strings[4] == "e";
 
+    // Equality of vectors with non-trivial elements compares the elements, not their bytes
+    Vector<String> equalStrings;
+    equalStrings.pushBack(String("a"));
+    equalStrings.pushBack(String("b"));
+    equalStrings.pushBack(String("c"));
+    equalStrings.pushBack(String("d"));
+    equalStrings.pushBack(String("e"));
+    assert strings == equalStrings;
+    equalStrings[4] = String("f");
+    assert strings != equalStrings;
+
     printf("Vector smoke tests passed!\n");
 }
