@@ -12,6 +12,7 @@
 #include <symboltablebuilder/Scope.h> // IWYU pragma: keep - Scope
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
+#include <typechecker/OpRuleManager.h>
 #include <typechecker/StructManager.h>
 #include <typechecker/UnionManager.h>
 #include <util/FileUtil.h>
@@ -62,6 +63,7 @@ GlobalResourceManager::~GlobalResourceManager() {
   TypeRegistry::clear();
   TypeNameDisambiguator::clear();
   FunctionManager::cleanup();
+  OpRuleManager::cleanup();
   StructManager::cleanup();
   InterfaceManager::cleanup();
   UnionManager::cleanup();

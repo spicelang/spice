@@ -5,6 +5,7 @@ import "std/data/vector";
 import "std/data/unordered-map";
 import "std/data/pair";
 import "std/text/stringstream";
+import "std/math/hash";
 
 // Own imports
 import "bootstrap/source-file";
@@ -22,6 +23,7 @@ import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/typechecker/expr-result";
 import "bootstrap/typechecker/function-manager";
 import "bootstrap/typechecker/type-checker";
+import "bootstrap/util/custom-hash-functions";
 
 // Custom error message prefixes
 public const string ERROR_MSG_RETURN = "Passed wrong data type to return statement";
@@ -1309,8 +1311,27 @@ public f<QualType> OpRuleManager.getCastResultType(const ASTNode* node, const Qu
 public f<ExprResult> OpRuleManager.isOperatorOverloadingFctAvailable(ASTNode* node, string fctName, const Vector<ExprResult>& op, unsigned long opIdx) {
     assert op.getSize() == 1l || op.getSize() == 2l; // Only unary and binary operators are overloadable
     const String fctNameStr = String(fctName);
+
+    // Most operators are applied to operands without an overloaded operator function (e.g. int == int). Searching all
+    // source files for one is expensive, so skip the search if it found nothing for the same operator and operand types in
+    // this source file before and no function was inserted since then.
+    Hash cacheKey = 0ul;
+    hashCombine64(cacheKey, hashPointer(this.typeChecker.sourceFile));
+    hashCombine64(cacheKey, hash(fctNameStr));
+    foreach const ExprResult& operand : op {
+        hashCombine64(cacheKey, hashQualType(operand.ty));
+        hashCombine64(cacheKey, hash(operand.isTemporary()));
+    }
+    const unsigned long registryVersion = getFunctionRegistryVersion();
+    UnorderedMap<Hash, unsigned long>& unavailableOpFctCache = this.typeChecker.resourceManager.unavailableOpFctCache;
+    if unavailableOpFctCache.contains(cacheKey) && unavailableOpFctCache.get(cacheKey) == registryVersion {
+        return toExprResult(QualType(SuperType::TY_INVALID));
+    }
+
     Scope* calleeParentScope = nil<Scope*>;
     Function* callee = nil<Function*>;
+    const QualType thisType = QualType(SuperType::TY_DYN);
+    ArgList args;
     UnorderedMap<String, SourceFile*>& sourceFiles = this.typeChecker.resourceManager.sourceFiles;
     foreach Pair<const String&, SourceFile*&> sourceFileEntry : sourceFiles {
         SourceFile* sourceFile = sourceFileEntry.getSecond();
@@ -1321,8 +1342,7 @@ public f<ExprResult> OpRuleManager.isOperatorOverloadingFctAvailable(ASTNode* no
 
         // Match callees in the global scope of this source file
         calleeParentScope = sourceFile.globalScope;
-        const QualType thisType = QualType(SuperType::TY_DYN);
-        ArgList args;
+        args.clear();
         for unsigned long i = 0l; i < op.getSize(); i++ {
             const ExprResult& operand = op[i];
             const QualType argType = this.typeChecker.mapLocalTypeToImportedScopeType(calleeParentScope, operand.ty);
@@ -1337,6 +1357,7 @@ public f<ExprResult> OpRuleManager.isOperatorOverloadingFctAvailable(ASTNode* no
 
     // Return invalid type if the callee was not found
     if callee == nil<Function*> {
+        unavailableOpFctCache.upsert(cacheKey, registryVersion);
         return toExprResult(QualType(SuperType::TY_INVALID));
     }
     assert calleeParentScope != nil<Scope*>;

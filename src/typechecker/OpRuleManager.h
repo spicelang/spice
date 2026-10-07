@@ -3,6 +3,7 @@
 #pragma once
 
 #include <tuple>
+#include <unordered_map>
 
 #include <exception/SemanticError.h>
 #include <symboltablebuilder/Type.h>
@@ -652,8 +653,12 @@ public:
   template <size_t N>
   ExprResult isOperatorOverloadingFctAvailable(ASTNode *node, const char *fctName, const std::array<ExprResult, N> &op,
                                                size_t opIdx) const;
+  static void cleanup();
 
 private:
+  // Static members
+  static std::unordered_map</*cacheKey=*/uint64_t, /*registryVersion=*/uint64_t> unavailableOpFctCache;
+
   // Members
   TypeChecker *typeChecker;
   GlobalResourceManager &resourceManager;

@@ -82,6 +82,7 @@ public f<Function*> insertFunction(Scope* insertScope, const Function& baseFunct
     if !insertScope.functions.contains(fctId) {
         insertScope.functions.insert(fctId, FunctionManifestationList());
     }
+    getActiveFunctionLookupCache().registryVersion++; // A new function might match requests that did not match anything before
 
     // Collect substantiations
     Vector<Function> manifestations;
@@ -272,6 +273,11 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
                 continue;
             }
 
+            // Check the name before copying the function, because most functions in the scope have a different name
+            if !matchName(presetFunction, reqName) {
+                break; // Leave the whole manifestation list, because all have the same name
+            }
+
             // Copy the function to be able to substantiate types. Unlike in matchFunction, the type mapping is kept: a fully
             // substantiated manifestation of a generic function still has generic template type slots, which are resolved by it
             Function candidate = presetFunction;
@@ -322,6 +328,11 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
         cache.lookupCacheHits++;
         return cache.lookupCache.get(cacheKey);
     }
+    // Requests that did not match anything do not match anything as long as no function was inserted in the meantime
+    if cache.noMatchCache.contains(cacheKey) && cache.noMatchCache.get(cacheKey) == cache.registryVersion {
+        cache.lookupCacheHits++;
+        return nil<Function*>;
+    }
     cache.lookupCacheMisses++;
 
     // Loop over function registry to find functions, that match the requirements of the call
@@ -336,6 +347,11 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
             // Skip generic and newly inserted substantiations to prevent double matching of a function
             if presetFunction.isGenericSubstantiation() || presetFunction.isNewlyInserted {
                 continue;
+            }
+
+            // Check the name before copying the function, because most functions in the scope have a different name
+            if !matchName(presetFunction, reqName) {
+                break; // Leave the whole manifestation list, because all have the same name
             }
 
             // Copy the function to be able to substantiate types
@@ -434,8 +450,9 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
         }
     }
 
-    // If no matches were found, return a nil
+    // If no matches were found, remember that and return a nil
     if matches.isEmpty() {
+        cache.noMatchCache.upsert(cacheKey, cache.registryVersion);
         return nil<Function*>;
     }
 
@@ -930,6 +947,15 @@ public f<bool> hasDtor(Scope* matchScope) {
         }
     }
     return false;
+}
+
+/**
+ * Get the version of the function registry, which is increased whenever a new function is inserted
+ *
+ * @return Registry version
+ */
+public f<unsigned long> getFunctionRegistryVersion() {
+    return getActiveFunctionLookupCache().registryVersion;
 }
 
 /**

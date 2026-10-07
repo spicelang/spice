@@ -18,6 +18,10 @@ public type LookupCache<T> struct {
     public UnorderedMap<Hash, T*> lookupCache
     public unsigned long lookupCacheHits = 0l
     public unsigned long lookupCacheMisses = 0l
+    // Requests that did not match anything, with the registry version at that time (only used by the FunctionManager)
+    public UnorderedMap</*cacheKey=*/Hash, /*registryVersion=*/unsigned long> noMatchCache
+    // Increased whenever a new entry is inserted (only used by the FunctionManager)
+    public unsigned long registryVersion = 0l
 }
 
 /**
@@ -25,6 +29,8 @@ public type LookupCache<T> struct {
  */
 public p LookupCache.cleanup() {
     this.lookupCache.clear();
+    this.noMatchCache.clear();
+    this.registryVersion = 0l;
     this.lookupCacheHits = 0l;
     this.lookupCacheMisses = 0l;
 }

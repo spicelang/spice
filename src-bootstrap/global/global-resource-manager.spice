@@ -9,6 +9,7 @@ import "std/io/file";
 import "std/os/system";
 import "std/bindings/llvm/llvm" as llvm;
 import "std/os/recursive-mutex";
+import "std/math/hash";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -71,6 +72,8 @@ public type GlobalResourceManager struct {
     public LookupCache<Struct> structLookupCache
     public LookupCache<Interface> interfaceLookupCache
     public LookupCache<Union> unionLookupCache
+    // Operator functions that were not available for certain operand types (static member of the OpRuleManager in the host)
+    public UnorderedMap</*cacheKey=*/Hash, /*registryVersion=*/unsigned long> unavailableOpFctCache
     public RecursiveMutex symbolRegistryMutex // Guards the symbol lookup machinery during the parallel back end
     public bool abortCompilation = false
     unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1l // Start at 256 because all primitive types come first
@@ -142,6 +145,7 @@ public p GlobalResourceManager.dtor() {
     this.structLookupCache.cleanup();
     this.interfaceLookupCache.cleanup();
     this.unionLookupCache.cleanup();
+    this.unavailableOpFctCache.clear();
     // Cleanup all LLVM statics
     llvm::llvm_shutdown();
 }
