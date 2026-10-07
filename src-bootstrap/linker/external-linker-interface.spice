@@ -2,14 +2,28 @@
 import "std/data/vector";
 import "std/io/filepath";
 import "std/io/file";
+import "std/data/unordered-map";
 import "std/os/mutex";
 import "std/os/os";
+import "std/os/thread";
+import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/driver";
 import "bootstrap/util/system-util";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/linker-error";
+
+/**
+ * Compilation of an additional source to an object file
+ */
+type AdditionalSourceCompilation struct {
+    FilePath additionalSource
+    String linkerInvokerPath
+    Vector<String> args
+    FilePath objectFilePath
+    ExecResult result
+}
 
 public type ExternalLinkerInterface struct {
     CliOptions& cliOptions
@@ -19,11 +33,23 @@ public type ExternalLinkerInterface struct {
     public FilePath outputPath
     public bool linkLibMath = false
     Mutex linkLibMathMutex // The IR generator requests libm linkage from the worker threads of the parallel back end
+    Vector<FilePath> additionalSourcePaths
+    // Expanding a linker flag may run commands (backtick substitutions), so every flag is only expanded once
+    UnorderedMap<String, Vector<String>> expandedLinkerFlags
+    // Compilations of additional sources, that were started early to overlap with the back end
+    Vector<AdditionalSourceCompilation> additionalSourceCompilations
+    Vector<Thread> additionalSourceCompilationThreads
 }
 
 public p ExternalLinkerInterface.ctor(CliOptions& cliOptions) {
     this.cliOptions = cliOptions;
     this.outputPath = cliOptions.outputPath;
+}
+
+public p ExternalLinkerInterface.dtor() {
+    // The compilation threads write into the members of this linker, so wait for them before it goes away. This is only
+    // relevant, if the compilation was aborted before the linker ran (the host waits for them in the future destructors).
+    this.joinAdditionalSourceCompilationThreads();
 }
 
 /**
@@ -109,9 +135,19 @@ public p ExternalLinkerInterface.run() {
  * Cleanup intermediary object files
  */
 public p ExternalLinkerInterface.cleanup() {
+    // Wait for additional source compilations, that are still running (e.g. because the executable was restored from the
+    // cache and they were not needed)
+    this.joinAdditionalSourceCompilationThreads();
+
     // Cleanup intermediary object files
     if this.cliOptions.outputContainer == OutputContainer::OBJECT_FILE || this.cliOptions.dump.dumpToFiles {
         return;
+    }
+    foreach const AdditionalSourceCompilation& compilation : this.additionalSourceCompilations {
+        if compilation.objectFilePath.exists() {
+            const bool deleted = deleteFile(compilation.objectFilePath.toString());
+            assert deleted;
+        }
     }
     const string objFileExt = isWindows() ? "obj" : "o";
     foreach const FilePath& path : this.linkedFiles {
@@ -144,44 +180,26 @@ p ExternalLinkerInterface.link() {
     // Build the linker argument vector. Each entry is passed verbatim to the linker invoker (no shell), so file paths can
     // never be re-interpreted as shell syntax - this is what prevents command injection via attacker-controlled object-file
     // or output paths.
-    Vector<String> args;
-    // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
-    if !isGccInvoker || linker.name != "ld" {
-        args.pushBack("-fuse-ld=" + linker.path);
-    }
-    // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
-    if !isGccInvoker {
-        args.pushBack(String("--target=") + this.cliOptions.targetTriple.value);
-    }
+    Vector<String> args = this.getInvokerArgs(linker, isGccInvoker);
     // Append output path
     args.pushBack(String("-o"));
     args.pushBack(String(this.outputPath.toString()));
     // Append object files first, so that '-l' archive flags added below are searched for symbols that are already
-    // undefined at the point they appear in the command.
+    // undefined at the point they appear in the command. Additional sources are compiled to object files first, which
+    // mostly happened in the background.
+    this.joinAdditionalSourceCompilationThreads();
     foreach const FilePath& objectFilePath : this.linkedFiles {
-        args.pushBack(String(objectFilePath.toString()));
-    }
-    // Append the std's own library search path, so the runtime modules can link against the static support libraries that
-    // ship with the std (currently std/runtime/lib/libbacktrace.a). It goes ahead of the linker flags below, because search
-    // directories are tried in the order given. Passed verbatim rather than through expandLinkerFlag(), so that a std path
-    // containing '$' or a backtick is not mistaken for a variable reference or a command substitution. Only for a native
-    // build: those archives are built for the host the std was installed on, so offering them while linking for another
-    // target can only ever produce a mismatch.
-    if this.cliOptions.isNativeTarget {
-        const FilePath stdRuntimeLibDir = getStdRuntimeLibDir();
-        if !stdRuntimeLibDir.isEmpty() {
-            args.pushBack(String("-L") + stdRuntimeLibDir.toString());
+        if this.isAdditionalSource(objectFilePath) {
+            const FilePath compiledObjectFilePath = this.compileAdditionalSource(objectFilePath);
+            args.pushBack(String(compiledObjectFilePath.toString()));
+        } else {
+            args.pushBack(String(objectFilePath.toString()));
         }
     }
-    // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
-    // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
-    // expand into several argv entries. They go behind the object files (libraries must follow the objects that reference
-    // them).
-    foreach const String& linkerFlag : this.linkerFlags {
-        const Vector<String> expandedFlags = expandLinkerFlag(linkerFlag);
-        foreach const String& expandedFlag : expandedFlags {
-            args.pushBack(expandedFlag);
-        }
+    // Append the std's runtime library search path and the linker flags
+    const Vector<String> trailingArgs = this.getTrailingArgs();
+    foreach const String& trailingArg : trailingArgs {
+        args.pushBack(trailingArg);
     }
     if this.linkLibMath {
         args.pushBack(String("-lm"));
@@ -210,6 +228,234 @@ p ExternalLinkerInterface.link() {
     if this.cliOptions.printDebugOutput && !linkResult.output.isEmpty() {
         printf("Linking result: %s\n\n", linkResult.output.getRaw());
     }
+}
+
+/**
+ * Get the leading arguments for the linker invoker, that select the linker and the target
+ *
+ * @param linker Linker
+ * @param isGccInvoker Whether the linker invoker is GCC
+ * @return Leading arguments
+ */
+f<Vector<String>> ExternalLinkerInterface.getInvokerArgs(const ExternalBinaryFinderResult& linker, bool isGccInvoker) {
+    Vector<String> args;
+    // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
+    if !isGccInvoker || linker.name != "ld" {
+        args.pushBack("-fuse-ld=" + linker.path);
+    }
+    // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
+    if !isGccInvoker {
+        args.pushBack(String("--target=") + this.cliOptions.targetTriple.value);
+    }
+    return args;
+}
+
+/**
+ * Get the trailing arguments for the linker invoker: the library search path of the std and the expanded linker flags
+ *
+ * @return Trailing arguments
+ */
+f<Vector<String>> ExternalLinkerInterface.getTrailingArgs() {
+    Vector<String> args;
+    // Append the std's own library search path, so the runtime modules can link against the static support libraries that
+    // ship with the std (currently std/runtime/lib/libbacktrace.a). It goes ahead of the linker flags below, because search
+    // directories are tried in the order given. Passed verbatim rather than through expandLinkerFlag(), so that a std path
+    // containing '$' or a backtick is not mistaken for a variable reference or a command substitution. Only for a native
+    // build: those archives are built for the host the std was installed on, so offering them while linking for another
+    // target can only ever produce a mismatch.
+    if this.cliOptions.isNativeTarget {
+        const FilePath stdRuntimeLibDir = getStdRuntimeLibDir();
+        if !stdRuntimeLibDir.isEmpty() {
+            args.pushBack(String("-L") + stdRuntimeLibDir.toString());
+        }
+    }
+    // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
+    // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
+    // expand into several argv entries. They go behind the object files (libraries must follow the objects that reference
+    // them).
+    foreach const String& linkerFlag : this.linkerFlags {
+        if !this.expandedLinkerFlags.contains(linkerFlag) {
+            this.expandedLinkerFlags.upsert(linkerFlag, expandLinkerFlag(linkerFlag));
+        }
+        const Vector<String>& expandedFlags = this.expandedLinkerFlags.get(linkerFlag);
+        foreach const String& expandedFlag : expandedFlags {
+            args.pushBack(expandedFlag);
+        }
+    }
+
+    return args;
+}
+
+/**
+ * Get the arguments for the linker invoker to compile an additional source to an object file. These are the same arguments,
+ * that the linker invoker would use to compile the additional source as part of the link command.
+ *
+ * @param additionalSource Additional source file
+ * @param objectFilePath Path of the object file to emit
+ * @return Compile arguments
+ */
+f<Vector<String>> ExternalLinkerInterface.getAdditionalSourceCompileArgs(const FilePath& additionalSource, const FilePath& objectFilePath) {
+    const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
+    const ExternalBinaryFinderResult linker = findLinker(this.cliOptions);
+    const bool isGccInvoker = linkerInvoker.name == "gcc";
+    Vector<String> args = this.getInvokerArgs(linker, isGccInvoker);
+    args.pushBack(String("-c"));
+    args.pushBack(String("-o"));
+    args.pushBack(String(objectFilePath.toString()));
+    args.pushBack(String(additionalSource.toString()));
+    const Vector<String> trailingArgs = this.getTrailingArgs();
+    foreach const String& trailingArg : trailingArgs {
+        args.pushBack(trailingArg);
+    }
+    return args;
+}
+
+/**
+ * Get the path of the object file, an additional source is compiled to
+ *
+ * @param additionalSource Additional source file
+ * @return Object file path
+ */
+f<FilePath> ExternalLinkerInterface.getAdditionalSourceObjectFilePath(const FilePath& additionalSource) {
+    // Additional sources with the same file name may come from different directories, so add the index of the source
+    unsigned long index = 0l;
+    while index < this.additionalSourcePaths.getSize() && this.additionalSourcePaths.get(index) != additionalSource {
+        index++;
+    }
+    const string objFileExt = getOutputFileExtension(this.cliOptions, OutputContainer::OBJECT_FILE);
+    const String fileName = additionalSource.getFileName() + "." + toString(index) + "." + objFileExt;
+    return this.cliOptions.outputDir / fileName;
+}
+
+/**
+ * Check if the given linked file is an additional source
+ *
+ * @param path Path of the linked file
+ * @return Additional source or not
+ */
+f<bool> ExternalLinkerInterface.isAdditionalSource(const FilePath& path) {
+    foreach const FilePath& additionalSource : this.additionalSourcePaths {
+        if additionalSource == path {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Start compiling the additional sources to object files in the background, so that this overlaps with the back end. The
+ * linker waits for the results and only compiles an additional source again, if its compile arguments changed in the
+ * meantime (e.g. because source files, that were restored from the cache, added further linker flags).
+ */
+public p ExternalLinkerInterface.startAdditionalSourceCompilation() {
+    if this.cliOptions.outputContainer != OutputContainer::EXECUTABLE && this.cliOptions.outputContainer != OutputContainer::SHARED_LIBRARY {
+        return;
+    }
+    // On Windows, the std spawns a process by redirecting the standard streams of this whole process into a pipe, which is not
+    // thread-safe (see std/os/impl/process_native_windows.spice). With concurrent spawns, the write end of a pipe can stay
+    // in our own standard output, so that reading the output of the child never ends. So on Windows, the additional sources
+    // are compiled at link time. The host compiler spawns processes without touching its own standard streams.
+    if isWindows() {
+        return;
+    }
+    if !this.additionalSourceCompilations.isEmpty() {
+        return;
+    }
+
+    const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
+    foreach const FilePath& additionalSource : this.additionalSourcePaths {
+        AdditionalSourceCompilation compilation;
+        compilation.additionalSource = additionalSource;
+        compilation.linkerInvokerPath = linkerInvoker.path;
+        compilation.objectFilePath = this.getAdditionalSourceObjectFilePath(additionalSource);
+        compilation.args = this.getAdditionalSourceCompileArgs(additionalSource, compilation.objectFilePath);
+        this.additionalSourceCompilations.pushBack(compilation);
+    }
+
+    // Start the threads only after all compilations were added, so that no compilation is relocated while a thread works on it
+    this.additionalSourceCompilationThreads.reserve(this.additionalSourceCompilations.getSize());
+    for unsigned long i = 0l; i < this.additionalSourceCompilations.getSize(); i++ {
+        AdditionalSourceCompilation* compilation = &this.additionalSourceCompilations.get(i);
+        this.additionalSourceCompilationThreads.pushBack(Thread(p() [[async]] {
+            compilation.result = exec(compilation.linkerInvokerPath, compilation.args, true);
+        }));
+        Thread& thread = this.additionalSourceCompilationThreads.back();
+        thread.run();
+    }
+}
+
+/**
+ * Wait for the additional source compilations, that run in the background
+ */
+p ExternalLinkerInterface.joinAdditionalSourceCompilationThreads() {
+    foreach Thread& thread : this.additionalSourceCompilationThreads {
+        thread.join();
+    }
+    this.additionalSourceCompilationThreads.clear();
+}
+
+/**
+ * Compile an additional source to an object file or take the result of the compilation, that ran in the background
+ *
+ * @param additionalSource Additional source file
+ * @return Object file path
+ */
+f<FilePath> ExternalLinkerInterface.compileAdditionalSource(const FilePath& additionalSource) {
+    const FilePath objectFilePath = this.getAdditionalSourceObjectFilePath(additionalSource);
+    const Vector<String> args = this.getAdditionalSourceCompileArgs(additionalSource, objectFilePath);
+
+    // Compile it now, if it was not compiled in the background or with different arguments
+    AdditionalSourceCompilation* compilation = nil<AdditionalSourceCompilation*>;
+    foreach AdditionalSourceCompilation& existingCompilation : this.additionalSourceCompilations {
+        if existingCompilation.additionalSource == additionalSource {
+            compilation = &existingCompilation;
+            break;
+        }
+    }
+    if compilation == nil<AdditionalSourceCompilation*> || !areArgsEqual(compilation.args, args) {
+        if compilation == nil<AdditionalSourceCompilation*> {
+            AdditionalSourceCompilation newCompilation;
+            newCompilation.additionalSource = additionalSource;
+            this.additionalSourceCompilations.pushBack(newCompilation);
+            compilation = &this.additionalSourceCompilations.back();
+        }
+        const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
+        compilation.linkerInvokerPath = linkerInvoker.path;
+        compilation.objectFilePath = objectFilePath;
+        compilation.args = args;
+        compilation.result = exec(compilation.linkerInvokerPath, compilation.args, true);
+    }
+
+    // Check for compile error
+    if compilation.result.exitCode != 0 {
+        const String command = renderCommandForDisplay(compilation.linkerInvokerPath, compilation.args);
+        const String msg = "Compiling the additional source '" + additionalSource.toString() + "' failed\nCompile command: " + command + "\n" + compilation.result.output;
+        const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
+        panic(Error(error.errorMessage.getRaw()));
+    }
+    return objectFilePath;
+}
+
+/**
+ * Check if two argument lists are equal. The equality operator of Vector compares the raw bytes of the items, which does not
+ * work for Strings.
+ *
+ * @param lhs First argument list
+ * @param rhs Second argument list
+ * @return Equal or not
+ */
+f<bool> areArgsEqual(const Vector<String>& lhs, const Vector<String>& rhs) {
+    if lhs.getSize() != rhs.getSize() {
+        return false;
+    }
+    for unsigned long i = 0l; i < lhs.getSize(); i++ {
+        const String& lhsArg = lhs.get(i);
+        const String& rhsArg = rhs.get(i);
+        if lhsArg != rhsArg {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -311,7 +557,11 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(const FilePath& additio
     }
 
     // Add the file to the linker
-    this.addFileToLinkage(additionalSource.canonical());
+    const FilePath canonicalAdditionalSource = additionalSource.canonical();
+    this.addFileToLinkage(canonicalAdditionalSource);
+    if !this.isAdditionalSource(canonicalAdditionalSource) {
+        this.additionalSourcePaths.pushBack(canonicalAdditionalSource);
+    }
 }
 
 /**

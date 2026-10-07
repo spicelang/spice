@@ -3,7 +3,10 @@
 #include "ExternalLinkerInterface.h"
 
 #include <algorithm>
+#include <future>
 #include <iostream>
+#include <iterator>
+#include <ranges>
 #include <vector>
 
 #include <driver/Driver.h>
@@ -93,12 +96,20 @@ void ExternalLinkerInterface::run() const {
  * Cleanup intermediary object files
  */
 void ExternalLinkerInterface::cleanup() const {
+  // Wait for additional source compilations, that are still running (e.g. because the executable was restored from the
+  // cache and they were not needed)
+  for (const AdditionalSourceCompilation &compilation : additionalSourceCompilations | std::views::values)
+    compilation.result.wait();
+
   // Cleanup intermediary object files
   const char *objFileExt = SystemUtil::getOutputFileExtension(cliOptions, cliOptions.outputContainer);
-  if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE && !cliOptions.dump.dumpToFiles)
+  if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE && !cliOptions.dump.dumpToFiles) {
     for (const std::filesystem::path &path : linkedFiles)
       if (path.extension() == objFileExt)
         std::filesystem::remove(path);
+    for (const AdditionalSourceCompilation &compilation : additionalSourceCompilations | std::views::values)
+      std::filesystem::remove(compilation.objectFilePath);
+  }
 }
 
 /**
@@ -122,42 +133,19 @@ void ExternalLinkerInterface::link() const {
   // Build the linker argument vector. Each entry is passed verbatim to the linker invoker (no shell), so file paths
   // can never be re-interpreted as shell syntax - this is what prevents command injection via attacker-controlled
   // object-file or output paths.
-  std::vector<std::string> args;
-  // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
-  if (!isGccInvoker || std::string_view(linkerName) != LINKER_NAME_LD)
-    args.push_back("-fuse-ld=" + linkerPath);
-  // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
-  if (!isGccInvoker)
-    args.push_back("--target=" + cliOptions.targetTriple.str());
+  std::vector<std::string> args = getInvokerArgs(linkerName, linkerPath, isGccInvoker);
   // Append output path
   args.emplace_back("-o");
   args.push_back(outputPath.string());
-  // Append object files
-  for (const std::filesystem::path &objectFilePath : linkedFiles)
-    args.push_back(objectFilePath.string());
-  // Append the std's own library search path, so the runtime modules can link against the static support libraries
-  // that ship with the std (currently std/runtime/lib/libbacktrace.a, which std/runtime/impl/stack_trace_native.spice
-  // pulls in with '-lbacktrace'). It goes ahead of the linker flags below because search directories are tried in the
-  // order given, so the std links against its own archive rather than a same-named one in a directory that a
-  // binding's '-L' flag happens to add. Passed verbatim rather than through addLinkerFlag(), so that a std path
-  // containing '$' or a backtick is not mistaken for a variable reference or a command substitution.
-  // Only for a native build: those archives are built for the host the std was installed on, so offering them while
-  // linking for another target can only ever produce a mismatch - lld rejects every member outright
-  // ("is incompatible with aarch64linux"). Cross-compiling a program that takes a stack trace needs a libbacktrace
-  // built for the target, which has to come from the toolchain's own search path.
-  if (cliOptions.isNativeTarget)
-    if (const std::filesystem::path stdRuntimeLibDir = SystemUtil::getStdRuntimeLibDir(); !stdRuntimeLibDir.empty())
-      args.push_back("-L" + stdRuntimeLibDir.string());
-  // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
-  // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
-  // expand into several argv entries. They go behind the object files, because a '-l' naming a static archive is only
-  // searched for symbols that are still undefined at the point it appears - ahead of them it would resolve nothing.
-  for (const std::string &linkerFlag : linkerFlags)
-    for (std::string &expandedFlag : SystemUtil::expandLinkerFlag(linkerFlag))
-      args.push_back(std::move(expandedFlag));
+  // Append object files. Additional sources are compiled to object files first, which mostly happened in the background
+  for (const std::filesystem::path &objectFilePath : linkedFiles) {
+    const bool isAdditionalSource = std::ranges::find(additionalSourcePaths, objectFilePath) != additionalSourcePaths.end();
+    args.push_back(isAdditionalSource ? compileAdditionalSource(objectFilePath).string() : objectFilePath.string());
+  }
+  // Append the std's runtime library search path and the linker flags
+  std::ranges::move(getTrailingArgs(), std::back_inserter(args));
   if (linkLibMath)
     args.emplace_back("-lm");
-
   // Print status message
   if (cliOptions.printDebugOutput) {
     const std::string command = SystemUtil::renderCommandForDisplay(linkerInvokerPath, args);
@@ -189,6 +177,158 @@ void ExternalLinkerInterface::link() const {
 }
 
 /**
+ * Get the leading arguments for the linker invoker, that select the linker and the target
+ *
+ * @param linkerName Name of the linker
+ * @param linkerPath Path to the linker
+ * @param isGccInvoker Whether the linker invoker is GCC
+ * @return Leading arguments
+ */
+std::vector<std::string> ExternalLinkerInterface::getInvokerArgs(const char *linkerName, const std::string &linkerPath,
+                                                                 bool isGccInvoker) const {
+  std::vector<std::string> args;
+  // GCC 16 dropped '-fuse-ld=ld'; skip when using GCC with the default BFD linker
+  if (!isGccInvoker || std::string_view(linkerName) != LINKER_NAME_LD)
+    args.push_back("-fuse-ld=" + linkerPath);
+  // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
+  if (!isGccInvoker)
+    args.push_back("--target=" + cliOptions.targetTriple.str());
+  return args;
+}
+
+/**
+ * Get the trailing arguments for the linker invoker: the library search path of the std and the expanded linker flags
+ *
+ * @return Trailing arguments
+ */
+std::vector<std::string> ExternalLinkerInterface::getTrailingArgs() const {
+  std::vector<std::string> args;
+  // Append the std's own library search path, so the runtime modules can link against the static support libraries
+  // that ship with the std (currently std/runtime/lib/libbacktrace.a, which std/runtime/impl/stack_trace_native.spice
+  // pulls in with '-lbacktrace'). It goes ahead of the linker flags below because search directories are tried in the
+  // order given, so the std links against its own archive rather than a same-named one in a directory that a
+  // binding's '-L' flag happens to add. Passed verbatim rather than through addLinkerFlag(), so that a std path
+  // containing '$' or a backtick is not mistaken for a variable reference or a command substitution.
+  // Only for a native build: those archives are built for the host the std was installed on, so offering them while
+  // linking for another target can only ever produce a mismatch - lld rejects every member outright
+  // ("is incompatible with aarch64linux"). Cross-compiling a program that takes a stack trace needs a libbacktrace
+  // built for the target, which has to come from the toolchain's own search path.
+  if (cliOptions.isNativeTarget)
+    if (const std::filesystem::path stdRuntimeLibDir = SystemUtil::getStdRuntimeLibDir(); !stdRuntimeLibDir.empty())
+      args.push_back("-L" + stdRuntimeLibDir.string());
+  // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
+  // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
+  // expand into several argv entries. They go behind the object files, because a '-l' naming a static archive is only
+  // searched for symbols that are still undefined at the point it appears - ahead of them it would resolve nothing.
+  for (const std::string &linkerFlag : linkerFlags) {
+    auto it = expandedLinkerFlags.find(linkerFlag);
+    if (it == expandedLinkerFlags.end())
+      it = expandedLinkerFlags.emplace(linkerFlag, SystemUtil::expandLinkerFlag(linkerFlag)).first;
+    std::ranges::copy(it->second, std::back_inserter(args));
+  }
+
+  return args;
+}
+
+/**
+ * Get the arguments for the linker invoker to compile an additional source to an object file. These are the same arguments,
+ * that the linker invoker would use to compile the additional source as part of the link command.
+ *
+ * @param additionalSource Additional source file
+ * @param objectFilePath Path of the object file to emit
+ * @return Compile arguments
+ */
+std::vector<std::string>
+ExternalLinkerInterface::getAdditionalSourceCompileArgs(const std::filesystem::path &additionalSource,
+                                                        const std::filesystem::path &objectFilePath) const {
+  const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
+  const auto [linkerName, linkerPath] = SystemUtil::findLinker(cliOptions);
+  const bool isGccInvoker = std::string_view(linkerInvokerName) == LINKER_INVOKER_NAME_GCC;
+  std::vector<std::string> args = getInvokerArgs(linkerName, linkerPath, isGccInvoker);
+  args.emplace_back("-c");
+  args.emplace_back("-o");
+  args.push_back(objectFilePath.string());
+  args.push_back(additionalSource.string());
+  std::ranges::move(getTrailingArgs(), std::back_inserter(args));
+  return args;
+}
+
+/**
+ * Get the path of the object file, an additional source is compiled to
+ *
+ * @param additionalSource Additional source file
+ * @return Object file path
+ */
+std::filesystem::path
+ExternalLinkerInterface::getAdditionalSourceObjectFilePath(const std::filesystem::path &additionalSource) const {
+  // Additional sources with the same file name may come from different directories, so add the index of the source
+  const auto index = std::ranges::find(additionalSourcePaths, additionalSource) - additionalSourcePaths.begin();
+  const char *objFileExt = SystemUtil::getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE);
+  const std::string fileName = additionalSource.filename().string() + "." + std::to_string(index) + "." + objFileExt;
+  return cliOptions.outputDir / fileName;
+}
+
+/**
+ * Start compiling the additional sources to object files in the background, so that this overlaps with the back end. The
+ * linker waits for the results and only compiles an additional source again, if its compile arguments changed in the
+ * meantime (e.g. because source files, that were restored from the cache, added further linker flags).
+ */
+void ExternalLinkerInterface::startAdditionalSourceCompilation() {
+  if (cliOptions.outputContainer != OutputContainer::EXECUTABLE && cliOptions.outputContainer != OutputContainer::SHARED_LIBRARY)
+    return;
+
+  const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
+  for (const std::filesystem::path &additionalSource : additionalSourcePaths) {
+    if (additionalSourceCompilations.contains(additionalSource.string()))
+      continue;
+    AdditionalSourceCompilation compilation;
+    compilation.objectFilePath = getAdditionalSourceObjectFilePath(additionalSource);
+    compilation.args = getAdditionalSourceCompileArgs(additionalSource, compilation.objectFilePath);
+    compilation.result = std::async(std::launch::async, [linkerInvokerPath, args = compilation.args] {
+                           return SystemUtil::exec(linkerInvokerPath, args, true);
+                         }).share();
+    additionalSourceCompilations.emplace(additionalSource.string(), std::move(compilation));
+  }
+}
+
+/**
+ * Compile an additional source to an object file or take the result of the compilation, that was started in the background
+ *
+ * @param additionalSource Additional source file
+ * @return Object file path
+ */
+std::filesystem::path ExternalLinkerInterface::compileAdditionalSource(const std::filesystem::path &additionalSource) const {
+  const std::filesystem::path objectFilePath = getAdditionalSourceObjectFilePath(additionalSource);
+  std::vector<std::string> args = getAdditionalSourceCompileArgs(additionalSource, objectFilePath);
+
+  // Compile it now, if it was not compiled in the background or with different arguments
+  auto it = additionalSourceCompilations.find(additionalSource.string());
+  if (it == additionalSourceCompilations.end() || it->second.args != args) {
+    if (it != additionalSourceCompilations.end())
+      it->second.result.wait(); // Do not let two compilations write the same object file at the same time
+    const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
+    AdditionalSourceCompilation compilation;
+    compilation.objectFilePath = objectFilePath;
+    compilation.args = std::move(args);
+    std::promise<ExecResult> promise;
+    promise.set_value(SystemUtil::exec(linkerInvokerPath, compilation.args, true));
+    compilation.result = promise.get_future().share();
+    it = additionalSourceCompilations.insert_or_assign(additionalSource.string(), std::move(compilation)).first;
+  }
+
+  // Check for compile error
+  const ExecResult &result = it->second.result.get();
+  if (result.exitCode != 0) {
+    const auto [linkerInvokerName, linkerInvokerPath] = SystemUtil::findLinkerInvoker();
+    const std::string command = SystemUtil::renderCommandForDisplay(linkerInvokerPath, it->second.args);
+    const std::string errorMessage = "Compiling the additional source '" + additionalSource.string() +
+                                     "' failed\nCompile command: " + command + "\n" + result.output;
+    throw LinkerError(LINKER_ERROR, errorMessage);
+  }
+  return objectFilePath;
+}
+
+/**
  * Archive the object files to a static library
  */
 void ExternalLinkerInterface::archive() const {
@@ -206,9 +346,9 @@ void ExternalLinkerInterface::archive() const {
 
   // Print status message
   if (cliOptions.printDebugOutput) {
-    std::cout << "\nArchiving with: " << archiverName;                                      // LCOV_EXCL_LINE
-    std::cout << "\nArchiver command: " << SystemUtil::renderCommandForDisplay(archiverPath, args);     // LCOV_EXCL_LINE
-    std::cout << "\nEmitting static library to path: " << outputPath.string() << "\n";      // LCOV_EXCL_LINE
+    std::cout << "\nArchiving with: " << archiverName;                                              // LCOV_EXCL_LINE
+    std::cout << "\nArchiver command: " << SystemUtil::renderCommandForDisplay(archiverPath, args); // LCOV_EXCL_LINE
+    std::cout << "\nEmitting static library to path: " << outputPath.string() << "\n";              // LCOV_EXCL_LINE
   }
 
   // Call the archiver
@@ -275,6 +415,8 @@ void ExternalLinkerInterface::addAdditionalSourcePath(std::filesystem::path addi
   additionalSource = canonical(additionalSource);
   additionalSource.make_preferred();
   addFileToLinkage(additionalSource);
+  if (std::ranges::find(additionalSourcePaths, additionalSource) == additionalSourcePaths.end())
+    additionalSourcePaths.push_back(additionalSource);
 }
 
 /**

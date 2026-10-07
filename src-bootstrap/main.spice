@@ -32,6 +32,11 @@ f<bool> compileProject(CliOptions& cliOptions) {
         return true;
     }
 
+    // Compile additional C/C++ sources in the background, while the back end is running
+    if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
+        resourceManager.linker.startAdditionalSourceCompilation();
+    }
+
     mainSourceFile.runBackEnd();
     if resourceManager.abortCompilation { return true; }
 

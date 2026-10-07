@@ -33,6 +33,10 @@ bool compileProject(const CliOptions &cliOptions) {
     mainSourceFile->runMiddleEnd();
     CHECK_ABORT_FLAG_B()
 
+    // Compile additional C/C++ sources in the background, while the back end is running
+    if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE)
+      resourceManager.linker.startAdditionalSourceCompilation();
+
     mainSourceFile->runBackEnd();
     CHECK_ABORT_FLAG_B()
 
