@@ -14,8 +14,10 @@ import "bootstrap/util/system-util";
  * @return Successful or not
  */
 f<bool> compileProject(CliOptions& cliOptions) {
-    // Instantiate GlobalResourceManager
-    GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+    // Instantiate GlobalResourceManager. Freeing all the compiler data structures takes a noticeable amount of time, which
+    // is wasted right before the process exits. So it is allocated without ever being destructed (the host keeps it alive
+    // after a successful compilation).
+    GlobalResourceManager* resourceManager = __new<GlobalResourceManager>(cliOptions);
 
     // Create source file instance for main source file
     SourceFile* mainSourceFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), cliOptions.mainSourceFile, false);
@@ -32,13 +34,18 @@ f<bool> compileProject(CliOptions& cliOptions) {
         return true;
     }
 
+    // Compile additional C/C++ sources in the background, while the back end is running
+    if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
+        resourceManager.linker.startAdditionalSourceCompilation();
+    }
+
     mainSourceFile.runBackEnd();
     if resourceManager.abortCompilation { return true; }
 
     // Link the target executable (link object files to executable/library)
     if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
         resourceManager.linker.prepare();
-        resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);
+        resourceManager.cacheManager.linkOrRestoreExecutable(*resourceManager);
         resourceManager.linker.cleanup();
     }
 

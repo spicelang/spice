@@ -80,6 +80,7 @@ bool BootstrapUtil::buildBootstrapCompiler() {
     SourceFile *sourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
     sourceFile->runFrontEnd();
     sourceFile->runMiddleEnd();
+    resourceManager.linker.startAdditionalSourceCompilation();
     sourceFile->runBackEnd();
     resourceManager.linker.prepare();
     resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);

@@ -1,5 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
+#include <memory>
+
 #include <SourceFile.h>
 #include <driver/Driver.h>
 #include <exception/CliError.h>
@@ -13,6 +15,9 @@
 
 using namespace spice::compiler;
 
+// Resource manager of the successful compilation, which is deliberately not destroyed (see compileProject)
+static GlobalResourceManager *keptResourceManager = nullptr;
+
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
@@ -22,7 +27,8 @@ using namespace spice::compiler;
 bool compileProject(const CliOptions &cliOptions) {
   try {
     // Instantiate GlobalResourceManager
-    GlobalResourceManager resourceManager(cliOptions);
+    auto resourceManagerPtr = std::make_unique<GlobalResourceManager>(cliOptions);
+    GlobalResourceManager &resourceManager = *resourceManagerPtr;
 
     // Create source file instance for main source file
     SourceFile *mainSourceFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, cliOptions.mainSourceFile, false);
@@ -32,6 +38,10 @@ bool compileProject(const CliOptions &cliOptions) {
     CHECK_ABORT_FLAG_B()
     mainSourceFile->runMiddleEnd();
     CHECK_ABORT_FLAG_B()
+
+    // Compile additional C/C++ sources in the background, while the back end is running
+    if (cliOptions.outputContainer != OutputContainer::OBJECT_FILE)
+      resourceManager.linker.startAdditionalSourceCompilation();
 
     mainSourceFile->runBackEnd();
     CHECK_ABORT_FLAG_B()
@@ -45,6 +55,11 @@ bool compileProject(const CliOptions &cliOptions) {
 
     // Print compiler warnings
     mainSourceFile->collectAndPrintWarnings();
+
+    // Freeing all the compiler data structures takes a noticeable amount of time, which is wasted right before the process
+    // exits. So keep them alive. The pointer is kept in a global variable, so that leak checkers still consider the memory
+    // reachable.
+    keptResourceManager = resourceManagerPtr.release();
 
     return true;
   } catch (LexerError &e) {
