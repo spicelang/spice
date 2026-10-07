@@ -162,7 +162,7 @@ void SourceFile::runASTBuilder() {
 
   // Build AST for this source file
   ASTBuilder astBuilder(resourceManager, this, antlrCtx.inputStream.get());
-  ast = std::any_cast<EntryNode *>(astBuilder.visit(antlrCtx.parser->entry()));
+  ast = std::any_cast<EntryNode *>(astBuilder.visit(parseEntry()));
   antlrCtx.parser->reset();
 
   // Create global scope
@@ -171,6 +171,37 @@ void SourceFile::runASTBuilder() {
   previousStage = AST_BUILDER;
   timer.stop();
   printStatusMessage("AST Builder", IO_CST, IO_AST, compilerOutput.times.astBuilder);
+}
+
+/**
+ * Parse the token stream of this source file in two stages. The first stage uses the SLL prediction mode, which is much
+ * faster than the full LL prediction mode, but cannot handle all inputs. It does not report syntax errors, but bails out
+ * at the first one. Only then the second stage parses the whole token stream again with the LL prediction mode, which
+ * reports the syntax error exactly like a single LL stage would.
+ *
+ * @return Parse tree of the source file
+ */
+SpiceParser::EntryContext *SourceFile::parseEntry() const {
+  SpiceParser &parser = *antlrCtx.parser;
+  auto *interpreter = parser.getInterpreter<antlr4::atn::ParserATNSimulator>();
+
+  // Stage 1: SLL prediction mode, bail out at the first syntax error
+  interpreter->setPredictionMode(antlr4::atn::PredictionMode::SLL);
+  parser.removeErrorListeners();
+  parser.setErrorHandler(std::make_shared<antlr4::BailErrorStrategy>());
+  try {
+    return parser.entry();
+  } catch (const antlr4::ParseCancellationException &) {
+    // Either the input has a syntax error or SLL is too weak for it, so retry with LL
+  }
+
+  // Stage 2: LL prediction mode with the default error handling
+  antlrCtx.tokenStream->seek(0);
+  parser.reset();
+  interpreter->setPredictionMode(antlr4::atn::PredictionMode::LL);
+  parser.addErrorListener(antlrCtx.parserErrorHandler.get());
+  parser.setErrorHandler(std::make_shared<antlr4::DefaultErrorStrategy>());
+  return parser.entry();
 }
 
 void SourceFile::runASTVisualizer() {

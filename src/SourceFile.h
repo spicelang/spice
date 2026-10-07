@@ -131,6 +131,7 @@ public:
   void runSymbolTableBuilder();
 
 private:
+  [[nodiscard]] SpiceParser::EntryContext *parseEntry() const;
   void runTypeCheckerPre();
   void runTypeCheckerPost();
   void runPostTypeCheckingVerifier();
