@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <future>
 #include <iostream>
+#include <iterator>
+#include <ranges>
 #include <vector>
 
 #include <driver/Driver.h>
