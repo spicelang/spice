@@ -23,6 +23,7 @@ struct TestDriverCliOptions {
   bool isVerbose = false;
   bool enableCoverage = false;
   bool bootstrapMode = false;
+  bool bootstrapCoverage = false;
   std::string bootstrapCompilerPath;
 };
 
