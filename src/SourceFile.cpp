@@ -185,23 +185,21 @@ SpiceParser::EntryContext *SourceFile::parseEntry() const {
   SpiceParser &parser = *antlrCtx.parser;
   auto *interpreter = parser.getInterpreter<antlr4::atn::ParserATNSimulator>();
 
-  // Stage 1: SLL prediction mode, bail out at the first syntax error
+  // Try SLL prediction mode
   interpreter->setPredictionMode(antlr4::atn::PredictionMode::SLL);
   parser.removeErrorListeners();
   parser.setErrorHandler(std::make_shared<antlr4::BailErrorStrategy>());
   try {
     return parser.entry();
   } catch (const antlr4::ParseCancellationException &) {
-    // Either the input has a syntax error or SLL is too weak for it, so retry with LL
+    // Fall back to LL prediction mode to report syntax errors correctly
+    antlrCtx.tokenStream->seek(0);
+    parser.reset();
+    interpreter->setPredictionMode(antlr4::atn::PredictionMode::LL);
+    parser.addErrorListener(antlrCtx.parserErrorHandler.get());
+    parser.setErrorHandler(std::make_shared<antlr4::DefaultErrorStrategy>());
+    return parser.entry();
   }
-
-  // Stage 2: LL prediction mode with the default error handling
-  antlrCtx.tokenStream->seek(0);
-  parser.reset();
-  interpreter->setPredictionMode(antlr4::atn::PredictionMode::LL);
-  parser.addErrorListener(antlrCtx.parserErrorHandler.get());
-  parser.setErrorHandler(std::make_shared<antlr4::DefaultErrorStrategy>());
-  return parser.entry();
 }
 
 void SourceFile::runASTVisualizer() {
