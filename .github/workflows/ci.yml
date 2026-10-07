@@ -20,7 +20,8 @@ env:
   # - testing_*: the bootstrap test runner does not request the test main (only --no-entry)
   # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   BOOTSTRAP_TEST_FILTER: >-
-    CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*
+    CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*:
+    BenchmarkTests.*:ExampleTests.*
     -IRGeneratorTests.instrumentation_successTysanAndDbgInfo:
     IRGeneratorTests.instrumentation_successDbgInfoComplex:
     IRGeneratorTests.instrumentation_successDbgInfoLineOnly:

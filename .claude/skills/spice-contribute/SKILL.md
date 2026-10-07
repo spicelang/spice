@@ -114,8 +114,8 @@ Whenever a PR changes compiler behavior in `src/`, port the same change to
   `src-bootstrap/lexer/` and `src-bootstrap/parser/`, and new or changed AST
   nodes in `src-bootstrap/ast/`.
 - New diagnostics need the same error kind and message text in
-  `src-bootstrap/exception/`. Once a stage can raise them, list the prefix in
-  `BOOTSTRAP_SUPPORTED_ERROR_PREFIXES` (`test/util/BootstrapUtil.h`).
+  `src-bootstrap/exception/`; the bootstrap test run checks every expected
+  error and warning.
 - Changes to a stage the bootstrap compiler has not implemented yet need no
   port, but mention that in the PR description so it is not forgotten when
   the stage is ported.

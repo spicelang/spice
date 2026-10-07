@@ -2,11 +2,11 @@
 
 #include "BootstrapUtil.h"
 
-#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <regex>
+#include <sstream>
 #include <vector>
 
 #include <SourceFile.h>
@@ -166,20 +166,26 @@ std::optional<std::string> BootstrapUtil::extractSerializedAST(const std::string
 }
 
 /**
- * Check if the bootstrap compiler is already able to raise the error, expected by the given error ref file
+ * Extract the warnings of the main source file from the console output of the bootstrap compiler. It prints every warning
+ * in its own line, colored yellow, after the warnings of the source files the main source file depends on. Like the host
+ * test runner, only the warnings of the main source file are returned, so the ones located in other files are skipped.
  *
- * @param errorRefPath Path to the error ref file
- * @return Supported or not
+ * @param output Output of the bootstrap compiler
+ * @return Warnings of the main source file, one per line
  */
-bool BootstrapUtil::isErrorSupported(const std::filesystem::path &errorRefPath) {
-  for (const std::filesystem::path &refPath : TestUtil::expandRefPaths(errorRefPath)) {
-    if (!exists(refPath))
+std::string BootstrapUtil::extractWarnings(const std::string &output) {
+  static const std::regex WARNING_REGEX(R"(\x1B\[33m(\[Warning\] [^\n]*?)\x1B\[0m)");
+  static constexpr auto WARNING_PREFIX = "[Warning] ./";
+  static constexpr auto MAIN_FILE_WARNING_PREFIX = "[Warning] ./source.spice:";
+  std::stringstream warnings;
+  for (auto it = std::sregex_iterator(output.begin(), output.end(), WARNING_REGEX); it != std::sregex_iterator(); ++it) {
+    const std::string warning = (*it)[1].str();
+    // Skip warnings, located in another source file than the main source file
+    if (warning.starts_with(WARNING_PREFIX) && !warning.starts_with(MAIN_FILE_WARNING_PREFIX))
       continue;
-    const std::string expectedError = FileUtil::getFileContent(refPath);
-    const auto pred = [&](const char *prefix) { return expectedError.starts_with(prefix); };
-    return std::ranges::any_of(BOOTSTRAP_SUPPORTED_ERROR_PREFIXES, pred);
+    warnings << warning << "\n";
   }
-  return false;
+  return warnings.str();
 }
 
 /**
