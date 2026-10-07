@@ -1,36 +1,89 @@
 // Windows version of process_native.spice, picked by the OS suffix. The two files must offer the same symbols.
 //
-// The program is started via _spawnvp(), which searches the PATH and inherits the environment and the standard streams.
-// The CRT joins the arguments into a single command line without quoting them, so they are quoted here the way the
-// program's CRT splits them again (CommandLineToArgvW rules). The output is captured through a pipe, whose write end
-// temporarily replaces the standard output (and error) stream of this process, while the child is spawned.
+// Without capturing, the program is started via _spawnvp(), which searches the PATH and inherits the environment and the
+// standard streams. The CRT joins the arguments into a single command line without quoting them, so they are quoted here
+// the way the program's CRT splits them again (CommandLineToArgvW rules).
+//
+// With capturing, the program is started via CreateProcessA(), with the write end of a pipe as its standard output (and
+// error). This only changes the standard streams of the child and not the ones of this process, so it is thread-safe. The
+// handles, that the child inherits, are listed explicitly (PROC_THREAD_ATTRIBUTE_HANDLE_LIST). Otherwise, a child, that is
+// spawned at the same time by another thread, would inherit the write end of the pipe as well and keep it open, so that
+// reading the output would only end when that other child terminates.
 
 // Std imports
 import "std/data/vector";
 
+// Win32 structs (x64 layout)
+type SecurityAttributes struct {
+    unsigned int length
+    byte* securityDescriptor
+    int inheritHandle
+}
+
+type StartupInfoExA struct {
+    // STARTUPINFOA
+    unsigned int cb
+    char* reserved
+    char* desktop
+    char* title
+    unsigned int x
+    unsigned int y
+    unsigned int xSize
+    unsigned int ySize
+    unsigned int xCountChars
+    unsigned int yCountChars
+    unsigned int fillAttribute
+    unsigned int flags
+    unsigned short showWindow
+    unsigned short reserved2Size
+    byte* reserved2
+    unsigned long stdInput
+    unsigned long stdOutput
+    unsigned long stdError
+    // Extension of STARTUPINFOEXA
+    byte* attributeList
+}
+
+type ProcessInformation struct {
+    unsigned long process
+    unsigned long thread
+    unsigned int processId
+    unsigned int threadId
+}
+
 // Link external functions
 ext f<long> _spawnvp(int /*mode*/, string /*cmdName*/, string* /*argv*/);
-ext f<long> _cwait(int* /*termStat*/, long /*procHandle*/, int /*action*/);
-ext f<int> _pipe(int* /*fds*/, unsigned int /*size*/, int /*textMode*/);
-ext f<int> _dup(int /*fd*/);
-ext f<int> _dup2(int /*fd1*/, int /*fd2*/);
-ext f<int> _close(int /*fd*/);
-ext f<int> _read(int /*fd*/, byte* /*buffer*/, unsigned int /*count*/);
 ext f<int> fflush(byte* /*stream*/);
+ext f<int> CreatePipe(unsigned long* /*readPipe*/, unsigned long* /*writePipe*/, SecurityAttributes* /*pipeAttributes*/, unsigned int /*size*/);
+ext f<int> SetHandleInformation(unsigned long /*handle*/, unsigned int /*mask*/, unsigned int /*flags*/);
+ext f<unsigned long> GetStdHandle(unsigned int /*stdHandle*/);
+ext f<unsigned long> GetCurrentProcess();
+ext f<int> DuplicateHandle(unsigned long /*sourceProcess*/, unsigned long /*sourceHandle*/, unsigned long /*targetProcess*/, unsigned long* /*targetHandle*/, unsigned int /*desiredAccess*/, int /*inheritHandle*/, unsigned int /*options*/);
+ext f<int> InitializeProcThreadAttributeList(byte* /*attributeList*/, unsigned int /*attributeCount*/, unsigned int /*flags*/, unsigned long* /*size*/);
+ext f<int> UpdateProcThreadAttribute(byte* /*attributeList*/, unsigned int /*flags*/, unsigned long /*attribute*/, unsigned long* /*value*/, unsigned long /*size*/, byte* /*previousValue*/, unsigned long* /*returnSize*/);
+ext p DeleteProcThreadAttributeList(byte* /*attributeList*/);
+ext f<int> CreateProcessA(string /*applicationName*/, char* /*commandLine*/, byte* /*processAttributes*/, byte* /*threadAttributes*/, int /*inheritHandles*/, unsigned int /*creationFlags*/, byte* /*environment*/, string /*currentDirectory*/, StartupInfoExA* /*startupInfo*/, ProcessInformation* /*processInformation*/);
+ext f<int> ReadFile(unsigned long /*file*/, byte* /*buffer*/, unsigned int /*toRead*/, unsigned int* /*read*/, byte* /*overlapped*/);
+ext f<unsigned int> WaitForSingleObject(unsigned long /*handle*/, unsigned int /*milliseconds*/);
+ext f<int> GetExitCodeProcess(unsigned long /*process*/, unsigned int* /*exitCode*/);
+ext f<int> CloseHandle(unsigned long /*handle*/);
 
 // Exit code, that signals, that the process could not be started
 public const int PROCESS_SPAWN_FAILED = -1;
 
 const int P_WAIT = 0;
-const int P_NOWAIT = 1;
-const int WAIT_CHILD = 0;
-// O_BINARY | O_NOINHERIT: the child must only inherit the write end via the redirected standard streams. Otherwise, the
-// pipe would stay open in the child and reading it would never see the end
-const int PIPE_MODE = 32896;
 const unsigned int PIPE_SIZE = 65536u;
-const int STDOUT_FD = 1;
-const int STDERR_FD = 2;
 const unsigned int READ_BUFFER_SIZE = 4096u;
+const int WIN_TRUE = 1;
+const unsigned int HANDLE_FLAG_INHERIT = 1u;
+const unsigned int DUPLICATE_SAME_ACCESS = 2u;
+const unsigned int STD_INPUT_HANDLE = 4294967286u; // (DWORD) -10
+const unsigned int STD_ERROR_HANDLE = 4294967284u; // (DWORD) -12
+const unsigned int STARTF_USESTDHANDLES = 256u; // 0x100
+const unsigned int EXTENDED_STARTUPINFO_PRESENT = 524288u; // 0x80000
+const unsigned long PROC_THREAD_ATTRIBUTE_HANDLE_LIST = 131074ul; // 0x20002
+const unsigned int INFINITE = 4294967295u; // 0xFFFFFFFF
+const unsigned int WAIT_FAILED = 4294967295u; // 0xFFFFFFFF
 
 /**
  * Spawn a program, wait for it to terminate and optionally capture its output.
@@ -71,55 +124,163 @@ public f<int> spawnProcessAndWait(const String& program, const Vector<String>& a
         return exitCode == -1l ? PROCESS_SPAWN_FAILED : cast<int>(exitCode);
     }
 
-    // Create the pipe and redirect our standard streams into it, while the child is spawned
-    int[2] pipeFds;
+    // Create the pipe. Only its write end may be inherited, so that the child does not keep the read end open
+    SecurityAttributes pipeAttributes;
+    pipeAttributes.length = cast<unsigned int>(sizeof<SecurityAttributes>());
+    pipeAttributes.inheritHandle = WIN_TRUE;
+    unsigned long readHandle = 0ul;
+    unsigned long writeHandle = 0ul;
     unsafe {
-        if _pipe(cast<int*>(&pipeFds), PIPE_SIZE, PIPE_MODE) != 0 {
+        if CreatePipe(&readHandle, &writeHandle, &pipeAttributes, PIPE_SIZE) == 0 {
             return PROCESS_SPAWN_FAILED;
         }
     }
-    const int savedStdOut = _dup(STDOUT_FD);
-    const int savedStdErr = _dup(STDERR_FD);
-    _dup2(pipeFds[1], STDOUT_FD);
-    if includeStdErr {
-        _dup2(pipeFds[1], STDERR_FD);
+    SetHandleInformation(readHandle, HANDLE_FLAG_INHERIT, 0u);
+
+    // The child keeps our standard input (and error, if it is not captured). Pass inheritable duplicates of them, because
+    // our own handles might not be inheritable
+    const unsigned long stdInput = duplicateInheritable(GetStdHandle(STD_INPUT_HANDLE));
+    const unsigned long stdError = includeStdErr ? writeHandle : duplicateInheritable(GetStdHandle(STD_ERROR_HANDLE));
+
+    // List the handles, that the child may inherit. Each handle must only be listed once
+    unsigned long[3] inheritedHandles;
+    unsigned long inheritedHandleCount = 0ul;
+    inheritedHandles[inheritedHandleCount++] = writeHandle;
+    if isValidHandle(stdInput) {
+        inheritedHandles[inheritedHandleCount++] = stdInput;
     }
-    long procHandle;
+    if !includeStdErr && isValidHandle(stdError) {
+        inheritedHandles[inheritedHandleCount++] = stdError;
+    }
+
+    // Spawn the child
+    int exitCode = PROCESS_SPAWN_FAILED;
+    ProcessInformation processInformation;
+    bool spawned = false;
     unsafe {
-        procHandle = _spawnvp(P_NOWAIT, program.getRaw(), argv.getDataPtr());
+        const unsigned long* inheritedHandlesPtr = cast<unsigned long*>(&inheritedHandles);
+        spawned = spawnWithInheritedHandles(quotedArgs, stdInput, writeHandle, stdError, inheritedHandlesPtr, inheritedHandleCount, processInformation);
     }
-    // Restore our standard streams and close our copy of the write end, so that reading sees the end of the output
-    _dup2(savedStdOut, STDOUT_FD);
-    _dup2(savedStdErr, STDERR_FD);
-    _close(savedStdOut);
-    _close(savedStdErr);
-    _close(pipeFds[1]);
-    if procHandle == -1l {
-        _close(pipeFds[0]);
+
+    // Close our copies of the handles, that only the child needs. This has to happen before reading, so that reading sees the
+    // end of the output, once the child terminated
+    CloseHandle(writeHandle);
+    if isValidHandle(stdInput) {
+        CloseHandle(stdInput);
+    }
+    if !includeStdErr && isValidHandle(stdError) {
+        CloseHandle(stdError);
+    }
+    if !spawned {
+        CloseHandle(readHandle);
         return PROCESS_SPAWN_FAILED;
     }
 
-    // Read the output until the child terminates
+    // Read the output until the child closed the write end of the pipe
     char[4096] buffer;
     unsafe {
         while true {
-            const int bytesRead = _read(pipeFds[0], cast<byte*>(&buffer), READ_BUFFER_SIZE);
-            if bytesRead <= 0 {
+            unsigned int bytesRead = 0u;
+            if ReadFile(readHandle, cast<byte*>(&buffer), READ_BUFFER_SIZE, &bytesRead, nil<byte*>) == 0 || bytesRead == 0u {
                 break;
             }
-            for int i = 0; i < bytesRead; i++ {
+            for unsigned int i = 0u; i < bytesRead; i++ {
                 output += buffer[i];
             }
         }
     }
-    _close(pipeFds[0]);
+    CloseHandle(readHandle);
 
     // Wait for the child to terminate
-    int exitCode = 0;
-    if _cwait(&exitCode, procHandle, WAIT_CHILD) == -1l {
-        return PROCESS_SPAWN_FAILED;
+    if WaitForSingleObject(processInformation.process, INFINITE) != WAIT_FAILED {
+        unsigned int processExitCode = 0u;
+        if GetExitCodeProcess(processInformation.process, &processExitCode) != 0 {
+            exitCode = cast<int>(processExitCode);
+        }
     }
+    CloseHandle(processInformation.thread);
+    CloseHandle(processInformation.process);
     return exitCode;
+}
+
+/**
+ * Spawn a child process, that only inherits the given handles
+ *
+ * @param quotedArgs Quoted program and arguments
+ * @param stdInput Standard input handle of the child
+ * @param stdOutput Standard output handle of the child
+ * @param stdError Standard error handle of the child
+ * @param inheritedHandles Handles, that the child inherits
+ * @param inheritedHandleCount Number of handles, that the child inherits
+ * @param processInformation Process information of the child (output)
+ * @return Spawned or not
+ */
+f<bool> spawnWithInheritedHandles(const Vector<String>& quotedArgs, unsigned long stdInput, unsigned long stdOutput, unsigned long stdError, unsigned long* inheritedHandles, unsigned long inheritedHandleCount, ProcessInformation& processInformation) {
+    // Join the quoted arguments to the command line
+    String commandLine;
+    foreach unsigned long i, const String& quotedArg : quotedArgs {
+        if i > 0ul {
+            commandLine += ' ';
+        }
+        commandLine += quotedArg;
+    }
+
+    // Create the attribute list, that restricts the inherited handles
+    unsigned long attributeListSize = 0ul;
+    unsafe {
+        InitializeProcThreadAttributeList(nil<byte*>, 1u, 0u, &attributeListSize); // Only retrieves the required size
+    }
+    heap byte* attributeList = sAllocUnsafe(attributeListSize);
+    bool spawned = false;
+    unsafe {
+        if InitializeProcThreadAttributeList(cast<byte*>(attributeList), 1u, 0u, &attributeListSize) != 0 {
+            const unsigned long valueSize = inheritedHandleCount * sizeof<unsigned long>();
+            if UpdateProcThreadAttribute(cast<byte*>(attributeList), 0u, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, inheritedHandles, valueSize, nil<byte*>, nil<unsigned long*>) != 0 {
+                StartupInfoExA startupInfo;
+                startupInfo.cb = cast<unsigned int>(sizeof<StartupInfoExA>());
+                startupInfo.flags = STARTF_USESTDHANDLES;
+                startupInfo.stdInput = stdInput;
+                startupInfo.stdOutput = stdOutput;
+                startupInfo.stdError = stdError;
+                startupInfo.attributeList = cast<byte*>(attributeList);
+                spawned = CreateProcessA(nil<string>, cast<char*>(commandLine.getRaw()), nil<byte*>, nil<byte*>, WIN_TRUE, EXTENDED_STARTUPINFO_PRESENT, nil<byte*>, nil<string>, &startupInfo, &processInformation) != 0;
+            }
+            DeleteProcThreadAttributeList(cast<byte*>(attributeList));
+        }
+    }
+    sDealloc(attributeList);
+    return spawned;
+}
+
+/**
+ * Create an inheritable duplicate of a handle of this process
+ *
+ * @param handle Handle to duplicate
+ * @return Inheritable duplicate, or 0 if the handle is invalid or could not be duplicated
+ */
+f<unsigned long> duplicateInheritable(unsigned long handle) {
+    if !isValidHandle(handle) {
+        return 0ul;
+    }
+    unsigned long duplicate = 0ul;
+    unsafe {
+        const unsigned long currentProcess = GetCurrentProcess();
+        if DuplicateHandle(currentProcess, handle, currentProcess, &duplicate, 0u, WIN_TRUE, DUPLICATE_SAME_ACCESS) == 0 {
+            return 0ul;
+        }
+    }
+    return duplicate;
+}
+
+/**
+ * Check if a handle is valid, i.e. neither null nor INVALID_HANDLE_VALUE
+ *
+ * @param handle Handle to check
+ * @return Valid or not
+ */
+f<bool> isValidHandle(unsigned long handle) {
+    const long signedHandle = cast<long>(handle);
+    return signedHandle != 0l && signedHandle != -1l;
 }
 
 /**
