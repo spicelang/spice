@@ -57,7 +57,6 @@ jobs:
           sudo apt-get install ccache ninja-build graphviz pipx uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo pipx install gcovr
           mkdir -p ~/.cache/ccache
 

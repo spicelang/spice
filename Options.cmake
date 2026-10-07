@@ -145,16 +145,6 @@ else ()
     message(STATUS "Spice: Static linking for Spice is disabled.")
 endif ()
 
-# Coverage
-option(SPICE_RUN_COVERAGE "Generate coverage reports for Spice source files" OFF)
-if (SPICE_RUN_COVERAGE)
-    message(STATUS "Spice: Coverage reports enabled.")
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -g -O0 --coverage -fprofile-arcs -ftest-coverage")
-else ()
-    message(STATUS "Spice: Coverage reports disabled.")
-endif ()
-
 # ASAN
 option(SPICE_ASAN "Instrument executable with address sanitizer" OFF)
 if (SPICE_ASAN)

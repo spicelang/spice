@@ -45,14 +45,12 @@ if (SPICE_ENABLE_TPDE)
     # Spice itself links LLVM statically (see LLVMOptions.cmake). TPDE defaults to shared LLVM; align it
     # with Spice's convention so both sides can be linked into the same executable.
     set(TPDE_LINK_LLVM_STATIC ON CACHE BOOL "" FORCE)
-    # Build TPDE without SPICE_RUN_COVERAGE's gcov and SPICE_ASAN/TSAN/UBSAN's sanitizer instrumentation. The std TPDE
-    # bindings link the TPDE static libraries into Spice programs, which link neither libgcov nor a sanitizer runtime, and
-    # coverage of a third-party dependency is not reported anyway.
+    # Build TPDE without SPICE_ASAN/TSAN/UBSAN's sanitizer instrumentation. The std TPDE bindings link the TPDE static
+    # libraries into Spice programs, which link no sanitizer runtime.
     set(SPICE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
     set(SPICE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
     set(SPICE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
-    foreach (INSTRUMENTATION_FLAG --coverage -fprofile-arcs -ftest-coverage -fsanitize=address -fsanitize=thread
-             -fsanitize=undefined -fno-sanitize-recover=all)
+    foreach (INSTRUMENTATION_FLAG -fsanitize=address -fsanitize=thread -fsanitize=undefined -fno-sanitize-recover=all)
         string(REPLACE " ${INSTRUMENTATION_FLAG}" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
         string(REPLACE " ${INSTRUMENTATION_FLAG}" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
         string(REPLACE " ${INSTRUMENTATION_FLAG}" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
@@ -74,10 +72,8 @@ if (SPICE_ENABLE_TPDE)
 endif ()
 
 # Coverage
-file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage.py ${CMAKE_CURRENT_BINARY_DIR}/coverage.py SYMBOLIC)
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage-spice.py ${CMAKE_CURRENT_BINARY_DIR}/coverage-spice.py SYMBOLIC)
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage-bootstrap.py ${CMAKE_CURRENT_BINARY_DIR}/coverage-bootstrap.py SYMBOLIC)
-file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/gcovr.cfg ${CMAKE_CURRENT_BINARY_DIR}/gcovr.cfg SYMBOLIC)
 
 # Include main module
 add_subdirectory(src)
