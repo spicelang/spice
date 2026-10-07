@@ -34,12 +34,10 @@ env:
   # - generics_successGenericTypeCtorCall1: the bootstrap compiler crashes with a heap corruption (0xC0000374)
   # - lto_successLtoSimple: the bootstrap compiler links the LTO modules in a different order
   # - runtime_resultErrTracePanic: the relative path to the std file in the panic message has one '../' less
-  # - runtime_stackTraceCaptureBasic: StackTraceEntry is registered twice (StackTraceEntry.1 vs. StackTraceEntry)
   BOOTSTRAP_TEST_FILTER_WINDOWS: >-
     IRGeneratorTests.generics_successGenericTypeCtorCall1:
     IRGeneratorTests.lto_successLtoSimple:
-    StdTests.runtime_resultErrTracePanic:
-    StdTests.runtime_stackTraceCaptureBasic
+    StdTests.runtime_resultErrTracePanic
 
 jobs:
   build-linux-x86:
