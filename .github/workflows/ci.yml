@@ -120,7 +120,7 @@ jobs:
             -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_TEST_ARGS=--is-github-actions \
             ..
-          cmake --build . --target spicetest
+          cmake --build . --target spice spicetest
 
       - name: Run Test target (host compiler)
         working-directory: build
@@ -131,6 +131,20 @@ jobs:
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
         run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+
+      - name: Bootstrap until fixed point
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python bootstrap.py --host-compiler build/src/spice
+
+      - name: Upload bootstrap stage executables
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bootstrap-stages-linux-x64
+          path: build/bootstrap
+          retention-days: 7
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -217,7 +231,7 @@ jobs:
             -DSPICE_ENABLE_TPDE=ON \
             -DSPICE_TEST_ARGS=--is-github-actions \
             ..
-          cmake --build . --target spicetest
+          cmake --build . --target spice spicetest
 
       - name: Run Test target (host compiler)
         working-directory: build
@@ -228,6 +242,20 @@ jobs:
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
         run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+
+      - name: Bootstrap until fixed point
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python bootstrap.py --host-compiler build/src/spice
+
+      - name: Upload bootstrap stage executables
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bootstrap-stages-linux-aarch64
+          path: build/bootstrap
+          retention-days: 7
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -328,7 +356,7 @@ jobs:
             -DSPICE_BUILT_BY="ghactions" `
             -DSPICE_TEST_ARGS=--is-github-actions `
             ..
-          cmake --build . --target spicetest
+          cmake --build . --target spice spicetest
 
       - name: Run Test target (host compiler)
         working-directory: build
@@ -340,6 +368,20 @@ jobs:
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
         run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}:${BOOTSTRAP_TEST_FILTER_WINDOWS// /}" cmake --build . --target spicetest_bootstrap
+
+      - name: Bootstrap until fixed point
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python bootstrap.py --host-compiler build/src/spice.exe
+
+      - name: Upload bootstrap stage executables
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bootstrap-stages-win-x64
+          path: build/bootstrap
+          retention-days: 7
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -419,7 +461,7 @@ jobs:
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_TEST_ARGS=--is-github-actions \
             ..
-          cmake --build . --target spicetest
+          cmake --build . --target spice spicetest
 
       - name: Run Test target (host compiler)
         working-directory: build
@@ -430,6 +472,20 @@ jobs:
         shell: bash
         # The folded BOOTSTRAP_TEST_FILTER above is joined with spaces, which gtest does not accept
         run: GTEST_FILTER="${BOOTSTRAP_TEST_FILTER// /}" cmake --build . --target spicetest_bootstrap
+
+      - name: Bootstrap until fixed point
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python bootstrap.py --host-compiler build/src/spice
+
+      - name: Upload bootstrap stage executables
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: bootstrap-stages-macos-aarch64
+          path: build/bootstrap
+          retention-days: 7
 
       - name: Save CCache
         uses: actions/cache/save@v6
