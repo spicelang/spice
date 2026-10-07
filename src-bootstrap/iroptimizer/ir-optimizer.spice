@@ -33,9 +33,9 @@ public p IROptimizer.prepare() {
 }
 
 public p IROptimizer.optimizeDefault() {
-    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // GCOV_EXCL_LINE
-        println("\nOptimizing on level " + toString(this.cliOptions.optLevel) + " ...");                      // GCOV_EXCL_LINE
-    }                                                                                                         // GCOV_EXCL_LINE
+    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // LCOV_EXCL_LINE
+        println("\nOptimizing on level " + toString(this.cliOptions.optLevel) + " ...");                      // LCOV_EXCL_LINE
+    }                                                                                                         // LCOV_EXCL_LINE
 
     // Prepare pipeline
     llvm::PassBuilder passBuilder = llvm::PassBuilder(this.passBuilderOptions);
@@ -50,9 +50,9 @@ public p IROptimizer.optimizeDefault() {
 }
 
 public p IROptimizer.optimizePreLink() {
-    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // GCOV_EXCL_LINE
-        println("\nOptimizing on level " + toString(this.cliOptions.optLevel) + " (pre-link) ...");           // GCOV_EXCL_LINE
-    }                                                                                                         // GCOV_EXCL_LINE
+    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // LCOV_EXCL_LINE
+        println("\nOptimizing on level " + toString(this.cliOptions.optLevel) + " (pre-link) ...");           // LCOV_EXCL_LINE
+    }                                                                                                         // LCOV_EXCL_LINE
 
     // Prepare pipeline
     llvm::PassBuilder passBuilder = llvm::PassBuilder(this.passBuilderOptions);
@@ -64,9 +64,9 @@ public p IROptimizer.optimizePreLink() {
 }
 
 public p IROptimizer.optimizePostLink() {
-    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // GCOV_EXCL_LINE
-        println("\nOptimizing on level " + toString(this.cliOptions.optLevel) + " (post-link) ...");          // GCOV_EXCL_LINE
-    }                                                                                                         // GCOV_EXCL_LINE
+    if this.cliOptions.printDebugOutput && this.cliOptions.dump.dumpIR && !this.cliOptions.dump.dumpToFiles { // LCOV_EXCL_LINE
+        println("\nOptimizing on level " + toString(this.cliOptions.optLevel) + " (post-link) ...");          // LCOV_EXCL_LINE
+    }                                                                                                         // LCOV_EXCL_LINE
 
     // Prepare pipeline
     // The host passes a module summary index with whole program visibility, which the LLVM C API does not offer
@@ -83,10 +83,10 @@ public p IROptimizer.optimizePostLink() {
 p IROptimizer.runPipeline(llvm::PassBuilder& passBuilder, llvm::Module& module) {
     passBuilder.buildCustomPipeline();
     llvm::LLVMError error = passBuilder.run(module, this.sourceFile.targetMachine);
-    if error.isError() {                                       // GCOV_EXCL_LINE
-        const llvm::Message errorMessage = error.getMessage(); // GCOV_EXCL_LINE
-        panic(Error(errorMessage.get()));                      // GCOV_EXCL_LINE
-    }                                                          // GCOV_EXCL_LINE
+    if error.isError() {                                       // LCOV_EXCL_LINE
+        const llvm::Message errorMessage = error.getMessage(); // LCOV_EXCL_LINE
+        panic(Error(errorMessage.get()));                      // LCOV_EXCL_LINE
+    }                                                          // LCOV_EXCL_LINE
 }
 
 p IROptimizer.addInstrumentationPassToPipeline(llvm::PassBuilder& passBuilder) {

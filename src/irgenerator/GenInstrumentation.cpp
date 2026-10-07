@@ -9,8 +9,8 @@ namespace spice::compiler {
 
 void IRGenerator::enableFunctionInstrumentation(llvm::Function *function) const {
   switch (cliOptions.instrumentation.sanitizer) {
-  case Sanitizer::NONE: // GCOV_EXCL_LINE
-    break;              // GCOV_EXCL_LINE
+  case Sanitizer::NONE: // LCOV_EXCL_LINE
+    break;              // LCOV_EXCL_LINE
   case Sanitizer::ADDRESS:
     function->addFnAttr(llvm::Attribute::SanitizeAddress);
     break;
@@ -23,8 +23,8 @@ void IRGenerator::enableFunctionInstrumentation(llvm::Function *function) const 
   case Sanitizer::TYPE:
     function->addFnAttr(llvm::Attribute::SanitizeType);
     break;
-  default:                                                             // GCOV_EXCL_LINE
-    throw CompilerError(UNHANDLED_BRANCH, "Unhandled sanitizer type"); // GCOV_EXCL_LINE
+  default:                                                             // LCOV_EXCL_LINE
+    throw CompilerError(UNHANDLED_BRANCH, "Unhandled sanitizer type"); // LCOV_EXCL_LINE
   }
 }
 

@@ -37,9 +37,9 @@ public p TPDEObjectEmitter.emit(const FilePath& objectPath) {
     const llvm::Triple triple = llvm::Triple(tripleString.getRaw());
     tpde::Compiler compiler = tpde::Compiler(triple);
     if !compiler.isValid() {
-        const String message = "The TPDE backend does not support target triple '" + tripleString + "'"; // GCOV_EXCL_LINE
-        raiseObjectEmitterError(CompilerErrorType::WRONG_OUTPUT_TYPE, message);                       // GCOV_EXCL_LINE
-    } // GCOV_EXCL_LINE
+        const String message = "The TPDE backend does not support target triple '" + tripleString + "'"; // LCOV_EXCL_LINE
+        raiseObjectEmitterError(CompilerErrorType::WRONG_OUTPUT_TYPE, message);                       // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
 
     // Compile to an in-memory ELF object
     Vector<byte> objBytes;
@@ -51,22 +51,22 @@ public p TPDEObjectEmitter.emit(const FilePath& objectPath) {
     // Write to the requested path
     Result<File> fileResult = openFile(objectPathString, "wb");
     if !fileResult.isOk() {
-        const String message = "File '" + String(objectPathString) + "' could not be opened"; // GCOV_EXCL_LINE
-        raiseObjectEmitterError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, message);       // GCOV_EXCL_LINE
-    } // GCOV_EXCL_LINE
+        const String message = "File '" + String(objectPathString) + "' could not be opened"; // LCOV_EXCL_LINE
+        raiseObjectEmitterError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, message);       // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
     File file = fileResult.unwrap();
     bool writeFailed = false;
     foreach byte objByte : objBytes {
         if !file.write(cast<char>(objByte)) {
-            writeFailed = true; // GCOV_EXCL_LINE
-            break;              // GCOV_EXCL_LINE
-        } // GCOV_EXCL_LINE
+            writeFailed = true; // LCOV_EXCL_LINE
+            break;              // LCOV_EXCL_LINE
+        } // LCOV_EXCL_LINE
     }
     const bool closeFailed = !file.close();
     if writeFailed || closeFailed {
-        const String message = "File '" + String(objectPathString) + "' could not be written"; // GCOV_EXCL_LINE
-        raiseObjectEmitterError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, message);        // GCOV_EXCL_LINE
-    } // GCOV_EXCL_LINE
+        const String message = "File '" + String(objectPathString) + "' could not be written"; // LCOV_EXCL_LINE
+        raiseObjectEmitterError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, message);        // LCOV_EXCL_LINE
+    } // LCOV_EXCL_LINE
 }
 
 public p TPDEObjectEmitter.getASMString(String& output) {

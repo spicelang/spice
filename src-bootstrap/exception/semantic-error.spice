@@ -296,6 +296,6 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::UNION_FIELD_MUST_NOT_BE_REFERENCE: { return "Union field must not be a reference"; }
         case SemanticErrorType::DUPLICATE_UNION_DEFAULT_VALUE: { return "Duplicate default value in union"; }
         case SemanticErrorType::AMBIGUOUS_SYMBOL: { return "Ambiguous symbol"; }
-        default: { panic(Error("Unknown error")); }
+        default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

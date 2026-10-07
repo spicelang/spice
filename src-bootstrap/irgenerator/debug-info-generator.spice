@@ -391,7 +391,7 @@ f<llvm::Metadata> DebugInfoGenerator.getDITypeForQualType(const ASTNode* node, c
     } else if superType == SuperType::TY_FUNCTION || superType == SuperType::TY_PROCEDURE {
         baseDiType = this.fatPtrTy;
     } else {
-        panic(Error("Debug Info Type fallthrough")); // GCOV_EXCL_LINE
+        panic(Error("Debug Info Type fallthrough")); // LCOV_EXCL_LINE
     }
 
     if ty.isConst() {

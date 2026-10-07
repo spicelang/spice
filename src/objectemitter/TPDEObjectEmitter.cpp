@@ -25,7 +25,7 @@ void TPDEObjectEmitter::emit(const std::filesystem::path &objectPath) const {
   const std::unique_ptr<tpde_llvm::LLVMCompiler> compiler = tpde_llvm::LLVMCompiler::create(triple);
   if (!compiler)
     throw CompilerError(WRONG_OUTPUT_TYPE,
-                        "The TPDE backend does not support target triple '" + triple.str() + "'"); // GCOV_EXCL_LINE
+                        "The TPDE backend does not support target triple '" + triple.str() + "'"); // LCOV_EXCL_LINE
 
   // Compile to an in-memory ELF object
   std::vector<uint8_t> objBytes;
@@ -35,7 +35,7 @@ void TPDEObjectEmitter::emit(const std::filesystem::path &objectPath) const {
   // Write to the requested path
   std::ofstream out(objectPathString, std::ios::binary);
   if (!out)
-    throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectPathString + "' could not be opened"); // GCOV_EXCL_LINE
+    throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectPathString + "' could not be opened"); // LCOV_EXCL_LINE
   out.write(reinterpret_cast<const char *>(objBytes.data()), static_cast<std::streamsize>(objBytes.size()));
   out.flush();
 }

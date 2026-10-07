@@ -83,8 +83,8 @@ std::string CompilerWarning::getMessagePrefix(CompilerWarningType warningType) {
   case UNINSTALL_FAILED:
     return "Uninstall failed";
   }
-  assert_fail("Unknown warning"); // GCOV_EXCL_LINE
-  return "Unknown warning";       // GCOV_EXCL_LINE
+  assert_fail("Unknown warning"); // LCOV_EXCL_LINE
+  return "Unknown warning";       // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

@@ -589,7 +589,7 @@ f<llvm::Value> IRGenerator.packConstantAsByteArray(llvm::Value value, llvm::Type
     } else {
         // See the function comment: this is a rare case in practice (most union field defaults are numeric), so it is
         // deliberately unsupported for now rather than silently producing a wrong default value.
-        panic(Error("Unsupported default value for a union field of this type")); // GCOV_EXCL_LINE
+        panic(Error("Unsupported default value for a union field of this type")); // LCOV_EXCL_LINE
     }
 
     const bool isLittleEndian = this.module.isLittleEndian();
@@ -775,7 +775,7 @@ public f<llvm::Value> IRGenerator.getDefaultValueForSymbolType(const QualType& s
         return llvm::getConstNamedStruct(structType, fieldValues);
     }
 
-    panic(Error("Cannot determine default value for symbol type")); // GCOV_EXCL_LINE
+    panic(Error("Cannot determine default value for symbol type")); // LCOV_EXCL_LINE
 }
 
 // Get the field node, a field entry is declared by, if it is declared by a field node (dynamic_cast<FieldNode*> in the host)
@@ -826,7 +826,7 @@ f<llvm::Value> IRGenerator.getConst(const CompileTimeValue& compileTimeValue, co
         return llvm::getNullValue(this.llvmTypes.lambdaFatPtrType);
     }
 
-    panic(Error("Constant fall-through")); // GCOV_EXCL_LINE
+    panic(Error("Constant fall-through")); // LCOV_EXCL_LINE
 }
 
 f<llvm::BasicBlock> IRGenerator.createBlock(const String& blockName = String()) {
@@ -3148,7 +3148,7 @@ public f<Any> IRGenerator.visitAssignExpr(ASTAssignExprNode* node) {
             case AssignOp::OP_AND_EQUAL: { res = this.conversionManager.getAndEqualInst(baseNode, lhs, lhsSTy, rhs, rhsSTy); }
             case AssignOp::OP_OR_EQUAL: { res = this.conversionManager.getOrEqualInst(baseNode, lhs, lhsSTy, rhs, rhsSTy); }
             case AssignOp::OP_XOR_EQUAL: { res = this.conversionManager.getXorEqualInst(baseNode, lhs, lhsSTy, rhs, rhsSTy); }
-            default: { panic(Error("Assign op fall-through")); } // GCOV_EXCL_LINE
+            default: { panic(Error("Assign op fall-through")); } // LCOV_EXCL_LINE
         }
 
         if !res.ptr.isNull() { // The operation allocated more memory
@@ -3164,7 +3164,7 @@ public f<Any> IRGenerator.visitAssignExpr(ASTAssignExprNode* node) {
     }
 
     // This is a fallthrough case -> throw an error
-    panic(Error("AssignStmt fall-through")); // GCOV_EXCL_LINE
+    panic(Error("AssignStmt fall-through")); // LCOV_EXCL_LINE
 }
 
 // Enter the expression scope of the given expression, if it has one (the ExprScopeHandle of the host)
@@ -3504,7 +3504,7 @@ public f<Any> IRGenerator.visitEqualityExpr(ASTEqualityExprNode* node) {
     switch node.op {
         case EqualityOp::OP_EQUAL: { res = this.conversionManager.getEqualInst(baseNode, res, lhsSTy, rhs, rhsSTy); }
         case EqualityOp::OP_NOT_EQUAL: { res = this.conversionManager.getNotEqualInst(baseNode, res, lhsSTy, rhs, rhsSTy); }
-        default: { panic(Error("EqualityExpr fall-through")); } // GCOV_EXCL_LINE
+        default: { panic(Error("EqualityExpr fall-through")); } // LCOV_EXCL_LINE
     }
 
     // Return the result
@@ -3537,7 +3537,7 @@ public f<Any> IRGenerator.visitRelationalExpr(ASTRelationalExprNode* node) {
         case RelationalOp::OP_GREATER: { res = this.conversionManager.getGreaterInst(baseNode, res, lhsSTy, rhs, rhsSTy); }
         case RelationalOp::OP_LESS_EQUAL: { res = this.conversionManager.getLessEqualInst(baseNode, res, lhsSTy, rhs, rhsSTy); }
         case RelationalOp::OP_GREATER_EQUAL: { res = this.conversionManager.getGreaterEqualInst(baseNode, res, lhsSTy, rhs, rhsSTy); }
-        default: { panic(Error("EqualityExpr fall-through")); } // GCOV_EXCL_LINE
+        default: { panic(Error("EqualityExpr fall-through")); } // LCOV_EXCL_LINE
     }
 
     // Return the result
@@ -3576,7 +3576,7 @@ public f<Any> IRGenerator.visitShiftExpr(ASTShiftExprNode* node) {
         switch currentOp {
             case ShiftOp::OP_SHIFT_LEFT: { lhs = this.conversionManager.getShiftLeftInst(baseNode, lhs, lhsSTy, rhs, rhsSTy, operatorIndex); }
             case ShiftOp::OP_SHIFT_RIGHT: { lhs = this.conversionManager.getShiftRightInst(baseNode, lhs, lhsSTy, rhs, rhsSTy, operatorIndex); }
-            default: { panic(Error("AdditiveExpr fall-through")); } // GCOV_EXCL_LINE
+            default: { panic(Error("AdditiveExpr fall-through")); } // LCOV_EXCL_LINE
         }
 
         // Retrieve the new lhs symbol type
@@ -3621,7 +3621,7 @@ public f<Any> IRGenerator.visitAdditiveExpr(ASTAdditiveExprNode* node) {
         switch currentOp {
             case AdditiveOp::OP_PLUS: { lhs = this.conversionManager.getPlusInst(baseNode, lhs, lhsSTy, rhs, rhsSTy, operatorIndex); }
             case AdditiveOp::OP_MINUS: { lhs = this.conversionManager.getMinusInst(baseNode, lhs, lhsSTy, rhs, rhsSTy, operatorIndex); }
-            default: { panic(Error("AdditiveExpr fall-through")); } // GCOV_EXCL_LINE
+            default: { panic(Error("AdditiveExpr fall-through")); } // LCOV_EXCL_LINE
         }
 
         // Retrieve the new lhs symbol type
@@ -3667,7 +3667,7 @@ public f<Any> IRGenerator.visitMultiplicativeExpr(ASTMultiplicativeExprNode* nod
             case MultiplicativeOp::OP_MUL: { res = this.conversionManager.getMulInst(baseNode, res, lhsSTy, rhs, rhsSTy, operatorIndex); }
             case MultiplicativeOp::OP_DIV: { res = this.conversionManager.getDivInst(baseNode, res, lhsSTy, rhs, rhsSTy, operatorIndex); }
             case MultiplicativeOp::OP_REM: { res = this.conversionManager.getRemInst(baseNode, res, lhsSTy, rhs, rhsSTy); }
-            default: { panic(Error("MultiplicativeExpr fall-through")); } // GCOV_EXCL_LINE
+            default: { panic(Error("MultiplicativeExpr fall-through")); } // LCOV_EXCL_LINE
         }
 
         // Retrieve the new lhs symbol type
@@ -3797,7 +3797,7 @@ public f<Any> IRGenerator.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) {
             lhs = newLhs;
         }
         default: {
-            panic(Error("PrefixUnaryExpr fall-through")); // GCOV_EXCL_LINE
+            panic(Error("PrefixUnaryExpr fall-through")); // LCOV_EXCL_LINE
         }
     }
 
@@ -3959,7 +3959,7 @@ public f<Any> IRGenerator.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
             lhs = this.generateErrorPropagation(node, lhs);
         }
         default: {
-            panic(Error("PostfixUnaryExpr fall-through")); // GCOV_EXCL_LINE
+            panic(Error("PostfixUnaryExpr fall-through")); // LCOV_EXCL_LINE
         }
     }
 
@@ -4238,7 +4238,7 @@ public f<Any> IRGenerator.visitValue(ASTValueNode* node) {
         return exprResultAny(exprResultWithConstant(nilValue));
     }
 
-    panic(Error("Value fall-through")); // GCOV_EXCL_LINE
+    panic(Error("Value fall-through")); // LCOV_EXCL_LINE
 }
 
 public f<Any> IRGenerator.visitConstant(ASTConstantNode* node) {
@@ -5272,7 +5272,7 @@ f<Any> IRGenerator.visitBuiltinCall(ASTFctCallNode* node) {
     if name == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER { return this.visitBuiltinErrTraceBufferCall(node); }
     if name == BUILTIN_FCT_NAME_STDERR { return this.visitBuiltinStdErrCall(node); }
     if name == BUILTIN_FCT_NAME_FRAME_ADDRESS { return this.visitBuiltinFrameAddressCall(node); }
-    panic(Error("Builtin function not implemented!")); // GCOV_EXCL_LINE
+    panic(Error("Builtin function not implemented!")); // LCOV_EXCL_LINE
 }
 
 f<Any> IRGenerator.visitBuiltinPrintfCall(ASTFctCallNode* node) {
@@ -7050,12 +7050,12 @@ f<llvm::Value> IRGenerator.getVTableAddressPoint(const StructBase* spiceStruct) 
 
 p IRGenerator.enableFunctionInstrumentation(llvm::Function function) {
     switch this.cliOptions.instrumentation.sanitizer {
-        case Sanitizer::NONE: {} // GCOV_EXCL_LINE
+        case Sanitizer::NONE: {} // LCOV_EXCL_LINE
         case Sanitizer::ADDRESS: { function.addFnAttr("sanitize_address"); }
         case Sanitizer::THREAD: { function.addFnAttr("sanitize_thread"); }
         case Sanitizer::MEMORY: { function.addFnAttr("sanitize_memory"); }
         case Sanitizer::TYPE: { function.addFnAttr("sanitize_type"); }
-        default: { panic(Error("Unhandled sanitizer type")); } // GCOV_EXCL_LINE
+        default: { panic(Error("Unhandled sanitizer type")); } // LCOV_EXCL_LINE
     }
 }
 

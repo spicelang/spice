@@ -39,9 +39,9 @@ void IROptimizer::prepare() {
 }
 
 void IROptimizer::optimizeDefault() {
-  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // GCOV_EXCL_LINE
-              << " ...\n";                                                                            // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // LCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // LCOV_EXCL_LINE
+              << " ...\n";                                                                            // LCOV_EXCL_LINE
 
   // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
@@ -56,9 +56,9 @@ void IROptimizer::optimizeDefault() {
 }
 
 void IROptimizer::optimizePreLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // GCOV_EXCL_LINE
-              << " (pre-link) ...\n";                                                                 // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // LCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // LCOV_EXCL_LINE
+              << " (pre-link) ...\n";                                                                 // LCOV_EXCL_LINE
 
   // Prepare pipeline
   const llvm::OptimizationLevel llvmOptLevel = getLLVMOptLevelFromSpiceOptLevel();
@@ -73,9 +73,9 @@ void IROptimizer::optimizePreLink() {
 }
 
 void IROptimizer::optimizePostLink() {
-  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // GCOV_EXCL_LINE
-    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // GCOV_EXCL_LINE
-              << " (post-link) ...\n";                                                                // GCOV_EXCL_LINE
+  if (cliOptions.printDebugOutput && cliOptions.dump.dumpIR && !cliOptions.dump.dumpToFiles)          // LCOV_EXCL_LINE
+    std::cout << "\nOptimizing on level " + std::to_string(static_cast<uint8_t>(cliOptions.optLevel)) // LCOV_EXCL_LINE
+              << " (post-link) ...\n";                                                                // LCOV_EXCL_LINE
   llvm::Module &ltoModule = *resourceManager.ltoModule;
 
   // Compute module summary index

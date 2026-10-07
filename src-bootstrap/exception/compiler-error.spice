@@ -80,6 +80,6 @@ f<string> CompilerError.getMessagePrefix(const CompilerErrorType errorType) {
         case CompilerErrorType::OOM: { return "An out of memory error occurred"; }
         case CompilerErrorType::INVALID_FUNCTION: { return "Invalid function"; }
         case CompilerErrorType::INVALID_MODULE: { return "Invalid module"; }
-        default: { panic(Error("Unknown error")); }
+        default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

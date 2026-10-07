@@ -84,7 +84,7 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
   std::string error;
   const llvm::Target *target = llvm::TargetRegistry::lookupTarget(cliOptions.targetTriple, error);
   if (!target)
-    throw CompilerError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // GCOV_EXCL_LINE
+    throw CompilerError(TARGET_NOT_AVAILABLE, "Selected target was not found: " + error); // LCOV_EXCL_LINE
 
   // Create the target machine
   llvm::TargetOptions opt;

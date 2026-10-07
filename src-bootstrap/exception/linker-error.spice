@@ -48,6 +48,6 @@ f<string> LinkerError.getMessagePrefix(const LinkerErrorType errorType) {
         case LinkerErrorType::ARCHIVER_NOT_FOUND: { return "Archiver not found"; }
         case LinkerErrorType::LINKER_ERROR: { return "Linker error occurred"; }
         case LinkerErrorType::SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER: { return "Sanitizer not supported by linker invoker"; }
-        default: { panic(Error("Unknown error")); }
+        default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

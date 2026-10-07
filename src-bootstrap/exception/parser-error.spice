@@ -58,6 +58,6 @@ f<string> ParserError.getMessagePrefix(const ParserErrorType errorType) {
         case ParserErrorType::INVALID_ATTR_VALUE_TYPE: { return "Invalid attribute value type"; }
         case ParserErrorType::RESERVED_KEYWORD: { return "Usage of reserved keyword"; }
         case ParserErrorType::RESERVED_TYPENAME: { return "Usage of reserved typename"; }
-        default: { panic(Error("Unknown error")); }
+        default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

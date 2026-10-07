@@ -25,12 +25,12 @@ void LLVMObjectEmitter::emit(const std::filesystem::path &objectPath) const {
   std::error_code errorCode;
   llvm::raw_fd_ostream stream(objectPathString, errorCode, llvm::sys::fs::OF_None);
   if (errorCode)
-    throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectPathString + "' could not be opened"); // GCOV_EXCL_LINE
+    throw CompilerError(CANT_OPEN_OUTPUT_FILE, "File '" + objectPathString + "' could not be opened"); // LCOV_EXCL_LINE
 
   llvm::legacy::PassManager passManager;
   constexpr auto fileType = llvm::CodeGenFileType::ObjectFile;
   if (sourceFile->targetMachine->addPassesToEmitFile(passManager, stream, nullptr, fileType, cliOptions.disableVerifier))
-    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
+    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // LCOV_EXCL_LINE
 
   // Emit object file
   passManager.run(module);
@@ -42,7 +42,7 @@ void LLVMObjectEmitter::getASMString(std::string &output) const {
   llvm::legacy::PassManager passManager;
   constexpr auto fileType = llvm::CodeGenFileType::AssemblyFile;
   if (sourceFile->targetMachine->addPassesToEmitFile(passManager, ostream, nullptr, fileType, cliOptions.disableVerifier))
-    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // GCOV_EXCL_LINE
+    throw CompilerError(WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // LCOV_EXCL_LINE
 
   // Emit object file
   passManager.run(module);

@@ -14,8 +14,8 @@ namespace spice::compiler {
  */
 void FileUtil::writeToFile(const std::filesystem::path &filePath, const std::string &fileContent) {
   std::ofstream file(filePath);
-  if (!file)                                                                    // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string()); // GCOV_EXCL_LINE
+  if (!file)                                                                    // LCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string()); // LCOV_EXCL_LINE
   file << fileContent;
   file.flush();
   file.close();
@@ -29,8 +29,8 @@ void FileUtil::writeToFile(const std::filesystem::path &filePath, const std::str
  */
 std::string FileUtil::getFileContent(const std::filesystem::path &filePath) {
   std::ifstream file(filePath);
-  if (!file)                                                                    // GCOV_EXCL_LINE
-    throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string()); // GCOV_EXCL_LINE
+  if (!file)                                                                    // LCOV_EXCL_LINE
+    throw CompilerError(IO_ERROR, "Failed to open file: " + filePath.string()); // LCOV_EXCL_LINE
   std::stringstream stringStream;
   stringStream << file.rdbuf();
   file.close();

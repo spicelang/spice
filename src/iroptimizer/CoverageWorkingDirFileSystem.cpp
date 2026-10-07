@@ -22,7 +22,7 @@ private:
 } // namespace
 
 llvm::IntrusiveRefCntPtr<llvm::vfs::FileSystem> createFixedWorkingDirFileSystem(std::string workingDir) {
-  return new FixedWorkingDirFileSystem(llvm::vfs::getRealFileSystem(), std::move(workingDir)); // GCOV_EXCL_LINE
+  return new FixedWorkingDirFileSystem(llvm::vfs::getRealFileSystem(), std::move(workingDir)); // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler

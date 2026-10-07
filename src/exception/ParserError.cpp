@@ -47,8 +47,8 @@ std::string ParserError::getMessagePrefix(ParserErrorType errorType) {
   case RESERVED_TYPENAME:
     return "Usage of reserved typename";
   }
-  assert_fail("Unknown error"); // GCOV_EXCL_LINE
-  return "Unknown error";       // GCOV_EXCL_LINE
+  assert_fail("Unknown error"); // LCOV_EXCL_LINE
+  return "Unknown error";       // LCOV_EXCL_LINE
 }
 
 } // namespace spice::compiler
