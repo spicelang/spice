@@ -40,6 +40,9 @@ int main(int argc, char **argv) {
   if (testDriverCliOptions.bootstrapMode && testDriverCliOptions.bootstrapCompilerPath.empty() && !GTEST_FLAG_GET(list_tests))
     if (!BootstrapUtil::buildBootstrapCompiler())
       return 1;
+  // Only build the bootstrap compiler, e.g. to run the test cases against it in parallel afterwards
+  if (testDriverCliOptions.bootstrapBuildOnly)
+    return 0;
   // Run tests
   return RUN_ALL_TESTS();
 }
