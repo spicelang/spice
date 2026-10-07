@@ -22,11 +22,14 @@ namespace spice::compiler {
 std::unordered_map<uint64_t, Function *> FunctionManager::lookupCache = {};
 size_t FunctionManager::lookupCacheHits = 0;
 size_t FunctionManager::lookupCacheMisses = 0;
+std::unordered_map<uint64_t, uint64_t> FunctionManager::noMatchCache = {};
+uint64_t FunctionManager::registryVersion = 0;
 
 Function *FunctionManager::insert(Scope *insertScope, const Function &baseFunction, std::vector<Function *> *nodeFunctionList) {
   // Open a new manifestation list for the function definition
   const std::string fctId = baseFunction.name + ":" + baseFunction.declNode->codeLoc.toPrettyLineAndColumn();
   insertScope->functions.emplace(fctId, FunctionManifestationList());
+  registryVersion++; // A new function might match requests that did not match anything before
 
   // Collect substantiations
   std::vector<Function> manifestations;
@@ -188,6 +191,10 @@ const Function *FunctionManager::lookup(Scope *matchScope, const std::string &re
       if (presetFunction.isFullySubstantiated() != requestedFullySubstantiated)
         continue;
 
+      // Check the name before copying the function, because most functions in the scope have a different name
+      if (!matchName(presetFunction, reqName))
+        break; // Leave the whole manifestation list, because all have the same name
+
       // Copy the function to be able to substantiate types
       Function candidate = presetFunction;
 
@@ -237,6 +244,11 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
     lookupCacheHits++;
     return it->second;
   }
+  // Requests that did not match anything do not match anything as long as no function was inserted in the meantime
+  if (const auto it = noMatchCache.find(cacheKey); it != noMatchCache.end() && it->second == registryVersion) {
+    lookupCacheHits++;
+    return nullptr;
+  }
   lookupCacheMisses++;
 
   // Loop over function registry to find functions, that match the requirements of the call
@@ -248,6 +260,10 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       // Skip generic and newly inserted substantiations to prevent double matching of a function
       if (presetFunction.isGenericSubstantiation() || presetFunction.isNewlyInserted)
         continue;
+
+      // Check the name before copying the function, because most functions in the scope have a different name
+      if (!matchName(presetFunction, reqName))
+        break; // Leave the whole manifestation list, because all have the same name
 
       // Copy the function to be able to substantiate types
       Function candidate = presetFunction;
@@ -341,9 +357,11 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
     }
   }
 
-  // If no matches were found, return a nullptr
-  if (matches.empty())
+  // If no matches were found, remember that and return a nullptr
+  if (matches.empty()) {
+    noMatchCache[cacheKey] = registryVersion;
     return nullptr;
+  }
 
   // Tie-breaking: if multiple candidates match, narrow them by qualifier specificity and by preferring
   // explicitly declared overloads over generic substitutions (see breakOverloadTie).
@@ -740,6 +758,8 @@ bool FunctionManager::hasDtor(const Scope *matchScope) {
  */
 void FunctionManager::cleanup() {
   lookupCache.clear();
+  noMatchCache.clear();
+  registryVersion = 0;
   lookupCacheHits = 0;
   lookupCacheMisses = 0;
 }

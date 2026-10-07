@@ -9,8 +9,12 @@
 #include <typechecker/FunctionManager.h>
 #include <typechecker/MacroDefs.h>
 #include <typechecker/TypeChecker.h>
+#include <util/CustomHashFunctions.h>
 
 namespace spice::compiler {
+
+// Static member initialization
+std::unordered_map<uint64_t, uint64_t> OpRuleManager::unavailableOpFctCache = {};
 
 OpRuleManager::OpRuleManager(TypeChecker *typeChecker)
     : typeChecker(typeChecker), resourceManager(typeChecker->resourceManager) {}
@@ -802,12 +806,34 @@ QualType OpRuleManager::getCastResultType(const ASTNode *node, QualType lhsType,
   return validateBinaryOperation(node, CAST_OP_RULES, std::size(CAST_OP_RULES), "(cast)", lhsType, rhsType, true);
 }
 
+/**
+ * Clear the cache of unavailable operator functions
+ */
+void OpRuleManager::cleanup() { unavailableOpFctCache.clear(); }
+
 template <size_t N>
 ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const char *const fctName,
                                                             const std::array<ExprResult, N> &op, size_t opIdx) const {
   static_assert(N == 1 || N == 2, "Only unary and binary operators are overloadable");
+
+  // Most operators are applied to operands without an overloaded operator function (e.g. int == int). Searching all
+  // source files for one is expensive, so skip the search if it found nothing for the same operator and operand types in
+  // this source file before and no function was inserted since then.
+  uint64_t cacheKey = 0;
+  hashCombine64(cacheKey, hashPointer(typeChecker->sourceFile));
+  hashCombine64(cacheKey, std::hash<std::string_view>{}(fctName));
+  for (const ExprResult &operand : op) {
+    hashCombine64(cacheKey, std::hash<QualType>{}(operand.type));
+    hashCombine64(cacheKey, std::hash<bool>{}(operand.isTemporary()));
+  }
+  const uint64_t registryVersion = FunctionManager::getRegistryVersion();
+  if (const auto it = unavailableOpFctCache.find(cacheKey); it != unavailableOpFctCache.end() && it->second == registryVersion)
+    return ExprResult(QualType(TY_INVALID));
+
   Scope *calleeParentScope = nullptr;
   const Function *callee = nullptr;
+  const QualType thisType(TY_DYN);
+  ArgList args(N);
   for (const auto &sourceFile : typeChecker->resourceManager.sourceFiles | std::views::values) {
     // Check if there is a registered operator function
     if (!sourceFile->getNameRegistryEntry(fctName))
@@ -815,8 +841,6 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
 
     // Match callees in the global scope of this source file
     calleeParentScope = sourceFile->globalScope.get();
-    const QualType thisType(TY_DYN);
-    ArgList args(N);
     args[0] = {typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[0].type), op[0].isTemporary()};
     if constexpr (N == 2)
       args[1] = {typeChecker->mapLocalTypeToImportedScopeType(calleeParentScope, op[1].type), op[1].isTemporary()};
@@ -826,8 +850,10 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   }
 
   // Return invalid type if the callee was not found
-  if (!callee)
+  if (!callee) {
+    unavailableOpFctCache[cacheKey] = registryVersion;
     return ExprResult(QualType(TY_INVALID));
+  }
   assert(calleeParentScope != nullptr);
 
   // Save the pointer to the operator function in the AST node

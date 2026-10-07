@@ -51,6 +51,7 @@ public:
   [[nodiscard]] static Function *findMoveCtor(Scope *matchScope);
   [[nodiscard]] static bool hasDefaultCtor(const Scope *matchScope);
   [[nodiscard]] static bool hasDtor(const Scope *matchScope);
+  [[nodiscard]] static uint64_t getRegistryVersion() { return registryVersion; }
   static void cleanup();
   [[nodiscard]] static std::string dumpLookupCacheStatistics();
 
@@ -59,6 +60,8 @@ private:
   static std::unordered_map<uint64_t, Function *> lookupCache;
   static size_t lookupCacheHits;
   static size_t lookupCacheMisses;
+  static std::unordered_map</*cacheKey=*/uint64_t, /*registryVersion=*/uint64_t> noMatchCache;
+  static uint64_t registryVersion;
 
   // Private methods
   [[nodiscard]] static Function *insertSubstantiation(Scope *insertScope, const Function &newManifestation,
