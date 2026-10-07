@@ -99,9 +99,6 @@ SourceFile::SourceFile(GlobalResourceManager &resourceManager, SourceFile *paren
 }
 
 void SourceFile::runLexer() {
-  if (isMainFile)
-    resourceManager.totalTimer.start();
-
   // Check if this stage has already been done
   if (previousStage >= LEXER)
     return;
@@ -658,6 +655,12 @@ void SourceFile::concludeCompilation() {
 }
 
 void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
+  // The front end of the main source file covers the front ends of all its (transitive) dependencies. A circular import
+  // re-enters the front end of the main source file, so only measure the outermost call, which starts with its lexer
+  const bool measureWallTime = isMainFile && previousStage == NONE;
+  if (measureWallTime)
+    resourceManager.frontEndTimer.start();
+
   runLexer();
   CHECK_ABORT_FLAG_V()
   runParser();
@@ -670,9 +673,15 @@ void SourceFile::runFrontEnd() { // NOLINT(misc-no-recursion)
   CHECK_ABORT_FLAG_V()
   runSymbolTableBuilder();
   CHECK_ABORT_FLAG_V()
+
+  if (measureWallTime)
+    resourceManager.frontEndTimer.stop();
 }
 
 void SourceFile::runMiddleEnd() {
+  if (isMainFile)
+    resourceManager.middleEndTimer.start();
+
   // Merge the exported name registries of all (transitive) dependencies into the respective importing files. This is
   // the deferred tail of the front-end: it must run after every reachable file has built its own registry, which is
   // why it cannot live inside the per-file front-end recursion (a circular import would otherwise merge a dependency
@@ -721,6 +730,9 @@ void SourceFile::runMiddleEnd() {
   // Visualize dependency graph
   runDependencyGraphVisualizer();
   CHECK_ABORT_FLAG_V()
+
+  if (isMainFile)
+    resourceManager.middleEndTimer.stop();
 }
 
 void SourceFile::lookupCache() {
@@ -765,6 +777,9 @@ void SourceFile::runBackEndForThisFile() {
 }
 
 void SourceFile::runBackEnd() {
+  if (isMainFile)
+    resourceManager.backEndTimer.start();
+
   // Flatten the dependency graph into the order the back end used to recurse in: every file comes after all of its
   // dependencies, and files that already ran their back end are skipped.
   std::vector<SourceFile *> backEndSourceFiles;
@@ -809,7 +824,7 @@ void SourceFile::runBackEnd() {
     sourceFile->concludeCompilation();
 
   if (isMainFile) {
-    resourceManager.totalTimer.stop();
+    resourceManager.backEndTimer.stop();
     if (cliOptions.printDebugOutput)
       dumpCompilationStats();
   }
@@ -1150,7 +1165,10 @@ void SourceFile::dumpCompilationStats() const {
   const size_t totalTypeCount = TypeRegistry::getTypeCount();
   const size_t allocatedBytes = resourceManager.astNodeAlloc.getTotalAllocatedSize();
   const size_t allocationCount = resourceManager.astNodeAlloc.getAllocationCount();
-  const size_t totalDuration = resourceManager.totalTimer.getDurationMilliseconds();
+  const size_t frontEndDuration = resourceManager.frontEndTimer.getDurationMilliseconds();
+  const size_t middleEndDuration = resourceManager.middleEndTimer.getDurationMilliseconds();
+  const size_t backEndDuration = resourceManager.backEndTimer.getDurationMilliseconds();
+  const size_t totalDuration = frontEndDuration + middleEndDuration + backEndDuration;
   std::cout << "\nSuccessfully compiled " << std::to_string(sourceFileCount) << " source file(s)";
   std::cout << " or " << std::to_string(totalLineCount) << " lines in total.\n";
   std::cout << "Total number of blocks allocated via BlockAllocator: " << CommonUtil::formatBytes(allocatedBytes);
@@ -1159,7 +1177,9 @@ void SourceFile::dumpCompilationStats() const {
   resourceManager.astNodeAlloc.printAllocatedClassStatistic();
 #endif
   std::cout << "Total number of types: " << std::to_string(totalTypeCount) << "\n";
-  std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms\n";
+  std::cout << "Total compile time: " << std::to_string(totalDuration) << " ms (frontend: " << std::to_string(frontEndDuration);
+  std::cout << " ms, middle end: " << std::to_string(middleEndDuration) << " ms, backend: " << std::to_string(backEndDuration);
+  std::cout << " ms)\n";
 }
 
 void SourceFile::dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const {
