@@ -836,7 +836,7 @@ ExprResult OpRuleManager::isOperatorOverloadingFctAvailable(ASTNode *node, const
   ArgList args(N);
   // The first match wins, so iterate the source files in creation order. The order of the source file map depends on the
   // hash function, which would make the choice between operator functions of different source files arbitrary
-  for (SourceFile *sourceFile : typeChecker->resourceManager.sourceFilesInCreationOrder) {
+  for (const SourceFile *sourceFile : typeChecker->resourceManager.sourceFilesInCreationOrder) {
     // Check if there is a registered operator function
     if (!sourceFile->getNameRegistryEntry(fctName))
       continue;
