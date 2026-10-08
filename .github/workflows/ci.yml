@@ -98,12 +98,11 @@ jobs:
 
       - name: Run Test target (bootstrap compiler)
         working-directory: build
-        # Runs all test cases against the bootstrap compiler. Test cases that check host specifics, the bootstrap compiler
-        # does not replicate (e.g. ANTLR error messages), have a 'skip-bootstrap' marker file. Test cases that check typeid
-        # values (the bootstrap type hash differs from the host's std::hash<Type>) follow the bootstrap compiler and have a
-        # 'skip-host' marker file. Test cases, where the bootstrap compiler deliberately differs from the host, have
-        # bootstrap refs instead (e.g. ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express
-        # everything the host emits).
+        # Runs all test cases against the bootstrap compiler. Test cases that check outputs, where both compilers differ
+        # (e.g. ANTLR error messages or typeid values, since the bootstrap type hash differs from the host's
+        # std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test cases, where the
+        # bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g. ir-code-bootstrap.ll for
+        # the debug info, since the LLVM C API can't express everything the host emits).
         run: cmake --build . --target spicetest_bootstrap_parallel
 
       - name: Bootstrap until fixed point

@@ -266,10 +266,10 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     return true;
   if (testDriverCliOptions.isGitHubActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
-  // Some test cases check host specifics, that the bootstrap compiler does not replicate (e.g. ANTLR error messages)
+  // Some test cases check host specifics, that the bootstrap compiler does not replicate
   if (testDriverCliOptions.bootstrapMode && exists(testCase.testPath / CTL_SKIP_BOOTSTRAP))
     return true;
-  // Some test cases check bootstrap specifics, that differ from the host compiler (e.g. typeid values, which are hashes)
+  // Some test cases check bootstrap specifics, that differ from the host compiler (e.g. ANTLR error messages or typeid values)
   if (!testDriverCliOptions.bootstrapMode && exists(testCase.testPath / CTL_SKIP_HOST))
     return true;
   // Sanitizer-instrumented binaries cannot run under Valgrind either (the ASan/TSan/MSan/TYSan runtime and Valgrind's

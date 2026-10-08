@@ -74,8 +74,8 @@ case with `--bootstrap --update-refs` (in bootstrap mode, only bootstrap refs ar
 - `disabled` — skip the case entirely
 - `skip-gh-actions` — skip on CI
 - `skip-windows`, `skip-macos` — skip on that OS
-- `skip-bootstrap` — skip when running against the bootstrap compiler (`--bootstrap`), e.g. for ANTLR-specific error messages
-- `skip-host` — skip when running against the host compiler, e.g. for references that follow the bootstrap compiler, where both differ (like typeid hash values)
+- `skip-bootstrap` — skip when running against the bootstrap compiler (`--bootstrap`). Prefer `skip-host`, since the bootstrap compiler becomes the default
+- `skip-host` — skip when running against the host compiler, e.g. for references that follow the bootstrap compiler, where both differ (like ANTLR error messages or typeid hash values)
 - `skip-without-tpde` — skip when the compiler was built without `SPICE_ENABLE_TPDE` (e.g. for tests of the std TPDE bindings)
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests
 - `debug.gdb` — gdb script (used with `debug.out`)
