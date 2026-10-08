@@ -262,6 +262,10 @@ jobs:
     runs-on: windows-2025-vs2026
 
     steps:
+      # Git for Windows checks out symlinks as plain text files by default. Some test cases need real symlinks
+      - name: Enable symlinks
+        run: git config --global core.symlinks true
+
       - name: Checkout
         uses: actions/checkout@v7
         with:
