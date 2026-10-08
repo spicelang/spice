@@ -67,7 +67,7 @@ When running against the bootstrap compiler (`--bootstrap`), the runner first lo
 order (`<stem>-bootstrap-<os>-<arch>.<ext>` → `<stem>-bootstrap-<os>.<ext>` → `<stem>-bootstrap.<ext>`), before falling
 back to the refs above. Use them where the bootstrap compiler deliberately differs from the host, e.g.
 `ir-code-bootstrap.ll` for debug info the LLVM C API can't express. To generate one, create the empty file and run the
-case with `--bootstrap --update-refs`.
+case with `--bootstrap --update-refs` (in bootstrap mode, only bootstrap refs are updated).
 
 ## 5. Control / skip marker files (empty files in the case dir)
 

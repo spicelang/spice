@@ -15,26 +15,25 @@ env:
   # that check host specifics, the bootstrap compiler does not replicate (e.g. ANTLR error messages), have a
   # 'skip-bootstrap' marker file instead. Test cases that check typeid values (the bootstrap type hash differs from the
   # host's std::hash<Type>) follow the bootstrap compiler and have a 'skip-host' marker file.
+  # Test cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
+  # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
   # Known gaps:
-  # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
   # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   BOOTSTRAP_TEST_FILTER: >-
     CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*:
     BenchmarkTests.*:ExampleTests.*
-    -IRGeneratorTests.instrumentation_successTysanAndDbgInfo:
-    IRGeneratorTests.instrumentation_successDbgInfoComplex:
-    IRGeneratorTests.instrumentation_successDbgInfoLineOnly:
-    IRGeneratorTests.instrumentation_successDbgInfoSimple:
-    IRGeneratorTests.instrumentation_successAsanAndDbgInfo:
-    IRGeneratorTests.instrumentation_successMsanAndDbgInfo:
-    IRGeneratorTests.instrumentation_successTsanAndDbgInfo:
-    StdTests.data_containerScopeCleanupLeak
+    -StdTests.data_containerScopeCleanupLeak
   # Additional bootstrap compiler gaps that only show up on Windows (appended to the negative patterns above):
   # - generics_successGenericTypeCtorCall1: the bootstrap compiler crashes with a heap corruption (0xC0000374)
   # - runtime_resultErrTracePanic, imports_successValidImport2: the relative paths to std files (in the panic message, in
   #   the dependency graph) have one '../' less. The bootstrap compiler resolves the test-files link when making paths
   #   relative, the host's std::filesystem::relative() does not on Windows
+  # - instrumentation_successAsanAndDbgInfo, instrumentation_successDbgInfoComplex, instrumentation_successTysanAndDbgInfo:
+  #   the IR differs on Windows (see their ir-code-windows.ll), but there is no ir-code-bootstrap-windows.ll for them yet
   BOOTSTRAP_TEST_FILTER_WINDOWS: >-
+    IRGeneratorTests.instrumentation_successAsanAndDbgInfo:
+    IRGeneratorTests.instrumentation_successDbgInfoComplex:
+    IRGeneratorTests.instrumentation_successTysanAndDbgInfo:
     IRGeneratorTests.generics_successGenericTypeCtorCall1:
     StdTests.runtime_resultErrTracePanic:
     TypeCheckerTests.imports_successValidImport2

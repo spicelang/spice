@@ -120,8 +120,10 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
       return true;
 #endif
 
-    if (testDriverCliOptions.updateRefs) {          // GCOV_EXCL_LINE
-      FileUtil::writeToFile(refPath, actualOutput); // GCOV_EXCL_LINE
+    // In bootstrap mode, only the bootstrap refs may be updated. The other refs hold the output of the host compiler
+    const bool isBootstrapRef = refPath.filename().string().starts_with(getBootstrapRefPath(originalRefPath).stem().string());
+    if (testDriverCliOptions.updateRefs && (!testDriverCliOptions.bootstrapMode || isBootstrapRef)) { // GCOV_EXCL_LINE
+      FileUtil::writeToFile(refPath, actualOutput);                                                   // GCOV_EXCL_LINE
     } else if (!testDriverCliOptions.enableCoverage) {
       // In coverage mode, debug info and coverage counters change the generated output, so comparing it against the
       // reference would fail spuriously. Still call getActualOutput() above though, to drive the pipeline stage that
