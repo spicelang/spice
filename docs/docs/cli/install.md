@@ -35,7 +35,6 @@ You can apply following options to the `install` subcommand:
 | -            | `--dump-object-file`      | Dump object files                                                                              |
 | -            | `--dump-dependency-graph` | Dump compile unit dependency graph                                                             |
 | `-d`         | `--debug-output`          | Print compiler output for debugging.                                                           |
-| `-q`         | `--quiet`                 | Do not show the compile progress bar (self-hosted compiler only).                              |
 | `-j <n>`     | `--jobs <n>`              | Set number of jobs to parallelize compilation (Default is auto)                                |
 | `-o`         | `--output`                | Set path for executable output.                                                                |
 | `-O<n>`      | -                         | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2` (default), `-O3`, `-Os`, `-Oz` |
