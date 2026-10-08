@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:6:25:
+Multiple declarations of the same variable: The variable 'value' was declared more than once
+
+6  foreach long value, int value : values {
+                       ^^^^^^^^^

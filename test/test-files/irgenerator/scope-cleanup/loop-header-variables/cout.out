@@ -1,0 +1,19 @@
+start: result=0 live=1
+forLeftThroughCondition: result=3 live=1
+forWithContinue: result=4 live=1
+forWithBreak: result=3 live=1
+forWithReturn: result=2 live=1
+nestedForWithBreakOutOfBoth: result=5 live=1
+nestedForWithContinueOuter: result=6 live=1
+forWithTemporaryInIncrementer: result=3 live=1
+forWithErrorPropagationInCondition(false): ok value=3 live=1
+forWithErrorPropagationInCondition(true): error code=42 live=1
+forWithString: result=3 live=1
+forWithEscapingAddress: result=3 live=1
+foreachWithEscapingIndex: result=9 live=1
+foreachWithItemByValue: result=6 live=5
+foreachWithItemByValueAndBreak: result=2 live=5
+foreachWithIndexAndItemByValue: result=14 live=5
+foreachWithItemByReference: result=6 live=5
+after vector: result=0 live=1
+foreachWithStringItem: result=5 live=1

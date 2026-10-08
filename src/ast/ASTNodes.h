@@ -683,6 +683,13 @@ public:
   Scope *bodyScope = nullptr;
 };
 
+// ============================================================ Cleanup ==========================================================
+
+struct ResourcesForManifestationToCleanup {
+  std::vector<std::pair<SymbolTableEntry *, Function *>> dtorFunctionsToCall;
+  std::vector<SymbolTableEntry *> heapVarsToFree;
+};
+
 // ========================================================== ForLoopNode ========================================================
 
 class ForLoopNode final : public StmtNode {
@@ -697,14 +704,18 @@ public:
   // Other methods
   GET_CHILDREN(initDecl, condAssign, incAssign, body);
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
+  [[nodiscard]] std::string getBodyScopeId() const { return "for-body:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
+  void customItemsInitialization(const size_t manifestationCount) override { headResourcesToCleanup.resize(manifestationCount); }
 
   // Public members
   DeclStmtNode *initDecl = nullptr;
   ExprNode *condAssign = nullptr;
   ExprNode *incAssign = nullptr;
   StmtLstNode *body = nullptr;
+  Scope *headScope = nullptr;
   Scope *bodyScope = nullptr;
+  std::vector<ResourcesForManifestationToCleanup> headResourcesToCleanup;
 };
 
 // ======================================================== ForeachLoopNode ======================================================
@@ -721,13 +732,17 @@ public:
   // Other methods
   GET_CHILDREN(idxVarDecl, itemVarDecl, iteratorAssign, body);
   [[nodiscard]] std::string getScopeId() const { return "foreach:" + codeLoc.toString(); }
+  [[nodiscard]] std::string getBodyScopeId() const { return "foreach-body:" + codeLoc.toString(); }
+  void customItemsInitialization(const size_t manifestationCount) override { headResourcesToCleanup.resize(manifestationCount); }
 
   // Public members
   DeclStmtNode *idxVarDecl = nullptr;
   DeclStmtNode *itemVarDecl = nullptr;
   ExprNode *iteratorAssign = nullptr;
   StmtLstNode *body = nullptr;
+  Scope *headScope = nullptr;
   Scope *bodyScope = nullptr;
+  std::vector<ResourcesForManifestationToCleanup> headResourcesToCleanup;
   Function *getIteratorFct = nullptr;
   Function *getFct = nullptr;
   Function *getIdxFct = nullptr;
@@ -924,12 +939,6 @@ public:
 
 class StmtLstNode final : public ASTNode {
 public:
-  // Structs
-  struct ResourcesForManifestationToCleanup {
-    std::vector<std::pair<SymbolTableEntry *, Function *>> dtorFunctionsToCall;
-    std::vector<SymbolTableEntry *> heapVarsToFree;
-  };
-
   // Constructors
   using ASTNode::ASTNode;
 

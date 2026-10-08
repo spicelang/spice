@@ -270,7 +270,6 @@ assert.then.L45:                                  ; preds = %assert.exit.L43
 
 assert.exit.L45:                                  ; preds = %assert.exit.L43
   call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %8, ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !101
-    #dbg_declare(ptr %item, !49, !DIExpression(), !101)
   br label %foreach.head.L48, !dbg !101
 
 foreach.head.L48:                                 ; preds = %foreach.tail.L48, %assert.exit.L45
@@ -278,6 +277,7 @@ foreach.head.L48:                                 ; preds = %foreach.tail.L48, %
   br i1 %86, label %foreach.body.L48, label %foreach.exit.L48, !dbg !102
 
 foreach.body.L48:                                 ; preds = %foreach.head.L48
+    #dbg_declare(ptr %item, !49, !DIExpression(), !102)
   %87 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %8), !dbg !102
   %88 = load i32, ptr %87, align 4, !dbg !102
   store i32 %88, ptr %item, align 4, !dbg !102
@@ -328,7 +328,6 @@ assert.then.L53:                                  ; preds = %assert.exit.L52
 
 assert.exit.L53:                                  ; preds = %assert.exit.L52
   call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %9, ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !111
-    #dbg_declare(ptr %item1, !51, !DIExpression(), !111)
   br label %foreach.head.L56, !dbg !111
 
 foreach.head.L56:                                 ; preds = %foreach.tail.L56, %assert.exit.L53
@@ -336,6 +335,7 @@ foreach.head.L56:                                 ; preds = %foreach.tail.L56, %
   br i1 %106, label %foreach.body.L56, label %foreach.exit.L56, !dbg !112
 
 foreach.body.L56:                                 ; preds = %foreach.head.L56
+    #dbg_declare(ptr %item1, !51, !DIExpression(), !112)
   %107 = call ptr @_ZN14VectorIteratorIiE3getEv(ptr %9), !dbg !112
     #dbg_declare(ptr %10, !51, !DIExpression(), !112)
   store ptr %107, ptr %10, align 8, !dbg !112
@@ -389,7 +389,6 @@ assert.exit.L61:                                  ; preds = %assert.exit.L60
   call void @_ZN6VectorIiE11getIteratorEv(ptr dead_on_unwind writable sret(%struct.VectorIterator) align 8 %11, ptr noundef nonnull align 8 dereferenceable(32) %vi), !dbg !121
     #dbg_declare(ptr %idx, !53, !DIExpression(), !121)
   store i64 0, ptr %idx, align 8, !dbg !121
-    #dbg_declare(ptr %item2, !56, !DIExpression(), !121)
   br label %foreach.head.L63, !dbg !121
 
 foreach.head.L63:                                 ; preds = %foreach.tail.L63, %assert.exit.L61
@@ -397,6 +396,7 @@ foreach.head.L63:                                 ; preds = %foreach.tail.L63, %
   br i1 %126, label %foreach.body.L63, label %foreach.exit.L63, !dbg !122
 
 foreach.body.L63:                                 ; preds = %foreach.head.L63
+    #dbg_declare(ptr %item2, !56, !DIExpression(), !122)
   %127 = call { i64, ptr } @_ZN14VectorIteratorIiE6getIdxEv(ptr %11), !dbg !122
   store { i64, ptr } %127, ptr %12, align 8, !dbg !122
   %128 = load i64, ptr %12, align 8, !dbg !122

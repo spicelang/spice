@@ -36,6 +36,11 @@ foreach long idx, string word : welcomeMessage {
 }
 ```
 
+!!! note "Lifetime of the index and the item"
+    The index variable lives as long as the loop. The item variable belongs to a single round instead: if it is declared
+    as a value (and not as a reference), it is copied from the container at the beginning of each round and destructed at
+    the end of it.
+
 !!! tip "Usage of loop alternatives"
     Foreach loops should only be used when you have a container data structure and want to iterate over its items.
     If this is not the case, we recommend using the [for loop](for-loops.md), [while loop](while-loops.md) or

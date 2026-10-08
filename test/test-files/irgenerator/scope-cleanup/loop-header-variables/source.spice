@@ -1,0 +1,259 @@
+// TEST: --sanitizer=address
+import "std/data/vector";
+
+// A variable declared in the head of a for loop (or the index of a foreach loop) lives for the whole loop. It is constructed
+// once before the first round and destructed once when the loop is left: through its condition, with break, with return or
+// with the error propagation operator '!'. continue must not destruct it. The item of a foreach loop, in contrast, belongs to
+// a single round: it is copied in at the beginning of each round and destructed at the end of it.
+//
+// Every Tracked counts itself in LIVE, which is why the number of live instances has to be back at 1 (the one main keeps)
+// after every call, whether it leaked an object (more) or destructed one twice (less). The loops that take the address of
+// their variables or use a String are there for the address sanitizer, which reports a use of the variable after the end of
+// its lifetime.
+
+public int LIVE = 0;
+
+public type Tracked struct {
+    int id
+}
+
+public p Tracked.ctor(int id) {
+    this.id = id;
+    LIVE++;
+}
+
+public p Tracked.ctor(const Tracked& other) {
+    this.id = other.id;
+    LIVE++;
+}
+
+public p Tracked.dtor() {
+    LIVE--;
+}
+
+f<Tracked> make(int id) {
+    Tracked t = Tracked(id);
+    return t;
+}
+
+f<Result<int>> mightFail(bool doFail) {
+    if doFail {
+        return err<int>(42, "it failed");
+    }
+    return ok<int>(7);
+}
+
+p report(string name, int result) {
+    printf("%s: result=%d live=%d\n", name, result, LIVE);
+}
+
+p report(string name, Result<int>& result) {
+    if result.isErr() {
+        printf("%s: error code=%d live=%d\n", name, result.getErr().code, LIVE);
+    } else {
+        printf("%s: ok value=%d live=%d\n", name, result.unwrap(), LIVE);
+    }
+}
+
+// The loop variable is used by the condition and the incrementer of every round, so it must not be destructed in between
+f<int> forLeftThroughCondition() {
+    int rounds = 0;
+    for Tracked t = Tracked(0); t.id < 3; t.id++ {
+        rounds++;
+    }
+    return rounds;
+}
+
+f<int> forWithContinue() {
+    int rounds = 0;
+    for Tracked t = Tracked(0); t.id < 4; t.id++ {
+        rounds++;
+        if t.id % 2 == 0 { continue; }
+        Tracked inner = Tracked(t.id);
+        assert inner.id == t.id;
+    }
+    return rounds;
+}
+
+f<int> forWithBreak() {
+    int rounds = 0;
+    for Tracked t = Tracked(0); t.id < 10; t.id++ {
+        Tracked inner = Tracked(t.id);
+        assert inner.id == t.id;
+        rounds++;
+        if t.id == 2 { break; }
+    }
+    return rounds;
+}
+
+f<int> forWithReturn() {
+    for Tracked t = Tracked(0); t.id < 10; t.id++ {
+        Tracked inner = Tracked(t.id);
+        if inner.id == 2 { return t.id; }
+    }
+    return -1;
+}
+
+// break 2 leaves the inner loop without going through its exit, so it has to destruct the inner loop variable itself
+f<int> nestedForWithBreakOutOfBoth() {
+    int rounds = 0;
+    for Tracked outer = Tracked(0); outer.id < 3; outer.id++ {
+        for Tracked inner = Tracked(0); inner.id < 3; inner.id++ {
+            rounds++;
+            if outer.id == 1 && inner.id == 1 { break 2; }
+        }
+    }
+    return rounds;
+}
+
+f<int> nestedForWithContinueOuter() {
+    int rounds = 0;
+    for Tracked outer = Tracked(0); outer.id < 3; outer.id++ {
+        for Tracked inner = Tracked(0); inner.id < 3; inner.id++ {
+            rounds++;
+            if inner.id == 1 { continue 2; }
+        }
+    }
+    return rounds;
+}
+
+// The temporaries of the incrementer are created in every round, so they also have to be destructed in every round
+f<int> forWithTemporaryInIncrementer() {
+    int rounds = 0;
+    for int i = 0; i < 3; i += make(1).id {
+        rounds++;
+    }
+    return rounds;
+}
+
+// The '!' leaves the loop from its condition. At that point the loop variable is alive and has to be destructed
+f<Result<int>> forWithErrorPropagationInCondition(bool doFail) {
+    int rounds = 0;
+    for Tracked t = Tracked(0); mightFail(doFail && t.id == 1)! == 7 && t.id < 3; t.id++ {
+        rounds++;
+    }
+    return ok<int>(rounds);
+}
+
+f<int> forWithString() {
+    int rounds = 0;
+    for String s = String("a"); s.getLength() < 4l; s += "a" {
+        rounds++;
+    }
+    return rounds;
+}
+
+f<int> forWithEscapingAddress() {
+    int sum = 0;
+    for int i = 0; i < 3; i++ {
+        int* ptr = &i;
+        sum += *ptr;
+    }
+    return sum;
+}
+
+f<int> foreachWithEscapingIndex(Vector<int>& values) {
+    long sum = 0l;
+    foreach long idx, int value : values {
+        long* ptr = &idx;
+        sum += *ptr + value;
+    }
+    return cast<int>(sum);
+}
+
+// The item is a copy, which belongs to a single round. So in each round, exactly one copy is alive: the one of the round
+// before must already be destructed
+f<int> foreachWithItemByValue(Vector<Tracked>& values) {
+    int sum = 0;
+    const int liveBefore = LIVE;
+    foreach Tracked item : values {
+        assert LIVE == liveBefore + 1;
+        sum += item.id;
+    }
+    return sum;
+}
+
+f<int> foreachWithItemByValueAndBreak(Vector<Tracked>& values) {
+    int sum = 0;
+    const int liveBefore = LIVE;
+    foreach Tracked item : values {
+        assert LIVE == liveBefore + 1;
+        if item.id == 3 { break; }
+        if item.id == 1 { continue; }
+        sum += item.id;
+    }
+    return sum;
+}
+
+f<int> foreachWithIndexAndItemByValue(Vector<Tracked>& values) {
+    long sum = 0l;
+    const int liveBefore = LIVE;
+    foreach long idx, Tracked item : values {
+        assert LIVE == liveBefore + 1;
+        sum += idx * item.id;
+    }
+    return cast<int>(sum);
+}
+
+// The item is a reference, so no copy is made at all
+f<int> foreachWithItemByReference(Vector<Tracked>& values) {
+    int sum = 0;
+    const int liveBefore = LIVE;
+    foreach Tracked& item : values {
+        assert LIVE == liveBefore;
+        sum += item.id;
+    }
+    return sum;
+}
+
+f<int> foreachWithStringItem(Vector<String>& values) {
+    long length = 0l;
+    foreach String value : values {
+        length += value.getLength();
+    }
+    return cast<int>(length);
+}
+
+f<int> main() {
+    Tracked local = Tracked(0);
+    report("start", local.id);
+
+    report("forLeftThroughCondition", forLeftThroughCondition());
+    report("forWithContinue", forWithContinue());
+    report("forWithBreak", forWithBreak());
+    report("forWithReturn", forWithReturn());
+    report("nestedForWithBreakOutOfBoth", nestedForWithBreakOutOfBoth());
+    report("nestedForWithContinueOuter", nestedForWithContinueOuter());
+    report("forWithTemporaryInIncrementer", forWithTemporaryInIncrementer());
+    Result<int> resultOk = forWithErrorPropagationInCondition(false);
+    report("forWithErrorPropagationInCondition(false)", resultOk);
+    Result<int> resultErr = forWithErrorPropagationInCondition(true);
+    report("forWithErrorPropagationInCondition(true)", resultErr);
+    report("forWithString", forWithString());
+    report("forWithEscapingAddress", forWithEscapingAddress());
+
+    Vector<int> ints;
+    ints.pushBack(1);
+    ints.pushBack(2);
+    ints.pushBack(3);
+    report("foreachWithEscapingIndex", foreachWithEscapingIndex(ints));
+
+    {
+        Vector<Tracked> values;
+        for int i = 0; i < 4; i++ {
+            values.pushBack(Tracked(i));
+        }
+        const int liveBefore = LIVE;
+        report("foreachWithItemByValue", foreachWithItemByValue(values) + 100 * (LIVE - liveBefore));
+        report("foreachWithItemByValueAndBreak", foreachWithItemByValueAndBreak(values) + 100 * (LIVE - liveBefore));
+        report("foreachWithIndexAndItemByValue", foreachWithIndexAndItemByValue(values) + 100 * (LIVE - liveBefore));
+        report("foreachWithItemByReference", foreachWithItemByReference(values) + 100 * (LIVE - liveBefore));
+    }
+    report("after vector", 0);
+
+    Vector<String> strings;
+    strings.pushBack(String("ab"));
+    strings.pushBack(String("cde"));
+    report("foreachWithStringItem", foreachWithStringItem(strings));
+    return 0;
+}

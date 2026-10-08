@@ -25,12 +25,14 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   llvm::BasicBlock *bTail = createBlock("for.tail." + codeLine);
   llvm::BasicBlock *bExit = createBlock("for.exit." + codeLine);
 
-  // Change scope
-  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY, node);
+  // Change to head scope
+  ScopeHandle headScopeHandle(this, node->getScopeId(), ScopeType::LOOP_HEAD, node);
+  Scope *bodyScope = currentScope->getChildScope(node->getBodyScopeId());
 
-  // Save the break/continue targets, paired with the scope to clean up to when jumping there
-  breakTargets.emplace_back(currentScope, bExit);
-  continueTargets.emplace_back(currentScope, bTail);
+  // Save the break/continue targets, paired with the scope to clean up to when jumping there. The head scope is cleaned up in
+  // the exit block, so break does not clean it up itself
+  breakTargets.emplace_back(bodyScope, bExit);
+  continueTargets.emplace_back(bodyScope, bTail);
 
   // Init statement
   visit(node->initDecl);
@@ -47,19 +49,29 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body);
+  {
+    ScopeHandle bodyScopeHandle(static_cast<CompilerPass *>(this), bodyScope, ScopeType::FOR_BODY);
+    visit(node->body);
+  }
   // Create jump from body to tail block
   insertJump(bTail);
 
   // Switch to tail block
   switchToBlock(bTail);
   // Inc statement
-  visit(node->incAssign);
+  {
+    const ExprScopeHandle exprScopeHandle(this, node->incAssign);
+    visit(node->incAssign);
+    if (const Scope *exprScope = exprScopeHandle.getExprScope())
+      generateTemporariesCleanup(exprScope, node->incAssign);
+  }
   // Create jump from tail to head
   insertJump(bHead);
 
   // Switch to exit block
   switchToBlock(bExit);
+  // Clean up the head scope, e.g. destruct the loop variable
+  generateLoopHeadCleanup(node, currentScope);
 
   // Pop break/continue targets
   assert(breakTargets.back().block == bExit);
@@ -78,12 +90,14 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   llvm::BasicBlock *bTail = createBlock("foreach.tail." + codeLine);
   llvm::BasicBlock *bExit = createBlock("foreach.exit." + codeLine);
 
-  // Change scope
-  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY, node);
+  // Change to head scope
+  ScopeHandle headScopeHandle(this, node->getScopeId(), ScopeType::LOOP_HEAD, node);
+  Scope *bodyScope = currentScope->getChildScope(node->getBodyScopeId());
 
-  // Save the break/continue targets, paired with the scope to clean up to when jumping there
-  breakTargets.emplace_back(currentScope, bExit);
-  continueTargets.emplace_back(currentScope, bTail);
+  // Save the break/continue targets, paired with the scope to clean up to when jumping there. The head scope is cleaned up in
+  // the exit block, so break does not clean it up itself
+  breakTargets.emplace_back(bodyScope, bExit);
+  continueTargets.emplace_back(bodyScope, bTail);
 
   // Resolve iterator
   ExprNode *iteratorAssignNode = node->iteratorAssign;
@@ -139,14 +153,6 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
     assert(idxAddress != nullptr);
   }
 
-  // Visit item variable declaration
-  const DeclStmtNode *itemDeclNode = node->itemVarDecl;
-  visit(itemDeclNode);
-  // Get address of item variable
-  const SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
-  llvm::Value *itemAddress = getAddress(itemEntry);
-  assert(itemAddress != nullptr);
-
   // Create jump from original to head block
   insertJump(bHead);
 
@@ -162,6 +168,17 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to body block
   switchToBlock(bBody);
+  // Change to body scope
+  ScopeHandle bodyScopeHandle(static_cast<CompilerPass *>(this), bodyScope, ScopeType::FOREACH_BODY);
+
+  // Visit item variable declaration. The item belongs to the body, so its lifetime begins anew in each round
+  const DeclStmtNode *itemDeclNode = node->itemVarDecl;
+  visit(itemDeclNode);
+  // Get address of item variable
+  const SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
+  llvm::Value *itemAddress = getAddress(itemEntry);
+  assert(itemAddress != nullptr);
+
   // Get the current iterator values
   LLVMExprResult itemResult;
   if (hasIdx) {
@@ -202,6 +219,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   }
   // Visit body
   visit(node->body);
+  // Leave body scope
+  bodyScopeHandle.leaveScopeEarly();
   // Create jump from body to tail block
   insertJump(bTail);
 
@@ -217,6 +236,8 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to exit block
   switchToBlock(bExit);
+  // Clean up the head scope, e.g. end the lifetime of the index variable
+  generateLoopHeadCleanup(node, currentScope);
 
   // Pop break/continue targets
   assert(breakTargets.back().block == bExit);

@@ -23,8 +23,8 @@ std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
 }
 
 std::any TypeChecker::visitForLoop(ForLoopNode *node) {
-  // Change to for body scope
-  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
+  // Change to for head scope
+  ScopeHandle headScopeHandle(this, node->getScopeId(), ScopeType::LOOP_HEAD);
 
   // Visit loop variable declaration
   visit(node->initDecl);
@@ -37,10 +37,16 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
     SOFT_ERROR_ER(node->condAssign, CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
 
   // Visit incrementer
-  visit(node->incAssign);
+  visitInExprScope(node->incAssign);
 
   // Visit body
-  visit(node->body);
+  {
+    ScopeHandle bodyScopeHandle(this, node->getBodyScopeId(), ScopeType::FOR_BODY);
+    visit(node->body);
+  }
+
+  // Do cleanup of the head scope, e.g. the dtor call for the loop variable. It is executed once the loop is left
+  doScopeCleanup(node->headResourcesToCleanup.at(manIdx), node);
 
   return nullptr;
 }
@@ -84,8 +90,8 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
       currentScope->symbolTable.insertAnonymous(iteratorType, iteratorNode);
   }
 
-  // Change to foreach body scope
-  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOREACH_BODY);
+  // Change to foreach head scope
+  ScopeHandle headScopeHandle(this, node->getScopeId(), ScopeType::LOOP_HEAD);
 
   // Check iterator type
   if (!iteratorType.isIterator(node)) {
@@ -128,32 +134,41 @@ std::any TypeChecker::visitForeachLoop(ForeachLoopNode *node) {
   node->nextFct = FunctionManager::match(matchScope, "next", iteratorType, {}, {}, false, node);
   RETURN_NULLPTR_IF_NULLPTR(node->nextFct);
 
-  // Retrieve item variable entry
-  SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl->varName);
-  assert(itemVarSymbol != nullptr);
+  // The item lives in the body scope, since it is copied anew in each round
+  {
+    // Change to foreach body scope
+    ScopeHandle bodyScopeHandle(this, node->getBodyScopeId(), ScopeType::FOREACH_BODY);
 
-  // Check type of the item
-  auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl));
-  HANDLE_UNRESOLVED_TYPE_PTR(itemType)
-  if (itemType.is(TY_DYN)) { // Perform type inference
-    // Update evaluated symbol type of the declaration data type
-    node->itemVarDecl->dataType->setEvaluatedSymbolType(iteratorItemType, manIdx);
-    // Update item type
-    itemType = iteratorItemType;
+    // Retrieve item variable entry
+    SymbolTableEntry *itemVarSymbol = currentScope->lookupStrict(node->itemVarDecl->varName);
+    assert(itemVarSymbol != nullptr);
+
+    // Check type of the item
+    auto itemType = std::any_cast<QualType>(visit(node->itemVarDecl));
+    HANDLE_UNRESOLVED_TYPE_PTR(itemType)
+    if (itemType.is(TY_DYN)) { // Perform type inference
+      // Update evaluated symbol type of the declaration data type
+      node->itemVarDecl->dataType->setEvaluatedSymbolType(iteratorItemType, manIdx);
+      // Update item type
+      itemType = iteratorItemType;
+    }
+
+    // Check result type. This is important, also for copy ctor calls, etc.
+    const ExprResult itemResult = {itemType, itemVarSymbol};
+    const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
+    const auto [_, copyCtor] =
+        opRuleManager.getAssignResultType(node->itemVarDecl, itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
+    node->calledItemCopyCtor = copyCtor;
+
+    // Update type of item
+    itemVarSymbol->updateType(itemType, true);
+
+    // Visit body
+    visit(node->body);
   }
 
-  // Check result type. This is important, also for copy ctor calls, etc.
-  const ExprResult itemResult = {itemType, itemVarSymbol};
-  const ExprResult iteratorItemResult = {iteratorItemType, nullptr /* always a temporary */};
-  const auto [_, copyCtor] =
-      opRuleManager.getAssignResultType(node->itemVarDecl, itemResult, iteratorItemResult, true, false, ERROR_FOREACH_ITEM);
-  node->calledItemCopyCtor = copyCtor;
-
-  // Update type of item
-  itemVarSymbol->updateType(itemType, true);
-
-  // Visit body
-  visit(node->body);
+  // Do cleanup of the head scope, e.g. the lifetime of the index variable. It is executed once the loop is left
+  doScopeCleanup(node->headResourcesToCleanup.at(manIdx), node);
 
   return nullptr;
 }

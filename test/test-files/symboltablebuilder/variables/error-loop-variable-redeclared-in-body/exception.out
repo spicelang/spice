@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:9:
+Multiple declarations of the same variable: The variable 'i' was declared more than once
+
+3  int i = 2;
+   ^^^^^^^^^

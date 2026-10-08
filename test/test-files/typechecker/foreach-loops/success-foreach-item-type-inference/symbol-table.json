@@ -6,19 +6,26 @@
       "children": [
         {
           "captures": [],
-          "children": [],
-          "name": "foreach:L30C5",
-          "symbols": [
+          "children": [
             {
-              "codeLoc": "L30C13",
-              "isGlobal": false,
-              "isVolatile": false,
-              "name": "item",
-              "orderIndex": 0,
-              "state": "initialized",
-              "type": "short&"
+              "captures": [],
+              "children": [],
+              "name": "foreach-body:L30C5",
+              "symbols": [
+                {
+                  "codeLoc": "L30C13",
+                  "isGlobal": false,
+                  "isVolatile": false,
+                  "name": "item",
+                  "orderIndex": 0,
+                  "state": "initialized",
+                  "type": "short&"
+                }
+              ]
             }
-          ]
+          ],
+          "name": "foreach:L30C5",
+          "symbols": []
         }
       ],
       "name": "fct:main",
