@@ -21,9 +21,9 @@ public p BitcodeLinker.ctor(GlobalResourceManager& resourceManager) {
 }
 
 public p BitcodeLinker.link() {
-    // Link all source file modules in
-    foreach Pair<const String&, SourceFile*&> sourceFileEntry : this.resourceManager.sourceFiles {
-        SourceFile* sourceFile = sourceFileEntry.getSecond();
+    // Link all source file modules in. Use the creation order, because the order of the source file map depends on the hash
+    // function, and the link order shows in the LTO module
+    foreach SourceFile* sourceFile : this.resourceManager.sourceFilesInCreationOrder {
         const bool failed = this.resourceManager.ltoModule.linkInModule(sourceFile.llvmModule);
         assert !failed;
     }

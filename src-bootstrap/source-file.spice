@@ -806,10 +806,11 @@ public p SourceFile.runMiddleEnd() {
         anySourceFileRevisitPending = false;
         // Snapshot the current files before driving any of them: runTypeCheckerPost() below can itself trigger a
         // freshly-discovered runtime import (SourceFile.requestRuntimeModule -> GlobalResourceManager.createSourceFile),
-        // which inserts into resourceManager.sourceFiles, so a stable list of pointers is collected first.
+        // which inserts into resourceManager.sourceFiles, so a stable list of pointers is collected first. It is taken in
+        // creation order, so that the revisits happen in a deterministic order, independent of the hash function of the map.
         Vector<SourceFile*> sourceFilesSnapshot;
-        foreach dyn sourceFileEntry : this.resourceManager.sourceFiles {
-            sourceFilesSnapshot.pushBack(sourceFileEntry.getSecond());
+        foreach SourceFile* createdSourceFile : this.resourceManager.sourceFilesInCreationOrder {
+            sourceFilesSnapshot.pushBack(createdSourceFile);
         }
         foreach SourceFile* sourceFile : sourceFilesSnapshot {
             if sourceFile.reVisitRequested {
