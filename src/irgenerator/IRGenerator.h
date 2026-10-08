@@ -233,9 +233,6 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   llvm::Value *getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const;
   void generateScopeCleanup(const StmtLstNode *node, const SymbolTableEntry *returnedLocal = nullptr);
-  void generateScopeCleanup(const ResourcesForManifestationToCleanup &resources, Scope *scope,
-                            const SymbolTableEntry *returnedLocal);
-  void generateForHeadCleanup(const ForLoopNode *node, Scope *headScope, const SymbolTableEntry *returnedLocal = nullptr);
   void generateTemporariesCleanup(const Scope *exprScope, const ASTNode *node);
   void generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope, const SymbolTableEntry *returnedLocal = nullptr);
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;

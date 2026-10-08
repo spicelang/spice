@@ -22,6 +22,7 @@ env:
   # host's std::hash<Type>) follow the bootstrap compiler and have a 'skip-host' marker file.
   # Known gaps:
   # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
+  # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   BOOTSTRAP_TEST_FILTER: >-
     CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*
     -IRGeneratorTests.instrumentation_successTysanAndDbgInfo:
@@ -30,7 +31,8 @@ env:
     IRGeneratorTests.instrumentation_successDbgInfoSimple:
     IRGeneratorTests.instrumentation_successAsanAndDbgInfo:
     IRGeneratorTests.instrumentation_successMsanAndDbgInfo:
-    IRGeneratorTests.instrumentation_successTsanAndDbgInfo
+    IRGeneratorTests.instrumentation_successTsanAndDbgInfo:
+    StdTests.data_containerScopeCleanupLeak
 
 jobs:
   coverage-linux-x86:

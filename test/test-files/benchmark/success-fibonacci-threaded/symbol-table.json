@@ -55,44 +55,21 @@
             {
               "captures": [],
               "children": [],
-              "name": "expr:L11C46",
-              "symbols": []
-            },
-            {
-              "captures": [],
-              "children": [
-                {
-                  "captures": [],
-                  "children": [],
-                  "name": "lambda:L12C29",
-                  "symbols": [
-                    {
-                      "codeLoc": "L13C13",
-                      "isGlobal": false,
-                      "isVolatile": false,
-                      "name": "res",
-                      "orderIndex": 0,
-                      "state": "initialized",
-                      "type": "int"
-                    }
-                  ]
-                }
-              ],
-              "name": "for:L11C5",
+              "name": "lambda:L12C29",
               "symbols": [
                 {
-                  "codeLoc": "L16C9",
+                  "codeLoc": "L13C13",
                   "isGlobal": false,
                   "isVolatile": false,
-                  "name": "thread",
+                  "name": "res",
                   "orderIndex": 0,
                   "state": "initialized",
-                  "type": "public Thread&"
+                  "type": "int"
                 }
               ]
             }
           ],
-          "name": "for-head:L11C5",
+          "name": "for:L11C5",
           "symbols": [
             {
               "codeLoc": "L11C9",
@@ -102,6 +79,15 @@
               "orderIndex": 0,
               "state": "initialized",
               "type": "unsigned int"
+            },
+            {
+              "codeLoc": "L16C9",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "thread",
+              "orderIndex": 1,
+              "state": "initialized",
+              "type": "public Thread&"
             }
           ]
         },
@@ -113,31 +99,9 @@
               "children": [],
               "name": "expr:L20C29",
               "symbols": []
-            },
-            {
-              "captures": [],
-              "children": [],
-              "name": "expr:L20C46",
-              "symbols": []
-            },
-            {
-              "captures": [],
-              "children": [],
-              "name": "for:L20C5",
-              "symbols": [
-                {
-                  "codeLoc": "L21C9",
-                  "isGlobal": false,
-                  "isVolatile": false,
-                  "name": "thread",
-                  "orderIndex": 0,
-                  "state": "initialized",
-                  "type": "public Thread&"
-                }
-              ]
             }
           ],
-          "name": "for-head:L20C5",
+          "name": "for:L20C5",
           "symbols": [
             {
               "codeLoc": "L20C9",
@@ -147,6 +111,15 @@
               "orderIndex": 0,
               "state": "initialized",
               "type": "unsigned int"
+            },
+            {
+              "codeLoc": "L21C9",
+              "isGlobal": false,
+              "isVolatile": false,
+              "name": "thread",
+              "orderIndex": 1,
+              "state": "initialized",
+              "type": "public Thread&"
             }
           ]
         }

@@ -23,8 +23,8 @@ std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
 }
 
 std::any TypeChecker::visitForLoop(ForLoopNode *node) {
-  // Change to for head scope
-  const ScopeHandle headScopeHandle(this, node->getHeadScopeId(), ScopeType::FOR_HEAD);
+  // Change to for body scope
+  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
 
   // Visit loop variable declaration
   visit(node->initDecl);
@@ -37,16 +37,10 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
     SOFT_ERROR_ER(node->condAssign, CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
 
   // Visit incrementer
-  visitInExprScope(node->incAssign);
+  visit(node->incAssign);
 
   // Visit body
-  {
-    const ScopeHandle bodyScopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
-    visit(node->body);
-  }
-
-  // Do cleanup of the head scope, e.g. the dtor call for the loop variable
-  doScopeCleanup(node->headResourcesToCleanup.at(manIdx), node);
+  visit(node->body);
 
   return nullptr;
 }

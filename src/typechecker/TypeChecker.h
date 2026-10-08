@@ -11,7 +11,6 @@ namespace spice::compiler {
 // Forward declarations
 class LambdaBaseNode;
 class ExprNode;
-struct ResourcesForManifestationToCleanup;
 class CompilerWarning;
 struct Param;
 struct NamedParam;
@@ -232,11 +231,10 @@ private:
   Function *implicitlyCallStructCopyCtor(const QualType &thisType, const ASTNode *node) const;
   Function *implicitlyCallStructMoveCtor(const SymbolTableEntry *entry, const ASTNode *node) const;
   Function *implicitlyCallStructMoveCtor(const QualType &thisType, const ASTNode *node) const;
-  void implicitlyCallStructDtor(SymbolTableEntry *entry, ResourcesForManifestationToCleanup &resources,
-                                const ASTNode *node) const;
+  void implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) const;
   void implicitlyCallDeallocate(const ASTNode *node) const;
   void sortByReverseDeclarationOrder(std::vector<SymbolTableEntry *> &vars) const;
-  void doScopeCleanup(ResourcesForManifestationToCleanup &resources, const ASTNode *node) const;
+  void doScopeCleanup(StmtLstNode *node) const;
   void doExprScopeCleanup(const ExprNode *node) const;
   ExprResult visitInExprScope(ExprNode *expr);
   bool isCopyCtorCall(const ArgList &ctorArgs, const QualType &thisType) const;

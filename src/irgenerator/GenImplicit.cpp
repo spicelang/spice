@@ -120,25 +120,13 @@ llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const Qua
  */
 void IRGenerator::generateScopeCleanup(const StmtLstNode *node, const SymbolTableEntry *returnedLocal /*=nullptr*/) {
   diGenerator.setSourceLocation(node->closingBraceCodeLoc);
-  generateScopeCleanup(node->resourcesToCleanup.at(manIdx), currentScope, returnedLocal);
-}
 
-/**
- * Generate cleanup code (dtor calls, deallocations) for the given resources of a scope
- *
- * @param resources Resources to clean up, as determined by the type checker
- * @param scope Scope to generate the lifetime end markers for
- * @param returnedLocal Local variable, that is handed over to the caller by the return statement this cleanup is generated
- *                      for. It must not be destructed. Nullptr if there is none.
- */
-void IRGenerator::generateScopeCleanup(const ResourcesForManifestationToCleanup &resources, Scope *scope,
-                                       const SymbolTableEntry *returnedLocal) {
   // Do not clean up if the block is already terminated
   if (blockAlreadyTerminated)
     return;
 
   // Call all dtor functions
-  const auto &[dtorFunctionsToCall, heapVarsToFree] = resources;
+  const auto &[dtorFunctionsToCall, heapVarsToFree] = node->resourcesToCleanup.at(manIdx);
   for (auto [entry, dtor] : dtorFunctionsToCall)
     if (entry != returnedLocal)
       generateCtorOrDtorCall(entry, dtor, {});
@@ -149,7 +137,7 @@ void IRGenerator::generateScopeCleanup(const ResourcesForManifestationToCleanup 
 
   // Generate lifetime end markers
   if (cliOptions.useLifetimeMarkers) {
-    for (const SymbolTableEntry *var : scope->getVarsGoingOutOfScope()) {
+    for (const SymbolTableEntry *var : currentScope->getVarsGoingOutOfScope()) {
       llvm::Value *address = getAddress(var);
       // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else. This excludes e.g. the phi
       // of a ternary with a reference result, which refers to the storage of one of its operands.
@@ -157,22 +145,6 @@ void IRGenerator::generateScopeCleanup(const ResourcesForManifestationToCleanup 
         builder.CreateLifetimeEnd(address);
     }
   }
-}
-
-/**
- * Generate cleanup code (dtor calls, deallocations) for the head scope of a for loop, which holds the loop variable. It lives
- * across all iterations, so it is cleaned up once, when the loop is left, and not at the end of each iteration like the body.
- *
- * @param node For loop
- * @param headScope Head scope of the for loop
- * @param returnedLocal Local variable, that is handed over to the caller by the return statement this cleanup is generated
- *                      for. It must not be destructed. Nullptr if there is none.
- */
-void IRGenerator::generateForHeadCleanup(const ForLoopNode *node, Scope *headScope,
-                                         const SymbolTableEntry *returnedLocal /*=nullptr*/) {
-  assert(headScope->type == ScopeType::FOR_HEAD);
-  diGenerator.setSourceLocation(node->body->closingBraceCodeLoc);
-  generateScopeCleanup(node->headResourcesToCleanup.at(manIdx), headScope, returnedLocal);
 }
 
 /**
@@ -190,11 +162,10 @@ void IRGenerator::generateTemporariesCleanup(const Scope *exprScope, const ASTNo
 }
 
 /**
- * Check if the given node is part of the header of an if, while, do-while or foreach statement, e.g. of its condition.
+ * Check if the given node is part of the header of an if, while, do-while, for or foreach statement, e.g. of its condition.
  *
  * The IR for a header is generated within the scope of its statement, but the header is not part of the body of the statement.
  * Hence, the nearest statement list of a node in the header is the one around the statement, and not the one of that scope.
- * For loops are not affected, because their header is generated within a head scope of its own.
  *
  * @param node Node to check
  * @return Part of a header or not
@@ -204,37 +175,10 @@ static bool isInStatementHeader(const ASTNode *node) {
     if (ancestor->isStmtLst())
       return false; // The node is part of a body
     if (dynamic_cast<const IfStmtNode *>(ancestor) || dynamic_cast<const WhileLoopNode *>(ancestor) ||
-        dynamic_cast<const DoWhileLoopNode *>(ancestor) || dynamic_cast<const ForeachLoopNode *>(ancestor))
+        dynamic_cast<const DoWhileLoopNode *>(ancestor) || dynamic_cast<const ForLoopNode *>(ancestor) ||
+        dynamic_cast<const ForeachLoopNode *>(ancestor))
       return true;
   }
-  return false;
-}
-
-/**
- * Get the next for loop that encloses the given node
- *
- * @param node Node to start the search from (exclusive)
- * @return Enclosing for loop
- */
-static const ForLoopNode *getNextOuterForLoop(const ASTNode *node) {
-  for (const ASTNode *ancestor = node->parent; ancestor != nullptr; ancestor = ancestor->parent)
-    if (const auto forLoop = dynamic_cast<const ForLoopNode *>(ancestor))
-      return forLoop;
-  assert_fail("No enclosing for loop found"); // LCOV_EXCL_LINE
-  return nullptr;                             // LCOV_EXCL_LINE
-}
-
-/**
- * Check if the given node is the given ancestor or one of its descendants
- *
- * @param node Node to check
- * @param ancestor Potential ancestor
- * @return Descendant or not
- */
-static bool isDescendantOf(const ASTNode *node, const ASTNode *ancestor) {
-  for (; node != nullptr; node = node->parent)
-    if (node == ancestor)
-      return true;
   return false;
 }
 
@@ -255,7 +199,7 @@ static bool isDescendantOf(const ASTNode *node, const ASTNode *ancestor) {
 void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope,
                                            const SymbolTableEntry *returnedLocal /*=nullptr*/) {
   assert(targetScope != nullptr);
-  Scope *scopeLevel = currentScope;
+  const Scope *scopeLevel = currentScope;
 
   // Leave the expression scopes, which hold the temporaries of the expression that is evaluated. Only the ones that were already
   // constructed are destructed here, since the others do not have an address yet
@@ -265,32 +209,18 @@ void IRGenerator::generateScopeCleanupUpTo(const ASTNode *node, const Scope *tar
   }
 
   // Leave the scope of the statement, if the jump originates from its header. The body was not entered yet, or it was already
-  // left, so there is nothing of it to clean up.
+  // left, so there is nothing of it to clean up. A variable that the header declares itself (the one of a for loop) is not
+  // destructed on this path.
   if (scopeLevel != targetScope && isInStatementHeader(node))
     scopeLevel = scopeLevel->parent;
 
   const StmtLstNode *scope = node->getNextOuterStmtLst();
-  const ASTNode *forLoopSearchStart = node;
-  bool stmtLstCleanedUp = false;
   while (true) {
-    if (scopeLevel->type == ScopeType::FOR_HEAD) {
-      // The head scope of a for loop has no statement list to pair with. It belongs to the next enclosing for loop
-      const ForLoopNode *forLoop = getNextOuterForLoop(forLoopSearchStart);
-      forLoopSearchStart = forLoop;
-      // If the jump originates from the declaration of the loop variable, the loop variable is not initialized yet
-      if (!isDescendantOf(node, forLoop->initDecl))
-        generateForHeadCleanup(forLoop, scopeLevel, returnedLocal);
-    } else {
-      if (stmtLstCleanedUp) {
-        assert(scope->parent != nullptr);
-        scope = scope->parent->getNextOuterStmtLst();
-      }
-      generateScopeCleanup(scope, returnedLocal);
-      stmtLstCleanedUp = true;
-    }
+    generateScopeCleanup(scope, returnedLocal);
     if (scopeLevel == targetScope)
       break;
-    assert(scopeLevel->parent != nullptr);
+    assert(scope->parent != nullptr && scopeLevel->parent != nullptr);
+    scope = scope->parent->getNextOuterStmtLst();
     scopeLevel = scopeLevel->parent;
   }
 }

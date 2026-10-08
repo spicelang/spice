@@ -1204,12 +1204,6 @@ public f<String> ASTUnsafeBlockNode.getScopeId() {
 
 // ========================================================== ForLoopNode ========================================================
 
-// Resources to clean up at the end of a scope, e.g. dtor calls for struct instances
-public type ResourcesForManifestationToCleanup struct {
-    public Vector<Pair<SymbolTableEntry*, Function*>> dtorFunctionsToCall
-    public Vector<SymbolTableEntry*> heapVarsToFree
-}
-
 public type ASTForLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
@@ -1218,8 +1212,6 @@ public type ASTForLoopNode struct : IVisitable {
     public IVisitable* incAssign = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
     public Scope* bodyScope = nil<Scope*>
-    // The head scope holds the loop variable, which lives across all iterations. It is cleaned up once, when the loop is left
-    public Vector<ResourcesForManifestationToCleanup> headResourcesToCleanup
 }
 
 public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
@@ -1228,10 +1220,6 @@ public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
 }
 public f<Any> ASTForLoopNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitForLoop(this);
-}
-
-public f<String> ASTForLoopNode.getHeadScopeId() {
-    return String("for-head:") + this.codeLoc.toString();
 }
 
 public f<String> ASTForLoopNode.getScopeId() {
@@ -1461,6 +1449,11 @@ public f<String> ASTAnonymousBlockStmtNode.getScopeId() {
 
 
 // ========================================================== StmtLstNode ========================================================
+
+public type ResourcesForManifestationToCleanup struct {
+    public Vector<Pair<SymbolTableEntry*, Function*>> dtorFunctionsToCall
+    public Vector<SymbolTableEntry*> heapVarsToFree
+}
 
 public type ASTStmtLstNode struct : IVisitable {
     compose public ASTNode node
@@ -2825,12 +2818,6 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         while lambdaBaseNode.manifestations.getSize() < manifestationCount {
             // Placeholder for the host's default constructed Function. The type checker replaces it
             lambdaBaseNode.manifestations.pushBack(Function(String(""), nil<SymbolTableEntry*>, QualType(SuperType::TY_INVALID), QualType(SuperType::TY_INVALID), noParams, noTemplateTypes, node));
-        }
-    }
-    if node.kind == ASTNodeKind::FOR_LOOP {
-        ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(node);
-        while forLoopNode.headResourcesToCleanup.getSize() < manifestationCount {
-            forLoopNode.headResourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
         }
     }
     if node.kind == ASTNodeKind::STMT_LST {

@@ -2606,7 +2606,7 @@ public f<Any> TypeChecker.visitStmtLst(ASTStmtLstNode* node) {
     }
 
     // Do cleanup of this scope, e.g. dtor calls for struct instances
-    this.doScopeCleanup(node.resourcesToCleanup.get(this.manIdx), cast<ASTNode*>(node));
+    this.doScopeCleanup(node);
 
     return Any();
 }
@@ -2854,8 +2854,8 @@ public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
 }
 
 public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
-    // Change to for head scope
-    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getHeadScopeId(), ScopeType::FOR_HEAD);
+    // Change to for body scope
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
 
     // Visit loop variable declaration
     this.visit(node.initDecl);
@@ -2870,15 +2870,10 @@ public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
     }
 
     // Visit incrementer
-    this.visitInExprScope(node.incAssign);
+    this.visit(node.incAssign);
 
     // Visit body
-    ScopeHandle bodyScopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
     this.visit(node.body);
-    bodyScopeHandle.leaveScopeEarly();
-
-    // Do cleanup of the head scope, e.g. the dtor call for the loop variable
-    this.doScopeCleanup(node.headResourcesToCleanup.get(this.manIdx), cast<ASTNode*>(node));
 
     return Any();
 }
@@ -6934,14 +6929,14 @@ public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const QualType& thi
  * Prepare the generation of a call to the dtor of a given struct
  *
  * @param entry Symbol entry to use as 'this' pointer for the dtor call
- * @param resources Resources to clean up for the current scope, the dtor call is added to
- * @param node Node of the current scope (statement list or for loop)
+ * @param node StmtLstNode for the current scope
  */
-p TypeChecker.implicitlyCallStructDtor(SymbolTableEntry* entry, ResourcesForManifestationToCleanup& resources, ASTNode* node) {
-    // Add the dtor to the resources of the scope to call it later in codegen
+p TypeChecker.implicitlyCallStructDtor(SymbolTableEntry* entry, ASTStmtLstNode* node) {
+    // Add the dtor to the stmt list node to call it later in codegen
     const ArgList noArgs;
-    Function* dtor = this.implicitlyCallStructMethod(entry, String(DTOR_FUNCTION_NAME), noArgs, node);
+    Function* dtor = this.implicitlyCallStructMethod(entry, String(DTOR_FUNCTION_NAME), noArgs, cast<ASTNode*>(node));
     if dtor != nil<Function*> {
+        ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
         resources.dtorFunctionsToCall.pushBack(Pair<SymbolTableEntry*, Function*>(entry, dtor));
     }
 }
@@ -7002,12 +6997,11 @@ f<bool> TypeChecker.isDeclaredAfter(const SymbolTableEntry* a, const SymbolTable
 }
 
 /**
- * Consider calls to destructors for the current scope
+ * Consider calls to destructors for the given scope
  *
- * @param resources Resources to clean up for the current scope, the dtor calls and deallocations are added to
- * @param node Node of the current scope (statement list or for loop)
+ * @param node StmtLstNode for the current scope
  */
-p TypeChecker.doScopeCleanup(ResourcesForManifestationToCleanup& resources, ASTNode* node) {
+p TypeChecker.doScopeCleanup(ASTStmtLstNode* node) {
     // Get all variables, that are approved for de-allocation
     Vector<SymbolTableEntry*> vars = this.currentScope.getVarsGoingOutOfScope();
     // Sort by reverse declaration order
@@ -7029,7 +7023,8 @@ p TypeChecker.doScopeCleanup(ResourcesForManifestationToCleanup& resources, ASTN
                 continue;
             }
 
-            this.implicitlyCallDeallocate(node); // Required to request the memory runtime
+            this.implicitlyCallDeallocate(cast<ASTNode*>(node)); // Required to request the memory runtime
+            ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
             resources.heapVarsToFree.pushBack(varEntry);
         }
         // Only generate dtor call for structs
@@ -7041,7 +7036,7 @@ p TypeChecker.doScopeCleanup(ResourcesForManifestationToCleanup& resources, ASTN
             continue;
         }
         // Call dtor
-        this.implicitlyCallStructDtor(varEntry, resources, node);
+        this.implicitlyCallStructDtor(varEntry, node);
     }
 }
 
