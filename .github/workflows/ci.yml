@@ -18,8 +18,6 @@ env:
   # Known gaps:
   # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
   # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
-  # - warnings_warningUnusedMethod: the bootstrap symbol table is an UnorderedMap, the host one a std::map sorted by name,
-  #   so the warnings come in a different order
   BOOTSTRAP_TEST_FILTER: >-
     CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*:
     BenchmarkTests.*:ExampleTests.*
@@ -30,8 +28,7 @@ env:
     IRGeneratorTests.instrumentation_successAsanAndDbgInfo:
     IRGeneratorTests.instrumentation_successMsanAndDbgInfo:
     IRGeneratorTests.instrumentation_successTsanAndDbgInfo:
-    StdTests.data_containerScopeCleanupLeak:
-    TypeCheckerTests.warnings_warningUnusedMethod
+    StdTests.data_containerScopeCleanupLeak
   # Additional bootstrap compiler gaps that only show up on Windows (appended to the negative patterns above):
   # - generics_successGenericTypeCtorCall1: the bootstrap compiler crashes with a heap corruption (0xC0000374)
   # - runtime_resultErrTracePanic, imports_successValidImport2: the relative paths to std files (in the panic message, in

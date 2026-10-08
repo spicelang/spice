@@ -75,7 +75,7 @@ public type Scope struct {
     // Child scopes are owned by their parent (mirroring the host's `map<string, shared_ptr<Scope>>`). They are
     // stored as stable pointers into 'childAllocator' rather than by value, so that adding a child never has to
     // copy a Scope (which is not trivially copyable and must never be deep-copied implicitly).
-    public UnorderedMap<String, Scope*> children
+    public Map<String, Scope*> children // Ordered like in the host, since the order shows in the warnings
     public SymbolTable symbolTable
     public CodeLoc* codeLoc = nil<CodeLoc*>
     public ScopeType scopeType
@@ -534,12 +534,13 @@ public f<JsonValue*> Scope.getSymbolTableJSON() {
  */
 #[ignoreUnusedReturnValue]
 public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
+    assert !this.children.contains(scopeName);
     // Reserve stable storage for the child in this scope's pool and construct it in place (no Scope copy).
     Scope* child = this.childAllocator.reserve<Scope>();
     unsafe {
         __placement_new<Scope>(child, this, this.sourceFile, scopeType, declCodeLoc);
     }
-    this.children.upsert(scopeName, child);
+    this.children.insert(scopeName, child);
     return child;
 }
 
@@ -554,7 +555,7 @@ public p Scope.renameChildScope(const String& oldName, const String& newName) {
     assert this.children.contains(oldName) && !this.children.contains(newName);
     // Re-key the owning pointer; the pooled Scope itself is not moved or copied.
     Scope* child = this.children.get(oldName);
-    this.children.upsert(newName, child);
+    this.children.insert(newName, child);
     this.children.remove(oldName);
 }
 
@@ -577,7 +578,7 @@ public f<Scope*> Scope.copyChildScope(const String& oldName, const String& newNa
     }
     oldScope.deepCopyScope(newScope);
     // Save copy under new name
-    this.children.upsert(newName, newScope);
+    this.children.insert(newName, newScope);
     return newScope;
 }
 
@@ -608,7 +609,7 @@ public p Scope.deepCopyScope(Scope* newScope) {
             __placement_new<Scope>(newChild, newScope, oldChild.sourceFile, oldChild.scopeType, oldChild.codeLoc);
         }
         oldChild.deepCopyScope(newChild);
-        newScope.children.upsert(childEntry.getFirst(), newChild);
+        newScope.children.insert(childEntry.getFirst(), newChild);
     }
 }
 

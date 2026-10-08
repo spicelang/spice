@@ -1,0 +1,32 @@
+import "std/data/map";
+
+// Insert and remove keys in a pseudo-random, but deterministic order. Removing a black node, that gets replaced by a nil
+// child, requires a rebalancing of the tree as well. Otherwise, the red-black invariants break and a later removal runs into
+// a nil sibling and crashes
+f<int> main() {
+    Map<int, int> map;
+    bool[64] present;
+    unsigned long size = 0ul;
+    unsigned long state = 12345ul;
+    for int op = 0; op < 20000; op++ {
+        state = state * 6364136223846793005ul + 1442695040888963407ul;
+        const int key = cast<int>((state >> 33ul) % 64ul);
+        if present[key] {
+            map.remove(key);
+            present[key] = false;
+            size--;
+        } else {
+            map.insert(key, key * 10);
+            present[key] = true;
+            size++;
+        }
+        assert map.getSize() == size;
+    }
+    for int key = 0; key < 64; key++ {
+        assert map.contains(key) == present[key];
+        if present[key] {
+            assert map.get(key) == key * 10;
+        }
+    }
+    printf("All assertions passed!\n");
+}
