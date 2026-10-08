@@ -5,6 +5,7 @@
 #include <exception/CliError.h>
 #include <util/CommonUtil.h>
 #include <util/CompilerWarning.h>
+#include <util/FileUtil.h>
 #include <util/SystemUtil.h>
 
 #include <llvm/Support/CommandLine.h>
@@ -115,7 +116,7 @@ int Driver::parse(int argc, const char *argv[]) {
 void Driver::enrich() const {
   // Make path of given main source file canonical and relative
   if (!performDryRun)
-    cliOptions.mainSourceFile = relative(cliOptions.mainSourceFile);
+    cliOptions.mainSourceFile = FileUtil::relative(cliOptions.mainSourceFile);
 
   // Propagate llvm args to llvm
   if (!cliOptions.llvmArgs.empty()) {
