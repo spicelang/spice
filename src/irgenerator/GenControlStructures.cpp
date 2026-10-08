@@ -26,7 +26,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   llvm::BasicBlock *bExit = createBlock("for.exit." + codeLine);
 
   // Change to head scope
-  ScopeHandle headScopeHandle(this, node->getHeadScopeId(), ScopeType::FOR_HEAD, node);
+  const ScopeHandle headScopeHandle(this, node->getHeadScopeId(), ScopeType::FOR_HEAD, node);
   Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
 
   // Save the break/continue targets, paired with the scope to clean up to when jumping there. The head scope is cleaned up in the
@@ -50,7 +50,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   switchToBlock(bBody);
   // Visit body
   {
-    ScopeHandle bodyScopeHandle(this, bodyScope, ScopeType::FOR_BODY);
+    const ScopeHandle bodyScopeHandle(this, bodyScope, ScopeType::FOR_BODY);
     visit(node->body);
   }
   // Create jump from body to tail block

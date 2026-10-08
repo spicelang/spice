@@ -24,7 +24,7 @@ std::any TypeChecker::visitUnsafeBlock(UnsafeBlockNode *node) {
 
 std::any TypeChecker::visitForLoop(ForLoopNode *node) {
   // Change to for head scope
-  ScopeHandle headScopeHandle(this, node->getHeadScopeId(), ScopeType::FOR_HEAD);
+  const ScopeHandle headScopeHandle(this, node->getHeadScopeId(), ScopeType::FOR_HEAD);
 
   // Visit loop variable declaration
   visit(node->initDecl);
@@ -41,7 +41,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
 
   // Visit body
   {
-    ScopeHandle bodyScopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
+    const ScopeHandle bodyScopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY);
     visit(node->body);
   }
 
