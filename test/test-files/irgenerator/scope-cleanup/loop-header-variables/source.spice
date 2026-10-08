@@ -161,10 +161,13 @@ f<int> foreachWithEscapingIndex(Vector<int>& values) {
     return cast<int>(sum);
 }
 
-// The item is a copy, which belongs to a single round
+// The item is a copy, which belongs to a single round. So in each round, exactly one copy is alive: the one of the round
+// before must already be destructed
 f<int> foreachWithItemByValue(Vector<Tracked>& values) {
     int sum = 0;
+    const int liveBefore = LIVE;
     foreach Tracked item : values {
+        assert LIVE == liveBefore + 1;
         sum += item.id;
     }
     return sum;
@@ -172,7 +175,9 @@ f<int> foreachWithItemByValue(Vector<Tracked>& values) {
 
 f<int> foreachWithItemByValueAndBreak(Vector<Tracked>& values) {
     int sum = 0;
+    const int liveBefore = LIVE;
     foreach Tracked item : values {
+        assert LIVE == liveBefore + 1;
         if item.id == 3 { break; }
         if item.id == 1 { continue; }
         sum += item.id;
@@ -182,15 +187,20 @@ f<int> foreachWithItemByValueAndBreak(Vector<Tracked>& values) {
 
 f<int> foreachWithIndexAndItemByValue(Vector<Tracked>& values) {
     long sum = 0l;
+    const int liveBefore = LIVE;
     foreach long idx, Tracked item : values {
+        assert LIVE == liveBefore + 1;
         sum += idx * item.id;
     }
     return cast<int>(sum);
 }
 
+// The item is a reference, so no copy is made at all
 f<int> foreachWithItemByReference(Vector<Tracked>& values) {
     int sum = 0;
+    const int liveBefore = LIVE;
     foreach Tracked& item : values {
+        assert LIVE == liveBefore;
         sum += item.id;
     }
     return sum;
