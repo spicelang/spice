@@ -127,6 +127,8 @@ public type IRGenerator struct : IAbstractAstVisitor {
     public CommonLLVMTypes llvmTypes
     Vector<BreakContinueTarget> breakTargets
     Vector<BreakContinueTarget> continueTargets
+    // Variables declared in a loop header live across all iterations, so the per-iteration cleanups must not end their lifetime
+    Vector<const SymbolTableEntry*> loopHeaderVars
     Stack<llvm::BasicBlock> fallthroughBlocks
     llvm::BasicBlock allocaInsertBlock
     llvm::Value allocaInsertInst
@@ -2360,6 +2362,11 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
 
     // Init statement
     this.visit(node.initDecl);
+    // The variable of the init statement lives across all iterations
+    const ASTDeclStmtNode* initDeclNode = downcast<ASTDeclStmtNode>(node.initDecl);
+    Vector<const SymbolTableEntry*> headerVars;
+    headerVars.pushBack(initDeclNode.entries.get(this.manIdx));
+    this.beginLoopHeaderVarLifetimes(headerVars);
     // Create jump from original to head block
     this.insertJump(bHead);
 
@@ -2386,6 +2393,7 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
 
     // Switch to exit block
     this.switchToBlock(bExit);
+    this.endLoopHeaderVarLifetimes(headerVars);
 
     // Pop break/continue targets
     this.breakTargets.popBack();
@@ -2490,6 +2498,14 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     const llvm::Value itemAddress = this.getAddress(itemEntry);
     assert !itemAddress.isNull();
 
+    // The idx and item variables are declared once and assigned in every iteration, so they live across all iterations
+    Vector<const SymbolTableEntry*> headerVars;
+    headerVars.pushBack(itemEntry);
+    if idxEntry != nil<const SymbolTableEntry*> {
+        headerVars.pushBack(idxEntry);
+    }
+    this.beginLoopHeaderVarLifetimes(headerVars);
+
     // Create jump from original to head block
     this.insertJump(bHead);
 
@@ -2564,6 +2580,7 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
 
     // Switch to exit block
     this.switchToBlock(bExit);
+    this.endLoopHeaderVarLifetimes(headerVars);
 
     // Pop break/continue targets
     this.breakTargets.popBack();
@@ -5735,6 +5752,59 @@ public f<llvm::Value> IRGenerator.getUpcastedStructPtr(llvm::Value structPtr, co
 }
 
 /**
+ * Mark the given variables, declared in the header of a loop, as living across all iterations of the loop. Their lifetime starts
+ * once before the loop, so the cleanups at the end of an iteration (end of the body, continue) must not end it. Otherwise, the
+ * next iteration would access them after the end of their lifetime, e.g. when the next foreach item is stored.
+ *
+ * @param entries Loop header variables
+ */
+p IRGenerator.beginLoopHeaderVarLifetimes(const Vector<const SymbolTableEntry*>& entries) {
+    foreach const SymbolTableEntry* entry : entries {
+        this.loopHeaderVars.pushBack(entry);
+    }
+}
+
+/**
+ * End the lifetime of the given loop header variables, when the loop is left. Must be called at the beginning of the exit block
+ * of the loop, which all paths out of the loop, except returns, pass.
+ *
+ * @param entries Loop header variables
+ */
+p IRGenerator.endLoopHeaderVarLifetimes(const Vector<const SymbolTableEntry*>& entries) {
+    foreach const SymbolTableEntry* entry : entries {
+        for unsigned long i = 0l; i < this.loopHeaderVars.getSize(); i++ {
+            if this.loopHeaderVars.get(i) == entry {
+                this.loopHeaderVars.removeAt(i);
+                break;
+            }
+        }
+        if !this.cliOptions.useLifetimeMarkers {
+            continue;
+        }
+        // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else
+        const llvm::Value address = this.getAddress(entry);
+        if !address.isNull() && address.isAllocaInst() {
+            this.createLifetimeMarker("llvm.lifetime.end", address);
+        }
+    }
+}
+
+/**
+ * Check if the given variable is declared in the header of a loop, that is currently generated
+ *
+ * @param entry Variable to check
+ * @return Loop header variable or not
+ */
+f<bool> IRGenerator.isLoopHeaderVar(const SymbolTableEntry* entry) {
+    foreach const SymbolTableEntry* loopHeaderVar : this.loopHeaderVars {
+        if loopHeaderVar == entry {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Generate cleanup code (dtor calls, deallocations) for the scope of the given statement list
  *
  * @param node Statement list of the scope
@@ -5767,6 +5837,10 @@ p IRGenerator.generateScopeCleanup(ASTStmtLstNode* node, SymbolTableEntry* retur
     if this.cliOptions.useLifetimeMarkers {
         const Vector<SymbolTableEntry*> varsGoingOutOfScope = this.currentScope.getVarsGoingOutOfScope();
         foreach const SymbolTableEntry* var : varsGoingOutOfScope {
+            // The lifetime of a loop header variable ends when the loop is left, not at the end of each iteration
+            if this.isLoopHeaderVar(var) {
+                continue;
+            }
             const llvm::Value address = this.getAddress(var);
             // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else. This excludes e.g. the phi
             // of a ternary with a reference result, which refers to the storage of one of its operands.

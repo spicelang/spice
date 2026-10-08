@@ -112,6 +112,36 @@ llvm::Value *IRGenerator::getUpcastedStructPtr(llvm::Value *structPtr, const Qua
 }
 
 /**
+ * Mark the given variables, declared in the header of a loop, as living across all iterations of the loop. Their lifetime starts
+ * once before the loop, so the cleanups at the end of an iteration (end of the body, continue) must not end it. Otherwise, the
+ * next iteration would access them after the end of their lifetime, e.g. when the next foreach item is stored.
+ *
+ * @param entries Loop header variables
+ */
+void IRGenerator::beginLoopHeaderVarLifetimes(const std::vector<const SymbolTableEntry *> &entries) {
+  for (const SymbolTableEntry *entry : entries)
+    loopHeaderVars.insert(entry);
+}
+
+/**
+ * End the lifetime of the given loop header variables, when the loop is left. Must be called at the beginning of the exit block
+ * of the loop, which all paths out of the loop, except returns, pass.
+ *
+ * @param entries Loop header variables
+ */
+void IRGenerator::endLoopHeaderVarLifetimes(const std::vector<const SymbolTableEntry *> &entries) {
+  for (const SymbolTableEntry *entry : entries) {
+    loopHeaderVars.erase(entry);
+    if (!cliOptions.useLifetimeMarkers)
+      continue;
+    // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else
+    llvm::Value *address = getAddress(entry);
+    if (address != nullptr && llvm::isa<llvm::AllocaInst>(address))
+      builder.CreateLifetimeEnd(address);
+  }
+}
+
+/**
  * Generate cleanup code (dtor calls, deallocations) for the scope of the given statement list
  *
  * @param node Statement list of the scope
@@ -138,6 +168,9 @@ void IRGenerator::generateScopeCleanup(const StmtLstNode *node, const SymbolTabl
   // Generate lifetime end markers
   if (cliOptions.useLifetimeMarkers) {
     for (const SymbolTableEntry *var : currentScope->getVarsGoingOutOfScope()) {
+      // The lifetime of a loop header variable ends when the loop is left, not at the end of each iteration
+      if (loopHeaderVars.contains(var))
+        continue;
       llvm::Value *address = getAddress(var);
       // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else. This excludes e.g. the phi
       // of a ternary with a reference result, which refers to the storage of one of its operands.

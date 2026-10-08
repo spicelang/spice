@@ -34,6 +34,9 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
 
   // Init statement
   visit(node->initDecl);
+  // The variable of the init statement lives across all iterations
+  const std::vector<const SymbolTableEntry *> headerVars = {node->initDecl->entries.at(manIdx)};
+  beginLoopHeaderVarLifetimes(headerVars);
   // Create jump from original to head block
   insertJump(bHead);
 
@@ -60,6 +63,7 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
 
   // Switch to exit block
   switchToBlock(bExit);
+  endLoopHeaderVarLifetimes(headerVars);
 
   // Pop break/continue targets
   assert(breakTargets.back().block == bExit);
@@ -147,6 +151,12 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   llvm::Value *itemAddress = getAddress(itemEntry);
   assert(itemAddress != nullptr);
 
+  // The idx and item variables are declared once and assigned in every iteration, so they live across all iterations
+  std::vector<const SymbolTableEntry *> headerVars = {itemEntry};
+  if (idxEntry != nullptr)
+    headerVars.push_back(idxEntry);
+  beginLoopHeaderVarLifetimes(headerVars);
+
   // Create jump from original to head block
   insertJump(bHead);
 
@@ -217,6 +227,7 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to exit block
   switchToBlock(bExit);
+  endLoopHeaderVarLifetimes(headerVars);
 
   // Pop break/continue targets
   assert(breakTargets.back().block == bExit);
