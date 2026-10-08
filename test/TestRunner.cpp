@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include <algorithm>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -539,6 +540,14 @@ static void execBootstrapTestCase(const TestCase &testCase) {
     std::filesystem::create_directories(dumpDir);
     std::vector<std::string> dumpArgs = buildArgs(dumpDir / "object.o");
     dumpArgs.insert(dumpArgs.end(), {"--output-container", "obj", "--dump-to-files"});
+    // The host test runner checks the IR of each opt level, for which a reference exists, and keeps the last one of these opt
+    // levels for the rest of the compilation. So it emits the assembly code with it, which the dump run has to mirror
+    std::optional<uint8_t> lastCheckedOptLevel;
+    for (uint8_t i = 0; i <= 5; i++)
+      if (TestUtil::doesRefExist(testCase.testPath / REF_NAME_OPT_IR[i]))
+        lastCheckedOptLevel = i;
+    if (lastCheckedOptLevel.has_value())
+      dumpArgs.emplace_back("-O" + std::string(1, BOOTSTRAP_OPT_LEVEL_NAMES[lastCheckedOptLevel.value()]));
     if (checkSymbolTable)
       dumpArgs.emplace_back("--dump-symtab");
     if (checkAssembly)
