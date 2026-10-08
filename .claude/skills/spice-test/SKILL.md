@@ -75,16 +75,26 @@ The `spicetest_bootstrap_parallel` target builds the bootstrap compiler once
 gtest-parallel (`--bootstrap-compiler`), like `spicetest_parallel` does for the
 host compiler. CI uses the parallel target.
 
-It checks `syntax-tree.dot` (via `--dump-ast`), `exception.out`, `warning.out`,
-the IR references, `cout.out` and `exit-code.out`. It reports errors via a
+It is functionally equivalent to the host mode and checks the same references:
+`syntax-tree.dot` and `dependency-graph.dot` (via `--dump-ast` /
+`--dump-dependency-graph`, taken from the console output), `symbol-table.json`,
+`assembly.asm`, `type-registry.out` and `cache-stats.out` (via a separate run with
+`--dump-to-files`, only if one of these refs exists), `exception.out`,
+`warning.out`, the IR references (one run per opt level), `cout.out`,
+`exit-code.out` and `debug.out` (via GDB). `run-builtin-tests` cases are built
+with the internal `--test-main` flag of the bootstrap compiler (test main without
+the test build mode, like the host runner). `--leak-detection` runs the compiled
+programs under valgrind, `--coverage` instruments them via the `--coverage` flag
+of the bootstrap compiler, and `--is-github-actions` skips the assembly and GDB
+checks, all like in host mode. The bootstrap compiler reports errors via a
 panic, so the message is taken from the panic output, with test paths rewritten
 to `./` like the host prints them. Every expected error must be raised. Warnings
 are taken from the console output, and only the ones of the main source file
 are compared, like the host test runner does. `LinterTests` run in this mode
 only. CI (`ci.yml`, all platforms) runs this mode for all reference test suites,
 minus a list of known-failing cases in `BOOTSTRAP_TEST_FILTER*`.
-`--update-refs` and `--coverage` are rejected, so host refs are never
-overwritten with bootstrap output.
+`--update-refs` is rejected, so host refs are never overwritten with bootstrap
+output.
 
 ```sh
 cmake --build cmake-build-debug --target spicetest_bootstrap

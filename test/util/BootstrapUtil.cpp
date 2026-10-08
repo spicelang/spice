@@ -3,7 +3,6 @@
 #include "BootstrapUtil.h"
 
 #include <cstdlib>
-#include <cstring>
 #include <iostream>
 #include <regex>
 #include <sstream>
@@ -149,16 +148,19 @@ std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string 
 }
 
 /**
- * Extract the serialized AST from the '--dump-ast' console output of the bootstrap compiler
+ * Extract a serialized graph (e.g. the AST from '--dump-ast' or the dependency graph from '--dump-dependency-graph') from
+ * the console output of the bootstrap compiler
  *
  * @param output Output of the bootstrap compiler
- * @return Serialized AST, if found
+ * @param graphName Name of the graph, as printed in the caption of the dump
+ * @return Serialized graph, if found
  */
-std::optional<std::string> BootstrapUtil::extractSerializedAST(const std::string &output) {
-  size_t start = output.find(BOOTSTRAP_SERIALIZED_AST_CAPTION);
+std::optional<std::string> BootstrapUtil::extractSerializedGraph(const std::string &output, const char *graphName) {
+  const std::string caption = "Serialized " + std::string(graphName) + ":\n\n";
+  size_t start = output.find(caption);
   if (start == std::string::npos)
     return std::nullopt;
-  start += std::strlen(BOOTSTRAP_SERIALIZED_AST_CAPTION);
+  start += caption.length();
   // All lines of the dot code are indented, except the first one and the closing brace
   const size_t end = output.find("\n}", start);
   if (end == std::string::npos)
@@ -199,13 +201,14 @@ void BootstrapUtil::eraseDSOLocalMarkers(std::string &irCode) { CommonUtil::repl
 
 /**
  * Replace the implementation marker in the producer string of the bootstrap compiler with the one of the host compiler.
- * Both compilers name themselves in the producer string, so the IR of the host and the bootstrap compiler differs there.
+ * Both compilers name themselves in the producer string, so the IR and assembly code of the host and the bootstrap compiler
+ * differ there.
  *
- * @param irCode IR code
+ * @param code IR or assembly code
  */
-void BootstrapUtil::normalizeProducerString(std::string &irCode) {
+void BootstrapUtil::normalizeProducerString(std::string &code) {
   const std::string hostMarker = " [" + std::string(COMPILER_IMPLEMENTATION) + "] (https://github.com/spicelang/spice)";
-  CommonUtil::replaceAll(irCode, " [self-hosted] (https://github.com/spicelang/spice)", hostMarker);
+  CommonUtil::replaceAll(code, " [self-hosted] (https://github.com/spicelang/spice)", hostMarker);
 }
 
 /**
@@ -218,6 +221,20 @@ void BootstrapUtil::normalizeProducerString(std::string &irCode) {
 std::string BootstrapUtil::stripAnsiCodes(const std::string &text) {
   static const std::regex ANSI_ESCAPE_REGEX(R"(\x1B\[[0-9;]*m)");
   return std::regex_replace(text, ANSI_ESCAPE_REGEX, "");
+}
+
+/**
+ * Check if the given compiler arguments request debug info. Like for the compiler, the last debug info argument wins.
+ *
+ * @param args Compiler arguments
+ * @return Debug info requested or not
+ */
+bool BootstrapUtil::emitsDebugInfo(const std::vector<std::string> &args) {
+  bool debugInfo = false;
+  for (const std::string &arg : args)
+    if (arg == "-g" || arg.starts_with("--debug-info"))
+      debugInfo = arg != "--debug-info=none";
+  return debugInfo;
 }
 
 } // namespace spice::testing

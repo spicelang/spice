@@ -9,69 +9,7 @@ import "std/io/filepath";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/compiler-pass";
 import "bootstrap/source-file";
-
-/**
- * Compute the path of 'path' relative to 'base', mirroring std::filesystem::relative().
- * 'base' is treated as a reference point (not a directory), so two files in the same
- * directory produce a '../sibling' result.  Same path gives '.'.
- */
-f<String> computeRelativePath(const FilePath& path, const FilePath& base) {
-    // Normalize to generic (Unix) strings
-    String pathStr = String(path.toGenericString());
-    String baseStr = String(base.toGenericString());
-
-    // Split pathStr by '/'
-    Vector<String> pComps = Vector<String>();
-    unsigned long pStart = 0l;
-    while true {
-        const long pSlash = pathStr.find('/', pStart);
-        if pSlash < 0l {
-            pComps.pushBack(pathStr.getSubstring(pStart));
-            break;
-        }
-        pComps.pushBack(pathStr.getSubstring(pStart, pSlash - cast<long>(pStart)));
-        pStart = cast<unsigned long>(pSlash) + 1l;
-    }
-
-    // Split baseStr by '/'
-    Vector<String> bComps = Vector<String>();
-    unsigned long bStart = 0l;
-    while true {
-        const long bSlash = baseStr.find('/', bStart);
-        if bSlash < 0l {
-            bComps.pushBack(baseStr.getSubstring(bStart));
-            break;
-        }
-        bComps.pushBack(baseStr.getSubstring(bStart, bSlash - cast<long>(bStart)));
-        bStart = cast<unsigned long>(bSlash) + 1l;
-    }
-
-    // Find common prefix length
-    long commonLen = 0l;
-    while commonLen < pComps.getSize() && commonLen < bComps.getSize() {
-        if pComps[cast<unsigned long>(commonLen)] != bComps[cast<unsigned long>(commonLen)] { break; }
-        commonLen++;
-    }
-
-    // Build result: one '..' per remaining base component, then remaining path components
-    StringStream ss;
-    bool first = true;
-    for long i = commonLen; i < bComps.getSize(); i++ {
-        if !first { ss << "/"; }
-        ss << "..";
-        first = false;
-    }
-    for long i = commonLen; i < pComps.getSize(); i++ {
-        if !first { ss << "/"; }
-        ss << pComps[cast<unsigned long>(i)];
-        first = false;
-    }
-
-    if ss.isEmpty() {
-        return String(".");
-    }
-    return String(ss.str());
-}
+import "bootstrap/reader/code-loc";
 
 /**
  * Visualizer for the import dependency graph. Mirrors src/visualizer/DependencyGraphVisualizer.{h,cpp}.
@@ -116,15 +54,17 @@ p DependencyGraphVisualizer.getDependencyGraphNode(StringStream& output, SourceF
     }
     this.printedFiles.pushBack(currentSourceFile);
 
-    // Emit a node for this source file using a path relative to the main file
-    const String nodeId = computeRelativePath(currentSourceFile.filePath, this.sourceFile.filePath);
+    // Emit a node for this source file using a path relative to the main file. Like std::filesystem::relative() of the host,
+    // both paths are resolved to their canonical form first, so symlinks along the way (e.g. to the std) do not matter
+    const String mainFilePath = String(this.sourceFile.filePath.toString());
+    const String nodeId = getRelativePath(String(currentSourceFile.filePath.toString()), mainFilePath);
     output << " \"" << nodeId << "\" [color=\"lightgreen\",label=\"" << currentSourceFile.fileName << "\"];\n";
 
     // Recurse into dependencies and emit edges
     foreach dyn depEntry : currentSourceFile.dependencies {
         SourceFile* dependency = depEntry.getSecond();
         this.getDependencyGraphNode(output, dependency);
-        const String depNodeId = computeRelativePath(dependency.filePath, this.sourceFile.filePath);
+        const String depNodeId = getRelativePath(String(dependency.filePath.toString()), mainFilePath);
         output << " \"" << nodeId << "\" -> \"" << depNodeId << "\";\n";
     }
 }

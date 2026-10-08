@@ -64,11 +64,12 @@ void TestDriver::addOptions() {
       app.add_flag<bool>("--bootstrap-build-only", testDriverCliOptions.bootstrapBuildOnly,
                          "Only build the bootstrap compiler, without running any test cases (implies --bootstrap). Used to "
                          "build it once before running the test cases in parallel via --bootstrap-compiler");
-  // The reference files hold the output of the host compiler, so they must never be overwritten with bootstrap output. The
-  // coverage mode instruments the programs compiled by the host compiler, which the bootstrap mode does not compile at all.
-  bootstrapOpt->excludes(updateRefsOpt)->excludes(coverageOpt);
-  bootstrapCompilerOpt->excludes(updateRefsOpt)->excludes(coverageOpt);
-  // Instrumenting the bootstrap compiler requires building it, so it cannot be combined with a pre-built one
+  // The reference files hold the output of the host compiler, so they must never be overwritten with bootstrap output. In
+  // bootstrap mode, the coverage mode instruments the programs compiled by the bootstrap compiler instead.
+  bootstrapOpt->excludes(updateRefsOpt);
+  bootstrapCompilerOpt->excludes(updateRefsOpt);
+  // Instrumenting the bootstrap compiler requires building it, so it cannot be combined with a pre-built one. Its coverage
+  // data would mix with the one of the instrumented test programs, so it cannot be combined with the coverage mode either
   bootstrapCoverageOpt->excludes(updateRefsOpt)->excludes(coverageOpt)->excludes(bootstrapCompilerOpt);
   // Building only makes no sense, if a pre-built bootstrap compiler is given
   bootstrapBuildOnlyOpt->excludes(updateRefsOpt)->excludes(coverageOpt)->excludes(bootstrapCompilerOpt);

@@ -534,6 +534,14 @@ p Driver.addBuildSubcommand() {
     subCmd.addFlag("--disable-verifier", this.cliOptions.disableVerifier, "Disable LLVM module and function verification");
     // --no-entry
     subCmd.addFlag("--no-entry", this.cliOptions.noEntryFct, "Do not generate main function");
+    // --test-main
+    // The test runner of the host compiler builds the test cases, which run their enclosed tests, in debug mode. So it needs
+    // the test main function without switching to the test build mode, like the test subcommand would do
+    const p(const bool&) testMainCallback = p(const bool& _v) {
+        this.cliOptions.generateTestMain = true; // An alternative entry function is generated
+        this.cliOptions.noEntryFct = true;       // To not have two main functions, disable normal main
+    };
+    subCmd.addFlag("--test-main", testMainCallback, "Generate a main function, that runs all enclosed tests, instead of the normal one. For internal use");
     // --static
     subCmd.addFlag("--static", this.cliOptions.staticLinking, "Link statically");
     // --strip-symbols
@@ -895,6 +903,14 @@ f<bool> testBuildAndRunSubcommands() {
     assert buildOptions.cliOptions.buildVars.get(String("key")) == "value";
     assert buildOptions.cliOptions.buildVars.get(String("flag")) == "true"; // a build var without a value is 'true'
     assert buildOptions.cliOptions.buildVars.get(String("spice.backend")) == "llvm";
+
+    // Build: test main without the test build mode, like the test runner of the host compiler requests it
+    Driver buildTestMain;
+    string[4] buildTestMainArgs = ["spice", "build", "--test-main", "main-file.spice"];
+    assert parseAndEnrich(buildTestMain, 4, buildTestMainArgs);
+    assert buildTestMain.cliOptions.generateTestMain;
+    assert buildTestMain.cliOptions.noEntryFct;
+    assert buildTestMain.cliOptions.buildMode == BuildMode::DEBUG;
 
     // Run: minimal
     Driver runMinimal;

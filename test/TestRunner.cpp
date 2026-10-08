@@ -79,6 +79,82 @@ void reGenerateIRForLTO(SourceFile *sourceFile, std::unordered_set<const SourceF
     sourceFile->runPreLinkIROptimizer();
 }
 
+/**
+ * Execute the compiled test program and check its output and exit code against the references, if there are any.
+ * Shared by the host and the bootstrap test runner, so that both check the compiled programs the same way.
+ *
+ * @param testCase Test case to check
+ * @param executablePath Path to the compiled test program
+ */
+void checkExecution(const TestCase &testCase, const std::filesystem::path &executablePath) {
+  const bool checkExecutionOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
+  const bool checkExecutionExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
+  if (!checkExecutionOutput && !checkExecutionExitCode)
+    return;
+
+  const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
+  // Execute binary
+  std::stringstream cmd;
+  if (testDriverCliOptions.enableLeakDetection)
+    cmd << "valgrind -q --leak-check=full --suppressions=../../valgrind.supp --num-callers=100 --error-exitcode=1 ";
+  cmd << executablePath.string();
+  if (exists(cliFlagsFile))
+    cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
+  const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
+
+  // Check if the execution output matches the expected output
+  const auto getActualOutput = [&] { return output; };
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, getActualOutput);
+
+#if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
+  // Check if the exit code matches the expected one
+  // If no exit code ref file exists, check against 0
+  const auto getActualExitCode = [&] { return std::to_string(exitCode); };
+  const bool refExists = TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, getActualExitCode);
+  if (!refExists) {
+    EXPECT_EQ(0, exitCode) << "Program exited with non-zero exit code";
+  }
+#endif
+}
+
+// GCOV_EXCL_START
+/**
+ * Run the debug script of the test case on the compiled test program and check the debugger output against the reference,
+ * if there is one. Shared by the host and the bootstrap test runner.
+ *
+ * @param testCase Test case to check
+ * @param executablePath Path to the compiled test program
+ */
+void checkDebuggerOutput(const TestCase &testCase, const std::filesystem::path &executablePath) {
+  if (testDriverCliOptions.isGitHubActions) // GDB tests are currently not support on GH actions
+    return;
+  TestUtil::checkRefMatch(
+      testCase.testPath / REF_NAME_GDB_OUTPUT,
+      [&] {
+        // Execute debugger script
+        std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
+        EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
+        gdbScriptPath.make_preferred();
+        // -nx: ignore any local/system .gdbinit so a developer's own GDB setup (e.g. globally installed
+        // pretty printers) cannot change test output; tests that want the pretty printers source them
+        // explicitly from within their debug script instead.
+        const std::string cmd = "gdb -nx -x " + gdbScriptPath.string() + " " + executablePath.string();
+        const auto [output, exitCode] = SystemUtil::exec(cmd);
+
+#if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
+        EXPECT_EQ(0, exitCode) << "GDB exited with non-zero exit code when running debug script";
+#endif
+
+        return output;
+      },
+      [&](std::string &expectedOutput, std::string &actualOutput) {
+        // Do not compare against the GDB header
+        TestUtil::eraseGDBHeader(expectedOutput);
+        TestUtil::eraseGDBHeader(actualOutput);
+      });
+}
+// GCOV_EXCL_STOP
+
 } // namespace
 
 static void execTestCase(const TestCase &testCase) {
@@ -340,63 +416,11 @@ static void execTestCase(const TestCase &testCase) {
       return cacheStats.str();
     });
 
-    const bool checkExecutionOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
-    const bool checkExecutionExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
-    if (checkExecutionOutput || checkExecutionExitCode) {
-      const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
-      // Execute binary
-      std::stringstream cmd;
-      if (testDriverCliOptions.enableLeakDetection)
-        cmd << "valgrind -q --leak-check=full --suppressions=../../valgrind.supp --num-callers=100 --error-exitcode=1 ";
-      cmd << executablePath.string();
-      if (exists(cliFlagsFile))
-        cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-      const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
-
-      // Check if the execution output matches the expected output
-      const auto getActualOutput = [&] { return output; };
-      TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, getActualOutput);
-
-#if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
-      // Check if the exit code matches the expected one
-      // If no exit code ref file exists, check against 0
-      const auto getActualExitCode = [&] { return std::to_string(exitCode); };
-      const bool refExists = TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE, getActualExitCode);
-      if (!refExists) {
-        EXPECT_EQ(0, exitCode) << "Program exited with non-zero exit code";
-      }
-#endif
-    }
+    // Check execution output and exit code
+    checkExecution(testCase, executablePath);
 
     // Check if the debugger output matches the expected output
-    // GCOV_EXCL_START
-    if (!testDriverCliOptions.isGitHubActions) { // GDB tests are currently not support on GH actions
-      TestUtil::checkRefMatch(
-          testCase.testPath / REF_NAME_GDB_OUTPUT,
-          [&] {
-            // Execute debugger script
-            std::filesystem::path gdbScriptPath = testCase.testPath / CTL_DEBUG_SCRIPT;
-            EXPECT_TRUE(std::filesystem::exists(gdbScriptPath)) << "Debug output requested, but debug script not found";
-            gdbScriptPath.make_preferred();
-            // -nx: ignore any local/system .gdbinit so a developer's own GDB setup (e.g. globally installed
-            // pretty printers) cannot change test output; tests that want the pretty printers source them
-            // explicitly from within their debug script instead.
-            const std::string cmd = "gdb -nx -x " + gdbScriptPath.string() + " " + executablePath.string();
-            const auto [output, exitCode] = SystemUtil::exec(cmd);
-
-#if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
-            EXPECT_EQ(0, exitCode) << "GDB exited with non-zero exit code when running debug script";
-#endif
-
-            return output;
-          },
-          [&](std::string &expectedOutput, std::string &actualOutput) {
-            // Do not compare against the GDB header
-            TestUtil::eraseGDBHeader(expectedOutput);
-            TestUtil::eraseGDBHeader(actualOutput);
-          });
-    }
-    // GCOV_EXCL_STOP
+    checkDebuggerOutput(testCase, executablePath);
   } catch (LexerError &error) {
     TestUtil::handleError(testCase, error);
   } catch (ParserError &error) {
@@ -418,9 +442,10 @@ static void execTestCase(const TestCase &testCase) {
  * Runs a test case against the bootstrap compiler, built at the start of the test run. The bootstrap compiler is invoked
  * like the host compiler would be invoked by a user, since it cannot be driven stage by stage from here.
  *
- * The following reference outputs are checked: the serialized AST, the raised error, the warnings of the main source file,
- * the IR code, and the execution output and exit code of the compiled program. Beyond that, each test case checks that the
- * bootstrap compiler runs through all stages without crashing or raising an unexpected error.
+ * Like the host test runner, it checks all reference outputs: the serialized AST, the symbol table, the raised error, the
+ * dependency graph, the IR code of all opt levels, the assembly code, the warnings of the main source file, the type registry,
+ * the cache stats, the execution output and exit code of the compiled program, and the debugger output. Beyond that, each
+ * test case checks that the bootstrap compiler runs through all stages without crashing or raising an unexpected error.
  */
 static void execBootstrapTestCase(const TestCase &testCase) {
   // Check if test is disabled
@@ -431,43 +456,64 @@ static void execBootstrapTestCase(const TestCase &testCase) {
   const std::filesystem::path artifactDir = TestUtil::prepareArtifactDir(testCase);
   const std::filesystem::path executablePath = TestUtil::getExecutablePath(artifactDir);
   const bool checkAST = TestUtil::doesRefExist(testCase.testPath / REF_NAME_SYNTAX_TREE);
-  const bool checkExecutionOutput = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT);
-  const bool checkExecutionExitCode = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE);
-  const bool needsExecutable = checkExecutionOutput || checkExecutionExitCode;
+  const bool checkDepGraph = TestUtil::doesRefExist(testCase.testPath / REF_NAME_DEP_GRAPH);
+  const bool needsExecutable = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT) ||
+                               TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE) ||
+                               TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
+  std::vector<std::string> testArgs;
+  TestUtil::parseTestArgs(mainSourceFilePath, testArgs);
 
-  // Assemble the command line, mirroring the one the test runner passes to the host compiler
+  // Assemble the command line, mirroring the cli options the test runner passes to the host compiler
   const auto buildArgs = [&](const std::filesystem::path &outputPath) {
-    // Like the host test runner, bypass the compilation cache: the IR dumps would be empty for files restored from it
+    // Like the host test runner, bypass the compilation cache: the dumps would be empty for files restored from it
     std::vector<std::string> args = {"build", "--test-mode", "--ignore-cache"};
-    TestUtil::parseTestArgs(mainSourceFilePath, args);
+    args.insert(args.end(), testArgs.begin(), testArgs.end());
     if (exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS))
-      args.emplace_back("--no-entry");
+      args.emplace_back("--test-main");
+    if (testDriverCliOptions.enableCoverage)
+      args.emplace_back("--coverage");
     args.emplace_back("--output");
     args.push_back(outputPath.string());
     return args;
   };
+  // Run the bootstrap compiler with the given args on the main source file
+  const auto runBootstrapCompiler = [&](std::vector<std::string> args) {
+    args.push_back(mainSourceFilePath.string());
+    ExecResult result = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
+    if (testDriverCliOptions.isVerbose)                             // GCOV_EXCL_LINE
+      std::cout << "Bootstrap compiler output:\n" << result.output; // GCOV_EXCL_LINE
+    return result;
+  };
+  // The bootstrap compiler writes the dumps of the main source file to '<output dir>/source-<dump name>'
+  const auto readDump = [](const std::filesystem::path &dumpDir, const std::string &dumpName) {
+    const std::filesystem::path dumpPath = dumpDir / ("source-" + dumpName);
+    if (!exists(dumpPath))
+      return std::string();
+    return FileUtil::getFileContent(dumpPath);
+  };
+
   std::vector<std::string> args = buildArgs(executablePath);
   // Like the host test runner, only link an executable if it gets executed afterwards. If an error is expected, keep the
   // executable output container, like the host test runner does: some errors (e.g. a missing main function) are only raised
   // for executables
-  const bool expectsError = TestUtil::doesRefExist(testCase.testPath / REF_NAME_ERROR_OUTPUT);
+  const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
+  const bool expectsError = TestUtil::doesRefExist(errorRefPath);
   if (!needsExecutable && !expectsError) {
     args.emplace_back("--output-container");
     args.emplace_back("obj");
   }
+  // The graphs are dumped to the console, since dumping them to files requires Graphviz to render them
   if (checkAST)
     args.emplace_back("--dump-ast");
-  args.push_back(mainSourceFilePath.string());
+  if (checkDepGraph)
+    args.emplace_back("--dump-dependency-graph");
 
   // Run the bootstrap compiler
-  const auto [output, exitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
-  if (testDriverCliOptions.isVerbose)                      // GCOV_EXCL_LINE
-    std::cout << "Bootstrap compiler output:\n" << output; // GCOV_EXCL_LINE
+  const auto [output, exitCode] = runBootstrapCompiler(args);
 
   // Check if the bootstrap compiler raised an error
-  const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
   if (const std::optional<std::string> errorMessage = BootstrapUtil::extractErrorMessage(output)) {
-    if (!TestUtil::doesRefExist(errorRefPath))
+    if (!expectsError)
       FAIL() << "Expected no error, but got: " << *errorMessage;
     TestUtil::checkRefMatch(errorRefPath, [&] { return *errorMessage; });
     return;
@@ -477,20 +523,52 @@ static void execBootstrapTestCase(const TestCase &testCase) {
 
   // Check AST
   TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYNTAX_TREE, [&] {
-    const std::optional<std::string> astString = BootstrapUtil::extractSerializedAST(output);
+    const std::optional<std::string> astString = BootstrapUtil::extractSerializedGraph(output, BOOTSTRAP_GRAPH_NAME_AST);
     EXPECT_TRUE(astString.has_value()) << "Bootstrap compiler did not dump the AST:\n" << output;
     return astString.value_or("");
   });
 
+  // Dump the outputs, the bootstrap compiler can only write to files in a separate run, to not dump the graphs to files as
+  // well. Like the host test runner, the assembly code is not checked when running on GitHub Actions
+  const bool checkSymbolTable = TestUtil::doesRefExist(testCase.testPath / REF_NAME_SYMBOL_TABLE);
+  const bool checkAssembly = !testDriverCliOptions.isGitHubActions && TestUtil::doesRefExist(testCase.testPath / REF_NAME_ASM);
+  const bool checkTypeRegistry = TestUtil::doesRefExist(testCase.testPath / REF_NAME_TYPE_REGISTRY);
+  const bool checkCacheStats = TestUtil::doesRefExist(testCase.testPath / REF_NAME_CACHE_STATS);
+  const std::filesystem::path dumpDir = artifactDir / "dumps";
+  if (checkSymbolTable || checkAssembly || checkTypeRegistry || checkCacheStats) {
+    std::filesystem::create_directories(dumpDir);
+    std::vector<std::string> dumpArgs = buildArgs(dumpDir / "object.o");
+    dumpArgs.insert(dumpArgs.end(), {"--output-container", "obj", "--dump-to-files"});
+    if (checkSymbolTable)
+      dumpArgs.emplace_back("--dump-symtab");
+    if (checkAssembly)
+      dumpArgs.emplace_back("--dump-assembly");
+    if (checkTypeRegistry)
+      dumpArgs.emplace_back("--dump-types");
+    if (checkCacheStats)
+      dumpArgs.emplace_back("--dump-cache-stats");
+    const auto [dumpOutput, dumpExitCode] = runBootstrapCompiler(dumpArgs);
+    EXPECT_EQ(0, dumpExitCode) << "Bootstrap compiler exited with code " << dumpExitCode << ":\n" << dumpOutput;
+  }
+
+  // Check symbol table
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYMBOL_TABLE, [&] { return readDump(dumpDir, "symbol-table.json"); });
+
   // Fail if an error was expected
-  if (TestUtil::doesRefExist(errorRefPath))
+  if (expectsError)
     FAIL() << "Expected error, but got no error";
 
-  // Check warnings
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] { return BootstrapUtil::extractWarnings(output); });
+  // Check dependency graph
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_DEP_GRAPH, [&] {
+    const std::optional<std::string> depGraphString =
+        BootstrapUtil::extractSerializedGraph(output, BOOTSTRAP_GRAPH_NAME_DEP_GRAPH);
+    EXPECT_TRUE(depGraphString.has_value()) << "Bootstrap compiler did not dump the dependency graph:\n" << output;
+    return depGraphString.value_or("");
+  });
 
   // Check IR code. The host checks the IR after running the optimizer pipeline of each opt level, for which a reference exists.
   // The bootstrap compiler dumps the optimized IR of every source file into the output dir, so it is compiled once per opt level.
+  const bool emitsDebugInfo = BootstrapUtil::emitsDebugInfo(testArgs);
   for (uint8_t i = 0; i <= 5; i++) {
     TestUtil::checkRefMatch(
         testCase.testPath / REF_NAME_OPT_IR[i],
@@ -499,23 +577,19 @@ static void execBootstrapTestCase(const TestCase &testCase) {
           std::filesystem::create_directories(irArtifactDir);
           std::vector<std::string> irArgs = buildArgs(irArtifactDir / "object.o");
           irArgs.emplace_back("-O" + std::string(1, BOOTSTRAP_OPT_LEVEL_NAMES[i]));
-          irArgs.emplace_back("--output-container");
-          irArgs.emplace_back("obj");
-          irArgs.emplace_back("--dump-ir");
-          irArgs.emplace_back("--dump-to-files");
-          irArgs.push_back(mainSourceFilePath.string());
-          const auto [irOutput, irExitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, irArgs, true);
+          irArgs.insert(irArgs.end(), {"--output-container", "obj", "--dump-ir", "--dump-to-files"});
+          const auto [irOutput, irExitCode] = runBootstrapCompiler(irArgs);
           EXPECT_EQ(0, irExitCode) << "Bootstrap compiler exited with code " << irExitCode << ":\n" << irOutput;
           // With LTO, the bootstrap compiler dumps the IR of the LTO module after the post-link optimization
           const bool useLTO = std::ranges::find(irArgs, "-lto") != irArgs.end();
-          const std::string irDumpName =
-              useLTO ? "source-ir-code-lto-post-link.ll" : "source-ir-code-O" + std::to_string(i) + ".ll";
-          const std::filesystem::path irDumpPath = irArtifactDir / irDumpName;
-          if (!exists(irDumpPath))
-            return std::string();
-          return FileUtil::getFileContent(irDumpPath);
+          return readDump(irArtifactDir, useLTO ? "ir-code-lto-post-link.ll" : "ir-code-O" + std::to_string(i) + ".ll");
         },
         [&](std::string &expectedOutput, std::string &actualOutput) {
+          if (emitsDebugInfo) {
+            // Remove the lines, containing paths on the local file system
+            TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
+            TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
+          }
           // The LLVM C API, which the bootstrap compiler uses, cannot mark global values as dso_local
           BootstrapUtil::eraseDSOLocalMarkers(expectedOutput);
           BootstrapUtil::eraseDSOLocalMarkers(actualOutput);
@@ -525,27 +599,30 @@ static void execBootstrapTestCase(const TestCase &testCase) {
         true);
   }
 
-  // Check execution output and exit code
+  // Check assembly code
+  if (checkAssembly)
+    TestUtil::checkRefMatch(
+        testCase.testPath / REF_NAME_ASM, [&] { return readDump(dumpDir, "assembly-code.s"); },
+        [](std::string &, std::string &actualOutput) {
+          // The bootstrap compiler names itself differently in the producer string
+          BootstrapUtil::normalizeProducerString(actualOutput);
+        });
+
+  // Check warnings
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] { return BootstrapUtil::extractWarnings(output); });
+
+  // Check type registry output
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_TYPE_REGISTRY, [&] { return readDump(dumpDir, "type-registry.out"); });
+
+  // Check cache stats output
+  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_CACHE_STATS, [&] { return readDump(dumpDir, "cache-stats.out"); });
+
   if (needsExecutable) {
-    // Execute binary
-    std::stringstream cmd;
-    cmd << executablePath.string();
-    const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
-    if (exists(cliFlagsFile))
-      cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-    const auto [programOutput, programExitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
+    // Check execution output and exit code
+    checkExecution(testCase, executablePath);
 
-    // Check if the execution output matches the expected output
-    TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXECUTION_OUTPUT, [&] { return programOutput; });
-
-#if not OS_WINDOWS // Windows does not give us the exit code, so we cannot check it on Windows
-    // Check if the exit code matches the expected one. If no exit code ref file exists, check against 0
-    const bool refExists = TestUtil::checkRefMatch(testCase.testPath / REF_NAME_EXIT_CODE,
-                                                   [&] { return std::to_string(programExitCode); });
-    if (!refExists) {
-      EXPECT_EQ(0, programExitCode) << "Program exited with non-zero exit code";
-    }
-#endif
+    // Check if the debugger output matches the expected output
+    checkDebuggerOutput(testCase, executablePath);
   }
 
   SUCCEED();
