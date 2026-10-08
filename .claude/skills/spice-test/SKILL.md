@@ -92,8 +92,9 @@ panic, so the message is taken from the panic output, with test paths rewritten
 to `./` like the host prints them. Every expected error must be raised. Warnings
 are taken from the console output, and only the ones of the main source file
 are compared, like the host test runner does. `LinterTests` run in this mode
-only. CI (`ci.yml`, all platforms) runs this mode for all reference test suites,
-minus a list of known-failing cases in `BOOTSTRAP_TEST_FILTER*`.
+only. CI (`ci.yml`, all platforms) runs this mode for all test suites, without
+a filter. Cases that can't pass against the bootstrap compiler get a
+`skip-bootstrap` marker file instead of an exclusion.
 `--update-refs` only updates bootstrap refs (e.g. `ir-code-bootstrap.ll`, create
 the empty file first), so host refs are never overwritten with bootstrap output.
 
