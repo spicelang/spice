@@ -17,6 +17,11 @@ for int i = 1; i <= 10; i++ {
 !!! note "Optional parentheses"
     As with the if statement, foreach loop and while loop, the parentheses around the head of the `for` loop are optional.
 
+!!! note "Lifetime of the loop variable"
+    The variable declared in the head of the `for` loop lives as long as the loop. It is constructed once before the first
+    round and destructed once when the loop is left, no matter if this happens through the condition, `break` or `return`.
+    It can not be declared again in the body of the loop.
+
 !!! tip "Usage of loop alternatives"
     For loops should only be used when it is foreseeable how often a block of code will run. If this is not the case, it
     is recommended to use the [while loop](while-loops.md) or [do-while loop](do-while-loops.md) instead. If you want to

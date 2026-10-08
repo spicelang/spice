@@ -1,0 +1,6 @@
+f<int> main() {
+    for int i = 0; i < 3; i++ {
+        int i = 2;
+        printf("%d\n", i);
+    }
+}

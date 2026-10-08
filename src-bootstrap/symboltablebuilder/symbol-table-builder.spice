@@ -565,10 +565,10 @@ public f<Any> SymbolTableBuilder.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
 
 public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
 
-    // Create scope for the loop body
-    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOR_BODY, &node.codeLoc);
-    node.bodyScope = bodyScope;
-    this.currentScope = bodyScope;
+    // Create scope for the loop head. The loop variable lives there, since it has to survive from one round to the next
+    Scope* headScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LOOP_HEAD, &node.codeLoc);
+    node.headScope = headScope;
+    this.currentScope = headScope;
 
     // Visit loop variable declaration
     this.visit(node.initDecl);
@@ -576,35 +576,50 @@ public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
     // Visit condition
     this.visitInExprScope(node.condAssign);
 
+    // Visit incrementer
+    this.visitInExprScope(node.incAssign);
+
+    // Create scope for the loop body
+    const CodeLoc& bodyCodeLoc = node.body.getCodeLoc();
+    Scope* bodyScope = this.currentScope.createChildScope(node.getBodyScopeId(), ScopeType::FOR_BODY, &bodyCodeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
     // Visit body
     this.visit(node.body);
 
-    // Leave for body scope
-    this.currentScope = bodyScope.parent;
+    // Leave for body and head scope
+    this.currentScope = headScope.parent;
 
     return Any();
 }
 
 public f<Any> SymbolTableBuilder.visitForeachLoop(ASTForeachLoopNode* node) {
 
-    // Create scope for the loop body
-    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOREACH_BODY, &node.codeLoc);
-    node.bodyScope = bodyScope;
-    this.currentScope = bodyScope;
+    // Create scope for the loop head. The index variable lives there, since it has to survive from one round to the next
+    Scope* headScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LOOP_HEAD, &node.codeLoc);
+    node.headScope = headScope;
+    this.currentScope = headScope;
 
     // Visit index variable declaration
     if node.idxVarDecl != nil<IVisitable*> {
         this.visit(node.idxVarDecl);
     }
 
-    // Visit item variable declaration
+    // Create scope for the loop body
+    const CodeLoc& bodyCodeLoc = node.body.getCodeLoc();
+    Scope* bodyScope = this.currentScope.createChildScope(node.getBodyScopeId(), ScopeType::FOREACH_BODY, &bodyCodeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
+    // Visit item variable declaration. The item lives in the body scope, since it is copied anew in each round
     this.visit(node.itemVarDecl);
 
     // Visit body
     this.visit(node.body);
 
-    // Leave foreach body scope
-    this.currentScope = bodyScope.parent;
+    // Leave foreach body and head scope
+    this.currentScope = headScope.parent;
 
     return Any();
 }
@@ -791,8 +806,11 @@ public f<Any> SymbolTableBuilder.visitSignature(ASTSignatureNode* node) {
 public f<Any> SymbolTableBuilder.visitDeclStmt(ASTDeclStmtNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
-    // Check if variable already exists in the same scope.
-    if this.currentScope.lookupStrict(node.varName) != nil<SymbolTableEntry*> {
+    // Check if variable already exists in the same scope. The head of a loop counts as part of the scope of its body here
+    Scope* parentScope = this.currentScope.parent;
+    const bool isLoopBody = parentScope != nil<Scope*> && parentScope.scopeType == ScopeType::LOOP_HEAD;
+    const bool declaredInLoopHead = isLoopBody && parentScope.lookupStrict(node.varName) != nil<SymbolTableEntry*>;
+    if this.currentScope.lookupStrict(node.varName) != nil<SymbolTableEntry*> || declaredInLoopHead {
         this.reportError(baseNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The variable '" + node.varName + "' was declared more than once");
         return Any();
     }

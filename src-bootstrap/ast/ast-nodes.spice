@@ -1202,6 +1202,13 @@ public f<String> ASTUnsafeBlockNode.getScopeId() {
 }
 
 
+// ============================================================ Cleanup ==========================================================
+
+public type ResourcesForManifestationToCleanup struct {
+    public Vector<Pair<SymbolTableEntry*, Function*>> dtorFunctionsToCall
+    public Vector<SymbolTableEntry*> heapVarsToFree
+}
+
 // ========================================================== ForLoopNode ========================================================
 
 public type ASTForLoopNode struct : IVisitable {
@@ -1211,7 +1218,9 @@ public type ASTForLoopNode struct : IVisitable {
     public IVisitable* condAssign = nil<IVisitable*>
     public IVisitable* incAssign = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
+    public Scope* headScope = nil<Scope*>
     public Scope* bodyScope = nil<Scope*>
+    public Vector<ResourcesForManifestationToCleanup> headResourcesToCleanup
 }
 
 public p ASTForLoopNode.ctor(CodeLoc codeLoc) {
@@ -1226,6 +1235,10 @@ public f<String> ASTForLoopNode.getScopeId() {
     return String("for:") + this.codeLoc.toString();
 }
 
+public f<String> ASTForLoopNode.getBodyScopeId() {
+    return String("for-body:") + this.codeLoc.toString();
+}
+
 
 // ======================================================== ForeachLoopNode ======================================================
 
@@ -1236,7 +1249,9 @@ public type ASTForeachLoopNode struct : IVisitable {
     public IVisitable* itemVarDecl = nil<IVisitable*>
     public IVisitable* iteratorAssign = nil<IVisitable*>
     public IVisitable* body = nil<IVisitable*>
+    public Scope* headScope = nil<Scope*>
     public Scope* bodyScope = nil<Scope*>
+    public Vector<ResourcesForManifestationToCleanup> headResourcesToCleanup
     public Function* getIteratorFct = nil<Function*>
     public Function* getFct = nil<Function*>
     public Function* getIdxFct = nil<Function*>
@@ -1255,6 +1270,10 @@ public f<Any> ASTForeachLoopNode.accept(IAbstractAstVisitor* visitor) {
 
 public f<String> ASTForeachLoopNode.getScopeId() {
     return String("foreach:") + this.codeLoc.toString();
+}
+
+public f<String> ASTForeachLoopNode.getBodyScopeId() {
+    return String("foreach-body:") + this.codeLoc.toString();
 }
 
 
@@ -1449,11 +1468,6 @@ public f<String> ASTAnonymousBlockStmtNode.getScopeId() {
 
 
 // ========================================================== StmtLstNode ========================================================
-
-public type ResourcesForManifestationToCleanup struct {
-    public Vector<Pair<SymbolTableEntry*, Function*>> dtorFunctionsToCall
-    public Vector<SymbolTableEntry*> heapVarsToFree
-}
 
 public type ASTStmtLstNode struct : IVisitable {
     compose public ASTNode node
@@ -2824,6 +2838,18 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         ASTStmtLstNode* stmtLstNode = downcast<ASTStmtLstNode>(node);
         while stmtLstNode.resourcesToCleanup.getSize() < manifestationCount {
             stmtLstNode.resourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
+        }
+    }
+    if node.kind == ASTNodeKind::FOR_LOOP {
+        ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(node);
+        while forLoopNode.headResourcesToCleanup.getSize() < manifestationCount {
+            forLoopNode.headResourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
+        }
+    }
+    if node.kind == ASTNodeKind::FOREACH_LOOP {
+        ASTForeachLoopNode* foreachLoopNode = downcast<ASTForeachLoopNode>(node);
+        while foreachLoopNode.headResourcesToCleanup.getSize() < manifestationCount {
+            foreachLoopNode.headResourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
         }
     }
     if node.kind == ASTNodeKind::RETURN_STMT {

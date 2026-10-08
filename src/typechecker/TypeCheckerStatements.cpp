@@ -28,7 +28,7 @@ std::any TypeChecker::visitStmtLst(StmtLstNode *node) {
   }
 
   // Do cleanup of this scope, e.g. dtor calls for struct instances
-  doScopeCleanup(node);
+  doScopeCleanup(node->resourcesToCleanup.at(manIdx), node);
 
   return nullptr;
 }

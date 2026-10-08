@@ -1,0 +1,9 @@
+import "std/data/vector";
+
+f<int> main() {
+    Vector<int> values;
+    values.pushBack(1);
+    foreach long value, int value : values {
+        printf("%d\n", value);
+    }
+}

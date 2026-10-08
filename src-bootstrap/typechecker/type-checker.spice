@@ -2606,7 +2606,7 @@ public f<Any> TypeChecker.visitStmtLst(ASTStmtLstNode* node) {
     }
 
     // Do cleanup of this scope, e.g. dtor calls for struct instances
-    this.doScopeCleanup(node);
+    this.doScopeCleanup(node.resourcesToCleanup.get(this.manIdx), cast<ASTNode*>(node));
 
     return Any();
 }
@@ -2854,8 +2854,8 @@ public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
 }
 
 public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
-    // Change to for body scope
-    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
+    // Change to for head scope
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::LOOP_HEAD);
 
     // Visit loop variable declaration
     this.visit(node.initDecl);
@@ -2870,10 +2870,15 @@ public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
     }
 
     // Visit incrementer
-    this.visit(node.incAssign);
+    this.visitInExprScope(node.incAssign);
 
     // Visit body
+    ScopeHandle bodyScopeHandle = ScopeHandle(&this.compilerPass, node.getBodyScopeId(), ScopeType::FOR_BODY);
     this.visit(node.body);
+    bodyScopeHandle.leaveScopeEarly();
+
+    // Do cleanup of the head scope, e.g. the dtor call for the loop variable. It is executed once the loop is left
+    this.doScopeCleanup(node.headResourcesToCleanup.get(this.manIdx), cast<ASTNode*>(node));
 
     return Any();
 }
@@ -2932,8 +2937,8 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
         }
     }
 
-    // Change to foreach body scope
-    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOREACH_BODY);
+    // Change to foreach head scope
+    ScopeHandle _ = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::LOOP_HEAD);
 
     // Check iterator type
     if !iteratorType.isIterator(baseNode) {
@@ -2978,6 +2983,9 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
     node.nextFct = matchFunction(matchScope, String("next"), iteratorType, noArgs, noTemplateTypeHints, false, baseNode);
     if node.nextFct == nil<Function*> { return Any(); }
 
+    // Change to foreach body scope. The item lives there, since it is copied anew in each round
+    ScopeHandle bodyScopeHandle = ScopeHandle(&this.compilerPass, node.getBodyScopeId(), ScopeType::FOREACH_BODY);
+
     // Retrieve item variable entry
     ASTDeclStmtNode* itemVarDecl = downcast<ASTDeclStmtNode>(node.itemVarDecl);
     SymbolTableEntry* itemVarSymbol = this.currentScope.lookupStrict(itemVarDecl.varName);
@@ -3004,6 +3012,10 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
 
     // Visit body
     this.visit(node.body);
+    bodyScopeHandle.leaveScopeEarly();
+
+    // Do cleanup of the head scope, e.g. the lifetime of the index variable. It is executed once the loop is left
+    this.doScopeCleanup(node.headResourcesToCleanup.get(this.manIdx), baseNode);
 
     return Any();
 }
@@ -6929,14 +6941,14 @@ public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const QualType& thi
  * Prepare the generation of a call to the dtor of a given struct
  *
  * @param entry Symbol entry to use as 'this' pointer for the dtor call
- * @param node StmtLstNode for the current scope
+ * @param resources Resources to clean up at the end of the current scope
+ * @param node Current AST node for error messages
  */
-p TypeChecker.implicitlyCallStructDtor(SymbolTableEntry* entry, ASTStmtLstNode* node) {
-    // Add the dtor to the stmt list node to call it later in codegen
+p TypeChecker.implicitlyCallStructDtor(SymbolTableEntry* entry, ResourcesForManifestationToCleanup& resources, const ASTNode* node) {
+    // Add the dtor to the resources to clean up to call it later in codegen
     const ArgList noArgs;
-    Function* dtor = this.implicitlyCallStructMethod(entry, String(DTOR_FUNCTION_NAME), noArgs, cast<ASTNode*>(node));
+    Function* dtor = this.implicitlyCallStructMethod(entry, String(DTOR_FUNCTION_NAME), noArgs, node);
     if dtor != nil<Function*> {
-        ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
         resources.dtorFunctionsToCall.pushBack(Pair<SymbolTableEntry*, Function*>(entry, dtor));
     }
 }
@@ -6997,11 +7009,12 @@ f<bool> TypeChecker.isDeclaredAfter(const SymbolTableEntry* a, const SymbolTable
 }
 
 /**
- * Consider calls to destructors for the given scope
+ * Consider calls to destructors for the current scope
  *
- * @param node StmtLstNode for the current scope
+ * @param resources Resources to clean up at the end of the current scope
+ * @param node Node the current scope belongs to (a StmtLstNode or the head of a loop)
  */
-p TypeChecker.doScopeCleanup(ASTStmtLstNode* node) {
+p TypeChecker.doScopeCleanup(ResourcesForManifestationToCleanup& resources, const ASTNode* node) {
     // Get all variables, that are approved for de-allocation
     Vector<SymbolTableEntry*> vars = this.currentScope.getVarsGoingOutOfScope();
     // Sort by reverse declaration order
@@ -7023,8 +7036,7 @@ p TypeChecker.doScopeCleanup(ASTStmtLstNode* node) {
                 continue;
             }
 
-            this.implicitlyCallDeallocate(cast<ASTNode*>(node)); // Required to request the memory runtime
-            ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
+            this.implicitlyCallDeallocate(node); // Required to request the memory runtime
             resources.heapVarsToFree.pushBack(varEntry);
         }
         // Only generate dtor call for structs
@@ -7036,7 +7048,7 @@ p TypeChecker.doScopeCleanup(ASTStmtLstNode* node) {
             continue;
         }
         // Call dtor
-        this.implicitlyCallStructDtor(varEntry, node);
+        this.implicitlyCallStructDtor(varEntry, resources, node);
     }
 }
 
@@ -7075,6 +7087,7 @@ p TypeChecker.doExprScopeCleanup(IVisitable* node) {
  * @param expr Expression to visit
  * @return Result of the expression
  */
+#[ignoreUnusedReturnValue]
 f<ExprResult> TypeChecker.visitInExprScope(IVisitable* expr) {
     ExprScopeHandle exprScopeHandle = ExprScopeHandle(&this.compilerPass, expr);
     const ExprResult exprResult = this.visitExpr(expr);

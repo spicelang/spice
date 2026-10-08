@@ -446,8 +446,8 @@ std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
 }
 
 std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
-  // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
+  // Create scope for the loop head. The loop variable lives there, since it has to survive from one round to the next
+  node->headScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LOOP_HEAD, &node->codeLoc);
 
   // Visit loop variable declaration
   visit(node->initDecl);
@@ -455,32 +455,42 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Visit condition
   visitInExprScope(node->condAssign);
 
+  // Visit incrementer
+  visitInExprScope(node->incAssign);
+
+  // Create scope for the loop body
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getBodyScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
+
   // Visit body
   visit(node->body);
 
-  // Leave for body scope
-  currentScope = node->bodyScope->parent;
+  // Leave for body and head scope
+  currentScope = node->headScope->parent;
 
   return nullptr;
 }
 
 std::any SymbolTableBuilder::visitForeachLoop(ForeachLoopNode *node) {
-  // Create scope for the loop body
-  node->bodyScope = currentScope =
-      currentScope->createChildScope(node->getScopeId(), ScopeType::FOREACH_BODY, &node->body->codeLoc);
+  // Create scope for the loop head. The index variable lives there, since it has to survive from one round to the next
+  node->headScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::LOOP_HEAD, &node->codeLoc);
 
   // Visit index variable declaration
   if (node->idxVarDecl)
     visit(node->idxVarDecl);
 
-  // Visit item variable declaration
+  // Create scope for the loop body
+  node->bodyScope = currentScope =
+      currentScope->createChildScope(node->getBodyScopeId(), ScopeType::FOREACH_BODY, &node->body->codeLoc);
+
+  // Visit item variable declaration. The item lives in the body scope, since it is copied anew in each round
   visit(node->itemVarDecl);
 
   // Visit body
   visit(node->body);
 
-  // Leave foreach body scope
-  currentScope = node->bodyScope->parent;
+  // Leave foreach body and head scope
+  currentScope = node->headScope->parent;
 
   return nullptr;
 }
@@ -652,8 +662,10 @@ std::any SymbolTableBuilder::visitSignature(SignatureNode *node) {
 }
 
 std::any SymbolTableBuilder::visitDeclStmt(DeclStmtNode *node) {
-  // Check if variable already exists in the same scope.
-  if (currentScope->lookupStrict(node->varName))
+  // Check if variable already exists in the same scope. The head of a loop counts as part of the scope of its body here
+  Scope *parentScope = currentScope->parent;
+  const bool isLoopBody = parentScope != nullptr && parentScope->type == ScopeType::LOOP_HEAD;
+  if (currentScope->lookupStrict(node->varName) || (isLoopBody && parentScope->lookupStrict(node->varName)))
     throw SemanticError(node, VARIABLE_DECLARED_TWICE, "The variable '" + node->varName + "' was declared more than once");
 
   // Visit the right side

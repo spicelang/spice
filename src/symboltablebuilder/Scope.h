@@ -52,7 +52,8 @@ enum class ScopeType : uint8_t {
   DEFAULT_BODY,
   UNSAFE_BODY,
   ANONYMOUS_BLOCK_BODY,
-  EXPR_BODY
+  EXPR_BODY,
+  LOOP_HEAD
 };
 
 /**
