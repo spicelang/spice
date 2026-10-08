@@ -600,7 +600,7 @@ ext f<LLVMValueRef> LLVMGetBasicBlockParent(LLVMBasicBlockRef /*BB*/);
 ext f<unsigned int> LLVMCountBasicBlocks(LLVMValueRef /*Fn*/);
 ext f<LLVMValueRef> LLVMGetFirstInstruction(LLVMBasicBlockRef /*BB*/);
 ext f<LLVMValueRef> LLVMGetNextInstruction(LLVMValueRef /*Inst*/);
-ext p LLVMPositionBuilder(LLVMBuilderRef /*Builder*/, LLVMBasicBlockRef /*Block*/, LLVMValueRef /*Instr*/);
+ext p LLVMPositionBuilderBeforeDbgRecords(LLVMBuilderRef /*Builder*/, LLVMBasicBlockRef /*Block*/, LLVMValueRef /*Instr*/);
 ext p LLVMInstructionSetDebugLoc(LLVMValueRef /*Inst*/, LLVMMetadataRef /*Loc*/);
 ext f<unsigned int> LLVMGetEnumAttributeKindForName(string /*Name*/, unsigned long /*SLen*/);
 ext f<LLVMAttributeRef> LLVMCreateEnumAttribute(LLVMContextRef /*C*/, unsigned int /*KindID*/, unsigned long /*Val*/);
@@ -2724,9 +2724,10 @@ public f<Type> IRBuilder.getDoubleTy() {
     return Type{ LLVMDoubleTypeInContext(this.ctx) };
 }
 
-// Position the builder before the given instruction
+// Position the builder before the given instruction and the debug records attached to it. Like
+// llvm::IRBuilder::SetInsertPoint(BB, It), this also sets the current debug location to the one of the given instruction
 public p IRBuilder.setInsertPointBefore(BasicBlock block, Value inst) {
-    LLVMPositionBuilder(this.self, block.self, inst.self);
+    LLVMPositionBuilderBeforeDbgRecords(this.self, block.self, inst.self);
 }
 
 public f<Value> IRBuilder.createAlloca(Type ty, string name) {
