@@ -6,6 +6,7 @@
 #include <string>
 
 #include <SourceFile.h>
+#include <util/FileUtil.h>
 
 namespace spice::compiler {
 
@@ -34,7 +35,7 @@ std::string CodeLoc::toPrettyString() const {
  */
 std::string CodeLoc::toPrettyFilePath() const {
   const std::filesystem::path &rootSourceFilePath = sourceFile->getRootSourceFile()->filePath;
-  std::filesystem::path sourceFilePath = relative(sourceFile->filePath, rootSourceFilePath);
+  std::filesystem::path sourceFilePath = FileUtil::relative(sourceFile->filePath, rootSourceFilePath);
   if (sourceFilePath == ".")
     sourceFilePath /= sourceFile->fileName;
   return sourceFilePath.generic_string();

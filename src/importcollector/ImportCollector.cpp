@@ -11,6 +11,7 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <symboltablebuilder/Scope.h>
+#include <util/FileUtil.h>
 #include <util/SystemUtil.h>
 
 namespace spice::compiler {
@@ -115,8 +116,8 @@ std::any ImportCollector::visitImportDef(ImportDefNode *node) {
     intendedRoot = SystemUtil::getBootstrapDir();
   else
     intendedRoot = ownFileDir;
-  const std::filesystem::path allowedRoot = canonical(intendedRoot);
-  const std::filesystem::path canonicalImportPath = canonical(importPath);
+  const std::filesystem::path allowedRoot = FileUtil::canonical(intendedRoot);
+  const std::filesystem::path canonicalImportPath = FileUtil::canonical(importPath);
   const auto [in1, in2] = std::ranges::mismatch(allowedRoot, canonicalImportPath);
   if (in1 != allowedRoot.end())
     throw SemanticError(node, INVALID_IMPORT_PATH, "Import path '" + node->importPath + "' escapes the permitted directory tree");
