@@ -20,8 +20,16 @@ env:
   # Known gaps:
   # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   BOOTSTRAP_TEST_FILTER: >-
-    CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*:
-    BenchmarkTests.*:ExampleTests.*:LinterTests.*
+    CommonTests.*:
+    LexerTests.*:
+    ParserTests.*:
+    SymbolTableBuilderTests.*:
+    TypeCheckerTests.*:
+    IRGeneratorTests.*:
+    StdTests.*:
+    BenchmarkTests.*:
+    ExampleTests.*:
+    LinterTests.*
     -StdTests.data_containerScopeCleanupLeak
 
 jobs:
