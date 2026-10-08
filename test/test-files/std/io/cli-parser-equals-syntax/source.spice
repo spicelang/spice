@@ -73,5 +73,22 @@ f<int> main() {
     assert state.tags.get(2) == "c";
     assert state.file == "multi.spice";
 
+    // A flag, whose name contains a value, takes precedence over a flag with the bare name, regardless of the order they were
+    // added in. The bare flag still matches on its own
+    string level = "";
+    string* l = &level;
+    build.addFlag("--debug-info", p(const bool& _v) { *l = "full"; }, "Full debug info");
+    build.addFlag("--debug-info=line-only", p(const bool& _v) { *l = "line-only"; }, "Line tables only");
+    build.addFlag("--debug-info=none", p(const bool& _v) { *l = "none"; }, "No debug info");
+    string[4] lineOnlyArgs = ["prog", "build", "--debug-info=line-only", "flag.spice"];
+    assert parser.parse(4u, lineOnlyArgs) == EXIT_CODE_SUCCESS;
+    assert level == "line-only";
+    string[4] noneArgs = ["prog", "build", "--debug-info=none", "flag.spice"];
+    assert parser.parse(4u, noneArgs) == EXIT_CODE_SUCCESS;
+    assert level == "none";
+    string[4] bareArgs = ["prog", "build", "--debug-info", "flag.spice"];
+    assert parser.parse(4u, bareArgs) == EXIT_CODE_SUCCESS;
+    assert level == "full";
+
     printf("All assertions passed!\n");
 }
