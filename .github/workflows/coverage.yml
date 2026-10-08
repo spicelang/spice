@@ -22,8 +22,6 @@ env:
   # host's std::hash<Type>) follow the bootstrap compiler and have a 'skip-host' marker file.
   # Known gaps:
   # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
-  # - imports_successValidImport2: the bootstrap compiler does not resolve symlinks when computing the relative paths of the
-  #   dependency graph nodes, like std::filesystem::relative() of the host compiler does
   # - testing_successTestingMultiFile: the bootstrap test main runs the tests of the source files in a different order
   # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   BOOTSTRAP_TEST_FILTER: >-
@@ -36,8 +34,7 @@ env:
     IRGeneratorTests.instrumentation_successMsanAndDbgInfo:
     IRGeneratorTests.instrumentation_successTsanAndDbgInfo:
     IRGeneratorTests.testing_successTestingMultiFile:
-    StdTests.data_containerScopeCleanupLeak:
-    TypeCheckerTests.imports_successValidImport2
+    StdTests.data_containerScopeCleanupLeak
 
 jobs:
   coverage-linux-x86:

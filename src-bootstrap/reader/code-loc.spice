@@ -80,7 +80,7 @@ public f<String> CodeLoc.toPrettyFilePath() {
  * @param base Base path
  * @return Relative path in generic format
  */
-f<String> getRelativePath(const String& path, const String& base) {
+public f<String> getRelativePath(const String& path, const String& base) {
     const FilePath originalPath = FilePath(path);
     const FilePath originalBase = FilePath(base);
     FilePath canonicalPath = originalPath.canonical();
