@@ -15,9 +15,6 @@ import "bootstrap/util/compile-progress";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/linker-error";
 
-// Link external functions
-ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
-
 /**
  * Compilation of an additional source to an object file
  */
@@ -226,14 +223,18 @@ p ExternalLinkerInterface.link() {
     // Check for linker error
     if linkResult.exitCode != 0 {
         if captureStdErr {
-            clearActiveCompileProgress();
-            fprintf(__stderr(), "%s", linkResult.output.getRaw());
+            printAboveActiveCompileProgress(linkResult.output);
         }
         const String command = renderCommandForDisplay(linkerInvoker.path, args);
         const String msg = "Linker exited with non-zero exit code\nLinker command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
         clearActiveCompileProgress();
         panic(Error(error.errorMessage.getRaw()));
+    }
+
+    // The captured output of a successful link (e.g. linker warnings) would be lost otherwise
+    if captureStdErr && !linkResult.output.isEmpty() {
+        printAboveActiveCompileProgress(linkResult.output);
     }
 
     // Print linker result if appropriate
@@ -497,14 +498,18 @@ p ExternalLinkerInterface.archive() {
     // Check for archiver error
     if archiveResult.exitCode != 0 {
         if captureStdErr {
-            clearActiveCompileProgress();
-            fprintf(__stderr(), "%s", archiveResult.output.getRaw());
+            printAboveActiveCompileProgress(archiveResult.output);
         }
         const String command = renderCommandForDisplay(archiver.path, args);
         const String msg = "Archiver exited with non-zero exit code\nArchiver command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
         clearActiveCompileProgress();
         panic(Error(error.errorMessage.getRaw()));
+    }
+
+    // The captured output of a successful archiving would be lost otherwise (see link)
+    if captureStdErr && !archiveResult.output.isEmpty() {
+        printAboveActiveCompileProgress(archiveResult.output);
     }
 
     // Print archiver result if appropriate

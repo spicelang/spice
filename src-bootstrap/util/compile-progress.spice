@@ -5,6 +5,12 @@ import "std/os/thread";
 import "std/data/vector";
 import "std/time/delay";
 
+// Own imports
+import "bootstrap/driver";
+
+// Link external functions
+ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
+
 // Labels of the compile phases. They are padded to the same width, so that the bar does not move when the phase changes
 public const string COMPILE_PHASE_FRONT_END =  "Parsing        ";
 public const string COMPILE_PHASE_MIDDLE_END = "Type checking  ";
@@ -242,6 +248,18 @@ public p CompileProgress.clear() {
 }
 
 /**
+ * Print output to stderr without removing the bar for good. The bar is cleared first and drawn again with the next update
+ *
+ * @param output Output to print
+ */
+public p CompileProgress.printAboveBar(const String& output) {
+    if !this.enabled { return; }
+    LockGuard _ = LockGuard(this.mutex);
+    this.bar.clear();
+    printToStdErr(output);
+}
+
+/**
  * Advance the progress by the given number of steps
  *
  * @param steps Number of steps
@@ -323,6 +341,15 @@ f<bool> isWholeProgramStage(BackEndStage stage) {
 }
 
 /**
+ * Print the given output to stderr
+ *
+ * @param output Output to print
+ */
+p printToStdErr(const String& output) {
+    const int _ = fprintf(__stderr(), "%s", output.getRaw());
+}
+
+/**
  * Divide two numbers, rounding up. Keeps a stage, that takes any time, from ending up with zero steps
  *
  * @param dividend Dividend
@@ -331,6 +358,24 @@ f<bool> isWholeProgramStage(BackEndStage stage) {
  */
 f<unsigned long> divideRoundingUp(unsigned long dividend, unsigned long divisor) {
     return (dividend + divisor - 1ul) / divisor;
+}
+
+/**
+ * Check whether the compilation progress should be shown as progress bar. This is only the case if stdout is a terminal
+ * and the compiler prints nothing else to it while compiling, i.e. neither debug output nor dumps to the console. The AST
+ * and dependency graph dumps print their SVG generation status even when dumping to files, so they always hide the bar. The
+ * --quiet option suppresses it explicitly.
+ *
+ * @param cliOptions Command line options
+ * @return Show progress or not
+ */
+public f<bool> shouldShowCompileProgress(const CliOptions& cliOptions) {
+    if cliOptions.quiet || cliOptions.printDebugOutput { return false; }
+    const DumpSettings& dump = cliOptions.dump;
+    const bool anyDump = dump.dumpAST || dump.dumpSymbolTable || dump.dumpTypes || dump.dumpCacheStats || dump.dumpDependencyGraph || dump.dumpIR || dump.dumpAssembly || dump.dumpObjectFiles;
+    if anyDump && !dump.dumpToFiles { return false; }
+    if dump.dumpAST || dump.dumpDependencyGraph { return false; }
+    return isStdoutTerminal();
 }
 
 /**
@@ -344,6 +389,20 @@ public f<bool> isCompileProgressActive() {
         if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return false; }
         CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
         return compileProgress.enabled;
+    }
+}
+
+/**
+ * Print output to stderr above the progress bar of the active compilation, e.g. the warnings of an external tool, whose
+ * output was captured, because the bar is shown
+ *
+ * @param output Output to print
+ */
+public p printAboveActiveCompileProgress(const String& output) {
+    unsafe {
+        if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return; }
+        CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
+        compileProgress.printAboveBar(output);
     }
 }
 

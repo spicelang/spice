@@ -1,6 +1,5 @@
 // Std imports
 import "std/os/os";
-import "std/io/progress-bar";
 
 // Own imports
 import "bootstrap/source-file";
@@ -8,22 +7,6 @@ import "bootstrap/driver";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/util/system-util";
 import "bootstrap/util/compile-progress";
-
-/**
- * Check whether the compilation progress should be shown as progress bar. This is only the case if stdout is a terminal
- * and the compiler prints nothing else to it while compiling, i.e. neither debug output nor dumps to the console. The
- * --quiet option suppresses it explicitly.
- *
- * @param cliOptions Command line options
- * @return Show progress or not
- */
-f<bool> shouldShowCompileProgress(const CliOptions& cliOptions) {
-    if cliOptions.quiet || cliOptions.printDebugOutput { return false; }
-    const DumpSettings& dump = cliOptions.dump;
-    const bool anyDump = dump.dumpAST || dump.dumpSymbolTable || dump.dumpTypes || dump.dumpCacheStats || dump.dumpDependencyGraph || dump.dumpIR || dump.dumpAssembly || dump.dumpObjectFiles;
-    if anyDump && !dump.dumpToFiles { return false; }
-    return isStdoutTerminal();
-}
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
