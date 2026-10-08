@@ -140,6 +140,20 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             return EXIT_CODE_SUCCESS;
         }
 
+        // Check for flags, whose name contains a value (e.g. "--debug-info=none"). They are matched against the whole argument
+        // first, so that they take precedence over a flag with the bare name (e.g. "--debug-info")
+        if hasInlineValue {
+            foreach const CliOption<bool>& boolOption : this.boolOptions {
+                if boolOption.isPositional() { continue; }
+                if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
+                    bool value = true;
+                    boolOption.setTargetValue(value);
+                    boolOption.callCallback(value);
+                    continue 2; // Continue with next argument
+                }
+            }
+        }
+
         // Check for options (positional options are matched separately below)
         foreach const CliOption<bool>& boolOption : this.boolOptions {
             if boolOption.isPositional() { continue; }

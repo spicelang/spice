@@ -332,7 +332,9 @@ public f<llvm::Value> IRGenerator.insertAlloca(llvm::Type llvmType, const String
     if !this.allocaInsertInst.isNull() { // If there is already an alloca inst, insert right after that
         // The host creates the alloca at the current insert point and moves it after the last alloca. The LLVM C API cannot move
         // instructions, so the alloca is created at its final position right away
+        // Positioning the builder before an instruction also takes over its debug location, so save and restore it
         const llvm::BasicBlock currentBlock = this.builder.getInsertBlock();
+        const llvm::Metadata currentDebugLoc = this.builder.getCurrentDebugLocation();
         const llvm::Value nextInst = this.allocaInsertInst.getNextInstruction();
         if nextInst.isNull() {
             this.builder.setInsertPoint(this.allocaInsertBlock);
@@ -343,9 +345,11 @@ public f<llvm::Value> IRGenerator.insertAlloca(llvm::Type llvmType, const String
         allocaInst.dropLocation(); // Part of prologue
         this.allocaInsertInst = allocaInst;
         this.builder.setInsertPoint(currentBlock);
+        this.builder.setCurrentDebugLocation(currentDebugLoc);
     } else { // This is the first alloca inst in the current function -> insert at the entry block
-        // Save current basic block and move insert cursor to entry block of the current function
+        // Save current basic block and debug location and move insert cursor to entry block of the current function
         const llvm::BasicBlock currentBlock = this.builder.getInsertBlock();
+        const llvm::Metadata currentDebugLoc = this.builder.getCurrentDebugLocation();
         const llvm::Value firstInst = this.allocaInsertBlock.getFirstInstruction();
         if firstInst.isNull() {
             this.builder.setInsertPoint(this.allocaInsertBlock);
@@ -357,8 +361,9 @@ public f<llvm::Value> IRGenerator.insertAlloca(llvm::Type llvmType, const String
         this.allocaInsertInst = this.builder.createAlloca(llvmType, varName.getRaw());
         this.allocaInsertInst.dropLocation(); // Part of prologue
 
-        // Restore old basic block
+        // Restore old basic block and debug location
         this.builder.setInsertPoint(currentBlock);
+        this.builder.setCurrentDebugLocation(currentDebugLoc);
     }
 
     // Insert lifetime start marker
