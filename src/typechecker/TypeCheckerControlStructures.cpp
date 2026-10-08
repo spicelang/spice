@@ -37,7 +37,7 @@ std::any TypeChecker::visitForLoop(ForLoopNode *node) {
     SOFT_ERROR_ER(node->condAssign, CONDITION_MUST_BE_BOOL, "For loop condition must be of type bool")
 
   // Visit incrementer
-  visit(node->incAssign);
+  visitInExprScope(node->incAssign);
 
   // Visit body
   {

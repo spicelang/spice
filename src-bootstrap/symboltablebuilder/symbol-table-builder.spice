@@ -576,6 +576,9 @@ public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
     // Visit condition
     this.visitInExprScope(node.condAssign);
 
+    // Visit incrementer. Its temporaries are destructed after each evaluation, so it gets an expression scope of its own
+    this.visitInExprScope(node.incAssign);
+
     // Create scope for the loop body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOR_BODY, &node.codeLoc);
     node.bodyScope = bodyScope;

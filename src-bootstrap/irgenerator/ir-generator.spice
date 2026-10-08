@@ -2383,8 +2383,15 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
 
     // Switch to tail block
     this.switchToBlock(bTail);
-    // Inc statement
-    this.visit(node.incAssign);
+    // Inc statement. Its temporaries are destructed right after it was evaluated
+    {
+        ExprScopeHandle exprScopeHandle = ExprScopeHandle(&this.compilerPass, node.incAssign);
+        this.visit(node.incAssign);
+        const Scope* exprScope = exprScopeHandle.getExprScope();
+        if exprScope != nil<Scope*> {
+            this.generateTemporariesCleanup(exprScope, getASTNode(node.incAssign));
+        }
+    }
     // Create jump from tail to head
     this.insertJump(bHead);
 

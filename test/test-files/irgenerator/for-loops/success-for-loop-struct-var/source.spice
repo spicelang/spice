@@ -14,6 +14,10 @@ f<bool> operator<(const Counter& counter, int limit) {
     return counter.value < limit;
 }
 
+f<int> getValue(const Counter& counter) {
+    return counter.value;
+}
+
 f<int> findFirstAbove(int limit) {
     for Counter counter = Counter(0); counter < 10; counter.value++ {
         if counter.value > limit {
@@ -44,4 +48,10 @@ f<int> main() {
     printf("After loop 2\n");
 
     printf("Found %d\n", findFirstAbove(4));
+
+    // Temporaries of the incrementer are destructed after each evaluation
+    for int i = 0; i < 3; i += getValue(Counter(1)) {
+        printf("Iteration %d\n", i);
+    }
+    printf("After loop 3\n");
 }

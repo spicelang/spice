@@ -456,6 +456,9 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Visit condition
   visitInExprScope(node->condAssign);
 
+  // Visit incrementer. Its temporaries are destructed after each evaluation, so it gets an expression scope of its own
+  visitInExprScope(node->incAssign);
+
   // Create scope for the loop body
   node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
 

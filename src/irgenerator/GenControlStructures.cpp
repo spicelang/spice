@@ -58,8 +58,13 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
 
   // Switch to tail block
   switchToBlock(bTail);
-  // Inc statement
-  visit(node->incAssign);
+  // Inc statement. Its temporaries are destructed right after it was evaluated
+  {
+    const ExprScopeHandle exprScopeHandle(this, node->incAssign);
+    visit(node->incAssign);
+    if (const Scope *exprScope = exprScopeHandle.getExprScope())
+      generateTemporariesCleanup(exprScope, node->incAssign);
+  }
   // Create jump from tail to head
   insertJump(bHead);
 

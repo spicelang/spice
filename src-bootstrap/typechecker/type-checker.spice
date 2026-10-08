@@ -2870,7 +2870,7 @@ public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
     }
 
     // Visit incrementer
-    this.visit(node.incAssign);
+    this.visitInExprScope(node.incAssign);
 
     // Visit body
     ScopeHandle bodyScopeHandle = ScopeHandle(&this.compilerPass, node.getScopeId(), ScopeType::FOR_BODY);
