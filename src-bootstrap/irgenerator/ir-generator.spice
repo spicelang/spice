@@ -6492,10 +6492,11 @@ p IRGenerator.generateDefaultDtor(const model::Function* dtorFunction) {
 }
 
 p IRGenerator.generateTestMain() {
-    // Collect all test functions
+    // Collect all test functions. Iterate the source files in creation order, so that the tests of the main source file run
+    // first, followed by the ones of its dependencies in import order. The order of the source file map depends on the hash
+    // function
     Vector<const Vector<const model::Function*>*> tests;
-    foreach Pair<const String&, SourceFile*&> sourceFileEntry : this.resourceManager.sourceFiles {
-        const SourceFile* testSourceFile = sourceFileEntry.getSecond();
+    foreach const SourceFile* testSourceFile : this.resourceManager.sourceFilesInCreationOrder {
         if !testSourceFile.testFunctions.isEmpty() {
             tests.pushBack(&testSourceFile.testFunctions);
         }

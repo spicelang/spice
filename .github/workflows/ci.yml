@@ -17,7 +17,6 @@ env:
   # host's std::hash<Type>) follow the bootstrap compiler and have a 'skip-host' marker file.
   # Known gaps:
   # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
-  # - testing_successTestingMultiFile: the bootstrap test main runs the tests of the source files in a different order
   # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   # - warnings_warningUnusedMethod: the bootstrap symbol table is an UnorderedMap, the host one a std::map sorted by name,
   #   so the warnings come in a different order
@@ -31,7 +30,6 @@ env:
     IRGeneratorTests.instrumentation_successAsanAndDbgInfo:
     IRGeneratorTests.instrumentation_successMsanAndDbgInfo:
     IRGeneratorTests.instrumentation_successTsanAndDbgInfo:
-    IRGeneratorTests.testing_successTestingMultiFile:
     StdTests.data_containerScopeCleanupLeak:
     TypeCheckerTests.warnings_warningUnusedMethod
   # Additional bootstrap compiler gaps that only show up on Windows (appended to the negative patterns above):

@@ -855,9 +855,10 @@ void IRGenerator::generateDefaultDtor(const Function *dtorFunction) {
 }
 
 void IRGenerator::generateTestMain() {
-  // Collect all test functions
+  // Collect all test functions. Iterate the source files in creation order, so that the tests of the main source file run first,
+  // followed by the ones of its dependencies in import order. The order of the source file map depends on the hash function
   std::vector<const std::vector<const Function *> *> tests;
-  for (const auto &sourceFile : resourceManager.sourceFiles | std::views::values)
+  for (const SourceFile *sourceFile : resourceManager.sourceFilesInCreationOrder)
     if (!sourceFile->testFunctions.empty())
       tests.push_back(&sourceFile->testFunctions);
 

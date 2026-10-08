@@ -57,6 +57,7 @@ public type GlobalResourceManager struct {
     // a map of owning 'heap' pointers cannot be instantiated: its iterator needs a reference to a heap pointer as field type
     BlockAllocator<SourceFile> sourceFileAlloc
     public UnorderedMap<String, SourceFile*> sourceFiles // Maps the file paths to the source files owned by the pool above
+    public Vector<SourceFile*> sourceFilesInCreationOrder // For a deterministic order where it matters (e.g. the test main)
     String rootSourceFilePath // Path of the root source file, which the code locations are pretty-printed relative to
     public Vector<Pair<Struct*, bool>> pendingStructDefaultMemberDecisions
     public CliOptions& cliOptions
@@ -199,6 +200,7 @@ public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent,
             __placement_new<SourceFile>(newSourceFile, *this, parent, depName, path, isStdFile);
         }
         this.sourceFiles.upsert(sourceFileKey, newSourceFile);
+        this.sourceFilesInCreationOrder.pushBack(newSourceFile);
     }
 
     return this.sourceFiles.get(sourceFileKey);

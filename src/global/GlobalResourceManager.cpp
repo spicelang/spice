@@ -77,8 +77,10 @@ SourceFile *GlobalResourceManager::createSourceFile(SourceFile *parent, const st
   const std::string filePathStr = weakly_canonical(absolute(path)).string();
 
   // Create the new source file if it does not exist yet
-  if (!sourceFiles.contains(filePathStr))
-    sourceFiles.emplace(filePathStr, std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile));
+  if (!sourceFiles.contains(filePathStr)) {
+    const auto [it, _] = sourceFiles.emplace(filePathStr, std::make_unique<SourceFile>(*this, parent, depName, path, isStdFile));
+    sourceFilesInCreationOrder.push_back(it->second.get());
+  }
 
   return sourceFiles.at(filePathStr).get();
 }
