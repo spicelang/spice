@@ -6,6 +6,7 @@
 #include <ranges>
 
 #include <SourceFile.h>
+#include <util/FileUtil.h>
 
 namespace spice::compiler {
 
@@ -21,14 +22,16 @@ void DependencyGraphVisualizer::getDependencyGraphNode(std::stringstream &output
     return;
 
   // Append code for this source file
-  const std::filesystem::path relativePath = relative(currentSourceFile->filePath, sourceFile->filePath).generic_string();
+  const std::filesystem::path relativePath =
+      FileUtil::relative(currentSourceFile->filePath, sourceFile->filePath).generic_string();
   output << " \"" << relativePath.string() << "\" [color=\"lightgreen\",label=\"" << currentSourceFile->fileName << "\"];\n";
   printedFiles.insert(currentSourceFile);
 
   // Append code for dependencies
   for (const SourceFile *dependency : currentSourceFile->dependencies | std::views::values) {
     getDependencyGraphNode(output, dependency);
-    const std::filesystem::path dependencyPathRelative = relative(dependency->filePath, sourceFile->filePath).generic_string();
+    const std::filesystem::path dependencyPathRelative =
+        FileUtil::relative(dependency->filePath, sourceFile->filePath).generic_string();
     output << " \"" << relativePath.string() << "\" -> \"" << dependencyPathRelative.string() << "\";\n";
   }
 }
