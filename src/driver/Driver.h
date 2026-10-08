@@ -88,7 +88,7 @@ struct CliOptions {
   std::string targetVendor = TARGET_UNKNOWN;
   std::string targetOs = TARGET_UNKNOWN;
   bool isNativeTarget = true;
-  bool useCPUFeatures = true;
+  bool useNativeFeatures = false;
   bool execute = false;
   std::filesystem::path cacheDir;                                // Where the cache files go. Should always be a temp directory
   std::filesystem::path outputDir = "./";                        // Where the object files go. Should always be a temp directory

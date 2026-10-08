@@ -120,7 +120,7 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     }
 
     // Create target machine for LLVM
-    if cliOptions.isNativeTarget & cliOptions.useCPUFeatures {
+    if cliOptions.isNativeTarget & cliOptions.useNativeFeatures {
         // Retrieve native CPU name and the supported CPU features
         this.cpuName = llvm::getHostCPUName();
         this.cpuFeatures = llvm::getHostCPUFeatures();

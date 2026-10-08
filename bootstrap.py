@@ -24,7 +24,7 @@ NC = "\033[0m"
 ROOT_DIR = Path(__file__).resolve().parent
 EXE_NAME = "spice.exe" if sys.platform == "win32" else "spice"
 # Same flags the test runner uses to build the bootstrap compiler (see test/util/BootstrapUtil.cpp)
-DEFAULT_BUILD_FLAGS = ["-O3", "-lto"]
+DEFAULT_BUILD_FLAGS = ["-O3", "-lto", "--native-features"]
 
 
 def log(msg: str) -> None:
