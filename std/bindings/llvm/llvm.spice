@@ -527,6 +527,7 @@ ext f<string> LLVMGetHostCPUFeatures();
 ext f<LLVMBool> LLVMGetTargetFromTriple(string /*Triple*/, LLVMTargetMachineRef* /*OutMachine*/, string* /*OutError*/);
 ext f<LLVMTargetMachineRef> LLVMCreateTargetMachine(LLVMTargetRef /*T*/, string /*Triple*/, string /*CPU*/, string /*Features*/, LLVMCodeGenOptLevel /*OptLevel*/, LLVMRelocMode /*Reloc*/, LLVMCodeModel /*CodeModel*/);
 ext p LLVMDisposeTargetMachine(LLVMTargetMachineRef /*TM*/);
+ext p LLVMSetTargetMachineAsmVerbosity(LLVMTargetMachineRef /*T*/, LLVMBool /*VerboseAsm*/);
 ext f<LLVMBool> LLVMTargetMachineEmitToFile(LLVMTargetMachineRef /*T*/, LLVMModuleRef /*M*/, string /*Filename*/, LLVMCodeGenFileType /*codegen*/, string* /*ErrorMessage*/);
 ext f<LLVMTargetDataRef> LLVMCreateTargetDataLayout(LLVMTargetMachineRef /*TM*/);
 ext p LLVMDisposeTargetData(LLVMTargetDataRef /*TD*/);
@@ -1505,6 +1506,15 @@ p TargetMachine.ctor(LLVMTargetRef targetRef, Triple triple, string cpu, string 
 
 public p TargetMachine.dtor() {
     LLVMDisposeTargetMachine(this.self);
+}
+
+/**
+ * Set whether the target machine emits verbose assembly, i.e. with comments (e.g. block labels and function boundaries)
+ *
+ * @param verboseAsm Emit verbose assembly or not
+ */
+public p TargetMachine.setAsmVerbosity(bool verboseAsm) {
+    LLVMSetTargetMachineAsmVerbosity(this.self, cast<LLVMBool>(verboseAsm));
 }
 
 public f<LLVMError> TargetMachine.emitToFile(const Module& module, string filename, LLVMCodeGenFileType codegen) {

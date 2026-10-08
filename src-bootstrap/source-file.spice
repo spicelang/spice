@@ -223,6 +223,8 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     // emission. The LLVM C API cannot change the opt level of a target machine, so it is set right away here.
     const llvm::LLVMCodeGenOptLevel codeGenOptLevel = getCodeGenOptLevel(this.cliOptions.optLevel);
     this.targetMachine = target.createTargetMachine(targetTriple, cpuName, features, codeGenOptLevel, relocMode, llvm::LLVMCodeModel::Default);
+    // Like the host, emit the assembly code with comments. This only affects the assembly code, not the object files
+    this.targetMachine.setAsmVerbosity(true);
 }
 
 public p SourceFile.runParser() {

@@ -79,7 +79,8 @@ It is functionally equivalent to the host mode and checks the same references:
 `syntax-tree.dot` and `dependency-graph.dot` (via `--dump-ast` /
 `--dump-dependency-graph`, taken from the console output), `symbol-table.json`,
 `assembly.asm`, `type-registry.out` and `cache-stats.out` (via a separate run with
-`--dump-to-files`, only if one of these refs exists), `exception.out`,
+`--dump-to-files`, only if one of these refs exists; like the host runner, it uses
+the last opt level with an IR reference, e.g. `-O3` if `ir-code-O3.ll` exists), `exception.out`,
 `warning.out`, the IR references (one run per opt level), `cout.out`,
 `exit-code.out` and `debug.out` (via GDB). `run-builtin-tests` cases are built
 with the internal `--test-main` flag of the bootstrap compiler (test main without
