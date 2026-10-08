@@ -94,8 +94,8 @@ are taken from the console output, and only the ones of the main source file
 are compared, like the host test runner does. `LinterTests` run in this mode
 only. CI (`ci.yml`, all platforms) runs this mode for all reference test suites,
 minus a list of known-failing cases in `BOOTSTRAP_TEST_FILTER*`.
-`--update-refs` is rejected, so host refs are never overwritten with bootstrap
-output.
+`--update-refs` only updates bootstrap refs (e.g. `ir-code-bootstrap.ll`, create
+the empty file first), so host refs are never overwritten with bootstrap output.
 
 ```sh
 cmake --build cmake-build-debug --target spicetest_bootstrap

@@ -86,7 +86,8 @@ public:
   static bool isDisabled(const TestCase &testCase);
   static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
-  static std::array<std::filesystem::path, 3> expandRefPaths(const std::filesystem::path &refPath);
+  static std::filesystem::path getBootstrapRefPath(const std::filesystem::path &refPath);
+  static std::vector<std::filesystem::path> expandRefPaths(const std::filesystem::path &refPath);
 };
 
 } // namespace spice::testing
