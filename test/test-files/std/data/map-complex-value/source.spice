@@ -1,0 +1,63 @@
+import "std/data/map";
+import "std/data/vector";
+import "std/type/type-conversion";
+
+// Value type with a non-trivial field, but without default constructor
+type Person struct {
+    String name
+    int age
+}
+
+p Person.ctor(const String& name, int age) {
+    this.name = name;
+    this.age = age;
+}
+
+type Registry struct {
+    Map<int, Person> persons
+}
+
+f<int> main() {
+    // Leave freed chunks with non-zero content behind, so that the map nodes are allocated in reused memory
+    {
+        Vector<String> garbage;
+        for int i = 0; i < 100; i++ {
+            garbage.pushBack(String("This string occupies a heap chunk, which gets reused after it was freed"));
+        }
+    }
+
+    Map<int, Person> map;
+    assert map.isEmpty();
+    for int i = 0; i < 20; i++ {
+        map.insert(i, Person(String("Person ") + toString(i), 20 + i));
+    }
+    assert map.getSize() == 20;
+    assert map.get(7).name == "Person 7";
+    assert map.get(7).age == 27;
+    map.remove(7);
+    assert !map.contains(7);
+    assert map.getSize() == 19;
+
+    // Copy-construct the map
+    Map<int, Person> copy = map;
+    assert copy.getSize() == 19;
+    assert copy.get(3).name == "Person 3";
+    assert copy.get(19).age == 39;
+    // The copy owns its values
+    copy.get(3).name = String("Changed");
+    assert copy.get(3).name == "Changed";
+    assert map.get(3).name == "Person 3";
+
+    // Copy-assign the map from a const reference
+    Registry registry1;
+    registry1.persons.insert(1, Person(String("Alice"), 30));
+    registry1.persons.insert(2, Person(String("Bob"), 40));
+    Registry registry2;
+    const Registry& source = registry1;
+    registry2.persons = source.persons;
+    assert registry2.persons.getSize() == 2;
+    assert registry2.persons.get(1).name == "Alice";
+    assert registry2.persons.get(2).age == 40;
+
+    printf("All assertions passed!\n");
+}

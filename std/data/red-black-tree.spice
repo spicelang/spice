@@ -57,15 +57,6 @@ type Node<K, V> struct {
     heap Node<K, V>* childRight
 }
 
-p Node.ctor(const K& key, const V& value, NodeColor color, Node<K, V>* parent = nil<Node<K, V>*>, heap Node<K, V>* childLeft = nil<heap Node<K, V>*>, heap Node<K, V>* childRight = nil<heap Node<K, V>*>) {
-    this.key = key;
-    this.value = value;
-    this.color = color;
-    this.parent = parent;
-    this.childLeft = childLeft;
-    this.childRight = childRight;
-}
-
 p Node.ctor(const Node<K, V>& other) {
     panic(Error("This copy ctor should never be called!"));
 }
@@ -138,7 +129,7 @@ public p RedBlackTree.ctor(RedBlackTree<K, V>& other) {
  */
 public p RedBlackTree.insert(const K& key, const V& value) {
     // Create the new node
-    heap Node<K, V>* newNode = __new<Node<K, V>>(key, value, NodeColor::RED);
+    heap Node<K, V>* newNode = this.createNode(key, value, NodeColor::RED, nil<Node<K, V>*>);
 
     // Search for the correct position
     Node<K, V>* y = nil<Node<K, V>*>;
@@ -202,22 +193,28 @@ public p RedBlackTree.remove(const K& key) {
 
     Node<K, V>* y = z;
     Node<K, V>* x;
+    // The parent of x is tracked separately, because x can be nil, which has no parent pointer
+    Node<K, V>* xParent;
     bool wasYBlack = y.isBlack();
     if !z.hasLeftChild() {
         x = z.childRight;
+        xParent = z.parent;
         this.transplant(z, z.childRight);
     } else if !z.hasRightChild() {
         x = z.childLeft;
+        xParent = z.parent;
         this.transplant(z, z.childLeft);
     } else {
         y = this.minimum(z.childRight);
         wasYBlack = y.isBlack();
         x = y.childRight;
         if y.parent == z {
+            xParent = y;
             if x != nil<Node<K, V>*> {
                 x.parent = y;
             }
         } else {
+            xParent = y.parent;
             this.transplant(y, y.childRight);
             y.childRight = z.childRight;
             y.childRight.parent = y;
@@ -234,9 +231,10 @@ public p RedBlackTree.remove(const K& key) {
     z.childRight = nil<heap Node<K, V>*>;
     sDelete(z);
 
-    // Do a fixup if required
-    if wasYBlack && x != nil<Node<K, V>*> {
-        this.deleteFixup(x);
+    // Removing a black node takes one black node from all paths through x, so restore the black height. This is required
+    // even if x is nil: skipping it breaks the invariants, so that a later fixup runs into a nil sibling
+    if wasYBlack {
+        this.deleteFixup(x, xParent);
     }
 
     this.size--;
@@ -316,6 +314,32 @@ public p RedBlackTree.dtor() {
 }
 
 /**
+ * Allocate a new node for the given key-value pair. The key and the value are copy-constructed into the raw allocation, like
+ * the hash table does for its entries: assigning them in a node constructor would destruct the uninitialized memory of a
+ * key or value type without default constructor first, which crashes once the allocator hands out reused memory.
+ *
+ * @param key The key to store
+ * @param value The value to store
+ * @param color The color of the node
+ * @param parent The parent of the node
+ * @return Pointer to the newly allocated node
+ */
+f<heap Node<K, V>*> RedBlackTree.createNode(const K& key, const V& value, NodeColor color, Node<K, V>* parent) {
+    heap Node<K, V>* node;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<Node<K, V>>());
+        node = cast<heap Node<K, V>*>(allocResult.unwrapAndMove());
+        __placement_new<K>(&node.key, key);
+        __placement_new<V>(&node.value, value);
+    }
+    node.color = color;
+    node.parent = parent;
+    node.childLeft = nil<heap Node<K, V>*>;
+    node.childRight = nil<heap Node<K, V>*>;
+    return node;
+}
+
+/**
  * Recursion helper to free a whole subtree bottom-up. Children are detached from the node
  * before it is deleted, so the node's own (implicit) destructor never sees a dangling child
  * pointer and can never double-free it.
@@ -340,7 +364,7 @@ p RedBlackTree.freeSubtree(heap Node<K, V>* node) {
  */
 f<heap Node<K, V>*> RedBlackTree.cloneSubtree(Node<K, V>* node, Node<K, V>* parent) {
     if node == nil<Node<K, V>*> { return nil<heap Node<K, V>*>; }
-    heap Node<K, V>* newNode = __new<Node<K, V>>(node.key, node.value, node.color, parent);
+    heap Node<K, V>* newNode = this.createNode(node.key, node.value, node.color, parent);
     newNode.childLeft = this.cloneSubtree(node.childLeft, newNode);
     newNode.childRight = this.cloneSubtree(node.childRight, newNode);
     return newNode;
@@ -453,62 +477,57 @@ p RedBlackTree.insertFixup(Node<K, V>* z) {
     this.rootNode.color = NodeColor::BLACK;
 }
 
-p RedBlackTree.deleteFixup(Node<K, V>* x) {
+p RedBlackTree.deleteFixup(Node<K, V>* x, Node<K, V>* xParent) {
+    // A nil node counts as black. In a valid tree, the sibling w of the doubly black x is never nil
     while x != this.rootNode && (x == nil<Node<K, V>*> || x.isBlack()) {
-        if x == x.parent.childLeft {
-            Node<K, V>* w = x.parent.childRight;
-            if w != nil<Node<K, V>*> && w.isRed() {
+        if x == xParent.childLeft {
+            Node<K, V>* w = xParent.childRight;
+            if w.isRed() {
                 w.color = NodeColor::BLACK;
-                x.parent.color = NodeColor::RED;
-                this.rotateLeft(x.parent);
-                w = x.parent.childRight;
+                xParent.color = NodeColor::RED;
+                this.rotateLeft(xParent);
+                w = xParent.childRight;
             }
             if (!w.hasLeftChild() || w.childLeft.isBlack()) && (!w.hasRightChild() || w.childRight.isBlack()) {
                 w.color = NodeColor::RED;
-                x = x.parent;
+                x = xParent;
+                xParent = x.parent;
             } else {
                 if !w.hasRightChild() || w.childRight.isBlack() {
-                    if w.hasLeftChild() {
-                        w.childLeft.color = NodeColor::BLACK;
-                    }
+                    w.childLeft.color = NodeColor::BLACK;
                     w.color = NodeColor::RED;
                     this.rotateRight(w);
-                    w = x.parent.childRight;
+                    w = xParent.childRight;
                 }
-                w.color = x.parent.color;
-                x.parent.color = NodeColor::BLACK;
-                if w.hasRightChild() {
-                    w.childRight.color = NodeColor::BLACK;
-                }
-                this.rotateLeft(x.parent);
+                w.color = xParent.color;
+                xParent.color = NodeColor::BLACK;
+                w.childRight.color = NodeColor::BLACK;
+                this.rotateLeft(xParent);
                 x = this.rootNode;
             }
         } else {
-            Node<K, V>* w = x.parent.childLeft;
-            if w != nil<Node<K, V>*> && w.isRed() {
+            Node<K, V>* w = xParent.childLeft;
+            if w.isRed() {
                 w.color = NodeColor::BLACK;
-                x.parent.color = NodeColor::RED;
-                this.rotateRight(x.parent);
-                w = x.parent.childLeft;
+                xParent.color = NodeColor::RED;
+                this.rotateRight(xParent);
+                w = xParent.childLeft;
             }
             if (!w.hasRightChild() || w.childRight.isBlack()) && (!w.hasLeftChild() || w.childLeft.isBlack()) {
                 w.color = NodeColor::RED;
-                x = x.parent;
+                x = xParent;
+                xParent = x.parent;
             } else {
                 if !w.hasLeftChild() || w.childLeft.isBlack() {
-                    if w.hasRightChild() {
-                        w.childRight.color = NodeColor::BLACK;
-                    }
+                    w.childRight.color = NodeColor::BLACK;
                     w.color = NodeColor::RED;
                     this.rotateLeft(w);
-                    w = x.parent.childLeft;
+                    w = xParent.childLeft;
                 }
-                w.color = x.parent.color;
-                x.parent.color = NodeColor::BLACK;
-                if w.hasLeftChild() {
-                    w.childLeft.color = NodeColor::BLACK;
-                }
-                this.rotateRight(x.parent);
+                w.color = xParent.color;
+                xParent.color = NodeColor::BLACK;
+                w.childLeft.color = NodeColor::BLACK;
+                this.rotateRight(xParent);
                 x = this.rootNode;
             }
         }

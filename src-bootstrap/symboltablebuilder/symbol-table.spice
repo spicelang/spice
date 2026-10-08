@@ -20,7 +20,7 @@ import "bootstrap/source-file";
 
 // Type aliases
 public type CaptureMap alias Map</*name=*/String, /*capture*/Capture>; // Ordered like in the host, since the order determines the capture struct layout
-public type SymbolMap alias UnorderedMap</*name=*/String, /*entry*/SymbolTableEntry>;
+public type SymbolMap alias Map</*name=*/String, /*entry*/SymbolTableEntry>; // Ordered like in the host, since the order shows in the warnings
 
 /**
  * Class for storing information about symbols of the program.
@@ -95,7 +95,7 @@ public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode
     assert !this.symbols.contains(name);
     const QualType qualType = QualType(SuperType::TY_INVALID);
     ASTNode* mutableDeclNode = cast<ASTNode*>(declNode);
-    this.symbols.upsert(name, SymbolTableEntry(name, qualType, this.scope, mutableDeclNode, orderIndex, isGlobal));
+    this.symbols.insert(name, SymbolTableEntry(name, qualType, this.scope, mutableDeclNode, orderIndex, isGlobal));
     // Set entry to declared
     SymbolTableEntry* entry = &this.symbols.get(name);
     entry.updateState(LifecycleState::DECLARED, mutableDeclNode);
@@ -166,7 +166,7 @@ public f<SymbolTableEntry*> SymbolTable.copySymbol(const String& originalName, c
     SymbolTableEntry* entryToCopy = this.lookupStrict(originalName);
     assert entryToCopy != nil<SymbolTableEntry*>;
     assert !this.symbols.contains(newName);
-    this.symbols.upsert(newName, *entryToCopy);
+    this.symbols.insert(newName, *entryToCopy);
     return &this.symbols.get(newName);
 }
 
