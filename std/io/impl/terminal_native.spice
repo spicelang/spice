@@ -1,0 +1,12 @@
+// Link external functions
+ext f<int> isatty(int /*fd*/);
+
+/**
+ * Check whether the given file descriptor refers to a terminal
+ *
+ * @param fd File descriptor
+ * @return Terminal or not
+ */
+public f<bool> isTerminalFd(int fd) {
+    return isatty(fd) != 0;
+}

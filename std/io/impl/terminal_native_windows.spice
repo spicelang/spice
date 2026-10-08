@@ -1,0 +1,14 @@
+// Windows version of terminal_native.spice, picked by the OS suffix. The two files must offer the same symbols.
+
+// Link external functions
+ext f<int> _isatty(int /*fd*/);
+
+/**
+ * Check whether the given file descriptor refers to a terminal (console)
+ *
+ * @param fd File descriptor
+ * @return Terminal or not
+ */
+public f<bool> isTerminalFd(int fd) {
+    return _isatty(fd) != 0;
+}

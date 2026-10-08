@@ -1,0 +1,338 @@
+// Std imports
+import "std/time/time";
+import "std/type/type-conversion";
+import "std/io/impl/terminal_native";
+
+// Link external functions
+ext f<int> fflush(byte* /*stream*/);
+
+// Constants
+public const unsigned int DEFAULT_PROGRESS_BAR_WIDTH = 40;
+const int STDOUT_FD = 1;
+const long MIN_REDRAW_INTERVAL_MICROS = 100000l; // Redraw at most every 100 ms, unless the percentage changes
+
+/**
+ * A single-line CLI progress bar with percentage, counter, elapsed time and ETA.
+ *
+ * The bar redraws itself in place by returning the cursor to the start of the line, so nothing else
+ * should be printed to stdout while it is active. Output looks like this:
+ *
+ * Downloading [================>                       ]  42% 420/1000 00:12 ETA 00:17
+ */
+public type ProgressBar struct {
+    unsigned long total
+    unsigned long current
+    unsigned int width
+    string label
+    char fillChar = '='
+    char headChar = '>'
+    char emptyChar = ' '
+    bool showCounter = true
+    long startMicros
+    long lastRenderMicros
+    int lastRenderPercent = -1
+    unsigned long lastLineLength
+    bool started
+    bool finished
+}
+
+/**
+ * Construct a progress bar
+ *
+ * @param total Number of steps that make up 100 %
+ * @param label Optional label, printed in front of the bar
+ * @param width Number of characters between the brackets
+ */
+public p ProgressBar.ctor(unsigned long total, string label = "", unsigned int width = DEFAULT_PROGRESS_BAR_WIDTH) {
+    this.total = total;
+    this.label = label;
+    this.width = width;
+}
+
+/**
+ * Customize the characters the bar is drawn with
+ *
+ * @param fillChar Character for the completed part
+ * @param headChar Character at the tip of the completed part
+ * @param emptyChar Character for the remaining part
+ */
+public p ProgressBar.setStyle(char fillChar, char headChar, char emptyChar) {
+    this.fillChar = fillChar;
+    this.headChar = headChar;
+    this.emptyChar = emptyChar;
+}
+
+/**
+ * Show or hide the current/total counter, e.g. if the steps are no meaningful unit for the user
+ *
+ * @param showCounter Show the counter or not
+ */
+public p ProgressBar.setShowCounter(bool showCounter) {
+    this.showCounter = showCounter;
+}
+
+/**
+ * Change the label, printed in front of the bar. Takes effect with the next redraw.
+ *
+ * @param label New label
+ */
+public p ProgressBar.setLabel(string label) {
+    this.label = label;
+}
+
+/**
+ * Change the number of steps that make up 100 %, e.g. when more work is discovered on the way. The current progress is
+ * clamped to the new total.
+ *
+ * @param total New total
+ */
+public p ProgressBar.setTotal(unsigned long total) {
+    this.total = total;
+    this.setCurrent(this.current);
+}
+
+/**
+ * Start the progress bar. This resets the clock the ETA is calculated from and draws the initial bar.
+ * Calling it is optional, the first update starts the bar implicitly.
+ */
+public p ProgressBar.start() {
+    this.startMicros = getCurrentMicros();
+    this.current = 0ul;
+    this.lastRenderPercent = -1;
+    this.started = true;
+    this.finished = false;
+    this.render(true);
+}
+
+/**
+ * Set the progress to an absolute value. Values above the total are clamped.
+ *
+ * @param current Number of completed steps
+ */
+public p ProgressBar.update(unsigned long current) {
+    if this.finished { return; }
+    if !this.started { this.start(); }
+    this.setCurrent(current);
+    this.render(false);
+}
+
+/**
+ * Set the progress to an absolute value without drawing the bar. Values above the total are clamped.
+ * Useful to render the bar yourself via format().
+ *
+ * @param current Number of completed steps
+ */
+public p ProgressBar.setCurrent(unsigned long current) {
+    this.current = current > this.total ? this.total : current;
+}
+
+/**
+ * Advance the progress by the given number of steps
+ *
+ * @param steps Number of steps completed since the last call
+ */
+public p ProgressBar.tick(unsigned long steps = 1ul) {
+    this.update(this.current + steps);
+}
+
+/**
+ * Mark the progress bar as complete, draw it a last time and move the cursor to the next line
+ */
+public p ProgressBar.finish() {
+    if this.finished { return; }
+    if !this.started { this.start(); }
+    this.current = this.total;
+    this.render(true);
+    printf("\n");
+    fflush(nil<byte*>);
+    this.finished = true;
+}
+
+/**
+ * Draw the bar right away, e.g. after changing the label. Does nothing if the bar was not started yet or is finished.
+ */
+public p ProgressBar.redraw() {
+    if !this.started || this.finished { return; }
+    this.render(true);
+}
+
+/**
+ * Remove the bar from the console and return the cursor to the start of the line, e.g. to print something else. The
+ * next update draws the bar again.
+ */
+public p ProgressBar.clear() {
+    if this.lastLineLength == 0ul { return; }
+    String blank = String();
+    for unsigned long i = 0ul; i < this.lastLineLength; i++ {
+        blank.append(' ');
+    }
+    printf("\r%s\r", blank.getRaw());
+    fflush(nil<byte*>);
+    this.lastLineLength = 0ul;
+    this.lastRenderPercent = -1;
+}
+
+/**
+ * Retrieve the total number of steps
+ *
+ * @return Total steps
+ */
+public inline f<unsigned long> ProgressBar.getTotal() {
+    return this.total;
+}
+
+/**
+ * Retrieve the number of completed steps
+ *
+ * @return Completed steps
+ */
+public inline f<unsigned long> ProgressBar.getCurrent() {
+    return this.current;
+}
+
+/**
+ * Retrieve the progress as fraction between 0 and 1
+ *
+ * @return Progress fraction
+ */
+public f<double> ProgressBar.getProgress() {
+    if this.total == 0ul { return 1.0; }
+    return cast<double>(this.current) / cast<double>(this.total);
+}
+
+/**
+ * Retrieve the time elapsed since the bar was started
+ *
+ * @return Elapsed time in microseconds
+ */
+public f<long> ProgressBar.getElapsedMicros() {
+    if !this.started { return 0l; }
+    return getCurrentMicros() - this.startMicros;
+}
+
+/**
+ * Estimate the remaining time, assuming the average rate so far stays constant
+ *
+ * @param elapsedMicros Time elapsed since the start
+ * @return Estimated remaining time in microseconds, or -1 if no estimate is possible yet
+ */
+public f<long> ProgressBar.getEtaMicros(long elapsedMicros) {
+    if this.current >= this.total { return 0l; }
+    if this.current == 0ul || elapsedMicros <= 0l { return -1l; }
+    const double remaining = cast<double>(this.total - this.current);
+    return cast<long>(cast<double>(elapsedMicros) * remaining / cast<double>(this.current));
+}
+
+/**
+ * Build the progress bar line for a given elapsed time, without drawing it
+ *
+ * @param elapsedMicros Time elapsed since the start
+ * @return Formatted progress bar line
+ */
+public f<String> ProgressBar.format(long elapsedMicros) {
+    result = String();
+    if len(this.label) > 0 {
+        result.append(this.label);
+        result.append(' ');
+    }
+
+    // Bar
+    const double progress = this.getProgress();
+    const unsigned long filled = cast<unsigned long>(progress * cast<double>(this.width));
+    result.append('[');
+    for unsigned long i = 0ul; i < this.width; i++ {
+        if i < filled {
+            result.append(this.fillChar);
+        } else if i == filled && filled > 0ul {
+            result.append(this.headChar);
+        } else {
+            result.append(this.emptyChar);
+        }
+    }
+    result.append("] ");
+
+    // Percentage
+    const int percent = cast<int>(progress * 100.0);
+    if percent < 100 { result.append(' '); }
+    if percent < 10 { result.append(' '); }
+    result.append(toString(percent));
+    result.append("% ");
+
+    // Counter
+    if this.showCounter {
+        result.append(toString(cast<long>(this.current)));
+        result.append('/');
+        result.append(toString(cast<long>(this.total)));
+        result.append(' ');
+    }
+
+    // Elapsed time and ETA
+    result.append(formatDuration(elapsedMicros));
+    result.append(" ETA ");
+    result.append(formatDuration(this.getEtaMicros(elapsedMicros)));
+}
+
+/**
+ * Draw the progress bar, unless the last draw was too recent and the percentage did not change
+ *
+ * @param force Draw regardless of the redraw throttling
+ */
+p ProgressBar.render(bool force) {
+    const long now = getCurrentMicros();
+    const int percent = cast<int>(this.getProgress() * 100.0);
+    if !force && percent == this.lastRenderPercent && now - this.lastRenderMicros < MIN_REDRAW_INTERVAL_MICROS {
+        return;
+    }
+    this.lastRenderMicros = now;
+    this.lastRenderPercent = percent;
+
+    String line = this.format(now - this.startMicros);
+    const unsigned long lineLength = line.getLength();
+    // Overwrite leftovers of a longer previous line
+    for unsigned long i = lineLength; i < this.lastLineLength; i++ {
+        line.append(' ');
+    }
+    this.lastLineLength = lineLength;
+    printf("\r%s", line.getRaw());
+    fflush(nil<byte*>);
+}
+
+/**
+ * Format a duration as mm:ss, or hh:mm:ss if it is one hour or longer
+ *
+ * @param micros Duration in microseconds, negative for unknown
+ * @return Formatted duration, or --:-- if unknown
+ */
+public f<String> formatDuration(long micros) {
+    if micros < 0l { return String("--:--"); }
+    const long totalSecs = micros / 1000000l;
+    const long hours = totalSecs / 3600l;
+    const long minutes = (totalSecs / 60l) % 60l;
+    const long seconds = totalSecs % 60l;
+    result = String();
+    if hours > 0l {
+        result.append(toString(hours));
+        result.append(':');
+    }
+    appendTwoDigits(result, minutes);
+    result.append(':');
+    appendTwoDigits(result, seconds);
+}
+
+/**
+ * Append a number to a string, zero-padded to two digits
+ */
+p appendTwoDigits(String& output, long value) {
+    if value < 10l { output.append('0'); }
+    output.append(toString(value));
+}
+
+/**
+ * Check whether stdout is attached to a terminal. A progress bar should usually only be shown if it is, because the
+ * carriage returns it uses to redraw itself clutter redirected output.
+ *
+ * @return Terminal or not
+ */
+public f<bool> isStdoutTerminal() {
+    return isTerminalFd(STDOUT_FD);
+}
