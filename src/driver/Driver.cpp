@@ -426,6 +426,10 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
   subCmd->add_flag<bool>("--keep-frame-pointers", cliOptions.keepFramePointers,
                          "Set up a frame pointer in every function, so external profilers and debuggers can walk "
                          "the stack (costs a register and a bit of performance)");
+  // --native-features
+  subCmd->add_flag<bool>("--native-features", cliOptions.useNativeFeatures,
+                         "Tune the output for the CPU of the compiling machine and use all of its features. The output "
+                         "might not run on other machines of the same architecture");
 
   // Opt levels
   subCmd->add_flag_callback("-O0", [&] { cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");

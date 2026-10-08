@@ -172,8 +172,8 @@ static void execTestCase(const TestCase &testCase) {
       /* targetVendor= */ TARGET_UNKNOWN,
       /* targetOs= */ TARGET_UNKNOWN,
       /* isNativeTarget= */ true,
-      /* useCPUFeatures*/ false, // Disabled because it makes the refs differ on different machines
-      /* execute= */ false,      // If we set this to 'true', the compiler will not emit object files
+      /* useNativeFeatures= */ false, // Would make the refs differ on different machines
+      /* execute= */ false,           // If we set this to 'true', the compiler will not emit object files
       /* cacheDir= */ "./cache",
       /* outputDir= */ "./",
       /* outputPath= */ "",

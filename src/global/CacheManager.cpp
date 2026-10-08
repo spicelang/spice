@@ -33,6 +33,9 @@ std::string CacheManager::computeCacheKey(const std::string &sourceCode, const s
   // Frame pointers are a codegen decision baked into the emitted object, so an object built without them must not
   // be reused once '--keep-frame-pointers' is passed, and vice versa.
   components << cliOptions.keepFramePointers;
+  // Native CPU features change the emitted instructions, so an object built with them must not be reused for a
+  // generic build, and vice versa.
+  components << cliOptions.useNativeFeatures;
   // The output container influences codegen (PIC/PIE levels, DSO-local attributes for symbols,
   // etc.), so reusing an object emitted for a different container would produce wrong output.
   components << static_cast<uint8_t>(cliOptions.outputContainer);

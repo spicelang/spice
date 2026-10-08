@@ -119,7 +119,7 @@ public type CliOptions struct {
     public String targetVendor // TARGET_UNKNOWN per default, see the constructor
     public String targetOs // TARGET_UNKNOWN per default, see the constructor
     public bool isNativeTarget = true
-    public bool useCPUFeatures = true
+    public bool useNativeFeatures = false
     public bool execute = false
     public FilePath cacheDir // Where the cache files go. Should always be a temp directory
     public FilePath outputDir // Where the object files go. Should always be a temp directory. "./" per default, see the constructor
@@ -693,6 +693,8 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--use-tbaa-metadata", this.cliOptions.useTBAAMetadata, "Generate metadata for type-based alias analysis to enhance optimizations");
     // --keep-frame-pointers
     subCmd.addFlag("--keep-frame-pointers", this.cliOptions.keepFramePointers, "Set up a frame pointer in every function, so external profilers and debuggers can walk the stack (costs a register and a bit of performance)");
+    // --native-features
+    subCmd.addFlag("--native-features", this.cliOptions.useNativeFeatures, "Tune the output for the CPU of the compiling machine and use all of its features. The output might not run on other machines of the same architecture");
     // --test-mode
     // The host has no such option: its test runner sets up the cli options in-process. The test runner drives the bootstrap
     // compiler as separate process, so it needs an option to compile in the same mode.
@@ -700,7 +702,6 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         this.cliOptions.testMode = true;
         this.cliOptions.comparableOutput = true;
         this.cliOptions.namesForIRValues = true;
-        this.cliOptions.useCPUFeatures = false; // Disabled because it makes the refs differ on different machines
         // Compile serially like the host's test runner: the test cases are already spread over processes, so a parallel back
         // end would only oversubscribe the machine, and the reference outputs stay strictly deterministic this way
         this.cliOptions.compileJobCount = 1u;

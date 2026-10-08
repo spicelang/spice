@@ -166,6 +166,20 @@ TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForFramePointers) {
   ASSERT_NE(keyNoFramePointers, keyFramePointers);
 }
 
+TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForNativeFeatures) {
+  const std::string source = "f<int> main() { return 0; }";
+
+  cliOptions.useNativeFeatures = false;
+  const CacheManager managerGeneric(cliOptions);
+  const std::string keyGeneric = managerGeneric.computeCacheKey(source);
+
+  cliOptions.useNativeFeatures = true;
+  const CacheManager managerNative(cliOptions);
+  const std::string keyNative = managerNative.computeCacheKey(source);
+
+  ASSERT_NE(keyGeneric, keyNative);
+}
+
 TEST_F(CompileCacheTest, ComputeCacheKeyDiffersForDepCacheKeys) {
   const CacheManager manager(cliOptions);
   const std::string source = "f<int> main() { return 0; }";

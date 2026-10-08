@@ -41,7 +41,7 @@ GlobalResourceManager::GlobalResourceManager(const CliOptions &cliOptions)
 
   // Create cpu name and features strings
   cpuName = "generic";
-  if (cliOptions.isNativeTarget && cliOptions.useCPUFeatures) {
+  if (cliOptions.isNativeTarget && cliOptions.useNativeFeatures) {
     // Retrieve native CPU name and the supported CPU features
     cpuName = llvm::sys::getHostCPUName();
     llvm::SubtargetFeatures features;

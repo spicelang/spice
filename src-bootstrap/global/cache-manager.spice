@@ -54,6 +54,7 @@ public f<String> CacheManager.computeCacheKey(const String& sourceCode, const Ve
     components << this.cliOptions.targetTriple.value;
     components << toString(this.cliOptions.useLTO);
     components << toString(this.cliOptions.keepFramePointers);
+    components << toString(this.cliOptions.useNativeFeatures);
     components << toString(this.cliOptions.outputContainer);
     // Fold in sorted dep keys so any change in a dependency invalidates this entry too
     Vector<String> sortedDepKeys = depCacheKeys;
