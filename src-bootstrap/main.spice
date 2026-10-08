@@ -6,6 +6,7 @@ import "bootstrap/source-file";
 import "bootstrap/driver";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/util/system-util";
+import "bootstrap/util/compile-progress";
 
 /**
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
@@ -17,17 +18,28 @@ f<bool> compileProject(CliOptions& cliOptions) {
     // Instantiate GlobalResourceManager
     GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
 
+    // Show the progress on the console. Enable it before the first source file is created, so that it is counted
+    if shouldShowCompileProgress(cliOptions) {
+        const bool runBackEnd = !cliOptions.lintOnly; // Lint-only mode does neither run the back end, nor link
+        const bool link = runBackEnd && cliOptions.outputContainer != OutputContainer::OBJECT_FILE;
+        const bool optimized = cliOptions.optLevel != OptLevel::O0;
+        const unsigned long jobCount = resourceManager.getCompileJobCount();
+        resourceManager.compileProgress.enable(runBackEnd, link, optimized, cliOptions.useLTO, jobCount);
+    }
+
     // Create source file instance for main source file
     SourceFile* mainSourceFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), cliOptions.mainSourceFile, false);
 
     // Run compile pipeline for main source file. All dependent source files are triggered by their parents
     mainSourceFile.runFrontEnd();
     if resourceManager.abortCompilation { return true; }
+    resourceManager.compileProgress.setPhase(COMPILE_PHASE_MIDDLE_END);
     mainSourceFile.runMiddleEnd();
     if resourceManager.abortCompilation { return true; }
 
     // Lint-only mode stops here and reports findings without generating any code
     if cliOptions.lintOnly {
+        resourceManager.compileProgress.clear();
         mainSourceFile.collectAndPrintLintFindings();
         return true;
     }
@@ -37,15 +49,21 @@ f<bool> compileProject(CliOptions& cliOptions) {
         resourceManager.linker.startAdditionalSourceCompilation();
     }
 
+    resourceManager.compileProgress.setPhase(COMPILE_PHASE_BACK_END);
     mainSourceFile.runBackEnd();
     if resourceManager.abortCompilation { return true; }
 
     // Link the target executable (link object files to executable/library)
     if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
+        resourceManager.compileProgress.startLinking();
         resourceManager.linker.prepare();
         resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);
         resourceManager.linker.cleanup();
+        resourceManager.compileProgress.finishLinking();
     }
+
+    // Remove the progress bar before printing the warnings
+    resourceManager.compileProgress.clear();
 
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();

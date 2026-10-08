@@ -1,0 +1,52 @@
+import "std/io/progress-bar";
+
+f<int> main() {
+    // Duration formatting
+    assert formatDuration(-1l) == "--:--";
+    assert formatDuration(0l) == "00:00";
+    assert formatDuration(59999999l) == "00:59";
+    assert formatDuration(61000000l) == "01:01";
+    assert formatDuration(3723000000l) == "1:02:03";
+
+    // Progress, ETA and line formatting
+    ProgressBar bar = ProgressBar(200ul, "Test", 10u);
+    assert bar.getProgress() == 0.0;
+    assert bar.getEtaMicros(0l) == -1l;
+    String line1 = bar.format(0l);
+    printf("%s\n", line1.getRaw());
+
+    bar.setCurrent(50ul);
+    assert bar.getProgress() == 0.25;
+    assert bar.getEtaMicros(10000000l) == 30000000l;
+    String line2 = bar.format(10000000l);
+    printf("%s\n", line2.getRaw());
+
+    bar.setStyle('#', '#', '.');
+    bar.setCurrent(199ul);
+    String line3 = bar.format(3600000000l);
+    printf("%s\n", line3.getRaw());
+
+    bar.setCurrent(200ul);
+    assert bar.getEtaMicros(40000000l) == 0l;
+    String line4 = bar.format(40000000l);
+    printf("%s\n", line4.getRaw());
+
+    // Without counter, changed label and total
+    bar.setShowCounter(false);
+    bar.setLabel("Next");
+    bar.setTotal(400ul);
+    assert bar.getTotal() == 400ul;
+    assert bar.getCurrent() == 200ul;
+    String line5 = bar.format(40000000l);
+    printf("%s\n", line5.getRaw());
+
+    // Values above the total are clamped
+    bar.setTotal(100ul);
+    assert bar.getCurrent() == 100ul;
+
+    // Without label, empty total
+    ProgressBar emptyBar = ProgressBar(0ul, "", 4u);
+    assert emptyBar.getProgress() == 1.0;
+    String line6 = emptyBar.format(0l);
+    printf("%s\n", line6.getRaw());
+}

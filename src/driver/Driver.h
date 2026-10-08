@@ -136,6 +136,7 @@ struct CliOptions {
   // CliOptions, so inserting a field anywhere else silently shifts every field after it into the wrong slot.
   bool keepFramePointers = false;
   bool stripSymbols = false;
+  bool quiet = false; // Do not show the compile progress (only the bootstrap compiler shows it so far)
 
   /**
    * Whether a panic or failed assertion prints the stack trace of the failing call. It needs the std's libbacktrace, which is

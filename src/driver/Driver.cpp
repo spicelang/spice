@@ -466,6 +466,8 @@ void Driver::addCompileSubcommandOptions(CLI::App *subCmd) const {
 
   // --debug-output
   subCmd->add_flag<bool>("--debug-output,-d", cliOptions.printDebugOutput, "Enable debug output");
+  // --quiet
+  subCmd->add_flag<bool>("--quiet,-q", cliOptions.quiet, "Do not show the compile progress");
   // --dump-ast
   subCmd->add_flag<bool>("--dump-ast,-ast", cliOptions.dump.dumpAST, "Dump AST as serialized string and SVG image");
   // --dump-symtab

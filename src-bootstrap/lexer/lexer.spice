@@ -6,6 +6,7 @@ import "std/io/filepath";
 
 // Own imports
 import "bootstrap/lexer/token";
+import "bootstrap/util/compile-progress";
 import "bootstrap/reader/reader";
 import "bootstrap/reader/code-loc";
 import "bootstrap/exception/lexer-error";
@@ -459,6 +460,7 @@ f<Token> Lexer.consumeToken() {
 p Lexer.throwLexerError(const CodeLoc& codeLoc, string message) {
     const LexerError lexerError = LexerError(codeLoc, LexerErrorType::TOKENIZING_FAILED, message);
     const String& errorMessage = lexerError.getMessage();
+    clearActiveCompileProgress();
     panic(Error(errorMessage.getRaw()));
 }
 

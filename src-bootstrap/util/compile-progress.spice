@@ -1,0 +1,419 @@
+// Std imports
+import "std/io/progress-bar";
+import "std/os/mutex";
+import "std/os/thread";
+import "std/data/vector";
+import "std/time/delay";
+
+// Own imports
+import "bootstrap/driver";
+
+// Link external functions
+ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
+
+// Labels of the compile phases. They are padded to the same width, so that the bar does not move when the phase changes
+public const string COMPILE_PHASE_FRONT_END =  "Parsing        ";
+public const string COMPILE_PHASE_MIDDLE_END = "Type checking  ";
+public const string COMPILE_PHASE_BACK_END =   "Generating code";
+public const string COMPILE_PHASE_LINKING =    "Linking        ";
+
+// Progress steps per source file and stage, weighted by the time the stage takes for an average source file (one step is
+// roughly 2 ms). The back end steps are measured for a serial back end and divided by the speedup of the parallel back end.
+const unsigned long STEPS_FRONT_END = 2ul;
+const unsigned long STEPS_TYPE_CHECKER_PRE = 2ul;
+const unsigned long STEPS_TYPE_CHECKER_POST = 10ul;
+const unsigned long STEPS_IR_GENERATOR = 5ul;
+const unsigned long STEPS_IR_OPTIMIZER = 21ul; // Also the pre-link optimizer with LTO
+const unsigned long STEPS_OBJECT_EMITTER_O0 = 5ul;
+const unsigned long STEPS_OBJECT_EMITTER_OPTIMIZED = 19ul;
+const unsigned long STEPS_LTO_IR_OPTIMIZER = 30ul; // Bitcode linker and post-link optimizer for the whole program
+const unsigned long STEPS_LTO_OBJECT_EMITTER = 30ul; // Object emitter for the whole program
+const unsigned long STEPS_LINKING = 2ul;
+// The parallel back end does not scale with the number of jobs, because a few source files (e.g. with many generic
+// manifestations) take much longer than the others. This is about the speedup, it reaches with many jobs.
+const unsigned long MAX_BACK_END_SPEEDUP = 6ul;
+
+// Interval, in which the heartbeat thread refreshes the bar while a long-running stage reports no progress
+const int HEARTBEAT_INTERVAL_MILLIS = 50;
+
+// Address of the active compile progress. Compile errors are raised as panics from places that have no access to the
+// resource manager (e.g. the lexer and the parser), and they have to remove the bar from the console first. Spice only
+// supports globals of primitive type, so the address is stored as a long.
+unsigned long ACTIVE_COMPILE_PROGRESS_ADDRESS = 0ul;
+
+/**
+ * Back end stages, that report their progress
+ */
+public type BackEndStage enum {
+    IR_GENERATOR,
+    IR_OPTIMIZER, // The default optimizer, or the pre-link optimizer with LTO
+    LTO_IR_OPTIMIZER, // Bitcode linker and post-link optimizer for the whole program
+    OBJECT_EMITTER,
+    LTO_OBJECT_EMITTER // Object emitter for the whole program
+}
+
+/**
+ * Shows the progress of a compilation as progress bar with ETA on the console. It is disabled by default and only enabled
+ * for an actual compilation, which prints nothing else to the console while it runs (see compileProject).
+ *
+ * The progress is counted in steps, which the source files report when they finish a stage. Every source file adds the
+ * steps of all its stages to the total when it is created, so the total grows while the front end discovers the imports.
+ * The source files report from the worker threads of the parallel back end as well, which is why all accesses are locked.
+ *
+ * Some stages run only once for the whole program (the LTO stages and linking) and report no progress, until they are
+ * done. In the meantime, a heartbeat thread keeps the elapsed time and the ETA on the console up to date.
+ */
+public type CompileProgress struct {
+    ProgressBar bar
+    Mutex mutex
+    bool enabled = false
+    // Steps per source file
+    unsigned long stepsIrGenerator = 0ul
+    unsigned long stepsIrOptimizer = 0ul
+    unsigned long stepsObjectEmitter = 0ul
+    unsigned long stepsLtoIrOptimizer = 0ul
+    unsigned long stepsLtoObjectEmitter = 0ul
+    unsigned long stepsLinking = 0ul
+    unsigned long sourceFileCount = 0ul
+    bool heartbeatRunning = false
+    Vector<Thread> heartbeatThreads // Holds the heartbeat thread while it runs
+}
+
+public p CompileProgress.ctor() {
+    this.bar = ProgressBar(0ul, COMPILE_PHASE_FRONT_END);
+    this.bar.setShowCounter(false); // The steps are no meaningful unit for the user
+}
+
+public p CompileProgress.dtor() {
+    this.stopHeartbeat();
+    this.clear();
+    unsafe {
+        if ACTIVE_COMPILE_PROGRESS_ADDRESS == cast<unsigned long>(cast<byte*>(this)) {
+            ACTIVE_COMPILE_PROGRESS_ADDRESS = 0ul;
+        }
+    }
+}
+
+/**
+ * Enable the progress bar and draw it for the first time
+ *
+ * @param runBackEnd Whether the back end runs
+ * @param link Whether the object files are linked
+ * @param optimized Whether the opt level is above O0
+ * @param useLTO Whether LTO is enabled
+ * @param jobCount Number of source files, that the back end compiles in parallel
+ */
+public p CompileProgress.enable(bool runBackEnd, bool link, bool optimized, bool useLTO, unsigned long jobCount) {
+    if runBackEnd {
+        // Divide the serial steps by the speedup of the parallel back end. LTO always runs serially
+        unsigned long speedup = useLTO ? 1ul : jobCount;
+        if speedup > MAX_BACK_END_SPEEDUP { speedup = MAX_BACK_END_SPEEDUP; }
+        if speedup == 0ul { speedup = 1ul; }
+        this.stepsIrGenerator = divideRoundingUp(STEPS_IR_GENERATOR, speedup);
+        this.stepsIrOptimizer = optimized ? divideRoundingUp(STEPS_IR_OPTIMIZER, speedup) : 0ul;
+        if useLTO {
+            this.stepsLtoIrOptimizer = STEPS_LTO_IR_OPTIMIZER;
+            this.stepsLtoObjectEmitter = STEPS_LTO_OBJECT_EMITTER;
+        } else {
+            const unsigned long serialStepsObjectEmitter = optimized ? STEPS_OBJECT_EMITTER_OPTIMIZED : STEPS_OBJECT_EMITTER_O0;
+            this.stepsObjectEmitter = divideRoundingUp(serialStepsObjectEmitter, speedup);
+        }
+    }
+    if link {
+        this.stepsLinking = STEPS_LINKING;
+    }
+
+    this.enabled = true;
+    unsafe {
+        ACTIVE_COMPILE_PROGRESS_ADDRESS = cast<unsigned long>(cast<byte*>(this));
+    }
+    // The bar is drawn for the first time with the first source file, because a bar without any steps counts as complete
+}
+
+/**
+ * Account for a newly created source file
+ */
+public p CompileProgress.addSourceFile() {
+    if !this.enabled { return; }
+    LockGuard _ = LockGuard(this.mutex);
+    unsigned long stepsPerFile = STEPS_FRONT_END + STEPS_TYPE_CHECKER_PRE + STEPS_TYPE_CHECKER_POST + this.stepsLinking;
+    stepsPerFile += this.stepsIrGenerator + this.stepsIrOptimizer + this.stepsObjectEmitter;
+    stepsPerFile += this.stepsLtoIrOptimizer + this.stepsLtoObjectEmitter;
+    this.sourceFileCount++;
+    this.bar.setTotal(this.bar.getTotal() + stepsPerFile);
+    if this.sourceFileCount == 1ul {
+        this.bar.start();
+    }
+}
+
+/**
+ * Report that a source file finished its front end
+ */
+public p CompileProgress.finishFrontEnd() {
+    this.advance(STEPS_FRONT_END);
+}
+
+/**
+ * Report that a source file finished the pre-run of the type checker
+ */
+public p CompileProgress.finishTypeCheckerPre() {
+    this.advance(STEPS_TYPE_CHECKER_PRE);
+}
+
+/**
+ * Report that a source file finished the post-run of the type checker
+ */
+public p CompileProgress.finishTypeCheckerPost() {
+    this.advance(STEPS_TYPE_CHECKER_POST);
+}
+
+/**
+ * Report that a source file enters a back end stage. Stages for the whole program get a heartbeat until they finish.
+ *
+ * @param stage Back end stage
+ */
+public p CompileProgress.startBackEndStage(BackEndStage stage) {
+    if !this.enabled { return; }
+    if isWholeProgramStage(stage) {
+        this.startHeartbeat();
+    }
+}
+
+/**
+ * Report that a source file finished a back end stage
+ *
+ * @param stage Back end stage
+ */
+public p CompileProgress.finishBackEndStage(BackEndStage stage) {
+    if !this.enabled { return; }
+    if isWholeProgramStage(stage) {
+        this.stopHeartbeat();
+    }
+    LockGuard _ = LockGuard(this.mutex);
+    this.bar.tick(this.getBackEndStageSteps(stage));
+}
+
+/**
+ * Report that the back end of a source file was skipped, because it was restored from the cache
+ *
+ * @param isMainFile Whether this is the main source file, that runs the stages for the whole program with LTO
+ */
+public p CompileProgress.skipBackEnd(bool isMainFile) {
+    if !this.enabled { return; }
+    LockGuard _ = LockGuard(this.mutex);
+    unsigned long steps = this.stepsIrGenerator + this.stepsIrOptimizer + this.stepsObjectEmitter;
+    if isMainFile {
+        steps += (this.stepsLtoIrOptimizer + this.stepsLtoObjectEmitter) * this.sourceFileCount;
+    }
+    this.bar.tick(steps);
+}
+
+/**
+ * Switch to the linking phase and keep the bar up to date on a heartbeat thread, until finishLinking is called
+ */
+public p CompileProgress.startLinking() {
+    if !this.enabled { return; }
+    this.setPhase(COMPILE_PHASE_LINKING);
+    this.startHeartbeat();
+}
+
+/**
+ * Stop the heartbeat thread and complete the steps of the linking
+ */
+public p CompileProgress.finishLinking() {
+    this.stopHeartbeat();
+    this.advance(this.stepsLinking * this.sourceFileCount);
+}
+
+/**
+ * Switch to the next compile phase
+ *
+ * @param phase Label of the phase (one of the COMPILE_PHASE_* constants)
+ */
+public p CompileProgress.setPhase(string phase) {
+    if !this.enabled { return; }
+    LockGuard _ = LockGuard(this.mutex);
+    this.bar.setLabel(phase);
+    this.bar.redraw();
+}
+
+/**
+ * Remove the bar from the console for good, e.g. to print the warnings or because the compilation ends
+ */
+public p CompileProgress.clear() {
+    if !this.enabled { return; }
+    LockGuard _ = LockGuard(this.mutex);
+    this.bar.clear();
+    this.enabled = false;
+}
+
+/**
+ * Print output to stderr without removing the bar for good. The bar is cleared first and drawn again with the next update
+ *
+ * @param output Output to print
+ */
+public p CompileProgress.printAboveBar(const String& output) {
+    if !this.enabled { return; }
+    LockGuard _ = LockGuard(this.mutex);
+    this.bar.clear();
+    printToStdErr(output);
+}
+
+/**
+ * Advance the progress by the given number of steps
+ *
+ * @param steps Number of steps
+ */
+p CompileProgress.advance(unsigned long steps) {
+    if !this.enabled { return; }
+    LockGuard _ = LockGuard(this.mutex);
+    this.bar.tick(steps);
+}
+
+/**
+ * Retrieve the number of steps, a source file completes with the given back end stage
+ *
+ * @param stage Back end stage
+ * @return Number of steps
+ */
+f<unsigned long> CompileProgress.getBackEndStageSteps(BackEndStage stage) {
+    if stage == BackEndStage::IR_GENERATOR { return this.stepsIrGenerator; }
+    if stage == BackEndStage::IR_OPTIMIZER { return this.stepsIrOptimizer; }
+    if stage == BackEndStage::OBJECT_EMITTER { return this.stepsObjectEmitter; }
+    // The stages for the whole program complete the steps of all source files at once
+    if stage == BackEndStage::LTO_IR_OPTIMIZER { return this.stepsLtoIrOptimizer * this.sourceFileCount; }
+    return this.stepsLtoObjectEmitter * this.sourceFileCount;
+}
+
+/**
+ * Start a heartbeat thread, that keeps the bar up to date while a stage reports no progress
+ */
+p CompileProgress.startHeartbeat() {
+    this.mutex.acquire();
+    this.heartbeatRunning = true;
+    this.mutex.release();
+    CompileProgress* progress = this;
+    this.heartbeatThreads.pushBack(Thread(p() [[async]] {
+        progress.runHeartbeat();
+    }));
+    Thread& heartbeatThread = this.heartbeatThreads.back();
+    heartbeatThread.run();
+}
+
+/**
+ * Routine of the heartbeat thread. Refreshes the bar, until the heartbeat is stopped or the bar is removed.
+ */
+p CompileProgress.runHeartbeat() {
+    bool running = true;
+    while running {
+        delay(HEARTBEAT_INTERVAL_MILLIS);
+        this.mutex.acquire();
+        running = this.enabled && this.heartbeatRunning;
+        if running {
+            this.bar.update(this.bar.getCurrent()); // Throttled by the bar itself
+        }
+        this.mutex.release();
+    }
+}
+
+/**
+ * Stop the heartbeat thread, if it runs. The caller must not hold the mutex.
+ */
+p CompileProgress.stopHeartbeat() {
+    if this.heartbeatThreads.isEmpty() { return; }
+    this.mutex.acquire();
+    this.heartbeatRunning = false;
+    this.mutex.release();
+    foreach Thread& thread : this.heartbeatThreads {
+        thread.join();
+    }
+    this.heartbeatThreads.clear();
+}
+
+/**
+ * Check whether the given back end stage runs once for the whole program
+ *
+ * @param stage Back end stage
+ * @return Whole program stage or not
+ */
+f<bool> isWholeProgramStage(BackEndStage stage) {
+    return stage == BackEndStage::LTO_IR_OPTIMIZER || stage == BackEndStage::LTO_OBJECT_EMITTER;
+}
+
+/**
+ * Print the given output to stderr
+ *
+ * @param output Output to print
+ */
+p printToStdErr(const String& output) {
+    const int _ = fprintf(__stderr(), "%s", output.getRaw());
+}
+
+/**
+ * Divide two numbers, rounding up. Keeps a stage, that takes any time, from ending up with zero steps
+ *
+ * @param dividend Dividend
+ * @param divisor Divisor
+ * @return Quotient, rounded up
+ */
+f<unsigned long> divideRoundingUp(unsigned long dividend, unsigned long divisor) {
+    return (dividend + divisor - 1ul) / divisor;
+}
+
+/**
+ * Check whether the compilation progress should be shown as progress bar. This is only the case if stdout is a terminal
+ * and the compiler prints nothing else to it while compiling, i.e. neither debug output nor dumps to the console. The AST
+ * and dependency graph dumps print their SVG generation status even when dumping to files, so they always hide the bar. The
+ * --quiet option suppresses it explicitly.
+ *
+ * @param cliOptions Command line options
+ * @return Show progress or not
+ */
+public f<bool> shouldShowCompileProgress(const CliOptions& cliOptions) {
+    if cliOptions.quiet || cliOptions.printDebugOutput { return false; }
+    const DumpSettings& dump = cliOptions.dump;
+    const bool anyDump = dump.dumpAST || dump.dumpSymbolTable || dump.dumpTypes || dump.dumpCacheStats || dump.dumpDependencyGraph || dump.dumpIR || dump.dumpAssembly || dump.dumpObjectFiles;
+    if anyDump && !dump.dumpToFiles { return false; }
+    if dump.dumpAST || dump.dumpDependencyGraph { return false; }
+    return isStdoutTerminal();
+}
+
+/**
+ * Check whether the progress bar of the active compilation is currently shown. If so, nothing else may write to the
+ * console, e.g. external tools have to get their output captured.
+ *
+ * @return Shown or not
+ */
+public f<bool> isCompileProgressActive() {
+    unsafe {
+        if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return false; }
+        CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
+        return compileProgress.enabled;
+    }
+}
+
+/**
+ * Print output to stderr above the progress bar of the active compilation, e.g. the warnings of an external tool, whose
+ * output was captured, because the bar is shown
+ *
+ * @param output Output to print
+ */
+public p printAboveActiveCompileProgress(const String& output) {
+    unsafe {
+        if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return; }
+        CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
+        compileProgress.printAboveBar(output);
+    }
+}
+
+/**
+ * Remove the progress bar of the active compilation from the console, if there is one. Called before a compile error is
+ * raised as panic, so that the error message does not end up behind the bar.
+ */
+public p clearActiveCompileProgress() {
+    unsafe {
+        if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return; }
+        CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
+        compileProgress.clear();
+    }
+}
