@@ -130,6 +130,7 @@ public type CliOptions struct {
     public bool ignoreCache = false
     public String llvmArgs
     public bool printDebugOutput = false
+    public bool quiet = false
     public DumpSettings dump
     public bool namesForIRValues = false
     public bool useLifetimeMarkers = false
@@ -637,7 +638,7 @@ p Driver.addUninstallSubcommand() {
     });
 
     // Source file
-    subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
+    subCmd.addOption("main-source-file", this.cliOptions.mainSourceFile, "Main source file");
 }
 
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
@@ -738,6 +739,9 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --debug-output
     CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
     debugOutputFlag.addAlias("-d");
+    // --quiet
+    CliOption<bool>& quietFlag = subCmd.addFlag("--quiet", this.cliOptions.quiet, "Do not show the compile progress");
+    quietFlag.addAlias("-q");
     // --dump-ast
     CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump AST as serialized string and SVG image");
     dumpAstFlag.addAlias("-ast");
@@ -760,7 +764,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
 
     // Source file. The parser requires positional options, and the existence of the file is checked after parsing
-    subCmd.addOption("<main-source-file>", this.cliOptions.mainSourceFile, "Main source file");
+    subCmd.addOption("main-source-file", this.cliOptions.mainSourceFile, "Main source file");
 }
 
 p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
@@ -956,11 +960,12 @@ f<bool> testTestLintInstallSubcommands() {
 
     // Test: complex
     Driver testComplex;
-    string[7] testComplexArgs = ["spice", "t", "-s", "--sanitizer", "thread", "--disable-verifier", "main-file.spice"];
-    assert parseAndEnrich(testComplex, 7, testComplexArgs);
+    string[8] testComplexArgs = ["spice", "t", "-s", "--sanitizer", "thread", "--disable-verifier", "-q", "main-file.spice"];
+    assert parseAndEnrich(testComplex, 8, testComplexArgs);
     assert testComplex.cliOptions.dump.dumpAssembly;
     assert testComplex.cliOptions.instrumentation.sanitizer == Sanitizer::THREAD;
     assert testComplex.cliOptions.disableVerifier;
+    assert testComplex.cliOptions.quiet;
 
     // Lint
     Driver lintMinimal;

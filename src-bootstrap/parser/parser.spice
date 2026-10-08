@@ -18,6 +18,7 @@ import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/exception/parser-error";
+import "bootstrap/util/compile-progress";
 
 // External functions
 ext f<unsigned long> strtoull(string, char**, int);
@@ -2945,5 +2946,6 @@ f<char> getEscapedChar(char c) {
 p Parser.throwParserError(const CodeLoc& codeLoc, ParserErrorType errorType, string message) {
     const ParserError parserError = ParserError(codeLoc, errorType, message);
     const String& errorMessage = parserError.getMessage();
+    clearActiveCompileProgress();
     panic(Error(errorMessage.getRaw()));
 }

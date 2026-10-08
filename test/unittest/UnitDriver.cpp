@@ -45,6 +45,7 @@ TEST(DriverTest, BuildSubcommandComplex) {
       "-lto",
       "--sanitizer=address",
       "--output-container=exec",
+      "-q",
       "../../media/test-project/test.spice",
   };
   static constexpr int argc = std::size(argv);
@@ -69,6 +70,7 @@ TEST(DriverTest, BuildSubcommandComplex) {
   ASSERT_EQ(OutputContainer::EXECUTABLE, cliOptions.outputContainer);         // --output-container=exec
   ASSERT_TRUE(cliOptions.useLTO);                                             // -lto
   ASSERT_TRUE(cliOptions.printDebugOutput);                                   // -d
+  ASSERT_TRUE(cliOptions.quiet);                                              // -q
   ASSERT_TRUE(cliOptions.dump.dumpIR);                                        // -ir
   ASSERT_TRUE(cliOptions.useLifetimeMarkers);                                 // implicitly due to enabled address sanitizer
 }

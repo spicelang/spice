@@ -28,6 +28,7 @@ import "bootstrap/typechecker/interface-manager";
 import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/union-manager";
 import "bootstrap/util/lookup-cache";
+import "bootstrap/util/compile-progress";
 import "bootstrap/reader/code-loc";
 import "bootstrap/util/memory";
 import "bootstrap/util/block-allocator";
@@ -71,6 +72,7 @@ public type GlobalResourceManager struct {
     public Timer middleEndTimer
     public Timer backEndTimer
     public ErrorManager errorManager
+    public CompileProgress compileProgress // Progress bar on the console, if enabled (see compileProject)
     // Lookup caches of the managers (static members of the managers in the host)
     public LookupCache<model::Function> functionLookupCache
     public LookupCache<Struct> structLookupCache
@@ -201,6 +203,7 @@ public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent,
         }
         this.sourceFiles.upsert(sourceFileKey, newSourceFile);
         this.sourceFilesInCreationOrder.pushBack(newSourceFile);
+        this.compileProgress.addSourceFile();
     }
 
     return this.sourceFiles.get(sourceFileKey);
