@@ -63,6 +63,12 @@ For any ref, the runner prefers, in order:
 Examples: `assembly-linux-amd64.asm`, `assembly-linux-aarch64.asm`,
 `ir-code-windows.ll`, `cout-macos.out`. (os ∈ linux/windows/macos, arch ∈ amd64/aarch64).
 
+When running against the bootstrap compiler (`--bootstrap`), the runner first looks for bootstrap variants in the same
+order (`<stem>-bootstrap-<os>-<arch>.<ext>` → `<stem>-bootstrap-<os>.<ext>` → `<stem>-bootstrap.<ext>`), before falling
+back to the refs above. Use them where the bootstrap compiler deliberately differs from the host, e.g.
+`ir-code-bootstrap.ll` for debug info the LLVM C API can't express. To generate one, create the empty file and run the
+case with `--bootstrap --update-refs`.
+
 ## 5. Control / skip marker files (empty files in the case dir)
 
 - `disabled` — skip the case entirely

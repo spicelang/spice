@@ -116,7 +116,7 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
 
 #ifndef ARCH_X86_64
     // Cancel early, before comparing or updating the refs
-    if (x86Only && refPath == originalRefPath)
+    if (x86Only && (refPath == originalRefPath || refPath == getBootstrapRefPath(originalRefPath)))
       return true;
 #endif
 
@@ -142,7 +142,7 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
  * @return True, if the ref file was found
  */
 bool TestUtil::doesRefExist(const std::filesystem::path &originalRefPath) {
-  const std::array<std::filesystem::path, 3> refPaths = expandRefPaths(originalRefPath);
+  const std::vector<std::filesystem::path> refPaths = expandRefPaths(originalRefPath);
   return std::ranges::any_of(refPaths, [](const std::filesystem::path &refPath) { return exists(refPath); });
 }
 
@@ -363,14 +363,41 @@ void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *const need
   }
 }
 
-std::array<std::filesystem::path, 3> TestUtil::expandRefPaths(const std::filesystem::path &refPath) {
-  const std::filesystem::path parent = refPath.parent_path();
-  const std::string stem = refPath.stem().string();
-  const std::string ext = refPath.extension().string();
-  // Construct array of files to search for
-  const std::string osFileName = stem + "-" + SPICE_TARGET_OS + ext;
-  const std::string osArchFileName = stem + "-" + SPICE_TARGET_OS + "-" + SPICE_TARGET_ARCH + ext;
-  return {parent / osArchFileName, parent / osFileName, refPath};
+/**
+ * Get the path of the bootstrap variant of the given ref file, e.g. 'ir-code-bootstrap.ll' for 'ir-code.ll'
+ *
+ * @param refPath Path to the reference file
+ * @return Path to the bootstrap variant of the reference file
+ */
+std::filesystem::path TestUtil::getBootstrapRefPath(const std::filesystem::path &refPath) {
+  const std::string fileName = refPath.stem().string() + "-bootstrap" + refPath.extension().string();
+  return refPath.parent_path() / fileName;
+}
+
+/**
+ * Get all variants of the given ref file, ordered from the most to the least specific one. In bootstrap mode, the
+ * bootstrap variants (e.g. 'ir-code-bootstrap.ll') come first, for references where the bootstrap compiler differs from
+ * the host compiler.
+ *
+ * @param refPath Path to the reference file
+ * @return Paths to the ref file variants
+ */
+std::vector<std::filesystem::path> TestUtil::expandRefPaths(const std::filesystem::path &refPath) {
+  std::vector<std::filesystem::path> baseRefPaths = {refPath};
+  if (testDriverCliOptions.bootstrapMode)
+    baseRefPaths.insert(baseRefPaths.begin(), getBootstrapRefPath(refPath));
+
+  // Construct list of files to search for
+  std::vector<std::filesystem::path> refPaths;
+  for (const std::filesystem::path &baseRefPath : baseRefPaths) {
+    const std::filesystem::path parent = baseRefPath.parent_path();
+    const std::string stem = baseRefPath.stem().string();
+    const std::string ext = baseRefPath.extension().string();
+    const std::string osFileName = stem + "-" + SPICE_TARGET_OS + ext;
+    const std::string osArchFileName = stem + "-" + SPICE_TARGET_OS + "-" + SPICE_TARGET_ARCH + ext;
+    refPaths.insert(refPaths.end(), {parent / osArchFileName, parent / osFileName, baseRefPath});
+  }
+  return refPaths;
 }
 
 } // namespace spice::testing
