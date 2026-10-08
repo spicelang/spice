@@ -424,8 +424,8 @@ public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceMan
     // Collect object file cache keys and additional source paths across all source files
     Vector<String> objectFileCacheKeys;
     Vector<String> additionalSourcePaths;
-    foreach dyn entry : resourceManager.sourceFiles {
-        SourceFile* sf = entry.getSecond();
+    // Use the creation order, so that the executable cache key does not depend on the hash function of the source file map
+    foreach SourceFile* sf : resourceManager.sourceFilesInCreationOrder {
         objectFileCacheKeys.pushBack(sf.cacheKey);
         for unsigned long i = 0l; i < sf.sourceAdditionalSourcePaths.getSize(); i++ {
             const FilePath sfPath = sf.sourceAdditionalSourcePaths.get(i);

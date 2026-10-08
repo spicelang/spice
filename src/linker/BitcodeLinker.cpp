@@ -2,8 +2,6 @@
 
 #include "BitcodeLinker.h"
 
-#include <ranges>
-
 #include <SourceFile.h>
 #include <global/GlobalResourceManager.h>
 
@@ -15,8 +13,9 @@ BitcodeLinker::BitcodeLinker(GlobalResourceManager &resourceManager)
     : CompilerPass(resourceManager), linker(*resourceManager.ltoModule) {}
 
 void BitcodeLinker::link() {
-  // Link all source file modules in
-  for (const auto &sourceFile : resourceManager.sourceFiles | std::views::values)
+  // Link all source file modules in. Use the creation order, because the order of the source file map depends on the hash
+  // function, and the link order shows in the LTO module
+  for (SourceFile *sourceFile : resourceManager.sourceFilesInCreationOrder)
     linker.linkInModule(std::move(sourceFile->llvmModule), llvm::Linker::None);
 }
 

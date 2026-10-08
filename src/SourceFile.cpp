@@ -710,11 +710,9 @@ void SourceFile::runMiddleEnd() {
     // Snapshot the current files before driving any of them: runTypeCheckerPost() below can itself trigger a
     // freshly-discovered runtime import (SourceFile::requestRuntimeModule -> GlobalResourceManager::createSourceFile),
     // which inserts into resourceManager.sourceFiles - iterating that map while it is being mutated is undefined
-    // behavior, so a stable list of raw pointers is collected first.
-    std::vector<SourceFile *> sourceFilesSnapshot;
-    sourceFilesSnapshot.reserve(resourceManager.sourceFiles.size());
-    for (const std::unique_ptr<SourceFile> &sourceFile : resourceManager.sourceFiles | std::views::values)
-      sourceFilesSnapshot.push_back(sourceFile.get());
+    // behavior, so a stable list of raw pointers is collected first. It is taken in creation order, so that the revisits
+    // happen in a deterministic order, independent of the hash function of the source file map.
+    const std::vector<SourceFile *> sourceFilesSnapshot = resourceManager.sourceFilesInCreationOrder;
     for (SourceFile *sourceFile : sourceFilesSnapshot) {
       if (sourceFile->reVisitRequested) {
         sourceFile->runTypeCheckerPost();

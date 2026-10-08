@@ -263,7 +263,8 @@ void CacheManager::linkOrRestoreExecutable(GlobalResourceManager &resourceManage
   // via @core.linker.additionalSource) that participate in the executable cache key.
   std::vector<std::string> objectFileCacheKeys;
   std::vector<std::filesystem::path> additionalSourcePaths;
-  for (const auto &sourceFile : resourceManager.sourceFiles | std::views::values) {
+  // Use the creation order, so that the executable cache key does not depend on the hash function of the source file map
+  for (const SourceFile *sourceFile : resourceManager.sourceFilesInCreationOrder) {
     objectFileCacheKeys.push_back(sourceFile->cacheKey);
     for (const std::filesystem::path &additionalSource : sourceFile->sourceAdditionalSourcePaths)
       additionalSourcePaths.push_back(additionalSource);

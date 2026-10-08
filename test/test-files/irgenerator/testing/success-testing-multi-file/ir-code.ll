@@ -16,12 +16,12 @@ source_filename = "source.spice"
 @successMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[32m[ PASSED   ]\1B[0m\1B[22m %s\0A\00", align 4
 @errorMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[31m[ FAILED   ]\1B[0m\1B[22m %s\0A\00", align 4
 @skippedMsg0 = private unnamed_addr constant [35 x i8] c"\1B[1m\1B[33m[ SKIPPED  ]\1B[0m\1B[22m %s\0A\00", align 4
-@fileName0 = private unnamed_addr constant [14 x i8] c"source2.spice\00", align 4
-@testName0 = private unnamed_addr constant [9 x i8] c"testSub1\00", align 4
-@testName1 = private unnamed_addr constant [9 x i8] c"testSub2\00", align 4
-@fileName1 = private unnamed_addr constant [13 x i8] c"source.spice\00", align 4
-@testName2 = private unnamed_addr constant [9 x i8] c"testAdd1\00", align 4
-@testName3 = private unnamed_addr constant [9 x i8] c"testAdd2\00", align 4
+@fileName0 = private unnamed_addr constant [13 x i8] c"source.spice\00", align 4
+@testName0 = private unnamed_addr constant [9 x i8] c"testAdd1\00", align 4
+@testName1 = private unnamed_addr constant [9 x i8] c"testAdd2\00", align 4
+@fileName1 = private unnamed_addr constant [14 x i8] c"source2.spice\00", align 4
+@testName2 = private unnamed_addr constant [9 x i8] c"testSub1\00", align 4
+@testName3 = private unnamed_addr constant [9 x i8] c"testSub2\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z3addii(i32 noundef %0, i32 noundef %1) #0 {
@@ -125,21 +125,21 @@ define i32 @main() #4 {
   %1 = call i32 (ptr, ...) @printf(ptr @allStartMsg0, i32 4, i32 2)
   %2 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 2, ptr @fileName0)
   %3 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName0)
-  %4 = call i1 @_Z8testSub1v()
+  %4 = call i1 @_Z8testAdd1v()
   %5 = select i1 %4, ptr @successMsg0, ptr @errorMsg0
   %6 = call i32 (ptr, ...) @printf(ptr %5, ptr @testName0)
   %7 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName1)
-  %8 = call i1 @_Z8testSub2v()
+  %8 = call i1 @_Z8testAdd2v()
   %9 = select i1 %8, ptr @successMsg0, ptr @errorMsg0
   %10 = call i32 (ptr, ...) @printf(ptr %9, ptr @testName1)
   %11 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 2, ptr @fileName0)
   %12 = call i32 (ptr, ...) @printf(ptr @fileStartMsg0, i32 2, ptr @fileName1)
   %13 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName2)
-  %14 = call i1 @_Z8testAdd1v()
+  %14 = call i1 @_Z8testSub1v()
   %15 = select i1 %14, ptr @successMsg0, ptr @errorMsg0
   %16 = call i32 (ptr, ...) @printf(ptr %15, ptr @testName2)
   %17 = call i32 (ptr, ...) @printf(ptr @runMsg0, ptr @testName3)
-  %18 = call i1 @_Z8testAdd2v()
+  %18 = call i1 @_Z8testSub2v()
   %19 = select i1 %18, ptr @successMsg0, ptr @errorMsg0
   %20 = call i32 (ptr, ...) @printf(ptr %19, ptr @testName3)
   %21 = call i32 (ptr, ...) @printf(ptr @fileEndMsg0, i32 2, ptr @fileName1)
