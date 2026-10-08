@@ -863,7 +863,7 @@ p SourceFile.runBackEndForThisFile() {
         if this.resourceManager.abortCompilation { return; }
         this.runPostLinkIROptimizer();
         if this.resourceManager.abortCompilation { return; }
-    } else {
+    } else if !this.isMainFile || !this.cliOptions.skipMainIROptimizer {
         this.runDefaultIROptimizer();
         if this.resourceManager.abortCompilation { return; }
     }

@@ -463,6 +463,12 @@ static void execBootstrapTestCase(const TestCase &testCase) {
                                TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
   std::vector<std::string> testArgs;
   TestUtil::parseTestArgs(mainSourceFilePath, testArgs);
+  // The host test runner only runs the IR optimizer for the main source file, if the test case checks the optimized IR or
+  // collects coverage. Otherwise, the main source file is emitted without the optimizer pipeline and therefore also without the
+  // sanitizer instrumentation, which the pipeline adds
+  const bool anyOptIrRefExists = std::ranges::any_of(
+      REF_NAME_OPT_IR, [&](const char *const ref) { return TestUtil::doesRefExist(testCase.testPath / ref); });
+  const bool skipMainIROptimizer = !anyOptIrRefExists && !testDriverCliOptions.enableCoverage;
 
   // Assemble the command line, mirroring the cli options the test runner passes to the host compiler
   const auto buildArgs = [&](const std::filesystem::path &outputPath) {
@@ -473,6 +479,8 @@ static void execBootstrapTestCase(const TestCase &testCase) {
       args.emplace_back("--test-main");
     if (testDriverCliOptions.enableCoverage)
       args.emplace_back("--coverage");
+    if (skipMainIROptimizer)
+      args.emplace_back("--skip-main-ir-optimizer");
     args.emplace_back("--output");
     args.push_back(outputPath.string());
     return args;

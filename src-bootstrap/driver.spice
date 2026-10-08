@@ -143,6 +143,7 @@ public type CliOptions struct {
     public InstrumentationSettings instrumentation
     public bool disableVerifier = !__get_build_var<bool>("spice.is_debug")
     public bool testMode = false
+    public bool skipMainIROptimizer = false
     public bool comparableOutput = false
     public Map<String, String> buildVars
     public bool lintOnly = false
@@ -706,6 +707,11 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         this.cliOptions.compileJobCount = 1u;
     };
     subCmd.addFlag("--test-mode", testModeCallback, "Compile like the test runner of the host compiler does (test mode, comparable output). For internal use");
+    // --skip-main-ir-optimizer
+    // The host has no such option either: its test runner only runs the IR optimizer for the main source file, if the test case
+    // checks the optimized IR (or collects coverage). Otherwise, the main source file is emitted without running the optimizer
+    // pipeline, which also adds the sanitizer instrumentation. The test runner passes this option to mirror that.
+    subCmd.addFlag("--skip-main-ir-optimizer", this.cliOptions.skipMainIROptimizer, "Skip the IR optimizer for the main source file, like the test runner of the host compiler does for test cases without optimized IR reference. For internal use");
 
     // Opt levels
     subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");

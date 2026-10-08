@@ -17,7 +17,6 @@ env:
   # host's std::hash<Type>) follow the bootstrap compiler and have a 'skip-host' marker file.
   # Known gaps:
   # - debug info: the LLVM C API can't express everything the host emits (e.g. DIStringType, nameTableKind)
-  # - data_containerScopeCleanupLeak: AddressSanitizer reports a stack-use-after-scope in code built by the bootstrap
   BOOTSTRAP_TEST_FILTER: >-
     CommonTests.*:LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*:IRGeneratorTests.*:StdTests.*:
     BenchmarkTests.*:ExampleTests.*
@@ -27,8 +26,7 @@ env:
     IRGeneratorTests.instrumentation_successDbgInfoSimple:
     IRGeneratorTests.instrumentation_successAsanAndDbgInfo:
     IRGeneratorTests.instrumentation_successMsanAndDbgInfo:
-    IRGeneratorTests.instrumentation_successTsanAndDbgInfo:
-    StdTests.data_containerScopeCleanupLeak
+    IRGeneratorTests.instrumentation_successTsanAndDbgInfo
   # Additional bootstrap compiler gaps that only show up on Windows (appended to the negative patterns above):
   # - generics_successGenericTypeCtorCall1: the bootstrap compiler crashes with a heap corruption (0xC0000374)
   # - runtime_resultErrTracePanic, imports_successValidImport2: the relative paths to std files (in the panic message, in
