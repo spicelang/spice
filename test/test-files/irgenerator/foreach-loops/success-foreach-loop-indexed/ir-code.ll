@@ -18,7 +18,6 @@ define dso_local noundef i32 @main() #0 {
   store [7 x i32] [i32 1, i32 5, i32 4, i32 0, i32 12, i32 12345, i32 9], ptr %intArray, align 4
   %3 = getelementptr inbounds [7 x i32], ptr %intArray, i64 0, i32 0
   call void @_Z7iterateIiE13ArrayIteratorIiEPim(ptr dead_on_unwind writable sret(%struct.ArrayIterator) align 8 %1, ptr noundef %3, i64 noundef 7)
-  store i64 0, ptr %index, align 8
   br label %foreach.head.L5
 
 foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
@@ -26,6 +25,7 @@ foreach.head.L5:                                  ; preds = %foreach.tail.L5, %0
   br i1 %4, label %foreach.body.L5, label %foreach.exit.L5
 
 foreach.body.L5:                                  ; preds = %foreach.head.L5
+  store i64 0, ptr %index, align 8
   %5 = call { i64, ptr } @_ZN13ArrayIteratorIiE6getIdxEv(ptr %1)
   store { i64, ptr } %5, ptr %2, align 8
   %6 = load i64, ptr %2, align 8

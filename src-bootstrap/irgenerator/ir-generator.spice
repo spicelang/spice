@@ -127,8 +127,6 @@ public type IRGenerator struct : IAbstractAstVisitor {
     public CommonLLVMTypes llvmTypes
     Vector<BreakContinueTarget> breakTargets
     Vector<BreakContinueTarget> continueTargets
-    // Variables declared in a loop header live across all iterations, so the per-iteration cleanups must not end their lifetime
-    Vector<const SymbolTableEntry*> loopHeaderVars
     Stack<llvm::BasicBlock> fallthroughBlocks
     llvm::BasicBlock allocaInsertBlock
     llvm::Value allocaInsertInst
@@ -2353,20 +2351,17 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
     const llvm::BasicBlock bTail = this.createBlock("for.tail." + codeLine);
     const llvm::BasicBlock bExit = this.createBlock("for.exit." + codeLine);
 
-    // Change scope
-    ScopeHandle _ = ScopeHandle(this, node.getScopeId(), ScopeType::FOR_BODY, cast<ASTNode*>(node));
+    // Change to head scope
+    ScopeHandle _ = ScopeHandle(this, node.getHeadScopeId(), ScopeType::FOR_HEAD, cast<ASTNode*>(node));
+    Scope* bodyScope = this.currentScope.getChildScope(node.getScopeId());
 
-    // Save the break/continue targets, paired with the scope to clean up to when jumping there
-    this.breakTargets.pushBack(BreakContinueTarget{this.currentScope, bExit});
-    this.continueTargets.pushBack(BreakContinueTarget{this.currentScope, bTail});
+    // Save the break/continue targets, paired with the scope to clean up to when jumping there. The head scope is cleaned up in the
+    // exit block, which all paths out of the loop pass, except for returns
+    this.breakTargets.pushBack(BreakContinueTarget{bodyScope, bExit});
+    this.continueTargets.pushBack(BreakContinueTarget{bodyScope, bTail});
 
     // Init statement
     this.visit(node.initDecl);
-    // The variable of the init statement lives across all iterations
-    const ASTDeclStmtNode* initDeclNode = downcast<ASTDeclStmtNode>(node.initDecl);
-    Vector<const SymbolTableEntry*> headerVars;
-    headerVars.pushBack(initDeclNode.entries.get(this.manIdx));
-    this.beginLoopHeaderVarLifetimes(headerVars);
     // Create jump from original to head block
     this.insertJump(bHead);
 
@@ -2380,7 +2375,9 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
     // Switch to body block
     this.switchToBlock(bBody);
     // Visit body
+    ScopeHandle bodyScopeHandle = ScopeHandle(&this.compilerPass, bodyScope, ScopeType::FOR_BODY);
     this.visit(node.body);
+    bodyScopeHandle.leaveScopeEarly();
     // Create jump from body to tail block
     this.insertJump(bTail);
 
@@ -2393,7 +2390,8 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
 
     // Switch to exit block
     this.switchToBlock(bExit);
-    this.endLoopHeaderVarLifetimes(headerVars);
+    // Clean up the head scope, e.g. destruct the loop variable
+    this.generateForHeadCleanup(node, this.currentScope);
 
     // Pop break/continue targets
     this.breakTargets.popBack();
@@ -2478,34 +2476,6 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     }
     const QualType itemRefSTy = hasIdx ? node.getIdxFct.returnType : node.getFct.returnType;
 
-    // Visit idx variable declaration if required
-    const SymbolTableEntry* idxEntry = nil<const SymbolTableEntry*>;
-    llvm::Value idxAddress;
-    if hasIdx {
-        this.visit(node.idxVarDecl);
-        // Get address of idx variable
-        const ASTDeclStmtNode* idxDeclNode = downcast<ASTDeclStmtNode>(node.idxVarDecl);
-        idxEntry = idxDeclNode.entries.get(this.manIdx);
-        idxAddress = this.getAddress(idxEntry);
-        assert !idxAddress.isNull();
-    }
-
-    // Visit item variable declaration
-    this.visit(node.itemVarDecl);
-    // Get address of item variable
-    const ASTDeclStmtNode* itemDeclNode = downcast<ASTDeclStmtNode>(node.itemVarDecl);
-    const SymbolTableEntry* itemEntry = itemDeclNode.entries.get(this.manIdx);
-    const llvm::Value itemAddress = this.getAddress(itemEntry);
-    assert !itemAddress.isNull();
-
-    // The idx and item variables are declared once and assigned in every iteration, so they live across all iterations
-    Vector<const SymbolTableEntry*> headerVars;
-    headerVars.pushBack(itemEntry);
-    if idxEntry != nil<const SymbolTableEntry*> {
-        headerVars.pushBack(idxEntry);
-    }
-    this.beginLoopHeaderVarLifetimes(headerVars);
-
     // Create jump from original to head block
     this.insertJump(bHead);
 
@@ -2523,6 +2493,26 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
 
     // Switch to body block
     this.switchToBlock(bBody);
+
+    // Visit the idx and item variable declarations. They get a new value in each iteration, so they are declared in the body
+    // block. Like this, their lifetime starts with each iteration and ends with the cleanup of the body scope
+    const SymbolTableEntry* idxEntry = nil<const SymbolTableEntry*>;
+    llvm::Value idxAddress;
+    if hasIdx {
+        this.visit(node.idxVarDecl);
+        // Get address of idx variable
+        const ASTDeclStmtNode* idxDeclNode = downcast<ASTDeclStmtNode>(node.idxVarDecl);
+        idxEntry = idxDeclNode.entries.get(this.manIdx);
+        idxAddress = this.getAddress(idxEntry);
+        assert !idxAddress.isNull();
+    }
+    this.visit(node.itemVarDecl);
+    // Get address of item variable
+    const ASTDeclStmtNode* itemDeclNode = downcast<ASTDeclStmtNode>(node.itemVarDecl);
+    const SymbolTableEntry* itemEntry = itemDeclNode.entries.get(this.manIdx);
+    const llvm::Value itemAddress = this.getAddress(itemEntry);
+    assert !itemAddress.isNull();
+
     // Get the current iterator values
     LLVMExprResult itemResult;
     if hasIdx {
@@ -2580,7 +2570,6 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
 
     // Switch to exit block
     this.switchToBlock(bExit);
-    this.endLoopHeaderVarLifetimes(headerVars);
 
     // Pop break/continue targets
     this.breakTargets.popBack();
@@ -5752,59 +5741,6 @@ public f<llvm::Value> IRGenerator.getUpcastedStructPtr(llvm::Value structPtr, co
 }
 
 /**
- * Mark the given variables, declared in the header of a loop, as living across all iterations of the loop. Their lifetime starts
- * once before the loop, so the cleanups at the end of an iteration (end of the body, continue) must not end it. Otherwise, the
- * next iteration would access them after the end of their lifetime, e.g. when the next foreach item is stored.
- *
- * @param entries Loop header variables
- */
-p IRGenerator.beginLoopHeaderVarLifetimes(const Vector<const SymbolTableEntry*>& entries) {
-    foreach const SymbolTableEntry* entry : entries {
-        this.loopHeaderVars.pushBack(entry);
-    }
-}
-
-/**
- * End the lifetime of the given loop header variables, when the loop is left. Must be called at the beginning of the exit block
- * of the loop, which all paths out of the loop, except returns, pass.
- *
- * @param entries Loop header variables
- */
-p IRGenerator.endLoopHeaderVarLifetimes(const Vector<const SymbolTableEntry*>& entries) {
-    foreach const SymbolTableEntry* entry : entries {
-        for unsigned long i = 0l; i < this.loopHeaderVars.getSize(); i++ {
-            if this.loopHeaderVars.get(i) == entry {
-                this.loopHeaderVars.removeAt(i);
-                break;
-            }
-        }
-        if !this.cliOptions.useLifetimeMarkers {
-            continue;
-        }
-        // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else
-        const llvm::Value address = this.getAddress(entry);
-        if !address.isNull() && address.isAllocaInst() {
-            this.createLifetimeMarker("llvm.lifetime.end", address);
-        }
-    }
-}
-
-/**
- * Check if the given variable is declared in the header of a loop, that is currently generated
- *
- * @param entry Variable to check
- * @return Loop header variable or not
- */
-f<bool> IRGenerator.isLoopHeaderVar(const SymbolTableEntry* entry) {
-    foreach const SymbolTableEntry* loopHeaderVar : this.loopHeaderVars {
-        if loopHeaderVar == entry {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
  * Generate cleanup code (dtor calls, deallocations) for the scope of the given statement list
  *
  * @param node Statement list of the scope
@@ -5813,14 +5749,24 @@ f<bool> IRGenerator.isLoopHeaderVar(const SymbolTableEntry* entry) {
  */
 p IRGenerator.generateScopeCleanup(ASTStmtLstNode* node, SymbolTableEntry* returnedLocal = nil<SymbolTableEntry*>) {
     this.diGenerator.setSourceLocation(node.closingBraceCodeLoc);
+    this.generateScopeCleanup(node.resourcesToCleanup.get(this.manIdx), this.currentScope, returnedLocal);
+}
 
+/**
+ * Generate cleanup code (dtor calls, deallocations) for the given resources of a scope
+ *
+ * @param resources Resources to clean up, as determined by the type checker
+ * @param scope Scope to generate the lifetime end markers for
+ * @param returnedLocal Local variable, that is handed over to the caller by the return statement this cleanup is generated
+ *                      for. It must not be destructed. Nil if there is none.
+ */
+p IRGenerator.generateScopeCleanup(const ResourcesForManifestationToCleanup& resources, Scope* scope, SymbolTableEntry* returnedLocal) {
     // Do not clean up if the block is already terminated
     if this.blockAlreadyTerminated {
         return;
     }
 
     // Call all dtor functions
-    const ResourcesForManifestationToCleanup& resources = node.resourcesToCleanup.get(this.manIdx);
     const Vector<llvm::Value> noArgs;
     foreach const Pair<SymbolTableEntry*, model::Function*>& dtorToCall : resources.dtorFunctionsToCall {
         if dtorToCall.getFirst() != returnedLocal {
@@ -5835,12 +5781,8 @@ p IRGenerator.generateScopeCleanup(ASTStmtLstNode* node, SymbolTableEntry* retur
 
     // Generate lifetime end markers
     if this.cliOptions.useLifetimeMarkers {
-        const Vector<SymbolTableEntry*> varsGoingOutOfScope = this.currentScope.getVarsGoingOutOfScope();
+        const Vector<SymbolTableEntry*> varsGoingOutOfScope = scope.getVarsGoingOutOfScope();
         foreach const SymbolTableEntry* var : varsGoingOutOfScope {
-            // The lifetime of a loop header variable ends when the loop is left, not at the end of each iteration
-            if this.isLoopHeaderVar(var) {
-                continue;
-            }
             const llvm::Value address = this.getAddress(var);
             // Only allocas get a lifetime start marker and llvm.lifetime.end rejects anything else. This excludes e.g. the phi
             // of a ternary with a reference result, which refers to the storage of one of its operands.
@@ -5849,6 +5791,22 @@ p IRGenerator.generateScopeCleanup(ASTStmtLstNode* node, SymbolTableEntry* retur
             }
         }
     }
+}
+
+/**
+ * Generate cleanup code (dtor calls, deallocations) for the head scope of a for loop, which holds the loop variable. It lives
+ * across all iterations, so it is cleaned up once, when the loop is left, and not at the end of each iteration like the body.
+ *
+ * @param node For loop
+ * @param headScope Head scope of the for loop
+ * @param returnedLocal Local variable, that is handed over to the caller by the return statement this cleanup is generated
+ *                      for. It must not be destructed. Nil if there is none.
+ */
+p IRGenerator.generateForHeadCleanup(ASTForLoopNode* node, Scope* headScope, SymbolTableEntry* returnedLocal = nil<SymbolTableEntry*>) {
+    assert headScope.scopeType == ScopeType::FOR_HEAD;
+    const ASTStmtLstNode* bodyNode = downcast<ASTStmtLstNode>(node.body);
+    this.diGenerator.setSourceLocation(bodyNode.closingBraceCodeLoc);
+    this.generateScopeCleanup(node.headResourcesToCleanup.get(this.manIdx), headScope, returnedLocal);
 }
 
 /**
@@ -5869,10 +5827,11 @@ p IRGenerator.generateTemporariesCleanup(const Scope* exprScope, ASTNode* node) 
 }
 
 /**
- * Check if the given node is part of the header of an if, while, do-while, for or foreach statement, e.g. of its condition.
+ * Check if the given node is part of the header of an if, while, do-while or foreach statement, e.g. of its condition.
  *
  * The IR for a header is generated within the scope of its statement, but the header is not part of the body of the statement.
  * Hence, the nearest statement list of a node in the header is the one around the statement, and not the one of that scope.
+ * For loops are not affected, because their header is generated within a head scope of its own.
  *
  * @param node Node to check
  * @return Part of a header or not
@@ -5884,10 +5843,46 @@ f<bool> isInStatementHeader(const ASTNode* node) {
             return false; // The node is part of a body
         }
         const ASTNodeKind kind = ancestor.kind;
-        if kind == ASTNodeKind::IF_STMT || kind == ASTNodeKind::WHILE_LOOP || kind == ASTNodeKind::DO_WHILE_LOOP || kind == ASTNodeKind::FOR_LOOP || kind == ASTNodeKind::FOREACH_LOOP {
+        if kind == ASTNodeKind::IF_STMT || kind == ASTNodeKind::WHILE_LOOP || kind == ASTNodeKind::DO_WHILE_LOOP || kind == ASTNodeKind::FOREACH_LOOP {
             return true;
         }
         ancestor = ancestor.parent;
+    }
+    return false;
+}
+
+/**
+ * Get the next for loop that encloses the given node
+ *
+ * @param node Node to start the search from (exclusive)
+ * @return Enclosing for loop
+ */
+f<ASTForLoopNode*> getNextOuterForLoop(ASTNode* node) {
+    ASTNode* ancestor = node.parent;
+    while ancestor != nil<ASTNode*> {
+        if ancestor.kind == ASTNodeKind::FOR_LOOP {
+            return downcast<ASTForLoopNode>(ancestor);
+        }
+        ancestor = ancestor.parent;
+    }
+    assert false; // No enclosing for loop found
+    return nil<ASTForLoopNode*>;
+}
+
+/**
+ * Check if the given node is the given ancestor or one of its descendants
+ *
+ * @param node Node to check
+ * @param ancestor Potential ancestor
+ * @return Descendant or not
+ */
+f<bool> isDescendantOf(const ASTNode* node, const ASTNode* ancestor) {
+    const ASTNode* current = node;
+    while current != nil<const ASTNode*> {
+        if current == ancestor {
+            return true;
+        }
+        current = current.parent;
     }
     return false;
 }
@@ -5908,7 +5903,7 @@ f<bool> isInStatementHeader(const ASTNode* node) {
  */
 p IRGenerator.generateScopeCleanupUpTo(ASTNode* node, const Scope* targetScope, SymbolTableEntry* returnedLocal = nil<SymbolTableEntry*>) {
     assert targetScope != nil<const Scope*>;
-    const Scope* scopeLevel = this.currentScope;
+    Scope* scopeLevel = this.currentScope;
 
     // Leave the expression scopes, which hold the temporaries of the expression that is evaluated. Only the ones that were already
     // constructed are destructed here, since the others do not have an address yet
@@ -5918,20 +5913,35 @@ p IRGenerator.generateScopeCleanupUpTo(ASTNode* node, const Scope* targetScope, 
     }
 
     // Leave the scope of the statement, if the jump originates from its header. The body was not entered yet, or it was already
-    // left, so there is nothing of it to clean up. A variable that the header declares itself (the one of a for loop) is not
-    // destructed on this path.
+    // left, so there is nothing of it to clean up.
     if scopeLevel != targetScope && isInStatementHeader(node) {
         scopeLevel = scopeLevel.parent;
     }
 
     ASTStmtLstNode* scope = node.getNextOuterStmtLst();
+    ASTNode* forLoopSearchStart = node;
+    bool stmtLstCleanedUp = false;
     while true {
-        this.generateScopeCleanup(scope, returnedLocal);
+        if scopeLevel.scopeType == ScopeType::FOR_HEAD {
+            // The head scope of a for loop has no statement list to pair with. It belongs to the next enclosing for loop
+            ASTForLoopNode* forLoop = getNextOuterForLoop(forLoopSearchStart);
+            forLoopSearchStart = cast<ASTNode*>(forLoop);
+            // If the jump originates from the declaration of the loop variable, the loop variable is not initialized yet
+            if !isDescendantOf(node, getASTNode(forLoop.initDecl)) {
+                this.generateForHeadCleanup(forLoop, scopeLevel, returnedLocal);
+            }
+        } else {
+            if stmtLstCleanedUp {
+                assert scope.parent != nil<ASTNode*>;
+                scope = scope.parent.getNextOuterStmtLst();
+            }
+            this.generateScopeCleanup(scope, returnedLocal);
+            stmtLstCleanedUp = true;
+        }
         if scopeLevel == targetScope {
             break;
         }
-        assert scope.parent != nil<ASTNode*> && scopeLevel.parent != nil<Scope*>;
-        scope = scope.parent.getNextOuterStmtLst();
+        assert scopeLevel.parent != nil<Scope*>;
         scopeLevel = scopeLevel.parent;
     }
 }

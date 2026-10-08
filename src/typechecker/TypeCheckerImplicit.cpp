@@ -794,12 +794,14 @@ Function *TypeChecker::implicitlyCallStructMoveCtor(const QualType &thisType, co
  * Prepare the generation of a call to the dtor of a given struct
  *
  * @param entry Symbol entry to use as 'this' pointer for the dtor call
- * @param node StmtLstNode for the current scope
+ * @param resources Resources to clean up for the current scope, the dtor call is added to
+ * @param node Node of the current scope (statement list or for loop)
  */
-void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, StmtLstNode *node) const {
-  // Add the dtor to the stmt list node to call it later in codegen
+void TypeChecker::implicitlyCallStructDtor(SymbolTableEntry *entry, ResourcesForManifestationToCleanup &resources,
+                                           const ASTNode *node) const {
+  // Add the dtor to the resources of the scope to call it later in codegen
   if (Function *dtor = implicitlyCallStructMethod(entry, DTOR_FUNCTION_NAME, {}, node))
-    node->resourcesToCleanup.at(manIdx).dtorFunctionsToCall.emplace_back(entry, dtor);
+    resources.dtorFunctionsToCall.emplace_back(entry, dtor);
 }
 
 /**
@@ -840,11 +842,12 @@ void TypeChecker::sortByReverseDeclarationOrder(std::vector<SymbolTableEntry *> 
 }
 
 /**
- * Consider calls to destructors for the given scope
+ * Consider calls to destructors for the current scope
  *
- * @param node StmtLstNode for the current scope
+ * @param resources Resources to clean up for the current scope, the dtor calls and deallocations are added to
+ * @param node Node of the current scope (statement list or for loop)
  */
-void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
+void TypeChecker::doScopeCleanup(ResourcesForManifestationToCleanup &resources, const ASTNode *node) const {
   // Get all variables, that are approved for de-allocation
   std::vector<SymbolTableEntry *> vars = currentScope->getVarsGoingOutOfScope();
   // Sort by reverse declaration order
@@ -862,7 +865,7 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
         continue;
 
       implicitlyCallDeallocate(node); // Required to request the memory runtime
-      node->resourcesToCleanup.at(manIdx).heapVarsToFree.push_back(var);
+      resources.heapVarsToFree.push_back(var);
     }
     // Only generate dtor call for structs
     if (!var->getQualType().is(TY_STRUCT))
@@ -871,7 +874,7 @@ void TypeChecker::doScopeCleanup(StmtLstNode *node) const {
     if (!var->getLifecycle().isInitialized() && var->scope->type != ScopeType::STRUCT)
       continue;
     // Call dtor
-    implicitlyCallStructDtor(var, node);
+    implicitlyCallStructDtor(var, resources, node);
   }
 }
 

@@ -685,6 +685,12 @@ public:
 
 // ========================================================== ForLoopNode ========================================================
 
+// Resources to clean up at the end of a scope, e.g. dtor calls for struct instances
+struct ResourcesForManifestationToCleanup {
+  std::vector<std::pair<SymbolTableEntry *, Function *>> dtorFunctionsToCall;
+  std::vector<SymbolTableEntry *> heapVarsToFree;
+};
+
 class ForLoopNode final : public StmtNode {
 public:
   // Constructors
@@ -696,8 +702,10 @@ public:
 
   // Other methods
   GET_CHILDREN(initDecl, condAssign, incAssign, body);
+  [[nodiscard]] std::string getHeadScopeId() const { return "for-head:" + codeLoc.toString(); }
   [[nodiscard]] std::string getScopeId() const { return "for:" + codeLoc.toString(); }
   [[nodiscard]] bool returnsOnAllControlPaths(bool *doSetPredecessorsUnreachable, size_t manIdx) const override;
+  void customItemsInitialization(const size_t manifestationCount) override { headResourcesToCleanup.resize(manifestationCount); }
 
   // Public members
   DeclStmtNode *initDecl = nullptr;
@@ -705,6 +713,8 @@ public:
   ExprNode *incAssign = nullptr;
   StmtLstNode *body = nullptr;
   Scope *bodyScope = nullptr;
+  // The head scope holds the loop variable, which lives across all iterations. It is cleaned up once, when the loop is left
+  std::vector<ResourcesForManifestationToCleanup> headResourcesToCleanup;
 };
 
 // ======================================================== ForeachLoopNode ======================================================
@@ -924,12 +934,6 @@ public:
 
 class StmtLstNode final : public ASTNode {
 public:
-  // Structs
-  struct ResourcesForManifestationToCleanup {
-    std::vector<std::pair<SymbolTableEntry *, Function *>> dtorFunctionsToCall;
-    std::vector<SymbolTableEntry *> heapVarsToFree;
-  };
-
   // Constructors
   using ASTNode::ASTNode;
 

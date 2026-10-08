@@ -39,6 +39,7 @@ public type ScopeType enum {
     ENUM,
     IF_ELSE_BODY,
     WHILE_BODY,
+    FOR_HEAD,
     FOR_BODY,
     FOREACH_BODY,
     CASE_BODY,

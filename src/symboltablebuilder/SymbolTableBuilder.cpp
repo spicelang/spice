@@ -446,8 +446,9 @@ std::any SymbolTableBuilder::visitUnsafeBlock(UnsafeBlockNode *node) {
 }
 
 std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
-  // Create scope for the loop body
-  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
+  // Create scope for the loop head. The loop variable lives across all iterations, so it must not go out of scope at the end of
+  // each iteration, like the variables of the body scope do
+  Scope *headScope = currentScope = currentScope->createChildScope(node->getHeadScopeId(), ScopeType::FOR_HEAD, &node->codeLoc);
 
   // Visit loop variable declaration
   visit(node->initDecl);
@@ -455,11 +456,14 @@ std::any SymbolTableBuilder::visitForLoop(ForLoopNode *node) {
   // Visit condition
   visitInExprScope(node->condAssign);
 
+  // Create scope for the loop body
+  node->bodyScope = currentScope = currentScope->createChildScope(node->getScopeId(), ScopeType::FOR_BODY, &node->body->codeLoc);
+
   // Visit body
   visit(node->body);
 
-  // Leave for body scope
-  currentScope = node->bodyScope->parent;
+  // Leave for body and head scope
+  currentScope = headScope->parent;
 
   return nullptr;
 }

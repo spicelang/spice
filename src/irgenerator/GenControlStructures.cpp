@@ -25,18 +25,17 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   llvm::BasicBlock *bTail = createBlock("for.tail." + codeLine);
   llvm::BasicBlock *bExit = createBlock("for.exit." + codeLine);
 
-  // Change scope
-  ScopeHandle scopeHandle(this, node->getScopeId(), ScopeType::FOR_BODY, node);
+  // Change to head scope
+  ScopeHandle headScopeHandle(this, node->getHeadScopeId(), ScopeType::FOR_HEAD, node);
+  Scope *bodyScope = currentScope->getChildScope(node->getScopeId());
 
-  // Save the break/continue targets, paired with the scope to clean up to when jumping there
-  breakTargets.emplace_back(currentScope, bExit);
-  continueTargets.emplace_back(currentScope, bTail);
+  // Save the break/continue targets, paired with the scope to clean up to when jumping there. The head scope is cleaned up in the
+  // exit block, which all paths out of the loop pass, except for returns
+  breakTargets.emplace_back(bodyScope, bExit);
+  continueTargets.emplace_back(bodyScope, bTail);
 
   // Init statement
   visit(node->initDecl);
-  // The variable of the init statement lives across all iterations
-  const std::vector<const SymbolTableEntry *> headerVars = {node->initDecl->entries.at(manIdx)};
-  beginLoopHeaderVarLifetimes(headerVars);
   // Create jump from original to head block
   insertJump(bHead);
 
@@ -50,7 +49,10 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
   // Switch to body block
   switchToBlock(bBody);
   // Visit body
-  visit(node->body);
+  {
+    ScopeHandle bodyScopeHandle(this, bodyScope, ScopeType::FOR_BODY);
+    visit(node->body);
+  }
   // Create jump from body to tail block
   insertJump(bTail);
 
@@ -63,7 +65,8 @@ std::any IRGenerator::visitForLoop(const ForLoopNode *node) {
 
   // Switch to exit block
   switchToBlock(bExit);
-  endLoopHeaderVarLifetimes(headerVars);
+  // Clean up the head scope, e.g. destruct the loop variable
+  generateForHeadCleanup(node, currentScope);
 
   // Pop break/continue targets
   assert(breakTargets.back().block == bExit);
@@ -132,31 +135,6 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
   assert(hasIdx ? node->getIdxFct != nullptr : node->getFct != nullptr);
   const QualType itemRefSTy = hasIdx ? node->getIdxFct->returnType : node->getFct->returnType;
 
-  // Visit idx variable declaration if required
-  const SymbolTableEntry *idxEntry = nullptr;
-  llvm::Value *idxAddress = nullptr;
-  if (hasIdx) {
-    visit(idxDeclNode);
-    // Get address of idx variable
-    idxEntry = idxDeclNode->entries.at(manIdx);
-    idxAddress = getAddress(idxEntry);
-    assert(idxAddress != nullptr);
-  }
-
-  // Visit item variable declaration
-  const DeclStmtNode *itemDeclNode = node->itemVarDecl;
-  visit(itemDeclNode);
-  // Get address of item variable
-  const SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
-  llvm::Value *itemAddress = getAddress(itemEntry);
-  assert(itemAddress != nullptr);
-
-  // The idx and item variables are declared once and assigned in every iteration, so they live across all iterations
-  std::vector<const SymbolTableEntry *> headerVars = {itemEntry};
-  if (idxEntry != nullptr)
-    headerVars.push_back(idxEntry);
-  beginLoopHeaderVarLifetimes(headerVars);
-
   // Create jump from original to head block
   insertJump(bHead);
 
@@ -172,6 +150,25 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to body block
   switchToBlock(bBody);
+
+  // Visit the idx and item variable declarations. They get a new value in each iteration, so they are declared in the body
+  // block. Like this, their lifetime starts with each iteration and ends with the cleanup of the body scope
+  const SymbolTableEntry *idxEntry = nullptr;
+  llvm::Value *idxAddress = nullptr;
+  if (hasIdx) {
+    visit(idxDeclNode);
+    // Get address of idx variable
+    idxEntry = idxDeclNode->entries.at(manIdx);
+    idxAddress = getAddress(idxEntry);
+    assert(idxAddress != nullptr);
+  }
+  const DeclStmtNode *itemDeclNode = node->itemVarDecl;
+  visit(itemDeclNode);
+  // Get address of item variable
+  const SymbolTableEntry *itemEntry = itemDeclNode->entries.at(manIdx);
+  llvm::Value *itemAddress = getAddress(itemEntry);
+  assert(itemAddress != nullptr);
+
   // Get the current iterator values
   LLVMExprResult itemResult;
   if (hasIdx) {
@@ -227,7 +224,6 @@ std::any IRGenerator::visitForeachLoop(const ForeachLoopNode *node) {
 
   // Switch to exit block
   switchToBlock(bExit);
-  endLoopHeaderVarLifetimes(headerVars);
 
   // Pop break/continue targets
   assert(breakTargets.back().block == bExit);

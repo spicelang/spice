@@ -565,10 +565,10 @@ public f<Any> SymbolTableBuilder.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
 
 public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
 
-    // Create scope for the loop body
-    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOR_BODY, &node.codeLoc);
-    node.bodyScope = bodyScope;
-    this.currentScope = bodyScope;
+    // Create scope for the loop head. The loop variable lives across all iterations, so it must not go out of scope at the end of
+    // each iteration, like the variables of the body scope do
+    Scope* headScope = this.currentScope.createChildScope(node.getHeadScopeId(), ScopeType::FOR_HEAD, &node.codeLoc);
+    this.currentScope = headScope;
 
     // Visit loop variable declaration
     this.visit(node.initDecl);
@@ -576,11 +576,16 @@ public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
     // Visit condition
     this.visitInExprScope(node.condAssign);
 
+    // Create scope for the loop body
+    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::FOR_BODY, &node.codeLoc);
+    node.bodyScope = bodyScope;
+    this.currentScope = bodyScope;
+
     // Visit body
     this.visit(node.body);
 
-    // Leave for body scope
-    this.currentScope = bodyScope.parent;
+    // Leave for body and head scope
+    this.currentScope = headScope.parent;
 
     return Any();
 }

@@ -46,6 +46,7 @@ enum class ScopeType : uint8_t {
   ENUM,
   IF_ELSE_BODY,
   WHILE_BODY,
+  FOR_HEAD,
   FOR_BODY,
   FOREACH_BODY,
   CASE_BODY,
@@ -67,7 +68,7 @@ enum class ScopeType : uint8_t {
  * - interfaces
  * - thread blocks
  * - unsafe blocks
- * - for loops
+ * - for loops (the header with the loop variable and the body)
  * - foreach loops
  * - while loops
  * - if statements

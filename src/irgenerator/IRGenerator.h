@@ -4,7 +4,6 @@
 
 #include <stack>
 #include <unordered_map>
-#include <unordered_set>
 
 #include <CompilerPass.h>
 #include <ast/ASTNodes.h>
@@ -234,8 +233,9 @@ private:
   llvm::Value *doImplicitCast(llvm::Value *src, QualType dstSTy, QualType srcSTy);
   llvm::Value *getUpcastedStructPtr(llvm::Value *structPtr, const QualType &dstType, const QualType &srcType) const;
   void generateScopeCleanup(const StmtLstNode *node, const SymbolTableEntry *returnedLocal = nullptr);
-  void beginLoopHeaderVarLifetimes(const std::vector<const SymbolTableEntry *> &entries);
-  void endLoopHeaderVarLifetimes(const std::vector<const SymbolTableEntry *> &entries);
+  void generateScopeCleanup(const ResourcesForManifestationToCleanup &resources, Scope *scope,
+                            const SymbolTableEntry *returnedLocal);
+  void generateForHeadCleanup(const ForLoopNode *node, Scope *headScope, const SymbolTableEntry *returnedLocal = nullptr);
   void generateTemporariesCleanup(const Scope *exprScope, const ASTNode *node);
   void generateScopeCleanupUpTo(const ASTNode *node, const Scope *targetScope, const SymbolTableEntry *returnedLocal = nullptr);
   void generateFctDecl(const Function *fct, const std::vector<llvm::Value *> &args) const;
@@ -284,8 +284,6 @@ private:
   CommonLLVMTypes llvmTypes;
   std::vector<BreakContinueTarget> breakTargets;
   std::vector<BreakContinueTarget> continueTargets;
-  // Variables declared in a loop header live across all iterations, so the per-iteration cleanups must not end their lifetime
-  std::unordered_set<const SymbolTableEntry *> loopHeaderVars;
   std::stack<llvm::BasicBlock *> fallthroughBlocks;
   llvm::BasicBlock *allocaInsertBlock = nullptr;
   llvm::AllocaInst *allocaInsertInst = nullptr;
