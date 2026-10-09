@@ -154,14 +154,17 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
 
-        // Check for options (positional options are matched separately below)
-        foreach const CliOption<bool>& boolOption : this.boolOptions {
-            if boolOption.isPositional() { continue; }
-            if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), optName) {
-                bool value = true;
-                boolOption.setTargetValue(value);
-                boolOption.callCallback(value);
-                continue 2; // Continue with next argument
+        // Check for options (positional options are matched separately below). A flag takes no value, so an argument with an
+        // inline value is left to the options with the same name, that take one. Without such an option, it is rejected below
+        if !hasInlineValue {
+            foreach const CliOption<bool>& boolOption : this.boolOptions {
+                if boolOption.isPositional() { continue; }
+                if this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), optName) {
+                    bool value = true;
+                    boolOption.setTargetValue(value);
+                    boolOption.callCallback(value);
+                    continue 2; // Continue with next argument
+                }
             }
         }
         foreach const CliOption<string>& stringOption : this.stringOptions {
@@ -292,8 +295,8 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
             }
         }
 
-        // Treat the argument as the next unconsumed positional, if any remain
-        if positionalConsumed < cast<unsigned int>(this.positionalTypeTags.getSize()) {
+        // Treat the argument as the next unconsumed positional, if any remain. An unmatched option is no positional value
+        if !this.isOptionLike(arg) && positionalConsumed < cast<unsigned int>(this.positionalTypeTags.getSize()) {
             this.applyPositional(positionalConsumed, arg);
             positionalConsumed++;
             continue;
@@ -363,6 +366,12 @@ f<bool> CliSubcommand.isOptionLike(string arg) {
  * @return true if the argument is an option, that takes a value, false otherwise
  */
 f<bool> CliSubcommand.isValueOption(string arg) {
+    // The bare name of a flag never takes a value, even if an option with the same name takes one (e.g. "--name=value")
+    foreach const CliOption<bool>& boolOption : this.boolOptions {
+        if !boolOption.isPositional() && this.nameOrAliasMatches(boolOption.getName(), boolOption.getAliases(), arg) {
+            return false;
+        }
+    }
     foreach const CliOption<string>& stringOption : this.stringOptions {
         if !stringOption.isPositional() && this.nameOrAliasMatches(stringOption.getName(), stringOption.getAliases(), arg) {
             return true;

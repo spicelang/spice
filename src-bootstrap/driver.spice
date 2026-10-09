@@ -41,6 +41,9 @@ public type DebugInfoLevel enum {
     LINE_ONLY = 1, // Only emit DWARF line tables, no type, variable or scope info
     FULL = 2       // Emit full debug info, incl. types, variables and lexical scopes
 }
+const string DEBUG_INFO_NONE = "none";
+const string DEBUG_INFO_LINE_ONLY = "line-only";
+const string DEBUG_INFO_FULL = "full";
 
 public type Sanitizer enum {
     NONE = 0,    // No sanitizer
@@ -785,13 +788,26 @@ p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
         }
     };
 
+    const p(const string&) debugInfoCallback = p(const string& debugInfoLevel) {
+        const String inputString = toLower(String(debugInfoLevel));
+        // The host reports a flag without an attached value as 'true', so accept the boolean values like the host does
+        if inputString == "true" || inputString == DEBUG_INFO_FULL {
+            this.setDebugInfoLevel(DebugInfoLevel::FULL);
+        } else if inputString == DEBUG_INFO_LINE_ONLY {
+            this.setDebugInfoLevel(DebugInfoLevel::LINE_ONLY);
+        } else if inputString == "false" || inputString == DEBUG_INFO_NONE {
+            this.setDebugInfoLevel(DebugInfoLevel::NONE);
+        } else {
+            raiseCliError(CliErrorType::INVALID_DEBUG_INFO_LEVEL, inputString.getRaw());
+        }
+    };
+
     // --debug-info
-    // The cli parser has no options with an optional value. Therefore, the levels are flags of their own, which also keeps a
-    // bare '--debug-info' from swallowing the main source file. The one that comes last on the command line wins.
-    subCmd.addFlag("--debug-info", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::FULL); }, "Generate debug info: full (default), line-only, none");
-    subCmd.addFlag("--debug-info=full", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::FULL); }, "Alias for --debug-info");
-    subCmd.addFlag("--debug-info=line-only", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::LINE_ONLY); }, "Only emit DWARF line tables");
-    subCmd.addFlag("--debug-info=none", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::NONE); }, "Do not emit any debug info");
+    // The cli parser has no options with an optional value. Therefore, the level can only be attached with '=', which is
+    // handled by the option. The bare '--debug-info' is a flag of its own, which keeps it from swallowing the main source
+    // file. The one that comes last on the command line wins.
+    subCmd.addOption("--debug-info", debugInfoCallback, "Generate debug info: full (default), line-only, none");
+    subCmd.addFlag("--debug-info", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::FULL); }, "Alias for --debug-info=full");
     // -g
     subCmd.addFlag("-g", p(const bool& _v) { this.setDebugInfoLevel(DebugInfoLevel::FULL); }, "Alias for --debug-info=full");
     // --sanitizer
@@ -1032,6 +1048,11 @@ f<bool> testInstrumentation() {
     assert parseDebugInfoLevel("--debug-info=full", "-d", "main-file.spice") == DebugInfoLevel::FULL;
     assert parseDebugInfoLevel("--debug-info=line-only", "-d", "main-file.spice") == DebugInfoLevel::LINE_ONLY;
     assert parseDebugInfoLevel("--debug-info=none", "-d", "main-file.spice") == DebugInfoLevel::NONE;
+    // Levels are case-insensitive, and the boolean values are accepted like in the host
+    assert parseDebugInfoLevel("--debug-info=LINE-ONLY", "-d", "main-file.spice") == DebugInfoLevel::LINE_ONLY;
+    assert parseDebugInfoLevel("--debug-info=Full", "-d", "main-file.spice") == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=true", "-d", "main-file.spice") == DebugInfoLevel::FULL;
+    assert parseDebugInfoLevel("--debug-info=false", "-d", "main-file.spice") == DebugInfoLevel::NONE;
 
     // The last occurrence wins, no matter if '-g' or '--debug-info' comes last
     assert parseDebugInfoLevel("-g", "--debug-info=line-only", "main-file.spice") == DebugInfoLevel::LINE_ONLY;

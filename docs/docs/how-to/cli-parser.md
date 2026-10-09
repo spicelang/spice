@@ -173,3 +173,12 @@ invocations are equivalent:
 $ ./app-name --name Spice
 $ ./app-name --name=Spice
 ```
+
+Flags take no value, so a value attached to a flag (e.g. `--hi=false`) is rejected as an unknown argument. A flag and an
+option may share a name, though. Then the bare name sets the flag, while a value attached with `=` goes to the option. This
+gives an option with an optional value, which does not take the following argument as its value:
+
+```spice
+cli.addOption("--level", p(const string& level) { /* use the given level */ }, "Set the level");
+cli.addFlag("--level", p(const bool& _v) { /* use the default level */ }, "Use the default level");
+```

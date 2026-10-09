@@ -90,5 +90,26 @@ f<int> main() {
     assert parser.parse(4u, bareArgs) == EXIT_CODE_SUCCESS;
     assert level == "full";
 
+    // A flag takes no value, so a value attached to it is rejected instead of being dropped silently
+    bool verbose = false;
+    build.addFlag("--verbose", verbose, "Verbose output");
+    string[4] flagValueArgs = ["prog", "build", "--verbose=false", "flag.spice"];
+    assert parser.parse(4u, flagValueArgs) != EXIT_CODE_SUCCESS;
+    assert !verbose;
+
+    // A flag and an option can share a name: the bare name is the flag, a value attached with '=' goes to the option. The bare
+    // flag does not take the following argument as its value
+    string mode = "";
+    string* m = &mode;
+    build.addOption("--mode", p(const string& value) { *m = value; }, "Mode");
+    build.addFlag("--mode", p(const bool& _v) { *m = "default"; }, "Default mode");
+    string[4] modeValueArgs = ["prog", "build", "--mode=fast", "mode.spice"];
+    assert parser.parse(4u, modeValueArgs) == EXIT_CODE_SUCCESS;
+    assert mode == "fast";
+    string[4] bareModeArgs = ["prog", "build", "--mode", "bare-mode.spice"];
+    assert parser.parse(4u, bareModeArgs) == EXIT_CODE_SUCCESS;
+    assert mode == "default";
+    assert state.file == "bare-mode.spice";
+
     printf("All assertions passed!\n");
 }
