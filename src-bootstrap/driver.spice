@@ -998,10 +998,14 @@ f<bool> testTestLintInstallSubcommands() {
     const String installedPath = String(install.cliOptions.outputPath.toGenericString());
     assert installedPath.startsWith(binDir.toGenericString());
 
-    // Uninstall: only the source file is required and nothing gets compiled
+    // Uninstall: only the source file is required and nothing gets compiled. The source file has to exist for uninstall
+    const Result<bool> writeResult = writeFile("main-file.spice", "");
+    assert writeResult.isOk();
     Driver uninstall;
     string[3] uninstallArgs = ["spice", "uninstall", "main-file.spice"];
-    assert parseAndEnrich(uninstall, 3, uninstallArgs);
+    const bool uninstallParsed = parseAndEnrich(uninstall, 3, uninstallArgs);
+    assert deleteFile("main-file.spice");
+    assert uninstallParsed;
     assert !uninstall.shouldCompile;
     assert !uninstall.shouldInstall;
     assert uninstall.shouldUninstall;
@@ -1144,9 +1148,9 @@ f<bool> testOutputFileExtensions() {
 
 #[test]
 f<bool> testRejectedArguments() {
-    // The source file has to exist
+    // The source file has to exist for uninstall. For the compile path, the missing file is reported by the pipeline
     Driver missingFile;
-    string[3] missingFileArgs = ["spice", "build", "does-not-exist.spice"];
+    string[3] missingFileArgs = ["spice", "uninstall", "does-not-exist.spice"];
     assert parseOnly(missingFile, 3, missingFileArgs) != EXIT_CODE_SUCCESS;
 
     // The source file is required

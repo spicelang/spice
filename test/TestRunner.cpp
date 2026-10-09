@@ -757,4 +757,18 @@ TEST_P(LinterTests, ) {
 INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTestCases("linter", false)),
                          TestUtil::NameResolver());
 
+// Builds the bootstrap compiler sources in test build mode and runs their builtin tests (#[test] functions, e.g. in
+// src-bootstrap/driver.spice), with the same instrumentation as the bootstrap compiler
+TEST(BootstrapTests, BuiltinTests) {
+  if (!testDriverCliOptions.bootstrapMode)
+    GTEST_SKIP() << "The builtin tests of the bootstrap compiler run in bootstrap mode only";
+  const std::optional<std::filesystem::path> executablePath = BootstrapUtil::buildBootstrapBuiltinTests();
+  ASSERT_TRUE(executablePath.has_value()) << "Could not build the builtin tests of the bootstrap compiler";
+  const auto [output, exitCode] = SystemUtil::exec(executablePath->string(), {}, true);
+  if (testDriverCliOptions.isVerbose)                 // GCOV_EXCL_LINE
+    std::cout << "Builtin tests output:\n" << output; // GCOV_EXCL_LINE
+  EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
+  EXPECT_EQ(0, exitCode) << "Builtin tests failed:\n" << output;
+}
+
 } // namespace spice::testing

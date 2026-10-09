@@ -199,7 +199,7 @@ jobs:
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
         run: |
           python ${{ github.workspace }}/deps/gtest-parallel/gtest-parallel ./spicetest -- \
-            --is-github-actions --bootstrap-compiler=./test-tmp/bootstrap-compiler/spice
+            --is-github-actions --bootstrap-asan --bootstrap-compiler=./test-tmp/bootstrap-compiler/spice
 
   test-programs-linux-x86-asan:
     name: CI - Linux/x86_64 test programs with ASAN
