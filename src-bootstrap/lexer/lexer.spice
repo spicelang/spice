@@ -5,8 +5,8 @@ import "std/text/analysis";
 import "std/io/filepath";
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/lexer/token";
-import "bootstrap/util/compile-progress";
 import "bootstrap/reader/reader";
 import "bootstrap/reader/code-loc";
 import "bootstrap/exception/lexer-error";
@@ -452,16 +452,14 @@ f<Token> Lexer.consumeToken() {
 }
 
 /**
- * Abort lexing with a lexer error. The bootstrap compiler has no exceptions, so the error is raised as a panic.
+ * Abort lexing with a lexer error
  *
  * @param codeLoc Code location of the error
  * @param message Error message suffix
  */
 p Lexer.throwLexerError(const CodeLoc& codeLoc, string message) {
     const LexerError lexerError = LexerError(codeLoc, LexerErrorType::TOKENIZING_FAILED, message);
-    const String& errorMessage = lexerError.getMessage();
-    clearActiveCompileProgress();
-    panic(Error(errorMessage.getRaw()));
+    abortWithError(lexerError.getMessage());
 }
 
 f<Token> Lexer.consumeNumberLiteral(const CodeLoc& codeLoc) {

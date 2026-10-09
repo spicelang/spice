@@ -6,6 +6,7 @@ import "std/text/format";
 import "std/type/type-conversion";
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/compiler-pass";
 import "bootstrap/source-file";
 import "bootstrap/global/global-resource-manager";
@@ -18,7 +19,6 @@ import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/exception/parser-error";
-import "bootstrap/util/compile-progress";
 
 // External functions
 ext f<unsigned long> strtoull(string, char**, int);
@@ -2937,7 +2937,7 @@ f<char> getEscapedChar(char c) {
 }
 
 /**
- * Abort parsing with a parser error. The bootstrap compiler has no exceptions, so the error is raised as a panic.
+ * Abort parsing with a parser error
  *
  * @param codeLoc Code location of the error
  * @param errorType Type of the error
@@ -2945,7 +2945,5 @@ f<char> getEscapedChar(char c) {
  */
 p Parser.throwParserError(const CodeLoc& codeLoc, ParserErrorType errorType, string message) {
     const ParserError parserError = ParserError(codeLoc, errorType, message);
-    const String& errorMessage = parserError.getMessage();
-    clearActiveCompileProgress();
-    panic(Error(errorMessage.getRaw()));
+    abortWithError(parserError.getMessage());
 }

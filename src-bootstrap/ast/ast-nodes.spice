@@ -3460,14 +3460,14 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                     compileTimeValue.setLongValue(compileTimeValue.getLongValue() * operandValue.getLongValue());
                 } else if op == MultiplicativeOp::OP_DIV {
                     if operandValue.getLongValue() == 0l {
-                        panicWithSemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
+                        abortWithSemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
                     }
                     compileTimeValue.setLongValue(compileTimeValue.getLongValue() / operandValue.getLongValue());
                 } else {
                     assert op == MultiplicativeOp::OP_REM;
                     // Note: The host does not check for a zero divisor here and crashes with SIGFPE
                     if operandValue.getLongValue() == 0l {
-                        panicWithSemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
+                        abortWithSemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
                     }
                     compileTimeValue.setLongValue(compileTimeValue.getLongValue() % operandValue.getLongValue());
                 }

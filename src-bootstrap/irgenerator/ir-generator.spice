@@ -11,6 +11,7 @@ import "std/type/type-conversion";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/compiler-pass";
 import "bootstrap/driver";
 import "bootstrap/source-file";
@@ -248,15 +249,13 @@ f<long> getFunctionKey(const model::Function* function) {
 // Abort the compilation with a compiler error (the host throws a CompilerError)
 p raiseCompilerError(const CodeLoc& codeLoc, CompilerErrorType errorType, const String& message) {
     const CompilerError compilerError = CompilerError(codeLoc, errorType, message.getRaw());
-    const String& errorMessage = compilerError.getMessage();
-    panic(Error(errorMessage.getRaw()));
+    abortWithError(compilerError.getMessage());
 }
 
 // Abort the compilation with a semantic error (the host throws a SemanticError)
 p raiseSemanticError(const ASTNode* node, SemanticErrorType errorType, const String& message) {
     const SemanticError semanticError = SemanticError(node, errorType, message.getRaw());
-    const String& errorMessage = semanticError.getMessage();
-    panic(Error(errorMessage.getRaw()));
+    abortWithError(semanticError.getMessage());
 }
 
 // Integer constants. The values are masked to the bit width, like the host's builder.getIntN() takes an unsigned integer of the

@@ -1818,10 +1818,19 @@ public f<heap string> getHostCPUFeatures() {
     return LLVMGetHostCPUFeatures();
 }
 
+/**
+ * Look up the target for the given triple. If there is no such target, the error message is stored in outError, which
+ * stays untouched otherwise. So the caller has to initialize it with nil and check it, before using the returned target.
+ *
+ * @param triple Target triple
+ * @param outError Error message, if the target was not found. Without it, a failed lookup is fatal
+ * @return Target
+ */
 public f<Target> getTargetFromTriple(Triple triple, string* outError) {
     Target target;
-    const bool errorOccurred = LLVMGetTargetFromTriple(triple.value, &target.self, outError) != 0;
-    assert !errorOccurred;
+    const bool failed = LLVMGetTargetFromTriple(triple.value, &target.self, outError) != 0;
+    // Without an error output, the caller cannot notice the failure
+    assert !failed || outError != nil<string*>;
     return target;
 }
 

@@ -67,7 +67,7 @@ f<bool> hasMessage(const CliErrorType errorType, const string message, const str
     return cliError.getMessage() == expectedMessage;
 }
 
-// The driver reports cli errors via a panic, which a builtin test cannot observe. So the messages of the rejected cli
+// The driver reports cli errors by exiting the process, which a builtin test cannot observe. So the messages of the rejected cli
 // arguments are checked here, at the level of the error itself
 #[test]
 f<bool> testCliErrorMessages() {

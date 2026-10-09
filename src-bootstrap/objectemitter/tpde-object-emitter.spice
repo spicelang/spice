@@ -8,6 +8,7 @@ import "std/bindings/llvm/llvm" as llvm;
 import "std/bindings/tpde/tpde" as tpde;
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/objectemitter/abstract-object-emitter";
 
@@ -75,13 +76,12 @@ public p TPDEObjectEmitter.getASMString(String& output) {
 }
 
 /**
- * Abort with a compiler error. The bootstrap compiler has no exceptions, so the error is raised as a panic.
+ * Abort with a compiler error
  *
  * @param errorType Type of the compiler error
  * @param message Error message suffix
  */
 p raiseObjectEmitterError(CompilerErrorType errorType, const String& message) {
     const CompilerError error = CompilerError(errorType, message.getRaw());
-    const String& errorMessage = error.getMessage();
-    panic(Error(errorMessage.getRaw()));
+    abortWithError(error.getMessage());
 }

@@ -3,6 +3,8 @@ import "std/io/filepath";
 import "std/io/file";
 
 // Own imports
+import "bootstrap/exception/compiler-error";
+import "bootstrap/exception/fatal-error";
 import "bootstrap/reader/code-loc";
 import "bootstrap/util/test-util";
 
@@ -25,7 +27,9 @@ public p Reader.ctor(const FilePath& inputPath) {
     // Open the file input stream
     Result<File> result = openFile(inputPath.toString(), MODE_READ);
     if !result.isOk() {
-        panic(Error("Source file cannot be opened"));
+        const String messageSuffix = "Source file at path '" + inputPath.toString() + "' cannot be opened.";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, messageSuffix.getRaw());
+        abortWithError(error.getMessage());
     }
     this.file = result.unwrap();
 
