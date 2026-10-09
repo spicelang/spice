@@ -1,3 +1,5 @@
 Counter: 16
 Doubled twice: 64
 Is even: 1
+Counter after reset: 0
+Counter via ptr: 0

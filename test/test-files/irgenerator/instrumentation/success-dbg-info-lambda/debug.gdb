@@ -7,10 +7,14 @@ set print inferior-events off
 break source.spice:4
 break source.spice:12
 break source.spice:19
+break source.spice:29
+break source.spice:37
 run
 
 # Runtime
-info args
+info locals
+print counter
+print offset
 continue
 info args
 print value
@@ -20,6 +24,10 @@ info args
 print x
 continue
 print x
+continue
+print counter
+continue
+print *counterPtr
 continue
 
 # Quit

@@ -249,7 +249,8 @@ void DebugInfoGenerator::generateGlobalStringDebugInfo(llvm::GlobalVariable *glo
   global->addDebugInfo(diBuilder->createGlobalVariableExpression(compileUnit, name, name, diFile, lineNo, stringType, true));
 }
 
-void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber) {
+void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber,
+                                                   llvm::ArrayRef<uint64_t> addressOps) {
   if (!irGenerator->cliOptions.instrumentation.emitsFullDebugInfo())
     return;
 
@@ -266,7 +267,8 @@ void DebugInfoGenerator::generateLocalVarDebugInfo(const std::string &varName, l
     varInfo = diBuilder->createParameterVariable(scope, varName, argNumber, diFile, lineNo, diType);
   else
     varInfo = diBuilder->createAutoVariable(scope, varName, diFile, lineNo, diType);
-  llvm::DIExpression *expr = diBuilder->createExpression();
+  // The address ops describe how to get from the given address to the variable, e.g. through the captures pointer
+  llvm::DIExpression *expr = diBuilder->createExpression(addressOps);
   const llvm::DILocation *debugLocation = irGenerator->builder.getCurrentDebugLocation();
   assert(debugLocation != nullptr);
   diBuilder->insertDeclare(address, varInfo, expr, debugLocation, irGenerator->builder.GetInsertPoint());
@@ -336,11 +338,12 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     baseDiType = boolTy;
     break;
   case TY_STRUCT: {
-    // Do cache lookup
-    const size_t hashKey = std::hash<QualType>{}(ty);
-    const auto it = structTypeCache.find(hashKey);
-    if (it != structTypeCache.end())
-      return it->second;
+    // Do cache lookup. Qualifiers are applied on top of the cached type, so the cache is keyed by the unqualified type
+    const size_t hashKey = std::hash<Type>{}(*ty.getType());
+    if (const auto it = structTypeCache.find(hashKey); it != structTypeCache.end()) {
+      baseDiType = it->second;
+      break;
+    }
 
     // Cache miss, generate struct type
     const Struct *spiceStruct = ty.getStruct(node);
@@ -411,11 +414,12 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     break;
   }
   case TY_INTERFACE: {
-    // Do cache lookup
-    const size_t hashKey = std::hash<QualType>{}(ty);
-    const auto it = structTypeCache.find(hashKey);
-    if (it != structTypeCache.end())
-      return it->second;
+    // Do cache lookup. Qualifiers are applied on top of the cached type, so the cache is keyed by the unqualified type
+    const size_t hashKey = std::hash<Type>{}(*ty.getType());
+    if (const auto it = structTypeCache.find(hashKey); it != structTypeCache.end()) {
+      baseDiType = it->second;
+      break;
+    }
 
     // Cache miss, generate interface type
     const Interface *spiceInterface = ty.getInterface(node);
@@ -445,11 +449,12 @@ llvm::DIType *DebugInfoGenerator::getDITypeForQualType(const ASTNode *node, cons
     break;
   }
   case TY_UNION: {
-    // Do cache lookup
-    const size_t hashKey = std::hash<QualType>{}(ty);
-    const auto it = structTypeCache.find(hashKey);
-    if (it != structTypeCache.end())
-      return it->second;
+    // Do cache lookup. Qualifiers are applied on top of the cached type, so the cache is keyed by the unqualified type
+    const size_t hashKey = std::hash<Type>{}(*ty.getType());
+    if (const auto it = structTypeCache.find(hashKey); it != structTypeCache.end()) {
+      baseDiType = it->second;
+      break;
+    }
 
     // Cache miss, generate union type
     const Union *spiceUnion = ty.getUnion(node);

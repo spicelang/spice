@@ -22,6 +22,7 @@ import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/capture";
 import "bootstrap/symboltablebuilder/qual-type";
 import "bootstrap/symboltablebuilder/super-type";
+import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
 
 /**
  * Generates the debug info of a source file. This mirrors the host compiler's src/irgenerator/DebugInfoGenerator.cpp.
@@ -297,7 +298,7 @@ public p DebugInfoGenerator.generateGlobalStringDebugInfo(llvm::Value global, co
     global.setGlobalMetadata(llvm::getDebugMetadataKindID(*this.irGenerator.context), gve);
 }
 
-public p DebugInfoGenerator.generateLocalVarDebugInfo(const String& varName, llvm::Value address, unsigned long argNumber = 18446744073709551615ul) {
+public p DebugInfoGenerator.generateLocalVarDebugInfo(const String& varName, llvm::Value address, unsigned long argNumber = 18446744073709551615ul, const Vector<unsigned long>& addressOps = Vector<unsigned long>()) {
     if !this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo() {
         return;
     }
@@ -316,7 +317,8 @@ public p DebugInfoGenerator.generateLocalVarDebugInfo(const String& varName, llv
     } else {
         varInfo = this.diBuilder.createAutoVariable(scope, varName, this.diFile, lineNo, diType);
     }
-    const llvm::Metadata expr = this.diBuilder.createExpression();
+    // The address ops describe how to get from the given address to the variable, e.g. through the captures pointer
+    const llvm::Metadata expr = this.diBuilder.createExpression(addressOps);
     const llvm::Metadata debugLocation = this.irGenerator.builder.getCurrentDebugLocation();
     assert !debugLocation.isNull();
     this.diBuilder.insertDeclareAtEnd(address, varInfo, expr, debugLocation, this.irGenerator.builder.getInsertBlock());
@@ -402,8 +404,9 @@ f<llvm::Metadata> DebugInfoGenerator.getDITypeForQualType(const ASTNode* node, c
 }
 
 f<llvm::Metadata> DebugInfoGenerator.getStructDIType(const ASTNode* node, const QualType& ty) {
-    // Do cache lookup
-    const long hashKey = cast<long>(hash(ty.getName(true, false, true)));
+    // Do cache lookup. Qualifiers are applied on top of the cached type, so the cache is keyed by the unqualified type
+    const symboltable::Type* unqualifiedType = ty.getType();
+    const long hashKey = cast<long>(hash(unqualifiedType.getName(true, false, true)));
     if this.structTypeCache.contains(hashKey) {
         return this.structTypeCache.get(hashKey);
     }
@@ -460,8 +463,9 @@ f<llvm::Metadata> DebugInfoGenerator.getStructDIType(const ASTNode* node, const 
 }
 
 f<llvm::Metadata> DebugInfoGenerator.getInterfaceDIType(const ASTNode* node, const QualType& ty) {
-    // Do cache lookup
-    const long hashKey = cast<long>(hash(ty.getName(true, false, true)));
+    // Do cache lookup. Qualifiers are applied on top of the cached type, so the cache is keyed by the unqualified type
+    const symboltable::Type* unqualifiedType = ty.getType();
+    const long hashKey = cast<long>(hash(unqualifiedType.getName(true, false, true)));
     if this.structTypeCache.contains(hashKey) {
         return this.structTypeCache.get(hashKey);
     }
@@ -489,8 +493,9 @@ f<llvm::Metadata> DebugInfoGenerator.getInterfaceDIType(const ASTNode* node, con
 }
 
 f<llvm::Metadata> DebugInfoGenerator.getUnionDIType(const ASTNode* node, const QualType& ty) {
-    // Do cache lookup
-    const long hashKey = cast<long>(hash(ty.getName(true, false, true)));
+    // Do cache lookup. Qualifiers are applied on top of the cached type, so the cache is keyed by the unqualified type
+    const symboltable::Type* unqualifiedType = ty.getType();
+    const long hashKey = cast<long>(hash(unqualifiedType.getName(true, false, true)));
     if this.structTypeCache.contains(hashKey) {
         return this.structTypeCache.get(hashKey);
     }

@@ -1970,6 +1970,9 @@ public const unsigned int DW_ATE_UNSIGNED_CHAR = 8u;
 // DWARF tags (llvm::dwarf::DW_TAG_*)
 public const unsigned int DW_TAG_REFERENCE_TYPE = 16u;
 public const unsigned int DW_TAG_CONST_TYPE = 38u;
+// DWARF expression operations (llvm::dwarf::DW_OP_*)
+public const unsigned long DW_OP_DEREF = 6ul;
+public const unsigned long DW_OP_PLUS_UCONST = 35ul;
 // Debug info flags (LLVMDIFlags)
 public const int DI_FLAG_ZERO = 0;
 public const int DI_FLAG_PUBLIC = 3;
@@ -2115,6 +2118,14 @@ public f<Metadata> DIBuilder.createAutoVariable(Metadata scope, const String& na
 // Like llvm::DIBuilder::createExpression (empty expression)
 public f<Metadata> DIBuilder.createExpression() {
     return Metadata{ LLVMDIBuilderCreateExpression(this.self, nil<unsigned long*>, 0l) };
+}
+
+// Like llvm::DIBuilder::createExpression
+public f<Metadata> DIBuilder.createExpression(const Vector<unsigned long>& addressOps) {
+    unsafe {
+        unsigned long* addressOpsRef = addressOps.isEmpty() ? nil<unsigned long*> : addressOps.getDataPtr();
+        return Metadata{ LLVMDIBuilderCreateExpression(this.self, addressOpsRef, addressOps.getSize()) };
+    }
 }
 
 // Like llvm::DIBuilder::createGlobalVariableExpression

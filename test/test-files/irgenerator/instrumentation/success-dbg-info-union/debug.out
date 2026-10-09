@@ -23,8 +23,8 @@ Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 Breakpoint 1, sum (value=...)
     at ./test-files/irgenerator/instrumentation/success-dbg-info-union/source.spice:28
 28	    return value.vec.x + value.vec.y;
-$1 = (Value &) {i = 1, d = 4.2439915824246103e-314, vec = {x = 1, y = 2}, 
-  next = }
+$1 = (const Value &) {i = 1, d = 4.2439915824246103e-314, vec = {x = 1, 
+    y = 2}, next = }
 $2 = {x = 1, y = 2}
 
 Breakpoint 2, main ()
@@ -47,4 +47,4 @@ Boxes: 7, 2.500000
 Fallbacks: 8, 9
 Holder value: 12
 Holder fallback: 123
-[Inferior 1 (process 1106401) exited normally]
+[Inferior 1 (process 1128383) exited normally]
