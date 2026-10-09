@@ -894,6 +894,26 @@ p SourceFile.runBackEndForThisFile() {
         if this.resourceManager.abortCompilation { return; }
     }
     this.runObjectEmitter();
+    this.releaseBackEndResources();
+}
+
+/**
+ * Release the LLVM resources of this source file, as soon as its object file was emitted. The host keeps them until the source
+ * file is destructed. Releasing them early bounds the peak memory usage to the resources of the source files, whose back end
+ * runs at the moment. Nothing uses them afterwards, because the back end of each source file only works on its own resources.
+ * With LTO, the modules are linked into the LTO module and the main source file emits the object file, so they are kept.
+ */
+p SourceFile.releaseBackEndResources() {
+    if this.cliOptions.useLTO {
+        return;
+    }
+    // The LLVM types live in the context, so forget them before. The builder and the module have to be disposed before the
+    // context as well
+    this.typeToLLVMTypeMapping.clear();
+    this.builder.dispose();
+    this.llvmModule.dispose();
+    this.targetMachine.dispose();
+    this.context.dispose();
 }
 
 p SourceFile.lookupCache() {

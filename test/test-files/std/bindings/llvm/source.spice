@@ -60,4 +60,15 @@ f<int> main() {
     printf("Optimized IR:\n%s", optimizedIR.get());
 
     targetMachine.emitToFile(module, "this-is-a-test.o", llvm::LLVMCodeGenFileType::ObjectFile);
+
+    // Release the LLVM objects early, the builder and the module before their context. Disposing twice has no effect, so
+    // the destructors do not dispose them again at the end of the scope
+    builder.dispose();
+    module.dispose();
+    targetMachine.dispose();
+    context.dispose();
+    builder.dispose();
+    module.dispose();
+    targetMachine.dispose();
+    context.dispose();
 }
