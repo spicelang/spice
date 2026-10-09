@@ -1760,9 +1760,10 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
     foreach const model::Function* manifestation : node.manifestations {
         assert manifestation.entry != nil<SymbolTableEntry*>;
 
-        // Check if the manifestation is substantiated or not public and not used by anybody
+        // Check if the manifestation is substantiated or not public and not used by anybody. Default methods of public
+        // interfaces are public, because structs in other source files can inherit them
         const QualType& entryType = manifestation.entry.getQualType();
-        bool isPublic = entryType.isPublic();
+        bool isPublic = entryType.isPublic() || isPublicDefaultMethod(manifestation);
         if !manifestation.isFullySubstantiated() || (!isPublic && !manifestation.used) {
             this.manIdx++; // Increment symbolTypeIndex
             continue;
@@ -1771,10 +1772,11 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
             assert manifestation.alreadyTypeChecked;
         }
 
-        // Change to struct scope
+        // Change to struct scope or to the interface scope for default methods
         if manifestation.isMethod() {
             const QualType& thisType = manifestation.thisType;
-            const String scopeName = getStructScopeName(thisType.getSubType(), thisType.getTemplateTypes());
+            const QualTypeList noTemplateTypes;
+            const String scopeName = manifestation.isInterfaceDefaultMethod ? getInterfaceScopeName(thisType.getSubType(), noTemplateTypes) : getStructScopeName(thisType.getSubType(), thisType.getTemplateTypes());
             this.currentScope = this.currentScope.getChildScope(scopeName);
             assert this.currentScope != nil<Scope*>;
         }
@@ -4362,6 +4364,11 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
             this.autoDeReferencePtr(thisPtr, fieldEntryType);
             const QualType newBaseType = fieldEntryType.getBase();
             structTy = newBaseType.toLLVMType(this.sourceFile);
+        }
+
+        // Methods, that are inherited from an interface default method, expect a pointer to the interface part of the struct
+        if spiceFunc != nil<const model::Function*> && spiceFunc.isInheritedDefaultMethod() {
+            thisPtr = this.getUpcastedStructPtr(thisPtr, spiceFunc.defaultMethod.thisType, structType);
         }
 
         // Add 'this' pointer to the front of the argument list
@@ -7006,7 +7013,8 @@ p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
     arrayValues.pushBack(llvm::getNullValue(ptrTy)); // nullptr as safety guard
     arrayValues.pushBack(spiceStruct.vTableData.typeInfo); // TypeInfo to identify the type for the VTable
     foreach const model::Function* virtualMethod : virtualMethods {
-        llvm::Function llvmFunc = this.getLLVMFunction(virtualMethod);
+        // Methods, that are inherited from an interface default method, are implemented by the default method
+        llvm::Function llvmFunc = virtualMethod.isInheritedDefaultMethod() ? this.getOrDeclareDefaultMethod(virtualMethod.defaultMethod) : this.getLLVMFunction(virtualMethod);
         assert spiceStruct.scope.scopeType == ScopeType::INTERFACE || !llvmFunc.isNull();
         // Virtual calls expect the return type of the interface method, so methods with another return type need a thunk
         if !llvmFunc.isNull() && !virtualMethod.virtualReturnType.is(SuperType::TY_DYN) {
@@ -7024,6 +7032,34 @@ p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
     llvm::Value global = this.module.getNamedGlobal(mangledName.getRaw());
     assert !global.isNull();
     global.setInitializer(initializer);
+}
+
+f<llvm::Function> IRGenerator.getOrDeclareDefaultMethod(const model::Function* defaultMethod) {
+    assert defaultMethod.isInterfaceDefaultMethod;
+    // The default method might be defined in another source file or later in this one -> declare it if required
+    const String mangledName = defaultMethod.getMangledName();
+    const llvm::Function existing = this.module.getFunction(mangledName.getRaw());
+    if !existing.isNull() {
+        return existing;
+    }
+
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy()); // This pointer
+    foreach const QualType& paramType : defaultMethod.getParamTypes() {
+        paramTypes.pushBack(paramType.getParamLLVMType(this.sourceFile));
+    }
+    const llvm::Type fctType = this.getFunctionType(defaultMethod.returnType, paramTypes);
+    this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
+    llvm::Function fct = this.module.getFunction(mangledName.getRaw());
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(defaultMethod.returnType);
+    if returnABI.isIndirect() {
+        this.addSRetParamAttrs(fct, returnABI.memoryType);
+    }
+    return fct;
+}
+
+f<bool> isPublicDefaultMethod(const model::Function* function) {
+    return function.isInterfaceDefaultMethod && function.thisType.isPublic();
 }
 
 f<llvm::Function> IRGenerator.getOrCreateCovariantReturnThunk(const model::Function* method, llvm::Function target) {

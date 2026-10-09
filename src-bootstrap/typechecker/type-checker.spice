@@ -777,8 +777,11 @@ f<Any> TypeChecker.visitFctDefCheck(ASTFctDefNode* node) {
             continue;
         }
 
-        // Change scope to concrete struct specialization scope
-        if fctDefBase.isMethod {
+        // Change scope to concrete struct specialization scope or to the interface scope for default methods
+        if manifestation.isInterfaceDefaultMethod {
+            this.checkDefaultMethodImplementsInterfaceMethod(manifestation);
+            this.compilerPass.changeToScope(fctDefBase.structScope, ScopeType::INTERFACE);
+        } else if fctDefBase.isMethod {
             const QualTypeList thisTemplateTypes = manifestation.thisType.getTemplateTypes();
             const String scopeName = getStructScopeName(fctDefBase.name.structName, thisTemplateTypes);
             this.compilerPass.changeToScope(scopeName, ScopeType::STRUCT);
@@ -842,8 +845,11 @@ f<Any> TypeChecker.visitProcDefCheck(ASTProcDefNode* node) {
             continue;
         }
 
-        // Change scope to concrete struct specialization scope
-        if fctDefBase.isMethod {
+        // Change scope to concrete struct specialization scope or to the interface scope for default methods
+        if manifestation.isInterfaceDefaultMethod {
+            this.checkDefaultMethodImplementsInterfaceMethod(manifestation);
+            this.compilerPass.changeToScope(fctDefBase.structScope, ScopeType::INTERFACE);
+        } else if fctDefBase.isMethod {
             const QualTypeList thisTemplateTypes = manifestation.thisType.getTemplateTypes();
             const String scopeName = getStructScopeName(fctDefBase.name.structName, thisTemplateTypes);
             this.compilerPass.changeToScope(scopeName, ScopeType::STRUCT);
@@ -910,6 +916,53 @@ p TypeChecker.annotateLambdaCaptureParams(ASTFctDefBaseNode* fctDefBase, const F
             paramSymbol.updateType(paramSymbolType.getWithLambdaCaptures(), true);
         }
     }
+}
+
+/**
+ * Check if a function or procedure, that is defined as method of an interface, is a valid default method.
+ *
+ * @param fctDefBase Function or procedure definition node of the default method
+ * @param interfaceType Type of the interface, the default method belongs to
+ * @param paramList Parameters of the default method
+ * @return Valid default method or not
+ */
+f<bool> TypeChecker.checkDefaultMethod(ASTFctDefBaseNode* fctDefBase, const QualType& interfaceType, const ParamList& paramList) {
+    ASTNode* baseNode = cast<ASTNode*>(fctDefBase);
+    const String& name = fctDefBase.name.name;
+    if name == CTOR_FUNCTION_NAME || name == DTOR_FUNCTION_NAME {
+        throwSemanticError(baseNode, SemanticErrorType::INVALID_DEFAULT_METHOD, String("Interfaces cannot have constructors or destructors"));
+        return false;
+    }
+    const QualTypeList interfaceTemplateTypes = interfaceType.getTemplateTypes();
+    if fctDefBase.hasTemplateTypes || !interfaceTemplateTypes.isEmpty() {
+        throwSemanticError(baseNode, SemanticErrorType::INVALID_DEFAULT_METHOD, String("Default methods of generic interfaces are not supported yet"));
+        return false;
+    }
+    foreach const Param& param : paramList {
+        if param.isOptional {
+            throwSemanticError(getASTNode(fctDefBase.paramLst), SemanticErrorType::INVALID_DEFAULT_METHOD, String("Default methods cannot have optional parameters"));
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Check if a default method implements a method signature of its interface. The parameter and return types have to match
+ * exactly, because the default method is called through the vtable slot of the interface method.
+ *
+ * @param defaultMethod Default method to check
+ */
+p TypeChecker.checkDefaultMethodImplementsInterfaceMethod(const Function* defaultMethod) {
+    const Interface* spiceInterface = defaultMethod.thisType.getInterface(defaultMethod.declNode);
+    assert spiceInterface != nil<const Interface*>;
+    const QualTypeList paramTypes = defaultMethod.getParamTypes();
+    foreach const Function* method : spiceInterface.methods {
+        if method.name == defaultMethod.name && method.getParamTypes() == paramTypes && method.returnType == defaultMethod.returnType {
+            return;
+        }
+    }
+    throwSemanticError(defaultMethod.declNode, SemanticErrorType::INVALID_DEFAULT_METHOD, "The default method '" + defaultMethod.getSignature() + "' does not implement any method of the interface '" + spiceInterface.structBase.name + "'");
 }
 
 f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
@@ -985,8 +1038,18 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
                 // Search for method that has the required signature
                 const QualTypeList noTemplateTypeHints;
                 Function* spiceFunction = matchFunction(this.currentScope, methodName, structType, args, noTemplateTypeHints, true, baseNode);
+                // If the struct does not implement the method itself, fall back to the default method of the interface
+                if spiceFunction == nil<Function*> {
+                    spiceFunction = inheritDefaultMethod(this.currentScope, structType, spiceInterface, methodName, params, returnType);
+                }
                 if spiceFunction == nil<Function*> {
                     this.softError(baseNode, SemanticErrorType::INTERFACE_METHOD_NOT_IMPLEMENTED, "The struct '" + node.structName + "' does not implement method '" + expMethod.getSignature() + "'.");
+                    continue;
+                }
+
+                // The default methods of two interfaces must not implement the same method of the struct
+                if spiceFunction.isInheritedDefaultMethod() && spiceFunction.defaultMethod.thisType.getBodyScope() != interfaceType.getBodyScope() {
+                    this.softError(baseNode, SemanticErrorType::INTERFACE_METHOD_NOT_IMPLEMENTED, "The struct '" + node.structName + "' implements multiple interfaces with method '" + expMethod.getSignature() + "', which has a default implementation. Please implement it in the struct.");
                     continue;
                 }
 
@@ -1237,9 +1300,15 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
         return Any();
     }
 
+    // Check if the function is a valid default method, if it is defined as method of an interface
+    if thisType.is(SuperType::TY_INTERFACE) && !this.checkDefaultMethod(fctDefBase, thisType, paramList) {
+        this.currentScope = this.rootScope;
+        return Any();
+    }
+
     // Leave function body scope
     this.currentScope = fctDefBase.scope.parent;
-    assert this.currentScope.scopeType == ScopeType::GLOBAL || this.currentScope.scopeType == ScopeType::STRUCT;
+    assert this.currentScope.scopeType == ScopeType::GLOBAL || this.currentScope.scopeType == ScopeType::STRUCT || this.currentScope.scopeType == ScopeType::INTERFACE;
 
     // Prepare type of function
     const QualType functionTypeBase = QualType(SuperType::TY_FUNCTION);
@@ -1255,6 +1324,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
     // Build function object
     Function spiceFunc = Function(fctDefBase.name.name, functionEntry, thisType, returnType, paramList, usedGenericTypes, baseNode);
     spiceFunc.bodyScope = fctDefBase.scope;
+    spiceFunc.isInterfaceDefaultMethod = thisType.is(SuperType::TY_INTERFACE);
     insertFunction(this.currentScope, spiceFunc, &fctDefBase.manifestations);
     // The host throws on a duplicate declaration. Stop here, the compilation is aborted after this stage
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
@@ -1384,9 +1454,15 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
         }
     }
 
+    // Check if the procedure is a valid default method, if it is defined as method of an interface
+    if thisType.is(SuperType::TY_INTERFACE) && !this.checkDefaultMethod(fctDefBase, thisType, paramList) {
+        this.currentScope = this.rootScope;
+        return Any();
+    }
+
     // Leave procedure body scope
     this.currentScope = fctDefBase.scope.parent;
-    assert this.currentScope.scopeType == ScopeType::GLOBAL || this.currentScope.scopeType == ScopeType::STRUCT;
+    assert this.currentScope.scopeType == ScopeType::GLOBAL || this.currentScope.scopeType == ScopeType::STRUCT || this.currentScope.scopeType == ScopeType::INTERFACE;
 
     // Prepare type of procedure
     const QualType procedureTypeBase = QualType(SuperType::TY_PROCEDURE);
@@ -1402,6 +1478,7 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
     // Build procedure object
     Function spiceProc = Function(fctDefBase.name.name, procedureEntry, thisType, QualType(SuperType::TY_DYN), paramList, usedGenericTypes, baseNode);
     spiceProc.bodyScope = fctDefBase.scope;
+    spiceProc.isInterfaceDefaultMethod = thisType.is(SuperType::TY_INTERFACE);
     insertFunction(this.currentScope, spiceProc, &fctDefBase.manifestations);
     // The host throws on a duplicate declaration. Stop here, the compilation is aborted after this stage
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
@@ -6181,6 +6258,90 @@ p decideDefaultMembers(Struct& spiceStruct, bool withMoveCtor) {
         createDefaultMoveCtorIfRequired(spiceStruct, spiceStruct.structBase.scope);
     }
     createDefaultDtorIfRequired(spiceStruct, spiceStruct.structBase.scope);
+    inheritDefaultMethods(spiceStruct);
+}
+
+/**
+ * Let a struct manifestation inherit the default methods of its interfaces for all interface methods, that the struct does
+ * not implement itself. This happens as early as possible, so that calls to inherited methods can be type-checked before
+ * the struct itself is checked to implement all interface methods. Default methods of interfaces in a circular import
+ * might not be prepared yet at this point. Those are inherited when checking the struct (see visitStructDefCheck).
+ *
+ * @param spiceStruct Struct manifestation
+ */
+p inheritDefaultMethods(Struct& spiceStruct) {
+    if !spiceStruct.structBase.isFullySubstantiated() {
+        return;
+    }
+
+    const QualType structType = spiceStruct.structBase.entry.getQualType();
+    foreach const QualType& interfaceType : spiceStruct.interfaceTypes {
+        // Generic interfaces cannot have default methods
+        const QualTypeList interfaceTemplateTypes = interfaceType.getTemplateTypes();
+        if !interfaceTemplateTypes.isEmpty() {
+            continue;
+        }
+        const Interface* spiceInterface = interfaceType.getInterface(spiceStruct.structBase.declNode);
+        assert spiceInterface != nil<const Interface*>;
+
+        foreach const Function* method : spiceInterface.methods {
+            // Check if the struct implements the method itself
+            const QualTypeList paramTypes = method.getParamTypes();
+            ArgList args;
+            args.reserve(paramTypes.getSize());
+            foreach const QualType& paramType : paramTypes {
+                args.pushBack(Pair<QualType, bool>(paramType, false));
+            }
+            const QualTypeList noTemplateTypeHints;
+            if matchFunction(spiceStruct.structBase.scope, method.name, structType, args, noTemplateTypeHints, true, spiceStruct.structBase.declNode) != nil<Function*> {
+                continue;
+            }
+
+            const Function* _ = inheritDefaultMethod(spiceStruct.structBase.scope, structType, spiceInterface, method.name, paramTypes, method.returnType);
+        }
+    }
+}
+
+/**
+ * Let a struct inherit the default method of an interface for the given method signature, if the interface provides one.
+ * The inherited method is inserted into the struct scope, but has no body on its own. It refers to the default method,
+ * which is emitted only once and gets called with a pointer to the interface part of the struct.
+ *
+ * @param structScope Scope of the struct manifestation
+ * @param structType Struct type, which implements the interface
+ * @param spiceInterface Interface, which might provide the default method
+ * @param methodName Name of the requested method
+ * @param paramTypes Parameter types of the requested method
+ * @param returnType Return type of the requested method
+ * @return Inherited method or nil if the interface has no default method for the signature
+ */
+f<Function*> inheritDefaultMethod(Scope* structScope, const QualType& structType, const Interface* spiceInterface, const String& methodName, const QualTypeList& paramTypes, const QualType& returnType) {
+    // Search for a default method with the exact signature
+    Function* defaultMethod = lookupDefaultMethod(spiceInterface.structBase.scope, methodName, paramTypes, returnType);
+    if defaultMethod == nil<Function*> {
+        return nil<Function*>;
+    }
+
+    // If the struct declares a method with this name, it most likely tries to implement the interface method, but with a
+    // signature that does not match. Do not silently inherit the default method in this case, but report the missing method
+    if hasUserMethodWithName(structScope, methodName) {
+        return nil<Function*>;
+    }
+
+    // Create the inherited method in the struct scope
+    Function inheritedMethod = *defaultMethod;
+    inheritedMethod.thisType = structType;
+    inheritedMethod.bodyScope = nil<Scope*>;
+    inheritedMethod.isInterfaceDefaultMethod = false;
+    inheritedMethod.defaultMethod = defaultMethod;
+    inheritedMethod.alreadyTypeChecked = true; // The body is type-checked as part of the default method
+    inheritedMethod.used = false;
+
+    // The default method is referenced by the vtable of the struct, so it has to be emitted
+    defaultMethod.used = true;
+    defaultMethod.entry.used = true;
+
+    return insertFunction(structScope, inheritedMethod);
 }
 
 /**
