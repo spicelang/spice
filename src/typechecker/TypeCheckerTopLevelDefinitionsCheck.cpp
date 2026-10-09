@@ -65,10 +65,11 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
     assert(typeMapping.empty());
     typeMapping = manifestation->typeMapping;
 
-    // Set return type to the result variable
+    // Set return type to the result variable. A manifestation for a capturing lambda argument copies the body scope of an
+    // already type-checked manifestation, so the result variable might already have a type
     SymbolTableEntry *resultVarEntry = currentScope->lookupStrict(RETURN_VARIABLE_NAME);
     assert(resultVarEntry != nullptr);
-    resultVarEntry->updateType(manifestation->returnType, false);
+    resultVarEntry->updateType(manifestation->returnType, true);
     resultVarEntry->used = true;
 
     // Visit parameters
