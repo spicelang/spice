@@ -120,30 +120,11 @@ bool BootstrapUtil::buildBootstrapCompiler() {
 /**
  * Run the bootstrap compiler with the given args and capture its combined stdout and stderr output.
  *
- * The bootstrap compiler still leaks memory (e.g. its scope tree), so an ASAN-instrumented bootstrap compiler (see
- * --bootstrap-asan) disables LeakSanitizer by default. Otherwise, the leak report would fail every test case. Only the
- * bootstrap compiler process gets this setting, the compiled test programs keep their own sanitizer behavior. To check
- * for leaks anyway, set ASAN_OPTIONS=detect_leaks=1, which takes precedence, because it is appended.
- *
  * @param args Arguments for the bootstrap compiler
  * @return Output and exit code of the bootstrap compiler
  */
 ExecResult BootstrapUtil::execBootstrapCompiler(const std::vector<std::string> &args) {
-#if OS_WINDOWS
   return SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
-#else
-  const char *asanOptions = std::getenv("ASAN_OPTIONS");
-  const std::optional<std::string> prevAsanOptions = asanOptions ? std::optional<std::string>(asanOptions) : std::nullopt;
-  const std::string bootstrapAsanOptions = "detect_leaks=0" + (prevAsanOptions ? ":" + *prevAsanOptions : "");
-  setenv("ASAN_OPTIONS", bootstrapAsanOptions.c_str(), /*overwrite=*/1);
-  ExecResult result = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
-  // Restore the previous value, so that the compiled test programs are not affected
-  if (prevAsanOptions)
-    setenv("ASAN_OPTIONS", prevAsanOptions->c_str(), /*overwrite=*/1);
-  else
-    unsetenv("ASAN_OPTIONS");
-  return result;
-#endif
 }
 
 /**

@@ -1942,6 +1942,9 @@ public type DIBuilder struct {
     LLVMDIBuilderRef self = nil<LLVMDIBuilderRef>
 }
 
+// Creates no builder. Owners only create one, if they emit debug info, but the dtor runs either way
+public p DIBuilder.ctor() {}
+
 public p DIBuilder.ctor(Module module) {
     this.self = LLVMCreateDIBuilder(module.self);
 }
