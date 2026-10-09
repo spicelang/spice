@@ -229,6 +229,11 @@ Function *TypeChecker::inheritDefaultMethod(Scope *structScope, const QualType &
   if (defaultMethod == nullptr)
     return nullptr;
 
+  // If the struct declares a method with this name, it most likely tries to implement the interface method, but with a
+  // signature that does not match. Do not silently inherit the default method in this case, but report the missing method
+  if (FunctionManager::hasUserMethodWithName(structScope, methodName))
+    return nullptr;
+
   // Create the inherited method in the struct scope
   Function inheritedMethod = *defaultMethod;
   inheritedMethod.thisType = structType;

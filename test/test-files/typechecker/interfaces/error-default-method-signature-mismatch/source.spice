@@ -1,0 +1,19 @@
+type IGreeter interface {
+    p greet(int);
+}
+
+p IGreeter.greet(int _times) {
+    printf("Hello\n");
+}
+
+type Person struct : IGreeter {}
+
+// Does not override the default method, because the parameter type differs
+p Person.greet(double _times) {
+    printf("Hi\n");
+}
+
+f<int> main() {
+    Person person;
+    person.greet(1.0);
+}

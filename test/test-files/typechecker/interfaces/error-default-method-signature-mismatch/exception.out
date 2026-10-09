@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:9:1:
+Interface method not implemented: The struct 'Person' does not implement method 'p IGreeter.greet(int)'.
+
+9  type Person struct : IGreeter {}
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

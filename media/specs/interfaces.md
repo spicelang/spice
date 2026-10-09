@@ -81,6 +81,9 @@ Default methods keep the purpose of an interface intact, because they follow the
    a default method for it, the struct has to implement the method itself. Otherwise, the compiler reports an error.
 4. **Exact signature:** A default method has to implement a method signature of its interface with exactly the same parameter
    and return types. Default methods cannot be constructors or destructors and cannot have optional parameters.
+5. **No accidental fallback:** If a struct declares a method with the name of a default method, but with a signature that
+   does not match the interface method, the struct does not inherit the default method. Instead, the compiler reports that
+   the interface method is not implemented.
 
 Calls from within a default method to other methods of the interface are virtual calls. They always end up in the
 implementation of the concrete struct, regardless of whether it is the implementation of the struct or another default method.

@@ -161,6 +161,8 @@ A few rules apply to default methods:
 
 - A default method must implement a method signature of its interface, with exactly the same parameter and return types.
 - Default methods cannot be constructors or destructors and cannot have optional parameters.
+- If a struct declares a method with the same name as a default method, but with another signature, it does not inherit
+  the default method and has to implement the interface method itself.
 - If a struct implements multiple interfaces, that declare the same method, and one of them provides a default method for
   it, the struct has to implement the method itself.
 - Default methods of generic interfaces are not supported yet.
