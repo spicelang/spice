@@ -5227,6 +5227,9 @@ f<llvm::Type> IRGenerator.buildCapturesContainerType(const CaptureMap& captures)
 
 p IRGenerator.unpackCapturesToLocalVariables(const CaptureMap& captures, llvm::Value val, llvm::Type structType) {
     assert !captures.isEmpty();
+    // Debug info attached to a computed address gets dropped by the backend, so the debug info of all captures is attached
+    // to the stack slot of the captures ptr (val) instead. The address ops lead from there to the capture. By reference
+    // captures hold the address of the captured variable, so they need one more deref.
     // If we have only one capture that is a ptr, we can just load the ptr
     if captures.getSize() == 1l {
         foreach Pair<const String&, const Capture&> captureEntry : captures {
@@ -5237,7 +5240,11 @@ p IRGenerator.unpackCapturesToLocalVariables(const CaptureMap& captures, llvm::V
                 const llvm::Value captureAddress = val;
                 this.pushAddress(firstCapture.capturedSymbol, captureAddress);
                 // Generate debug info
-                this.diGenerator.generateLocalVarDebugInfo(firstCapture.getName(), captureAddress);
+                Vector<unsigned long> addressOps;
+                if firstCapture.getMode() == CapturePassMode::BY_REFERENCE {
+                    addressOps.pushBack(llvm::DW_OP_DEREF);
+                }
+                this.diGenerator.generateLocalVarDebugInfo(firstCapture.getName(), val, SIZE_MAX, addressOps);
                 return;
             }
         }
@@ -5254,7 +5261,15 @@ p IRGenerator.unpackCapturesToLocalVariables(const CaptureMap& captures, llvm::V
         const llvm::Value captureAddress = this.insertStructGEP(structType, capturesPtr, captureIdx, valueName);
         this.pushAddress(capture.capturedSymbol, captureAddress);
         // Generate debug info
-        this.diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
+        const unsigned long offset = this.module.getStructElementOffset(structType, captureIdx);
+        Vector<unsigned long> addressOps;
+        addressOps.pushBack(llvm::DW_OP_DEREF);
+        addressOps.pushBack(llvm::DW_OP_PLUS_UCONST);
+        addressOps.pushBack(offset);
+        if capture.getMode() == CapturePassMode::BY_REFERENCE {
+            addressOps.pushBack(llvm::DW_OP_DEREF);
+        }
+        this.diGenerator.generateLocalVarDebugInfo(capture.getName(), val, SIZE_MAX, addressOps);
         captureIdx++;
     }
 }

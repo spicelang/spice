@@ -29,40 +29,40 @@ source_filename = "source.spice"
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_Z3sumRK5Value(ptr noundef %0) #0 !dbg !32 {
   %value = alloca ptr, align 8
-    #dbg_declare(ptr %value, !51, !DIExpression(), !53)
-  store ptr %0, ptr %value, align 8, !dbg !53
-  %2 = load ptr, ptr %value, align 8, !dbg !54
-  %3 = load i32, ptr %2, align 4, !dbg !54
-  %4 = icmp eq i32 %3, 3, !dbg !54
-  br i1 %4, label %union.tag.ok.L28, label %union.tag.panic.L28, !dbg !54, !prof !55
+    #dbg_declare(ptr %value, !51, !DIExpression(), !52)
+  store ptr %0, ptr %value, align 8, !dbg !52
+  %2 = load ptr, ptr %value, align 8, !dbg !53
+  %3 = load i32, ptr %2, align 4, !dbg !53
+  %4 = icmp eq i32 %3, 3, !dbg !53
+  br i1 %4, label %union.tag.ok.L28, label %union.tag.panic.L28, !dbg !53, !prof !54
 
 union.tag.panic.L28:                              ; preds = %1
-  %5 = call ptr @__acrt_iob_func(i32 2), !dbg !54
-  %6 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.0), !dbg !54
-  call void @exit(i32 1), !dbg !54
-  unreachable, !dbg !54
+  %5 = call ptr @__acrt_iob_func(i32 2), !dbg !53
+  %6 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.0), !dbg !53
+  call void @exit(i32 1), !dbg !53
+  unreachable, !dbg !53
 
 union.tag.ok.L28:                                 ; preds = %1
-  %vec.addr = getelementptr inbounds nuw %union.Value, ptr %2, i32 0, i32 2, !dbg !54
-  %x.addr = getelementptr inbounds %struct.Vec2, ptr %vec.addr, i64 0, i32 0, !dbg !54
-  %7 = load ptr, ptr %value, align 8, !dbg !56
-  %8 = load i32, ptr %7, align 4, !dbg !56
-  %9 = icmp eq i32 %8, 3, !dbg !56
-  br i1 %9, label %union.tag.ok.L282, label %union.tag.panic.L281, !dbg !56, !prof !55
+  %vec.addr = getelementptr inbounds nuw %union.Value, ptr %2, i32 0, i32 2, !dbg !53
+  %x.addr = getelementptr inbounds %struct.Vec2, ptr %vec.addr, i64 0, i32 0, !dbg !53
+  %7 = load ptr, ptr %value, align 8, !dbg !55
+  %8 = load i32, ptr %7, align 4, !dbg !55
+  %9 = icmp eq i32 %8, 3, !dbg !55
+  br i1 %9, label %union.tag.ok.L282, label %union.tag.panic.L281, !dbg !55, !prof !54
 
 union.tag.panic.L281:                             ; preds = %union.tag.ok.L28
-  %10 = call ptr @__acrt_iob_func(i32 2), !dbg !56
-  %11 = call i32 (ptr, ptr, ...) @fprintf(ptr %10, ptr @anon.string.1), !dbg !56
-  call void @exit(i32 1), !dbg !56
-  unreachable, !dbg !56
+  %10 = call ptr @__acrt_iob_func(i32 2), !dbg !55
+  %11 = call i32 (ptr, ptr, ...) @fprintf(ptr %10, ptr @anon.string.1), !dbg !55
+  call void @exit(i32 1), !dbg !55
+  unreachable, !dbg !55
 
 union.tag.ok.L282:                                ; preds = %union.tag.ok.L28
-  %vec.addr3 = getelementptr inbounds nuw %union.Value, ptr %7, i32 0, i32 2, !dbg !56
-  %y.addr = getelementptr inbounds %struct.Vec2, ptr %vec.addr3, i64 0, i32 1, !dbg !56
-  %12 = load i32, ptr %y.addr, align 4, !dbg !56
-  %13 = load i32, ptr %x.addr, align 4, !dbg !56
-  %14 = add nsw i32 %13, %12, !dbg !56
-  ret i32 %14, !dbg !57
+  %vec.addr3 = getelementptr inbounds nuw %union.Value, ptr %7, i32 0, i32 2, !dbg !55
+  %y.addr = getelementptr inbounds %struct.Vec2, ptr %vec.addr3, i64 0, i32 1, !dbg !55
+  %12 = load i32, ptr %y.addr, align 4, !dbg !55
+  %13 = load i32, ptr %x.addr, align 4, !dbg !55
+  %14 = add nsw i32 %13, %12, !dbg !55
+  ret i32 %14, !dbg !56
 }
 
 ; Function Attrs: nounwind
@@ -75,168 +75,168 @@ declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly ca
 declare void @exit(i32) #3
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #4 !dbg !58 {
+define dso_local noundef i32 @main() #4 !dbg !57 {
   %value = alloca %union.Value, align 8
   %intBox = alloca %union.Box, align 8
   %doubleBox = alloca %union.Box.0, align 8
   %holder = alloca %struct.Holder, align 8
-    #dbg_declare(ptr %value, !61, !DIExpression(), !62)
-  store %union.Value zeroinitializer, ptr %value, align 8, !dbg !62
-  store i32 1, ptr %value, align 4, !dbg !63
-  %i.addr = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !63
-  store i32 42, ptr %i.addr, align 4, !dbg !64
-  %1 = load i32, ptr %value, align 4, !dbg !65
-  %2 = icmp eq i32 %1, 1, !dbg !65
-  br i1 %2, label %union.tag.ok.L34, label %union.tag.panic.L34, !dbg !65, !prof !55
+    #dbg_declare(ptr %value, !60, !DIExpression(), !61)
+  store %union.Value zeroinitializer, ptr %value, align 8, !dbg !61
+  store i32 1, ptr %value, align 4, !dbg !62
+  %i.addr = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !62
+  store i32 42, ptr %i.addr, align 4, !dbg !63
+  %1 = load i32, ptr %value, align 4, !dbg !64
+  %2 = icmp eq i32 %1, 1, !dbg !64
+  br i1 %2, label %union.tag.ok.L34, label %union.tag.panic.L34, !dbg !64, !prof !54
 
 union.tag.panic.L34:                              ; preds = %0
-  %3 = call ptr @__acrt_iob_func(i32 2), !dbg !65
-  %4 = call i32 (ptr, ptr, ...) @fprintf(ptr %3, ptr @anon.string.2), !dbg !65
-  call void @exit(i32 1), !dbg !65
-  unreachable, !dbg !65
+  %3 = call ptr @__acrt_iob_func(i32 2), !dbg !64
+  %4 = call i32 (ptr, ptr, ...) @fprintf(ptr %3, ptr @anon.string.2), !dbg !64
+  call void @exit(i32 1), !dbg !64
+  unreachable, !dbg !64
 
 union.tag.ok.L34:                                 ; preds = %0
-  %i.addr1 = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !65
-  %5 = load i32, ptr %i.addr1, align 4, !dbg !65
-  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5), !dbg !65
-  store i32 2, ptr %value, align 4, !dbg !66
-  %d.addr = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !66
-  store double 3.500000e+00, ptr %d.addr, align 8, !dbg !67
-  %7 = load i32, ptr %value, align 4, !dbg !68
-  %8 = icmp eq i32 %7, 2, !dbg !68
-  br i1 %8, label %union.tag.ok.L36, label %union.tag.panic.L36, !dbg !68, !prof !55
+  %i.addr1 = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !64
+  %5 = load i32, ptr %i.addr1, align 4, !dbg !64
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5), !dbg !64
+  store i32 2, ptr %value, align 4, !dbg !65
+  %d.addr = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !65
+  store double 3.500000e+00, ptr %d.addr, align 8, !dbg !66
+  %7 = load i32, ptr %value, align 4, !dbg !67
+  %8 = icmp eq i32 %7, 2, !dbg !67
+  br i1 %8, label %union.tag.ok.L36, label %union.tag.panic.L36, !dbg !67, !prof !54
 
 union.tag.panic.L36:                              ; preds = %union.tag.ok.L34
-  %9 = call ptr @__acrt_iob_func(i32 2), !dbg !68
-  %10 = call i32 (ptr, ptr, ...) @fprintf(ptr %9, ptr @anon.string.3), !dbg !68
-  call void @exit(i32 1), !dbg !68
-  unreachable, !dbg !68
+  %9 = call ptr @__acrt_iob_func(i32 2), !dbg !67
+  %10 = call i32 (ptr, ptr, ...) @fprintf(ptr %9, ptr @anon.string.3), !dbg !67
+  call void @exit(i32 1), !dbg !67
+  unreachable, !dbg !67
 
 union.tag.ok.L36:                                 ; preds = %union.tag.ok.L34
-  %d.addr2 = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !68
-  %11 = load double, ptr %d.addr2, align 8, !dbg !68
-  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, double noundef %11), !dbg !68
-  store i32 3, ptr %value, align 4, !dbg !69
-  %vec.addr = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !69
-  store %struct.Vec2 { i32 1, i32 2 }, ptr %vec.addr, align 4, !dbg !70
-  %13 = call noundef i32 @_Z3sumRK5Value(ptr noundef %value), !dbg !71
-  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %13), !dbg !71
-    #dbg_declare(ptr %intBox, !72, !DIExpression(), !78)
-  store %union.Box zeroinitializer, ptr %intBox, align 8, !dbg !78
-  store i32 1, ptr %intBox, align 4, !dbg !79
-  %value.addr = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !79
-  store i32 7, ptr %value.addr, align 4, !dbg !80
-    #dbg_declare(ptr %doubleBox, !81, !DIExpression(), !86)
-  store %union.Box.0 zeroinitializer, ptr %doubleBox, align 8, !dbg !86
-  store i32 1, ptr %doubleBox, align 4, !dbg !87
-  %value.addr3 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !87
-  store double 2.500000e+00, ptr %value.addr3, align 8, !dbg !88
-  %15 = load i32, ptr %intBox, align 4, !dbg !89
-  %16 = icmp eq i32 %15, 1, !dbg !89
-  br i1 %16, label %union.tag.ok.L44, label %union.tag.panic.L44, !dbg !89, !prof !55
+  %d.addr2 = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !67
+  %11 = load double, ptr %d.addr2, align 8, !dbg !67
+  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, double noundef %11), !dbg !67
+  store i32 3, ptr %value, align 4, !dbg !68
+  %vec.addr = getelementptr inbounds nuw %union.Value, ptr %value, i32 0, i32 2, !dbg !68
+  store %struct.Vec2 { i32 1, i32 2 }, ptr %vec.addr, align 4, !dbg !69
+  %13 = call noundef i32 @_Z3sumRK5Value(ptr noundef %value), !dbg !70
+  %14 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %13), !dbg !70
+    #dbg_declare(ptr %intBox, !71, !DIExpression(), !77)
+  store %union.Box zeroinitializer, ptr %intBox, align 8, !dbg !77
+  store i32 1, ptr %intBox, align 4, !dbg !78
+  %value.addr = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !78
+  store i32 7, ptr %value.addr, align 4, !dbg !79
+    #dbg_declare(ptr %doubleBox, !80, !DIExpression(), !85)
+  store %union.Box.0 zeroinitializer, ptr %doubleBox, align 8, !dbg !85
+  store i32 1, ptr %doubleBox, align 4, !dbg !86
+  %value.addr3 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !86
+  store double 2.500000e+00, ptr %value.addr3, align 8, !dbg !87
+  %15 = load i32, ptr %intBox, align 4, !dbg !88
+  %16 = icmp eq i32 %15, 1, !dbg !88
+  br i1 %16, label %union.tag.ok.L44, label %union.tag.panic.L44, !dbg !88, !prof !54
 
 union.tag.panic.L44:                              ; preds = %union.tag.ok.L36
-  %17 = call ptr @__acrt_iob_func(i32 2), !dbg !89
-  %18 = call i32 (ptr, ptr, ...) @fprintf(ptr %17, ptr @anon.string.4), !dbg !89
+  %17 = call ptr @__acrt_iob_func(i32 2), !dbg !88
+  %18 = call i32 (ptr, ptr, ...) @fprintf(ptr %17, ptr @anon.string.4), !dbg !88
+  call void @exit(i32 1), !dbg !88
+  unreachable, !dbg !88
+
+union.tag.ok.L44:                                 ; preds = %union.tag.ok.L36
+  %value.addr4 = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !88
+  %19 = load i32, ptr %value.addr4, align 4, !dbg !88
+  %20 = load i32, ptr %doubleBox, align 4, !dbg !89
+  %21 = icmp eq i32 %20, 1, !dbg !89
+  br i1 %21, label %union.tag.ok.L446, label %union.tag.panic.L445, !dbg !89, !prof !54
+
+union.tag.panic.L445:                             ; preds = %union.tag.ok.L44
+  %22 = call ptr @__acrt_iob_func(i32 2), !dbg !89
+  %23 = call i32 (ptr, ptr, ...) @fprintf(ptr %22, ptr @anon.string.5), !dbg !89
   call void @exit(i32 1), !dbg !89
   unreachable, !dbg !89
 
-union.tag.ok.L44:                                 ; preds = %union.tag.ok.L36
-  %value.addr4 = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !89
-  %19 = load i32, ptr %value.addr4, align 4, !dbg !89
-  %20 = load i32, ptr %doubleBox, align 4, !dbg !90
-  %21 = icmp eq i32 %20, 1, !dbg !90
-  br i1 %21, label %union.tag.ok.L446, label %union.tag.panic.L445, !dbg !90, !prof !55
-
-union.tag.panic.L445:                             ; preds = %union.tag.ok.L44
-  %22 = call ptr @__acrt_iob_func(i32 2), !dbg !90
-  %23 = call i32 (ptr, ptr, ...) @fprintf(ptr %22, ptr @anon.string.5), !dbg !90
-  call void @exit(i32 1), !dbg !90
-  unreachable, !dbg !90
-
 union.tag.ok.L446:                                ; preds = %union.tag.ok.L44
-  %value.addr7 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !90
-  %24 = load double, ptr %value.addr7, align 8, !dbg !90
-  %25 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 noundef %19, double noundef %24), !dbg !90
-  store i32 2, ptr %intBox, align 4, !dbg !91
-  %fallback.addr = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !91
-  store i64 8, ptr %fallback.addr, align 8, !dbg !92
-  store i32 2, ptr %doubleBox, align 4, !dbg !93
-  %fallback.addr8 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !93
-  store i64 9, ptr %fallback.addr8, align 8, !dbg !94
-  %26 = load i32, ptr %intBox, align 4, !dbg !95
-  %27 = icmp eq i32 %26, 2, !dbg !95
-  br i1 %27, label %union.tag.ok.L47, label %union.tag.panic.L47, !dbg !95, !prof !55
+  %value.addr7 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !89
+  %24 = load double, ptr %value.addr7, align 8, !dbg !89
+  %25 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, i32 noundef %19, double noundef %24), !dbg !89
+  store i32 2, ptr %intBox, align 4, !dbg !90
+  %fallback.addr = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !90
+  store i64 8, ptr %fallback.addr, align 8, !dbg !91
+  store i32 2, ptr %doubleBox, align 4, !dbg !92
+  %fallback.addr8 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !92
+  store i64 9, ptr %fallback.addr8, align 8, !dbg !93
+  %26 = load i32, ptr %intBox, align 4, !dbg !94
+  %27 = icmp eq i32 %26, 2, !dbg !94
+  br i1 %27, label %union.tag.ok.L47, label %union.tag.panic.L47, !dbg !94, !prof !54
 
 union.tag.panic.L47:                              ; preds = %union.tag.ok.L446
-  %28 = call ptr @__acrt_iob_func(i32 2), !dbg !95
-  %29 = call i32 (ptr, ptr, ...) @fprintf(ptr %28, ptr @anon.string.6), !dbg !95
+  %28 = call ptr @__acrt_iob_func(i32 2), !dbg !94
+  %29 = call i32 (ptr, ptr, ...) @fprintf(ptr %28, ptr @anon.string.6), !dbg !94
+  call void @exit(i32 1), !dbg !94
+  unreachable, !dbg !94
+
+union.tag.ok.L47:                                 ; preds = %union.tag.ok.L446
+  %fallback.addr9 = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !94
+  %30 = load i64, ptr %fallback.addr9, align 8, !dbg !94
+  %31 = load i32, ptr %doubleBox, align 4, !dbg !95
+  %32 = icmp eq i32 %31, 2, !dbg !95
+  br i1 %32, label %union.tag.ok.L4711, label %union.tag.panic.L4710, !dbg !95, !prof !54
+
+union.tag.panic.L4710:                            ; preds = %union.tag.ok.L47
+  %33 = call ptr @__acrt_iob_func(i32 2), !dbg !95
+  %34 = call i32 (ptr, ptr, ...) @fprintf(ptr %33, ptr @anon.string.7), !dbg !95
   call void @exit(i32 1), !dbg !95
   unreachable, !dbg !95
 
-union.tag.ok.L47:                                 ; preds = %union.tag.ok.L446
-  %fallback.addr9 = getelementptr inbounds nuw %union.Box, ptr %intBox, i32 0, i32 2, !dbg !95
-  %30 = load i64, ptr %fallback.addr9, align 8, !dbg !95
-  %31 = load i32, ptr %doubleBox, align 4, !dbg !96
-  %32 = icmp eq i32 %31, 2, !dbg !96
-  br i1 %32, label %union.tag.ok.L4711, label %union.tag.panic.L4710, !dbg !96, !prof !55
-
-union.tag.panic.L4710:                            ; preds = %union.tag.ok.L47
-  %33 = call ptr @__acrt_iob_func(i32 2), !dbg !96
-  %34 = call i32 (ptr, ptr, ...) @fprintf(ptr %33, ptr @anon.string.7), !dbg !96
-  call void @exit(i32 1), !dbg !96
-  unreachable, !dbg !96
-
 union.tag.ok.L4711:                               ; preds = %union.tag.ok.L47
-  %fallback.addr12 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !96
-  %35 = load i64, ptr %fallback.addr12, align 8, !dbg !96
-  %36 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i64 noundef %30, i64 noundef %35), !dbg !96
-    #dbg_declare(ptr %holder, !97, !DIExpression(), !107)
-  store %struct.Holder zeroinitializer, ptr %holder, align 8, !dbg !107
-  %box.addr = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !108
-  store i32 1, ptr %box.addr, align 4, !dbg !108
-  %value.addr13 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr, i32 0, i32 2, !dbg !108
-  store i16 12, ptr %value.addr13, align 2, !dbg !109
-  %box.addr14 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !110
-  %37 = load i32, ptr %box.addr14, align 4, !dbg !110
-  %38 = icmp eq i32 %37, 1, !dbg !110
-  br i1 %38, label %union.tag.ok.L51, label %union.tag.panic.L51, !dbg !110, !prof !55
+  %fallback.addr12 = getelementptr inbounds nuw %union.Box.0, ptr %doubleBox, i32 0, i32 2, !dbg !95
+  %35 = load i64, ptr %fallback.addr12, align 8, !dbg !95
+  %36 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i64 noundef %30, i64 noundef %35), !dbg !95
+    #dbg_declare(ptr %holder, !96, !DIExpression(), !106)
+  store %struct.Holder zeroinitializer, ptr %holder, align 8, !dbg !106
+  %box.addr = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !107
+  store i32 1, ptr %box.addr, align 4, !dbg !107
+  %value.addr13 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr, i32 0, i32 2, !dbg !107
+  store i16 12, ptr %value.addr13, align 2, !dbg !108
+  %box.addr14 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !109
+  %37 = load i32, ptr %box.addr14, align 4, !dbg !109
+  %38 = icmp eq i32 %37, 1, !dbg !109
+  br i1 %38, label %union.tag.ok.L51, label %union.tag.panic.L51, !dbg !109, !prof !54
 
 union.tag.panic.L51:                              ; preds = %union.tag.ok.L4711
-  %39 = call ptr @__acrt_iob_func(i32 2), !dbg !110
-  %40 = call i32 (ptr, ptr, ...) @fprintf(ptr %39, ptr @anon.string.8), !dbg !110
-  call void @exit(i32 1), !dbg !110
-  unreachable, !dbg !110
+  %39 = call ptr @__acrt_iob_func(i32 2), !dbg !109
+  %40 = call i32 (ptr, ptr, ...) @fprintf(ptr %39, ptr @anon.string.8), !dbg !109
+  call void @exit(i32 1), !dbg !109
+  unreachable, !dbg !109
 
 union.tag.ok.L51:                                 ; preds = %union.tag.ok.L4711
-  %value.addr15 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr14, i32 0, i32 2, !dbg !110
-  %41 = load i16, ptr %value.addr15, align 2, !dbg !110
-  %42 = sext i16 %41 to i32, !dbg !110
-  %43 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i32 noundef %42), !dbg !110
-  %box.addr16 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !111
-  store i32 2, ptr %box.addr16, align 4, !dbg !111
-  %fallback.addr17 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr16, i32 0, i32 2, !dbg !111
-  store i64 123, ptr %fallback.addr17, align 8, !dbg !112
-  %value.addr18 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 0, !dbg !113
-  store i32 4, ptr %value.addr18, align 4, !dbg !113
-  %next.addr = getelementptr inbounds nuw %union.Value, ptr %value.addr18, i32 0, i32 2, !dbg !113
-  store ptr %value, ptr %next.addr, align 8, !dbg !114
-  %box.addr19 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !115
-  %44 = load i32, ptr %box.addr19, align 4, !dbg !115
-  %45 = icmp eq i32 %44, 2, !dbg !115
-  br i1 %45, label %union.tag.ok.L54, label %union.tag.panic.L54, !dbg !115, !prof !55
+  %value.addr15 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr14, i32 0, i32 2, !dbg !109
+  %41 = load i16, ptr %value.addr15, align 2, !dbg !109
+  %42 = sext i16 %41 to i32, !dbg !109
+  %43 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i32 noundef %42), !dbg !109
+  %box.addr16 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !110
+  store i32 2, ptr %box.addr16, align 4, !dbg !110
+  %fallback.addr17 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr16, i32 0, i32 2, !dbg !110
+  store i64 123, ptr %fallback.addr17, align 8, !dbg !111
+  %value.addr18 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 0, !dbg !112
+  store i32 4, ptr %value.addr18, align 4, !dbg !112
+  %next.addr = getelementptr inbounds nuw %union.Value, ptr %value.addr18, i32 0, i32 2, !dbg !112
+  store ptr %value, ptr %next.addr, align 8, !dbg !113
+  %box.addr19 = getelementptr inbounds %struct.Holder, ptr %holder, i64 0, i32 1, !dbg !114
+  %44 = load i32, ptr %box.addr19, align 4, !dbg !114
+  %45 = icmp eq i32 %44, 2, !dbg !114
+  br i1 %45, label %union.tag.ok.L54, label %union.tag.panic.L54, !dbg !114, !prof !54
 
 union.tag.panic.L54:                              ; preds = %union.tag.ok.L51
-  %46 = call ptr @__acrt_iob_func(i32 2), !dbg !115
-  %47 = call i32 (ptr, ptr, ...) @fprintf(ptr %46, ptr @anon.string.9), !dbg !115
-  call void @exit(i32 1), !dbg !115
-  unreachable, !dbg !115
+  %46 = call ptr @__acrt_iob_func(i32 2), !dbg !114
+  %47 = call i32 (ptr, ptr, ...) @fprintf(ptr %46, ptr @anon.string.9), !dbg !114
+  call void @exit(i32 1), !dbg !114
+  unreachable, !dbg !114
 
 union.tag.ok.L54:                                 ; preds = %union.tag.ok.L51
-  %fallback.addr20 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr19, i32 0, i32 2, !dbg !115
-  %48 = load i64, ptr %fallback.addr20, align 8, !dbg !115
-  %49 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.6, i64 noundef %48), !dbg !115
-  ret i32 0, !dbg !116
+  %fallback.addr20 = getelementptr inbounds nuw %union.Box.1, ptr %box.addr19, i32 0, i32 2, !dbg !114
+  %48 = load i64, ptr %fallback.addr20, align 8, !dbg !114
+  %49 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.6, i64 noundef %48), !dbg !114
+  ret i32 0, !dbg !115
 }
 
 ; Function Attrs: nofree nounwind
@@ -304,69 +304,68 @@ attributes #5 = { nofree nounwind }
 !48 = !DIDerivedType(tag: DW_TAG_member, name: "next", scope: !38, file: !7, line: 14, baseType: !49, size: 64, offset: 64)
 !49 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !38, size: 64)
 !50 = !{}
-!51 = !DILocalVariable(name: "value", arg: 1, scope: !32, file: !7, line: 27, type: !52)
-!52 = !DIDerivedType(tag: DW_TAG_reference_type, baseType: !38, size: 64)
-!53 = !DILocation(line: 27, column: 12, scope: !32)
-!54 = !DILocation(line: 28, column: 12, scope: !32)
-!55 = !{!"branch_weights", i32 1048575, i32 1}
-!56 = !DILocation(line: 28, column: 26, scope: !32)
-!57 = !DILocation(line: 29, column: 1, scope: !32)
-!58 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !7, file: !7, line: 31, type: !59, scopeLine: 31, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !50)
-!59 = !DISubroutineType(types: !60)
-!60 = !{!35}
-!61 = !DILocalVariable(name: "value", scope: !58, file: !7, line: 32, type: !38)
-!62 = !DILocation(line: 32, column: 5, scope: !58)
-!63 = !DILocation(line: 33, column: 5, scope: !58)
-!64 = !DILocation(line: 33, column: 15, scope: !58)
-!65 = !DILocation(line: 34, column: 25, scope: !58)
-!66 = !DILocation(line: 35, column: 5, scope: !58)
-!67 = !DILocation(line: 35, column: 15, scope: !58)
-!68 = !DILocation(line: 36, column: 28, scope: !58)
-!69 = !DILocation(line: 37, column: 5, scope: !58)
-!70 = !DILocation(line: 37, column: 26, scope: !58)
-!71 = !DILocation(line: 38, column: 29, scope: !58)
-!72 = !DILocalVariable(name: "intBox", scope: !58, file: !7, line: 40, type: !73)
-!73 = !DICompositeType(tag: DW_TAG_union_type, name: "Box<int>", scope: !7, file: !7, line: 17, size: 128, align: 64, elements: !74, identifier: "union.Box")
-!74 = !{!75, !76}
-!75 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !73, file: !7, line: 18, baseType: !35, size: 32, offset: 64)
-!76 = !DIDerivedType(tag: DW_TAG_member, name: "fallback", scope: !73, file: !7, line: 19, baseType: !77, size: 64, offset: 64)
-!77 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!78 = !DILocation(line: 40, column: 5, scope: !58)
-!79 = !DILocation(line: 41, column: 5, scope: !58)
-!80 = !DILocation(line: 41, column: 20, scope: !58)
-!81 = !DILocalVariable(name: "doubleBox", scope: !58, file: !7, line: 42, type: !82)
-!82 = !DICompositeType(tag: DW_TAG_union_type, name: "Box<double>", scope: !7, file: !7, line: 17, size: 128, align: 64, elements: !83, identifier: "union.Box")
-!83 = !{!84, !85}
-!84 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !82, file: !7, line: 18, baseType: !42, size: 64, offset: 64)
-!85 = !DIDerivedType(tag: DW_TAG_member, name: "fallback", scope: !82, file: !7, line: 19, baseType: !77, size: 64, offset: 64)
-!86 = !DILocation(line: 42, column: 5, scope: !58)
-!87 = !DILocation(line: 43, column: 5, scope: !58)
-!88 = !DILocation(line: 43, column: 23, scope: !58)
-!89 = !DILocation(line: 44, column: 31, scope: !58)
-!90 = !DILocation(line: 44, column: 45, scope: !58)
-!91 = !DILocation(line: 45, column: 5, scope: !58)
-!92 = !DILocation(line: 45, column: 23, scope: !58)
-!93 = !DILocation(line: 46, column: 5, scope: !58)
-!94 = !DILocation(line: 46, column: 26, scope: !58)
-!95 = !DILocation(line: 47, column: 35, scope: !58)
-!96 = !DILocation(line: 47, column: 52, scope: !58)
-!97 = !DILocalVariable(name: "holder", scope: !58, file: !7, line: 49, type: !98)
-!98 = !DICompositeType(tag: DW_TAG_structure_type, name: "Holder", scope: !7, file: !7, line: 22, size: 256, align: 64, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !99, identifier: "struct.Holder")
-!99 = !{!100, !101}
-!100 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !98, file: !7, line: 23, baseType: !38, size: 128, align: 64)
-!101 = !DIDerivedType(tag: DW_TAG_member, name: "box", scope: !98, file: !7, line: 24, baseType: !102, size: 128, align: 64, offset: 128)
-!102 = !DICompositeType(tag: DW_TAG_union_type, name: "Box<short>", scope: !7, file: !7, line: 17, size: 128, align: 64, elements: !103, identifier: "union.Box")
-!103 = !{!104, !106}
-!104 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !102, file: !7, line: 18, baseType: !105, size: 16, offset: 64)
-!105 = !DIBasicType(name: "short", size: 16, encoding: DW_ATE_signed)
-!106 = !DIDerivedType(tag: DW_TAG_member, name: "fallback", scope: !102, file: !7, line: 19, baseType: !77, size: 64, offset: 64)
-!107 = !DILocation(line: 49, column: 5, scope: !58)
-!108 = !DILocation(line: 50, column: 5, scope: !58)
-!109 = !DILocation(line: 50, column: 24, scope: !58)
-!110 = !DILocation(line: 51, column: 34, scope: !58)
-!111 = !DILocation(line: 52, column: 5, scope: !58)
-!112 = !DILocation(line: 52, column: 27, scope: !58)
-!113 = !DILocation(line: 53, column: 5, scope: !58)
-!114 = !DILocation(line: 53, column: 26, scope: !58)
-!115 = !DILocation(line: 54, column: 37, scope: !58)
-!116 = !DILocation(line: 55, column: 1, scope: !58)
+!51 = !DILocalVariable(name: "value", arg: 1, scope: !32, file: !7, line: 27, type: !36)
+!52 = !DILocation(line: 27, column: 12, scope: !32)
+!53 = !DILocation(line: 28, column: 12, scope: !32)
+!54 = !{!"branch_weights", i32 1048575, i32 1}
+!55 = !DILocation(line: 28, column: 26, scope: !32)
+!56 = !DILocation(line: 29, column: 1, scope: !32)
+!57 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !7, file: !7, line: 31, type: !58, scopeLine: 31, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !50)
+!58 = !DISubroutineType(types: !59)
+!59 = !{!35}
+!60 = !DILocalVariable(name: "value", scope: !57, file: !7, line: 32, type: !38)
+!61 = !DILocation(line: 32, column: 5, scope: !57)
+!62 = !DILocation(line: 33, column: 5, scope: !57)
+!63 = !DILocation(line: 33, column: 15, scope: !57)
+!64 = !DILocation(line: 34, column: 25, scope: !57)
+!65 = !DILocation(line: 35, column: 5, scope: !57)
+!66 = !DILocation(line: 35, column: 15, scope: !57)
+!67 = !DILocation(line: 36, column: 28, scope: !57)
+!68 = !DILocation(line: 37, column: 5, scope: !57)
+!69 = !DILocation(line: 37, column: 26, scope: !57)
+!70 = !DILocation(line: 38, column: 29, scope: !57)
+!71 = !DILocalVariable(name: "intBox", scope: !57, file: !7, line: 40, type: !72)
+!72 = !DICompositeType(tag: DW_TAG_union_type, name: "Box<int>", scope: !7, file: !7, line: 17, size: 128, align: 64, elements: !73, identifier: "union.Box")
+!73 = !{!74, !75}
+!74 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !72, file: !7, line: 18, baseType: !35, size: 32, offset: 64)
+!75 = !DIDerivedType(tag: DW_TAG_member, name: "fallback", scope: !72, file: !7, line: 19, baseType: !76, size: 64, offset: 64)
+!76 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
+!77 = !DILocation(line: 40, column: 5, scope: !57)
+!78 = !DILocation(line: 41, column: 5, scope: !57)
+!79 = !DILocation(line: 41, column: 20, scope: !57)
+!80 = !DILocalVariable(name: "doubleBox", scope: !57, file: !7, line: 42, type: !81)
+!81 = !DICompositeType(tag: DW_TAG_union_type, name: "Box<double>", scope: !7, file: !7, line: 17, size: 128, align: 64, elements: !82, identifier: "union.Box")
+!82 = !{!83, !84}
+!83 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !81, file: !7, line: 18, baseType: !42, size: 64, offset: 64)
+!84 = !DIDerivedType(tag: DW_TAG_member, name: "fallback", scope: !81, file: !7, line: 19, baseType: !76, size: 64, offset: 64)
+!85 = !DILocation(line: 42, column: 5, scope: !57)
+!86 = !DILocation(line: 43, column: 5, scope: !57)
+!87 = !DILocation(line: 43, column: 23, scope: !57)
+!88 = !DILocation(line: 44, column: 31, scope: !57)
+!89 = !DILocation(line: 44, column: 45, scope: !57)
+!90 = !DILocation(line: 45, column: 5, scope: !57)
+!91 = !DILocation(line: 45, column: 23, scope: !57)
+!92 = !DILocation(line: 46, column: 5, scope: !57)
+!93 = !DILocation(line: 46, column: 26, scope: !57)
+!94 = !DILocation(line: 47, column: 35, scope: !57)
+!95 = !DILocation(line: 47, column: 52, scope: !57)
+!96 = !DILocalVariable(name: "holder", scope: !57, file: !7, line: 49, type: !97)
+!97 = !DICompositeType(tag: DW_TAG_structure_type, name: "Holder", scope: !7, file: !7, line: 22, size: 256, align: 64, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !98, identifier: "struct.Holder")
+!98 = !{!99, !100}
+!99 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !97, file: !7, line: 23, baseType: !38, size: 128, align: 64)
+!100 = !DIDerivedType(tag: DW_TAG_member, name: "box", scope: !97, file: !7, line: 24, baseType: !101, size: 128, align: 64, offset: 128)
+!101 = !DICompositeType(tag: DW_TAG_union_type, name: "Box<short>", scope: !7, file: !7, line: 17, size: 128, align: 64, elements: !102, identifier: "union.Box")
+!102 = !{!103, !105}
+!103 = !DIDerivedType(tag: DW_TAG_member, name: "value", scope: !101, file: !7, line: 18, baseType: !104, size: 16, offset: 64)
+!104 = !DIBasicType(name: "short", size: 16, encoding: DW_ATE_signed)
+!105 = !DIDerivedType(tag: DW_TAG_member, name: "fallback", scope: !101, file: !7, line: 19, baseType: !76, size: 64, offset: 64)
+!106 = !DILocation(line: 49, column: 5, scope: !57)
+!107 = !DILocation(line: 50, column: 5, scope: !57)
+!108 = !DILocation(line: 50, column: 24, scope: !57)
+!109 = !DILocation(line: 51, column: 34, scope: !57)
+!110 = !DILocation(line: 52, column: 5, scope: !57)
+!111 = !DILocation(line: 52, column: 27, scope: !57)
+!112 = !DILocation(line: 53, column: 5, scope: !57)
+!113 = !DILocation(line: 53, column: 26, scope: !57)
+!114 = !DILocation(line: 54, column: 37, scope: !57)
+!115 = !DILocation(line: 55, column: 1, scope: !57)

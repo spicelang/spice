@@ -17,33 +17,50 @@ Reading symbols from ./test-tmp/instrumentation_successDbgInfoLambda/source...
 Breakpoint 1: file ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice, line 4.
 Breakpoint 2: file ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice, line 12.
 Breakpoint 3: file ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice, line 19.
+Breakpoint 4: file ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice, line 29.
+Breakpoint 5: file ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice, line 37.
 [Thread debugging using libthread_db enabled]
 Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
 
 Breakpoint 2, lambda.L10C21.0() ()
     at ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice:12
 12	        counter += offset;
-No arguments.
+counter = 11
+offset = 5
+$1 = 11
+$2 = 5
 
 Breakpoint 1, applyTwice (fct=..., value=16)
     at ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice:4
 4	    return fct(fct(value));
 fct = {fct = <lambda.L18C29.0(int)>, captures = , captureSize = 0}
 value = 16
-$1 = 16
-$2 = 0
+$3 = 16
+$4 = 0
 
 Breakpoint 3, lambda.L18C29.0(int) (x=16)
     at ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice:19
 19	        return x * 2;
 x = 16
-$3 = 16
+$5 = 16
 
 Breakpoint 3, lambda.L18C29.0(int) (x=32)
     at ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice:19
 19	        return x * 2;
-$4 = 32
+$6 = 32
+
+Breakpoint 4, lambda.L28C17.0() ()
+    at ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice:29
+29	        counter = 0;
+$7 = 16
+
+Breakpoint 5, lambda.L36C23.0() ()
+    at ./test-files/irgenerator/instrumentation/success-dbg-info-lambda/source.spice:37
+37	        printf("Counter via ptr: %d\n", *counterPtr);
+$8 = 0
 Counter: 16
 Doubled twice: 64
 Is even: 1
-[Inferior 1 (process 1106349) exited normally]
+Counter after reset: 0
+Counter via ptr: 0
+[Inferior 1 (process 1129419) exited normally]

@@ -7,6 +7,7 @@
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/BuiltinFunctions.h>
 
+#include <llvm/BinaryFormat/Dwarf.h>
 #include <llvm/IR/Module.h>
 
 namespace spice::compiler {
@@ -1162,6 +1163,9 @@ llvm::Type *IRGenerator::buildCapturesContainerType(const CaptureMap &captures) 
 
 void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llvm::Value *val, llvm::Type *structType) {
   assert(!captures.empty());
+  // Debug info attached to a computed address gets dropped by the backend, so the debug info of all captures is attached
+  // to the stack slot of the captures ptr (val) instead. The address ops lead from there to the capture. By reference
+  // captures hold the address of the captured variable, so they need one more deref.
   // If we have only one capture that is a ptr, we can just load the ptr
   const Capture &firstCapture = captures.begin()->second;
   if (captures.size() == 1 && (firstCapture.capturedSymbol->getQualType().isPtr() || firstCapture.getMode() == BY_REFERENCE)) {
@@ -1169,10 +1173,14 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
     llvm::Value *captureAddress = val;
     pushAddress(firstCapture.capturedSymbol, captureAddress);
     // Generate debug info
-    diGenerator.generateLocalVarDebugInfo(firstCapture.getName(), captureAddress);
+    std::vector<uint64_t> addressOps;
+    if (firstCapture.getMode() == BY_REFERENCE)
+      addressOps.push_back(llvm::dwarf::DW_OP_deref);
+    diGenerator.generateLocalVarDebugInfo(firstCapture.getName(), val, SIZE_MAX, addressOps);
   } else {
     // Interpret capturesPtr as ptr to the captures struct
     llvm::Value *capturesPtr = insertLoad(builder.getPtrTy(), val);
+    const llvm::StructLayout *structLayout = module->getDataLayout().getStructLayout(llvm::cast<llvm::StructType>(structType));
 
     size_t captureIdx = 0;
     for (const auto &[name, capture] : captures) {
@@ -1180,7 +1188,11 @@ void IRGenerator::unpackCapturesToLocalVariables(const CaptureMap &captures, llv
       llvm::Value *captureAddress = insertStructGEP(structType, capturesPtr, captureIdx, valueName);
       pushAddress(capture.capturedSymbol, captureAddress);
       // Generate debug info
-      diGenerator.generateLocalVarDebugInfo(capture.getName(), captureAddress);
+      const uint64_t offset = structLayout->getElementOffset(captureIdx);
+      std::vector<uint64_t> addressOps = {llvm::dwarf::DW_OP_deref, llvm::dwarf::DW_OP_plus_uconst, offset};
+      if (capture.getMode() == BY_REFERENCE)
+        addressOps.push_back(llvm::dwarf::DW_OP_deref);
+      diGenerator.generateLocalVarDebugInfo(capture.getName(), val, SIZE_MAX, addressOps);
       captureIdx++;
     }
   }

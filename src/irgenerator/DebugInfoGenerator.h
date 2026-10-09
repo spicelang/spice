@@ -36,7 +36,8 @@ public:
   void generateGlobalVarDebugInfo(llvm::GlobalVariable *global, const SymbolTableEntry *globalEntry);
   void generateGlobalStringDebugInfo(llvm::GlobalVariable *global, const std::string &name, size_t length,
                                      const CodeLoc &codeLoc) const;
-  void generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber = SIZE_MAX);
+  void generateLocalVarDebugInfo(const std::string &varName, llvm::Value *address, size_t argNumber = SIZE_MAX,
+                                 llvm::ArrayRef<uint64_t> addressOps = {});
   void setSourceLocation(const CodeLoc &codeLoc);
   ALWAYS_INLINE void setSourceLocation(const ASTNode *node) { setSourceLocation(node->codeLoc); }
   void finalize() const;

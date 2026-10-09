@@ -23,4 +23,18 @@ f<int> main() {
     // Expression lambda
     f<bool>(int) isEven = (int x) -> x % 2 == 0;
     printf("Is even: %d\n", isEven(counter));
+
+    // Lambda with a single capture by reference
+    p() reset = p() {
+        counter = 0;
+    };
+    reset();
+    printf("Counter after reset: %d\n", counter);
+
+    // Lambda with a single pointer capture by value
+    int* counterPtr = &counter;
+    p() printViaPtr = p() {
+        printf("Counter via ptr: %d\n", *counterPtr);
+    };
+    printViaPtr();
 }
