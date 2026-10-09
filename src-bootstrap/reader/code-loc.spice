@@ -3,6 +3,10 @@ import "std/type/type-conversion";
 import "std/data/vector";
 import "std/io/filepath";
 import "std/text/string-ext";
+import "std/os/os";
+
+// Own imports
+import "bootstrap/util/test-util";
 
 // Path of the root source file of the compilation. The host's CodeLoc references its source file and retrieves the root source
 // file from it. The bootstrap CodeLoc only carries the path of its source file, so the path of the root source file is registered
@@ -156,4 +160,59 @@ public f<bool> CodeLoc.isAfter(const CodeLoc& other) {
 
 public f<bool> operator==(const CodeLoc &lhs, const CodeLoc &rhs) {
     return lhs.sourceFilePath == rhs.sourceFilePath && lhs.line == rhs.line && lhs.col == rhs.col;
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testGetRelativePath() {
+    const FilePath testDir = makeUniqueTestDir("spice-code-loc-test");
+    const FilePath realDir = testDir / "real" / "nested";
+    createTestDirs(realDir);
+    const FilePath realFile = realDir / "file.txt";
+    const FilePath otherFile = testDir / "other.txt";
+    writeTestFile(realFile, "content");
+    writeTestFile(otherFile, "content");
+
+    // Like std::filesystem::relative, the base is treated as a dir, even if it is a file
+    const String upwards = getRelativePath(String(otherFile.toString()), String(realFile.toString()));
+    const String downwards = getRelativePath(String(realFile.toString()), String(otherFile.toString()));
+    const String same = getRelativePath(String(otherFile.toString()), String(otherFile.toString()));
+
+    // A path, that can't be resolved, is returned as is
+    const FilePath missingFile = testDir / "non-existing.txt";
+    const FilePath canonicalMissingFile = missingFile.canonical();
+    const String missing = getRelativePath(String(missingFile.toString()), String(otherFile.toString()));
+
+    // Paths are resolved through symlinks. Creating symlinks requires special privileges on Windows, so this part is skipped
+    // there. Through the symlink, the file lives three levels below the test dir, not two
+    const FilePath linkDir = testDir / "link-parent" / "link";
+    createTestDirs(testDir / "link-parent");
+    const bool hasSymlink = createTestDirSymlink(realDir, linkDir);
+    String upwardsFromLink = String("../../../other.txt");
+    String downwardsToLink = String("../real/nested/file.txt");
+    bool linkResolvesToRealFile = true;
+    if hasSymlink {
+        const FilePath linkFile = linkDir / "file.txt";
+        const FilePath linkFileWithDot = linkDir / "." / "file.txt";
+        const FilePath canonicalRealFile = realFile.canonical();
+        const FilePath canonicalLinkFile = linkFile.canonical();
+        const FilePath canonicalLinkFileWithDot = linkFileWithDot.canonical();
+        linkResolvesToRealFile = canonicalRealFile.isAbsolute() && canonicalRealFile == canonicalLinkFile && canonicalRealFile == canonicalLinkFileWithDot;
+        upwardsFromLink = getRelativePath(String(otherFile.toString()), String(linkFile.toString()));
+        downwardsToLink = getRelativePath(String(linkFile.toString()), String(otherFile.toString()));
+    }
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert upwards == "../../../other.txt";
+    assert downwards == "../real/nested/file.txt";
+    assert same == ".";
+    assert canonicalMissingFile.isEmpty();
+    assert missing == missingFile.toString();
+    assert hasSymlink || isWindows();
+    assert linkResolvesToRealFile;
+    assert upwardsFromLink == "../../../other.txt";
+    assert downwardsToLink == "../real/nested/file.txt";
+    return true;
 }

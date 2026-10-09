@@ -2,6 +2,8 @@
 
 // Std imports
 import "std/os/recursive-mutex";
+import "std/os/thread-pool";
+import "std/data/unordered-map";
 
 /**
  * Global switch that tells the process-wide caches of the compiler (type registry, function lookup cache, ...) whether
@@ -112,4 +114,69 @@ public f<RecursiveMutex*> getSymbolRegistryMutex() {
         result = cast<RecursiveMutex*>(cast<byte*>(ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS));
     }
     assert result != nil<RecursiveMutex*>;
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testConditionalLockOnlyLocksInParallelSection() {
+    RecursiveMutex mutex;
+    assert !areConcurrentPassesRunning();
+
+    { // Outside of a parallel section the lock is a no-op
+        ConditionalLock lock = ConditionalLock(&mutex);
+        assert lock.mutex == nil<RecursiveMutex*>;
+    }
+
+    { // Inside a parallel section the mutex is held for the lifetime of the lock
+        ParallelSection _;
+        assert areConcurrentPassesRunning();
+        ConditionalLock lock = ConditionalLock(&mutex);
+        assert lock.mutex == &mutex;
+    }
+
+    assert !areConcurrentPassesRunning();
+    return true;
+}
+
+// Increment the counter of the given key, guarded by a ConditionalLock
+p incrementGuarded(UnorderedMap<unsigned long, unsigned long>* sharedMap, RecursiveMutex* mutex, unsigned long key) {
+    ConditionalLock _ = ConditionalLock(mutex);
+    if sharedMap.contains(key) {
+        sharedMap.upsert(key, sharedMap.get(key) + 1l);
+    } else {
+        sharedMap.upsert(key, 1l);
+    }
+}
+
+// Increment the counters of the given map from multiple threads. The lock is taken in a separate function, because the host
+// compiler captures the struct symbol of a ctor call within a lambda body, which crashes its IR generator
+p incrementConcurrently(UnorderedMap<unsigned long, unsigned long>* sharedMap, RecursiveMutex* mutex) {
+    ThreadPool pool = ThreadPool(4s);
+    for unsigned int i = 0; i < 4; i++ {
+        pool.enqueue(p() [[async]] {
+            for unsigned long key = 0l; key < 10000l; key++ {
+                incrementGuarded(sharedMap, mutex, key % 500l);
+            }
+        });
+    }
+    pool.start();
+    pool.join();
+}
+
+#[test]
+f<bool> testConditionalLockGuardsSharedMapUnderContention() {
+    UnorderedMap<unsigned long, unsigned long> sharedMap; // Stands in for the type registry / lookup caches
+    RecursiveMutex mutex;
+    {
+        ParallelSection _;
+        incrementConcurrently(&sharedMap, &mutex);
+    }
+    assert !areConcurrentPassesRunning();
+
+    assert sharedMap.getSize() == 500l;
+    for unsigned long key = 0l; key < 500l; key++ {
+        assert sharedMap.get(key) == 4l * 20l;
+    }
+    return true;
 }

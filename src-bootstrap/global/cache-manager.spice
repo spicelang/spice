@@ -11,6 +11,7 @@ import "std/text/json/json-value";
 import "std/text/json/json-parser";
 import "std/text/json/json-serializer";
 import "std/type/type-conversion";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "bootstrap/driver";
@@ -18,6 +19,7 @@ import "bootstrap/source-file";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/util/common-util";
 import "bootstrap/util/system-util";
+import "bootstrap/util/test-util";
 
 /**
  * The CacheManager is responsible for caching and restoring compiled source files and executables.
@@ -453,4 +455,446 @@ public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceMan
             this.cacheExecutable(objectFileCacheKeys, resourceManager.linker.linkerFlags, additionalSourcePaths, resourceManager.linker.outputPath);
         }
     }
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+const string TEST_SOURCE = "f<int> main() { return 0; }";
+
+f<Vector<String>> makeKeys(const string key) {
+    Vector<String> keys;
+    keys.pushBack(String(key));
+    return keys;
+}
+
+f<Vector<String>> makeKeys(const string key1, const string key2) {
+    Vector<String> keys = makeKeys(key1);
+    keys.pushBack(String(key2));
+    return keys;
+}
+
+f<Vector<String>> makeKeys(const string key1, const string key2, const string key3) {
+    Vector<String> keys = makeKeys(key1, key2);
+    keys.pushBack(String(key3));
+    return keys;
+}
+
+// Compute the cache key of the test source with a cache manager for the given cli options
+f<String> computeTestCacheKey(CliOptions& cliOptions) {
+    CacheManager manager = CacheManager(cliOptions);
+    return manager.computeCacheKey(String(TEST_SOURCE), Vector<String>());
+}
+
+f<String> foldTestManifestations(CacheManager& manager, const String& sourceKey, const string manifestations) {
+    const StringStream fingerprint = StringStream(manifestations);
+    return manager.foldManifestations(sourceKey, fingerprint);
+}
+
+#[test]
+f<bool> testComputeCacheKey() {
+    CliOptions cliOptions;
+    CacheManager manager = CacheManager(cliOptions);
+    const Vector<String> noDeps;
+
+    // Deterministic
+    assert manager.computeCacheKey(String(TEST_SOURCE), noDeps) == manager.computeCacheKey(String(TEST_SOURCE), noDeps);
+    // Different for different content
+    assert manager.computeCacheKey(String(TEST_SOURCE), noDeps) != manager.computeCacheKey(String("f<int> main() { return 1; }"), noDeps);
+
+    // Different for the dep cache keys
+    const String keyNoDeps = manager.computeCacheKey(String(TEST_SOURCE), noDeps);
+    const String keyWithDep = manager.computeCacheKey(String(TEST_SOURCE), makeKeys("dep-v1"));
+    const String keyWithDepChanged = manager.computeCacheKey(String(TEST_SOURCE), makeKeys("dep-v2"));
+    assert keyNoDeps != keyWithDep;
+    assert keyWithDep != keyWithDepChanged;
+
+    // Dep cache keys must be sorted internally, so call sites do not need to provide a particular order. This matters because
+    // dep traversal order is not stable across builds
+    assert manager.computeCacheKey(String(TEST_SOURCE), makeKeys("a", "b", "c")) == manager.computeCacheKey(String(TEST_SOURCE), makeKeys("c", "a", "b"));
+    return true;
+}
+
+#[test]
+f<bool> testComputeCacheKeyDiffersForCliOptions() {
+    CliOptions cliOptions;
+
+    // Build mode
+    cliOptions.buildMode = BuildMode::DEBUG;
+    const String keyDebug = computeTestCacheKey(cliOptions);
+    cliOptions.buildMode = BuildMode::RELEASE;
+    assert keyDebug != computeTestCacheKey(cliOptions);
+
+    // Opt level
+    cliOptions.optLevel = OptLevel::O0;
+    const String keyO0 = computeTestCacheKey(cliOptions);
+    cliOptions.optLevel = OptLevel::O3;
+    assert keyO0 != computeTestCacheKey(cliOptions);
+
+    // Sanitizer
+    cliOptions.instrumentation.sanitizer = Sanitizer::NONE;
+    const String keyNone = computeTestCacheKey(cliOptions);
+    cliOptions.instrumentation.sanitizer = Sanitizer::ADDRESS;
+    assert keyNone != computeTestCacheKey(cliOptions);
+
+    // Debug info
+    cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::NONE;
+    const String keyNoDebug = computeTestCacheKey(cliOptions);
+    cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::LINE_ONLY;
+    const String keyLineOnly = computeTestCacheKey(cliOptions);
+    cliOptions.instrumentation.debugInfoLevel = DebugInfoLevel::FULL;
+    const String keyFullDebug = computeTestCacheKey(cliOptions);
+    assert keyNoDebug != keyLineOnly;
+    assert keyNoDebug != keyFullDebug;
+    assert keyLineOnly != keyFullDebug;
+
+    // LTO
+    cliOptions.useLTO = false;
+    const String keyNoLto = computeTestCacheKey(cliOptions);
+    cliOptions.useLTO = true;
+    assert keyNoLto != computeTestCacheKey(cliOptions);
+
+    // Frame pointers
+    cliOptions.keepFramePointers = false;
+    const String keyNoFramePointers = computeTestCacheKey(cliOptions);
+    cliOptions.keepFramePointers = true;
+    assert keyNoFramePointers != computeTestCacheKey(cliOptions);
+
+    // Native features
+    cliOptions.useNativeFeatures = false;
+    const String keyGeneric = computeTestCacheKey(cliOptions);
+    cliOptions.useNativeFeatures = true;
+    assert keyGeneric != computeTestCacheKey(cliOptions);
+    return true;
+}
+
+#[test]
+f<bool> testFoldManifestations() {
+    CliOptions cliOptions;
+    CacheManager manager = CacheManager(cliOptions);
+    const String sourceKey = manager.computeCacheKey(String(TEST_SOURCE), Vector<String>());
+
+    // Deterministic
+    assert foldTestManifestations(manager, sourceKey, "Fidentity<int>\n") == foldTestManifestations(manager, sourceKey, "Fidentity<int>\n");
+
+    // Different for different manifestations
+    const String none = foldTestManifestations(manager, sourceKey, "");
+    const String one = foldTestManifestations(manager, sourceKey, "Fidentity<int>\n");
+    const String other = foldTestManifestations(manager, sourceKey, "Fidentity<long>\n");
+    const String unused = foldTestManifestations(manager, sourceKey, "fidentity<int>\n"); // Lowercase tag: exists, but is unused
+    assert none != one;
+    assert one != other;
+    assert one != unused;
+
+    // Different for different source keys
+    const String otherSourceKey = manager.computeCacheKey(String("f<int> main() { return 1; }"), Vector<String>());
+    assert foldTestManifestations(manager, sourceKey, "Fidentity<int>\n") != foldTestManifestations(manager, otherSourceKey, "Fidentity<int>\n");
+    return true;
+}
+
+#[test]
+f<bool> testDependencyChangeInvalidatesDependentCacheKey() {
+    // Provokes the bug that was fixed: before transitive dep cache keys were folded into a file's own cache key, a dependent
+    // whose source text was unchanged would keep cache-hitting against a stale object file even when one of its dependencies
+    // had been edited - causing the linker to consume out-of-date code
+    CliOptions cliOptions;
+    CacheManager manager = CacheManager(cliOptions);
+    const String mathSrc = String("f<int> add(int a, int b) { return a + b; }");
+    const String utilsSrc = String("import \"math\"; f<int> helper(int x) { return add(x, 1); }");
+    const String mathKeyV1 = manager.computeCacheKey(mathSrc, Vector<String>());
+    const String utilsKeyV1 = manager.computeCacheKey(utilsSrc, makeKeys(mathKeyV1.getRaw()));
+
+    // The dependent's own source text didn't change - only the dependency did
+    const String mathKeyV2 = manager.computeCacheKey(String("f<int> add(int a, int b) { return a + b + 0; }"), Vector<String>());
+    assert mathKeyV1 != mathKeyV2;
+
+    // The fold makes the dependent's cache key a function of the dependency's cache key, so utils now misses too
+    const String utilsKeyV2 = manager.computeCacheKey(utilsSrc, makeKeys(mathKeyV2.getRaw()));
+    assert utilsKeyV1 != utilsKeyV2;
+
+    // Without any dep change the dependent's cache key stays stable, so we don't pay unnecessary rebuilds
+    assert utilsKeyV1 == manager.computeCacheKey(utilsSrc, makeKeys(mathKeyV1.getRaw()));
+    return true;
+}
+
+#[test]
+f<bool> testCacheExecutable() {
+    CliOptions cliOptions;
+    const FilePath cacheDir = makeUniqueTestDir("spice-cache-test");
+    const FilePath outputDir = makeUniqueTestDir("spice-cache-test");
+    cliOptions.cacheDir = cacheDir;
+    cliOptions.outputDir = outputDir;
+    CacheManager manager = CacheManager(cliOptions);
+    const Vector<String> objectKeys = makeKeys("obj-1", "obj-2");
+    const Vector<String> linkerFlags = makeKeys("-lm", "-lpthread");
+    const Vector<String> noAdditionalSources;
+
+    // Miss on an empty cache
+    FilePath resolved;
+    assert !manager.lookupExecutable(makeKeys("key-a", "key-b"), makeKeys("-lm"), noAdditionalSources, resolved);
+    assert resolved.isEmpty();
+
+    // Caching a non-existing executable is a no-op
+    const FilePath missingExecutable = outputDir / "does-not-exist";
+    manager.cacheExecutable(objectKeys, linkerFlags, noAdditionalSources, missingExecutable);
+    assert !manager.lookupExecutable(objectKeys, linkerFlags, noAdditionalSources, resolved);
+
+    // Round trip
+    const FilePath executablePath = outputDir / "my-program";
+    writeTestFile(executablePath, "executable-bytes");
+    manager.cacheExecutable(objectKeys, linkerFlags, noAdditionalSources, executablePath);
+    assert manager.lookupExecutable(objectKeys, linkerFlags, noAdditionalSources, resolved);
+    assert resolved.exists();
+    const FilePath resolvedParent = FilePath(resolved.getParentDir());
+    assert resolvedParent.equivalent(cacheDir);
+
+    // Misses when the object keys or the linker flags differ
+    assert !manager.lookupExecutable(makeKeys("obj-1", "obj-3"), linkerFlags, noAdditionalSources, resolved);
+    assert !manager.lookupExecutable(objectKeys, makeKeys("-lpthread"), noAdditionalSources, resolved);
+
+    // Misses when static linking or the output container differ
+    cliOptions.staticLinking = true;
+    assert !manager.lookupExecutable(objectKeys, linkerFlags, noAdditionalSources, resolved);
+    cliOptions.staticLinking = false;
+    cliOptions.outputContainer = OutputContainer::SHARED_LIBRARY;
+    assert !manager.lookupExecutable(objectKeys, linkerFlags, noAdditionalSources, resolved);
+    cliOptions.outputContainer = OutputContainer::EXECUTABLE;
+    assert manager.lookupExecutable(objectKeys, linkerFlags, noAdditionalSources, resolved);
+
+    removeTestDir(cacheDir);
+    removeTestDir(outputDir);
+    return true;
+}
+
+#[test]
+f<bool> testLookupExecutableMissesWhenAdditionalSourceContentChanges() {
+    CliOptions cliOptions;
+    const FilePath cacheDir = makeUniqueTestDir("spice-cache-test");
+    const FilePath outputDir = makeUniqueTestDir("spice-cache-test");
+    cliOptions.cacheDir = cacheDir;
+    cliOptions.outputDir = outputDir;
+    CacheManager manager = CacheManager(cliOptions);
+
+    // C/C++ files referenced via @core.linker.additionalSource must contribute to the executable cache key, otherwise editing
+    // them would silently keep serving the previously linked binary
+    const FilePath additionalSource = outputDir / "extra.c";
+    writeTestFile(additionalSource, "int compute() { return 1; }\n");
+    const FilePath executablePath = outputDir / "program";
+    writeTestFile(executablePath, "executable-bytes");
+    const Vector<String> objectKeys = makeKeys("obj-1");
+    const Vector<String> linkerFlags = makeKeys("-lm");
+    const Vector<String> additionalSources = makeKeys(additionalSource.toGenericString());
+
+    manager.cacheExecutable(objectKeys, linkerFlags, additionalSources, executablePath);
+    FilePath resolved;
+    assert manager.lookupExecutable(objectKeys, linkerFlags, additionalSources, resolved);
+
+    // Editing the additional source must invalidate the cached executable
+    writeTestFile(additionalSource, "int compute() { return 2; }\n");
+    assert !manager.lookupExecutable(objectKeys, linkerFlags, additionalSources, resolved);
+
+    removeTestDir(cacheDir);
+    removeTestDir(outputDir);
+    return true;
+}
+
+// Make the given cli options target the native target, so that source files can look up an LLVM target
+p setupNativeTarget(CliOptions& cliOptions) {
+    cliOptions.targetTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+    cliOptions.isNativeTarget = true;
+}
+
+// Look up the given source file in the cache. Reset the lookup output fields beforehand, since they accumulate on each call
+f<bool> lookupTestSourceFile(CacheManager& manager, SourceFile* sourceFile) {
+    sourceFile.cachedObjectFilePaths.clear();
+    sourceFile.sourceLinkerFlags.clear();
+    sourceFile.sourceAdditionalSourcePaths.clear();
+    return manager.lookupSourceFile(sourceFile);
+}
+
+// Walks through a 3-file dependency chain (main -> utils -> math) using the real cache-key folding behavior, caches every file,
+// then mutates math's source and verifies that the change cascades into utils and main: their cache keys move with the dep, so
+// all three miss and must be recompiled
+#[test]
+f<bool> testMultiFileDependencyChangeForcesRecompilation() {
+    CliOptions cliOptions;
+    const FilePath cacheDir = makeUniqueTestDir("spice-cache-test");
+    const FilePath outputDir = makeUniqueTestDir("spice-cache-test");
+    cliOptions.cacheDir = cacheDir;
+    cliOptions.outputDir = outputDir;
+    setupNativeTarget(cliOptions);
+
+    // Place stub source files on disk (their contents are irrelevant: cache keys are derived from the in-memory sources below
+    // and assigned to SourceFile.cacheKey directly)
+    const FilePath mathPath = outputDir / "math.spice";
+    const FilePath utilsPath = outputDir / "utils.spice";
+    const FilePath mainPath = outputDir / "main.spice";
+    writeTestFile(mathPath, "");
+    writeTestFile(utilsPath, "");
+    writeTestFile(mainPath, "");
+
+    {
+        // The GlobalResourceManager owns a CacheManager wired to the cli options
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        CacheManager& manager = resourceManager.cacheManager;
+
+        SourceFile* math = resourceManager.createSourceFile(nil<SourceFile*>, String("math"), mathPath, false);
+        SourceFile* utils = resourceManager.createSourceFile(nil<SourceFile*>, String("utils"), utilsPath, false);
+        SourceFile* mainFile = resourceManager.createSourceFile(nil<SourceFile*>, String("main"), mainPath, false);
+        math.isMainFile = false;
+        utils.isMainFile = false;
+        mainFile.isMainFile = true;
+
+        // Wire up the dependency chain: main -> utils -> math
+        utils.addDependency(math, String("math"));
+        mainFile.addDependency(utils, String("utils"));
+
+        // Assign cache keys as the import collector would: each file's key folds in its transitive dep cache keys, so changes
+        // to any dep propagate up the chain
+        const String mathSrcV1 = String("f<int> add(int a, int b) { return a + b; }");
+        const String utilsSrc = String("import \"math\"; f<int> helper(int x) { return add(x, 1); }");
+        const String mainSrc = String("import \"utils\"; f<int> main() { return helper(41); }");
+        math.cacheKey = manager.computeCacheKey(mathSrcV1, Vector<String>());
+        utils.cacheKey = manager.computeCacheKey(utilsSrc, makeKeys(math.cacheKey.getRaw()));
+        mainFile.cacheKey = manager.computeCacheKey(mainSrc, makeKeys(utils.cacheKey.getRaw(), math.cacheKey.getRaw()));
+
+        // Pretend the back end emitted object files into the output dir (cacheSourceFile picks them up there)
+        writeTestFile(outputDir / "math.o", "math-v1-obj");
+        writeTestFile(outputDir / "utils.o", "utils-obj");
+        writeTestFile(outputDir / "main.o", "main-obj");
+        manager.cacheSourceFile(math);
+        manager.cacheSourceFile(utils);
+        manager.cacheSourceFile(mainFile);
+
+        // Phase 1: nothing changed since caching - every file hits and pulls its transitive dep objects (kept so runtime
+        // modules pulled in implicitly at symbol-table-building time still make it into the link for cache-restored files)
+        assert lookupTestSourceFile(manager, math);
+        assert math.cachedObjectFilePaths.getSize() == 1l; // math.o
+        assert lookupTestSourceFile(manager, utils);
+        assert utils.cachedObjectFilePaths.getSize() == 2l; // math.o + utils.o
+        assert lookupTestSourceFile(manager, mainFile);
+        assert mainFile.cachedObjectFilePaths.getSize() == 3l; // utils.o, math.o, main.o
+
+        // Phase 2: math's source changes -> its cache key changes -> utils and main keys also change (because the fold pulls
+        // in the new math key transitively). All three miss and recompile
+        const String oldMathKey = math.cacheKey;
+        const String oldUtilsKey = utils.cacheKey;
+        const String oldMainKey = mainFile.cacheKey;
+        const String mathSrcV2 = String("f<int> add(int a, int b) { return a + b + 0; }");
+        math.cacheKey = manager.computeCacheKey(mathSrcV2, Vector<String>());
+        utils.cacheKey = manager.computeCacheKey(utilsSrc, makeKeys(math.cacheKey.getRaw()));
+        mainFile.cacheKey = manager.computeCacheKey(mainSrc, makeKeys(utils.cacheKey.getRaw(), math.cacheKey.getRaw()));
+        assert oldMathKey != math.cacheKey;
+        assert oldUtilsKey != utils.cacheKey;
+        assert oldMainKey != mainFile.cacheKey;
+        assert !lookupTestSourceFile(manager, math);
+        assert !lookupTestSourceFile(manager, utils);
+        assert !lookupTestSourceFile(manager, mainFile);
+    }
+
+    removeTestDir(cacheDir);
+    removeTestDir(outputDir);
+    return true;
+}
+
+// Outcome of compiling a program in a fresh GlobalResourceManager
+type CompileOutcome struct {
+    bool mainRestored
+    bool depRestored
+    bool depExposesSymbol
+    String depCacheKey
+}
+
+// Compile the given program in a fresh GlobalResourceManager, which stands in for a new compiler process. The back end emits
+// the object files, but nothing is linked
+f<CompileOutcome> compileTestProgram(CliOptions& cliOptions, const FilePath& programPath, const string depName, const string depSymbol) {
+    GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+    SourceFile* mainFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), programPath, false);
+    mainFile.runFrontEnd();
+    assert !resourceManager.abortCompilation;
+
+    // Symbols of a file that ends up cache-restored must be exposed regardless
+    SourceFile* depFile = mainFile.dependencies.get(String(depName));
+    const bool depExposesSymbol = depFile.getNameRegistryEntry(String(depSymbol)) != nil<const NameRegistryEntry*>;
+
+    mainFile.runMiddleEnd();
+    assert !resourceManager.abortCompilation;
+    assert resourceManager.errorManager.softErrors.isEmpty();
+
+    // Restorability depends on the generic manifestations, so it is decided in the back end
+    mainFile.runBackEnd();
+    assert !resourceManager.abortCompilation;
+    return CompileOutcome{mainFile.restoredFromCache, depFile.restoredFromCache, depExposesSymbol, depFile.cacheKey};
+}
+
+// Compile a two-file program once to populate the cache, then edit only the dependent file's source and recompile in a fresh
+// GlobalResourceManager. The unchanged dependency must hit the cache for its object file, but its exported symbols still have
+// to be resolvable by the dependent, since the dependent itself isn't a cache hit and needs to type-check against them
+#[test]
+f<bool> testCacheHitDependencyStillExposesSymbolsToChangedDependent() {
+    CliOptions cliOptions;
+    const FilePath cacheDir = makeUniqueTestDir("spice-cache-test");
+    const FilePath outputDir = makeUniqueTestDir("spice-cache-test");
+    cliOptions.cacheDir = cacheDir;
+    cliOptions.outputDir = outputDir;
+    setupNativeTarget(cliOptions);
+
+    // The dependency stays untouched across both compiler runs
+    const FilePath mainPath = outputDir / "main.spice";
+    writeTestFile(outputDir / "math.spice", "public f<int> add(int a, int b) {\n    return a + b;\n}\n");
+    writeTestFile(mainPath, "import \"math\";\n\nf<int> main() {\n    return add(1, 2);\n}\n");
+
+    // First run: compiles both files from scratch and populates the cache
+    const CompileOutcome first = compileTestProgram(cliOptions, mainPath, "math", "add");
+    assert first.depExposesSymbol;
+    assert !first.depRestored;
+
+    // Edit only main.spice. math.spice is unchanged, so it must still cache-hit on the next run
+    writeTestFile(mainPath, "import \"math\";\n\nf<int> main() {\n    return add(1, 2) + 1;\n}\n");
+    const CompileOutcome second = compileTestProgram(cliOptions, mainPath, "math", "add");
+    assert second.depExposesSymbol;
+    assert second.depRestored;
+    assert !second.mainRestored;
+
+    removeTestDir(cacheDir);
+    removeTestDir(outputDir);
+    return true;
+}
+
+// Issue #1393: an object cached for a program that did not need a generic instantiation must not be reused for one that does
+#[test]
+f<bool> testCachedModuleObjectIsNotReusedForImporterNeedingOtherInstantiations() {
+    CliOptions cliOptions;
+    const FilePath cacheDir = makeUniqueTestDir("spice-cache-test");
+    const FilePath outputDir = makeUniqueTestDir("spice-cache-test");
+    cliOptions.cacheDir = cacheDir;
+    cliOptions.outputDir = outputDir;
+    setupNativeTarget(cliOptions);
+
+    // A generic module and two programs importing it, of which only the second instantiates it
+    const FilePath programA = outputDir / "a.spice";
+    const FilePath programB = outputDir / "b.spice";
+    writeTestFile(outputDir / "lib.spice", "type T dyn;\n\npublic f<T> identity<T>(T value) {\n    return value;\n}\n");
+    writeTestFile(programA, "import \"lib\";\n\nf<int> main() {\n    return 0;\n}\n");
+    writeTestFile(programB, "import \"lib\";\n\nf<int> main() {\n    return identity(0);\n}\n");
+
+    // A needs no instantiation of 'identity'
+    const CompileOutcome firstA = compileTestProgram(cliOptions, programA, "lib", "identity");
+    assert !firstA.depRestored;
+
+    // B needs 'identity<int>', which the object cached for A lacks
+    const CompileOutcome firstB = compileTestProgram(cliOptions, programB, "lib", "identity");
+    assert !firstB.depRestored;
+    assert firstA.depCacheKey != firstB.depCacheKey;
+
+    // Both objects coexist in the cache, so neither program invalidates the other
+    const CompileOutcome secondA = compileTestProgram(cliOptions, programA, "lib", "identity");
+    assert secondA.depRestored;
+    assert firstA.depCacheKey == secondA.depCacheKey;
+    const CompileOutcome secondB = compileTestProgram(cliOptions, programB, "lib", "identity");
+    assert secondB.depRestored;
+    assert firstB.depCacheKey == secondB.depCacheKey;
+
+    removeTestDir(cacheDir);
+    removeTestDir(outputDir);
+    return true;
 }
