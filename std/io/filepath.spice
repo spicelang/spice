@@ -295,12 +295,24 @@ public inline f<bool> FilePath.exists() {
 }
 
 /**
- * Checks whether the path is absolute (starts with the UNIX path separator).
+ * Checks whether the path is absolute. This is the case if it starts with a path separator or with a Windows drive
+ * letter followed by a path separator (e.g. 'C:\' or 'C:/'). Both separators are accepted.
  *
  * @return True if the path is absolute
  */
-public inline f<bool> FilePath.hasRootPath() {
-    return this.path.startsWith("/");
+public f<bool> FilePath.hasRootPath() {
+    if this.path.isEmpty() {
+        return false;
+    }
+    const char firstChar = this.path[0l];
+    if firstChar == PATH_SEPARATOR_UNIX || firstChar == PATH_SEPARATOR_WINDOWS {
+        return true;
+    }
+    if this.path.getLength() < 3l || this.path[1l] != ':' {
+        return false;
+    }
+    const char thirdChar = this.path[2l];
+    return thirdChar == PATH_SEPARATOR_UNIX || thirdChar == PATH_SEPARATOR_WINDOWS;
 }
 
 /**
@@ -526,6 +538,14 @@ public f<bool> testFilePathPathSafetySmoke() {
     assert !relPath.isAbsolute();
     const FilePath emptyPath = FilePath("");
     assert !emptyPath.hasRootPath();
+    const FilePath windowsAbsPath1 = FilePath("C:\\Users\\file.txt");
+    assert windowsAbsPath1.hasRootPath();
+    const FilePath windowsAbsPath2 = FilePath("D:/a/file.txt");
+    assert windowsAbsPath2.hasRootPath();
+    const FilePath windowsRootRelPath = FilePath("\\file.txt");
+    assert windowsRootRelPath.hasRootPath();
+    const FilePath driveRelPath = FilePath("C:file.txt"); // relative to the current directory of drive C:
+    assert !driveRelPath.hasRootPath();
 
     // hasParentDirComponent - purely lexical, no filesystem access
     const FilePath escaping1 = FilePath("../etc/passwd");
