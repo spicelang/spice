@@ -146,9 +146,14 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
     SOFT_ERROR_BOOL(node->returnType, GENERIC_TYPE_NOT_IN_TEMPLATE,
                     "Generic return type not included in the template type list of the function")
 
+  // Check if the function is a valid default method, if it is defined as method of an interface
+  if (thisType.is(TY_INTERFACE))
+    checkDefaultMethod(node, thisType, paramList);
+
   // Leave function body scope
   currentScope = node->scope->parent;
-  assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
+  assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT ||
+         currentScope->type == ScopeType::INTERFACE);
 
   // Prepare type of function
   QualType functionType = QualType(TY_FUNCTION).getWithFunctionParamAndReturnTypes(returnType, paramTypes);
@@ -162,6 +167,7 @@ std::any TypeChecker::visitFctDefPrepare(FctDefNode *node) {
   // Build function object
   Function spiceFunc(node->name->name, functionEntry, thisType, returnType, paramList, usedGenericTypes, node);
   spiceFunc.bodyScope = node->scope;
+  spiceFunc.isInterfaceDefaultMethod = thisType.is(TY_INTERFACE);
   FunctionManager::insert(currentScope, spiceFunc, &node->manifestations);
 
   // Check function attributes
@@ -276,9 +282,14 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
     }
   }
 
+  // Check if the procedure is a valid default method, if it is defined as method of an interface
+  if (thisType.is(TY_INTERFACE))
+    checkDefaultMethod(node, thisType, paramList);
+
   // Leave procedure body scope
   currentScope = node->scope->parent;
-  assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT);
+  assert(currentScope->type == ScopeType::GLOBAL || currentScope->type == ScopeType::STRUCT ||
+         currentScope->type == ScopeType::INTERFACE);
 
   // Prepare type of procedure
   QualType procedureType = QualType(TY_PROCEDURE).getWithFunctionParamAndReturnTypes(QualType(TY_DYN), paramTypes);
@@ -292,6 +303,7 @@ std::any TypeChecker::visitProcDefPrepare(ProcDefNode *node) {
   // Build procedure object
   Function spiceProc(node->name->name, procedureEntry, thisType, QualType(TY_DYN), paramList, usedGenericTypes, node);
   spiceProc.bodyScope = node->scope;
+  spiceProc.isInterfaceDefaultMethod = thisType.is(TY_INTERFACE);
   FunctionManager::insert(currentScope, spiceProc, &node->manifestations);
 
   // Check procedure attributes
@@ -633,10 +645,11 @@ std::any TypeChecker::visitUnionDefPrepare(UnionDefNode *node) {
 
     // Union fields must be trivially constructible, copyable and destructible, since the union does not know which
     // field is currently active and therefore cannot run any non-trivial special member on its own.
-    if (!fieldType.isRef() &&
-        (!fieldType.isTriviallyConstructible(field) || !fieldType.isTriviallyCopyable(field) || !fieldType.isTriviallyDestructible(field)))
+    if (!fieldType.isRef() && (!fieldType.isTriviallyConstructible(field) || !fieldType.isTriviallyCopyable(field) ||
+                               !fieldType.isTriviallyDestructible(field)))
       softError(field, UNION_FIELD_TYPE_NOT_TRIVIAL,
-                "The type of the union field '" + field->fieldName + "' is not trivial. Only trivial types are allowed as union fields");
+                "The type of the union field '" + field->fieldName +
+                    "' is not trivial. Only trivial types are allowed as union fields");
 
     // At most one field may carry a default value
     if (field->defaultValue != nullptr) {

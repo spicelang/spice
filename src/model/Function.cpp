@@ -148,6 +148,9 @@ std::string Function::getScopeName() const { return getSignature(false, true, fa
  * @return Mangled name
  */
 std::string Function::getMangledName() const {
+  // A struct method, which is inherited from an interface default method, is implemented by the default method
+  if (defaultMethod != nullptr)
+    return defaultMethod->getMangledName();
   // Use predefined mangled name if available
   if (!predefinedMangledName.empty())
     return predefinedMangledName;

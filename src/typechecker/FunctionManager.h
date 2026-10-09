@@ -39,6 +39,9 @@ public:
   static Function *insert(Scope *insertScope, const Function &baseFunction, std::vector<Function *> *nodeFunctionList = nullptr);
   static void substantiateOptionalParams(const Function &baseFunction, std::vector<Function> &manifestations);
   [[nodiscard]] static Function createMainFunction(SymbolTableEntry *entry, const QualTypeList &paramTypes, ASTNode *declNode);
+  [[nodiscard]] static Function *lookupDefaultMethod(Scope *interfaceScope, const std::string &name,
+                                                     const QualTypeList &paramTypes, const QualType &returnType);
+  [[nodiscard]] static bool hasUserMethodWithName(const Scope *structScope, const std::string &name);
   [[nodiscard]] static const Function *lookup(Scope *matchScope, const std::string &reqName, const QualType &reqThisType,
                                               const ArgList &reqArgs, bool strictQualifierMatching);
   static Function *match(Scope *matchScope, const std::string &reqName, const QualType &reqThisType, const ArgList &reqArgs,

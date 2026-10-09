@@ -58,6 +58,7 @@ public:
   [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isMethodFunction() const { return isFunction() && isMethod(); }
   [[nodiscard]] [[maybe_unused]] ALWAYS_INLINE bool isMethodProcedure() const { return isProcedure() && isMethod(); }
   [[nodiscard]] ALWAYS_INLINE bool isVirtualMethod() const { return isMethod() && isVirtual; }
+  [[nodiscard]] ALWAYS_INLINE bool isInheritedDefaultMethod() const { return defaultMethod != nullptr; }
   [[nodiscard]] bool hasSubstantiatedParams() const;
   [[nodiscard]] bool hasSubstantiatedGenerics() const;
   [[nodiscard]] bool isFullySubstantiated() const;
@@ -78,6 +79,8 @@ public:
   std::string predefinedMangledName;
   std::string mangleSuffix;
   Function *genericPreset = nullptr;
+  // Interface default method, that implements this struct method, if the struct does not implement it itself
+  const Function *defaultMethod = nullptr;
   bool isVararg = false;
   bool mangleFunctionName = true;
   bool alreadyTypeChecked = false;
@@ -85,6 +88,7 @@ public:
   bool implicitDefault = false;
   bool isVirtual = false;
   bool isNewlyInserted = false;
+  bool isInterfaceDefaultMethod = false; // Default implementation of an interface method, defined as method of the interface
   size_t vtableIndex = 0;
 };
 

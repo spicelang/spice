@@ -122,6 +122,10 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
       structTy = fieldEntryType.getBase().toLLVMType(sourceFile);
     }
 
+    // Methods, that are inherited from an interface default method, expect a pointer to the interface part of the struct
+    if (spiceFunc != nullptr && spiceFunc->isInheritedDefaultMethod())
+      thisPtr = getUpcastedStructPtr(thisPtr, spiceFunc->defaultMethod->thisType, structType);
+
     // Add 'this' pointer to the front of the argument list
     argValues.push_back(thisPtr);
   }

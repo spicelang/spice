@@ -1,0 +1,30 @@
+type T int|long;
+
+type IValue interface {
+    f<double> getValue();
+    f<double> getDoubleValue();
+}
+
+f<double> IValue.getDoubleValue() {
+    return this.getValue() * 2.0;
+}
+
+type Box<T> struct : IValue {
+    T value
+}
+
+p Box.ctor(T value) {
+    this.value = value;
+}
+
+f<double> Box.getValue() {
+    return cast<double>(this.value);
+}
+
+f<int> main() {
+    Box<int> intBox = Box<int>(21);
+    Box<long> longBox = Box<long>(5l);
+    printf("%.2f\n", intBox.getDoubleValue());
+    IValue* value = &longBox;
+    printf("%.2f\n", value.getDoubleValue());
+}

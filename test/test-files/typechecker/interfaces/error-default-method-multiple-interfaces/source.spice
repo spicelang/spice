@@ -1,0 +1,18 @@
+type IGreeter interface {
+    p greet();
+}
+
+type IWelcomer interface {
+    p greet();
+}
+
+p IGreeter.greet() {
+    printf("Hello\n");
+}
+
+type Person struct : IGreeter, IWelcomer {}
+
+f<int> main() {
+    Person person;
+    person.greet();
+}

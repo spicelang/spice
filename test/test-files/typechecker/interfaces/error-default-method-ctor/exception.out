@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:5:1:
+Invalid default method: Interfaces cannot have constructors or destructors
+
+5  p IGreeter.ctor() {}
+   ^^^^^^^^^^^^^^^^^^^^

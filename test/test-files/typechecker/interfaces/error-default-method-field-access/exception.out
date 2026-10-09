@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:11:5:
+Member access is only allowed on structs and Strings: Cannot apply member access operator on ICounter*
+
+11  this.count++;
+    ^^^^^^^^^^

@@ -6,6 +6,7 @@
 #include <ast/ASTNodes.h>
 #include <ast/Attributes.h>
 #include <driver/Driver.h>
+#include <model/Interface.h>
 #include <symboltablebuilder/SymbolTableBuilder.h>
 #include <typechecker/FunctionManager.h>
 
@@ -142,17 +143,20 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   for (const Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
-    // Check if the manifestation is substantiated or not public and not used by anybody
-    bool isPublic = manifestation->entry->getQualType().isPublic();
+    // Check if the manifestation is substantiated or not public and not used by anybody. Default methods of public
+    // interfaces are public, because structs in other source files can inherit them
+    bool isPublic = manifestation->entry->getQualType().isPublic() || isPublicDefaultMethod(manifestation);
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
     }
 
-    // Change to struct scope
+    // Change to struct scope or to the interface scope for default methods
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string scopeName = Struct::getScopeName(thisType.getSubType(), thisType.getTemplateTypes());
+      const std::string scopeName = manifestation->isInterfaceDefaultMethod
+                                        ? Interface::getScopeName(thisType.getSubType())
+                                        : Struct::getScopeName(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(scopeName);
       assert(currentScope != nullptr);
     }
@@ -312,18 +316,21 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   for (const Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
-    // Check if the manifestation is substantiated or not public and not used by anybody
-    const bool isPublic = manifestation->entry->getQualType().isPublic();
+    // Check if the manifestation is substantiated or not public and not used by anybody. Default methods of public
+    // interfaces are public, because structs in other source files can inherit them
+    const bool isPublic = manifestation->entry->getQualType().isPublic() || isPublicDefaultMethod(manifestation);
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
     }
     assert(manifestation->alreadyTypeChecked);
 
-    // Change to struct scope
+    // Change to struct scope or to the interface scope for default methods
     if (manifestation->isMethod()) {
       const QualType &thisType = manifestation->thisType;
-      const std::string scopeName = Struct::getScopeName(thisType.getSubType(), thisType.getTemplateTypes());
+      const std::string scopeName = manifestation->isInterfaceDefaultMethod
+                                        ? Interface::getScopeName(thisType.getSubType())
+                                        : Struct::getScopeName(thisType.getSubType(), thisType.getTemplateTypes());
       currentScope = currentScope->getChildScope(scopeName);
       assert(currentScope != nullptr);
     }

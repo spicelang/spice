@@ -1,0 +1,9 @@
+type IGreeter interface {
+    p greet(int);
+}
+
+p IGreeter.greet(int _times = 1) {
+    printf("Hello\n");
+}
+
+f<int> main() {}

@@ -1,0 +1,10 @@
+public type IShape interface {
+    public f<double> area();
+    public f<string> getName();
+    public p print();
+}
+
+// Default method of a public interface
+public p IShape.print() {
+    printf("%s with area %.2f\n", this.getName(), this.area());
+}

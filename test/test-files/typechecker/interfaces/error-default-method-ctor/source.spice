@@ -1,0 +1,7 @@
+type IGreeter interface {
+    p greet();
+}
+
+p IGreeter.ctor() {}
+
+f<int> main() {}

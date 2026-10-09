@@ -1,0 +1,17 @@
+type ICounter interface {
+    p increment();
+}
+
+type Counter struct : ICounter {
+    int count
+}
+
+// Default methods can only use the methods of the interface
+p ICounter.increment() {
+    this.count++;
+}
+
+f<int> main() {
+    Counter counter;
+    counter.increment();
+}

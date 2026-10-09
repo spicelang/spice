@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:5:18:
+Invalid default method: Default methods cannot have optional parameters
+
+5  p IGreeter.greet(int _times = 1) {
+                    ^^^^^^^^^^^^^^

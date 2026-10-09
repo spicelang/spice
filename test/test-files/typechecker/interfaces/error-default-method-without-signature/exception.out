@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:6:1:
+Invalid default method: The default method 'p IGreeter.greet(int)' does not implement any method of the interface 'IGreeter'
+
+6  p IGreeter.greet(int _times) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
