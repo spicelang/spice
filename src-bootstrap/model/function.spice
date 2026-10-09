@@ -42,6 +42,8 @@ public type Function struct {
     public String predefinedMangledName
     public String mangleSuffix
     public Function* genericPreset = nil<Function*>
+    // Interface default method, that implements this struct method, if the struct does not implement it itself
+    public Function* defaultMethod = nil<Function*>
     public bool isVararg = false
     public bool mangleFunctionName = true
     public bool alreadyTypeChecked = false
@@ -49,6 +51,7 @@ public type Function struct {
     public bool implicitDefault = false
     public bool isVirtual = false
     public bool isNewlyInserted = false
+    public bool isInterfaceDefaultMethod = false // Default implementation of an interface method, defined as method of the interface
     public unsigned long vtableIndex = 0ul
 }
 
@@ -194,6 +197,10 @@ public f<String> Function.getMangledName() {
     // Note: members are returned via an explicit `String(...)` copy. The host compiler currently returns a
     // struct member returned by value as a shallow alias of the member buffer instead of invoking the copy
     // ctor, which leads to a double free once both the returned value and the owning struct are destructed.
+    // A struct method, which is inherited from an interface default method, is implemented by the default method
+    if this.defaultMethod != nil<Function*> {
+        return this.defaultMethod.getMangledName();
+    }
     // Use predefined mangled name if available
     if !this.predefinedMangledName.isEmpty() {
         return String(this.predefinedMangledName);
@@ -364,4 +371,8 @@ public f<bool> Function.isNormalFunction() {
  */
 public f<bool> Function.isVirtualMethod() {
     return this.isMethod() && this.isVirtual;
+}
+
+public f<bool> Function.isInheritedDefaultMethod() {
+    return this.defaultMethod != nil<Function*>;
 }

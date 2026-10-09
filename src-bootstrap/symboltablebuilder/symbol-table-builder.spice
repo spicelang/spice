@@ -141,12 +141,16 @@ f<Any> SymbolTableBuilder.visitFctOrProcDef(ASTFctDefBaseNode* node, bool isFunc
         return Any();
     }
 
-    // Change to struct scope if this function is a method
+    // Change to struct scope if this function is a method. Methods of interfaces are default methods
     Scope* structScope = nil<Scope*>;
     if node.isMethod {
         const QualTypeList noTemplateTypes;
         const String structScopeName = getStructScopeName(node.name.structName, noTemplateTypes);
         structScope = this.currentScope.getChildScope(structScopeName);
+        if structScope == nil<Scope*> {
+            const String interfaceScopeName = getInterfaceScopeName(node.name.structName, noTemplateTypes);
+            structScope = this.currentScope.getChildScope(interfaceScopeName);
+        }
         if structScope == nil<Scope*> {
             this.reportError(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_STRUCT, "Struct '" + node.name.structName + "' could not be found");
             return Any();
