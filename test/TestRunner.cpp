@@ -99,7 +99,12 @@ void checkExecution(const TestCase &testCase, const std::filesystem::path &execu
   cmd << executablePath.string();
   if (exists(cliFlagsFile))
     cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-  const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
+  // In ASAN mode, always capture stderr as well: a sanitizer report has to fail the test case, even if it only checks an exit
+  // code, that might match the one of the sanitizer
+  const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput || testDriverCliOptions.enableAsan);
+  if (testDriverCliOptions.enableAsan) {
+    EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
+  }
 
   // Check if the execution output matches the expected output
   const auto getActualOutput = [&] { return output; };
@@ -303,11 +308,11 @@ static void execTestCase(const TestCase &testCase) {
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();
 
-    // Coverage counters are woven in by the optimizer pipeline, which the IR-check loop below only runs for opt levels
-    // that have a reference file to compare against. Most test cases only check execution output and have no IR
-    // reference at all, so without this, their linked binary would never actually carry the GCOV counters. Force one
-    // optimizer run at the default opt level in that case.
-    if (cliOptions.instrumentation.codeCoverage) {
+    // Coverage counters and sanitizer checks are woven in by the optimizer pipeline, which the IR-check loop below only runs
+    // for opt levels that have a reference file to compare against. Most test cases only check execution output and have no
+    // IR reference at all, so without this, their linked binary would never actually carry the GCOV counters or sanitizer
+    // checks. Force one optimizer run at the default opt level in that case.
+    if (cliOptions.instrumentation.codeCoverage || cliOptions.instrumentation.sanitizer != Sanitizer::NONE) {
       const bool anyOptIrRefExists = std::ranges::any_of(
           REF_NAME_OPT_IR, [&](const char *const ref) { return TestUtil::doesRefExist(testCase.testPath / ref); });
       if (!anyOptIrRefExists)

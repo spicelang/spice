@@ -172,11 +172,11 @@ valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
   $SPICE build <file.spice>
 ```
 
-The runner invokes valgrind as
-`valgrind -q --leak-check=full --num-callers=100 --error-exitcode=1`, so any leak
-or invalid access fails the case. `--track-origins=yes` is worth the slowdown
-when chasing uninitialized reads. ASan (faster, catches some stack/global issues)
-and valgrind (no rebuild needed) overlap — reach for whichever is already set up.
+With `--asan`, the runner fails a case on any AddressSanitizer or LeakSanitizer
+report of the compiled program. For valgrind, `--track-origins=yes` is worth the
+slowdown when chasing uninitialized reads, which ASan does not detect. ASan
+(faster, catches stack/global issues) and valgrind (no rebuild needed) overlap —
+reach for whichever is already set up.
 
 ## 7. Choosing a tool
 
