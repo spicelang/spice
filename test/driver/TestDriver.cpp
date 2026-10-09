@@ -27,9 +27,12 @@ void TestDriver::addOptions() {
       app.add_flag<bool>("--update-refs", testDriverCliOptions.updateRefs, "Update test reference files");
   // --run-benchmarks
   app.add_flag<bool>("--run-benchmarks", testDriverCliOptions.runBenchmarks, "Also run benchmarks and check baseline values");
-  // --leak-detection
-  app.add_flag<bool>("--leak-detection", testDriverCliOptions.enableLeakDetection,
-                     "Use Valgrind on tests to detect memory leaks");
+  // --asan
+  CLI::Option *asanOpt =
+      app.add_flag<bool>("--asan", testDriverCliOptions.enableAsan,
+                         "Compile and run test programs with AddressSanitizer (incl. leak detection) enabled, skipping all "
+                         "reference output comparisons except for the execution output and exit code (the sanitizer "
+                         "instrumentation changes the generated code)");
   // --is-github-actions
   app.add_flag<bool>("--is-github-actions", testDriverCliOptions.isGitHubActions,
                      "Skip tests that are not supported to run on GitHub Actions");
@@ -46,6 +49,9 @@ void TestDriver::addOptions() {
   // Coverage mode never compares against (or writes) reference files, so combining it with --update-refs would silently
   // overwrite tracked fixtures with coverage-instrumented, no-longer-comparable output. Reject the combination outright.
   coverageOpt->excludes(updateRefsOpt);
+  // Same goes for the ASAN mode. It cannot be combined with the coverage mode either, since the coverage mode does not test
+  // the sanitizers
+  asanOpt->excludes(updateRefsOpt)->excludes(coverageOpt);
   // --bootstrap
   app.add_flag<bool>("--bootstrap", testDriverCliOptions.bootstrapMode,
                      "Build the bootstrap compiler with the host compiler first, then run the test cases against it");

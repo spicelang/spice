@@ -154,12 +154,14 @@ runtime: `ASAN_OPTIONS=detect_leaks=1:abort_on_error=1`,
 
 ## 6. Valgrind
 
-For memory errors and leaks in the host program. There are dedicated targets and
-a runner flag (there is **no** `--valgrind` flag — use these):
+For memory errors and leaks in the host program. There are dedicated targets
+(there is **no** `--valgrind` flag — use these). For memory errors and leaks in
+the compiled test programs, use the `--asan` runner flag instead, which builds
+them with `--sanitizer address`:
 
 ```bash
-# Runner flag: wrap each test in valgrind to detect leaks
-$SPICETEST --leak-detection --gtest_filter='*<Case>*'
+# Runner flag: build and run each test program with AddressSanitizer
+$SPICETEST --asan --gtest_filter='*<Case>*'
 
 # CMake convenience targets
 cmake --build cmake-build-debug --target spicetest_leakcheck   # tests under valgrind
@@ -202,7 +204,7 @@ bug, you MUST:
    missed branch usually has untested neighbors.
 3. **Verify the new test catches the regression**: confirm it fails on the
    pre-fix code (temporarily revert the fix if needed) and passes after, then run
-   the relevant suite under valgrind (`$SPICETEST --leak-detection
+   the relevant suite with AddressSanitizer (`$SPICETEST --asan
    --gtest_filter='...'`) so the new case is also checked for memory issues. If
    the bug was a runtime fault in generated code, also re-run the repro under the
    matching `--sanitizer`.
