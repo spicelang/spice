@@ -503,9 +503,12 @@ public p ASTNode.resizeToNumberOfManifestations(unsigned long manifestationCount
     // Reserve this node
     if this.isExprNode {
         ASTExprNode* exprNode = asExprNode(this);
-        // Reserve exactly the required capacity. Most nodes have a single manifestation, but a vector grows to the initial
-        // capacity of several items on its first insertion. The same applies to the vectors in customItemsInitialization
-        exprNode.symbolTypes.reserve(manifestationCount);
+        // Reserve exactly the required capacity on the first fill. Most nodes have a single manifestation, but a vector grows to
+        // the initial capacity of several items on its first insertion. Later fills (revisits, that add manifestations) keep the
+        // geometric growth of the vector, to not reallocate on every revisit. The same applies to customItemsInitialization
+        if exprNode.symbolTypes.isEmpty() {
+            exprNode.symbolTypes.reserve(manifestationCount);
+        }
         while exprNode.symbolTypes.getSize() < manifestationCount {
             exprNode.symbolTypes.pushBack(QualType(SuperType::TY_INVALID));
         }
@@ -2793,7 +2796,9 @@ f<bool> hasOpFctPointers(ASTNodeKind kind) {
 p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
     if node.kind == ASTNodeKind::ASSIGN_EXPR {
         ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(node);
-        assignExprNode.lhsDtorFct.reserve(manifestationCount);
+        if assignExprNode.lhsDtorFct.isEmpty() {
+            assignExprNode.lhsDtorFct.reserve(manifestationCount);
+        }
         while assignExprNode.lhsDtorFct.getSize() < manifestationCount {
             assignExprNode.lhsDtorFct.pushBack(nil<const Function*>);
         }
@@ -2801,7 +2806,9 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
     if hasOpFctPointers(node.kind) {
         // Each manifestation starts with one empty operator function slot (host: opFct.resize(manifestationCount, {nullptr}))
         Vector<Vector<const Function*>>* opFct = node.getOpFctPointers();
-        opFct.reserve(manifestationCount);
+        if opFct.isEmpty() {
+            opFct.reserve(manifestationCount);
+        }
         while opFct.getSize() < manifestationCount {
             Vector<const Function*> opFctsOfManifestation;
             opFctsOfManifestation.pushBack(nil<const Function*>);
@@ -2810,25 +2817,33 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
     }
     if node.kind == ASTNodeKind::DECL_STMT {
         ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
-        declStmtNode.entries.reserve(manifestationCount);
+        if declStmtNode.entries.isEmpty() {
+            declStmtNode.entries.reserve(manifestationCount);
+        }
         while declStmtNode.entries.getSize() < manifestationCount {
             declStmtNode.entries.pushBack(nil<SymbolTableEntry*>);
         }
     }
     if node.kind == ASTNodeKind::FCT_CALL {
         ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(node);
-        fctCallNode.data.reserve(manifestationCount);
+        if fctCallNode.data.isEmpty() {
+            fctCallNode.data.reserve(manifestationCount);
+        }
         while fctCallNode.data.getSize() < manifestationCount {
             fctCallNode.data.pushBack(FctCallData());
         }
     }
     if node.kind == ASTNodeKind::STRUCT_INSTANTIATION {
         ASTStructInstantiationNode* structInstantiationNode = downcast<ASTStructInstantiationNode>(node);
-        structInstantiationNode.instantiatedStructs.reserve(manifestationCount);
+        if structInstantiationNode.instantiatedStructs.isEmpty() {
+            structInstantiationNode.instantiatedStructs.reserve(manifestationCount);
+        }
         while structInstantiationNode.instantiatedStructs.getSize() < manifestationCount {
             structInstantiationNode.instantiatedStructs.pushBack(nil<Struct*>);
         }
-        structInstantiationNode.fieldCopyCtors.reserve(manifestationCount);
+        if structInstantiationNode.fieldCopyCtors.isEmpty() {
+            structInstantiationNode.fieldCopyCtors.reserve(manifestationCount);
+        }
         while structInstantiationNode.fieldCopyCtors.getSize() < manifestationCount {
             structInstantiationNode.fieldCopyCtors.pushBack(Vector<Function*>());
         }
@@ -2838,7 +2853,9 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         ASTLambdaBaseNode* lambdaBaseNode = asLambdaBaseNode(node);
         const ParamList noParams;
         const Vector<GenericType> noTemplateTypes;
-        lambdaBaseNode.manifestations.reserve(manifestationCount);
+        if lambdaBaseNode.manifestations.isEmpty() {
+            lambdaBaseNode.manifestations.reserve(manifestationCount);
+        }
         while lambdaBaseNode.manifestations.getSize() < manifestationCount {
             // Placeholder for the host's default constructed Function. The type checker replaces it
             lambdaBaseNode.manifestations.pushBack(Function(String(""), nil<SymbolTableEntry*>, QualType(SuperType::TY_INVALID), QualType(SuperType::TY_INVALID), noParams, noTemplateTypes, node));
@@ -2846,46 +2863,60 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
     }
     if node.kind == ASTNodeKind::STMT_LST {
         ASTStmtLstNode* stmtLstNode = downcast<ASTStmtLstNode>(node);
-        stmtLstNode.resourcesToCleanup.reserve(manifestationCount);
+        if stmtLstNode.resourcesToCleanup.isEmpty() {
+            stmtLstNode.resourcesToCleanup.reserve(manifestationCount);
+        }
         while stmtLstNode.resourcesToCleanup.getSize() < manifestationCount {
             stmtLstNode.resourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
         }
     }
     if node.kind == ASTNodeKind::FOR_LOOP {
         ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(node);
-        forLoopNode.headResourcesToCleanup.reserve(manifestationCount);
+        if forLoopNode.headResourcesToCleanup.isEmpty() {
+            forLoopNode.headResourcesToCleanup.reserve(manifestationCount);
+        }
         while forLoopNode.headResourcesToCleanup.getSize() < manifestationCount {
             forLoopNode.headResourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
         }
     }
     if node.kind == ASTNodeKind::FOREACH_LOOP {
         ASTForeachLoopNode* foreachLoopNode = downcast<ASTForeachLoopNode>(node);
-        foreachLoopNode.headResourcesToCleanup.reserve(manifestationCount);
+        if foreachLoopNode.headResourcesToCleanup.isEmpty() {
+            foreachLoopNode.headResourcesToCleanup.reserve(manifestationCount);
+        }
         while foreachLoopNode.headResourcesToCleanup.getSize() < manifestationCount {
             foreachLoopNode.headResourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
         }
     }
     if node.kind == ASTNodeKind::RETURN_STMT {
         ASTReturnStmtNode* returnStmtNode = downcast<ASTReturnStmtNode>(node);
-        returnStmtNode.returnedLocals.reserve(manifestationCount);
+        if returnStmtNode.returnedLocals.isEmpty() {
+            returnStmtNode.returnedLocals.reserve(manifestationCount);
+        }
         while returnStmtNode.returnedLocals.getSize() < manifestationCount {
             returnStmtNode.returnedLocals.pushBack(nil<SymbolTableEntry*>);
         }
     }
     if node.kind == ASTNodeKind::ATOMIC_EXPR {
         ASTAtomicExprNode* atomicExprNode = downcast<ASTAtomicExprNode>(node);
-        atomicExprNode.data.reserve(manifestationCount);
+        if atomicExprNode.data.isEmpty() {
+            atomicExprNode.data.reserve(manifestationCount);
+        }
         while atomicExprNode.data.getSize() < manifestationCount {
             atomicExprNode.data.pushBack(VarAccessData{});
         }
     }
     if node.kind == ASTNodeKind::IF_STMT {
         ASTIfStmtNode* ifStmtNode = downcast<ASTIfStmtNode>(node);
-        ifStmtNode.compileThenBranch.reserve(manifestationCount);
+        if ifStmtNode.compileThenBranch.isEmpty() {
+            ifStmtNode.compileThenBranch.reserve(manifestationCount);
+        }
         while ifStmtNode.compileThenBranch.getSize() < manifestationCount {
             ifStmtNode.compileThenBranch.pushBack(true);
         }
-        ifStmtNode.compileElseBranch.reserve(manifestationCount);
+        if ifStmtNode.compileElseBranch.isEmpty() {
+            ifStmtNode.compileElseBranch.reserve(manifestationCount);
+        }
         while ifStmtNode.compileElseBranch.getSize() < manifestationCount {
             ifStmtNode.compileElseBranch.pushBack(true);
         }
