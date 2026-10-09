@@ -190,7 +190,9 @@ jobs:
 
       - name: Run Test target against the bootstrap compiler with ASAN
         # Runs all test cases against the ASAN-instrumented bootstrap compiler. A test case fails, as soon as the bootstrap
-        # compiler prints a sanitizer report while compiling it (see BootstrapUtil::containsSanitizerReport)
+        # compiler prints a sanitizer report while compiling it (see BootstrapUtil::containsSanitizerReport). Leak
+        # detection is disabled for the bootstrap compiler for now, since it still leaks (see
+        # BootstrapUtil::execBootstrapCompiler)
         working-directory: build/test
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
