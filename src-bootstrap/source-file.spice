@@ -229,6 +229,14 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     this.targetMachine.setAsmVerbosity(true);
 }
 
+public p SourceFile.dtor() {
+    // Freeing a heap field does not destruct the object it points to. Delete the global scope explicitly, so that the whole
+    // scope tree (the child scopes, symbol tables, registries, ...) is released as well
+    if this.globalScope != nil<Scope*> {
+        sDelete(this.globalScope);
+    }
+}
+
 public p SourceFile.runParser() {
     // Check if this stage has already been done
     if this.previousStage >= CompileStageType::LEXER_AND_PARSER {

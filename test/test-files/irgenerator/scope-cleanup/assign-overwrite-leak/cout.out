@@ -1,0 +1,5 @@
+second value, that is long enough to be heap-allocated
+copied value, that is long enough to be heap-allocated
+second value, that is long enough to be heap-allocated
+value, that is set in the ctor and long enough to be heap-allocated
+value in raw memory, that is long enough to be heap-allocated

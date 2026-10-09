@@ -206,6 +206,7 @@ private:
   std::vector<const Function *> &getOpFctPointers(ASTNode *node) const;
   [[nodiscard]] bool isDestructibleTempStealTarget(AssignExprNode *node, const QualType &rhsType, bool isRhsTemporary) const;
   [[nodiscard]] bool isAlwaysConstructedLvalue(const ExprNode *node) const;
+  [[nodiscard]] static bool isDirectFieldOfThis(const ExprNode *node);
   [[nodiscard]] bool isReturnValueOptimizable(const ExprResult &returnValue) const;
   static void requestRevisitIfRequired(const Function *fct);
   void checkDefaultMethod(const FctDefBaseNode *node, const QualType &interfaceType, const ParamList &paramList) const;

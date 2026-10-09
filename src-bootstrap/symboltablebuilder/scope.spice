@@ -82,6 +82,7 @@ public type Scope struct {
     public ScopeType scopeType
     public bool isGenericScope = false
     public bool isAsyncScope = false
+    public bool isCtorScope = false
     public bool isDtorScope = false
     // Only for expression scopes: dtor calls for the temporaries of the expression, in the order they are to be generated
     public Vector<Pair<SymbolTableEntry*, Function*>> temporaryDtorsToCall
@@ -438,6 +439,22 @@ public f<Scope*> Scope.getFunctionScope() {
 }
 
 /**
+ * Check if this scope is the body scope of a ctor or one of its nested scopes (e.g. the body of an if statement in a ctor)
+ *
+ * @return In ctor body or not
+ */
+public f<bool> Scope.isInCtorBody() {
+    Scope* scope = this;
+    while scope != nil<Scope*> {
+        if scope.scopeType == ScopeType::FUNC_PROC_BODY || scope.scopeType == ScopeType::LAMBDA_BODY {
+            return scope.isCtorScope;
+        }
+        scope = scope.parent;
+    }
+    return false;
+}
+
+/**
  * Check if this scope is the root scope of its source file
  *
  * @return Root scope or not
@@ -595,6 +612,7 @@ public p Scope.deepCopyScope(Scope* newScope) {
     newScope.symbolTable.copyContentsFrom(this.symbolTable);
     newScope.isGenericScope = this.isGenericScope;
     newScope.isAsyncScope = this.isAsyncScope;
+    newScope.isCtorScope = this.isCtorScope;
     newScope.isDtorScope = this.isDtorScope;
     newScope.functions = this.functions;
     newScope.structs = this.structs;

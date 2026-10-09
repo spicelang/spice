@@ -308,14 +308,15 @@ public f<ExternalBinaryFinderResult> findArchiver() {
  * @return Std directory, or an empty path if the std was not found
  */
 public f<FilePath> findStdDir() {
+    // Check the candidates in locals: assigning the result variable twice would not destruct its first value
     if isUnixBased() {
-        result = FilePath("/usr/lib/spice/std/");
-        if result.exists() { return; }
+        const FilePath installedStdPath = FilePath("/usr/lib/spice/std/");
+        if installedStdPath.exists() { return installedStdPath; }
     }
     Result<string> value = getEnv("SPICE_STD_DIR");
     if value.isOk() {
-        result = FilePath(value.unwrap());
-        if result.exists() { return; }
+        const FilePath envStdPath = FilePath(value.unwrap());
+        if envStdPath.exists() { return envStdPath; }
     }
     return FilePath();
 }

@@ -109,6 +109,7 @@ public:
   void collectManifestationFingerprint(std::stringstream &fingerprint) const;
   [[nodiscard]] unsigned int getLoopNestingDepth() const;
   [[nodiscard]] Scope *getFunctionScope();
+  [[nodiscard]] bool isInCtorBody() const;
   [[nodiscard]] bool isInCaseBranch() const;
   [[nodiscard]] bool isInAsyncScope() const;
   [[nodiscard]] bool doesAllowUnsafeOperations() const;
@@ -137,6 +138,7 @@ public:
   const ScopeType type;
   bool isGenericScope = false;
   bool isAsyncScope = false;
+  bool isCtorScope = false;
   bool isDtorScope = false;
   // Only for expression scopes: dtor calls for the temporaries of the expression, in the order they are to be generated
   std::vector<std::pair<SymbolTableEntry *, Function *>> temporaryDtorsToCall;

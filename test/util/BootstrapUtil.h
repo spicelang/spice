@@ -8,8 +8,6 @@
 #include <string>
 #include <vector>
 
-#include <util/SystemUtil.h>
-
 namespace spice::testing {
 
 const char *const PATH_BOOTSTRAP_COMPILER_ARTIFACTS = "./test-tmp/bootstrap-compiler";
@@ -23,7 +21,6 @@ class BootstrapUtil {
 public:
   // Public static methods
   static bool buildBootstrapCompiler();
-  static compiler::ExecResult execBootstrapCompiler(const std::vector<std::string> &args);
   static std::optional<std::string> extractErrorMessage(const std::string &output);
   static bool containsSanitizerReport(const std::string &output);
   static std::optional<std::string> extractSerializedGraph(const std::string &output, const char *graphName);
