@@ -763,7 +763,8 @@ TEST(BootstrapTests, BuiltinTests) {
   if (!testDriverCliOptions.bootstrapMode)
     GTEST_SKIP() << "The builtin tests of the bootstrap compiler run in bootstrap mode only";
   const std::optional<std::filesystem::path> executablePath = BootstrapUtil::buildBootstrapBuiltinTests();
-  ASSERT_TRUE(executablePath.has_value()) << "Could not build the builtin tests of the bootstrap compiler";
+  if (!executablePath.has_value())
+    FAIL() << "Could not build the builtin tests of the bootstrap compiler";
   const auto [output, exitCode] = SystemUtil::exec(executablePath->string(), {}, true);
   if (testDriverCliOptions.isVerbose)                 // GCOV_EXCL_LINE
     std::cout << "Builtin tests output:\n" << output; // GCOV_EXCL_LINE

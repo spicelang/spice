@@ -29,6 +29,8 @@ using namespace spice::compiler;
 
 extern TestDriverCliOptions testDriverCliOptions;
 
+namespace {
+
 /**
  * Build the sources of the bootstrap compiler with the host compiler, like 'spice build src-bootstrap/main.spice' would do
  *
@@ -36,7 +38,7 @@ extern TestDriverCliOptions testDriverCliOptions;
  * @param buildBuiltinTests Build the builtin tests (#[test] functions) instead of the bootstrap compiler
  * @return Successful or not
  */
-static bool buildBootstrapSources(const std::filesystem::path &executablePath, bool buildBuiltinTests) {
+bool buildBootstrapSources(const std::filesystem::path &executablePath, bool buildBuiltinTests) {
   // Check the required environment variables
   for (const char *envVar : {"SPICE_STD_DIR", "SPICE_BOOTSTRAP_DIR", "LLVM_LIB_DIR"}) {
     if (std::getenv(envVar) == nullptr) {
@@ -47,7 +49,7 @@ static bool buildBootstrapSources(const std::filesystem::path &executablePath, b
   const std::filesystem::path mainSourceFilePath = std::filesystem::path(std::getenv("SPICE_BOOTSTRAP_DIR")) / "main.spice";
 
   const char *const what = buildBuiltinTests ? "builtin tests of the bootstrap compiler" : "bootstrap compiler";
-  std::cout << "Building the " << what << " from " << mainSourceFilePath.string() << " ..." << std::endl;
+  std::cout << "Building the " << what << " from " << mainSourceFilePath.string() << " ...\n";
   try {
     const std::string outputPath = executablePath.string();
     const std::string mainSourceFile = mainSourceFilePath.string();
@@ -118,7 +120,7 @@ static bool buildBootstrapSources(const std::filesystem::path &executablePath, b
  * @param executableName Name of the executable (without file extension)
  * @return Path of the executable
  */
-static std::filesystem::path prepareBootstrapOutputDir(const char *outputDir, const std::string &executableName) {
+std::filesystem::path prepareBootstrapOutputDir(const char *outputDir, const std::string &executableName) {
   const std::filesystem::path outputDirPath = std::filesystem::absolute(outputDir);
   std::error_code ec;
   std::filesystem::remove_all(outputDirPath, ec);
@@ -131,6 +133,8 @@ static std::filesystem::path prepareBootstrapOutputDir(const char *outputDir, co
   executablePath.make_preferred();
   return executablePath;
 }
+
+} // namespace
 
 /**
  * Build the bootstrap compiler with the host compiler, like 'spice build src-bootstrap/main.spice' would do.
@@ -155,7 +159,7 @@ bool BootstrapUtil::buildBootstrapCompiler() {
  * @return Path of the built executable, if successful
  */
 std::optional<std::filesystem::path> BootstrapUtil::buildBootstrapBuiltinTests() {
-  const std::filesystem::path executablePath = prepareBootstrapOutputDir(PATH_BOOTSTRAP_TESTS_ARTIFACTS, "spice-tests");
+  std::filesystem::path executablePath = prepareBootstrapOutputDir(PATH_BOOTSTRAP_TESTS_ARTIFACTS, "spice-tests");
   if (!buildBootstrapSources(executablePath, true))
     return std::nullopt;
   return executablePath;
