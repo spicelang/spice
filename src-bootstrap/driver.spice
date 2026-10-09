@@ -998,19 +998,22 @@ f<bool> testTestLintInstallSubcommands() {
     const String installedPath = String(install.cliOptions.outputPath.toGenericString());
     assert installedPath.startsWith(binDir.toGenericString());
 
-    // Uninstall: only the source file is required and nothing gets compiled. The source file has to exist for uninstall
-    const Result<bool> writeResult = writeFile("main-file.spice", "");
+    // Uninstall: only the source file is required and nothing gets compiled. The source file has to exist for uninstall.
+    // Create it in the temp dir, so that no file in the working directory gets overwritten or deleted
+    const FilePath uninstallSourceFilePath = FilePath(getTempDir()) / FilePath("spice-driver-uninstall-test.spice");
+    const String uninstallSourceFile = String(uninstallSourceFilePath.toString());
+    const Result<bool> writeResult = writeFile(uninstallSourceFile.getRaw(), "");
     assert writeResult.isOk();
     Driver uninstall;
-    string[3] uninstallArgs = ["spice", "uninstall", "main-file.spice"];
+    string[3] uninstallArgs = ["spice", "uninstall", uninstallSourceFile.getRaw()];
     const bool uninstallParsed = parseAndEnrich(uninstall, 3, uninstallArgs);
-    assert deleteFile("main-file.spice");
+    assert deleteFile(uninstallSourceFile.getRaw());
     assert uninstallParsed;
     assert !uninstall.shouldCompile;
     assert !uninstall.shouldInstall;
     assert uninstall.shouldUninstall;
     assert !uninstall.shouldExecute;
-    assert uninstall.cliOptions.mainSourceFile.toGenericString() == "main-file.spice";
+    assert String(uninstall.cliOptions.mainSourceFile.toGenericString()) == uninstallSourceFilePath.toGenericString();
     return true;
 }
 
