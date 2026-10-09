@@ -33,9 +33,6 @@ void MetadataGenerator::generateTypeMetadata(llvm::Instruction *inst, const Qual
 void MetadataGenerator::generateTBAAMetadata(llvm::Instruction *inst, const QualType &type) {
   const std::string typeName = type.getName(true, true);
   llvm::MDNode *tbaaTypeNode = mdBuilder.createTBAAScalarTypeNode(typeName, omnipotentByte);
-  // Old-format struct-path TBAA access tag: {base type, access type, offset}. The new format (createTBAATypeNode +
-  // createTBAAAccessTag with size and immutability flag) is not used, because the LLVM type sanitizer only understands
-  // old-format type nodes, whose first operand is the type name. Both formats must not be mixed.
   llvm::ConstantAsMetadata *offset = llvm::ConstantAsMetadata::get(irGenerator->builder.getInt64(0));
   llvm::MDNode *tbaaAccessTag = llvm::MDNode::get(irGenerator->context, {tbaaTypeNode, tbaaTypeNode, offset});
 

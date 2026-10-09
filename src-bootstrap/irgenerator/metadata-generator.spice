@@ -61,9 +61,6 @@ public p MetadataGenerator.generateTypeMetadata(llvm::Value inst, const QualType
 public p MetadataGenerator.generateTBAAMetadata(llvm::Value inst, const QualType& qualType) {
     const String typeName = qualType.getName(true, true);
     const llvm::Metadata tbaaTypeNode = this.createTBAAScalarTypeNode(typeName, this.omnipotentByte);
-    // Old-format struct-path TBAA access tag: {base type, access type, offset}. The new format (createTBAATypeNode +
-    // createTBAAAccessTag with size and immutability flag) is not used, because the LLVM type sanitizer only understands
-    // old-format type nodes, whose first operand is the type name. Both formats must not be mixed.
     llvm::IRBuilder* builder = this.irGenerator.builder;
     Vector<llvm::Metadata> operands;
     operands.pushBack(tbaaTypeNode);
