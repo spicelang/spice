@@ -182,7 +182,9 @@ std::optional<std::filesystem::path> BootstrapUtil::buildBootstrapBuiltinTests()
  */
 std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string &output, int exitCode) {
   static constexpr const char *ERROR_HEADER = "[Error|";
-  if (exitCode == 0 || output.contains("Program panicked at "))
+  static constexpr const char *PANIC_HEADER = "Program panicked at ";
+  // Only check for the header at the beginning of a line. The code snippet of a diagnostic may contain the text as well
+  if (exitCode == 0 || output.starts_with(PANIC_HEADER) || output.contains("\n" + std::string(PANIC_HEADER)))
     return std::nullopt;
 
   // The message begins at the first error header at the beginning of a line. Nested errors (e.g. the soft errors of an

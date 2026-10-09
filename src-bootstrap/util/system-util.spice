@@ -155,7 +155,7 @@ public f<Vector<String>> expandLinkerFlag(const String& flag) {
         if cmdResult.exitCode != 0 {                                                                // LCOV_EXCL_LINE
             const String message = "Command substitution for linker flag failed: " + innerCommand;  // LCOV_EXCL_LINE
             const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, message.getRaw()); // LCOV_EXCL_LINE
-            panic(Error(error.errorMessage.getRaw()));                                              // LCOV_EXCL_LINE
+            abortWithError(error.errorMessage);                                                     // LCOV_EXCL_LINE
         }                                                                                           // LCOV_EXCL_LINE
         expanded = cmdResult.output;
     }
