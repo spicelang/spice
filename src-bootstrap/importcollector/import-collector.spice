@@ -29,23 +29,6 @@ public p ImportCollector.ctor(GlobalResourceManager& resourceManager, SourceFile
     this.compilerPass = CompilerPass(resourceManager, sourceFile);
 }
 
-// ─── entry point ──────────────────────────────────────────────────────────────
-
-// Generic double-dispatch entry point required by IAbstractAstVisitor. source-file.spice calls the concrete
-// visit(ASTEntryNode*) overload below.
-#[ignoreUnusedReturnValue]
-public f<Any> ImportCollector.visit(IVisitable* node) {
-    return node.accept(cast<IAbstractAstVisitor*>(this));
-}
-
-// The real entry point, called from SourceFile.runImportCollector() as importCollector.visit(this.ast).
-#[ignoreUnusedReturnValue]
-public f<Any> ImportCollector.visit(ASTEntryNode* node) {
-    return this.visitEntry(node);
-}
-
-// ─── real logic ───────────────────────────────────────────────────────────────
-
 public f<Any> ImportCollector.visitEntry(ASTEntryNode* node) {
     // Visit all module attributes
     foreach IVisitable* attr : node.modAttrs {
@@ -214,81 +197,3 @@ public f<Any> ImportCollector.visitModAttr(ASTModAttrNode* node) {
 
     return Any();
 }
-
-// ─── stubs for the rest of IAbstractAstVisitor (not used by this pass) ────────
-
-public f<Any> ImportCollector.visitMainFctDef(ASTMainFctDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitFctDef(ASTFctDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitProcDef(ASTProcDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitFctName(ASTFctNameNode* _) { return Any(); }
-public f<Any> ImportCollector.visitStructDef(ASTStructDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitInterfaceDef(ASTInterfaceDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitUnionDef(ASTUnionDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitEnumDef(ASTEnumDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitGenericTypeDef(ASTGenericTypeDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAliasDef(ASTAliasDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitGlobalVarDef(ASTGlobalVarDefNode* _) { return Any(); }
-public f<Any> ImportCollector.visitExtDecl(ASTExtDeclNode* _) { return Any(); }
-public f<Any> ImportCollector.visitUnsafeBlock(ASTUnsafeBlockNode* _) { return Any(); }
-public f<Any> ImportCollector.visitForLoop(ASTForLoopNode* _) { return Any(); }
-public f<Any> ImportCollector.visitForeachLoop(ASTForeachLoopNode* _) { return Any(); }
-public f<Any> ImportCollector.visitWhileLoop(ASTWhileLoopNode* _) { return Any(); }
-public f<Any> ImportCollector.visitDoWhileLoop(ASTDoWhileLoopNode* _) { return Any(); }
-public f<Any> ImportCollector.visitIfStmt(ASTIfStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitElseStmt(ASTElseStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitSwitchStmt(ASTSwitchStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitCaseBranch(ASTCaseBranchNode* _) { return Any(); }
-public f<Any> ImportCollector.visitDefaultBranch(ASTDefaultBranchNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitStmtLst(ASTStmtLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitTypeLst(ASTTypeLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* _) { return Any(); }
-public f<Any> ImportCollector.visitTypeAltsLst(ASTTypeAltsLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitParamLst(ASTParamLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitArgLst(ASTArgLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitEnumItemLst(ASTEnumItemLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitEnumItem(ASTEnumItemNode* _) { return Any(); }
-public f<Any> ImportCollector.visitField(ASTFieldNode* _) { return Any(); }
-public f<Any> ImportCollector.visitSignature(ASTSignatureNode* _) { return Any(); }
-public f<Any> ImportCollector.visitDeclStmt(ASTDeclStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitExprStmt(ASTExprStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitQualifierLst(ASTQualifierLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitQualifier(ASTQualifierNode* _) { return Any(); }
-public f<Any> ImportCollector.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* _) { return Any(); }
-public f<Any> ImportCollector.visitLambdaAttr(ASTLambdaAttrNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAttrLst(ASTAttrLstNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAttr(ASTAttrNode* _) { return Any(); }
-public f<Any> ImportCollector.visitCaseConstant(ASTCaseConstantNode* _) { return Any(); }
-public f<Any> ImportCollector.visitReturnStmt(ASTReturnStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitBreakStmt(ASTBreakStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitContinueStmt(ASTContinueStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitFallthroughStmt(ASTFallthroughStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAssertStmt(ASTAssertStmtNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAssignExpr(ASTAssignExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitTernaryExpr(ASTTernaryExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitLogicalOrExpr(ASTLogicalOrExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitLogicalAndExpr(ASTLogicalAndExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitBitwiseOrExpr(ASTBitwiseOrExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitBitwiseXorExpr(ASTBitwiseXorExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitBitwiseAndExpr(ASTBitwiseAndExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitEqualityExpr(ASTEqualityExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitRelationalExpr(ASTRelationalExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitShiftExpr(ASTShiftExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAdditiveExpr(ASTAdditiveExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitMultiplicativeExpr(ASTMultiplicativeExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitCastExpr(ASTCastExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitAtomicExpr(ASTAtomicExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitValue(ASTValueNode* _) { return Any(); }
-public f<Any> ImportCollector.visitConstant(ASTConstantNode* _) { return Any(); }
-public f<Any> ImportCollector.visitFctCall(ASTFctCallNode* _) { return Any(); }
-public f<Any> ImportCollector.visitArrayInitialization(ASTArrayInitializationNode* _) { return Any(); }
-public f<Any> ImportCollector.visitStructInstantiation(ASTStructInstantiationNode* _) { return Any(); }
-public f<Any> ImportCollector.visitLambdaFunc(ASTLambdaFuncNode* _) { return Any(); }
-public f<Any> ImportCollector.visitLambdaProc(ASTLambdaProcNode* _) { return Any(); }
-public f<Any> ImportCollector.visitLambdaExpr(ASTLambdaExprNode* _) { return Any(); }
-public f<Any> ImportCollector.visitDataType(ASTDataTypeNode* _) { return Any(); }
-public f<Any> ImportCollector.visitBaseDataType(ASTBaseDataTypeNode* _) { return Any(); }
-public f<Any> ImportCollector.visitCustomDataType(ASTCustomDataTypeNode* _) { return Any(); }
-public f<Any> ImportCollector.visitFunctionDataType(ASTFunctionDataTypeNode* _) { return Any(); }

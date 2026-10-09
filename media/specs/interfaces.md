@@ -113,5 +113,5 @@ implementation of the concrete struct, regardless of whether it is the implement
 ### Bootstrap compiler
 The bootstrap compiler implements default methods the same way as the host compiler (see `symbol-table-builder.spice`,
 `type-checker.spice`, `function-manager.spice` and `ir-generator.spice`). Since both compilers support them, the sources of
-the bootstrap compiler can use default methods as well. This allows the visitor interface of the bootstrap compiler to
-provide default visit methods, so that each compiler pass only implements the visit methods it needs.
+the bootstrap compiler use default methods as well: The visitor interface `IAbstractAstVisitor` provides default visit
+methods, which visit all children of the node, so that each compiler pass only implements the visit methods it needs.

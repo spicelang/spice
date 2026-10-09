@@ -46,23 +46,6 @@ public p PostTypeCheckingVerifier.verify(ASTEntryNode* ast) {
     this.visitEntry(ast);
 }
 
-// Generic double-dispatch entry point required by IAbstractAstVisitor
-#[ignoreUnusedReturnValue]
-public f<Any> PostTypeCheckingVerifier.visit(IVisitable* node) {
-    return node.accept(cast<IAbstractAstVisitor*>(this));
-}
-
-// Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
-#[ignoreUnusedReturnValue]
-f<Any> PostTypeCheckingVerifier.visitChildren(ASTNode* node) {
-    foreach ASTNode* child : node.children {
-        assert child != nil<ASTNode*>;
-        assert child.visitable != nil<IVisitable*>;
-        this.visit(child.visitable);
-    }
-    return Any();
-}
-
 // ======================================================== Verification ========================================================
 
 public f<Any> PostTypeCheckingVerifier.visitFctDef(ASTFctDefNode* node) {
@@ -104,11 +87,6 @@ public f<Any> PostTypeCheckingVerifier.visitAliasDef(ASTAliasDefNode* node) {
 
 public f<Any> PostTypeCheckingVerifier.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
     assert node.entry != nil<SymbolTableEntry*>;
-    return this.visitChildren(cast<ASTNode*>(node));
-}
-
-public f<Any> PostTypeCheckingVerifier.visitEnumItem(ASTEnumItemNode* node) {
-    // EnumItemNode::entry is intentionally not stored on the node; the entry lives in the enum scope.
     return this.visitChildren(cast<ASTNode*>(node));
 }
 
@@ -177,68 +155,3 @@ public f<Any> PostTypeCheckingVerifier.visitLambdaExpr(ASTLambdaExprNode* node) 
     assert !node.node.manifestations.isEmpty();
     return this.visitChildren(cast<ASTNode*>(node));
 }
-
-// ====================================================== Default visitors ======================================================
-
-#[ignoreUnusedReturnValue]
-public f<Any> PostTypeCheckingVerifier.visitEntry(ASTEntryNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitMainFctDef(ASTMainFctDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitGenericTypeDef(ASTGenericTypeDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitExtDecl(ASTExtDeclNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitImportDef(ASTImportDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitUnsafeBlock(ASTUnsafeBlockNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitForLoop(ASTForLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitForeachLoop(ASTForeachLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitWhileLoop(ASTWhileLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitDoWhileLoop(ASTDoWhileLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitIfStmt(ASTIfStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitElseStmt(ASTElseStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitSwitchStmt(ASTSwitchStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitCaseBranch(ASTCaseBranchNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitDefaultBranch(ASTDefaultBranchNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitStmtLst(ASTStmtLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitTypeLst(ASTTypeLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitTypeAltsLst(ASTTypeAltsLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitParamLst(ASTParamLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitArgLst(ASTArgLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitEnumItemLst(ASTEnumItemLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitField(ASTFieldNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitExprStmt(ASTExprStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitQualifierLst(ASTQualifierLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitQualifier(ASTQualifierNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitModAttr(ASTModAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitAttr(ASTAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitCaseConstant(ASTCaseConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitReturnStmt(ASTReturnStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitBreakStmt(ASTBreakStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitContinueStmt(ASTContinueStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitAssertStmt(ASTAssertStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitAssignExpr(ASTAssignExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitTernaryExpr(ASTTernaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitLogicalOrExpr(ASTLogicalOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitLogicalAndExpr(ASTLogicalAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitEqualityExpr(ASTEqualityExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitRelationalExpr(ASTRelationalExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitShiftExpr(ASTShiftExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitAdditiveExpr(ASTAdditiveExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitCastExpr(ASTCastExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitValue(ASTValueNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitConstant(ASTConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitDataType(ASTDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitBaseDataType(ASTBaseDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitCustomDataType(ASTCustomDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> PostTypeCheckingVerifier.visitFunctionDataType(ASTFunctionDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }

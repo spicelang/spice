@@ -112,18 +112,6 @@ public p TypeChecker.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     this.warnings = &sourceFile.compilerOutput.warnings;
 }
 
-// Generic double-dispatch entry point required by IAbstractAstVisitor. source-file.spice calls the concrete
-// visit(ASTEntryNode*) overload below.
-#[ignoreUnusedReturnValue]
-public f<Any> TypeChecker.visit(IVisitable* node) {
-    return node.accept(cast<IAbstractAstVisitor*>(this));
-}
-
-#[ignoreUnusedReturnValue]
-public f<Any> TypeChecker.visit(ASTEntryNode* node) {
-    return this.visitEntry(node);
-}
-
 // Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor).
 // The host aborts the whole visitor by throwing on a hard error. The bootstrap records the hard error instead and stops
 // visiting further children here, because the following nodes may depend on what the erroneous node failed to set up.
@@ -6111,25 +6099,6 @@ f<Any> TypeChecker.visitBuiltinFrameAddressCall(ASTFctCallNode* node) {
     const QualType byteType = QualType(SuperType::TY_BYTE);
     return this.builtinResult(node, byteType.toPtr(cast<ASTNode*>(node)));
 }
-
-// ======================================================= Not overridden by the host TypeChecker =================================
-
-// The host TypeChecker does not override these visit methods, so they visit all children (AbstractASTVisitor default)
-public f<Any> TypeChecker.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitTypeLst(ASTTypeLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitTypeAltsLst(ASTTypeAltsLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitArgLst(ASTArgLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitEnumItemLst(ASTEnumItemLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitEnumItem(ASTEnumItemNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitExprStmt(ASTExprStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitQualifierLst(ASTQualifierLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitQualifier(ASTQualifierNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitModAttr(ASTModAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> TypeChecker.visitAttr(ASTAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
 
 // ============================================================== TypeCheckerImplicit.cpp ========================================
 

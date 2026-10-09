@@ -183,28 +183,6 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
 
 // ============================================================= Visit ===========================================================
 
-// Generic double-dispatch entry point required by IAbstractAstVisitor
-#[ignoreUnusedReturnValue]
-public f<Any> IRGenerator.visit(IVisitable* node) {
-    return node.accept(cast<IAbstractAstVisitor*>(this));
-}
-
-#[ignoreUnusedReturnValue]
-public f<Any> IRGenerator.visit(ASTEntryNode* node) {
-    return this.visitEntry(node);
-}
-
-// Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
-#[ignoreUnusedReturnValue]
-f<Any> IRGenerator.visitChildren(ASTNode* node) {
-    foreach ASTNode* child : node.children {
-        assert child != nil<ASTNode*>;
-        assert child.visitable != nil<IVisitable*>;
-        this.visit(child.visitable);
-    }
-    return Any();
-}
-
 // Visit a node, which evaluates to an expression result
 f<LLVMExprResult> IRGenerator.visitExpr(IVisitable* node) {
     Any visitResult = this.visit(node);
@@ -7171,24 +7149,3 @@ p IRGenerator.enableFunctionInstrumentation(llvm::Function function) {
         default: { panic(Error("Unhandled sanitizer type")); } // LCOV_EXCL_LINE
     }
 }
-
-// =========================================== Default visit methods (ASTVisitor in the host) =====================================
-
-public f<Any> IRGenerator.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitImportDef(ASTImportDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitTypeLst(ASTTypeLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitParamLst(ASTParamLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitArgLst(ASTArgLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitEnumItemLst(ASTEnumItemLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitEnumItem(ASTEnumItemNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitField(ASTFieldNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitSignature(ASTSignatureNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitExprStmt(ASTExprStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitQualifier(ASTQualifierNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitAttr(ASTAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitBaseDataType(ASTBaseDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitCustomDataType(ASTCustomDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> IRGenerator.visitFunctionDataType(ASTFunctionDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
