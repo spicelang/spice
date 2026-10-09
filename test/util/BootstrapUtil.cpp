@@ -53,7 +53,7 @@ bool buildBootstrapSources(const std::filesystem::path &executablePath, bool bui
   try {
     const std::string outputPath = executablePath.string();
     const std::string mainSourceFile = mainSourceFilePath.string();
-    std::vector<const char *> argv = {"spice", "build"};
+    std::vector argv = {"spice", "build"};
     // Coverage instrumentation does not support LTO. Without optimizations, the coverage counters map best to the source
     if (testDriverCliOptions.bootstrapCoverage)
       argv.insert(argv.end(), {"-O0", "--coverage"});

@@ -29,7 +29,8 @@ public f<FilePath> makeUniqueTestDir(const string prefix) {
     }
     const String dirName = String(prefix) + "-" + toString(getCurrentMicros()) + "-" + toString(cast<long>(dirIdx));
     const FilePath dir = FilePath(getTempDir()) / dirName.getRaw();
-    assert mkDirs(dir.toGenericString(), MODE_ALL_RWX) == 0;
+    // Pass the path as is, because toGenericString() would convert the separators of the path in place
+    assert mkDirs(dir.toString(), MODE_ALL_RWX) == 0;
     return dir;
 }
 
@@ -60,7 +61,8 @@ public p removeTestDir(const FilePath& dir) {
  * @param dir Dir to create
  */
 public p createTestDirs(const FilePath& dir) {
-    assert mkDirs(dir.toGenericString(), MODE_ALL_RWX) == 0;
+    // Pass the path as is, because toGenericString() would convert the separators of the caller's path in place
+    assert mkDirs(dir.toString(), MODE_ALL_RWX) == 0;
 }
 
 /**

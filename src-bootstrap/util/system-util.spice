@@ -496,8 +496,9 @@ public f<FilePath> getSpiceBinDir() {
 
 #[test]
 f<bool> testIsCommandAvailable() {
-    assert isCommandAvailable("dot");
-    assert isGraphvizInstalled();
+    // Graphviz is optional, so the positive case is checked with a command, that always exists
+    assert isCommandAvailable(isWindows() ? "cmd" : "sh");
+    assert isGraphvizInstalled() == isCommandAvailable("dot");
     assert !isCommandAvailable("non-existing-command");
     return true;
 }
