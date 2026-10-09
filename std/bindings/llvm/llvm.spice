@@ -757,7 +757,18 @@ public p LLVMContext.setDiscardValueNames(bool discard) {
 }
 
 public p LLVMContext.dtor() {
-    LLVMContextDispose(this.self);
+    this.dispose();
+}
+
+/**
+ * Dispose the context before the end of its lifetime, e.g. to release its memory early. All modules and builders of the
+ * context have to be disposed before. Disposing it twice has no effect
+ */
+public p LLVMContext.dispose() {
+    if this.self != nil<LLVMContextRef> {
+        LLVMContextDispose(this.self);
+        this.self = nil<LLVMContextRef>;
+    }
 }
 
 // ===== Type =====
@@ -1113,8 +1124,16 @@ public p Module.ctor(string name, const LLVMContext& ctx) {
 }
 
 public p Module.dtor() {
+    this.dispose();
+}
+
+/**
+ * Dispose the module before the end of its lifetime, e.g. to release its memory early. Disposing it twice has no effect
+ */
+public p Module.dispose() {
     if this.self != nil<LLVMModuleRef> {
         LLVMDisposeModule(this.self);
+        this.self = nil<LLVMModuleRef>;
     }
 }
 
@@ -1218,7 +1237,17 @@ public p IRBuilder.ctor(const LLVMContext& parentCtx) {
 }
 
 public p IRBuilder.dtor() {
-    LLVMDisposeBuilder(this.self);
+    this.dispose();
+}
+
+/**
+ * Dispose the builder before the end of its lifetime, e.g. to release its memory early. Disposing it twice has no effect
+ */
+public p IRBuilder.dispose() {
+    if this.self != nil<LLVMBuilderRef> {
+        LLVMDisposeBuilder(this.self);
+        this.self = nil<LLVMBuilderRef>;
+    }
 }
 
 public f<Type> IRBuilder.getInt1Ty() {
@@ -1505,7 +1534,18 @@ p TargetMachine.ctor(LLVMTargetRef targetRef, Triple triple, string cpu, string 
 }
 
 public p TargetMachine.dtor() {
-    LLVMDisposeTargetMachine(this.self);
+    this.dispose();
+}
+
+/**
+ * Dispose the target machine before the end of its lifetime, e.g. to release its memory early. Disposing it twice has no
+ * effect
+ */
+public p TargetMachine.dispose() {
+    if this.self != nil<LLVMTargetMachineRef> {
+        LLVMDisposeTargetMachine(this.self);
+        this.self = nil<LLVMTargetMachineRef>;
+    }
 }
 
 /**
