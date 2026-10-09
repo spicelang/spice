@@ -156,7 +156,7 @@ public type SourceFile struct {
     public SourceFile* parent
     public String cacheKey
     public ASTEntryNode* ast = nil<ASTEntryNode*>
-    public heap Scope* globalScope
+    public Scope* globalScope = nil<Scope*> // Owned by the scope pool of the resource manager
     public llvm::LLVMContext context
     public llvm::IRBuilder builder
     public llvm::TargetMachine targetMachine
@@ -229,14 +229,6 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     this.targetMachine.setAsmVerbosity(true);
 }
 
-public p SourceFile.dtor() {
-    // Freeing a heap field does not destruct the object it points to. Delete the global scope explicitly, so that the whole
-    // scope tree (the child scopes, symbol tables, registries, ...) is released as well
-    if this.globalScope != nil<Scope*> {
-        sDelete(this.globalScope);
-    }
-}
-
 public p SourceFile.runParser() {
     // Check if this stage has already been done
     if this.previousStage >= CompileStageType::LEXER_AND_PARSER {
@@ -265,7 +257,7 @@ public p SourceFile.runParser() {
     assert this.ast != nil<ASTEntryNode*>;
 
     // Create the global scope
-    this.globalScope = __new<Scope>(nil<Scope*>, this, ScopeType::GLOBAL, &this.ast.node.codeLoc);
+    this.globalScope = this.resourceManager.createScope(nil<Scope*>, this, ScopeType::GLOBAL, &this.ast.node.codeLoc);
 
     // Compute initial cache key without dep keys — will be refined in runImportCollector once all imports run
     const Result<String> sourceCodeResult = readFile(this.filePath.toString());
