@@ -149,7 +149,8 @@ bool TypeChecker::isAlwaysConstructedLvalue(const ExprNode *node) const {
       return false;
     // Field values additionally require a no-args ctor (see above)
     const QualType structType = type.toNonConst();
-    if (atomicExpr == nullptr && FunctionManager::lookup(structType.getBodyScope(), CTOR_FUNCTION_NAME, structType, {}, false) == nullptr)
+    if (atomicExpr == nullptr &&
+        FunctionManager::lookup(structType.getBodyScope(), CTOR_FUNCTION_NAME, structType, {}, false) == nullptr)
       return false;
   }
 
