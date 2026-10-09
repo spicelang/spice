@@ -85,23 +85,22 @@ bool CacheManager::lookupSourceFile(SourceFile *sourceFile) const {
     return false;
   }
 
-  // Verify all transitive dependency object files exist and collect their paths. We keep
-  // these even though Spice imports register themselves via their own concludeCompilation,
-  // because runtime modules (string-rt, memory-rt, ...) are pulled in implicitly during
-  // symbol-table building - a stage that gets skipped for cache-restored files. Without
-  // this list those runtime objects would be missing from the link. The linker dedupes the
-  // overlap with deps that did register themselves.
+  // Verify all transitive dependency object files exist. They are not linked from here: the cache is only looked up after
+  // the middle end, so every dependency (incl. the runtime modules, which are requested while building the symbol table) is
+  // part of the compilation and registers its own object in concludeCompilation. A dependency can even end up with a
+  // different key than the one recorded here, as its key covers the generic instantiations, that its importers request.
+  // Linking the recorded object as well would then link the dependency twice. With LTO, only the main file is cached, so
+  // this check keeps it from being restored.
   if (metadata.contains("dependencies")) {
     for (const auto &depKey : metadata["dependencies"]) {
       const std::string key = depKey.get<std::string>();
       const std::filesystem::path depObjectFilePath = cacheDir / (key + "." + objectFileExtension);
       if (!exists(depObjectFilePath))
         return false;
-      sourceFile->cachedObjectFilePaths.push_back(depObjectFilePath);
     }
   }
 
-  // Add this file's own object file last
+  // Add this file's own object file
   sourceFile->cachedObjectFilePaths.push_back(objectFilePath);
 
   // Restore linker flags and additional source paths
@@ -144,10 +143,8 @@ void CacheManager::cacheSourceFile(const SourceFile *sourceFile) const {
   if (error)
     return;
 
-  // Collect all transitive dependency cache keys, linker flags, and additional source paths.
-  // We need the transitive list so that cache-restored files can replay the full linker input
-  // even for implicit deps (e.g. runtime modules requested during symbol-table building, which
-  // a cache hit skips). The linker dedupes the overlap with deps that register themselves.
+  // Collect all transitive dependency cache keys, linker flags, and additional source paths. The dependency cache keys are
+  // only used to verify that the objects of the dependencies are still cached (see lookupSourceFile)
   std::vector<std::string> depCacheKeys;
   std::vector<std::string> allLinkerFlags = sourceFile->sourceLinkerFlags;
   std::vector<std::string> allAdditionalSourcePaths;

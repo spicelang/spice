@@ -126,7 +126,12 @@ public f<bool> CacheManager.lookupSourceFile(SourceFile* sourceFile) {
     }
     JsonValue* metadata = parseResult.unwrap();
 
-    // Verify all transitive dependency object files exist and collect their paths
+    // Verify all transitive dependency object files exist. They are not linked from here: the cache is only looked up after
+    // the middle end, so every dependency (incl. the runtime modules, which are requested while building the symbol table) is
+    // part of the compilation and registers its own object in concludeCompilation. A dependency can even end up with a
+    // different key than the one recorded here, as its key covers the generic instantiations, that its importers request.
+    // Linking the recorded object as well would then link the dependency twice. With LTO, only the main file is cached, so
+    // this check keeps it from being restored.
     if metadata.hasField("dependencies") {
         JsonValue* deps = metadata.getField("dependencies");
         const unsigned long numDeps = deps.getArraySize();
@@ -140,11 +145,10 @@ public f<bool> CacheManager.lookupSourceFile(SourceFile* sourceFile) {
                 deleteJsonValue(metadata);
                 return false;
             }
-            sourceFile.cachedObjectFilePaths.pushBack(FilePath(depObjStr));
         }
     }
 
-    // Add this file's own object file last
+    // Add this file's own object file
     sourceFile.cachedObjectFilePaths.pushBack(FilePath(objPathStr));
 
     // Restore linker flags
@@ -222,7 +226,8 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
         return;
     }
 
-    // Collect all transitive dependency cache keys, linker flags, and additional source paths
+    // Collect all transitive dependency cache keys, linker flags, and additional source paths. The dependency cache keys are
+    // only used to verify that the objects of the dependencies are still cached (see lookupSourceFile)
     Vector<String> depCacheKeys;
     Vector<String> allLinkerFlags;
     Vector<String> allAdditionalSourcePaths;
@@ -765,14 +770,14 @@ f<bool> testMultiFileDependencyChangeForcesRecompilation() {
         manager.cacheSourceFile(utils);
         manager.cacheSourceFile(mainFile);
 
-        // Phase 1: nothing changed since caching - every file hits and pulls its transitive dep objects (kept so runtime
-        // modules pulled in implicitly at symbol-table-building time still make it into the link for cache-restored files)
+        // Phase 1: nothing changed since caching - every file hits and only restores its own object. The objects of the deps
+        // are registered by the deps themselves, since every dep is part of the compilation
         assert lookupTestSourceFile(manager, math);
         assert math.cachedObjectFilePaths.getSize() == 1l; // math.o
         assert lookupTestSourceFile(manager, utils);
-        assert utils.cachedObjectFilePaths.getSize() == 2l; // math.o + utils.o
+        assert utils.cachedObjectFilePaths.getSize() == 1l; // utils.o
         assert lookupTestSourceFile(manager, mainFile);
-        assert mainFile.cachedObjectFilePaths.getSize() == 3l; // utils.o, math.o, main.o
+        assert mainFile.cachedObjectFilePaths.getSize() == 1l; // main.o
 
         // Phase 2: math's source changes -> its cache key changes -> utils and main keys also change (because the fold pulls
         // in the new math key transitively). All three miss and recompile
@@ -896,5 +901,72 @@ f<bool> testCachedModuleObjectIsNotReusedForImporterNeedingOtherInstantiations()
 
     removeTestDir(cacheDir);
     removeTestDir(outputDir);
+    return true;
+}
+
+// A cache-restored file must not link the objects of its dependencies, that are recorded in its cache entry. A dependency's
+// key covers the generic instantiations, that its importers request, so it can differ from the recorded one in another
+// program. The dependency then registers its current object, and linking the recorded one as well defines its symbols twice.
+#[test]
+f<bool> testCacheRestoredDependantDoesNotLinkStaleDependencyObject() {
+    CliOptions cliOptions;
+    const FilePath cacheDir = makeUniqueTestDir("spice-cache-test");
+    const FilePath outputDir = makeUniqueTestDir("spice-cache-test");
+    cliOptions.cacheDir = cacheDir;
+    cliOptions.outputDir = outputDir;
+    setupNativeTarget(cliOptions);
+
+    // A generic module, a module using it without instantiating anything, and two programs importing both, of which only the
+    // second instantiates the generic function
+    writeTestFile(outputDir / "lib.spice", "type T dyn;\n\npublic f<T> identity<T>(T value) {\n    return value;\n}\n\npublic f<int> answer() {\n    return 42;\n}\n");
+    writeTestFile(outputDir / "util.spice", "import \"lib\";\n\npublic f<int> helper() {\n    return answer();\n}\n");
+    writeTestFile(outputDir / "a.spice", "import \"lib\";\nimport \"util\";\n\nf<int> main() {\n    return helper();\n}\n");
+    writeTestFile(outputDir / "b.spice", "import \"lib\";\nimport \"util\";\n\nf<int> main() {\n    return identity(helper());\n}\n");
+
+    // A populates the cache. Its entry for util records the key of lib without any instantiation
+    const CompileOutcome outcomeOfA = compileTestProgram(cliOptions, outputDir / "a.spice", "lib", "identity");
+
+    // B needs 'identity<int>', so lib gets another key and is compiled again, while util is restored from the cache
+    bool libRestored;
+    String libKeyOfB;
+    bool utilRestored;
+    bool staleLibObjectLinked = false;
+    unsigned long linkedFileCount;
+    unsigned long sourceFileCount;
+    {
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        SourceFile* mainFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), outputDir / "b.spice", false);
+        mainFile.runFrontEnd();
+        mainFile.runMiddleEnd();
+        assert resourceManager.errorManager.softErrors.isEmpty();
+        mainFile.runBackEnd();
+        assert !resourceManager.abortCompilation;
+        const SourceFile* libFile = mainFile.dependencies.get(String("lib"));
+        const SourceFile* utilFile = mainFile.dependencies.get(String("util"));
+        libRestored = libFile.restoredFromCache;
+        libKeyOfB = libFile.cacheKey;
+        utilRestored = utilFile.restoredFromCache;
+
+        // Build the path of the object of lib, that A cached, like lookupSourceFile does
+        StringStream staleLibObjectPath;
+        staleLibObjectPath << cacheDir.toString() << "/" << outcomeOfA.depCacheKey << "." << getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE);
+        const FilePath staleLibObject = FilePath(staleLibObjectPath.str());
+        foreach const FilePath& linkedFile : resourceManager.linker.linkedFiles {
+            if linkedFile == staleLibObject {
+                staleLibObjectLinked = true;
+            }
+        }
+        linkedFileCount = resourceManager.linker.linkedFiles.getSize();
+        sourceFileCount = resourceManager.sourceFiles.getSize();
+    }
+
+    removeTestDir(cacheDir);
+    removeTestDir(outputDir);
+    assert !libRestored;
+    assert libKeyOfB != outcomeOfA.depCacheKey;
+    assert utilRestored;
+    // The object of lib, that A cached, is not linked. Every source file contributes exactly its own object
+    assert !staleLibObjectLinked;
+    assert linkedFileCount == sourceFileCount;
     return true;
 }

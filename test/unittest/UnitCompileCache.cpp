@@ -1,5 +1,6 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
+#include <algorithm>
 #include <fstream>
 #include <random>
 #include <ranges>
@@ -10,6 +11,7 @@
 #include <driver/Driver.h>
 #include <global/CacheManager.h>
 #include <global/GlobalResourceManager.h>
+#include <util/SystemUtil.h>
 
 #include <llvm/TargetParser/Host.h>
 
@@ -414,15 +416,14 @@ TEST_F(CompileCacheTest, MultiFileDependencyChangeForcesRecompilation) {
     return manager.lookupSourceFile(sourceFile);
   };
 
-  // Phase 1: nothing changed since caching - every file hits and pulls its transitive dep
-  // objects (kept so runtime modules pulled in implicitly at symbol-table-building time still
-  // make it into the link for cache-restored files; the linker dedupes the overlap).
+  // Phase 1: nothing changed since caching - every file hits and only restores its own object. The objects of the deps are
+  // registered by the deps themselves, since every dep is part of the compilation.
   ASSERT_TRUE(lookup(math));
   ASSERT_EQ(1u, math->cachedObjectFilePaths.size()); // math.o
   ASSERT_TRUE(lookup(utils));
-  ASSERT_EQ(2u, utils->cachedObjectFilePaths.size()); // math.o + utils.o
+  ASSERT_EQ(1u, utils->cachedObjectFilePaths.size()); // utils.o
   ASSERT_TRUE(lookup(main));
-  ASSERT_EQ(3u, main->cachedObjectFilePaths.size()); // utils.o, math.o, main.o
+  ASSERT_EQ(1u, main->cachedObjectFilePaths.size()); // main.o
 
   // Phase 2: math's source changes -> its cache key changes -> utils and main keys also change
   // (because the fold pulls in the new math key transitively). All three miss and recompile.
@@ -572,6 +573,55 @@ TEST_F(CompileCacheTest, CachedModuleObjectIsNotReusedForImporterNeedingOtherIns
   const Outcome secondB = compile("b.spice");
   ASSERT_TRUE(secondB.libRestored);
   ASSERT_EQ(firstB.libCacheKey, secondB.libCacheKey);
+}
+
+// A cache-restored file must not link the objects of its dependencies, that are recorded in its cache entry. A dependency's
+// key covers the generic instantiations, that its importers request, so it can differ from the recorded one in another
+// program. The dependency then registers its current object, and linking the recorded one as well defines its symbols twice.
+TEST_F(CompileCacheTest, CacheRestoredDependantDoesNotLinkStaleDependencyObject) {
+  cliOptions.targetTriple = llvm::Triple(llvm::Triple::normalize(llvm::sys::getProcessTriple()));
+  cliOptions.isNativeTarget = true;
+
+  // A generic module, a module using it without instantiating anything, and two programs importing both, of which only the
+  // second instantiates the generic function
+  writeDummyFile(outputDir / "lib.spice", "type T dyn;\n\npublic f<T> identity<T>(T value) {\n    return value;\n}\n\n"
+                                          "public f<int> answer() {\n    return 42;\n}\n");
+  writeDummyFile(outputDir / "util.spice", "import \"lib\";\n\npublic f<int> helper() {\n    return answer();\n}\n");
+  writeDummyFile(outputDir / "a.spice", "import \"lib\";\nimport \"util\";\n\nf<int> main() {\n    return helper();\n}\n");
+  writeDummyFile(outputDir / "b.spice",
+                 "import \"lib\";\nimport \"util\";\n\nf<int> main() {\n    return identity(helper());\n}\n");
+
+  // A populates the cache. Its entry for util records the key of lib without any instantiation
+  std::string libKeyOfA;
+  {
+    GlobalResourceManager resourceManager(cliOptions);
+    SourceFile *mainFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, outputDir / "a.spice", false);
+    mainFile->runFrontEnd();
+    mainFile->runMiddleEnd();
+    ASSERT_TRUE(resourceManager.errorManager.softErrors.empty());
+    mainFile->runBackEnd();
+    libKeyOfA = mainFile->dependencies.at("lib")->cacheKey;
+  }
+
+  // B needs 'identity<int>', so lib gets another key and is compiled again, while util is restored from the cache
+  GlobalResourceManager resourceManager(cliOptions);
+  SourceFile *mainFile = resourceManager.createSourceFile(nullptr, MAIN_FILE_NAME, outputDir / "b.spice", false);
+  mainFile->runFrontEnd();
+  mainFile->runMiddleEnd();
+  ASSERT_TRUE(resourceManager.errorManager.softErrors.empty());
+  mainFile->runBackEnd();
+  const SourceFile *libFile = mainFile->dependencies.at("lib");
+  const SourceFile *utilFile = mainFile->dependencies.at("util");
+  ASSERT_FALSE(libFile->restoredFromCache);
+  ASSERT_NE(libKeyOfA, libFile->cacheKey);
+  ASSERT_TRUE(utilFile->restoredFromCache);
+
+  // The object of lib, that A cached, is not linked. Every source file contributes exactly its own object
+  const std::vector<std::filesystem::path> &linkedFiles = resourceManager.linker.getLinkedFiles();
+  const char *objectFileExtension = SystemUtil::getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE);
+  const std::filesystem::path staleLibObject = cacheDir / (libKeyOfA + "." + objectFileExtension);
+  ASSERT_EQ(linkedFiles.end(), std::ranges::find(linkedFiles, staleLibObject));
+  ASSERT_EQ(resourceManager.sourceFiles.size(), linkedFiles.size());
 }
 
 } // namespace spice::testing
