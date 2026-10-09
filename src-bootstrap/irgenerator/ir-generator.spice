@@ -4436,7 +4436,10 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
 
     // Append the trailing capture-struct pointer for fat function pointer calls (see the ABI note above)
     if data.isFctPtrCall() {
-        const llvm::Value fatPtr = this.getAddress(firstFragEntry);
+        llvm::Value fatPtr = this.getAddress(firstFragEntry);
+        // The fat pointer might be reached via pointers or references (e.g. a param of type f<int>()** or f<int>()&)
+        QualType fatPtrType = firstFragEntry.getQualType();
+        this.autoDeReferencePtr(fatPtr, fatPtrType);
         // Remember the address of the function pointer slot for the call below
         fctPtr = this.insertStructGEP(this.llvmTypes.lambdaFatPtrType, fatPtr, 0);
         // Load the captures pointer and add it to the argument list as the trailing argument
@@ -4501,12 +4504,7 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
         fctPtr = this.insertInBoundsGEP(this.builder.getPtrTy(), vtablePtr, this.builder.getInt64(vtableIndex), String("vfct.addr"));
         callee = this.insertLoad(this.builder.getPtrTy(), fctPtr, false, String("fct"));
     } else if data.isFctPtrCall() {
-        assert firstFragEntry != nil<const SymbolTableEntry*>;
-        QualType firstFragType = firstFragEntry.getQualType();
-        if fctPtr.isNull() {
-            fctPtr = this.getAddress(firstFragEntry);
-        }
-        this.autoDeReferencePtr(fctPtr, firstFragType);
+        assert !fctPtr.isNull(); // Already dereferenced above, where the captures pointer is loaded
         callee = this.insertLoad(this.builder.getPtrTy(), fctPtr, false, String("fct"));
     } else {
         // Get callee function
