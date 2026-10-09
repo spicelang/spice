@@ -35,6 +35,7 @@ import "bootstrap/util/block-allocator";
 import "bootstrap/util/concurrency";
 import "bootstrap/source-file";
 import "bootstrap/driver";
+import "bootstrap/util/test-util";
 
 // Constants
 public const string MAIN_FILE_NAME = "root";
@@ -263,4 +264,35 @@ public f<unsigned long> GlobalResourceManager.getTotalLineCount() {
             if size > 0l && content[size - cast<unsigned long>(1)] != '\n' { result++; }
         }
     }
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testGetTotalLineCount() {
+    const FilePath testDir = makeUniqueTestDir("spice-line-count-test");
+    const FilePath firstFile = testDir / "first.spice";
+    const FilePath secondFile = testDir / "second.spice";
+    writeTestFile(firstFile, "Line 1\nLine2\nLine3\n\nLine 5"); // No trailing newline
+    writeTestFile(secondFile, "Line 1\nLine 2\n"); // Trailing newline
+
+    unsigned long firstLineCount;
+    unsigned long totalLineCount;
+    {
+        // Source files look up an LLVM target, so use the native one
+        CliOptions cliOptions;
+        cliOptions.targetTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+        cliOptions.isNativeTarget = true;
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        const SourceFile* _first = resourceManager.createSourceFile(nil<SourceFile*>, String("first"), firstFile, false);
+        firstLineCount = resourceManager.getTotalLineCount();
+        const SourceFile* _second = resourceManager.createSourceFile(nil<SourceFile*>, String("second"), secondFile, false);
+        totalLineCount = resourceManager.getTotalLineCount();
+    }
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert firstLineCount == 5l;
+    assert totalLineCount == 7l;
+    return true;
 }

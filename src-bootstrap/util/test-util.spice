@@ -1,0 +1,98 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Helpers for the builtin tests (#[test] functions) of the bootstrap compiler sources
+
+// Std imports
+import "std/data/vector";
+import "std/io/dir";
+import "std/io/file";
+import "std/io/filepath";
+import "std/os/filesystem";
+import "std/os/os";
+import "std/os/process";
+import "std/time/time";
+import "std/type/type-conversion";
+
+// Number of temp dirs, the tests created so far. Keeps the dirs apart, if two of them are created within the same microsecond
+unsigned long CREATED_TEST_DIRS = 0l;
+
+/**
+ * Create a new, empty dir in the temp dir. The test has to remove it again via removeTestDir()
+ *
+ * @param prefix Prefix of the dir name
+ * @return Path of the created dir
+ */
+public f<FilePath> makeUniqueTestDir(const string prefix) {
+    unsigned long dirIdx;
+    unsafe {
+        dirIdx = CREATED_TEST_DIRS++;
+    }
+    const String dirName = String(prefix) + "-" + toString(getCurrentMicros()) + "-" + toString(cast<long>(dirIdx));
+    const FilePath dir = FilePath(getTempDir()) / dirName.getRaw();
+    assert mkDirs(dir.toGenericString(), MODE_ALL_RWX) == 0;
+    return dir;
+}
+
+/**
+ * Delete the given dir with all its contents. Std has no function for that, so the tools of the OS are used
+ *
+ * @param dir Dir to remove
+ */
+public p removeTestDir(const FilePath& dir) {
+    Vector<String> args;
+    if isWindows() {
+        args.pushBack(String("/c"));
+        args.pushBack(String("rmdir"));
+        args.pushBack(String("/s"));
+        args.pushBack(String("/q"));
+        args.pushBack(String(dir.toNativeString()));
+        const Result<ProcessResult> _ = runProcessCaptured(String("cmd"), args);
+    } else {
+        args.pushBack(String("-rf"));
+        args.pushBack(String(dir.toString()));
+        const Result<ProcessResult> _ = runProcessCaptured(String("rm"), args);
+    }
+}
+
+/**
+ * Create a dir and all of its missing parent dirs
+ *
+ * @param dir Dir to create
+ */
+public p createTestDirs(const FilePath& dir) {
+    assert mkDirs(dir.toGenericString(), MODE_ALL_RWX) == 0;
+}
+
+/**
+ * Write the given content to a file at the given path
+ *
+ * @param path File path
+ * @param content File content
+ */
+public p writeTestFile(const FilePath& path, const string content) {
+    const Result<bool> writeResult = writeFile(path.toString(), content);
+    assert writeResult.isOk();
+}
+
+/**
+ * Create a symlink to a dir. Creating symlinks requires special privileges on Windows, so this is only supported on Unix
+ *
+ * @param target Dir, the symlink points to
+ * @param link Path of the symlink
+ * @return Created or not
+ */
+public f<bool> createTestDirSymlink(const FilePath& target, const FilePath& link) {
+    if isWindows() {
+        return false;
+    }
+    Vector<String> args;
+    args.pushBack(String("-s"));
+    args.pushBack(String(target.toString()));
+    args.pushBack(String(link.toString()));
+    const Result<ProcessResult> processResult = runProcessCaptured(String("ln"), args);
+    if !processResult.isOk() {
+        return false;
+    }
+    const ProcessResult& process = processResult.unwrap();
+    return process.exitCode == 0;
+}

@@ -126,3 +126,121 @@ public p BlockAllocator.allocateNewBlock() {
     this.memoryBlocks.pushBack(rawPtr);
     this.offsetInBlock = 0l;
 }
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// Number of destructed dummy nodes. Spice only supports globals of primitive type, so the counter lives here
+unsigned long DESTRUCTED_DUMMY_NODES = 0l;
+
+type DummyNode struct {
+    unsigned long line
+    unsigned long col
+}
+
+public p DummyNode.ctor(unsigned long line, unsigned long col) {
+    this.line = line;
+    this.col = col;
+}
+
+public p DummyNode.dtor() {
+    unsafe {
+        DESTRUCTED_DUMMY_NODES++;
+    }
+}
+
+// Memory manager, that counts the allocated and deallocated blocks
+type CountingMemoryManager struct : IMemoryManager {
+    DefaultMemoryManager defaultMemoryManager
+    unsigned long allocations = 0l
+    unsigned long deallocations = 0l
+}
+
+public f<heap byte*> CountingMemoryManager.allocate(unsigned long size) {
+    this.allocations++;
+    return this.defaultMemoryManager.allocate(size);
+}
+
+public p CountingMemoryManager.deallocate(heap byte*& ptr) {
+    this.deallocations++;
+    this.defaultMemoryManager.deallocate(ptr);
+}
+
+// Allocate the given number of dummy nodes with an allocator of the given block size and check that they are intact and
+// destructed together with the allocator
+f<bool> allocateDummyNodes(unsigned long nodeCount, unsigned long blockSize, unsigned long nodesPerBlock) {
+    DESTRUCTED_DUMMY_NODES = 0l;
+    CountingMemoryManager memoryManager;
+    {
+        BlockAllocator<DummyNode> alloc = BlockAllocator<DummyNode>(memoryManager, blockSize);
+
+        // Allocate nodes
+        Vector<DummyNode*> nodes;
+        for unsigned long i = 0l; i < nodeCount; i++ {
+            DummyNode* node = alloc.reserve<DummyNode>();
+            assert node != nil<DummyNode*>;
+            unsafe {
+                __placement_new<DummyNode>(node, i, 1l);
+            }
+            nodes.pushBack(node);
+        }
+
+        // Check that no node was overwritten by a later one
+        for unsigned long i = 0l; i < nodeCount; i++ {
+            DummyNode* node = nodes.get(i);
+            assert node.line == i;
+            assert node.col == 1l;
+        }
+
+        // Check if stats are correct
+        const unsigned long blockCount = (nodeCount + nodesPerBlock - 1l) / nodesPerBlock;
+        assert alloc.getAllocationCount() == nodeCount;
+        assert alloc.getTotalAllocatedSize() == blockCount * blockSize;
+        assert memoryManager.allocations == blockCount;
+        assert memoryManager.deallocations == 0l;
+
+        // Block allocator gets destructed here and with that, all allocated nodes should be destructed
+    }
+    assert DESTRUCTED_DUMMY_NODES == nodeCount;
+    assert memoryManager.deallocations == memoryManager.allocations;
+    return true;
+}
+
+#[test]
+f<bool> testBlockAllocatorLarge() {
+    // Create allocator, that can hold 5 nodes per block
+    return allocateDummyNodes(100000l, sizeof<DummyNode>() * 5l, 5l);
+}
+
+#[test]
+f<bool> testBlockAllocatorUnevenBlockSize() {
+    // Create allocator, that can hold 4.5 nodes per block
+    return allocateDummyNodes(1000l, sizeof<DummyNode>() * 9l / 2l, 4l);
+}
+
+#[test]
+f<bool> testBlockAllocatorReleaseObjects() {
+    unsafe {
+        DESTRUCTED_DUMMY_NODES = 0l;
+    }
+    DefaultMemoryManager memoryManager;
+    Vector<DummyNode*> released;
+    {
+        BlockAllocator<DummyNode> alloc = BlockAllocator<DummyNode>(memoryManager, sizeof<DummyNode>() * 2l);
+        for unsigned long i = 0l; i < 5l; i++ {
+            DummyNode* node = alloc.reserve<DummyNode>();
+            unsafe {
+                __placement_new<DummyNode>(node, i, 1l);
+            }
+        }
+        // The caller becomes responsible for destructing the released objects, so the allocator must not do it anymore
+        released = alloc.releaseObjects();
+        assert released.getSize() == 5l;
+        assert alloc.getAllocationCount() == 0l;
+        foreach DummyNode* node : released {
+            sDestruct(*node);
+        }
+    }
+    unsafe {
+        assert DESTRUCTED_DUMMY_NODES == 5l;
+    }
+    return true;
+}

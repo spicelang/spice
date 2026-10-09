@@ -4,6 +4,7 @@ import "std/io/file";
 
 // Own imports
 import "bootstrap/reader/code-loc";
+import "bootstrap/util/test-util";
 
 public type Reader struct {
     File file
@@ -144,4 +145,45 @@ public inline f<bool> Reader.isEOF() {
         return false;
     }
     return this.file.isEOF();
+}
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testReaderReadsFileContent() {
+    const FilePath testDir = makeUniqueTestDir("spice-reader-test");
+    const FilePath testFilePath = testDir / "file.txt";
+    const string expectedContent = "This is some test content\nLine 2\n\nLine 4";
+    writeTestFile(testFilePath, expectedContent);
+
+    // Read the whole file
+    Reader reader = Reader(testFilePath);
+    while !reader.isEOF() {
+        reader.advance();
+    }
+    const String content = reader.getSourceCode(0l, getRawLength(expectedContent));
+    const CodeLoc& endCodeLoc = reader.getCodeLoc();
+    const unsigned long endLine = endCodeLoc.line;
+
+    // Peek a char without consuming it
+    Reader peekingReader = Reader(testFilePath);
+    const char firstChar = peekingReader.getChar();
+    const char peekedChar = peekingReader.peekChar();
+    const char charAfterPeek = peekingReader.getChar();
+    peekingReader.advance();
+    const char secondChar = peekingReader.getChar();
+    const CodeLoc& secondCodeLoc = peekingReader.getCodeLoc();
+    const unsigned long secondLine = secondCodeLoc.line;
+    const unsigned long secondCol = secondCodeLoc.col;
+
+    // Clean up before asserting, so that a failure does not leave the file behind
+    removeTestDir(testDir);
+    assert content == expectedContent;
+    assert endLine == 4l;
+    assert firstChar == 'T';
+    assert peekedChar == 'h';
+    assert charAfterPeek == 'T';
+    assert secondChar == 'h';
+    assert secondLine == 1l;
+    assert secondCol == 2l;
+    return true;
 }

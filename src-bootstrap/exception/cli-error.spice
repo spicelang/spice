@@ -59,3 +59,29 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
         default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+f<bool> hasMessage(const CliErrorType errorType, const string message, const string expectedMessage) {
+    const CliError cliError = CliError(errorType, message);
+    return cliError.getMessage() == expectedMessage;
+}
+
+// The driver reports cli errors via a panic, which a builtin test cannot observe. So the messages of the rejected cli
+// arguments are checked here, at the level of the error itself
+#[test]
+f<bool> testCliErrorMessages() {
+    // Invalid enum values
+    assert hasMessage(CliErrorType::INVALID_BUILD_MODE, "unknown", "[Error|CLI] Invalid build mode: unknown");
+    assert hasMessage(CliErrorType::INVALID_SANITIZER, "unknown", "[Error|CLI] Invalid sanitizer: unknown");
+    assert hasMessage(CliErrorType::INVALID_OUTPUT_CONTAINER, "unknown", "[Error|CLI] Invalid output container: unknown");
+    assert hasMessage(CliErrorType::INVALID_BACKEND, "unknown", "[Error|CLI] Invalid backend: unknown");
+    assert hasMessage(CliErrorType::INVALID_DEBUG_INFO_LEVEL, "unknown", "[Error|CLI] Invalid debug info level: unknown");
+
+    // Incompatible options and unsupported features
+    assert hasMessage(CliErrorType::INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library", "[Error|CLI] Incompatible options: Cannot link statically if compiling shared library");
+    assert hasMessage(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "Memory sanitizer is only supported for Linux targets", "[Error|CLI] Feature is not supported for this target: Memory sanitizer is only supported for Linux targets");
+    assert hasMessage(CliErrorType::FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED, "message", "[Error|CLI] Feature not supported when dockerized: message");
+    assert hasMessage(CliErrorType::NON_ZERO_EXIT_CODE, "1", "[Error|CLI] Non-zero exit code: 1");
+    return true;
+}

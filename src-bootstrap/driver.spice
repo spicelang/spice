@@ -1168,3 +1168,33 @@ f<bool> testRejectedArguments() {
     assert !unknownOption.shouldCompile;
     return true;
 }
+
+#[test]
+f<bool> testEqualsSyntaxOptionValues() {
+    // Option values can also be attached with '='
+    Driver equalsSyntax;
+    string[7] equalsSyntaxArgs = ["spice", "build", "--sanitizer=address", "--output-container=exec", "--backend=llvm", "-q", "main-file.spice"];
+    assert parseAndEnrich(equalsSyntax, 7, equalsSyntaxArgs);
+    assert equalsSyntax.cliOptions.instrumentation.sanitizer == Sanitizer::ADDRESS;
+    assert equalsSyntax.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+    assert equalsSyntax.cliOptions.backend == Backend::LLVM;
+    assert equalsSyntax.cliOptions.buildVars.get(String("spice.backend")) == "llvm";
+    assert equalsSyntax.cliOptions.quiet;
+    assert equalsSyntax.cliOptions.useLifetimeMarkers; // implicitly due to the enabled address sanitizer
+
+    // Enum values are case-insensitive
+    Driver upperCase;
+    string[6] upperCaseArgs = ["spice", "build", "--build-mode=RELEASE", "--sanitizer=Thread", "--output-container=OBJ", "main-file.spice"];
+    assert parseAndEnrich(upperCase, 6, upperCaseArgs);
+    assert upperCase.cliOptions.buildMode == BuildMode::RELEASE;
+    assert upperCase.cliOptions.instrumentation.sanitizer == Sanitizer::THREAD;
+    assert upperCase.cliOptions.outputContainer == OutputContainer::OBJECT_FILE;
+
+    // The debug info level without a value does not swallow the source file
+    Driver debugInfoWithoutValue;
+    string[4] debugInfoWithoutValueArgs = ["spice", "build", "--debug-info", "main-file.spice"];
+    assert parseAndEnrich(debugInfoWithoutValue, 4, debugInfoWithoutValueArgs);
+    assert debugInfoWithoutValue.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::FULL;
+    assert debugInfoWithoutValue.cliOptions.mainSourceFile.toGenericString() == "main-file.spice";
+    return true;
+}

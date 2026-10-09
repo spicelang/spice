@@ -12,6 +12,7 @@ import "std/iterator/array-iterator";
 import "bootstrap/driver";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/linker-error";
+import "bootstrap/util/test-util";
 
 public type ExecResult struct {
     public String output
@@ -490,4 +491,75 @@ public f<FilePath> getSpiceBinDir() {
     } else {
         panic(Error("Unsupported platform"));
     }
+}
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testIsCommandAvailable() {
+    assert isCommandAvailable("dot");
+    assert isGraphvizInstalled();
+    assert !isCommandAvailable("non-existing-command");
+    return true;
+}
+
+#[test]
+f<bool> testExpandLinkerFlag() {
+    // Plain flag
+    const Vector<String> plain = expandLinkerFlag(String("-lm"));
+    assert plain.getSize() == 1l;
+    assert plain.get(0l) == "-lm";
+
+    // Single env var
+    assert setEnv("SPICE_TEST_LINKER_FLAG_VAR", "/opt/llvm/lib");
+    const String singleFlag = String(isWindows() ? "-L%SPICE_TEST_LINKER_FLAG_VAR%" : "-L$SPICE_TEST_LINKER_FLAG_VAR");
+    const Vector<String> single = expandLinkerFlag(singleFlag);
+    assert single.getSize() == 1l;
+    assert single.get(0l) == "-L/opt/llvm/lib";
+
+    // An env var that expands to several whitespace-separated flags (e.g. LLVM_INCLUDE_DIRS, populated by CMake/CI with one
+    // '-I<dir>' per LLVM include directory) must be split into one argv entry per flag, since there is no shell here to
+    // word-split the expansion
+    assert setEnv("SPICE_TEST_LINKER_FLAG_MULTI", "-I/opt/llvm/include -I/opt/llvm/build/include");
+    const String multiFlag = String(isWindows() ? "%SPICE_TEST_LINKER_FLAG_MULTI%" : "$SPICE_TEST_LINKER_FLAG_MULTI");
+    const Vector<String> multi = expandLinkerFlag(multiFlag);
+    assert multi.getSize() == 2l;
+    assert multi.get(0l) == "-I/opt/llvm/include";
+    assert multi.get(1l) == "-I/opt/llvm/build/include";
+    return true;
+}
+
+#[test]
+f<bool> testGetStdTPDEFlags() {
+    // A std without the TPDE libraries and headers (e.g. a source checkout) yields no flags
+    const FilePath stdDir = makeUniqueTestDir("spice-test-std-tpde");
+    const FilePath tpdeDir = stdDir / "bindings" / "tpde";
+    const FilePath includeDir = tpdeDir / "include";
+    const FilePath headerDir = includeDir / "tpde-llvm";
+    const FilePath libDir = tpdeDir / "lib";
+    createTestDirs(headerDir);
+    createTestDirs(libDir);
+    const String flagsWithoutTpde = getStdTPDEFlags(stdDir);
+
+    // A std with the TPDE libraries and headers of a release package yields the include flag and the libraries, that exist,
+    // in link order and inside a linker group
+    const FilePath tpdeLlvmLibPath = libDir / "libtpde_llvm.a";
+    const FilePath tpdeLibPath = libDir / "libtpde.a";
+    const FilePath fadecLibPath = libDir / "libfadec.a";
+    writeTestFile(headerDir / "LLVMCompiler.hpp", "\n");
+    writeTestFile(tpdeLlvmLibPath, "\n");
+    writeTestFile(tpdeLibPath, "\n");
+    writeTestFile(fadecLibPath, "\n");
+    const String expected = String("-I") + includeDir.toString() + " -Wl,--start-group " + tpdeLlvmLibPath.toString() + " " + tpdeLibPath.toString() + " " + fadecLibPath.toString() + " -Wl,--end-group";
+    const String flags = getStdTPDEFlags(stdDir);
+
+    // Without the TPDE LLVM library, the bindings can't use TPDE at all
+    assert deleteFile(tpdeLlvmLibPath.toString());
+    const String flagsWithoutTpdeLlvm = getStdTPDEFlags(stdDir);
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(stdDir);
+    assert flagsWithoutTpde.isEmpty();
+    assert flags == expected;
+    assert flagsWithoutTpdeLlvm.isEmpty();
+    return true;
 }

@@ -85,3 +85,25 @@ public p setJsonField(JsonValue* object, const String& key, JsonValue* value) {
     assert idx == size || object.getObjectKey(idx) != key; // Overwriting fields is not supported
     object.insertObjectField(idx, key, value);
 }
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testGetLastFragment() {
+    assert getLastFragment(String("This is a test"), " ") == "test";
+    assert getLastFragment(String("This_is_a_test"), "_") == "test";
+    assert getLastFragment(String("This.is.a."), ".") == "";
+    assert getLastFragment(String("This is a test"), "This is a test ") == "This is a test";
+    return true;
+}
+
+#[test]
+f<bool> testIsStringLess() {
+    assert isStringLess(String("a"), String("b"));
+    assert !isStringLess(String("b"), String("a"));
+    assert !isStringLess(String("a"), String("a"));
+    assert isStringLess(String("ab"), String("abc")); // A prefix sorts first
+    assert isStringLess(String(""), String("a"));
+    assert isStringLess(String("Z"), String("a")); // Byte-wise, like std::string
+    return true;
+}
