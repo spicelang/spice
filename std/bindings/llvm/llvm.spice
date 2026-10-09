@@ -1946,6 +1946,12 @@ public p DIBuilder.ctor(Module module) {
     this.self = LLVMCreateDIBuilder(module.self);
 }
 
+public p DIBuilder.dtor() {
+    if this.self != nil<LLVMDIBuilderRef> {
+        LLVMDisposeDIBuilder(this.self);
+    }
+}
+
 // Like llvm::DIBuilder::finalize
 public p DIBuilder.finalize() {
     LLVMDIBuilderFinalize(this.self);

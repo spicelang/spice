@@ -1,0 +1,68 @@
+// TEST: --sanitizer=address
+
+// Assigning a temporary or a copy to a struct value, that is already constructed, has to destruct the old value first.
+// Otherwise, its owning members leak. LeakSanitizer reports them at the program exit.
+
+// Struct without no-args ctor: its locals are always initialized at their declaration
+type Wrapper struct {
+    String text
+}
+
+p Wrapper.ctor(string text) {
+    this.text = String(text);
+}
+
+// Struct with an implicit default ctor
+type Mid struct {
+    String text
+}
+
+type Outer struct {
+    String text
+    Mid mid
+}
+
+// Outside the ctor, the first assignment to a field in the source code overwrites the value of a constructed object
+p Outer.setText(string text) {
+    this.text = String(text);
+}
+
+p Outer.setMidText(string text) {
+    this.mid.text = String(text);
+}
+
+p Outer.copyText(const String& text) {
+    this.text = text;
+}
+
+type Node struct {
+    String value
+}
+
+f<int> main() {
+    // Local of a struct without no-args ctor
+    Wrapper wrapper = Wrapper("first value, that is long enough to be heap-allocated");
+    wrapper = Wrapper("second value, that is long enough to be heap-allocated");
+    printf("%s\n", wrapper.text.getRaw());
+
+    // Fields via 'this', assigned in a method
+    Outer outer;
+    outer.setText("first value, that is long enough to be heap-allocated");
+    outer.setText("second value, that is long enough to be heap-allocated");
+    outer.setMidText("first value, that is long enough to be heap-allocated");
+    outer.setMidText("second value, that is long enough to be heap-allocated");
+    const String copySource = String("copied value, that is long enough to be heap-allocated");
+    outer.copyText(copySource);
+    printf("%s\n", outer.text.getRaw());
+    printf("%s\n", outer.mid.text.getRaw());
+
+    // Fields reached via a pointer might be uninitialized memory, so they must not be destructed before the assignment
+    heap Node* node;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<Node>());
+        node = cast<heap Node*>(allocResult.unwrapAndMove());
+    }
+    node.value = String("value in raw memory, that is long enough to be heap-allocated");
+    printf("%s\n", node.value.getRaw());
+    sDelete(node);
+}

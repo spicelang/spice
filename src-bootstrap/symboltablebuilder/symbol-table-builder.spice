@@ -145,6 +145,7 @@ f<Any> SymbolTableBuilder.visitFctOrProcDef(ASTFctDefBaseNode* node, bool isFunc
     this.currentScope = fctScope;
     fctScope.isGenericScope = node.hasTemplateTypes || (structScope != nil<Scope*> && structScope.isGenericScope);
     if !isFunction {
+        fctScope.isCtorScope = node.isMethod && node.name.name == CTOR_FUNCTION_NAME;
         fctScope.isDtorScope = node.isMethod && node.name.name == DTOR_FUNCTION_NAME;
     }
 

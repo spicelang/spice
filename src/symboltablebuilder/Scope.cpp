@@ -400,6 +400,18 @@ Scope *Scope::getFunctionScope() { // NOLINT(misc-no-recursion)
 }
 
 /**
+ * Check if this scope is the body scope of a ctor or one of its nested scopes (e.g. the body of an if statement in a ctor)
+ *
+ * @return In ctor body or not
+ */
+bool Scope::isInCtorBody() const {
+  for (const Scope *scope = this; scope != nullptr; scope = scope->parent)
+    if (scope->type == ScopeType::FUNC_PROC_BODY || scope->type == ScopeType::LAMBDA_BODY)
+      return scope->isCtorScope;
+  return false;
+}
+
+/**
  * Check if this scope is one of the child scopes of a switch statement
  *
  * @return Child scope of switch statement or not

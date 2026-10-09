@@ -55,9 +55,15 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       // Otherwise its owning members (heap pointers, strings, ...) would leak. This applies when a new value is copied
       // into the lhs (non-null copy ctor) and when a temporary is moved into it (temp stealing).
       // 'isInitialized()' is false for declarations, uninitialized fields and moved-from values, so those are skipped.
+      // The lifecycle of a field is tracked per struct, not per instance, so it only tells if the field is initialized within
+      // a ctor body. Outside the ctors of the struct, the first assignment to a field in the source code overwrites the value
+      // of a constructed object as well, if the field is reached via a variable or 'this'. Fields reached via a pointer might
+      // still be uninitialized memory (e.g. a raw allocation, that is initialized field by field).
       // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
       // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
-      if (!isDecl && lhs.entry != nullptr && lhs.entry->isInitialized() && !currentScope->doesAllowUnsafeOperations()) {
+      const bool overwritesValue = isDecl ? !currentScope->isInCtorBody() && isAlwaysConstructedLvalue(node->lhs)
+                                          : lhs.entry != nullptr && lhs.entry->isInitialized();
+      if (overwritesValue && lhs.entry != nullptr && !currentScope->doesAllowUnsafeOperations()) {
         const QualType lhsSType = lhs.type.removeReferenceWrapper().toNonConst();
         if (lhsSType.is(TY_STRUCT) && !lhsSType.isTriviallyDestructible(node) &&
             (copyCtor != nullptr || isDestructibleTempStealTarget(node, rhs.type, isRhsTemporary)))
@@ -125,9 +131,10 @@ bool TypeChecker::isDestructibleTempStealTarget(AssignExprNode *node, const Qual
 /**
  * Check if the value, that an lvalue expression denotes, has always been constructed at runtime, when it is accessed.
  * This is the case for variables (except the result variable) and chains of field accesses on them or on 'this', as long
- * as each involved struct value is referenced or its struct has a no-args ctor. Values of structs with a no-args ctor are
- * always constructed before they can be accessed: locals at their declaration and fields in the ctor preamble. Values of
- * other structs might still be uninitialized memory, e.g. fields of such a struct type in a ctor body.
+ * as each involved field value is referenced or its struct has a no-args ctor. Variables are constructed at their
+ * declaration: either explicitly, by the no-args ctor or, for trivially constructible structs, by zero-initialization. All
+ * other structs require an initial value. Field values of structs with a no-args ctor are constructed in the ctor
+ * preamble. Field values of other structs might still be uninitialized memory, e.g. in a ctor body.
  *
  * @param node Lvalue expression
  * @return Always constructed or not
@@ -140,8 +147,9 @@ bool TypeChecker::isAlwaysConstructedLvalue(const ExprNode *node) const {
   if (!isThis && !type.isRef()) {
     if (!type.is(TY_STRUCT))
       return false;
+    // Field values additionally require a no-args ctor (see above)
     const QualType structType = type.toNonConst();
-    if (FunctionManager::lookup(structType.getBodyScope(), CTOR_FUNCTION_NAME, structType, {}, false) == nullptr)
+    if (atomicExpr == nullptr && FunctionManager::lookup(structType.getBodyScope(), CTOR_FUNCTION_NAME, structType, {}, false) == nullptr)
       return false;
   }
 
