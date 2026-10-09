@@ -1,0 +1,26 @@
+// TEST: -g
+
+f<int> applyTwice(f<int>(int) fct, int value) {
+    return fct(fct(value));
+}
+
+f<int> main() {
+    int counter = 10; // Captured by reference
+    const long offset = 5l; // Captured by value
+    p() increment = p() {
+        counter++;
+        counter += offset;
+    };
+    increment();
+    printf("Counter: %d\n", counter);
+
+    // Function lambda with params and without captures
+    f<int>(int) doubleFct = f<int>(int x) {
+        return x * 2;
+    };
+    printf("Doubled twice: %d\n", applyTwice(doubleFct, counter));
+
+    // Expression lambda
+    f<bool>(int) isEven = (int x) -> x % 2 == 0;
+    printf("Is even: %d\n", isEven(counter));
+}

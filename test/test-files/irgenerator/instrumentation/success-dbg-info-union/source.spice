@@ -1,0 +1,55 @@
+// TEST: -g
+
+type T dyn;
+
+type Vec2 struct {
+    int x
+    int y
+}
+
+type Value union {
+    int i
+    double d
+    Vec2 vec
+    Value* next
+}
+
+type Box<T> union {
+    T value
+    long fallback
+}
+
+type Holder struct {
+    Value value
+    Box<short> box
+}
+
+f<int> sum(const Value& value) {
+    return value.vec.x + value.vec.y;
+}
+
+f<int> main() {
+    Value value;
+    value.i = 42;
+    printf("Int: %d\n", value.i);
+    value.d = 3.5;
+    printf("Double: %f\n", value.d);
+    value.vec = Vec2{ 1, 2 };
+    printf("Sum: %d\n", sum(value));
+
+    Box<int> intBox;
+    intBox.value = 7;
+    Box<double> doubleBox;
+    doubleBox.value = 2.5;
+    printf("Boxes: %d, %f\n", intBox.value, doubleBox.value);
+    intBox.fallback = 8l;
+    doubleBox.fallback = 9l;
+    printf("Fallbacks: %d, %d\n", intBox.fallback, doubleBox.fallback);
+
+    Holder holder;
+    holder.box.value = 12s;
+    printf("Holder value: %d\n", holder.box.value);
+    holder.box.fallback = 123l;
+    holder.value.next = &value;
+    printf("Holder fallback: %d\n", holder.box.fallback);
+}

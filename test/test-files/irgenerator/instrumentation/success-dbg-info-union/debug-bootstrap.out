@@ -1,0 +1,50 @@
+GNU gdb (Ubuntu 15.1-1ubuntu1~24.04.1) 15.1
+Copyright (C) 2024 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+Type "show copying" and "show warranty" for details.
+This GDB was configured as "x86_64-linux-gnu".
+Type "show configuration" for configuration details.
+For bug reporting instructions, please see:
+<https://www.gnu.org/software/gdb/bugs/>.
+Find the GDB manual and other documentation resources online at:
+    <http://www.gnu.org/software/gdb/documentation/>.
+
+For help, type "help".
+Type "apropos word" to search for commands related to "word"...
+Reading symbols from ./test-tmp/instrumentation_successDbgInfoUnion/source...
+Breakpoint 1: file ./test-files/irgenerator/instrumentation/success-dbg-info-union/source.spice, line 28.
+Breakpoint 2: file ./test-files/irgenerator/instrumentation/success-dbg-info-union/source.spice, line 44.
+Breakpoint 3: file ./test-files/irgenerator/instrumentation/success-dbg-info-union/source.spice, line 54.
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+
+Breakpoint 1, sum (value=...)
+    at ./test-files/irgenerator/instrumentation/success-dbg-info-union/source.spice:28
+28	    return value.vec.x + value.vec.y;
+$1 = (const Value &) {i = 1, d = 4.2439915824246103e-314, vec = {x = 1, 
+    y = 2}, next = }
+$2 = {x = 1, y = 2}
+
+Breakpoint 2, main ()
+    at ./test-files/irgenerator/instrumentation/success-dbg-info-union/source.spice:44
+44	    printf("Boxes: %d, %f\n", intBox.value, doubleBox.value);
+$3 = {i = 1, d = 4.2439915824246103e-314, vec = {x = 1, y = 2}, next = }
+$4 = {value = 7, fallback = 7}
+$5 = 2.5
+
+Breakpoint 3, main ()
+    at ./test-files/irgenerator/instrumentation/success-dbg-info-union/source.spice:54
+54	    printf("Holder fallback: %d\n", holder.box.fallback);
+$6 = {value = 123, fallback = 123}
+$7 = 123
+$8 = {i = 1, d = 4.2439915824246103e-314, vec = {x = 1, y = 2}, next = }
+Int: 42
+Double: 3.500000
+Sum: 3
+Boxes: 7, 2.500000
+Fallbacks: 8, 9
+Holder value: 12
+Holder fallback: 123
+[Inferior 1 (process 1107916) exited normally]
