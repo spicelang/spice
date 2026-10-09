@@ -22,13 +22,6 @@ public type ASTVisualizer struct : IAbstractAstVisitor {
     String parentNodeId
 }
 
-// Typed double-dispatch entry point.
-// Calls accept() on the IVisitable interface pointer, which dispatches to the correct visitXxx override.
-#[ignoreUnusedReturnValue]
-public f<Any> ASTVisualizer.visit(IVisitable* node) {
-    return node.accept(cast<IAbstractAstVisitor*>(this));
-}
-
 // ─── private helpers ──────────────────────────────────────────────────────────
 
 f<Any> ASTVisualizer.buildNode<T>(const T* node) {

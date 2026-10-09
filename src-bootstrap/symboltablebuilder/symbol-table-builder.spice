@@ -48,27 +48,7 @@ public p SymbolTableBuilder.ctor(GlobalResourceManager& resourceManager, SourceF
     this.compilerPass = CompilerPass(resourceManager, sourceFile);
 }
 
-// ─── entry point ──────────────────────────────────────────────────────────────
-
-// Generic double-dispatch entry point required by IAbstractAstVisitor. source-file.spice calls the concrete
-// visit(ASTEntryNode*) overload below.
-#[ignoreUnusedReturnValue]
-public f<Any> SymbolTableBuilder.visit(IVisitable* node) {
-    return node.accept(cast<IAbstractAstVisitor*>(this));
-}
-
-#[ignoreUnusedReturnValue]
-public f<Any> SymbolTableBuilder.visit(ASTEntryNode* node) {
-    return this.visitEntry(node);
-}
-
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-// Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor)
-#[ignoreUnusedReturnValue]
-f<Any> SymbolTableBuilder.visitChildren(ASTNode* node) {
-    return visitChildrenOf(node, cast<IAbstractAstVisitor*>(this));
-}
 
 // All errors of the symbol table builder are hard errors (thrown as SemanticError in the host)
 p SymbolTableBuilder.reportError(const ASTNode* node, SemanticErrorType errorType, const String& message, bool printErrorMessage = true) {
@@ -1071,47 +1051,3 @@ public f<Any> SymbolTableBuilder.visitEnumItemLst(ASTEnumItemLstNode* node) {
     }
     return Any();
 }
-
-// ─── default traversal for everything the pass does not implement itself ─────────
-
-public f<Any> SymbolTableBuilder.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitSwitchStmt(ASTSwitchStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitTypeLst(ASTTypeLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitTypeAltsLst(ASTTypeAltsLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitArgLst(ASTArgLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitExprStmt(ASTExprStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitQualifierLst(ASTQualifierLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitQualifier(ASTQualifierNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitCaseConstant(ASTCaseConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitReturnStmt(ASTReturnStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitBreakStmt(ASTBreakStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitContinueStmt(ASTContinueStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitAssertStmt(ASTAssertStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitAssignExpr(ASTAssignExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitEqualityExpr(ASTEqualityExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitRelationalExpr(ASTRelationalExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitShiftExpr(ASTShiftExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitAdditiveExpr(ASTAdditiveExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitCastExpr(ASTCastExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitAtomicExpr(ASTAtomicExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitValue(ASTValueNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitConstant(ASTConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitFctCall(ASTFctCallNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitStructInstantiation(ASTStructInstantiationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitDataType(ASTDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitBaseDataType(ASTBaseDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitCustomDataType(ASTCustomDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitFunctionDataType(ASTFunctionDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
-public f<Any> SymbolTableBuilder.visitImportDef(ASTImportDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }

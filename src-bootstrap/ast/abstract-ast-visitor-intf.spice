@@ -11,9 +11,13 @@ import "bootstrap/ast/ast-nodes";
  *
  * Circular imports are supported: ast-nodes.spice imports this file, and this file imports
  * ast-nodes.spice. The compiler handles the cycle natively.
+ *
+ * All methods have default implementations below, so that each compiler pass only implements the
+ * visit methods it needs. By default, a visit method visits all children of the node.
  */
 public type IAbstractAstVisitor interface {
     public f<Any> visit(IVisitable*);
+    public f<Any> visitChildren(ASTNode*);
     public f<Any> visitEntry(ASTEntryNode*);
     public f<Any> visitMainFctDef(ASTMainFctDefNode*);
     public f<Any> visitFctDef(ASTFctDefNode*);
@@ -93,3 +97,97 @@ public type IAbstractAstVisitor interface {
     public f<Any> visitCustomDataType(ASTCustomDataTypeNode*);
     public f<Any> visitFunctionDataType(ASTFunctionDataTypeNode*);
 }
+
+// ─── default methods ──────────────────────────────────────────────────────────
+
+// Typed double-dispatch entry point. The runtime type of node determines which accept() override fires, which in turn
+// calls the appropriate visit method of the concrete visitor.
+#[ignoreUnusedReturnValue]
+public f<Any> IAbstractAstVisitor.visit(IVisitable* node) {
+    return node.accept(this);
+}
+
+// Depth-first structural traversal. Visitors can override this to customize the traversal of all default visit methods.
+#[ignoreUnusedReturnValue]
+public f<Any> IAbstractAstVisitor.visitChildren(ASTNode* node) {
+    return visitChildrenOf(node, this);
+}
+
+public f<Any> IAbstractAstVisitor.visitEntry(ASTEntryNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitMainFctDef(ASTMainFctDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitFctDef(ASTFctDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitProcDef(ASTProcDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitFctName(ASTFctNameNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitStructDef(ASTStructDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitInterfaceDef(ASTInterfaceDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitUnionDef(ASTUnionDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitEnumDef(ASTEnumDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitGenericTypeDef(ASTGenericTypeDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAliasDef(ASTAliasDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitGlobalVarDef(ASTGlobalVarDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitExtDecl(ASTExtDeclNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitImportDef(ASTImportDefNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitUnsafeBlock(ASTUnsafeBlockNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitForLoop(ASTForLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitForeachLoop(ASTForeachLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitWhileLoop(ASTWhileLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitDoWhileLoop(ASTDoWhileLoopNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitIfStmt(ASTIfStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitElseStmt(ASTElseStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitSwitchStmt(ASTSwitchStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitCaseBranch(ASTCaseBranchNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitDefaultBranch(ASTDefaultBranchNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitStmtLst(ASTStmtLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitTypeLst(ASTTypeLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitTypeLstWithEllipsis(ASTTypeLstWithEllipsisNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitTypeAltsLst(ASTTypeAltsLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitParamLst(ASTParamLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitArgLst(ASTArgLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitEnumItemLst(ASTEnumItemLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitEnumItem(ASTEnumItemNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitField(ASTFieldNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitSignature(ASTSignatureNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitDeclStmt(ASTDeclStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitExprStmt(ASTExprStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitQualifierLst(ASTQualifierLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitQualifier(ASTQualifierNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitModAttr(ASTModAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitTopLevelDefinitionAttr(ASTTopLevelDefAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitLambdaAttr(ASTLambdaAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAttrLst(ASTAttrLstNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAttr(ASTAttrNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitCaseConstant(ASTCaseConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitReturnStmt(ASTReturnStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitBreakStmt(ASTBreakStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitContinueStmt(ASTContinueStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitFallthroughStmt(ASTFallthroughStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAssertStmt(ASTAssertStmtNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAssignExpr(ASTAssignExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitTernaryExpr(ASTTernaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitLogicalOrExpr(ASTLogicalOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitLogicalAndExpr(ASTLogicalAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitBitwiseOrExpr(ASTBitwiseOrExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitBitwiseXorExpr(ASTBitwiseXorExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitEqualityExpr(ASTEqualityExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitRelationalExpr(ASTRelationalExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitShiftExpr(ASTShiftExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAdditiveExpr(ASTAdditiveExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitMultiplicativeExpr(ASTMultiplicativeExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitCastExpr(ASTCastExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitAtomicExpr(ASTAtomicExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitValue(ASTValueNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitConstant(ASTConstantNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitFctCall(ASTFctCallNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitArrayInitialization(ASTArrayInitializationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitStructInstantiation(ASTStructInstantiationNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitLambdaFunc(ASTLambdaFuncNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitLambdaProc(ASTLambdaProcNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitLambdaExpr(ASTLambdaExprNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitDataType(ASTDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitBaseDataType(ASTBaseDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitCustomDataType(ASTCustomDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }
+public f<Any> IAbstractAstVisitor.visitFunctionDataType(ASTFunctionDataTypeNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }

@@ -168,6 +168,12 @@ When adding a new AST node, follow the existing node definitions in `src/ast/AST
 `visit*` method to the visitor interfaces and every concrete pass. See the `spice-language-feature` skill for the
 end-to-end recipe.
 
+In the bootstrap compiler (`src-bootstrap/`), the visitor interface `IAbstractAstVisitor`
+(`ast/abstract-ast-visitor-intf.spice`) provides a [default method](docs/docs/language/interfaces.md#default-methods) for
+every visit method, which visits all children of the node via `visitChildren`. A pass only implements the visit methods
+it needs and can override `visitChildren` to customize the traversal. When adding a new AST node, add its signature and
+default method to the interface.
+
 ## Error handling & diagnostics
 
 User-facing diagnostics are raised as **C++ exceptions** from a dedicated hierarchy under `src/exception/`:
