@@ -34,6 +34,7 @@ import "bootstrap/util/memory";
 import "bootstrap/util/block-allocator";
 import "bootstrap/util/concurrency";
 import "bootstrap/source-file";
+import "bootstrap/symboltablebuilder/scope";
 import "bootstrap/driver";
 import "bootstrap/util/test-util";
 
@@ -54,8 +55,12 @@ public type GlobalResourceManager struct {
     public DefaultMemoryManager memoryManager
     public Vector<String> compileTimeStringValues
     public BlockAllocator<ASTNode> astNodeAlloc // Used to allocate all AST nodes
+    // Used to allocate all scopes. The host owns the child scopes in their parent scope via shared_ptr. A pool per parent scope
+    // would reserve a whole block for each scope, although most scopes have no or only a few children
+    BlockAllocator<Scope> scopeAlloc
+    RecursiveMutex scopeAllocMutex // Guards the scope pool, while the back end runs in parallel (see ConditionalLock)
     public UnorderedMap<long, unsigned long> nodeToNodeId // Maps the address of each AST node to its node id
-    // The GlobalResourceManager owns all source files. They live in this pool (like the scopes in their parent scope), because
+    // The GlobalResourceManager owns all source files. They live in this pool (like the scopes in theirs), because
     // a map of owning 'heap' pointers cannot be instantiated: its iterator needs a reference to a heap pointer as field type
     BlockAllocator<SourceFile> sourceFileAlloc
     public UnorderedMap<String, SourceFile*> sourceFiles // Maps the file paths to the source files owned by the pool above
@@ -93,6 +98,7 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.cacheManager = CacheManager(cliOptions);
     this.runtimeModuleManager = RuntimeModuleManager(*this);
     this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
+    this.scopeAlloc = BlockAllocator<Scope>(this.memoryManager);
     this.sourceFileAlloc = BlockAllocator<SourceFile>(this.memoryManager, sizeof<SourceFile>() * 4l);
     // Context-free type creation (e.g. QualType(TY_INT)) interns into the type registry of the resource manager
     setActiveTypeRegistry(&this.typeRegistry);
@@ -208,6 +214,24 @@ public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent,
     }
 
     return this.sourceFiles.get(sourceFileKey);
+}
+
+/**
+ * Create a scope in the scope pool. The pool owns all scopes and destructs them together with the resource manager.
+ *
+ * @param parent Parent scope, or nil for a global scope
+ * @param sourceFile Source file the scope belongs to
+ * @param scopeType Type of the scope
+ * @param codeLoc Code location of the scope
+ * @return New scope
+ */
+public f<Scope*> GlobalResourceManager.createScope(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, const CodeLoc* codeLoc) {
+    // The back end creates scopes as well (e.g. for the test main), while it may run in parallel
+    ConditionalLock _ = ConditionalLock(&this.scopeAllocMutex);
+    // Reserve stable storage for the scope in the pool and construct it in place (no Scope copy)
+    Scope* scope = this.scopeAlloc.reserve<Scope>();
+    __placement_new<Scope>(scope, parent, sourceFile, scopeType, codeLoc);
+    return scope;
 }
 
 public f<unsigned long> GlobalResourceManager.getNextCustomTypeId() {
