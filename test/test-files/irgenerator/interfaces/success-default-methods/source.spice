@@ -24,14 +24,14 @@ f<int> IVisitor.visitLeaf(Node* _node) {
 }
 
 f<int> IVisitor.visitChildren(Node* node) {
-    int result = 0;
+    int sum = 0;
     if node.left != nil<Node*> {
-        result += this.visitNode(node.left);
+        sum += this.visitNode(node.left);
     }
     if node.right != nil<Node*> {
-        result += this.visitNode(node.right);
+        sum += this.visitNode(node.right);
     }
-    return result;
+    return sum;
 }
 
 p IVisitor.printName() {
@@ -56,14 +56,14 @@ f<int> LeafSum.visitLeaf(Node* node) {
 type NodeCounter struct : IVisitor {}
 
 f<int> NodeCounter.visitChildren(Node* node) {
-    int result = 1;
+    int sum = 1;
     if node.left != nil<Node*> {
-        result += this.visitNode(node.left);
+        sum += this.visitNode(node.left);
     }
     if node.right != nil<Node*> {
-        result += this.visitNode(node.right);
+        sum += this.visitNode(node.right);
     }
-    return result;
+    return sum;
 }
 
 p NodeCounter.printName() {

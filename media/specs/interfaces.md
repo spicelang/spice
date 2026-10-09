@@ -104,5 +104,7 @@ implementation of the concrete struct, regardless of whether it is the implement
 
 ### Limitations
 - Default methods of generic interfaces and generic default methods are not supported yet.
+- Virtual calls through an interface, that is not the first interface of a struct, do not work correctly yet. This is
+  independent of default methods, but also affects default methods of such interfaces.
 - The bootstrap compiler does not support default methods yet. Once it does, the visitor interface of the bootstrap compiler can
   provide default visit methods, so that each compiler pass only implements the visit methods it needs.

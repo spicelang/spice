@@ -1,4 +1,4 @@
-type T int|double;
+type T int|long;
 
 type IValue interface {
     f<double> getValue();
@@ -23,8 +23,8 @@ f<double> Box.getValue() {
 
 f<int> main() {
     Box<int> intBox = Box<int>(21);
-    Box<double> doubleBox = Box<double>(1.25);
+    Box<long> longBox = Box<long>(5l);
     printf("%.2f\n", intBox.getDoubleValue());
-    IValue* value = &doubleBox;
+    IValue* value = &longBox;
     printf("%.2f\n", value.getDoubleValue());
 }

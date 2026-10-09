@@ -12,6 +12,6 @@ p ICounter.increment() {
 }
 
 f<int> main() {
-    Counter counter = Counter{0};
+    Counter counter;
     counter.increment();
 }

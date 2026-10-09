@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:8:1:
+Invalid default method: Default methods of generic interfaces are not supported yet
+
+8  f<T> IValue.getDoubleValue() {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

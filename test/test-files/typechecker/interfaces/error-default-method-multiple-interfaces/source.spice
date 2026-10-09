@@ -13,6 +13,6 @@ p IGreeter.greet() {
 type Person struct : IGreeter, IWelcomer {}
 
 f<int> main() {
-    Person person = Person{};
+    Person person;
     person.greet();
 }

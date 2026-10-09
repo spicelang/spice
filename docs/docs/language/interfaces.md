@@ -125,6 +125,10 @@ type Person struct : Greeter {
     string name
 }
 
+p Person.ctor(string name) {
+    this.name = name;
+}
+
 f<string> Person.getName() {
     return this.name;
 }
@@ -141,8 +145,8 @@ p Robot.greet() {
 }
 
 f<int> main() {
-    Person person = Person{"Alice"};
-    Robot robot = Robot{};
+    Person person = Person("Alice");
+    Robot robot;
     person.greet(); // Hello, Alice!
     Greeter* greeter = &robot;
     greeter.greet(); // Beep boop, I am R2D2
