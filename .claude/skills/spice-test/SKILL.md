@@ -69,7 +69,8 @@ These are `spicetest`'s own flags (not GoogleTest):
   `-O1 --sanitizer address` (instead of `-O3 -lto`). Every test case fails, for
   which the bootstrap compiler prints an AddressSanitizer or LeakSanitizer
   report. Combine it with `--bootstrap-build-only` to build it once, then run
-  the cases in parallel via `--bootstrap-compiler`, like the weekly
+  the cases in parallel via `--bootstrap-compiler` and `--bootstrap-asan` (so
+  that the builtin tests are built with ASAN as well), like the weekly
   `ci-asan.yml` job does.
 
 ## Bootstrap mode
@@ -83,6 +84,12 @@ The `spicetest_bootstrap_parallel` target builds the bootstrap compiler once
 (`--bootstrap-build-only`), then runs the test cases against it in parallel via
 gtest-parallel (`--bootstrap-compiler`), like `spicetest_parallel` does for the
 host compiler. CI uses the parallel target.
+
+In bootstrap mode, `BootstrapTests.BuiltinTests` additionally builds the
+bootstrap compiler sources in test build mode (`--build-mode test`, into
+`test-tmp/bootstrap-tests/`) and runs their builtin tests (`#[test]` functions,
+e.g. in `src-bootstrap/driver.spice`). It uses the same instrumentation as the
+bootstrap compiler (`--bootstrap-asan`, `--bootstrap-coverage`), otherwise `-O0`.
 
 It is functionally equivalent to the host mode and checks the same references:
 `syntax-tree.dot` and `dependency-graph.dot` (via `--dump-ast` /
