@@ -35,6 +35,25 @@ p Outer.copyText(const String& text) {
     this.text = text;
 }
 
+// Struct with a no-args ctor, that already allocates. Each field of this type is constructed in the ctor preamble
+type Prefilled struct {
+    String text
+}
+
+type PrefilledOwner struct {
+    Prefilled prefilled
+}
+
+// In a ctor, a nested field of a field, that was constructed in the ctor preamble, holds a constructed value as well. This
+// ctor is placed before the one of Prefilled, so that it is the first assignment to the field in the source code
+p PrefilledOwner.ctor(string text) {
+    this.prefilled.text = String(text);
+}
+
+p Prefilled.ctor() {
+    this.text = String("default value, that is long enough to be heap-allocated");
+}
+
 type Node struct {
     String value
 }
@@ -55,6 +74,10 @@ f<int> main() {
     outer.copyText(copySource);
     printf("%s\n", outer.text.getRaw());
     printf("%s\n", outer.mid.text.getRaw());
+
+    // Nested field in a ctor
+    const PrefilledOwner prefilledOwner = PrefilledOwner("value, that is set in the ctor and long enough to be heap-allocated");
+    printf("%s\n", prefilledOwner.prefilled.text.getRaw());
 
     // Fields reached via a pointer might be uninitialized memory, so they must not be destructed before the assignment
     heap Node* node;

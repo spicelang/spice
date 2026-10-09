@@ -55,14 +55,16 @@ std::any TypeChecker::visitAssignExpr(AssignExprNode *node) {
       // Otherwise its owning members (heap pointers, strings, ...) would leak. This applies when a new value is copied
       // into the lhs (non-null copy ctor) and when a temporary is moved into it (temp stealing).
       // 'isInitialized()' is false for declarations, uninitialized fields and moved-from values, so those are skipped.
-      // The lifecycle of a field is tracked per struct, not per instance, so it only tells if the field is initialized within
-      // a ctor body. Outside the ctors of the struct, the first assignment to a field in the source code overwrites the value
-      // of a constructed object as well, if the field is reached via a variable or 'this'. Fields reached via a pointer might
-      // still be uninitialized memory (e.g. a raw allocation, that is initialized field by field).
+      // The lifecycle of a field is tracked per struct, not per instance, so the first assignment to a field in the source code
+      // can overwrite the value of a constructed object as well, if the field is reached via a variable or 'this'. Only the
+      // direct fields of 'this' in a ctor body might still be uninitialized. Nested fields were constructed in the ctor
+      // preamble. Fields reached via a pointer might still be uninitialized memory (e.g. a raw allocation, that is
+      // initialized field by field).
       // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
       // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
-      const bool overwritesValue = isDecl ? !currentScope->isInCtorBody() && isAlwaysConstructedLvalue(node->lhs)
-                                          : lhs.entry != nullptr && lhs.entry->isInitialized();
+      const bool isFieldInit = currentScope->isInCtorBody() && isDirectFieldOfThis(node->lhs);
+      const bool overwritesValue =
+          isDecl ? !isFieldInit && isAlwaysConstructedLvalue(node->lhs) : lhs.entry != nullptr && lhs.entry->isInitialized();
       if (overwritesValue && lhs.entry != nullptr && !currentScope->doesAllowUnsafeOperations()) {
         const QualType lhsSType = lhs.type.removeReferenceWrapper().toNonConst();
         if (lhsSType.is(TY_STRUCT) && !lhsSType.isTriviallyDestructible(node) &&
@@ -163,6 +165,20 @@ bool TypeChecker::isAlwaysConstructedLvalue(const ExprNode *node) const {
   if (postfixUnaryExpr == nullptr || postfixUnaryExpr->op != PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS)
     return false;
   return isAlwaysConstructedLvalue(postfixUnaryExpr->postfixUnaryExpr);
+}
+
+/**
+ * Check if an lvalue expression denotes a direct field of 'this' (e.g. 'this.field', but not 'this.field.nestedField')
+ *
+ * @param node Lvalue expression
+ * @return Direct field of 'this' or not
+ */
+bool TypeChecker::isDirectFieldOfThis(const ExprNode *node) {
+  const auto *postfixUnaryExpr = dynamic_cast<const PostfixUnaryExprNode *>(node);
+  if (postfixUnaryExpr == nullptr || postfixUnaryExpr->op != PostfixUnaryExprNode::PostfixUnaryOp::OP_MEMBER_ACCESS)
+    return false;
+  const auto *atomicExpr = dynamic_cast<const AtomicExprNode *>(postfixUnaryExpr->postfixUnaryExpr);
+  return atomicExpr != nullptr && atomicExpr->fqIdentifier == THIS_VARIABLE_NAME;
 }
 
 /**

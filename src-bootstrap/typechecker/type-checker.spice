@@ -3365,6 +3365,28 @@ f<bool> TypeChecker.isAlwaysConstructedLvalue(ASTNode* node) {
 }
 
 /**
+ * Check if an lvalue expression denotes a direct field of 'this' (e.g. 'this.field', but not 'this.field.nestedField')
+ *
+ * @param node Lvalue expression
+ * @return Direct field of 'this' or not
+ */
+f<bool> isDirectFieldOfThis(ASTNode* node) {
+    if node.kind != ASTNodeKind::POSTFIX_UNARY_EXPR {
+        return false;
+    }
+    ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(node);
+    if postfixUnaryExpr.op != PostfixUnaryOp::OP_MEMBER_ACCESS {
+        return false;
+    }
+    ASTNode* operandNode = getASTNode(postfixUnaryExpr.postfixUnaryExpr);
+    if operandNode.kind != ASTNodeKind::ATOMIC_EXPR {
+        return false;
+    }
+    ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(operandNode);
+    return atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
+}
+
+/**
  * Check if the value of a return statement can be returned without copying it (RVO). This is only the case for local
  * variables of the current function/procedure/lambda, because their dtor call can be omitted and the caller takes over
  * the ownership. Fields, globals, captured variables and values that are reached through a variable (e.g. by
@@ -3449,15 +3471,17 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         // Otherwise its owning members (heap pointers, strings, ...) would leak. This applies when a new value is copied
         // into the lhs (non-null copy ctor) and when a temporary is moved into it (temp stealing).
         // 'isInitialized()' is false for declarations, uninitialized fields and moved-from values, so those are skipped.
-        // The lifecycle of a field is tracked per struct, not per instance, so it only tells if the field is initialized within
-        // a ctor body. Outside the ctors of the struct, the first assignment to a field in the source code overwrites the value
-        // of a constructed object as well, if the field is reached via a variable or 'this'. Fields reached via a pointer might
-        // still be uninitialized memory (e.g. a raw allocation, that is initialized field by field).
+        // The lifecycle of a field is tracked per struct, not per instance, so the first assignment to a field in the source code
+        // can overwrite the value of a constructed object as well, if the field is reached via a variable or 'this'. Only the
+        // direct fields of 'this' in a ctor body might still be uninitialized. Nested fields were constructed in the ctor
+        // preamble. Fields reached via a pointer might still be uninitialized memory (e.g. a raw allocation, that is
+        // initialized field by field).
         // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
         // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
         bool overwritesValue = lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isInitialized();
         if isDecl {
-            overwritesValue = !this.currentScope.isInCtorBody() && this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
+            const bool isFieldInit = this.currentScope.isInCtorBody() && isDirectFieldOfThis(getASTNode(node.lhs));
+            overwritesValue = !isFieldInit && this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
         }
         if overwritesValue && lhs.entry != nil<SymbolTableEntry*> && !this.currentScope.doesAllowUnsafeOperations() {
             const QualType lhsUnwrappedType = lhs.ty.removeReferenceWrapper();
