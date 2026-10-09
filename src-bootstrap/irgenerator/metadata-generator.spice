@@ -61,10 +61,6 @@ public p MetadataGenerator.generateTypeMetadata(llvm::Value inst, const QualType
 public p MetadataGenerator.generateTBAAMetadata(llvm::Value inst, const QualType& qualType) {
     const String typeName = qualType.getName(true, true);
     const llvm::Metadata tbaaTypeNode = this.createTBAAScalarTypeNode(typeName, this.omnipotentByte);
-    // Seems so new, that the verifier does not accept it
-    //const llvm::TypeSize typeSize = irGenerator->module->getDataLayout().getTypeAllocSize(llvmType);
-    //const bool isImmutable = type.isConst();
-    //llvm::MDNode *tbaaAccessTag = mdBuilder.createTBAAAccessTag(tbaaTypeNode, tbaaTypeNode, 0, typeSize, isImmutable);
     llvm::IRBuilder* builder = this.irGenerator.builder;
     Vector<llvm::Metadata> operands;
     operands.pushBack(tbaaTypeNode);

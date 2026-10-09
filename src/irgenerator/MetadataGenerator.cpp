@@ -33,10 +33,6 @@ void MetadataGenerator::generateTypeMetadata(llvm::Instruction *inst, const Qual
 void MetadataGenerator::generateTBAAMetadata(llvm::Instruction *inst, const QualType &type) {
   const std::string typeName = type.getName(true, true);
   llvm::MDNode *tbaaTypeNode = mdBuilder.createTBAAScalarTypeNode(typeName, omnipotentByte);
-  // Seems so new, that the verifier does not accept it
-  //const llvm::TypeSize typeSize = irGenerator->module->getDataLayout().getTypeAllocSize(llvmType);
-  //const bool isImmutable = type.isConst();
-  //llvm::MDNode *tbaaAccessTag = mdBuilder.createTBAAAccessTag(tbaaTypeNode, tbaaTypeNode, 0, typeSize, isImmutable);
   llvm::ConstantAsMetadata *offset = llvm::ConstantAsMetadata::get(irGenerator->builder.getInt64(0));
   llvm::MDNode *tbaaAccessTag = llvm::MDNode::get(irGenerator->context, {tbaaTypeNode, tbaaTypeNode, offset});
 
