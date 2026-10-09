@@ -118,16 +118,6 @@ bool BootstrapUtil::buildBootstrapCompiler() {
 }
 
 /**
- * Run the bootstrap compiler with the given args and capture its combined stdout and stderr output.
- *
- * @param args Arguments for the bootstrap compiler
- * @return Output and exit code of the bootstrap compiler
- */
-ExecResult BootstrapUtil::execBootstrapCompiler(const std::vector<std::string> &args) {
-  return SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
-}
-
-/**
  * The bootstrap compiler has no exceptions, so it reports compile errors via a panic:
  *
  *   Program panicked at <file>:<line>:<col>: <error message>

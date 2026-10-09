@@ -480,7 +480,7 @@ static void execBootstrapTestCase(const TestCase &testCase) {
   // Run the bootstrap compiler with the given args on the main source file
   const auto runBootstrapCompiler = [&](std::vector<std::string> args) {
     args.push_back(mainSourceFilePath.string());
-    ExecResult result = BootstrapUtil::execBootstrapCompiler(args);
+    ExecResult result = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
     if (testDriverCliOptions.isVerbose)                             // GCOV_EXCL_LINE
       std::cout << "Bootstrap compiler output:\n" << result.output; // GCOV_EXCL_LINE
     // An ASAN-instrumented bootstrap compiler reports memory errors, even if it compiles the test case like expected
@@ -669,7 +669,7 @@ void execBootstrapLinterTestCase(const TestCase &testCase) {
   const std::vector<std::string> args = {"lint", mainSourceFilePath.string()};
 
   // Run the bootstrap compiler
-  const auto [output, exitCode] = BootstrapUtil::execBootstrapCompiler(args);
+  const auto [output, exitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
   if (testDriverCliOptions.isVerbose)                      // GCOV_EXCL_LINE
     std::cout << "Bootstrap compiler output:\n" << output; // GCOV_EXCL_LINE
   // An ASAN-instrumented bootstrap compiler reports memory errors, even if it lints the test case like expected
