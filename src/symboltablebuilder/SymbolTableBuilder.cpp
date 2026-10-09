@@ -9,6 +9,7 @@
 #include <exception/SemanticError.h>
 #include <global/GlobalResourceManager.h>
 #include <model/Function.h>
+#include <model/Interface.h>
 #include <symboltablebuilder/Scope.h>
 
 namespace spice::compiler {
@@ -86,10 +87,12 @@ std::any SymbolTableBuilder::visitFctDef(FctDefNode *node) {
     }
   }
 
-  // Change to struct scope if this function is a method
+  // Change to struct scope if this function is a method. Methods of interfaces are default methods
   if (node->isMethod) {
-    const std::string scopeName = Struct::getScopeName(node->name->structName);
-    node->structScope = currentScope = currentScope->getChildScope(scopeName);
+    Scope *structScope = currentScope->getChildScope(Struct::getScopeName(node->name->structName));
+    if (!structScope)
+      structScope = currentScope->getChildScope(Interface::getScopeName(node->name->structName));
+    node->structScope = currentScope = structScope;
     if (!currentScope)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->name->structName + "' could not be found");
   }
@@ -150,10 +153,12 @@ std::any SymbolTableBuilder::visitProcDef(ProcDefNode *node) {
     }
   }
 
-  // Change to struct scope if this procedure is a method
+  // Change to struct scope if this procedure is a method. Methods of interfaces are default methods
   if (node->isMethod) {
-    const std::string &scopeName = Struct::getScopeName(node->name->structName);
-    node->structScope = currentScope = currentScope->getChildScope(scopeName);
+    Scope *structScope = currentScope->getChildScope(Struct::getScopeName(node->name->structName));
+    if (!structScope)
+      structScope = currentScope->getChildScope(Interface::getScopeName(node->name->structName));
+    node->structScope = currentScope = structScope;
     if (!currentScope)
       throw SemanticError(node, REFERENCED_UNDEFINED_STRUCT, "Struct '" + node->name->structName + "' could not be found");
   }

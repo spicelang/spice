@@ -104,6 +104,63 @@ f<string> Document.serialize() {
 }
 ```
 
+## Default methods
+
+An interface can provide a default implementation for any of its methods. Default methods are defined outside the
+interface body, like any other [method](methods.md), but on the interface instead of a struct. A struct, that implements
+the interface, inherits the default method unless it implements the method itself.
+
+```spice
+type Greeter interface {
+    f<string> getName();
+    p greet();
+}
+
+// Default implementation of Greeter.greet
+p Greeter.greet() {
+    printf("Hello, %s!\n", this.getName());
+}
+
+type Person struct : Greeter {
+    string name
+}
+
+f<string> Person.getName() {
+    return this.name;
+}
+
+type Robot struct : Greeter {}
+
+f<string> Robot.getName() {
+    return "R2D2";
+}
+
+// Robot replaces the default implementation
+p Robot.greet() {
+    printf("Beep boop, I am %s\n", this.getName());
+}
+
+f<int> main() {
+    Person person = Person{"Alice"};
+    Robot robot = Robot{};
+    person.greet(); // Hello, Alice!
+    Greeter* greeter = &robot;
+    greeter.greet(); // Beep boop, I am R2D2
+}
+```
+
+Within a default method, `this` is a pointer to the interface. Default methods can therefore only use the other methods
+of the interface and have no access to the fields of the struct. Calls to other interface methods always dispatch to the
+implementation of the concrete struct.
+
+A few rules apply to default methods:
+
+- A default method must implement a method signature of its interface, with exactly the same parameter and return types.
+- Default methods cannot be constructors or destructors and cannot have optional parameters.
+- If a struct implements multiple interfaces, that declare the same method, and one of them provides a default method for
+  it, the struct has to implement the method itself.
+- Default methods of generic interfaces are not supported yet.
+
 ## Generic interfaces
 
 Interfaces can have generic type parameters, just like [generic structs](generics.md):

@@ -1,0 +1,99 @@
+type Node struct {
+    int value
+    Node* left
+    Node* right
+}
+
+type IVisitor interface {
+    f<int> visitNode(Node*);
+    f<int> visitLeaf(Node*);
+    f<int> visitChildren(Node*);
+    p printName();
+}
+
+// Default methods
+f<int> IVisitor.visitNode(Node* node) {
+    if node.left == nil<Node*> && node.right == nil<Node*> {
+        return this.visitLeaf(node);
+    }
+    return this.visitChildren(node);
+}
+
+f<int> IVisitor.visitLeaf(Node* _node) {
+    return 0;
+}
+
+f<int> IVisitor.visitChildren(Node* node) {
+    int result = 0;
+    if node.left != nil<Node*> {
+        result += this.visitNode(node.left);
+    }
+    if node.right != nil<Node*> {
+        result += this.visitNode(node.right);
+    }
+    return result;
+}
+
+p IVisitor.printName() {
+    printf("Unnamed visitor\n");
+}
+
+// Only overrides visitLeaf
+type LeafSum struct : IVisitor {
+    int visitedLeaves
+}
+
+p LeafSum.ctor() {
+    this.visitedLeaves = 0;
+}
+
+f<int> LeafSum.visitLeaf(Node* node) {
+    this.visitedLeaves++;
+    return node.value;
+}
+
+// Overrides visitChildren and printName
+type NodeCounter struct : IVisitor {}
+
+f<int> NodeCounter.visitChildren(Node* node) {
+    int result = 1;
+    if node.left != nil<Node*> {
+        result += this.visitNode(node.left);
+    }
+    if node.right != nil<Node*> {
+        result += this.visitNode(node.right);
+    }
+    return result;
+}
+
+p NodeCounter.printName() {
+    printf("Node counter\n");
+}
+
+f<int> visitTree(IVisitor* visitor, Node* root) {
+    visitor.printName();
+    return visitor.visitNode(root);
+}
+
+f<int> main() {
+    Node leaf1 = Node{1, nil<Node*>, nil<Node*>};
+    Node leaf2 = Node{2, nil<Node*>, nil<Node*>};
+    Node leaf3 = Node{3, nil<Node*>, nil<Node*>};
+    Node inner = Node{4, &leaf1, &leaf2};
+    Node root = Node{5, &inner, &leaf3};
+
+    // Call through the interface
+    LeafSum leafSum = LeafSum();
+    printf("Leaf sum: %d\n", visitTree(&leafSum, &root));
+    printf("Visited leaves: %d\n", leafSum.visitedLeaves);
+    NodeCounter nodeCounter = NodeCounter();
+    printf("Inner nodes: %d\n", visitTree(&nodeCounter, &root));
+
+    // Call inherited default methods directly on the struct
+    leafSum.printName();
+    printf("Leaf sum: %d\n", leafSum.visitNode(&inner));
+    printf("Leaf sum: %d\n", leafSum.visitChildren(&root));
+    printf("Visited leaves: %d\n", leafSum.visitedLeaves);
+    printf("Inner nodes: %d\n", nodeCounter.visitNode(&inner));
+    printf("Leaf: %d\n", nodeCounter.visitLeaf(&leaf3));
+}

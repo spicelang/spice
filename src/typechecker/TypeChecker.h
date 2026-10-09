@@ -12,6 +12,8 @@ namespace spice::compiler {
 class LambdaBaseNode;
 class ExprNode;
 class CompilerWarning;
+class FctDefBaseNode;
+class Interface;
 struct Param;
 struct NamedParam;
 struct ResourcesForManifestationToCleanup;
@@ -206,6 +208,12 @@ private:
   [[nodiscard]] bool isAlwaysConstructedLvalue(const ExprNode *node) const;
   [[nodiscard]] bool isReturnValueOptimizable(const ExprResult &returnValue) const;
   static void requestRevisitIfRequired(const Function *fct);
+  void checkDefaultMethod(const FctDefBaseNode *node, const QualType &interfaceType, const ParamList &paramList) const;
+  void checkDefaultMethodImplementsInterfaceMethod(const Function *defaultMethod) const;
+  static void inheritDefaultMethods(const Struct &spiceStruct);
+  static Function *inheritDefaultMethod(Scope *structScope, const QualType &structType, const Interface *interface,
+                                        const std::string &methodName, const QualTypeList &paramTypes,
+                                        const QualType &returnType);
   void ensureLoadedRuntimeForTypeName(const std::string &typeName) const;
   void ensureLoadedRuntimeForFunctionName(const std::string &functionName) const;
   void softError(const ASTNode *node, SemanticErrorType errorType, const std::string &message) const;

@@ -1,0 +1,12 @@
+type T int|double;
+
+type IValue<T> interface {
+    f<T> getValue();
+    f<T> getDoubleValue();
+}
+
+f<T> IValue.getDoubleValue() {
+    return this.getValue() * 2;
+}
+
+f<int> main() {}

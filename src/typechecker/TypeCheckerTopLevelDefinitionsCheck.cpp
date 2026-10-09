@@ -49,8 +49,11 @@ std::any TypeChecker::visitFctDefCheck(FctDefNode *node) {
       continue;
     }
 
-    // Change scope to concrete struct specialization scope
-    if (node->isMethod) {
+    // Change scope to concrete struct specialization scope or to the interface scope for default methods
+    if (manifestation->isInterfaceDefaultMethod) {
+      checkDefaultMethodImplementsInterfaceMethod(manifestation);
+      changeToScope(node->structScope, ScopeType::INTERFACE);
+    } else if (node->isMethod) {
       const std::string &scopeName = Struct::getScopeName(node->name->structName, manifestation->thisType.getTemplateTypes());
       changeToScope(scopeName, ScopeType::STRUCT);
     }
@@ -121,8 +124,11 @@ std::any TypeChecker::visitProcDefCheck(ProcDefNode *node) {
       continue;
     }
 
-    // Change scope to concrete struct specialization scope
-    if (node->isMethod) {
+    // Change scope to concrete struct specialization scope or to the interface scope for default methods
+    if (manifestation->isInterfaceDefaultMethod) {
+      checkDefaultMethodImplementsInterfaceMethod(manifestation);
+      changeToScope(node->structScope, ScopeType::INTERFACE);
+    } else if (node->isMethod) {
       const std::string &scopeName = Struct::getScopeName(node->name->structName, manifestation->thisType.getTemplateTypes());
       changeToScope(scopeName, ScopeType::STRUCT);
     }
@@ -239,9 +245,21 @@ std::any TypeChecker::visitStructDefCheck(StructDefNode *node) {
 
         // Search for method that has the required signature
         Function *spiceFunction = FunctionManager::match(currentScope, methodName, structType, args, {}, true, node);
+        // If the struct does not implement the method itself, fall back to the default method of the interface
+        if (spiceFunction == nullptr)
+          spiceFunction = inheritDefaultMethod(currentScope, structType, interface, methodName, params, returnType);
         if (spiceFunction == nullptr) {
           softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
                     "The struct '" + node->structName + "' does not implement method '" + expMethod->getSignature() + "'.");
+          continue;
+        }
+
+        // The default methods of two interfaces must not implement the same method of the struct
+        if (spiceFunction->isInheritedDefaultMethod() &&
+            spiceFunction->defaultMethod->thisType.getBodyScope() != interfaceType.getBodyScope()) {
+          softError(node, INTERFACE_METHOD_NOT_IMPLEMENTED,
+                    "The struct '" + node->structName + "' implements multiple interfaces with method '" +
+                        expMethod->getSignature() + "', which has a default implementation. Please implement it in the struct.");
           continue;
         }
 

@@ -266,6 +266,8 @@ private:
   llvm::Constant *generateVTable(StructBase *spiceStruct) const;
   void generateVTableInitializer(const StructBase *spiceStruct);
   llvm::Function *getOrCreateCovariantReturnThunk(const Function *method, llvm::Function *target);
+  llvm::Function *getOrDeclareDefaultMethod(const Function *defaultMethod);
+  [[nodiscard]] static bool isPublicDefaultMethod(const Function *function);
   llvm::StructType *getVTableType(const StructBase *spiceStruct) const;
   llvm::Constant *getVTableAddressPoint(const StructBase *spiceStruct) const;
 

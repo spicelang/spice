@@ -124,6 +124,7 @@ void TypeChecker::decideDefaultMembers(Struct &spiceStruct, bool withMoveCtor) {
   if (withMoveCtor)
     createDefaultMoveCtorIfRequired(spiceStruct, spiceStruct.scope);
   createDefaultDtorIfRequired(spiceStruct, spiceStruct.scope);
+  inheritDefaultMethods(spiceStruct);
 }
 
 /**

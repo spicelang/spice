@@ -132,7 +132,9 @@ void IRGenerator::generateVTableInitializer(const StructBase *spiceStruct) {
   arrayValues.push_back(llvm::Constant::getNullValue(ptrTy)); // nullptr as safety guard
   arrayValues.push_back(spiceStruct->vTableData.typeInfo);    // TypeInfo to identify the type for the VTable
   for (const Function *virtualMethod : virtualMethods) {
-    llvm::Function *llvmFunc = getLLVMFunction(virtualMethod);
+    // Methods, that are inherited from an interface default method, are implemented by the default method
+    llvm::Function *llvmFunc = virtualMethod->isInheritedDefaultMethod() ? getOrDeclareDefaultMethod(virtualMethod->defaultMethod)
+                                                                         : getLLVMFunction(virtualMethod);
     assert(spiceStruct->scope->type == ScopeType::INTERFACE || llvmFunc != nullptr);
     // Virtual calls expect the return type of the interface method, so methods with another return type need a thunk
     if (llvmFunc != nullptr && !virtualMethod->virtualReturnType.is(TY_DYN))
@@ -213,6 +215,28 @@ llvm::Function *IRGenerator::getOrCreateCovariantReturnThunk(const Function *met
   allocaInsertInst = allocaInsertInstOrig;
 
   return thunk;
+}
+
+llvm::Function *IRGenerator::getOrDeclareDefaultMethod(const Function *defaultMethod) {
+  assert(defaultMethod->isInterfaceDefaultMethod);
+  // The default method might be defined in another source file or later in this one -> declare it if required
+  const std::string mangledName = defaultMethod->getMangledName();
+  if (llvm::Function *existing = module->getFunction(mangledName))
+    return existing;
+
+  std::vector<llvm::Type *> paramTypes = {builder.getPtrTy()}; // This pointer
+  for (const QualType &paramType : defaultMethod->getParamTypes())
+    paramTypes.push_back(paramType.getParamLLVMType(sourceFile));
+  llvm::FunctionType *fctType = getFunctionType(defaultMethod->returnType, paramTypes);
+  module->getOrInsertFunction(mangledName, fctType);
+  llvm::Function *fct = module->getFunction(mangledName);
+  if (const ReturnABIInfo returnABI = getReturnABIInfo(defaultMethod->returnType); returnABI.isIndirect())
+    addSRetParamAttrs(fct, returnABI.memoryType);
+  return fct;
+}
+
+bool IRGenerator::isPublicDefaultMethod(const Function *function) {
+  return function->isInterfaceDefaultMethod && function->thisType.isPublic();
 }
 
 llvm::StructType *IRGenerator::getVTableType(const StructBase *spiceStruct) const {

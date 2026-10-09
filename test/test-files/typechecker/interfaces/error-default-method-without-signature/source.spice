@@ -1,0 +1,10 @@
+type IGreeter interface {
+    p greet();
+}
+
+// There is no greet(int) in the interface
+p IGreeter.greet(int _times) {
+    printf("Hello\n");
+}
+
+f<int> main() {}

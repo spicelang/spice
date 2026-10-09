@@ -1,0 +1,48 @@
+import "source2";
+
+type Circle struct : IShape {
+    double radius
+}
+
+p Circle.ctor(double radius) {
+    this.radius = radius;
+}
+
+f<double> Circle.area() {
+    return 3.0 * this.radius * this.radius;
+}
+
+f<string> Circle.getName() {
+    return "Circle";
+}
+
+type Square struct : IShape {
+    double length
+}
+
+p Square.ctor(double length) {
+    this.length = length;
+}
+
+f<double> Square.area() {
+    return this.length * this.length;
+}
+
+f<string> Square.getName() {
+    return "Square";
+}
+
+p Square.print() {
+    printf("Square with length %.2f\n", this.length);
+}
+
+f<int> main() {
+    Circle circle = Circle(2.0);
+    Square square = Square(3.0);
+    IShape* shape = &circle;
+    shape.print();
+    shape = &square;
+    shape.print();
+    circle.print();
+    square.print();
+}

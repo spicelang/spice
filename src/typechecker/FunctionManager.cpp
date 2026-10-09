@@ -152,6 +152,26 @@ Function *FunctionManager::insertSubstantiation(Scope *insertScope, const Functi
 }
 
 /**
+ * Search the given interface scope for a default method with exactly the given signature
+ *
+ * @param interfaceScope Scope of the interface
+ * @param name Method name
+ * @param paramTypes Parameter types
+ * @param returnType Return type
+ * @return Found default method or nullptr
+ */
+Function *FunctionManager::lookupDefaultMethod(Scope *interfaceScope, const std::string &name, const QualTypeList &paramTypes,
+                                               const QualType &returnType) {
+  assert(interfaceScope->type == ScopeType::INTERFACE);
+  for (auto &manifestations : interfaceScope->functions | std::views::values)
+    for (Function &function : manifestations | std::views::values)
+      if (function.isInterfaceDefaultMethod && function.name == name && function.getParamTypes() == paramTypes &&
+          function.returnType == returnType)
+        return &function;
+  return nullptr;
+}
+
+/**
  * Checks if a function exists by matching it, but not setting it to used
  *
  * @param matchScope Scope to match against
@@ -260,6 +280,10 @@ Function *FunctionManager::match(Scope *matchScope, const std::string &reqName, 
       // Skip generic and newly inserted substantiations to prevent double matching of a function
       if (presetFunction.isGenericSubstantiation() || presetFunction.isNewlyInserted)
         continue;
+
+      // Default methods are not called directly, but through the method signature of the interface
+      if (presetFunction.isInterfaceDefaultMethod)
+        break;
 
       // Check the name before copying the function, because most functions in the scope have a different name
       if (!matchName(presetFunction, reqName))
