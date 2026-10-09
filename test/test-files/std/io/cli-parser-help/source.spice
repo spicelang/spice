@@ -1,0 +1,34 @@
+import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+import "std/io/filepath";
+
+// State the options write to
+type State struct {
+    FilePath mainSourceFile
+    string mode = ""
+    String name
+    int count = 0
+    FilePath output
+    String targetOs
+    bool verbose = false
+}
+
+f<int> main() {
+    State state;
+
+    CliParser parser = CliParser("Test Program", "This is a simple test program");
+    CliSubcommand& build = parser.addSubcommand("build", "Build something");
+    build.addOption("main-source-file", state.mainSourceFile, "Main source file");
+    // Options of all types, interleaved, to check that the help lists them in registration order
+    build.addOption("--mode", state.mode, "Raw string option");
+    build.addOption("--name", state.name, "String option");
+    build.addOption("--count", state.count, "Int option");
+    CliOption<FilePath>& outputOption = build.addOption("--output", state.output, "FilePath option");
+    outputOption.addAlias("-o");
+    build.addOption("--target-os", state.targetOs, "Another String option");
+    build.addFlag("--verbose", state.verbose, "Verbose output");
+
+    // The help output lists the positional arguments, all options and all flags
+    string[3] args = ["prog", "build", "--help"];
+    result = parser.parse(3u, args);
+}

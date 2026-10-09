@@ -16,7 +16,7 @@ type TargetVarOrCallbackInt int&|p(const int&);
 type TargetVarOrCallbackFilePath FilePath&|p(const FilePath&);
 type TargetVarOrCallbackBool bool&|p(const bool&);
 
-// Type tags used by the positional argument registry to dispatch to
+// Type tags used by the positional argument and option registries to dispatch to
 // the per-type option vectors below.
 const unsigned int POSITIONAL_TAG_STRING = 0u;
 const unsigned int POSITIONAL_TAG_STRING_OBJ = 1u;
@@ -47,6 +47,11 @@ public type CliSubcommand struct {
     // matching per-type option vector.
     Vector<unsigned int> positionalTypeTags
     Vector<unsigned int> positionalIndices
+    // Option registry preserving registration order across types for the help output.
+    // Each entry pairs a type tag (POSITIONAL_TAG_*) with the index into the matching
+    // per-type option vector. It holds the non-positional options only.
+    Vector<unsigned int> optionTypeTags
+    Vector<unsigned int> optionIndices
     // Owning storage for the values split off "--name=value" arguments. Reserved to the argument count before parsing, so
     // pointers into these strings (e.g. of a raw string option in set-value mode) stay valid for the whole parse run.
     Vector<String> inlineValues
@@ -579,6 +584,9 @@ public f<CliOption<string>&> CliSubcommand.addOption<StrOrConstStrObjRef, Target
     if opt.isPositional() {
         this.positionalTypeTags.pushBack(POSITIONAL_TAG_STRING);
         this.positionalIndices.pushBack(cast<unsigned int>(this.stringOptions.getSize() - 1l));
+    } else {
+        this.optionTypeTags.pushBack(POSITIONAL_TAG_STRING);
+        this.optionIndices.pushBack(cast<unsigned int>(this.stringOptions.getSize() - 1l));
     }
     return opt;
 }
@@ -599,6 +607,9 @@ public f<CliOption<String>&> CliSubcommand.addOption<StrOrConstStrObjRef, Target
     if opt.isPositional() {
         this.positionalTypeTags.pushBack(POSITIONAL_TAG_STRING_OBJ);
         this.positionalIndices.pushBack(cast<unsigned int>(this.stringObjOptions.getSize() - 1l));
+    } else {
+        this.optionTypeTags.pushBack(POSITIONAL_TAG_STRING_OBJ);
+        this.optionIndices.pushBack(cast<unsigned int>(this.stringObjOptions.getSize() - 1l));
     }
     return opt;
 }
@@ -619,6 +630,9 @@ public f<CliOption<int>&> CliSubcommand.addOption<StrOrConstStrObjRef, TargetVar
     if opt.isPositional() {
         this.positionalTypeTags.pushBack(POSITIONAL_TAG_INT);
         this.positionalIndices.pushBack(cast<unsigned int>(this.intOptions.getSize() - 1l));
+    } else {
+        this.optionTypeTags.pushBack(POSITIONAL_TAG_INT);
+        this.optionIndices.pushBack(cast<unsigned int>(this.intOptions.getSize() - 1l));
     }
     return opt;
 }
@@ -639,6 +653,9 @@ public f<CliOption<FilePath>&> CliSubcommand.addOption<StrOrConstStrObjRef, Targ
     if opt.isPositional() {
         this.positionalTypeTags.pushBack(POSITIONAL_TAG_FILEPATH);
         this.positionalIndices.pushBack(cast<unsigned int>(this.filePathOptions.getSize() - 1l));
+    } else {
+        this.optionTypeTags.pushBack(POSITIONAL_TAG_FILEPATH);
+        this.optionIndices.pushBack(cast<unsigned int>(this.filePathOptions.getSize() - 1l));
     }
     return opt;
 }
@@ -673,6 +690,28 @@ public p CliSubcommand.printHelpItem() {
     lineBreak();
 }
 
+/**
+ * Print the help entry of the option with the given type tag at the given index of the matching per-type option vector
+ *
+ * @param typeTag Type tag of the option (POSITIONAL_TAG_*)
+ * @param idx Index into the per-type option vector
+ */
+p CliSubcommand.printOptionHelpItem(unsigned int typeTag, unsigned int idx) {
+    if typeTag == POSITIONAL_TAG_STRING {
+        CliOption<string>& opt = this.stringOptions.get(idx);
+        opt.printHelpItem();
+    } else if typeTag == POSITIONAL_TAG_STRING_OBJ {
+        CliOption<String>& opt = this.stringObjOptions.get(idx);
+        opt.printHelpItem();
+    } else if typeTag == POSITIONAL_TAG_INT {
+        CliOption<int>& opt = this.intOptions.get(idx);
+        opt.printHelpItem();
+    } else if typeTag == POSITIONAL_TAG_FILEPATH {
+        CliOption<FilePath>& opt = this.filePathOptions.get(idx);
+        opt.printHelpItem();
+    }
+}
+
 p CliSubcommand.printHelp(string[] argv, int layer) {
     // Build subcommand string
     String subcommand = String(argv[0]);
@@ -699,36 +738,15 @@ p CliSubcommand.printHelp(string[] argv, int layer) {
     if !this.positionalTypeTags.isEmpty() {
         printf("\nPositional arguments:\n");
         for unsigned int i = 0u; i < cast<unsigned int>(this.positionalTypeTags.getSize()); i++ {
-            unsigned int typeTag = this.positionalTypeTags.get(i);
-            unsigned int idx = this.positionalIndices.get(i);
-            if typeTag == POSITIONAL_TAG_STRING {
-                CliOption<string>& sOpt = this.stringOptions.get(idx);
-                sOpt.printHelpItem();
-            } else if typeTag == POSITIONAL_TAG_STRING_OBJ {
-                CliOption<String>& soOpt = this.stringObjOptions.get(idx);
-                soOpt.printHelpItem();
-            } else if typeTag == POSITIONAL_TAG_INT {
-                CliOption<int>& iOpt = this.intOptions.get(idx);
-                iOpt.printHelpItem();
-            } else if typeTag == POSITIONAL_TAG_FILEPATH {
-                CliOption<FilePath>& fOpt = this.filePathOptions.get(idx);
-                fOpt.printHelpItem();
-            }
+            this.printOptionHelpItem(this.positionalTypeTags.get(i), this.positionalIndices.get(i));
         }
     }
 
-    // Print options (only the non-positional ones)
-    long nonPositionalOptionCount = this.stringOptions.getSize() + this.stringObjOptions.getSize()
-        + this.intOptions.getSize() + this.filePathOptions.getSize() - this.positionalTypeTags.getSize();
-    if nonPositionalOptionCount > 0 {
+    // Print options (only the non-positional ones) in registration order
+    if !this.optionTypeTags.isEmpty() {
         printf("\nOptions:\n");
-        foreach const CliOption<string>& option : this.stringOptions {
-            if option.isPositional() { continue; }
-            option.printHelpItem();
-        }
-        foreach const CliOption<int>& option : this.intOptions {
-            if option.isPositional() { continue; }
-            option.printHelpItem();
+        for unsigned int i = 0u; i < cast<unsigned int>(this.optionTypeTags.getSize()); i++ {
+            this.printOptionHelpItem(this.optionTypeTags.get(i), this.optionIndices.get(i));
         }
     }
 

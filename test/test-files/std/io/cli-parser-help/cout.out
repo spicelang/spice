@@ -1,0 +1,17 @@
+Build something
+
+Usage: prog build [options] <main-source-file>
+
+Positional arguments:
+  <main-source-file>               Main source file                                                                     
+
+Options:
+  --mode <value>                   Raw string option                                                                    
+  --name <value>                   String option                                                                        
+  --count <value>                  Int option                                                                           
+  --output,-o <value>              FilePath option                                                                      
+  --target-os <value>              Another String option                                                                
+
+Flags:
+  --verbose                        Verbose output                                                                       
+  --help,-h                        Print this help message                                                              
