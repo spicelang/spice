@@ -2,6 +2,7 @@
 import "std/text/stringstream";
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/ast/ast-nodes";
 
 public type SemanticErrorType enum {
@@ -155,10 +156,9 @@ public p SemanticError.ctor(const ASTNode* node, const SemanticErrorType errorTy
  * @param errorType Type of the error
  * @param message Error message suffix
  */
-public p panicWithSemanticError(const ASTNode* node, const SemanticErrorType errorType, const string message) {
+public p abortWithSemanticError(const ASTNode* node, const SemanticErrorType errorType, const string message) {
     const SemanticError error = SemanticError(node, errorType, message);
-    const String& errorMessage = error.getMessage();
-    panic(Error(errorMessage.getRaw()));
+    abortWithError(error.getMessage());
 }
 
 /**

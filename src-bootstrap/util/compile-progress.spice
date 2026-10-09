@@ -36,7 +36,7 @@ const unsigned long MAX_BACK_END_SPEEDUP = 6ul;
 // Interval, in which the heartbeat thread refreshes the bar while a long-running stage reports no progress
 const int HEARTBEAT_INTERVAL_MILLIS = 50;
 
-// Address of the active compile progress. Compile errors are raised as panics from places that have no access to the
+// Address of the active compile progress. Compile errors abort the compilation from places that have no access to the
 // resource manager (e.g. the lexer and the parser), and they have to remove the bar from the console first. Spice only
 // supports globals of primitive type, so the address is stored as a long.
 unsigned long ACTIVE_COMPILE_PROGRESS_ADDRESS = 0ul;
@@ -407,8 +407,8 @@ public p printAboveActiveCompileProgress(const String& output) {
 }
 
 /**
- * Remove the progress bar of the active compilation from the console, if there is one. Called before a compile error is
- * raised as panic, so that the error message does not end up behind the bar.
+ * Remove the progress bar of the active compilation from the console, if there is one. Called before a compile error aborts
+ * the compilation, so that the error message does not end up behind the bar.
  */
 public p clearActiveCompileProgress() {
     unsafe {

@@ -5,6 +5,7 @@ import "std/io/filepath";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/compiler-pass";
 import "bootstrap/source-file";
 import "bootstrap/exception/compiler-error";
@@ -32,15 +33,13 @@ public p LLVMObjectEmitter.emit(const FilePath& objectPath) {
     if this.sourceFile.targetMachine.emitToFileWithError(*this.module, objectPathString, llvm::LLVMCodeGenFileType::ObjectFile, errorMessage) {
         const String messageSuffix = "File '" + String(objectPathString) + "' could not be opened";                 // LCOV_EXCL_LINE
         const CompilerError error = CompilerError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, messageSuffix.getRaw()); // LCOV_EXCL_LINE
-        const String& message = error.getMessage();                                                               // LCOV_EXCL_LINE
-        panic(Error(message.getRaw()));                                                                            // LCOV_EXCL_LINE
+        abortWithError(error.getMessage());                                                                        // LCOV_EXCL_LINE
     } // LCOV_EXCL_LINE
 }
 
 public p LLVMObjectEmitter.getASMString(String& output) {
     if this.sourceFile.targetMachine.emitToString(*this.module, llvm::LLVMCodeGenFileType::AssemblyFile, output) {
         const CompilerError error = CompilerError(CompilerErrorType::WRONG_OUTPUT_TYPE, "Target machine can't emit a file of this type"); // LCOV_EXCL_LINE
-        const String& message = error.getMessage();                                                                                     // LCOV_EXCL_LINE
-        panic(Error(message.getRaw()));                                                                                                  // LCOV_EXCL_LINE
+        abortWithError(error.getMessage());                                                                                              // LCOV_EXCL_LINE
     } // LCOV_EXCL_LINE
 }

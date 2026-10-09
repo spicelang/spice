@@ -9,6 +9,7 @@ import "std/os/thread";
 import "std/type/type-conversion";
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/driver";
 import "bootstrap/util/system-util";
 import "bootstrap/util/compile-progress";
@@ -175,8 +176,7 @@ p ExternalLinkerInterface.link() {
     if !isClangInvoker && (sanitizer == Sanitizer::MEMORY || sanitizer == Sanitizer::TYPE) {
         const string msg = "Memory and type sanitizers require clang as the linker invoker, but 'gcc' was selected";
         const LinkerError error = LinkerError(LinkerErrorType::SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER, msg);
-        clearActiveCompileProgress();
-        panic(Error(error.errorMessage.getRaw()));
+        abortWithError(error.errorMessage);
     }
 
     // Build the linker argument vector. Each entry is passed verbatim to the linker invoker (no shell), so file paths can
@@ -228,8 +228,7 @@ p ExternalLinkerInterface.link() {
         const String command = renderCommandForDisplay(linkerInvoker.path, args);
         const String msg = "Linker exited with non-zero exit code\nLinker command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
-        clearActiveCompileProgress();
-        panic(Error(error.errorMessage.getRaw()));
+        abortWithError(error.errorMessage);
     }
 
     // The captured output of a successful link (e.g. linker warnings) would be lost otherwise
@@ -440,8 +439,7 @@ f<FilePath> ExternalLinkerInterface.compileAdditionalSource(const FilePath& addi
         const String command = renderCommandForDisplay(compilation.linkerInvokerPath, compilation.args);
         const String msg = "Compiling the additional source '" + additionalSource.toString() + "' failed\nCompile command: " + command + "\n" + compilation.result.output;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
-        clearActiveCompileProgress();
-        panic(Error(error.errorMessage.getRaw()));
+        abortWithError(error.errorMessage);
     }
     return objectFilePath;
 }
@@ -506,8 +504,7 @@ p ExternalLinkerInterface.archive() {
         const String command = renderCommandForDisplay(archiver.path, args);
         const String msg = "Archiver exited with non-zero exit code\nArchiver command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
-        clearActiveCompileProgress();
-        panic(Error(error.errorMessage.getRaw()));
+        abortWithError(error.errorMessage);
     }
 
     // The captured output of a successful archiving would be lost otherwise (see link)
@@ -573,9 +570,7 @@ public p ExternalLinkerInterface.addAdditionalSourcePath(const FilePath& additio
     if !additionalSource.exists() {
         const String msg = "The additional source file '" + additionalSource.toGenericString() + "' does not exist";
         const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, msg.getRaw());
-        const String& message = error.getMessage();
-        clearActiveCompileProgress();
-        panic(Error(message.getRaw()));
+        abortWithError(error.getMessage());
     }
 
     // Add the file to the linker

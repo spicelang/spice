@@ -1,0 +1,27 @@
+// Std imports
+import "std/os/os";
+
+// Own imports
+import "bootstrap/util/compile-progress";
+
+// Link external functions
+ext p exit(int /*status*/);
+
+/**
+ * Abort the compilation with the given error message. The host throws lexer, parser, semantic, compiler, linker and cli
+ * errors as exceptions, which its main function catches to print the message and exit with an error code. Spice has no
+ * exceptions, so the bootstrap compiler prints the message and exits right away.
+ *
+ * Unlike a panic, this prints neither the location in the compiler sources nor a stack trace, since the error is caused by
+ * the user input and not by a bug in the compiler. Internal errors are still raised as panics.
+ *
+ * Like a panic, this terminates the process via exit(), which flushes the console output. This works the same from the
+ * worker threads of the parallel back end.
+ *
+ * @param message Error message
+ */
+public p abortWithError(const String& message) {
+    clearActiveCompileProgress();
+    printf("%s\n", message.getRaw());
+    exit(EXIT_CODE_ERROR);
+}

@@ -166,32 +166,41 @@ std::optional<std::filesystem::path> BootstrapUtil::buildBootstrapBuiltinTests()
 }
 
 /**
- * The bootstrap compiler has no exceptions, so it reports compile errors via a panic:
+ * The bootstrap compiler has no exceptions. Like the host compiler, it prints the message of a compile error and exits with
+ * a non-zero exit code. The message is the last output, so it reaches from its header (e.g. '[Error|Semantic]') to the end of
+ * the output. It may be preceded by other output (e.g. the dumped AST).
  *
- *   Program panicked at <file>:<line>:<col>: <error message>
- *   <line>  <source code line of the panic>
- *   ...
+ * Internal compiler errors are still raised as panics. They are no compile errors, so no error message is extracted for
+ * them, and the test case fails with the complete output.
  *
- * Extract the error message and make it comparable to the one of the host compiler. Like the host compiler, the bootstrap
- * compiler already prints the file paths of code locations relative to the directory of the main source file.
+ * Like the host compiler, the bootstrap compiler already prints the file paths of code locations relative to the directory
+ * of the main source file.
  *
  * @param output Combined stdout and stderr output of the bootstrap compiler
+ * @param exitCode Exit code of the bootstrap compiler
  * @return Error message, if the bootstrap compiler reported an error
  */
-std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string &output) {
-  static const std::regex PANIC_HEADER_REGEX(R"(Program panicked at [^\n]*?:(\d+):\d+: )");
-  std::smatch match;
-  if (!std::regex_search(output, match, PANIC_HEADER_REGEX))
+std::optional<std::string> BootstrapUtil::extractErrorMessage(const std::string &output, int exitCode) {
+  static constexpr const char *ERROR_HEADER = "[Error|";
+  if (exitCode == 0 || output.contains("Program panicked at "))
     return std::nullopt;
-  const size_t messageStart = match.position(0) + match.length(0);
 
-  // The message ends where the source code snippet of the panic location begins (its line number, followed by two spaces)
-  const std::string snippetStart = "\n" + match[1].str() + "  ";
-  size_t messageEnd = output.find(snippetStart, messageStart);
-  if (messageEnd == std::string::npos)
-    messageEnd = output.find('\n', messageStart);
-  std::string message =
-      output.substr(messageStart, messageEnd == std::string::npos ? std::string::npos : messageEnd - messageStart);
+  // The message begins at the first error header at the beginning of a line. Nested errors (e.g. the soft errors of an
+  // 'Unresolved soft errors' compiler error) come after it
+  size_t messageStart = 0;
+  if (!output.starts_with(ERROR_HEADER)) {
+    messageStart = output.find("\n" + std::string(ERROR_HEADER));
+    if (messageStart == std::string::npos)
+      return std::nullopt;
+    messageStart++;
+  }
+  std::string message = output.substr(messageStart);
+
+  // Remove the line break, that terminates the message
+  if (message.ends_with('\n'))
+    message.pop_back();
+  if (message.ends_with('\r'))
+    message.pop_back();
 
   // Normalize path separators on Windows
   CommonUtil::replaceAll(message, "\\", "/");

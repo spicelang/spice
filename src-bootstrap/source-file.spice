@@ -18,6 +18,7 @@ import "std/os/thread-pool";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "bootstrap/driver";
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/global/runtime-module-manager";
@@ -211,9 +212,7 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     if error != nil<string> {
         const String messageSuffix = "Selected target was not found: " + String(error);
         const CompilerError compilerError = CompilerError(CompilerErrorType::TARGET_NOT_AVAILABLE, messageSuffix.getRaw());
-        const String& message = compilerError.getMessage();
-        clearActiveCompileProgress();
-        panic(Error(message.getRaw()));
+        abortWithError(compilerError.getMessage());
     }
 
     // Create target machine
@@ -245,9 +244,7 @@ public p SourceFile.runParser() {
         msg << "Source file at path '" << this.filePath.toString() << "' does not exist.";
         const String messageSuffix = msg.str();
         const CompilerError error = CompilerError(CompilerErrorType::SOURCE_FILE_NOT_FOUND, messageSuffix.getRaw());
-        const String& message = error.getMessage();
-        clearActiveCompileProgress();
-        panic(Error(message.getRaw()));
+        abortWithError(error.getMessage());
     }
 
     // Parse the source file
@@ -968,7 +965,7 @@ public p SourceFile.runBackEnd() {
         }
         // Enter the parallel section before the worker threads start and leave it only after all of them were joined. The
         // host re-throws the error of the first failing source file here. The bootstrap compiler has no exceptions, so a
-        // failing source file panics on its worker thread, which ends the process.
+        // failing source file aborts the compilation on its worker thread (see abortWithError), which ends the process.
         ParallelSection _;
         threadPool.start();
         threadPool.join();
@@ -1294,8 +1291,7 @@ f<bool> SourceFile.isQualifiableImportName(String& importName) {
 public p SourceFile.checkForHardError() {
     const ErrorManager& errorManager = this.resourceManager.errorManager;
     if errorManager.hasHardError {
-        clearActiveCompileProgress();
-        panic(Error(errorManager.hardErrorMessage.getRaw()));
+        abortWithError(errorManager.hardErrorMessage);
     }
 }
 
@@ -1308,9 +1304,7 @@ public p SourceFile.checkForSoftErrors() {
             errorMessage += error.message;
         }
         const CompilerError compilerError = CompilerError(CompilerErrorType::UNRESOLVED_SOFT_ERRORS, errorMessage.getRaw());
-        const String& compilerErrorMessage = compilerError.getMessage();
-        clearActiveCompileProgress();
-        panic(Error(compilerErrorMessage.getRaw()));
+        abortWithError(compilerError.getMessage());
     }
 }
 
@@ -1566,8 +1560,7 @@ p SourceFile.dumpOutput(const String& content, const String& caption, const Stri
         if !writeResult.isOk() {
             const String messageSuffix = "Failed to open file: " + dumpFilePath.toString();
             const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, messageSuffix.getRaw());
-            const String& message = error.getMessage();
-            panic(Error(message.getRaw()));
+            abortWithError(error.getMessage());
         }
     } else {
         // Dump to console
@@ -1602,7 +1595,8 @@ p SourceFile.visualizerOutput(const string outputNameRaw, const String& output) 
 
         // Check if graphviz is installed
         if !isGraphvizInstalled() {
-            panic(Error("Please check if you have installed Graphviz and added it to the PATH variable"));
+            const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, "Please check if you have installed Graphviz and added it to the PATH variable");
+            abortWithError(error.getMessage());
         }
 
         // Write to a dot file

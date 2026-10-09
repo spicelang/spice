@@ -243,7 +243,7 @@ public p Scope.ensureSuccessfulTypeInference() {
         const QualType entryType = entry.getQualType();
         if entryType.is(SuperType::TY_DYN) {
             const String message = "For the variable '" + symbol.getFirst() + "' no type could be inferred";
-            panicWithSemanticError(entry.declNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, message.getRaw());
+            abortWithSemanticError(entry.declNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, message.getRaw());
         }
     }
 

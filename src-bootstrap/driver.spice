@@ -18,6 +18,7 @@ import "std/bindings/llvm/llvm" as llvm;
 import "std/bindings/tpde/tpde" as tpde;
 
 // Own imports
+import "bootstrap/exception/fatal-error";
 import "util/common-util";
 import "bootstrap/exception/cli-error";
 import "bootstrap/util/compiler-warning";
@@ -189,15 +190,14 @@ public const f<bool> CliOptions.printsStackTraceOnAbort() {
 }
 
 /**
- * Abort with a cli error. The bootstrap compiler has no exceptions, so the error is reported via a panic.
+ * Abort with a cli error
  *
  * @param errorType Type of the error
  * @param message Error message suffix
  */
 p raiseCliError(const CliErrorType errorType, const string message) {
     const CliError cliError = CliError(errorType, message);
-    const String& errorMessage = cliError.getMessage();
-    panic(Error(errorMessage.getRaw()));
+    abortWithError(cliError.getMessage());
 }
 
 /**
@@ -245,10 +245,13 @@ public f<int> Driver.parse(int argc, string[] argv) {
         return exitCode;
     }
 
-    // For uninstall, the main source file has to exist. For the compile path, the missing file is reported by the pipeline
-    // (SourceFile.runParser), matching the host compiler, so it is not checked here.
-    if this.shouldUninstall && !this.cliOptions.mainSourceFile.exists() {
+    // The main source file has to exist, like the host's cli parser checks it (CLI::ExistingFile). The host's test runner does
+    // not use the cli parser, so a missing file is reported by the pipeline (SourceFile.runParser) instead. --test-mode mirrors
+    // that, and the compile path skips the check here. So do the builtin tests (dry run), which parse made-up file names.
+    const bool checkCompileSourceFile = (this.shouldCompile || this.shouldInstall) && !this.dryRun && !this.cliOptions.testMode;
+    if (checkCompileSourceFile || this.shouldUninstall) && !this.cliOptions.mainSourceFile.exists() {
         printf("<main-source-file>: File does not exist: %s\n", this.cliOptions.mainSourceFile.toString());
+        printf("Run with --help for more information.\n");
         return EXIT_CODE_ERROR;
     }
 
@@ -412,8 +415,7 @@ public p Driver.runBinary() {
  */
 p createDirectories(const FilePath& path) {
     if mkDirs(path.toString(), MODE_ALL_RWX) != 0 {
-        const String message = String("Could not create directory '") + path.toString() + "'";
-        panic(Error(message.getRaw()));
+        abortWithError(String("Could not create directory '") + path.toString() + "'");
     }
 }
 
