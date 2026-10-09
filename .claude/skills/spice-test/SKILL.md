@@ -62,6 +62,14 @@ These are `spicetest`'s own flags (not GoogleTest):
   `-O0 --coverage` (instead of `-O3 -lto`). Its gcov data lands in
   `test-tmp/bootstrap-compiler/`; `coverage-bootstrap.py` (run from the build
   dir, `LLVM_COV` pointing at `llvm-cov`) turns it into an HTML report.
+- `--bootstrap-asan` — bootstrap mode with a bootstrap compiler built with
+  `-O1 --sanitizer address` (instead of `-O3 -lto`). Every test case fails, for
+  which the bootstrap compiler prints an AddressSanitizer or LeakSanitizer
+  report. The bootstrap compiler still leaks (e.g. its scope tree), so the
+  runner starts it with `ASAN_OPTIONS=detect_leaks=0` prepended; set
+  `ASAN_OPTIONS=detect_leaks=1` to check for leaks anyway. Combine it with
+  `--bootstrap-build-only` to build it once, then run the cases in parallel via
+  `--bootstrap-compiler`, like the weekly `ci-asan.yml` job does.
 
 ## Bootstrap mode
 

@@ -480,9 +480,11 @@ static void execBootstrapTestCase(const TestCase &testCase) {
   // Run the bootstrap compiler with the given args on the main source file
   const auto runBootstrapCompiler = [&](std::vector<std::string> args) {
     args.push_back(mainSourceFilePath.string());
-    ExecResult result = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
+    ExecResult result = BootstrapUtil::execBootstrapCompiler(args);
     if (testDriverCliOptions.isVerbose)                             // GCOV_EXCL_LINE
       std::cout << "Bootstrap compiler output:\n" << result.output; // GCOV_EXCL_LINE
+    // An ASAN-instrumented bootstrap compiler reports memory errors, even if it compiles the test case like expected
+    EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(result.output)) << "Sanitizer report:\n" << result.output;
     return result;
   };
   // The bootstrap compiler writes the dumps of the main source file to '<output dir>/source-<dump name>'
@@ -667,9 +669,11 @@ void execBootstrapLinterTestCase(const TestCase &testCase) {
   const std::vector<std::string> args = {"lint", mainSourceFilePath.string()};
 
   // Run the bootstrap compiler
-  const auto [output, exitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
+  const auto [output, exitCode] = BootstrapUtil::execBootstrapCompiler(args);
   if (testDriverCliOptions.isVerbose)                      // GCOV_EXCL_LINE
     std::cout << "Bootstrap compiler output:\n" << output; // GCOV_EXCL_LINE
+  // An ASAN-instrumented bootstrap compiler reports memory errors, even if it lints the test case like expected
+  EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
 
   // Check if the bootstrap compiler raised an error
   const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;

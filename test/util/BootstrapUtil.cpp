@@ -65,6 +65,9 @@ bool BootstrapUtil::buildBootstrapCompiler() {
     // Coverage instrumentation does not support LTO. Without optimizations, the coverage counters map best to the source
     if (testDriverCliOptions.bootstrapCoverage)
       argv.insert(argv.end(), {"-O0", "--coverage"});
+    // Without LTO and with fewer optimizations, the sanitizer reports point to the right source locations
+    else if (testDriverCliOptions.bootstrapAsan)
+      argv.insert(argv.end(), {"-O1", "--sanitizer", "address"});
     else
       argv.insert(argv.end(), {"-O3", "-lto"});
     argv.insert(argv.end(), {"--ignore-cache", "--output", outputPath.c_str(), mainSourceFile.c_str()});
@@ -112,6 +115,35 @@ bool BootstrapUtil::buildBootstrapCompiler() {
   std::cout << "Built the bootstrap compiler: " << executablePath.string() << std::endl;
   testDriverCliOptions.bootstrapCompilerPath = executablePath.string();
   return true;
+}
+
+/**
+ * Run the bootstrap compiler with the given args and capture its combined stdout and stderr output.
+ *
+ * The bootstrap compiler still leaks memory (e.g. its scope tree), so an ASAN-instrumented bootstrap compiler (see
+ * --bootstrap-asan) disables LeakSanitizer by default. Otherwise, the leak report would fail every test case. Only the
+ * bootstrap compiler process gets this setting, the compiled test programs keep their own sanitizer behavior. To check
+ * for leaks anyway, set ASAN_OPTIONS=detect_leaks=1, which takes precedence, because it is appended.
+ *
+ * @param args Arguments for the bootstrap compiler
+ * @return Output and exit code of the bootstrap compiler
+ */
+ExecResult BootstrapUtil::execBootstrapCompiler(const std::vector<std::string> &args) {
+#if OS_WINDOWS
+  return SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
+#else
+  const char *asanOptions = std::getenv("ASAN_OPTIONS");
+  const std::optional<std::string> prevAsanOptions = asanOptions ? std::optional<std::string>(asanOptions) : std::nullopt;
+  const std::string bootstrapAsanOptions = "detect_leaks=0" + (prevAsanOptions ? ":" + *prevAsanOptions : "");
+  setenv("ASAN_OPTIONS", bootstrapAsanOptions.c_str(), /*overwrite=*/1);
+  ExecResult result = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
+  // Restore the previous value, so that the compiled test programs are not affected
+  if (prevAsanOptions)
+    setenv("ASAN_OPTIONS", prevAsanOptions->c_str(), /*overwrite=*/1);
+  else
+    unsetenv("ASAN_OPTIONS");
+  return result;
+#endif
 }
 
 /**
@@ -221,6 +253,20 @@ void BootstrapUtil::normalizeProducerString(std::string &code) {
 std::string BootstrapUtil::stripAnsiCodes(const std::string &text) {
   static const std::regex ANSI_ESCAPE_REGEX(R"(\x1B\[[0-9;]*m)");
   return std::regex_replace(text, ANSI_ESCAPE_REGEX, "");
+}
+
+/**
+ * Check if the given output of the bootstrap compiler contains a report of the AddressSanitizer or LeakSanitizer, which
+ * the bootstrap compiler prints, if it was built with --bootstrap-asan:
+ *
+ *   ==<pid>==ERROR: AddressSanitizer: heap-use-after-free on address ...
+ *
+ * @param output Combined stdout and stderr output of the bootstrap compiler
+ * @return Sanitizer report found or not
+ */
+bool BootstrapUtil::containsSanitizerReport(const std::string &output) {
+  static const std::regex SANITIZER_REPORT_REGEX(R"(==\d+==ERROR: (AddressSanitizer|LeakSanitizer))");
+  return std::regex_search(output, SANITIZER_REPORT_REGEX);
 }
 
 /**
