@@ -58,6 +58,11 @@ void TestDriver::addOptions() {
       app.add_flag<bool>("--bootstrap-coverage", testDriverCliOptions.bootstrapCoverage,
                          "Build the bootstrap compiler with Spice code coverage instrumentation enabled, then run the test "
                          "cases against it (implies --bootstrap)");
+  // --bootstrap-asan
+  CLI::Option *bootstrapAsanOpt =
+      app.add_flag<bool>("--bootstrap-asan", testDriverCliOptions.bootstrapAsan,
+                         "Build the bootstrap compiler with AddressSanitizer instrumentation enabled, then run the test cases "
+                         "against it (implies --bootstrap). Fails every test case, for which the sanitizer reports an error");
   // --bootstrap-build-only
   CLI::Option *bootstrapBuildOnlyOpt =
       app.add_flag<bool>("--bootstrap-build-only", testDriverCliOptions.bootstrapBuildOnly,
@@ -69,6 +74,9 @@ void TestDriver::addOptions() {
   // Instrumenting the bootstrap compiler requires building it, so it cannot be combined with a pre-built one. Its coverage
   // data would mix with the one of the instrumented test programs, so it cannot be combined with the coverage mode either
   bootstrapCoverageOpt->excludes(updateRefsOpt)->excludes(coverageOpt)->excludes(bootstrapCompilerOpt);
+  // Instrumenting the bootstrap compiler with ASAN requires building it as well. Coverage and ASAN instrumentation of the
+  // bootstrap compiler are separate builds, so they cannot be combined
+  bootstrapAsanOpt->excludes(updateRefsOpt)->excludes(bootstrapCompilerOpt)->excludes(bootstrapCoverageOpt);
   // Building only makes no sense, if a pre-built bootstrap compiler is given
   bootstrapBuildOnlyOpt->excludes(updateRefsOpt)->excludes(coverageOpt)->excludes(bootstrapCompilerOpt);
 }
@@ -84,7 +92,7 @@ int TestDriver::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
     if (!testDriverCliOptions.bootstrapCompilerPath.empty() || testDriverCliOptions.bootstrapCoverage ||
-        testDriverCliOptions.bootstrapBuildOnly)
+        testDriverCliOptions.bootstrapAsan || testDriverCliOptions.bootstrapBuildOnly)
       testDriverCliOptions.bootstrapMode = true;
     return 0;
   } catch (const CLI::ParseError &parseError) {

@@ -22,6 +22,7 @@ public:
   // Public static methods
   static bool buildBootstrapCompiler();
   static std::optional<std::string> extractErrorMessage(const std::string &output);
+  static bool containsSanitizerReport(const std::string &output);
   static std::optional<std::string> extractSerializedGraph(const std::string &output, const char *graphName);
   static std::string extractWarnings(const std::string &output);
   static void eraseDSOLocalMarkers(std::string &irCode);

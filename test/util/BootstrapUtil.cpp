@@ -65,6 +65,9 @@ bool BootstrapUtil::buildBootstrapCompiler() {
     // Coverage instrumentation does not support LTO. Without optimizations, the coverage counters map best to the source
     if (testDriverCliOptions.bootstrapCoverage)
       argv.insert(argv.end(), {"-O0", "--coverage"});
+    // Without LTO and with fewer optimizations, the sanitizer reports point to the right source locations
+    else if (testDriverCliOptions.bootstrapAsan)
+      argv.insert(argv.end(), {"-O1", "--sanitizer", "address"});
     else
       argv.insert(argv.end(), {"-O3", "-lto"});
     argv.insert(argv.end(), {"--ignore-cache", "--output", outputPath.c_str(), mainSourceFile.c_str()});
@@ -221,6 +224,20 @@ void BootstrapUtil::normalizeProducerString(std::string &code) {
 std::string BootstrapUtil::stripAnsiCodes(const std::string &text) {
   static const std::regex ANSI_ESCAPE_REGEX(R"(\x1B\[[0-9;]*m)");
   return std::regex_replace(text, ANSI_ESCAPE_REGEX, "");
+}
+
+/**
+ * Check if the given output of the bootstrap compiler contains a report of the AddressSanitizer or LeakSanitizer, which
+ * the bootstrap compiler prints, if it was built with --bootstrap-asan:
+ *
+ *   ==<pid>==ERROR: AddressSanitizer: heap-use-after-free on address ...
+ *
+ * @param output Combined stdout and stderr output of the bootstrap compiler
+ * @return Sanitizer report found or not
+ */
+bool BootstrapUtil::containsSanitizerReport(const std::string &output) {
+  static const std::regex SANITIZER_REPORT_REGEX(R"(==\d+==ERROR: (AddressSanitizer|LeakSanitizer))");
+  return std::regex_search(output, SANITIZER_REPORT_REGEX);
 }
 
 /**
