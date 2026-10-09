@@ -212,6 +212,9 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
   // Append the trailing capture-struct pointer for fat function pointer calls (see the ABI note above)
   if (data.isFctPtrCall()) {
     llvm::Value *fatPtr = getAddress(firstFragEntry);
+    // The fat pointer might be reached via pointers or references (e.g. a param of type f<int>()** or f<int>()&)
+    QualType fatPtrType = firstFragEntry->getQualType();
+    autoDeReferencePtr(fatPtr, fatPtrType);
     // Remember the address of the function pointer slot for the call below
     fctPtr = insertStructGEP(llvmTypes.lambdaFatPtrType, fatPtr, 0);
     // Load the captures pointer and add it to the argument list as the trailing argument
@@ -267,11 +270,7 @@ std::any IRGenerator::visitFctCall(const FctCallNode *node) {
     fctPtr = insertInBoundsGEP(builder.getPtrTy(), vtablePtr, builder.getInt64(vtableIndex), "vfct.addr");
     callee = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
   } else if (data.isFctPtrCall()) {
-    assert(firstFragEntry != nullptr);
-    QualType firstFragType = firstFragEntry->getQualType();
-    if (!fctPtr)
-      fctPtr = getAddress(firstFragEntry);
-    autoDeReferencePtr(fctPtr, firstFragType);
+    assert(fctPtr != nullptr); // Already dereferenced above, where the captures pointer is loaded
     callee = insertLoad(builder.getPtrTy(), fctPtr, false, "fct");
   } else {
     // Get callee function

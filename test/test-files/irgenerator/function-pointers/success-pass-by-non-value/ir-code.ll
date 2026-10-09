@@ -17,11 +17,11 @@ define internal noundef i32 @_Z4testPKc(ptr noundef %0) #0 {
 define internal noundef i32 @_Z6invokePPPFiPKcE(ptr noundef align 8 %0) #0 {
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
-  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fctPtr, i32 0, i32 1
-  %captures = load ptr, ptr %2, align 8
-  %3 = load ptr, ptr %fctPtr, align 8
-  %4 = load ptr, ptr %3, align 8
-  %fct = load ptr, ptr %4, align 8
+  %2 = load ptr, ptr %fctPtr, align 8
+  %3 = load ptr, ptr %2, align 8
+  %4 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %3, i32 0, i32 1
+  %captures = load ptr, ptr %4, align 8
+  %fct = load ptr, ptr %3, align 8
   %5 = call i32 %fct(ptr @anon.string.0, ptr %captures)
   ret i32 %5
 }
@@ -30,10 +30,10 @@ define internal noundef i32 @_Z6invokePPPFiPKcE(ptr noundef align 8 %0) #0 {
 define internal noundef i32 @_Z6invokeRPFiPKcE(ptr noundef %0) #0 {
   %fctPtr = alloca ptr, align 8
   store ptr %0, ptr %fctPtr, align 8
-  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fctPtr, i32 0, i32 1
-  %captures = load ptr, ptr %2, align 8
-  %3 = load ptr, ptr %fctPtr, align 8
-  %fct = load ptr, ptr %3, align 8
+  %2 = load ptr, ptr %fctPtr, align 8
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %2, i32 0, i32 1
+  %captures = load ptr, ptr %3, align 8
+  %fct = load ptr, ptr %2, align 8
   %4 = call i32 %fct(ptr @anon.string.1, ptr %captures)
   ret i32 %4
 }

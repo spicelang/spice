@@ -426,10 +426,13 @@ f<FilePath> ExternalLinkerInterface.compileAdditionalSource(const FilePath& addi
             compilation = &this.additionalSourceCompilations.back();
         }
         const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
-        compilation.linkerInvokerPath = linkerInvoker.path;
-        compilation.objectFilePath = objectFilePath;
-        compilation.args = args;
-        compilation.result = exec(compilation.linkerInvokerPath, compilation.args, true);
+        // Assign via a reference: fields reached via a pointer might be uninitialized memory, so the compiler does not
+        // destruct their old values on assignment. The result of a background compilation would leak then
+        AdditionalSourceCompilation& recompilation = *compilation;
+        recompilation.linkerInvokerPath = linkerInvoker.path;
+        recompilation.objectFilePath = objectFilePath;
+        recompilation.args = args;
+        recompilation.result = exec(recompilation.linkerInvokerPath, recompilation.args, true);
     }
 
     // Check for compile error

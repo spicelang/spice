@@ -89,6 +89,22 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
 }
 
 /**
+ * Check if the given reference file is compared against the actual output in the current test mode. The coverage mode does
+ * not compare any reference file. The ASAN mode only compares the output and exit code of the compiled test program, since
+ * the sanitizer instrumentation changes the generated code, but must not change the behavior of the program.
+ *
+ * @param refPath Path to the reference file (without platform or bootstrap suffix)
+ * @return Compared or not
+ */
+bool TestUtil::isComparedInCurrentMode(const std::filesystem::path &refPath) {
+  if (testDriverCliOptions.enableCoverage)
+    return false;
+  if (testDriverCliOptions.enableAsan)
+    return refPath.filename() == REF_NAME_EXECUTION_OUTPUT || refPath.filename() == REF_NAME_EXIT_CODE;
+  return true;
+}
+
+/**
  * Check if the expected output matches the actual output
  *
  * @param originalRefPath Path to the reference file
@@ -124,8 +140,8 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
     const bool isBootstrapRef = refPath.filename().string().starts_with(getBootstrapRefPath(originalRefPath).stem().string());
     if (testDriverCliOptions.updateRefs && (!testDriverCliOptions.bootstrapMode || isBootstrapRef)) { // GCOV_EXCL_LINE
       FileUtil::writeToFile(refPath, actualOutput);                                                   // GCOV_EXCL_LINE
-    } else if (!testDriverCliOptions.enableCoverage) {
-      // In coverage mode, debug info and coverage counters change the generated output, so comparing it against the
+    } else if (isComparedInCurrentMode(originalRefPath)) {
+      // In coverage and ASAN mode, the instrumentation changes the generated output, so comparing it against the
       // reference would fail spuriously. Still call getActualOutput() above though, to drive the pipeline stage that
       // produces it (e.g. running the optimizer for the opt levels that have a reference file).
       std::string expectedOutput = FileUtil::getFileContent(refPath);
@@ -272,10 +288,8 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
   // Some test cases check bootstrap specifics, that differ from the host compiler (e.g. ANTLR error messages or typeid values)
   if (!testDriverCliOptions.bootstrapMode && exists(testCase.testPath / CTL_SKIP_HOST))
     return true;
-  // Sanitizer-instrumented binaries cannot run under Valgrind either (the ASan/TSan/MSan/TYSan runtime and Valgrind's
-  // instrumentation both intercept the same allocator hooks), so skip them under --leak-detection for the same reason
-  // --skip-sanitizer-tests does.
-  if (testDriverCliOptions.skipSanitizerTests || testDriverCliOptions.enableLeakDetection) {
+  // In ASAN mode, every test program is built with AddressSanitizer, which cannot be combined with another sanitizer
+  if (testDriverCliOptions.skipSanitizerTests || testDriverCliOptions.enableAsan) {
     std::vector<std::string> testArgs;
     parseTestArgs(testCase.testPath / REF_NAME_SOURCE, testArgs);
     for (const std::string &arg : testArgs)

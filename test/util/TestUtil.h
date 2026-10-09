@@ -88,6 +88,7 @@ public:
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
   static std::filesystem::path getBootstrapRefPath(const std::filesystem::path &refPath);
   static std::vector<std::filesystem::path> expandRefPaths(const std::filesystem::path &refPath);
+  static bool isComparedInCurrentMode(const std::filesystem::path &refPath);
 };
 
 } // namespace spice::testing

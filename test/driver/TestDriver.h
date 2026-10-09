@@ -17,7 +17,7 @@ namespace spice::testing {
 struct TestDriverCliOptions {
   bool updateRefs = false;
   bool runBenchmarks = false;
-  bool enableLeakDetection = false;
+  bool enableAsan = false;
   bool isGitHubActions = false;
   bool skipSanitizerTests = false;
   bool isVerbose = false;

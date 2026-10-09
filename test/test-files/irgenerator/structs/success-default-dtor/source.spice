@@ -10,11 +10,9 @@ p StructWithHeapFields.ctor() {
 }
 
 f<int> main() {
-    StructWithHeapFields* sPtr = nil<StructWithHeapFields*>;
-    {
-        StructWithHeapFields s = StructWithHeapFields();
-        sPtr = &s;
-        printf("Is nullptr: %d\n", s.data == nil<heap int*>);
-    }
-    printf("Is nullptr: %d\n", sPtr.data == nil<heap int*>);
+    StructWithHeapFields s = StructWithHeapFields();
+    printf("Is nullptr: %d\n", s.data == nil<heap int*>);
+    // Destruct explicitly, to check that the default dtor frees the heap field and resets it to nil
+    sDestruct(s);
+    printf("Is nullptr: %d\n", s.data == nil<heap int*>);
 }

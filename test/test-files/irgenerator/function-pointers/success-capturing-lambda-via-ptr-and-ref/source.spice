@@ -1,0 +1,20 @@
+// A capturing lambda, that is called via a pointer or a reference to it, must receive the captures of the lambda itself,
+// not whatever is stored next to the pointer or reference
+
+f<int> invoke(f<int>(int)** fctPtr) {
+    return fctPtr(1);
+}
+
+f<int> invoke(f<int>(int)& fctRef) {
+    return fctRef(2);
+}
+
+f<int> main() {
+    int offset = 40;
+    f<int>(int) addOffset = f<int>(int x) {
+        return x + offset;
+    };
+    f<int>(int)* addOffsetPtr = &addOffset;
+    printf("%d\n", invoke(&addOffsetPtr));
+    printf("%d\n", invoke(addOffset));
+}

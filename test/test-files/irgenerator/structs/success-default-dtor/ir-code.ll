@@ -43,28 +43,27 @@ declare void @_ZN6ResultIPVhE4dtorEv(ptr noundef nonnull align 8 dereferenceable
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define dso_local noundef i32 @main() #2 {
-  %sPtr = alloca ptr, align 8
   %s = alloca %struct.StructWithHeapFields, align 8
-  store ptr null, ptr %sPtr, align 8
   call void @_ZN20StructWithHeapFields4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
-  store ptr %s, ptr %sPtr, align 8
   %data.addr = getelementptr inbounds %struct.StructWithHeapFields, ptr %s, i64 0, i32 0
   %1 = load ptr, ptr %data.addr, align 8
   %2 = icmp eq ptr %1, null
   %3 = zext i1 %2 to i32
   %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
+  call void @_Z9sDestructI20StructWithHeapFieldsEvR20StructWithHeapFields(ptr noundef %s)
+  %data.addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %s, i64 0, i32 0
+  %5 = load ptr, ptr %data.addr1, align 8
+  %6 = icmp eq ptr %5, null
+  %7 = zext i1 %6 to i32
+  %8 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %7)
   call void @_ZN20StructWithHeapFields4dtorEv(ptr noundef nonnull align 8 dereferenceable(8) %s)
-  %5 = load ptr, ptr %sPtr, align 8
-  %data.addr1 = getelementptr inbounds %struct.StructWithHeapFields, ptr %5, i64 0, i32 0
-  %6 = load ptr, ptr %data.addr1, align 8
-  %7 = icmp eq ptr %6, null
-  %8 = zext i1 %7 to i32
-  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #3
+
+declare void @_Z9sDestructI20StructWithHeapFieldsEvR20StructWithHeapFields(ptr)
 
 attributes #0 = { mustprogress noinline nounwind optnone uwtable }
 attributes #1 = { noinline nounwind optnone uwtable }

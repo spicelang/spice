@@ -45,7 +45,10 @@ These are `spicetest`'s own flags (not GoogleTest):
 - `--update-refs` — regenerate/overwrite reference files from current output.
   Use after an intentional change to compiler output, then review the diff.
 - `--run-benchmarks` — also run benchmark cases and check baselines.
-- `--leak-detection` — wrap tests in valgrind to detect leaks.
+- `--asan` — build the compiled test programs with `--sanitizer address` and
+  fail on any AddressSanitizer or LeakSanitizer report. Only `cout.out` and
+  `exit-code.out` are compared, since the instrumentation changes the generated
+  code. Tests requesting another sanitizer are skipped.
 - `--skip-sanitizer-tests` — skip tests exercising language sanitizers.
 - `--is-github-actions` — skip cases unsupported on CI.
 - `--verbose` — extra runner debug output.
@@ -90,8 +93,8 @@ the last opt level with an IR reference, e.g. `-O3` if `ir-code-O3.ll` exists), 
 `warning.out`, the IR references (one run per opt level), `cout.out`,
 `exit-code.out` and `debug.out` (via GDB). `run-builtin-tests` cases are built
 with the internal `--test-main` flag of the bootstrap compiler (test main without
-the test build mode, like the host runner). `--leak-detection` runs the compiled
-programs under valgrind, `--coverage` instruments them via the `--coverage` flag
+the test build mode, like the host runner). `--asan` builds the compiled
+programs with `--sanitizer address`, `--coverage` instruments them via the `--coverage` flag
 of the bootstrap compiler, and `--is-github-actions` skips the assembly and GDB
 checks, all like in host mode. The bootstrap compiler reports errors via a
 panic, so the message is taken from the panic output, with test paths rewritten

@@ -96,12 +96,15 @@ void checkExecution(const TestCase &testCase, const std::filesystem::path &execu
   const std::filesystem::path cliFlagsFile = testCase.testPath / INPUT_NAME_CLI_FLAGS;
   // Execute binary
   std::stringstream cmd;
-  if (testDriverCliOptions.enableLeakDetection)
-    cmd << "valgrind -q --leak-check=full --suppressions=../../valgrind.supp --num-callers=100 --error-exitcode=1 ";
   cmd << executablePath.string();
   if (exists(cliFlagsFile))
     cmd << " " << TestUtil::getFileContentLinesVector(cliFlagsFile).at(0);
-  const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput);
+  // In ASAN mode, always capture stderr as well: a sanitizer report has to fail the test case, even if it only checks an exit
+  // code, that might match the one of the sanitizer
+  const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput || testDriverCliOptions.enableAsan);
+  if (testDriverCliOptions.enableAsan) {
+    EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
+  }
 
   // Check if the execution output matches the expected output
   const auto getActualOutput = [&] { return output; };
@@ -228,6 +231,8 @@ static void execTestCase(const TestCase &testCase) {
   // Parse test args
   std::vector<std::string> args = {"spice", "build"};
   TestUtil::parseTestArgs(cliOptions.mainSourceFile, args);
+  if (testDriverCliOptions.enableAsan)
+    args.insert(args.end(), {"--sanitizer", "address"});
   args.push_back(mainSourceFilePath.string());
 
   bool explicitlySelectedTarget = false;
@@ -303,11 +308,11 @@ static void execTestCase(const TestCase &testCase) {
     // Execute IR generator in normal or debug mode
     mainSourceFile->runIRGenerator();
 
-    // Coverage counters are woven in by the optimizer pipeline, which the IR-check loop below only runs for opt levels
-    // that have a reference file to compare against. Most test cases only check execution output and have no IR
-    // reference at all, so without this, their linked binary would never actually carry the GCOV counters. Force one
-    // optimizer run at the default opt level in that case.
-    if (cliOptions.instrumentation.codeCoverage) {
+    // Coverage counters and sanitizer checks are woven in by the optimizer pipeline, which the IR-check loop below only runs
+    // for opt levels that have a reference file to compare against. Most test cases only check execution output and have no
+    // IR reference at all, so without this, their linked binary would never actually carry the GCOV counters or sanitizer
+    // checks. Force one optimizer run at the default opt level in that case.
+    if (cliOptions.instrumentation.codeCoverage || cliOptions.instrumentation.sanitizer != Sanitizer::NONE) {
       const bool anyOptIrRefExists = std::ranges::any_of(
           REF_NAME_OPT_IR, [&](const char *const ref) { return TestUtil::doesRefExist(testCase.testPath / ref); });
       if (!anyOptIrRefExists)
@@ -473,6 +478,8 @@ static void execBootstrapTestCase(const TestCase &testCase) {
       args.emplace_back("--test-main");
     if (testDriverCliOptions.enableCoverage)
       args.emplace_back("--coverage");
+    if (testDriverCliOptions.enableAsan)
+      args.insert(args.end(), {"--sanitizer", "address"});
     args.emplace_back("--output");
     args.push_back(outputPath.string());
     return args;
