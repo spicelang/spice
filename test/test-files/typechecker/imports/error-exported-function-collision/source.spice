@@ -1,0 +1,22 @@
+import "source1" as s1;
+
+public f<int> getValue() {
+    return 1;
+}
+
+public p printValue(int value) {
+    printf("Value: %d\n", value);
+}
+
+type T dyn;
+
+public f<T> identity<T>(T value) {
+    return value;
+}
+
+f<int> main() {
+    printValue(getValue());
+    s1::printValue(s1::getValue());
+    printValue(identity(2));
+    printValue(s1::identity(3));
+}

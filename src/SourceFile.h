@@ -4,6 +4,8 @@
 
 #include <filesystem>
 #include <string>
+#include <unordered_map>
+#include <unordered_set>
 
 #include <exception/AntlrThrowingErrorListener.h>
 #include <global/RuntimeModuleManager.h>
@@ -239,6 +241,9 @@ private:
   void untrackNameRegistryTargetEntry(const SymbolTableEntry *targetEntry);
   void mergeNameRegistries(const SourceFile &importedSourceFile, const std::string &importName);
   void mergeNameRegistriesRecursive();
+  void checkForExportedSymbolCollisions() const;
+  void registerExportedSymbols(std::unordered_map<std::string, const ASTNode *> &exportedSymbols,
+                               std::unordered_set<const SourceFile *> &visitedSourceFiles) const;
   void dumpCacheStats();
   void dumpCompilationStats() const;
   void dumpOutput(const std::string &content, const std::string &caption, const std::string &fileSuffix) const;

@@ -1,0 +1,13 @@
+public f<int> getValue() {
+    return 2;
+}
+
+public p printValue(int value) {
+    printf("Other value: %d\n", value);
+}
+
+type T dyn;
+
+public f<T> identity<T>(T value) {
+    return value;
+}

@@ -3,6 +3,7 @@
 #include "IRGenerator.h"
 
 #include <SourceFile.h>
+#include <ast/Attributes.h>
 #include <driver/Driver.h>
 #include <exception/CompilerError.h>
 #include <global/GlobalResourceManager.h>
@@ -810,6 +811,24 @@ bool IRGenerator::isSymbolDSOLocal(bool isPublic) const {
   // If we are compiling a shared library and export the global symbol, we need to drop dso_local
   // because it may be interposed by other shared objects by the dynamic linker.
   return !(isPublic && cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY);
+}
+
+/**
+ * Check if the given function is emitted with external linkage and therefore visible to the linker under its mangled name.
+ * Default methods of public interfaces are public, because structs in other source files can inherit them. Test functions
+ * are public, because the test main calls them
+ *
+ * @param function Function or procedure
+ * @return Exported or not
+ */
+bool IRGenerator::isExportedFunction(const Function *function) {
+  if (function->entry->getQualType().isPublic() || isPublicDefaultMethod(function))
+    return true;
+  const auto fctDefNode = dynamic_cast<const FctDefNode *>(function->declNode);
+  if (!fctDefNode || !fctDefNode->attrs)
+    return false;
+  const CompileTimeValue *testAttrValue = fctDefNode->attrs->attrLst->getAttrValueByName(ATTR_TEST);
+  return testAttrValue && testAttrValue->boolValue;
 }
 
 llvm::GlobalValue::LinkageTypes IRGenerator::getSymbolLinkageType(bool isPublic) const {

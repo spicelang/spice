@@ -1,3 +1,3 @@
-public f<int> dummy() {
+public f<int> dummy(int a, int b) {
     return 3;
 }

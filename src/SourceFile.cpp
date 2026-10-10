@@ -10,7 +10,6 @@
 #include <driver/Driver.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
-#include <exception/SemanticError.h>
 #include <global/CacheManager.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
@@ -726,6 +725,9 @@ void SourceFile::runMiddleEnd() {
       anySourceFileRevisitPending = true;
   } while (anySourceFileRevisitPending);
   CHECK_ABORT_FLAG_V()
+  // Check that no two definitions of the program are exported under the same linker symbol name
+  checkForExportedSymbolCollisions();
+  CHECK_ABORT_FLAG_V()
   // Visualize dependency graph
   runDependencyGraphVisualizer();
   CHECK_ABORT_FLAG_V()
@@ -993,6 +995,60 @@ void SourceFile::checkForSoftErrors() const {
   }
 }
 
+/**
+ * Check that no two definitions of the program are exported under the same linker symbol name. Non-public symbols get
+ * internal linkage and therefore can never collide. Public ones get external linkage under a name that does not contain
+ * the source file, so e.g. two public functions with the same signature in different source files would break the linking.
+ * Every collision is reported as soft error.
+ */
+void SourceFile::checkForExportedSymbolCollisions() const {
+  std::unordered_map<std::string, const ASTNode *> exportedSymbols;
+  std::unordered_set<const SourceFile *> visitedSourceFiles;
+  registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+  checkForSoftErrors();
+}
+
+/**
+ * Register the exported symbols of this source file and all its (transitive) dependencies in the given registry. This
+ * covers the same source files as collectBackEndSourceFiles, so exactly the ones that end up in the linked program.
+ *
+ * @param exportedSymbols Registry, that maps each linker symbol name to the AST node of its definition
+ * @param visitedSourceFiles Source files, that were already registered
+ */
+void SourceFile::registerExportedSymbols(
+    std::unordered_map<std::string, const ASTNode *> &exportedSymbols,
+    std::unordered_set<const SourceFile *> &visitedSourceFiles) const { // NOLINT(misc-no-recursion)
+  // Guard against circular imports
+  if (!visitedSourceFiles.insert(this).second)
+    return;
+
+  // Register the symbols of all dependencies first, so that a collision is reported at the definition in the importing file
+  for (const SourceFile *sourceFile : dependencies | std::views::values)
+    sourceFile->registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+
+  const auto registerSymbol = [&](const std::string &linkerName, const std::string &displayName, const ASTNode *declNode) {
+    const auto [it, inserted] = exportedSymbols.emplace(linkerName, declNode);
+    if (inserted || it->second == declNode)
+      return;
+    const std::string message = "Exported symbol '" + displayName + "' collides with the exported symbol defined at " +
+                                it->second->codeLoc.toPrettyString() + ", because both have the linker name '" + linkerName + "'";
+    resourceManager.errorManager.addSoftError(declNode, EXPORTED_SYMBOL_COLLISION, message);
+  };
+
+  for (const TopLevelDefNode *topLevelDef : ast->topLevelDefs) {
+    if (const auto globalVarDef = dynamic_cast<const GlobalVarDefNode *>(topLevelDef)) {
+      // Public globals are exported under their plain name
+      if (globalVarDef->entry->getQualType().isPublic())
+        registerSymbol(globalVarDef->varName, globalVarDef->varName, globalVarDef);
+    } else if (const auto fctDef = dynamic_cast<const FctDefBaseNode *>(topLevelDef)) {
+      // Each emitted manifestation of an exported function is exported under its mangled name
+      for (const Function *manifestation : fctDef->manifestations)
+        if (manifestation->isFullySubstantiated() && IRGenerator::isExportedFunction(manifestation))
+          registerSymbol(manifestation->getMangledName(), manifestation->getSignature(), fctDef);
+    }
+  }
+}
+
 bool SourceFile::isLibraryOutput() const {
   return cliOptions.outputContainer == OutputContainer::STATIC_LIBRARY ||
          cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
@@ -1065,35 +1121,6 @@ bool SourceFile::dependsOn(const SourceFile *other) const {
   return false;
 }
 
-namespace {
-
-/**
- * Get the global variable definition, that declared the given symbol table entry
- *
- * @param entry Symbol table entry
- * @return Global variable definition node or nullptr if the entry is no global variable
- */
-const GlobalVarDefNode *getGlobalVarDef(const SymbolTableEntry *entry) {
-  return entry ? dynamic_cast<const GlobalVarDefNode *>(entry->declNode) : nullptr;
-}
-
-/**
- * Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
- * yet attach the qualifiers to the type of the global at this point
- *
- * @param node Global variable definition node
- * @return Public or not
- */
-bool isPublicGlobalVar(const GlobalVarDefNode *node) {
-  if (const QualifierLstNode *qualifierLst = node->dataType->qualifierLst)
-    for (const QualifierNode *qualifier : qualifierLst->qualifiers)
-      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
-        return true;
-  return false;
-}
-
-} // namespace
-
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
  * But only do that for the symbols that are actually defined in the imported source file. Do not allow transitive dependencies.
@@ -1126,14 +1153,7 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     const auto existing = exportedNameRegistry.find(originalName);
     const bool existingIsOwn =
         existing != exportedNameRegistry.end() && existing->second.targetScope->sourceFile->globalScope == globalScope;
-    if (existingIsOwn) {
-      // A global of this file must not share its name with a public global of the imported file. Non-public globals of
-      // the imported file are not visible here, so the own global shadows them, like any other own symbol
-      const auto *ownGlobal = getGlobalVarDef(existing->second.targetEntry);
-      const auto *importedGlobal = getGlobalVarDef(entry.targetEntry);
-      if (ownGlobal && importedGlobal && isPublicGlobalVar(importedGlobal))
-        throw SemanticError(ownGlobal, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + originalName + "' in other module");
-    } else {
+    if (!existingIsOwn) {
       const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
       addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
     }

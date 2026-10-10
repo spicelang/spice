@@ -1,0 +1,5 @@
+import "source1" as s1;
+
+public p printIdentity() {
+    printf("Other file: %d\n", s1::identity(2));
+}

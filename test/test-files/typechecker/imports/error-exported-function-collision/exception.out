@@ -1,0 +1,20 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:1:
+Multiple exported symbols with the same linker name: Exported symbol 'f<int> getValue()' collides with the exported symbol defined at ../source1.spice:1:1, because both have the linker name '_Z8getValuev'
+
+3  public f<int> getValue() {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:7:1:
+Multiple exported symbols with the same linker name: Exported symbol 'p printValue(int)' collides with the exported symbol defined at ../source1.spice:5:1, because both have the linker name '_Z10printValuei'
+
+7  public p printValue(int value) {
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:13:1:
+Multiple exported symbols with the same linker name: Exported symbol 'f<int> identity<int>(int)' collides with the exported symbol defined at ../source1.spice:11:1, because both have the linker name '_Z8identityIiEii'
+
+13  public f<T> identity<T>(T value) {
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
