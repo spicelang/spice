@@ -153,28 +153,13 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      # TEMPORARY: find out why the 0.28.2 arm64 release binaries die with SIGILL on some runners
-      - name: Diagnose stage0 SIGILL
-        continue-on-error: true
-        run: |
-          set -x
-          lscpu || true
-          grep -m1 -E "^(Features|CPU implementer|CPU architecture|CPU variant|CPU part)" -A0 /proc/cpuinfo || true
-          grep -m5 -E "^(Features|CPU implementer|CPU architecture|CPU variant|CPU part|CPU revision)" /proc/cpuinfo || true
-          sudo apt-get install -y gdb > /dev/null
-          mkdir -p /tmp/stage0-diag && cd /tmp/stage0-diag
-          curl -sSL https://github.com/spicelang/spice/releases/download/0.28.2/spice_linux_arm64.tar.gz | tar -xz spice spice-bootstrap
-          for exe in spice-bootstrap spice; do
-            echo "===== $exe"
-            gdb -batch -ex run -ex 'info registers pc' -ex 'x/8i $pc-16' -ex 'x/2i $pc' -ex bt -ex 'info proc mappings' \
-              --args ./$exe --version 2>&1 | grep -v "^warning" | head -80
-          done
 
       - name: Setup Dependencies
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          # upx: the UPX loader of the released Linux/arm64 binaries crashes, so fetch-stage0.py decompresses the stage0 compiler
+          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang upx
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
