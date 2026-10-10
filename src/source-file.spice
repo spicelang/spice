@@ -57,6 +57,7 @@ import "bootstrap/typechecker/struct-manager";
 import "bootstrap/typechecker/interface-manager";
 import "bootstrap/visualizer/ast-visualizer";
 import "bootstrap/visualizer/dependency-graph-visualizer";
+import "bootstrap/util/test-util";
 
 type CompileStageType enum {
     NONE,
@@ -679,8 +680,7 @@ public p SourceFile.runObjectEmitter() {
     // change it afterwards, so the target machine is created with it in the constructor.
 
     // Deduce an object file path
-    this.objectFilePath = this.cliOptions.outputDir / this.filePath.getFileName();
-    this.objectFilePath.replaceExtension("o");
+    this.objectFilePath = this.getObjectFilePath();
 
     // Pick a concrete emitter based on the selected backend. The driver only accepts the TPDE backend, if the compiler is backed
     // by TPDE
@@ -724,6 +724,15 @@ public p SourceFile.concludeCompilation() {
         for unsigned long i = 0l; i < this.cachedObjectFilePaths.getSize(); i++ {
             this.resourceManager.linker.addFileToLinkage(this.cachedObjectFilePaths.get(i));
         }
+        // Without linking, nothing else writes the output file. So restore the object of the main source file to it
+        if this.isMainFile && this.cliOptions.outputContainer == OutputContainer::OBJECT_FILE {
+            const FilePath& cachedObjectFilePath = this.cachedObjectFilePaths.get(0l);
+            if !copyFile(String(cachedObjectFilePath.toString()), String(this.cliOptions.outputPath.toString())) {
+                const String msg = "Could not restore the object file '" + this.cliOptions.outputPath.toGenericString() + "' from the cache";
+                const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, msg.getRaw());
+                abortWithError(error.getMessage());
+            }
+        }
         for unsigned long i = 0l; i < this.sourceLinkerFlags.getSize(); i++ {
             this.resourceManager.linker.addLinkerFlag(this.sourceLinkerFlags.get(i));
         }
@@ -738,7 +747,7 @@ public p SourceFile.concludeCompilation() {
     // concludeCompilation is always driven serially and in dependency order, while the object emitter may run on a worker
     // thread of the parallel back end.
     if !this.objectFilePath.isEmpty() {
-        this.resourceManager.linker.addFileToLinkage(this.objectFilePath);
+        this.resourceManager.linker.addEmittedObjectFile(this.objectFilePath);
     }
 
     // Cache the source file
@@ -1386,6 +1395,21 @@ public f<bool> SourceFile.isLibraryOutput() {
     return this.cliOptions.outputContainer == OutputContainer::STATIC_LIBRARY || this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
 }
 
+/**
+ * Get the path of the object file, that the object emitter emits for this source file. With the object file output container,
+ * the object of the main source file is the output file, so it goes to the output path.
+ *
+ * @return Object file path
+ */
+public f<FilePath> SourceFile.getObjectFilePath() {
+    if this.isMainFile && this.cliOptions.outputContainer == OutputContainer::OBJECT_FILE {
+        return this.cliOptions.outputPath;
+    }
+    FilePath objectFilePath = this.cliOptions.outputDir / this.filePath.getFileName();
+    objectFilePath.replaceExtension(getOutputFileExtension(this.cliOptions, OutputContainer::OBJECT_FILE));
+    return objectFilePath;
+}
+
 public p SourceFile.collectAndPrintWarnings() {
     // Skip if restored from cache (no scope tree available), or if already visited. The latter guard keeps circular
     // imports from recursing infinitely, since the dependency graph may contain cycles.
@@ -1718,4 +1742,55 @@ p SourceFile.printStatusMessage(const string stage, const CompileStageIOType& in
         // Print
         print(outputStr.str());
     }
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testGetObjectFilePath() {
+    const FilePath testDir = makeUniqueTestDir("spice-object-path-test");
+    const FilePath mainPath = testDir / "main.spice";
+    const FilePath utilsPath = testDir / "utils.spice";
+    writeTestFile(mainPath, "");
+    writeTestFile(utilsPath, "");
+
+    string objectFileExt;
+    FilePath execMainObjectPath;
+    FilePath execUtilsObjectPath;
+    FilePath objMainObjectPath;
+    FilePath objUtilsObjectPath;
+    {
+        // Source files look up an LLVM target, so use the native one
+        CliOptions cliOptions;
+        cliOptions.targetTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+        cliOptions.isNativeTarget = true;
+        cliOptions.outputDir = testDir;
+        cliOptions.outputPath = testDir / "custom-name.o";
+        objectFileExt = getOutputFileExtension(cliOptions, OutputContainer::OBJECT_FILE);
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        SourceFile* mainFile = resourceManager.createSourceFile(nil<SourceFile*>, String("main"), mainPath, false);
+        SourceFile* utils = resourceManager.createSourceFile(mainFile, String("utils"), utilsPath, false);
+        utils.isMainFile = false;
+
+        // When linking, every source file emits its object file into the output dir
+        cliOptions.outputContainer = OutputContainer::EXECUTABLE;
+        execMainObjectPath = mainFile.getObjectFilePath();
+        execUtilsObjectPath = utils.getObjectFilePath();
+        // With the object file output container, the object of the main source file is the output file
+        cliOptions.outputContainer = OutputContainer::OBJECT_FILE;
+        objMainObjectPath = mainFile.getObjectFilePath();
+        objUtilsObjectPath = utils.getObjectFilePath();
+    }
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    FilePath expectedMainObjectPath = testDir / "main.spice";
+    expectedMainObjectPath.replaceExtension(objectFileExt);
+    FilePath expectedUtilsObjectPath = testDir / "utils.spice";
+    expectedUtilsObjectPath.replaceExtension(objectFileExt);
+    assert execMainObjectPath == expectedMainObjectPath;
+    assert execUtilsObjectPath == expectedUtilsObjectPath;
+    assert objMainObjectPath == testDir / "custom-name.o";
+    assert objUtilsObjectPath == expectedUtilsObjectPath;
+    return true;
 }
