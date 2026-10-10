@@ -86,6 +86,8 @@ jobs:
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
+          # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
+          mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
           # The TPDE static libraries and headers, that the std TPDE bindings (std/bindings/tpde) use. Released Linux
           # packages ship them inside the std as well, so they travel with this job's binary just like libbacktrace.
           mkdir -p tpde/lib tpde/include tpde/LICENSES
@@ -137,6 +139,7 @@ jobs:
           path: |
             ./build/spice**
             ./build/libbacktrace.a
+            ./build/runtime/**
             ./build/tpde/**
 
   build-compiler-linux-aarch64:
@@ -215,6 +218,8 @@ jobs:
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
+          # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
+          mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
           # The TPDE static libraries and headers, that the std TPDE bindings (std/bindings/tpde) use. Released Linux
           # packages ship them inside the std as well, so they travel with this job's binary just like libbacktrace.
           mkdir -p tpde/lib tpde/include tpde/LICENSES
@@ -266,6 +271,7 @@ jobs:
           path: |
             ./build/spice**
             ./build/libbacktrace.a
+            ./build/runtime/**
             ./build/tpde/**
 
   build-compiler-windows-x86:
@@ -348,6 +354,9 @@ jobs:
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
+          # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
+          New-Item -ItemType Directory -Force runtime | Out-Null
+          Copy-Item -Recurse ../std/runtime/LICENSES runtime/LICENSES
 
       - name: Build bootstrap compiler
         working-directory: build
@@ -377,6 +386,7 @@ jobs:
           path: |
             ./build/spice**
             ./build/libbacktrace.a
+            ./build/runtime/**
 
   build-compiler-macos-aarch64:
     name: Build compiler - MacOS/AArch64
@@ -442,6 +452,8 @@ jobs:
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
+          # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
+          mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
 
       - name: Build bootstrap compiler
         working-directory: build
@@ -472,6 +484,7 @@ jobs:
           path: |
             ./build/spice**
             ./build/libbacktrace.a
+            ./build/runtime/**
 
   build-artifacts:
     name: Build artifacts
@@ -489,11 +502,6 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
-      # Only for libbacktrace's LICENSE, which is platform-independent and so does not travel with the per-platform
-      # archives. Every other submodule is build-time only, and this job builds nothing.
-      - name: Fetch libbacktrace license
-        run: git submodule update --init deps/libbacktrace
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -538,8 +546,9 @@ jobs:
           mv spice-linux-x64 spice-linux-amd64
           mv spice-macos-arm64 spice-darwin-arm64
           chmod -R +x ./
-          # The TPDE libraries, headers and licenses of the Linux jobs are data and go into the std like the rest of it
-          chmod -R a-x,a+X spice-linux-amd64/tpde spice-linux-arm64/tpde
+          # The TPDE libraries, headers and licenses of the Linux jobs and the libbacktrace licenses are data and go into the
+          # std like the rest of it
+          chmod -R a-x,a+X spice-linux-amd64/tpde spice-linux-arm64/tpde spice-*/runtime
 
       # Each compiler job uploaded the libbacktrace.a it built for its own platform, next to its binary. The
       # archives and the Linux packages pick theirs straight out of bin/ via a template, but the container image is
@@ -547,15 +556,16 @@ jobs:
       # the Dockerfile already selects the compiler binary.
       - name: Stage libbacktrace for the container build context
         run: |
-          mkdir -p docker-libs/linux/amd64 docker-libs/linux/arm64
-          cp bin/spice-linux-amd64/libbacktrace.a docker-libs/linux/amd64/libbacktrace.a
-          cp bin/spice-linux-arm64/libbacktrace.a docker-libs/linux/arm64/libbacktrace.a
+          # Laid out like <std>/runtime, which the Dockerfile copies it over
+          mkdir -p docker-libs/linux/amd64/lib docker-libs/linux/arm64/lib
+          cp bin/spice-linux-amd64/libbacktrace.a docker-libs/linux/amd64/lib/libbacktrace.a
+          cp bin/spice-linux-arm64/libbacktrace.a docker-libs/linux/arm64/lib/libbacktrace.a
           # Its BSD license requires the notice to accompany binary redistributions, so it goes in next to the archive.
-          cp deps/libbacktrace/LICENSE docker-libs/linux/amd64/LICENSE
-          cp deps/libbacktrace/LICENSE docker-libs/linux/arm64/LICENSE
-          # A stale archive in the checkout would be packaged for every platform by the 'std' entry, next to the
-          # platform-matched one. There is none on a clean runner; make sure of it.
-          rm -rf std/runtime/lib
+          cp -r bin/spice-linux-amd64/runtime/LICENSES docker-libs/linux/amd64/LICENSES
+          cp -r bin/spice-linux-arm64/runtime/LICENSES docker-libs/linux/arm64/LICENSES
+          # A stale archive or license in the checkout would be packaged for every platform by the 'std' entry, next to
+          # the platform-matched one. There is none on a clean runner; make sure of it.
+          rm -rf std/runtime/lib std/runtime/LICENSES
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7

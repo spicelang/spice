@@ -16,6 +16,9 @@ ANTLR_VERSION = "4.13.2"
 LIBBACKTRACE_SRC = Path("deps/libbacktrace")
 LIBBACKTRACE_BUILD = Path("deps/libbacktrace-build")
 LIBBACKTRACE_ARCHIVE = Path("std/runtime/lib/libbacktrace.a")
+# Its BSD license requires the notice to accompany binary redistributions, so it goes into the std tree as well, like the
+# licenses of TPDE do
+LIBBACKTRACE_LICENSE = Path("std/runtime/LICENSES/libbacktrace-LICENSE")
 # Records the submodule commit the archive was built from, so a bump rebuilds it but a repeat run does not.
 LIBBACKTRACE_STAMP = LIBBACKTRACE_BUILD / "built-from-revision"
 
@@ -82,8 +85,16 @@ def find_build_tools() -> tuple[str, str]:
     raise SystemExit("No POSIX shell found to configure libbacktrace with.\n" + MISSING_TOOLS_HINT)
 
 
+def install_libbacktrace_license() -> None:
+    """Install the license of the vendored libbacktrace into the std tree, next to its archive."""
+    LIBBACKTRACE_LICENSE.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(LIBBACKTRACE_SRC / "LICENSE", LIBBACKTRACE_LICENSE)
+
+
 def build_libbacktrace() -> None:
     """Build the vendored libbacktrace with its own autotools build."""
+    # Also when the archive is up to date, so that a std tree, built before the license was installed, gets it as well
+    install_libbacktrace_license()
     revision = subprocess.run(
         ["git", "-C", str(LIBBACKTRACE_SRC), "rev-parse", "HEAD"],
         check=True, capture_output=True, text=True,
