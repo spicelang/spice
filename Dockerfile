@@ -11,7 +11,7 @@ RUN apk update && apk add --repository=https://dl-cdn.alpinelinux.org/alpine/edg
 RUN ln -sf /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
 
 COPY std/ /usr/lib/spice/std/
-COPY docker-libs/$TARGETPLATFORM/ /usr/lib/spice/std/runtime/lib/
+COPY docker-libs/$TARGETPLATFORM/ /usr/lib/spice/std/runtime/
 COPY $TARGETPLATFORM/spice /usr/bin
 COPY $TARGETPLATFORM/spice-host /usr/bin
 

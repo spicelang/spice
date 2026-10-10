@@ -74,9 +74,9 @@ archives:
       - src: "bin/spice-{{ .Os }}-{{ .Arch }}/libbacktrace.a"
         dst: std/runtime/lib
         strip_parent: true
-      # Its license must accompany the archive. It is the same for every platform, so it comes from the checkout.
-      - src: deps/libbacktrace/LICENSE
-        dst: std/runtime/lib
+      # Its license must accompany the archive. setup-deps.py put it into <std>/runtime/LICENSES of the compiler job
+      - src: "bin/spice-{{ .Os }}-{{ .Arch }}/runtime/LICENSES/*"
+        dst: std/runtime/LICENSES
         strip_parent: true
       # The TPDE static libraries and headers for the std TPDE bindings (std/bindings/tpde), with their licenses. Only the
       # Linux compiler jobs build TPDE, so each Linux output gets the ones of its own architecture. The other outputs have
@@ -125,8 +125,10 @@ nfpms:
         # data, and should land in the std with the same mode as the rest of it.
         file_info:
           mode: 0644
-      - src: deps/libbacktrace/LICENSE
-        dst: /usr/lib/spice/std/runtime/lib/LICENSE
+      - src: "bin/spice-linux-{{ .Arch }}/runtime/LICENSES/*"
+        dst: /usr/lib/spice/std/runtime/LICENSES/
+        file_info:
+          mode: 0644
       # The TPDE static libraries and headers for the std TPDE bindings (std/bindings/tpde), with their licenses
       - src: "bin/spice-linux-{{ .Arch }}/tpde/lib/*.a"
         dst: /usr/lib/spice/std/bindings/tpde/lib/
