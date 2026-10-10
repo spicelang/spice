@@ -773,6 +773,7 @@ def run_test(test_case: TestCase | None) -> TestResult:
         else:
             exec_test_case(result, test_case)
     except TestFailed:
+        # Raised by TestResult.fail() to stop the test case, after it recorded the failure
         pass
     except Exception as error:  # noqa: BLE001 - report any runner error as test failure, like GoogleTest does
         result.failures.append(f"Test runner error: {type(error).__name__}: {error}")
