@@ -789,12 +789,17 @@ def prepare_work_dir() -> None:
     if link.is_symlink() or link.exists():
         if link.resolve() != target.resolve():
             bootstrap.fail(f"{link} exists, but does not link to {target}")
-    elif IS_WINDOWS:
-        # Creating a symlink requires extra privileges on Windows, a junction does not
-        import _winapi
-        _winapi.CreateJunction(str(target), str(link))
     else:
-        link.symlink_to(target, target_is_directory=True)
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except OSError:
+            if not IS_WINDOWS:
+                raise
+            # Creating a symlink requires extra privileges on Windows, a junction does not. Prefer the symlink though: Windows
+            # resolves relative symlink targets within the test files (e.g. in the import path traversal test case) against
+            # the path through the junction, so they would point outside the test dir
+            import _winapi
+            _winapi.CreateJunction(str(target), str(link))
     os.chdir(OPTS.work_dir)
 
 
