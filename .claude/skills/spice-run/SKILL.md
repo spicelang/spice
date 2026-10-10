@@ -5,11 +5,10 @@ description: Compile and/or run a Spice program with the `spice` CLI — build t
 
 # Compile & run Spice programs
 
-Uses the `spice` compiler at `cmake-build-debug/src-host/spice` (build it via the
-`spice-build` skill first).
+Uses the `spice` compiler at `build/spice` (build it via the `spice-build` skill first).
 
 ```sh
-SPICE=cmake-build-debug/src-host/spice
+SPICE=build/spice
 ```
 
 ## Subcommands
@@ -19,6 +18,7 @@ SPICE=cmake-build-debug/src-host/spice
 | `spice build <file.spice>` | `b` | Compile to an output container (default: executable) |
 | `spice run <file.spice>` | `r` | Compile and execute immediately |
 | `spice test <file.spice>` | `t` | Compile with a test entry point and run enclosed tests |
+| `spice lint <file.spice>` | `l` | Check for style and best-practice issues |
 | `spice install <file.spice>` | `i` | Build and install to a PATH dir |
 | `spice uninstall <file.spice>` | `u` | Remove an installed program |
 

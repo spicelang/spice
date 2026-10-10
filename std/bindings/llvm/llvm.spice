@@ -1959,7 +1959,7 @@ public f<Metadata> IRBuilder.getCurrentDebugLocation() {
 }
 
 // ----- Debug info (DIBuilder) -----
-// The bootstrap debug info generator mirrors src-host/irgenerator/DebugInfoGenerator.cpp, which uses the LLVM C++ DIBuilder.
+// The compiler's debug info generator mirrors the one of the former host compiler, which used the LLVM C++ DIBuilder.
 // The C API represents every debug info node (types, scopes, subprograms, ...) as an LLVMMetadataRef, so the Metadata
 // wrapper above is reused for all of them. A few C++-only capabilities have no C-API equivalent (see the notes at the
 // respective call sites in debug-info-generator.spice).

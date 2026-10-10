@@ -4,7 +4,7 @@
 The compiler under test is invoked like a user would invoke it ('spice build ...'), and its dumps, diagnostics and the
 behavior of the compiled test programs are compared against the reference files of each test case. Either pass an already
 built compiler via --compiler, or let the runner build it from the sources in src/ first via --build-compiler (e.g. with
-the released stage0 compiler from fetch-stage0.py or the host compiler).
+the released stage0 compiler from fetch-stage0.py).
 
 Besides the reference test cases, the runner builds the compiler sources in test build mode and runs their builtin tests
 (#[test] functions), and runs the linter test cases against the 'lint' subcommand.
@@ -45,8 +45,8 @@ TARGET_OS = "windows" if IS_WINDOWS else "macos" if IS_MACOS else "linux"
 TARGET_ARCH = {"x86_64": "amd64", "amd64": "amd64", "aarch64": "aarch64", "arm64": "aarch64"}.get(platform.machine().lower())
 IS_X86_64 = TARGET_ARCH == "amd64"
 
-# The paths of the test cases are relative to the work dir, which links to the test files. Like for the host test runner, it is
-# the working directory of the compiler and the test programs, which may create files in it
+# The paths of the test cases are relative to the work dir, which links to the test files. It is the working directory of the
+# compiler and the test programs, which may create files in it
 PATH_TEST_FILES = "./test-files"
 
 INPUT_NAME_CLI_FLAGS = "cli-flags.txt"
@@ -69,7 +69,6 @@ CTL_SKIP_DISABLED = "disabled"
 CTL_SKIP_GH = "skip-gh-actions"
 CTL_SKIP_WINDOWS = "skip-windows"
 CTL_SKIP_MACOS = "skip-macos"
-CTL_SKIP_BOOTSTRAP = "skip-bootstrap"
 CTL_SKIP_WITHOUT_TPDE = "skip-without-tpde"
 CTL_RUN_BUILTIN_TESTS = "run-builtin-tests"
 CTL_DEBUG_SCRIPT = "debug.gdb"
@@ -81,9 +80,6 @@ GRAPH_NAME_AST = "AST"
 GRAPH_NAME_DEP_GRAPH = "Dependency Graph"
 GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from "
 GDB_INFERIOR_MESSAGE = "[Inferior"
-# The compilers name themselves in the producer string of the IR and assembly code. The refs are shared with the host compiler
-PRODUCER_MARKER_SELF_HOSTED = " [self-hosted] (https://github.com/spicelang/spice)"
-PRODUCER_MARKER_HOST = " [host] (https://github.com/spicelang/spice)"
 
 ERROR_HEADER = "[Error|"
 PANIC_HEADER = "Program panicked at "
@@ -197,11 +193,12 @@ def decode_output(output: bytes) -> str:
     return output.decode("utf-8", errors="surrogateescape")
 
 
-def run_process(cmd: list[str] | str, capture_stderr: bool = True, shell: bool = False) -> tuple[str, int, str]:
+def run_process(cmd: list[str] | str, capture_stderr: bool = True, shell: bool = False,
+                cwd: Path | None = None) -> tuple[str, int, str]:
     """Run the given command. Returns the output (incl. stderr, if captured), the exit code and the separately captured
     stderr output otherwise"""
     try:
-        result = subprocess.run(cmd, shell=shell, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+        result = subprocess.run(cmd, shell=shell, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT if capture_stderr else subprocess.PIPE, timeout=OPTS.timeout or None)
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"Timed out after {OPTS.timeout}s: {cmd if isinstance(cmd, str) else shlex.join(cmd)}")
@@ -288,8 +285,14 @@ def extract_warnings(output: str) -> str:
     return "".join(warnings)
 
 
+def erase_dso_local_markers(ir_code: str) -> str:
+    # The compiler uses the LLVM C API, which cannot mark global values as dso_local yet. The refs keep the dso_local markers,
+    # that the compiler is supposed to emit
+    return ir_code.replace(" dso_local ", " ")
+
+
 def erase_lines_by_substring(code: str, needle: str) -> str:
-    """Remove the lines containing the given substring. Like the host test runner, keep the line breaks"""
+    """Remove the lines containing the given substring, but keep their line breaks"""
     return "\n".join("" if needle in line else line for line in code.split("\n"))
 
 
@@ -305,34 +308,13 @@ def erase_gdb_header(gdb_output: str) -> str:
     return gdb_output
 
 
-def normalize_producer_string(code: str) -> str:
-    return code.replace(PRODUCER_MARKER_SELF_HOSTED, PRODUCER_MARKER_HOST)
-
-
-def erase_dso_local_markers(ir_code: str) -> str:
-    # The LLVM C API, which the self-hosted compiler uses, cannot mark global values as dso_local
-    return ir_code.replace(" dso_local ", " ")
-
-
 # -------------------- Reference files --------------------
 
 
-def get_bootstrap_ref_path(ref_path: str) -> str:
-    """Get the path of the bootstrap variant of the given ref file, e.g. 'ir-code-bootstrap.ll' for 'ir-code.ll'"""
-    stem, ext = os.path.splitext(ref_path)
-    return f"{stem}-bootstrap{ext}"
-
-
 def expand_ref_paths(ref_path: str) -> list[str]:
-    """
-    Get all variants of the given ref file, ordered from the most to the least specific one. The bootstrap variants
-    (e.g. 'ir-code-bootstrap.ll') come first, for references where the self-hosted compiler differs from the host compiler.
-    """
-    ref_paths = []
-    for base_ref_path in (get_bootstrap_ref_path(ref_path), ref_path):
-        stem, ext = os.path.splitext(base_ref_path)
-        ref_paths += [f"{stem}-{TARGET_OS}-{TARGET_ARCH}{ext}", f"{stem}-{TARGET_OS}{ext}", base_ref_path]
-    return ref_paths
+    """Get all variants of the given ref file, ordered from the most to the least specific one"""
+    stem, ext = os.path.splitext(ref_path)
+    return [f"{stem}-{TARGET_OS}-{TARGET_ARCH}{ext}", f"{stem}-{TARGET_OS}{ext}", ref_path]
 
 
 def does_ref_exist(ref_path: str) -> bool:
@@ -366,11 +348,9 @@ def check_ref_match(result: TestResult, original_ref_path: str, get_actual_outpu
         # Get the actual output. This also drives the compiler runs, that produce it
         actual_output = get_actual_output()
         # Cancel early, before comparing or updating the refs
-        if x86_only and not IS_X86_64 and ref_path in (original_ref_path, get_bootstrap_ref_path(original_ref_path)):
+        if x86_only and not IS_X86_64 and ref_path == original_ref_path:
             return True
-        # Only the bootstrap refs may be updated. The other refs hold the output of the host compiler
-        bootstrap_stem = Path(get_bootstrap_ref_path(original_ref_path)).stem
-        if OPTS.update_refs and os.path.basename(ref_path).startswith(bootstrap_stem):
+        if OPTS.update_refs:
             write_file(ref_path, actual_output)
         elif is_compared_in_current_mode(original_ref_path):
             expected_output = read_file(ref_path)
@@ -434,9 +414,6 @@ def is_disabled(test_case: TestCase) -> bool:
         return True
     if OPTS.is_github_actions and exists(CTL_SKIP_GH):
         return True
-    # Some test cases check host specifics, that the self-hosted compiler does not replicate
-    if exists(CTL_SKIP_BOOTSTRAP):
-        return True
     test_args = parse_test_args(test_case.file(REF_NAME_SOURCE))
     # In ASAN mode, every test program is built with AddressSanitizer, which cannot be combined with another sanitizer
     if (OPTS.skip_sanitizer_tests or OPTS.asan) and any(arg.startswith("--sanitizer") for arg in test_args):
@@ -466,7 +443,10 @@ def prepare_artifact_dir(test_case: TestCase) -> Path:
 
 def run_compiler(result: TestResult, args: list[str]) -> tuple[str, int]:
     """Run the compiler under test with the given args, capturing stdout and stderr"""
-    output, exit_code, _ = run_process([str(OPTS.compiler), *args])
+    # The coverage instrumentation writes the .gcno files of all compiled source files into the working dir of the compiler. In
+    # coverage mode, every compiler run works in its output dir, so the runs do not overwrite the files of each other
+    cwd = Path(args[args.index("--output") + 1]).parent if OPTS.coverage and "--output" in args else None
+    output, exit_code, _ = run_process([str(OPTS.compiler), *args], cwd=cwd)
     if OPTS.verbose:
         print(f"{result.name}: compiler output of '{shlex.join(args)}':\n{output}")
     # An ASAN-instrumented compiler reports memory errors, even if it compiles the test case like expected
@@ -531,6 +511,9 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
     or raising an unexpected error.
     """
     main_source_path = test_case.file(REF_NAME_SOURCE)
+    # In coverage mode, the compiler does not run in the work dir (see run_compiler)
+    if OPTS.coverage:
+        main_source_path = os.path.abspath(main_source_path)
     artifact_dir = prepare_artifact_dir(test_case)
     executable_path = artifact_dir / f"source{EXE_SUFFIX}"
     check_ast = does_ref_exist(test_case.file(REF_NAME_SYNTAX_TREE))
@@ -600,7 +583,7 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
         dump_dir.mkdir()
         dump_args = build_args(dump_dir / "object.o") + ["--output-container", "obj", "--dump-to-files"]
         # The IR is checked for each opt level, for which a reference exists. Emit the assembly code with the last of these
-        # opt levels, like the host test runner does
+        # opt levels
         checked_opt_levels = [i for i, ref in enumerate(REF_NAME_OPT_IR) if does_ref_exist(test_case.file(ref))]
         if checked_opt_levels:
             dump_args.append(f"-O{OPT_LEVEL_NAMES[checked_opt_levels[-1]]}")
@@ -649,16 +632,13 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
                 # Remove the lines, containing paths on the local file system
                 expected = erase_lines_by_substring(expected, " = !DIFile(filename:")
                 actual = erase_lines_by_substring(actual, " = !DIFile(filename:")
-            expected = normalize_producer_string(erase_dso_local_markers(expected))
-            actual = normalize_producer_string(erase_dso_local_markers(actual))
-            return expected, actual
+            return erase_dso_local_markers(expected), erase_dso_local_markers(actual)
 
         check_ref_match(result, test_case.file(REF_NAME_OPT_IR[opt_level]), get_ir, modify_ir, x86_only=True)
 
     # Check assembly code
     if check_assembly:
-        check_ref_match(result, test_case.file(REF_NAME_ASM), lambda: read_dump(dump_dir, "assembly-code.s"),
-                        lambda expected, actual: (expected, normalize_producer_string(actual)))
+        check_ref_match(result, test_case.file(REF_NAME_ASM), lambda: read_dump(dump_dir, "assembly-code.s"))
 
     # Check warnings
     check_ref_match(result, test_case.file(REF_NAME_WARNING_OUTPUT), lambda: extract_warnings(output))
@@ -830,10 +810,9 @@ def parse_args() -> argparse.Namespace:
     compiler_group.add_argument("--compiler", type=Path, default=None,
                                 help="Run the test cases against the given, already built compiler")
     compiler_group.add_argument("--build-compiler", type=Path, default=None,
-                                help="Build the compiler under test from src/ with the given compiler first, e.g. the host "
-                                     "compiler or the released stage0 compiler (default: the stage0 compiler from 'fetch-stage0.py' in "
-                                     "build/stage0/, else the host compiler, first found in "
-                                     "build/, cmake-build-release/, cmake-build-debug/)")
+                                help="Build the compiler under test from src/ with the given compiler first, e.g. the released "
+                                     "stage0 compiler or a previously built compiler (default: the stage0 compiler from "
+                                     "'fetch-stage0.py' in build/stage0/)")
     parser.add_argument("--build-only", action="store_true",
                         help="Only build the compiler under test into <work-dir>/bootstrap-compiler, without running any test")
     parser.add_argument("--instrument", choices=["coverage", "asan"], default=None,
@@ -841,8 +820,7 @@ def parse_args() -> argparse.Namespace:
                              "instrumentation. With asan, every test case fails, for which the sanitizer reports an error. "
                              "With --compiler, only the builtin tests get instrumented")
     parser.add_argument("--update-refs", action="store_true",
-                        help="Update the bootstrap refs (e.g. ir-code-bootstrap.ll) of the selected test cases. The other "
-                             "refs hold the output of the host compiler and are never overwritten")
+                        help="Update the existing refs of the selected test cases with the actual output")
     parser.add_argument("--coverage", action="store_true",
                         help="Compile and run the test programs with Spice code coverage instrumentation, skipping all "
                              "reference output comparisons")
@@ -878,7 +856,7 @@ def parse_args() -> argparse.Namespace:
     if args.build_only and args.compiler:
         parser.error("--build-only cannot be combined with --compiler")
     if args.compiler is None and args.build_compiler is None:
-        args.build_compiler = bootstrap.find_stage0_compiler() or bootstrap.find_host_compiler()
+        args.build_compiler = bootstrap.find_stage0_compiler()
         if args.build_compiler is None:
             parser.error("No compiler found to build the compiler under test with. Download the stage0 compiler "
                          "('python fetch-stage0.py'), or pass --build-compiler or --compiler")

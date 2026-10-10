@@ -1,30 +1,29 @@
 ---
 name: spice-debugging
-description: Find, diagnose, and fix bugs in the Spice compiler or in a compiled Spice program using GDB, objdump, sanitizers (for both the host C++ compiler and the emitted Spice program via the built-in `--sanitizer` flag), the compiler dump flags, and valgrind. Use when investigating a crash, miscompilation, memory error, or undefined behavior, or when triaging a failing test. Whenever a bug is fixed, this skill also requires extending or adding a test that covers the problematic code path and any related uncovered paths.
+description: Find, diagnose, and fix bugs in the Spice compiler or in a compiled Spice program using GDB, objdump, sanitizers (for both the compiler itself and the emitted Spice program, via the built-in `--sanitizer` flag), the compiler dump flags, and valgrind. Use when investigating a crash, miscompilation, memory error, or undefined behavior, or when triaging a failing test. Whenever a bug is fixed, this skill also requires extending or adding a test that covers the problematic code path and any related uncovered paths.
 ---
 
 # Spice — Debug & Reduce Bugs
 
-Uses the compiler at `cmake-build-debug/src-host/spice` and the test runner at
-`cmake-build-debug/test/spicetest` (build them via the `spice-build` skill):
+Uses the compiler at `build/spice` and the test runner `test/run-tests.py` (build the compiler via the `spice-build`
+skill, `python build.py --build-type Debug` for debug info):
 
 ```sh
-SPICE=cmake-build-debug/src-host/spice
-SPICETEST=cmake-build-debug/test/spicetest
+SPICE=build/spice
 ```
 
 ## Two layers can be buggy — identify which first
 
-1. **The host program** — the `spice` compiler / `spicetest` runner, written in
-   C++. Bugs here are C++ crashes, leaks, and undefined behavior. Debug them with
-   GDB, valgrind, and host-compiler (C++) sanitizers.
+1. **The compiler** — the `spice` executable, written in Spice (`src/`). Bugs here are crashes, panics, leaks and
+   miscompilations of the compiler itself. Debug them with GDB, valgrind, and an ASAN-instrumented compiler. Remember that
+   the compiler is itself a compiled Spice program: a crash in it can also be a codegen bug of the compiler that built it.
 2. **The emitted Spice program** — the native binary the compiler produces from a
    `.spice` file. Bugs here are miscompilations or runtime faults in generated
    code. Debug them with the compiler's dump flags, the **built-in
    `--sanitizer`** instrumentation, GDB, and objdump.
 
 A segfault in a compiled Spice program can be either: a **codegen bug in the
-host compiler**, or a genuine bug in the **user's Spice source** (e.g. a null
+compiler**, or a genuine bug in the **user's Spice source** (e.g. a null
 dereference, out-of-bounds access, or use-after-free written in Spice). Don't
 assume one or the other — determine which it is. The dumps and `--sanitizer`
 help here: if the IR/assembly faithfully implements what the Spice source says
@@ -36,8 +35,8 @@ codegen bug.
 
 Get the smallest reliable repro before debugging.
 
-- Failing reference test: re-run just that case
-  `$SPICETEST --gtest_filter='*<Case>*'` (see the `spice-test` skill).
+- Failing reference test: re-run just that case with the compiler invocations printed
+  `python test/run-tests.py --compiler $SPICE --filter='*<Case>*' -v` (see the `spice-test` skill).
 - Standalone file: `$SPICE build <file.spice>` / `$SPICE run <file.spice>` (see
   the `spice-run` skill).
 - Shrink the `.spice` input until the symptom is minimal — this almost always
@@ -51,8 +50,7 @@ the full reference; the debugging-relevant flags:
 
 | Flag (aliases) | Inspect it for |
 |----------------|----------------|
-| `--dump-cst` (`-cst`) | Parser produced the wrong tree |
-| `--dump-ast` (`-ast`) | AST building / desugaring is wrong |
+| `--dump-ast` (`-ast`) | Parser produced the wrong tree / desugaring is wrong |
 | `--dump-symtab` | Wrong symbol resolution, scoping |
 | `--dump-types` | Type registration / mangling issues |
 | `--dump-ir` (`-ir`) | Wrong LLVM IR — most codegen bugs surface here |
@@ -80,12 +78,12 @@ Reference files to diff against live in `test/test-files/<group>/<case>/`, e.g.
 Build with debug info so symbols and line numbers are present.
 
 ```bash
-# Host program (compiler / test runner) crash
+# Compiler crash (debug build: python build.py --build-type Debug)
 gdb --args $SPICE build <file.spice>
 # then: run, bt, bt full, frame N, print <expr>, list
 
-# A single failing test case
-gdb --args $SPICETEST --gtest_filter='*<Case>*'
+# A single failing test case: take the invocation from 'run-tests.py -v' and run it from build/test-tmp
+cd build/test-tmp && gdb --args ../spice build --test-mode --ignore-cache ./test-files/<suite>/<case>/source.spice
 
 # The emitted Spice program — compile with debug info (-g) and a known path
 $SPICE build -g -o /tmp/prog <file.spice>
@@ -93,8 +91,8 @@ gdb --args /tmp/prog <args>
 ```
 
 `-g` / `--debug-info` makes the compiler emit DWARF debug info for the produced
-binary. Useful inside GDB: `bt`, `break <file>:<line>`, `watch <expr>`,
-`catch throw` (stop on C++ exceptions in the compiler), `info locals`.
+binary. Useful inside GDB: `bt`, `break <file>:<line>`, `watch <expr>`, `info locals`. A compiler panic exits via
+`exit()`, so `break exit` stops there with the stack intact.
 
 ## 4. objdump / disassembly
 
@@ -134,58 +132,49 @@ automatically (`--use-lifetime-markers`, `--use-tbaa-metadata`). Combine with
 fault is real; if it stays silent but the program is still wrong, suspect a
 logic miscompilation and go back to the IR/assembly dumps.
 
-### b) Host compiler / test runner (C++)
+### b) The compiler itself
 
-The CMake build doesn't wire C++ sanitizers in by default; enable them in a
-dedicated build dir (see `spice-build`):
+The compiler can be built with the same instrumentation. The test runner does it with `--instrument asan`
+(`-O1 --sanitizer address`) and fails every case, for which the compiler prints an AddressSanitizer or LeakSanitizer report:
 
 ```bash
-cmake -S . -B cmake-build-asan -G Ninja \
-  -DCMAKE_BUILD_TYPE=Debug \
-  -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer"
-cmake --build cmake-build-asan --target spice spicetest
-cmake-build-asan/test/spicetest --gtest_filter='*<Case>*'
+python test/run-tests.py --instrument asan --filter='*<Case>*'
+# The instrumented compiler stays at build/test-tmp/bootstrap-compiler/spice for manual runs
 ```
 
-Use `address` for heap/stack/use-after-free, `undefined` for UB, `thread` for
-data races (build TSan separately — it is incompatible with ASan). Tune at
-runtime: `ASAN_OPTIONS=detect_leaks=1:abort_on_error=1`,
-`UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1`.
+Or build it by hand with the stage0 compiler, e.g. with the thread sanitizer for races in the parallel back end:
+
+```bash
+SPICE_STD_DIR=$PWD/std SPICE_BOOTSTRAP_DIR=$PWD/src \
+  build/stage0/spice build -O1 -g --sanitizer thread --ignore-cache --output build/spice-tsan src/main.spice
+```
 
 ## 6. Valgrind
 
-For memory errors and leaks in the host program. There are dedicated targets
-(there is **no** `--valgrind` flag — use these). For memory errors and leaks in
-the compiled test programs, use the `--asan` runner flag instead, which builds
-them with `--sanitizer address`:
+For memory errors and leaks in the compiler or an emitted program (there is **no** `--valgrind` flag). For memory errors
+and leaks in the compiled test programs, use the `--asan` runner flag instead, which builds them with
+`--sanitizer address`:
 
 ```bash
 # Runner flag: build and run each test program with AddressSanitizer
-$SPICETEST --asan --gtest_filter='*<Case>*'
-
-# CMake convenience targets
-cmake --build cmake-build-debug --target spicetest_leakcheck   # tests under valgrind
-cmake --build cmake-build-debug --target spice_leakcheck       # compiler under valgrind
+python test/run-tests.py --compiler $SPICE --asan --filter='*<Case>*'
 
 # Ad-hoc run of the compiler or an emitted program
 valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes \
   $SPICE build <file.spice>
 ```
 
-With `--asan`, the runner fails a case on any AddressSanitizer or LeakSanitizer
-report of the compiled program. For valgrind, `--track-origins=yes` is worth the
-slowdown when chasing uninitialized reads, which ASan does not detect. ASan
-(faster, catches stack/global issues) and valgrind (no rebuild needed) overlap —
-reach for whichever is already set up.
+With `--asan`, the runner fails a case on any AddressSanitizer or LeakSanitizer report of the compiled program. For
+valgrind, `--track-origins=yes` is worth the slowdown when chasing uninitialized reads, which ASan does not detect. ASan
+(faster, catches stack/global issues) and valgrind (no rebuild needed) overlap — reach for whichever is already set up.
 
 ## 7. Choosing a tool
 
 | Symptom | Reach for |
 |---------|-----------|
-| Compiler/test crash, need a stack trace | GDB (`catch throw`, `bt full`) |
-| Heap corruption / use-after-free / leak in the compiler | host ASan, or valgrind |
-| Undefined behavior in the compiler | host UBSan |
-| Data race in the compiler | host TSan |
+| Compiler crash or panic, need a stack trace | GDB (`bt full`), the panic's own stack trace |
+| Heap corruption / use-after-free / leak in the compiler | `run-tests.py --instrument asan`, or valgrind |
+| Data race in the compiler | compiler built with `--sanitizer thread` |
 | Crash / bad values in a compiled Spice program | `--sanitizer=address` (+`-g`), then dumps → objdump/GDB |
 | Wrong intermediate representation | the `--dump-*` flags |
 
@@ -204,8 +193,8 @@ bug, you MUST:
    missed branch usually has untested neighbors.
 3. **Verify the new test catches the regression**: confirm it fails on the
    pre-fix code (temporarily revert the fix if needed) and passes after, then run
-   the relevant suite with AddressSanitizer (`$SPICETEST --asan
-   --gtest_filter='...'`) so the new case is also checked for memory issues. If
+   the relevant suite with AddressSanitizer (`python test/run-tests.py --compiler $SPICE --asan
+   --filter='...'`) so the new case is also checked for memory issues. If
    the bug was a runtime fault in generated code, also re-run the repro under the
    matching `--sanitizer`.
 
@@ -214,7 +203,7 @@ new tests now cover.
 
 ## Related skills
 
-- `spice-build` — Debug / sanitizer / leakcheck builds of the compiler.
+- `spice-build` — Debug builds of the compiler.
 - `spice-run` — compile/run a `.spice` file, including `-g` and `--sanitizer`.
 - `spice-dump` — full reference for the dump flags.
 - `spice-test` / `spice-add-test` — run, add, and update reference tests.

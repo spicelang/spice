@@ -5,9 +5,7 @@
     "files": {
         "guid": "064e9d15-7d0f-4800-869d-d097c2be9bd4",
         "items": [
-            "spice.exe",
-            "spice-host.exe",
-            "zlib1__.dll"
+            "spice.exe"
         ]
     },
     "directories": [
@@ -37,7 +35,7 @@
     "choco": {
         "description": "Spice programming language",
         "project-url": "https://github.com/spicelang/spice",
-        "tags": "programming-language language compiler cpp llvm antlr",
+        "tags": "programming-language language compiler llvm",
         "license-url": "https://github.com/spicelang/spice/blob/main/LICENSE"
     }
 }

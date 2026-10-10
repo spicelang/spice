@@ -11,88 +11,86 @@ for the Spice language.
 ## Repository at a glance
 
 - Project: **Spice Programming Language** compiler + standard library.
-- Build system: **CMake** (top-level `CMakeLists.txt`) with `src-host/` and `test/` subdirectories.
+- The compiler is self-hosted: it is written in Spice and built by a released Spice compiler (the stage0 compiler, pinned
+  in `.github/stage0-version` and downloaded by `fetch-stage0.py` into `build/stage0/`).
+- Build and test tooling: Python scripts in the repo root and `test/run-tests.py`.
 - Main areas:
-    - `src/`: self-hosted compiler (bootstrap compiler), written in Spice; the default compiler
+    - `src/`: the compiler, written in Spice
+        - `src/main.spice`: entry point
         - `src/driver.spice`: CLI handling
+        - `src/lexer/`, `src/parser/`: hand-written lexer and parser
         - `src/typechecker/`: type checking and inference, overload resolution, and related components
-        - `src/irgenerator/`: LLVM IR code generation
-    - `src-host/`: host compiler, written in C++; builds the bootstrap compiler and backs the test runner
-        - `src-host/driver/`: main compiler executable and CLI handling
-        - `src-host/typechecker/`: type checking and inference, overload resolution, and related components
-        - `src-host/irgenerator/`: LLVM IR code generation
-    - `test/`: GoogleTest-based test executable `spicetest`
+        - `src/irgenerator/`: LLVM IR code generation (via the LLVM C API bindings in `std/bindings/llvm`)
+    - `test/`: tests
+        - `test/run-tests.py`: test runner
         - `test/test-files/`: test input files for various reference integration tests
-        - `test/unittest/`: GoogleTest-based unit tests for compiler components
+        - Unit tests are `#[test]` functions next to the code in `src/`
     - `std/`: standard library source files (`.spice`)
     - `docs/`: documentation site sources
     - `media/specs`: design documents and notes on language features and implementation details
 
 ## Initial setup
 
-There are helper scripts for common tasks, but the underlying CMake commands are also available for manual use.
-The scripts are Python-based and cross-platform.
+The helper scripts are Python-based and cross-platform.
 
 - First-time local setup (can be skipped if environment is already configured):
     - `python dev-setup.py`
+- The scripts find LLVM via `LLVM_DIR` (`<llvm-build>/lib/cmake/llvm`) or `llvm-config`. Alternatively, set
+  `LLVM_LIB_DIR` and `LLVM_INCLUDE_DIRS` (`-I<dir1> -I<dir2>`).
+- Download the stage0 compiler (also done by `build.py` and `dev-setup.py`, if it is missing):
+    - `python fetch-stage0.py`
+- Optional: build the TPDE libraries into the std, for the experimental TPDE backend (Linux only):
+    - `python setup-deps.py --tpde`
 
 ## Building the project
 
-Please reuse one of the following two cmake build directories for all build tasks, to keep build artifacts organized and
-avoid confusion:
-
-- `cmake-build-debug/`: general build directory for development and testing
-- `cmake-build-release/`: build directory for release builds (optimized, no debug symbols) for performance benchmarking
-
-Instructions how to build when inside the respective build directory:
-
-- Build the entire project (compiler + tests):
-    - `cmake --build .`
-- Build only the compiler:
-    - `cmake --build . --target spice`
-- Build only the test executable:
-    - `cmake --build . --target spicetest`
-- Optional leak check target (requires valgrind installed):
-    - `cmake --build . --target spicetest_leakcheck`
+- Build the compiler with the stage0 compiler to `build/spice` (optimized, with LTO):
+    - `python build.py`
+- Unoptimized build with debug info:
+    - `python build.py --build-type Debug`
+- Bootstrap the compiler until it reaches a fixed point (the compiler builds itself reproducibly):
+    - `python bootstrap.py`
 
 ## Test and verification
 
-- Run all tests:
-    - `<build-directory>/test/spicetest`
-- Run a specific test case (replace `TestSuiteName.TestCaseName` with the actual test name):
-    - `<build-directory>/test/spicetest --gtest_filter=TestSuiteName.TestCaseName`
-- Run tests with valgrind for memory leak detection:
-    - `valgrind --leak-check=full <build-directory>/test/spicetest`
-    - Note: This can be slow, so it's recommended to run only a focused set of tests when using valgrind.
+- Run all tests (builds the compiler under test with the stage0 compiler first):
+    - `python test/run-tests.py`
+- Run the tests against an already built compiler:
+    - `python test/run-tests.py --compiler build/spice`
+- Run specific test cases (GoogleTest-style filter, `TestSuiteName.TestCaseName`):
+    - `python test/run-tests.py --compiler build/spice --filter 'TestSuiteName.TestCaseName'`
+- Update the refs of test cases with the actual output:
+    - `python test/run-tests.py --compiler build/spice --filter '...' --update-refs`
+- Build the compiler under test with AddressSanitizer, failing every test case that produces a sanitizer report:
+    - `python test/run-tests.py --instrument asan`
+- See `python test/run-tests.py --help` for all options.
 
 ## Running Spice programs
 
 - Compile a Spice source file to an executable:
-    - `<build-directory>/src-host/spice build <source-file.spice> -o <output-executable>`
+    - `build/spice build <source-file.spice> -o <output-executable>`
 - Run the compiled executable:
     - `./<output-executable>`
 - For quick testing, you can also use the `run` command to compile and execute in one step:
-    - `<build-directory>/src-host/spice run <source-file.spice>`
+    - `build/spice run <source-file.spice>`
 - Use the `--help` option to see all available commands and options:
-    - `<build-directory>/src-host/spice --help`
+    - `build/spice --help`
 - You can use an available sanitizer of your choice on Spice code (e.g. ASAN, TSAN, TYSAN, etc.)
-    - `<build-directory>/src-host/spice run --sanitizer=address <source-file.spice>`
+    - `build/spice run --sanitizer=address <source-file.spice>`
 
 ## Debugging
 
-- Use a debugger like `gdb` or `lldb` to debug the compiler executable:
-    - `gdb <build-directory>/src-host/spice`
+- Build the compiler with debug info (`python build.py --build-type Debug`) and use a debugger like `gdb` or `lldb`:
+    - `gdb --args build/spice build <source-file.spice>`
     - Set breakpoints, run the program, and inspect variables as needed.
-- For debugging test failures, you can run the test executable under the debugger:
-    - `gdb <build-directory>/test/spicetest`
-    - Use the `--gtest_filter` option to focus on specific tests when running under the debugger.
-- For debugging memory issues, use valgrind as described in the testing section.
+- For debugging a failing test case, run the compiler on the test case with the args the runner prints with `--verbose`.
+- For debugging memory issues, run the tests against an ASAN-instrumented compiler (see above) or use valgrind on the
+  compiler.
 
 ## Coding style
 
-Follow the project [Coding Style Guide](STYLE_GUIDE.md) for all C++ (`src-host/`, `test/`) and Spice (`src/`,
-`std/`, `test/test-files/`) changes. It documents formatting (`.clang-format`), naming, file layout, the visitor pattern,
-diagnostics, memory management, and Spice-source conventions. Read it before writing or modifying code.
+Follow the project [Coding Style Guide](STYLE_GUIDE.md) for all Spice changes (`src/`, `std/`, `test/test-files/`). Read it
+before writing or modifying code.
 
 ## Editing expectations
 

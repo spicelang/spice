@@ -59,7 +59,8 @@ There is a batch/shell script called `dev-setup` to help you with that. It will 
 
 - Make sure you have all dependencies
 - Clone and build the required LLVM version with the required settings to the `llvm` subdirectory
-- Download all required third-party libs to the `lib` subdirectory
+- Download and build all required third-party libs
+- Download the released Spice compiler (stage0 compiler), that builds the compiler from source
 - Build Spice for the first time into the `build` subdirectory
 
 Use this command to run it:
@@ -69,13 +70,18 @@ python dev-setup.py # Linux/macOS/Windows
 ```
 
 #### Re-build Spice
-There is also a batch/shell script to rebuild Spice. Use the following command to run it:
+There is also a script to rebuild Spice. Use the following command to run it:
 
 ```sh
 python build.py # Linux/macOS/Windows
 ```
 
 You can find the build output in the `build` subdirectory.
+
+#### Run the tests
+```sh
+python test/run-tests.py # Linux/macOS/Windows
+```
 
 ## Available target platforms
 Currently, Spice only offers stable support for linux/x86_64, linux/aarch64, windows/x86_64, darwin/aarch64 and webassembly.

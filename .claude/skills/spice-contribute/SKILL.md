@@ -19,7 +19,7 @@ All work happens on a dedicated branch, never directly on `main`.
 | `chore/<slug>` | Build system, dependency updates, repo maintenance |
 | `ci/<slug>` | GitHub Actions workflows, CI scripts, test infrastructure |
 | `std/<slug>` | Standard library changes that aren't strictly a new feature or fix |
-| `bootstrap/<slug>` | Changes to the self-hosted bootstrap compiler (`src/`) |
+| `bootstrap/<slug>` | Compiler-internal changes in `src/` (refactors, bootstrapping, stage0 bumps) |
 | `test/<slug>` | New or updated test cases, test utilities, reference files |
 | `docs/<slug>` | Documentation-only changes under `docs/` |
 | `security/<slug>` | Security-sensitive fixes (prefer non-public disclosure first — see `CONTRIBUTING.md`) |
@@ -58,7 +58,7 @@ Fixes #1201
 ```
 
 ```
-Bump minimum CMake version to 3.22
+Bump the stage0 compiler to 0.29.0
 ```
 
 ```
@@ -95,58 +95,33 @@ git reset --hard origin/main           # restore main to remote state
 git checkout feature/my-new-thing      # continue on the branch
 ```
 
-## Keep the host and bootstrap compilers in sync
+## Stay compatible with the stage0 compiler
 
-The host compiler (`src-host/`, C++) and the self-hosted bootstrap compiler
-(`src/`, Spice) implement the same pipeline and must not drift apart.
-The bootstrap compiler mirrors the host class by class: `src-host/<stage>/FooBar.{h,cpp}`
-corresponds to `src/<stage>/foo-bar.spice` (the host's split files such
-as `TypeCheckerExpressions.cpp` or `GenStatements.cpp` are merged into the one
-bootstrap file of that class).
+The compiler in `src/` is written in Spice and built by the released stage0 compiler, pinned in `.github/stage0-version`.
+So `src/` may only use language features and std APIs, that the pinned stage0 compiler supports. CI builds the compiler
+with the stage0 compiler and bootstraps it to a fixed point (`python bootstrap.py`), so a violation shows up there.
 
-Whenever a PR changes compiler behavior in `src-host/`, port the same change to
-`src/` in the **same PR**:
-
-- Bug fixes, new or changed semantics, diagnostics, name mangling and codegen
-  changes go into the matching bootstrap file, keeping the same structure,
-  function names and control flow so the two stay easy to diff.
-- Grammar changes in `src-host/Spice.g4` must also be implemented in the hand-written
-  `src/lexer/` and `src/parser/`, and new or changed AST
-  nodes in `src/ast/`.
-- New diagnostics need the same error kind and message text in
-  `src/exception/`; the bootstrap test run checks every expected
-  error and warning.
-- Changes to a stage the bootstrap compiler has not implemented yet need no
-  port, but mention that in the PR description so it is not forgotten when
-  the stage is ported.
-- The reverse holds too: a fix discovered while working on `src/`
-  that also affects the host compiler must be fixed in `src-host/` as well.
-
-If a change cannot be ported (e.g. it relies on a Spice language feature or
-stdlib API that is not available yet), say so under "Follow-up / known
-limitations" in the PR description instead of skipping it silently.
-
-Validate both sides: run the regular suite for the host compiler and the
-bootstrap suite (`test/run-tests.py`, see the quality gate below) for the port.
+To use a new language feature in `src/`, land the feature first, release it, then bump `.github/stage0-version` in a
+separate PR, before using the feature in the compiler sources. If a change has to wait for that, say so under
+"Follow-up / known limitations" in the PR description.
 
 ## Pre-PR quality gate
 
 Run these checks before opening (or requesting review on) a PR:
 
 ```sh
-# 1. Build what you changed
-cmake --build cmake-build-debug --target spice spicetest -j
+# 1. Build the compiler, if you changed it
+python build.py
 
-# 2. Run affected tests (add --gtest_filter to narrow scope)
-cmake-build-debug/test/spicetest
+# 2. Run the tests (narrow the scope with --filter while iterating, run all before the PR)
+python test/run-tests.py --compiler build/spice
 
 # 3. If you touched reference files, regenerate and review them
-cmake-build-debug/test/spicetest --gtest_filter='<Suite>*<Case>*' --update-refs
+python test/run-tests.py --compiler build/spice --filter='<Suite>.*<Case>*' --update-refs
 git diff test/test-files   # review generated output before committing
 
-# 4. If you changed the compiler, stdlib or bootstrap, include relevant suite(s)
-cmake-build-debug/test/spicetest --gtest_filter='StdTests*'
-python test/run-tests.py --filter='LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*'
+# 4. If you changed the compiler, check that it still bootstraps to a fixed point
+python bootstrap.py
 ```
 
 If the environment cannot run the full suite (e.g. LLVM not installed), say so
@@ -169,7 +144,7 @@ PR description template:
 
 ## How it was validated
 <!-- Exact commands run + outcome, e.g.: -->
-- `cmake-build-debug/test/spicetest --gtest_filter='IRGeneratorTests*'` — all pass
+- `python test/run-tests.py --compiler build/spice --filter='IRGeneratorTests.*'` — all pass
 - Manually ran `spice run scratch.spice` — output correct
 
 ## Follow-up / known limitations
@@ -198,9 +173,9 @@ they will be squashed at merge time.
 
 - [ ] Branch named with the correct prefix and a descriptive slug
 - [ ] All commits have a short descriptive headline (no type prefix)
-- [ ] Build passes (`cmake --build cmake-build-debug --target spice spicetest`)
+- [ ] Build passes (`python build.py`)
 - [ ] Relevant tests pass (full suite or focused filter)
-- [ ] Compiler changes ported between `src-host/` and `src/` (or the gap noted in the PR)
+- [ ] `src/` only uses features the pinned stage0 compiler supports
 - [ ] Reference files updated and reviewed (`--update-refs` + `git diff`)
 - [ ] Docs updated if behavior/CLI/error messages changed
 - [ ] Issue linked in footer (`Fixes #N` or `Refs #N`)

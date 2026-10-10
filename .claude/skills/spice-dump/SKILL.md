@@ -1,18 +1,17 @@
 ---
 name: spice-dump
-description: Dump compiler intermediate output (LLVM IR, assembly, AST, CST, symbol table, types) for a Spice source or test-input file using the `spice` CLI dump flags. Use when the user wants to inspect what the compiler generates for a `.spice` file, debug codegen, or regenerate reference dumps.
+description: Dump compiler intermediate output (LLVM IR, assembly, AST, symbol table, types) for a Spice source or test-input file using the `spice` CLI dump flags. Use when the user wants to inspect what the compiler generates for a `.spice` file, debug codegen, or regenerate reference dumps.
 ---
 
 # Dump Spice compiler output
 
-The `spice` compiler (built at `cmake-build-debug/src-host/spice`, see the
-`spice-build` skill) can dump every stage of compilation via flags on the
-`build` / `run` / `test` subcommands.
+The `spice` compiler (built at `build/spice`, see the `spice-build` skill) can dump every stage of compilation via flags
+on the `build` / `run` / `test` subcommands.
 
 ## Quick start
 
 ```sh
-SPICE=cmake-build-debug/src-host/spice
+SPICE=build/spice
 
 # Dump LLVM IR for a source file (unoptimized)
 $SPICE build -O0 -ir path/to/source.spice
@@ -31,7 +30,6 @@ reproduce those (e.g. `-O2 -ir` to compare against `ir-code-O2.ll`).
 
 | Flag | Aliases | Dumps |
 |------|---------|-------|
-| `--dump-cst` | `-cst` | Concrete syntax tree (serialized + SVG) |
 | `--dump-ast` | `-ast` | Abstract syntax tree (serialized + SVG) |
 | `--dump-symtab` | | Serialized symbol tables |
 | `--dump-types` | | All used types |
@@ -59,7 +57,7 @@ Useful companions:
 ## Common recipes
 
 ```sh
-SPICE=cmake-build-debug/src-host/spice
+SPICE=build/spice
 SRC=test/test-files/irgenerator/for-loops/success-for-loop/source.spice
 
 # Just the IR, nothing else, fast
@@ -68,8 +66,8 @@ $SPICE build -O0 -ir --abort-after-dump $SRC
 # IR at O2 (matches ir-code-O2.ll references)
 $SPICE build -O2 -ir --abort-after-dump $SRC
 
-# AST + CST as SVG/text
-$SPICE build -ast -cst --abort-after-dump $SRC
+# AST as SVG/text
+$SPICE build -ast --abort-after-dump $SRC
 
 # Symbol table and type registry
 $SPICE build --dump-symtab --dump-types --abort-after-dump $SRC
@@ -84,7 +82,7 @@ The dump filenames above correspond to reference files in
 `test/test-files/<group>/<case>/` (e.g. `ir-code.ll`, `ir-code-O2.ll`,
 `assembly-linux-amd64.asm`, `symbol-table.json`, `type-registry.out`,
 `syntax-tree.dot`). To regenerate those en masse after an intended compiler
-change, prefer `spicetest --update-refs` (see the `spice-test` skill) rather
+change, prefer `python test/run-tests.py --update-refs` (see the `spice-test` skill) rather
 than hand-copying dumps. Use the manual dumps here for ad-hoc inspection and
 debugging of a single file.
 

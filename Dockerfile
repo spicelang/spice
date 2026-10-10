@@ -13,6 +13,5 @@ RUN ln -sf /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6
 COPY std/ /usr/lib/spice/std/
 COPY docker-libs/$TARGETPLATFORM/ /usr/lib/spice/std/runtime/
 COPY $TARGETPLATFORM/spice /usr/bin
-COPY $TARGETPLATFORM/spice-host /usr/bin
 
 ENTRYPOINT [ "spice" ]

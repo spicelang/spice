@@ -6,7 +6,7 @@ description: Add a reference/integration test case under test/test-files for the
 # Add a Spice reference test
 
 Reference tests live under `test/test-files/<suite>/...`. The runner
-(`test/TestRunner.cpp`) discovers a test case per leaf directory, compiles its
+(`test/run-tests.py`) discovers a test case per leaf directory, compiles its
 `source.spice`, and compares each pipeline stage's output against any reference
 file present. A reference file that doesn't exist is simply skipped — so a test
 "opts in" to checks by including the corresponding files.
@@ -16,12 +16,12 @@ file present. A reference file that doesn't exist is simply skipped — so a tes
 Some suites are **grouped** (`test-files/<suite>/<group>/<case>/`), others are
 **flat** (`test-files/<suite>/<case>/`):
 
-- Grouped (`useSubDirs=true`): `symboltablebuilder`, `typechecker`, `irgenerator`, `std`
-- Flat: `common`, `lexer`, `parser`, `benchmark`, `examples`
+- Grouped: `symboltablebuilder`, `typechecker`, `irgenerator`, `std`
+- Flat: `common`, `lexer`, `parser`, `benchmark`, `examples`, `linter` (run against the `lint` subcommand, compares `lint.out`)
 
-The GoogleTest suite names are `SymbolTableBuilderTests`, `TypeCheckerTests`,
+The suite names are `SymbolTableBuilderTests`, `TypeCheckerTests`,
 `IRGeneratorTests`, `StdTests`, `CommonTests`, `LexerTests`, `ParserTests`,
-`BenchmarkTests`, `ExampleTests`. Match an existing
+`BenchmarkTests`, `ExampleTests`, `LinterTests`. Match an existing
 neighbor case for conventions.
 
 ## 2. Add `source.spice`
@@ -32,11 +32,10 @@ executable are also supported).
 
 ## 3. Add the reference files you want checked
 
-Exact names (from `test/util/TestUtil.h`):
+Exact names (from `test/run-tests.py`):
 
 | File | Checks |
 |------|--------|
-| `parse-tree.dot` | CST |
 | `syntax-tree.dot` | AST |
 | `symbol-table.json` | Symbol tables (after type checking) |
 | `dependency-graph.dot` | Compile-unit dependency graph |
@@ -62,39 +61,34 @@ For any ref, the runner prefers, in order:
 `<stem>-<os>-<arch>.<ext>` → `<stem>-<os>.<ext>` → `<stem>.<ext>`.
 Examples: `assembly-linux-amd64.asm`, `assembly-linux-aarch64.asm`,
 `ir-code-windows.ll`, `cout-macos.out`. (os ∈ linux/windows/macos, arch ∈ amd64/aarch64).
-
-The bootstrap compiler runner (`test/run-tests.py`) first looks for bootstrap variants in the same order
-(`<stem>-bootstrap-<os>-<arch>.<ext>` → `<stem>-bootstrap-<os>.<ext>` → `<stem>-bootstrap.<ext>`), before falling back to
-the refs above. Use them where the bootstrap compiler deliberately differs from the host, e.g. `ir-code-bootstrap.ll` for
-debug info the LLVM C API can't express. To generate one, create the empty file and run the case with
-`python test/run-tests.py --update-refs --filter=<name>` (it only updates bootstrap refs).
+IR refs without a platform suffix are only compared on x86_64.
 
 ## 5. Control / skip marker files (empty files in the case dir)
 
 - `disabled` — skip the case entirely
 - `skip-gh-actions` — skip on CI
 - `skip-windows`, `skip-macos` — skip on that OS
-- `skip-bootstrap` — skip when running against the bootstrap compiler (`test/run-tests.py`). Prefer `skip-host`, since the bootstrap compiler is the default
-- `skip-host` — skip when running against the host compiler, e.g. for references that follow the bootstrap compiler, where both differ (like ANTLR error messages or typeid hash values)
-- `skip-without-tpde` — skip when the TPDE libraries are not available: host compiler built without `SPICE_ENABLE_TPDE`, or no `TPDE_FLAGS` / `setup-deps.py --tpde` for `test/run-tests.py` (e.g. for tests of the std TPDE bindings)
+- `skip-without-tpde` — skip when the TPDE libraries are not available (no `TPDE_FLAGS` and no `setup-deps.py --tpde`), e.g. for tests of the std TPDE bindings
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests
 - `debug.gdb` — gdb script (used with `debug.out`)
 
 ## 6. Generate expected output and run
 
-Build the runner (`spice-test` skill), then let `--update-refs` fill in the
+Build the compiler (`spice-build` skill), then let `--update-refs` fill in the
 machine-generated refs (IR, asm, symbol table, …) from a `source.spice` you've
-written, and **review the diff** before committing:
+written, and **review the diff** before committing. `--update-refs` only writes refs
+that exist, so create the empty ref files first:
 
 ```sh
-cmake --build cmake-build-debug --target spicetest
+python build.py
+touch test/test-files/irgenerator/<group>/<case>/ir-code.ll
 # Generate/refresh refs for just your new case(s)
-cmake-build-debug/test/spicetest --gtest_filter='IRGeneratorTests*YourCase*' --update-refs
+python test/run-tests.py --compiler build/spice --filter='IRGeneratorTests.*YourCase*' --update-refs
 git diff test/test-files            # inspect what was generated
 # Re-run without update to confirm it passes
-cmake-build-debug/test/spicetest --gtest_filter='IRGeneratorTests*YourCase*'
+python test/run-tests.py --compiler build/spice --filter='IRGeneratorTests.*YourCase*'
 ```
 
 Hand-write `cout.out`/`exception.out`/`exit-code.out` when you want to assert
 specific expected behavior rather than snapshotting current behavior. Use
-`--gtest_list_tests` to find the exact generated test name.
+`python test/run-tests.py --list` to find the exact test name.

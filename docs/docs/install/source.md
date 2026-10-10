@@ -8,7 +8,11 @@ tags:
 
 ### Setup
 Before being able to compile the source code, you first have to download it from GitHub.
-Furthermore, you need a common C++ compiler (preferably GCC) and CMake to build the compiler executable.
+Furthermore, you need Python 3, as well as a common C++ compiler (preferably GCC), CMake and Ninja to build LLVM, which the
+compiler links against.
+
+The compiler is written in Spice itself. It is built by a released Spice compiler (the stage0 compiler), whose version is
+pinned in `.github/stage0-version`. The build scripts download it for your platform into `build/stage0/`.
 
 #### Clone from GitHub
 ```sh
@@ -17,7 +21,7 @@ cd spice
 ```
 
 ### Run setup script for setting up your dev environment
-To build Spice, you can use the `dev-setup.py` script. This will prepare your dev environment, install the correct LLVM version and builds the Spice executable for the first time to the `build` directory.
+To build Spice, you can use the `dev-setup.py` script. This will prepare your dev environment, install the correct LLVM version, download the stage0 compiler and build the Spice executable for the first time to the `build` directory.
 
 === ":fontawesome-brands-linux: Linux"
     ```sh
@@ -49,25 +53,32 @@ To build Spice, you can use the `dev-setup.py` script. This will prepare your de
     .\spice [options] <input>
     ```
 
-### Build the self-hosted compiler
-The steps above build the host compiler, which is written in C++. The release packages ship the self-hosted compiler as
-`spice` instead, which is written in Spice itself. It is built by a released self-hosted compiler (the stage0 compiler),
-whose version is pinned in `.github/stage0-version`. To build it as well, run:
+### Rebuild
+To build the compiler again after changing its sources in `src/`, run:
 ```sh
-python fetch-stage0.py
-python bootstrap.py --output build/spice-self-hosted
+python build.py
 ```
-`fetch-stage0.py` downloads the stage0 compiler for your platform into `build/stage0/`. `bootstrap.py` builds the self-hosted
-compiler from `src/` with it, lets it compile itself until two consecutive builds are identical, and copies the result to
-the given path. Without a downloaded stage0 compiler, `bootstrap.py` starts from the host compiler instead.
+It builds the compiler with the stage0 compiler, optimized and with link-time optimization, to `build/spice`. Pass
+`--build-type Debug` for an unoptimized build with debug info.
 
-### Optional build flags
+### Bootstrap
+To check that the compiler builds itself reproducibly, run:
+```sh
+python bootstrap.py --output build/spice
+```
+`bootstrap.py` builds the compiler from `src/` with the stage0 compiler, lets it compile itself until two consecutive builds
+are identical, and copies the result to the given path.
 
-The following CMake options are available when configuring the build (pass them as `-D<name>=ON` to `cmake`):
+### Run the tests
+```sh
+python test/run-tests.py
+```
+The test runner builds the compiler with the stage0 compiler and runs all test cases in `test/test-files` against it. Pass
+`--compiler build/spice` to test an already built compiler instead, or `--filter` to select test cases (see `--help`).
 
-| Flag                      | Description                                                                                            |
-|---------------------------|--------------------------------------------------------------------------------------------------------|
-| `SPICE_UNITY_BUILD`       | Enable CMake unity builds for the compiler executable.                                                 |
-| `SPICE_LTO`               | Link-time optimization for the compiler executable.                                                    |
-| `SPICE_LINK_STATIC`       | Statically link the compiler executable.                                                               |
-| `SPICE_ENABLE_TPDE`       | Enable the experimental [TPDE backend](../how-to/experimental-backends.md) as an alternative to LLVM.  |
+### Optional: TPDE backend
+The experimental [TPDE backend](../how-to/experimental-backends.md) needs the TPDE libraries (Linux only). To build them
+into the std, run:
+```sh
+python setup-deps.py --tpde
+```

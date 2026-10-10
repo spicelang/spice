@@ -78,41 +78,17 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        # --tpde builds TPDE into the std, for the TPDE backend of the bootstrap compiler and the std TPDE bindings
+        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: python setup-deps.py --tpde
 
-      - name: Build test target
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DSPICE_BUILT_BY="ghactions" \
-            -DSPICE_ENABLE_TPDE=ON \
-            -DSPICE_TEST_ARGS=--is-github-actions \
-            ..
-          cmake --build . --target spice spicetest
-
-      - name: Run Test target (host compiler)
-        working-directory: build
-        run: cmake --build . --target spicetest_parallel
-
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
         run: python fetch-stage0.py
 
-      - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
-        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
-        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
-        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
-        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+      - name: Run Test target
+        # Builds the compiler with the stage0 compiler, then runs all test cases against it
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
@@ -206,30 +182,10 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        # --tpde builds TPDE into the std, for the TPDE backend of the bootstrap compiler and the std TPDE bindings
+        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: python setup-deps.py --tpde
-
-      - name: Build test target
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DSPICE_BUILT_BY="ghactions" \
-            -DSPICE_ENABLE_TPDE=ON \
-            -DSPICE_TEST_ARGS=--is-github-actions \
-            ..
-          cmake --build . --target spice spicetest
-
-      - name: Run Test target (host compiler)
-        working-directory: build
-        run: cmake --build . --target spicetest_parallel
 
       - name: Setup UPX
         # The released binaries are compressed with UPX, and fetch-stage0.py decompresses the stage0 compiler, since the UPX
@@ -239,15 +195,11 @@ jobs:
         run: bash .github/scripts/install-upx.sh
 
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
         run: python fetch-stage0.py
 
-      - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
-        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
-        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
-        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
-        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+      - name: Run Test target
+        # Builds the compiler with the stage0 compiler, then runs all test cases against it
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
@@ -359,38 +311,12 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build test target
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-          CMAKE_TLS_VERIFY: "1"
-          SSL_CERT_FILE: "C:\\cacert.pem"
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
-            -DSPICE_BUILT_BY="ghactions" `
-            -DSPICE_TEST_ARGS=--is-github-actions `
-            ..
-          cmake --build . --target spice spicetest
-
-      - name: Run Test target (host compiler)
-        working-directory: build
-        run: |
-          cmake --build . --target spicetest_parallel
-
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
         run: python fetch-stage0.py
 
-      - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
-        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
-        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
-        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
-        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+      - name: Run Test target
+        # Builds the compiler with the stage0 compiler, then runs all test cases against it
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
@@ -480,35 +406,12 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build test target
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DSPICE_BUILT_BY="ghactions" \
-            -DSPICE_TEST_ARGS=--is-github-actions \
-            ..
-          cmake --build . --target spice spicetest
-
-      - name: Run Test target (host compiler)
-        working-directory: build
-        run: cmake --build . --target spicetest_parallel
-
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
         run: python fetch-stage0.py
 
-      - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
-        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
-        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
-        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
-        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+      - name: Run Test target
+        # Builds the compiler with the stage0 compiler, then runs all test cases against it
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include

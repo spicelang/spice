@@ -31,26 +31,26 @@ other builds, it is opt-in at build time as well.
 The Linux release packages of Spice (`x86_64` and `aarch64`) are built with TPDE support, so this is only needed when
 building Spice from source.
 
-TPDE is pulled in as a git submodule at `deps/tpde/`. To include it in your Spice build, configure CMake with
-the `SPICE_ENABLE_TPDE` option turned on:
+TPDE is pulled in as a git submodule at `deps/tpde/`. Build its libraries into the std, then build Spice:
 
 ```sh
-cmake -S . -B cmake-build-debug -DSPICE_ENABLE_TPDE=ON
-cmake --build cmake-build-debug --target spice
+python setup-deps.py --tpde
+python build.py
 ```
+
+The compiler emits objects via the std TPDE bindings (see [Using TPDE from Spice code](#using-tpde-from-spice-code)), so
+it is only backed by TPDE if the TPDE libraries were available while building it.
 
 Requirements:
 
-- The same LLVM version Spice is built against must be one of TPDE's supported versions (currently 19.1, 20.1,
-  21.1, 22.1). Spice's regular LLVM build already satisfies this on modern systems.
-- A matching `clang` binary must be discoverable at configure time; TPDE uses it to compile its encoding
-  templates. `dev-setup.py` installs a suitable one alongside LLVM.
-
-If either requirement is missing, the CMake configuration will fail with a clear error — no partial build.
+- The same LLVM version Spice is built against must be one of TPDE's supported versions. Spice's regular LLVM build
+  already satisfies this on modern systems.
+- A matching `clang` binary must be discoverable; TPDE uses it to compile its encoding templates. `dev-setup.py` installs
+  a suitable one alongside LLVM.
 
 ## Selecting the backend
 
-Once built with `-DSPICE_ENABLE_TPDE=ON`, choose the backend per compilation with `--backend`:
+Once built with TPDE support, choose the backend per compilation with `--backend`:
 
 ```sh
 # Default — LLVM CodeGen
@@ -62,12 +62,7 @@ spice build --backend=tpde main.spice
 spice run   --backend=tpde main.spice
 ```
 
-If the compiler was built without `SPICE_ENABLE_TPDE`, passing `--backend=tpde` produces a CLI error directing
-you to rebuild with the option turned on.
-
-The self-hosted bootstrap compiler (`src/`) supports `--backend=tpde` as well. It emits objects via the std
-TPDE bindings (see [Using TPDE from Spice code](#using-tpde-from-spice-code)), so it is only backed by TPDE if the
-TPDE libraries were available while building it. Otherwise, `--backend=tpde` produces a CLI error.
+If the compiler was built without the TPDE libraries, passing `--backend=tpde` produces a CLI error.
 
 ## Limitations you may hit
 

@@ -1,78 +1,61 @@
 ---
 name: spice-build
-description: Build the Spice compiler (`spice`) and/or the test runner (`spicetest`) with CMake/Ninja. Use when the user wants to compile/rebuild the project, build a specific target, produce a release/debug build, or set up the CMake build directory before running or testing.
+description: Build the Spice compiler (`spice`) from its Spice sources in `src/` with the stage0 compiler. Use when the user wants to compile/rebuild the compiler, produce a release/debug build, bootstrap the compiler to a fixed point, or set up the environment before running or testing.
 ---
 
 # Build Spice
 
-The Spice repo is a CMake project (top-level `CMakeLists.txt`) that produces two
-main artifacts:
-
-- `spice` — the compiler CLI (`src-host/`, output at `<build-dir>/src-host/spice`)
-- `spicetest` — the GoogleTest runner (`test/`, output at `<build-dir>/test/spicetest`)
-
-## Build directory convention
-
-Reuse one of these directories so artifacts stay organized (per `AGENTS.md`):
-
-- `cmake-build-debug/` — day-to-day development and testing
-- `cmake-build-release/` — optimized builds for benchmarking
-
-The `python build.py` helper instead builds into `build/` with `Release` + Ninja and
-moves the binaries to the repo root; prefer the directories above for agent work
-unless the user explicitly wants `build.py`.
+The compiler is self-hosted: it is written in Spice (`src/`, entry point `src/main.spice`) and built by a released Spice
+compiler, the **stage0 compiler**. Its version is pinned in `.github/stage0-version`; `python fetch-stage0.py` downloads it
+for the current platform into `build/stage0/spice`.
 
 ## Prerequisites
 
-A configured LLVM build must be reachable. `find_package(LLVM)` locates it via
-`LLVM_DIR` (the local dev setup builds LLVM into `./llvm/build-release`):
+The compiler links LLVM through the std LLVM bindings (`std/bindings/llvm`), so building it needs an LLVM build. The
+scripts find it via `LLVM_DIR` (`<llvm-build>/lib/cmake/llvm`) or `llvm-config`, or take `LLVM_LIB_DIR` and
+`LLVM_INCLUDE_DIRS` (`-I<dir1> -I<dir2>`) directly. The local dev setup builds LLVM into `./llvm/build-release`:
 
 ```sh
 export LLVM_DIR=$PWD/llvm/build-release/lib/cmake/llvm
 ```
 
-If LLVM and third-party libs are missing, run `python dev-setup.py` once (slow: it
-clones and builds LLVM). `python setup-deps.py` alone fetches just the header-only
-deps (json, CLI11) into `lib/`. `python setup-deps.py --tpde` (Linux, needs `LLVM_DIR`
-or `llvm-config`) also builds TPDE with its own CMake project and installs it into
-`std/bindings/tpde/`, where both compilers pick it up for `--backend=tpde` and the std
-TPDE bindings.
+If LLVM and third-party libs are missing, run `python dev-setup.py` once (slow: it clones and builds LLVM).
+`python setup-deps.py` alone updates the submodules and builds libbacktrace into the std. `python setup-deps.py --tpde`
+(Linux, needs `LLVM_DIR` or `llvm-config`) also builds TPDE with its own CMake project and installs it into
+`std/bindings/tpde/`, where the compiler picks it up for `--backend=tpde` and the std TPDE bindings.
 
-## Configure (first time / after CMakeLists changes)
+## Build
 
 ```sh
-cmake -S . -B cmake-build-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
-# release:
-cmake -S . -B cmake-build-release -G Ninja -DCMAKE_BUILD_TYPE=Release
+# Optimized with LTO, to build/spice (downloads the stage0 compiler first, if missing)
+python build.py
+
+# Unoptimized with debug info, for debugging the compiler
+python build.py --build-type Debug
+
+# Other output path or compiler to build with
+python build.py --output build/spice-dev --compiler build/spice
 ```
 
-## Build targets
+The build bypasses the compilation cache (`--ignore-cache`), since a cached object can go stale when only an imported file
+changes (issue #1417). An optimized LTO build of the compiler takes a few minutes.
 
-Run from inside the build dir, or pass `--build <dir>`:
+To build by hand, set `SPICE_STD_DIR=<repo>/std` and `SPICE_BOOTSTRAP_DIR=<repo>/src` and run e.g.
+`build/stage0/spice build -O0 --ignore-cache --output build/spice src/main.spice`.
+
+## Bootstrap to a fixed point
 
 ```sh
-# Everything (compiler + tests)
-cmake --build cmake-build-debug
-
-# Just the compiler
-cmake --build cmake-build-debug --target spice
-
-# Just the test runner
-cmake --build cmake-build-debug --target spicetest
-
-# Both, parallel
-cmake --build cmake-build-debug --target spice spicetest -j
-
-# Optional leak-check target (needs valgrind)
-cmake --build cmake-build-debug --target spicetest_leakcheck
+python bootstrap.py                      # stage0 builds stage1, which builds stage2, ...
+python bootstrap.py --output build/spice # copy the fixed point compiler
 ```
+
+It succeeds as soon as two consecutive self-compiled stages are bit-identical. CI runs it on every push.
 
 ## Tips
 
-- Incremental rebuilds: just re-run `cmake --build <dir> --target <t>`; Ninja
-  only recompiles what changed. No need to reconfigure unless CMake files change.
-- After building, the compiler is at `cmake-build-debug/src-host/spice` — see the
-  `spice-dump` skill for inspecting its IR/assembly output and `spice-test` for
-  running the suite.
-- Configure options live in `Options.cmake` / `Conditionals.cmake` /
-  `LLVMOptions.cmake` if the user needs non-default flags.
+- `python test/run-tests.py` builds the compiler under test on its own (into `build/test-tmp/bootstrap-compiler`); pass
+  `--compiler build/spice` to reuse a build instead. See the `spice-test` skill.
+- See the `spice-dump` skill for inspecting the IR/assembly output of the built compiler.
+- When `src/` starts to use a language feature, that the pinned stage0 compiler does not support yet, the stage0 version
+  has to be bumped to a release that does (see `fetch-stage0.py`).
