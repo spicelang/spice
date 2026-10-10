@@ -15,8 +15,7 @@ import "bootstrap/util/concurrency";
  * out a deterministic disambiguation suffix for the second and any further distinct type sharing a given name. The
  * first type to claim a name keeps it unchanged, so nothing changes unless a name is actually reused.
  *
- * The host's TypeNameDisambiguator is process-global (static members). Spice only supports globals of primitive type, so
- * like the TypeRegistry, it is a normal struct owned by the GlobalResourceManager, which registers it as the active one.
+ * Spice only supports globals of primitive type, so like the TypeRegistry, the disambiguator is a normal struct owned by the GlobalResourceManager, which registers it as the active one.
  * Since the GlobalResourceManager is created per compilation, the state is automatically cleared between compilations.
  */
 public type TypeNameDisambiguator struct {
@@ -93,7 +92,7 @@ public f<String> TypeNameDisambiguator.getDisambiguationSuffix(const String& nam
 
 /**
  * Get the disambiguation suffix for a struct/interface type with the given name and type id from the active type name
- * disambiguator. This is the equivalent of the host's static TypeNameDisambiguator::getDisambiguationSuffix.
+ * disambiguator.
  *
  * @param name Simple type name
  * @param typeId Custom type id of the type

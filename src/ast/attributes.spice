@@ -25,7 +25,6 @@ public const string ATTR_TEST_SKIP = "test.skip";
 public const string ATTR_ASYNC = "async";
 public const string ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
 
-// Enums mirror AttrNode::AttrTarget and AttrNode::AttrType of the former host compiler
 public type AttrTarget enum {
     TARGET_INVALID = 0,
     TARGET_MODULE = 1,
@@ -51,8 +50,8 @@ public type AttrConfigValue struct {
 }
 
 /**
- * Look up the allowed targets and the value type of a known attribute. This is the equivalent of the host's ATTR_CONFIGS
- * table (Spice globals must be primitives, so it is a function instead of a map).
+ * Look up the allowed targets and the value type of a known attribute. Spice globals must be primitives, so this is a function
+ * instead of a map.
  *
  * @param key Attribute key
  * @param config Receives the configuration of the attribute if it is known

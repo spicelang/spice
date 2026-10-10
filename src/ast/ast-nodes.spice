@@ -63,10 +63,10 @@ public const string OP_FCT_ASSIGN = "op.assign";
 /**
  * Saves a constant value for an AST node to realize features like array-out-of-bounds checks
  *
- * The host's CompileTimeValue is an untagged C++ union and the host reads across its members, e.g. the longValue of an int
- * constant in compile time arithmetic, or the boolValue of a non-bool condition. Spice unions are tagged and panic when an
- * inactive field is read, so the union is emulated here: all members share 8 bytes of storage and each member is a view on
- * them, which reads and writes only its own bytes, like the members of the host's union.
+ * The compiler reads across the members of a compile time value, e.g. the longValue of an int constant in compile time
+ * arithmetic, or the boolValue of a non-bool condition. Spice unions are tagged and panic when an inactive field is read,
+ * so an untagged union is emulated here: all members share 8 bytes of storage and each member is a view on them, which
+ * reads and writes only its own bytes.
  */
 public type CompileTimeValue struct {
     long storage = 0l
@@ -177,8 +177,8 @@ public type IVisitable interface {
 // ========================================================= ASTNodeKind =========================================================
 
 /**
- * Kind of a concrete AST node. Spice has no virtual dispatch through a struct, so the functions below, that are virtual methods
- * in the host (e.g. returnsOnAllControlPaths), switch over the kind of the node instead.
+ * Kind of a concrete AST node. Spice has no virtual dispatch through a struct, so the functions below, that depend on the
+ * concrete node (e.g. returnsOnAllControlPaths), switch over the kind of the node instead.
  */
 public type ASTNodeKind enum {
     INVALID,
@@ -313,8 +313,7 @@ f<bool> isIdentifierChar(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
 
-// Get the text of the source code interval [start, stop] (both inclusive), clamped to the source code like ANTLR's
-// CharStream::getText
+// Get the text of the source code interval [start, stop] (both inclusive), clamped to the source code
 f<String> getSourceText(const String& sourceCode, long start, long stop) {
     const long size = cast<long>(sourceCode.getLength());
     if stop >= size { stop = size - 1l; }
@@ -332,7 +331,7 @@ f<char> getSourceChar(const String& sourceCode, long idx) {
     return c;
 }
 
-// Get the length of the interval [start, stop], like antlr4::misc::Interval::length
+// Get the length of the interval [start, stop]
 f<long> getIntervalLength(long start, long stop) {
     return stop < start ? 0l : stop - start + 1l;
 }
@@ -341,8 +340,7 @@ f<long> getIntervalLength(long start, long stop) {
  * Get the error message snippet of this node: the source code line of the node with some context around it, and a marker
  * below the code of the node.
  *
- * Note: The host takes the source code from the ANTLR input stream of the source file. The bootstrap nodes do not know their
- * source file, so the source code is read from the file, the code location points to.
+ * Note: The nodes do not know their source file, so the source code is read from the file, the code location points to.
  *
  * @return Error message snippet
  */
@@ -430,8 +428,8 @@ public f<String> ASTNode.getErrorMessage() {
 }
 
 /**
- * Dispatch to all registered children of a node, like the host's AbstractASTVisitor::visitChildren. Passes use this
- * as the default behavior of every visit method they do not implement themselves.
+ * Dispatch to all registered children of a node. Passes use this as the default behavior of every visit method they do not
+ * implement themselves.
  *
  * @param node Node whose children should be visited
  * @param visitor Visitor to dispatch to
@@ -636,7 +634,7 @@ public f<Any> ASTAttrNode.accept(IAbstractAstVisitor* visitor) {
 }
 
 // Returns the attribute's compile-time value, or nil if it was declared without one (bool attributes
-// default to 'true' when omitted; callers apply that default themselves, matching the host).
+// default to 'true' when omitted; callers apply that default themselves).
 public f<const CompileTimeValue*> ASTAttrNode.getValue() {
     if this.value == nil<ASTConstantNode*> {
         return nil<const CompileTimeValue*>;
@@ -2530,9 +2528,9 @@ public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= Virtual methods =======================================================
 
-// The host implements the following functions as virtual methods of ASTNode, which are overridden by the concrete nodes.
-// Spice has no virtual dispatch through a struct, so they switch over the kind of the node instead. The concrete node is
-// reached via its IVisitable pointer, which has the same address as the concrete node.
+// The following functions depend on the concrete node. Spice has no virtual dispatch through a struct, so they switch over
+// the kind of the node instead. The concrete node is reached via its IVisitable pointer, which has the same address as the
+// concrete node.
 
 /**
  * Get the concrete node of an AST node
@@ -2574,7 +2572,7 @@ p destructAs<ConcreteNode>(ASTNode* node) {
 
 /**
  * Destruct an AST node as its concrete node type. The node pool only knows the nodes as ASTNode, so destructing them as such
- * would leak the members of the concrete nodes (e.g. operand lists and names). Mirrors the host's virtual ASTNode destructor.
+ * would leak the members of the concrete nodes (e.g. operand lists and names).
  *
  * @param node AST node to destruct
  */
@@ -2663,8 +2661,7 @@ public p destructASTNode(ASTNode* node) {
 }
 
 /**
- * Check if this node is a function parameter. Mirrors the host's virtual ASTNode::isParam(), which only the DeclStmtNode
- * overrides.
+ * Check if this node is a function parameter. Only a DeclStmtNode can be one.
  *
  * @return Parameter or not
  */
@@ -2677,7 +2674,7 @@ public f<bool> ASTNode.isParam() {
 }
 
 /**
- * Get the function manifestation list of a declaration node. Mirrors the host's virtual ASTNode::getFctManifestations().
+ * Get the function manifestation list of a declaration node.
  *
  * @param fctName Name of the function. Only relevant for struct defs, which hold the implicitly created default methods
  * @return Manifestation list
@@ -2716,8 +2713,7 @@ public f<Vector<Function*>*> ASTNode.getFctManifestations(const String& fctName)
 }
 
 /**
- * Get the operator overloading functions of a node, that supports operator overloading. Equal to the host's
- * ASTNode::getOpFctPointers(), which is overridden by the concrete nodes.
+ * Get the operator overloading functions of a node, that supports operator overloading.
  *
  * @return Operator overloading functions per manifestation
  */
@@ -2804,7 +2800,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if hasOpFctPointers(node.kind) {
-        // Each manifestation starts with one empty operator function slot (host: opFct.resize(manifestationCount, {nullptr}))
+        // Each manifestation starts with one empty operator function slot
         Vector<Vector<const Function*>>* opFct = node.getOpFctPointers();
         if opFct.isEmpty() {
             opFct.reserve(manifestationCount);
@@ -2857,7 +2853,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
             lambdaBaseNode.manifestations.reserve(manifestationCount);
         }
         while lambdaBaseNode.manifestations.getSize() < manifestationCount {
-            // Placeholder for the host's default constructed Function. The type checker replaces it
+            // Placeholder for a default constructed Function. The type checker replaces it
             lambdaBaseNode.manifestations.pushBack(Function(String(""), nil<SymbolTableEntry*>, QualType(SuperType::TY_INVALID), QualType(SuperType::TY_INVALID), noParams, noTemplateTypes, node));
         }
     }
@@ -3102,8 +3098,7 @@ public f<bool> ASTNode.isFctOrProcDef() {
 }
 
 /**
- * Get the signature of the function/procedure, this node defines (FctDefBaseNode/MainFctDefNode::getFunctionSignature in the
- * host)
+ * Get the signature of the function/procedure, this node defines
  *
  * @param manIdx Manifestation index
  * @return Function signature
@@ -3465,7 +3460,6 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                     compileTimeValue.setLongValue(compileTimeValue.getLongValue() / operandValue.getLongValue());
                 } else {
                     assert op == MultiplicativeOp::OP_REM;
-                    // Note: The host does not check for a zero divisor here and crashes with SIGFPE
                     if operandValue.getLongValue() == 0l {
                         abortWithSemanticError(operand, SemanticErrorType::DIVISION_BY_ZERO, "Dividing by zero is not allowed.");
                     }
@@ -3564,8 +3558,8 @@ public f<ASTAtomicExprNode*> ASTAssignExprNode.getLhsAtomicNode() {
 
 // ====================================================== IVisitable.getCodeLoc ==================================================
 
-// Every IVisitable node exposes its own code location. Passes use it to name the scope of an expression the same way the
-// host does ('expr:' + code location of the expression), so that later passes find the scope again from the node alone.
+// Every IVisitable node exposes its own code location. Passes use it to name the scope of an expression ('expr:' + code
+// location of the expression), so that later passes find the scope again from the node alone.
 
 public f<const CodeLoc&> ASTEntryNode.getCodeLoc() { return this.codeLoc; }
 public f<const CodeLoc&> ASTConstantNode.getCodeLoc() { return this.codeLoc; }
@@ -3743,7 +3737,7 @@ public f<byte*> ASTLambdaExprNode.getASTNodeAddress() { unsafe { return cast<byt
 public f<byte*> ASTFunctionDataTypeNode.getASTNodeAddress() { unsafe { return cast<byte*>(cast<ASTNode*>(this)); } }
 
 /**
- * Address of an AST node, which is used as key for maps that are keyed by AST node pointer in the host (e.g. nodeToNodeId)
+ * Address of an AST node, which is used as key for maps that are keyed by AST node (e.g. nodeToNodeId)
  *
  * @param node AST node
  * @return Address of the node
@@ -3757,7 +3751,7 @@ public f<long> getNodeAddress(const ASTNode* node) {
 }
 
 /**
- * Name of the scope that holds the temporaries of an expression. Equal to the host's ExprNode::getExprScopeId().
+ * Name of the scope that holds the temporaries of an expression.
  *
  * @param expr Expression
  * @return Scope id

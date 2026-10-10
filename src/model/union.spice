@@ -17,7 +17,7 @@ const string UNION_SCOPE_PREFIX = "union:";
 public type Union struct {
     public compose StructBase structBase
     public QualTypeList fieldTypes
-    public unsigned long defaultFieldIndex = 18446744073709551615ul // No field has a default value (SIZE_MAX in the host)
+    public unsigned long defaultFieldIndex = 18446744073709551615ul // No field has a default value (SIZE_MAX)
 }
 
 public p Union.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, ASTNode* declNode) {

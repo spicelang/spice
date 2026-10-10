@@ -1,4 +1,4 @@
-// Mirrors the shape of QualType in the bootstrap compiler: a pointer, followed by many sub-word fields
+// Mirrors the shape of QualType in the compiler: a pointer, followed by many sub-word fields
 public type Qualifiers struct {
     public bool q1 = false
     public bool q2 = false

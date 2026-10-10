@@ -21,8 +21,7 @@ import "bootstrap/symboltablebuilder/type-chain";
  * Helper for name mangling.
  * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
  *
- * The host implements this as a class with static methods. Spice has no static methods, so the methods are free functions
- * here, prefixed with 'mangle'.
+ * Spice has no static methods, so the helpers are free functions, prefixed with 'mangle'.
  *
  * Names:
  * - P: pointer
@@ -52,9 +51,6 @@ import "bootstrap/symboltablebuilder/type-chain";
 /**
  * Mangle a function or procedure.
  * This should be mostly compatible with the C++ Itanium ABI name mangling scheme.
- *
- * Note: In debug builds, the host additionally validates the mangled name with the C++ demangler, if the signature does not
- * contain function or procedure types (which are not valid Itanium). This sanity check is not ported.
  *
  * @param spiceFunc Input function
  * @return Mangled name

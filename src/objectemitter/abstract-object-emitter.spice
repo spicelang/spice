@@ -4,7 +4,7 @@
 import "std/io/filepath";
 
 /**
- * Interface implemented by every concrete object emitter (LLVM CodeGen, TPDE, ...). Mirrors the host's AbstractObjectEmitter.
+ * Interface implemented by every concrete object emitter (LLVM CodeGen, TPDE, ...).
  */
 public type IAbstractObjectEmitter interface {
     /**

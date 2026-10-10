@@ -56,7 +56,6 @@ the LLVM C API bindings of the std (`std/bindings/llvm`).
 - Spice has no exceptions: compile errors print their message and exit (`src/exception/fatal-error.spice`), internal errors
   are panics.
 - Unit tests are `#[test]` functions next to the code (e.g. in `src/driver.spice`), run by `python test/run-tests.py` as
-  `BootstrapTests.BuiltinTests`.
-- `media/specs/` holds design notes for language features — useful background before changing semantics. Some of them
-  still describe the former host compiler (C++, removed in v0.29.0), which the compiler in `src/` mirrors.
+  `CompilerTests.BuiltinTests`.
+- `media/specs/` holds design notes for language features — useful background before changing semantics.
 - To see any stage's output for a file, use the `spice-dump` skill (`-ast`, `--dump-symtab`, `--dump-types`, `-ir`, `-s`).

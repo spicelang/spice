@@ -39,7 +39,7 @@ public type StructRegistry alias Map</*structId=*/String, /*manifestationList=*/
 public f<Struct*> insertStruct(Scope* insertScope, Struct& spiceStruct, Vector<Struct*>* nodeStructList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the struct
     const String structId = spiceStruct.name + ":" + spiceStruct.declNode.codeLoc.toString();
-    // Like std::map::emplace in the host, keep an existing manifestation list
+    // Keep an existing manifestation list
     if !insertScope.structs.contains(structId) {
         insertScope.structs.insert(structId, StructManifestationList());
     }
@@ -65,8 +65,8 @@ f<Struct*> insertSubstantiation(Scope* insertScope, Struct& newManifestation, co
     return &manifestationList.get(signature);
 }
 
-// Address of the active struct lookup cache. The host keeps the lookup cache in static members of the StructManager. Spice
-// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+// Address of the active struct lookup cache. Spice only supports globals of primitive type, so the cache is owned by the
+// global resource manager and its address is stored here.
 long ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS = 0l;
 
 /**

@@ -139,7 +139,7 @@ The compiler can be built with the same instrumentation. The test runner does it
 
 ```bash
 python test/run-tests.py --instrument asan --filter='*<Case>*'
-# The instrumented compiler stays at build/test-tmp/bootstrap-compiler/spice for manual runs
+# The instrumented compiler stays at build/test-tmp/compiler/spice for manual runs
 ```
 
 Or build it by hand with the stage0 compiler, e.g. with the thread sanitizer for races in the parallel back end:

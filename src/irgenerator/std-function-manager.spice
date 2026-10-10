@@ -337,8 +337,7 @@ f<model::ParamList> getErrTraceParamList() {
 }
 
 /**
- * Mangle a runtime function, that is known by its name and signature only (the host constructs a temporary Function object
- * and mangles it)
+ * Mangle a runtime function, that is known by its name and signature only
  *
  * @param name Function name
  * @param returnType Return type

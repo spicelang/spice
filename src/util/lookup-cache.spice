@@ -10,9 +10,8 @@ import "std/type/type-conversion";
 type T dyn;
 
 /**
- * Lookup cache of a manager (FunctionManager, StructManager, ...). The host keeps the cache and its statistics in static
- * members of the managers. Spice only supports globals of primitive type, so the bootstrap keeps them in the global resource
- * manager instead, which also mirrors the host clearing them when the global resource manager is destroyed.
+ * Lookup cache of a manager (FunctionManager, StructManager, ...). Spice only supports globals of primitive type, so the cache
+ * and its statistics are kept in the global resource manager, which clears them when it is destroyed.
  */
 public type LookupCache<T> struct {
     public UnorderedMap<Hash, T*> lookupCache

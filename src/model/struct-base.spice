@@ -69,8 +69,8 @@ public f<String> StructBase.getSignature() {
 }
 
 /**
- * Get the signature from the struct name and the concrete template types. This is the equivalent of the host's static
- * StructBase::getSignature(), since Spice has no static methods.
+ * Get the signature from the struct name and the concrete template types. This is a free function, since Spice has no
+ * static methods.
  *
  * Example:
  * Pair<int,double>

@@ -55,8 +55,8 @@ public type QualType struct {
 
 public type QualTypeList alias Vector<QualType>;
 
-// The context-free QualType(SuperType) ctors intern into the active type registry (see type-registry.spice), like the
-// host's ctors intern into its static TypeRegistry. Without an active registry, rawType stays nil.
+// The context-free QualType(SuperType) ctors intern into the active type registry (see type-registry.spice). Without an
+// active registry, rawType stays nil.
 public p QualType.ctor(SuperType superType) {
     TypeRegistry* registry = getActiveTypeRegistry();
     if registry != nil<TypeRegistry*> {
@@ -424,7 +424,7 @@ public f<bool> QualType.isIterable(const ASTNode* node) {
 
 /**
  * Build the interface type IIterator<T> with the given type id. Interface types are compared by their type id only,
- * so the host uses this for the IIterable interface as well (with the type id of IIterable).
+ * so this is used for the IIterable interface as well (with the type id of IIterable).
  *
  * @param typeId Type id of the interface
  * @return Interface type
@@ -1213,7 +1213,7 @@ public p QualType.setQualifiers(TypeQualifiers newQualifiers) {
  * @return Equal or not
  */
 public f<bool> operator==(const QualType& lhs, const QualType& rhs) {
-    // Like the host, only compare the types, not the qualifiers
+    // Only compare the types, not the qualifiers
     return lhs.rawType == rhs.rawType;
 }
 

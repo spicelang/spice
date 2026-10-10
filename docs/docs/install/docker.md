@@ -33,8 +33,6 @@ You don't have to pull the image first. You also can skip this step.
     docker run --rm -it -v ${pwd}:/spice/out ghcr.io/spicelang/spice
     ```
 
-`spice` is the self-hosted compiler, which is written in Spice itself.
-
 ### Customize
 #### Custom output path
 You can use another output path by replacing `$(pwd)`/`${pwd}` with a custom path.

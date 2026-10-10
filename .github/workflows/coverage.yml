@@ -84,8 +84,8 @@ jobs:
           cmake --build .
 
       - name: Build llvm-cov
-        # Needed to read the gcov data Spice's own --coverage instrumentation emits (see "Run Test target (bootstrap
-        # compiler coverage)" and "Run Test target (Spice coverage)" below) - GNU gcov cannot parse it, only llvm-cov
+        # Needed to read the gcov data Spice's own --coverage instrumentation emits (see "Run Test target (compiler
+        # coverage)" and "Run Test target (Spice coverage)" below) - GNU gcov cannot parse it, only llvm-cov
         # gcov can. LLVM_BUILD_TOOLS=OFF above excludes tools from the default build, but their targets stay
         # individually buildable, so this only builds the one tool we need. Runs unconditionally (not gated on the LLVM cache step) so a cache hit still produces it.
         working-directory: llvm/build

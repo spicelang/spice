@@ -91,7 +91,7 @@ public p Reader.advance() {
         this.curCodeLoc.line++;
         this.curCodeLoc.col = 0l;
     } else if !this.isUtf8ContinuationByte(this.curChar) {
-        // Count code points instead of bytes, like the ANTLR-based lexer of the host compiler
+        // Count code points instead of bytes
         this.curCodeLoc.col++;
     }
 }

@@ -742,9 +742,9 @@ public f<llvm::Type> Type.toLLVMType(SourceFile* sourceFile) {
     panic(Error(message.getRaw())); // Unhandled branch
 }
 
-// The following helpers query the data layout of the target for the LLVM type of this type. The host does this inline, where
-// it is needed (e.g. in the type checker for the sizeof builtin). The LLVM bindings cannot be imported there, because their
-// type names (e.g. Function, Type) clash with the ones of the compiler.
+// The following helpers query the data layout of the target for the LLVM type of this type, for places that need it (e.g. the
+// type checker for the sizeof builtin). The LLVM bindings cannot be imported there, because their type names (e.g. Function,
+// Type) clash with the ones of the compiler.
 
 /**
  * Get the allocation size of this type in bytes, according to the data layout of the target
@@ -796,7 +796,7 @@ public f<unsigned long> Type.getFieldOffset(SourceFile* sourceFile, const Vector
  * @param typeA Candidate type
  * @param typeB Requested type
  */
-// Named unwrapBothTypes instead of unwrapBoth (like the host's Type::unwrapBoth), because the QualType overload in
+// Named unwrapBothTypes instead of unwrapBoth, because the QualType overload in
 // qual-type.spice would shadow it there
 public p unwrapBothTypes(const Type*& typeA, const Type*& typeB) {
     // Unwrap both types as far as possible

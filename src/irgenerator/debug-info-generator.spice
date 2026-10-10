@@ -25,11 +25,10 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
 
 /**
- * Generates the debug info of a source file. This mirrors the DebugInfoGenerator of the former host compiler.
+ * Generates the debug info of a source file.
  *
- * The host uses the LLVM C++ DIBuilder; here we use the LLVM C API (llvm::DIBuilder wrapper in std/bindings/llvm), which
- * represents every debug info node as an llvm::Metadata. A few C++-only capabilities have no C-API equivalent and are
- * therefore not mirrored:
+ * It uses the LLVM C API (llvm::DIBuilder wrapper in std/bindings/llvm), which represents every debug info node as an
+ * llvm::Metadata. A few capabilities of the C++ DIBuilder have no C-API equivalent and are therefore not supported:
  *   - Methods use createFunction (the C API has no createMethod).
  *   - Subprogram virtuality flags (SPFlagVirtual/SPFlagPureVirtual) cannot be set (the C API createFunction exposes only
  *     IsLocalToUnit/IsDefinition, not DISPFlags).
@@ -70,7 +69,7 @@ public p DebugInfoGenerator.initialize(const String& sourceFileName, const Strin
     this.diBuilder = llvm::DIBuilder(*this.irGenerator.module);
 
     // Create compilation unit
-    // Note: unlike the host we do not absolutize the path here; the directory operand already carries it
+    // Note: the path is not absolutized here; the directory operand already carries it
     const llvm::Metadata cuDiFile = this.diBuilder.createFile(sourceFileName, sourceFileDir);
     const bool fullDebugInfo = this.irGenerator.cliOptions.instrumentation.emitsFullDebugInfo();
     const int emissionKind = fullDebugInfo ? llvm::DW_EMISSION_FULL : llvm::DW_EMISSION_LINE_TABLES_ONLY;

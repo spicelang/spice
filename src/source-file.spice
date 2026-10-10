@@ -171,13 +171,13 @@ public type SourceFile struct {
     // import entries exposing it, so that a failing lookup can point the user to the colliding imports
     public Map<String, Vector<const SymbolTableEntry*>> ambiguousNameRegistry
     public Vector<const model::Function*> testFunctions
-    public GlobalResourceManager& resourceManager // Public, because Scope and SymbolTable are friend classes in the host
+    public GlobalResourceManager& resourceManager // Public, because Scope and SymbolTable need access
     // Private fields
     CliOptions& cliOptions
     UnorderedMap<long, llvm::Type> typeToLLVMTypeMapping // Maps the address of each type to its LLVM type
     // Number of name registry entries per target entry address, to answer isStructKnownByNameRegistry without scanning the registry
     UnorderedMap<long, unsigned long> nameRegistryTargetEntryCounts
-    public unsigned int importedRuntimeModules = 0 // Public, because the RuntimeModuleManager is a friend class in the host
+    public unsigned int importedRuntimeModules = 0 // Public, because the RuntimeModuleManager needs access
     unsigned short totalTypeCheckerRuns = 0s
     // Cycle-safety guards: the pipeline drivers recurse over a dependency graph that may contain cycles (circular
     // imports). These flags prevent re-entering a file that is already being processed in the same stage.
@@ -221,11 +221,10 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     const string features = resourceManager.cpuFeatures;
     const llvm::Triple& targetTriple = this.cliOptions.targetTriple;
     const llvm::LLVMRelocMode relocMode = llvm::LLVMRelocMode::PIC;
-    // The host creates the target machine with the default codegen opt level and sets the actual one right before the object
-    // emission. The LLVM C API cannot change the opt level of a target machine, so it is set right away here.
+    // The LLVM C API cannot change the codegen opt level of a target machine, so it is set right away here.
     const llvm::LLVMCodeGenOptLevel codeGenOptLevel = getCodeGenOptLevel(this.cliOptions.optLevel);
     this.targetMachine = target.createTargetMachine(targetTriple, cpuName, features, codeGenOptLevel, relocMode, llvm::LLVMCodeModel::Default);
-    // Like the host, emit the assembly code with comments. This only affects the assembly code, not the object files
+    // Emit the assembly code with comments. This only affects the assembly code, not the object files
     this.targetMachine.setAsmVerbosity(true);
 }
 
@@ -239,7 +238,7 @@ public p SourceFile.runParser() {
     Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.lexerAndParser);
     timer.start();
 
-    // The source file must exist. Raise the same error as the host compiler does in its lexer stage when it cannot be read.
+    // The source file must exist. Raise the same error as the lexer stage does when it cannot be read.
     if !this.filePath.exists() {
         StringStream msg;
         msg << "Source file at path '" << this.filePath.toString() << "' does not exist.";
@@ -676,15 +675,15 @@ public p SourceFile.runObjectEmitter() {
     const BackEndStage progressStage = this.cliOptions.useLTO ? BackEndStage::LTO_OBJECT_EMITTER : BackEndStage::OBJECT_EMITTER;
     this.resourceManager.compileProgress.startBackEndStage(progressStage);
 
-    // The code generation opt level matches the opt level, the IR was generated and optimized with. The host sets it on the target
-    // machine here. The LLVM C API cannot change it afterwards, so the target machine is created with it in the constructor.
+    // The code generation opt level matches the opt level, the IR was generated and optimized with. The LLVM C API cannot
+    // change it afterwards, so the target machine is created with it in the constructor.
 
     // Deduce an object file path
     this.objectFilePath = this.cliOptions.outputDir / this.filePath.getFileName();
     this.objectFilePath.replaceExtension("o");
 
-    // Pick a concrete emitter based on the selected backend. The driver only accepts the TPDE backend, if the bootstrap compiler
-    // is backed by TPDE (SPICE_ENABLE_TPDE in the host)
+    // Pick a concrete emitter based on the selected backend. The driver only accepts the TPDE backend, if the compiler is backed
+    // by TPDE
     LLVMObjectEmitter llvmObjectEmitter = LLVMObjectEmitter(this.resourceManager, this);
     TPDEObjectEmitter tpdeObjectEmitter = TPDEObjectEmitter(this.cliOptions.useLTO ? &this.resourceManager.ltoModule : &this.llvmModule);
     IAbstractObjectEmitter* objectEmitter = &llvmObjectEmitter;
@@ -899,8 +898,7 @@ p SourceFile.runBackEndForThisFile() {
 }
 
 /**
- * Release the LLVM resources of this source file, as soon as its object file was emitted. The host keeps them until the source
- * file is destructed. Releasing them early bounds the peak memory usage to the resources of the source files, whose back end
+ * Release the LLVM resources of this source file, as soon as its object file was emitted. Releasing them early bounds the peak memory usage to the resources of the source files, whose back end
  * runs at the moment. Nothing uses them afterwards, because the back end of each source file only works on its own resources.
  * With LTO, the modules are linked into the LTO module and the main source file emits the object file, so they are kept.
  */
@@ -967,8 +965,7 @@ public p SourceFile.runBackEnd() {
                 sourceFile.runBackEndForThisFile();
             });
         }
-        // Enter the parallel section before the worker threads start and leave it only after all of them were joined. The
-        // host re-throws the error of the first failing source file here. The bootstrap compiler has no exceptions, so a
+        // Enter the parallel section before the worker threads start and leave it only after all of them were joined. A
         // failing source file aborts the compilation on its worker thread (see abortWithError), which ends the process.
         ParallelSection _;
         threadPool.start();
@@ -1278,8 +1275,8 @@ f<bool> SourceFile.isQualifiableImportName(String& importName) {
 }
 
 /**
- * Abort the compilation if a hard error was raised. In the host, hard errors are thrown as SemanticError and abort the
- * compilation right away. The bootstrap records them instead (see ErrorManager), so each stage checks for them afterwards.
+ * Abort the compilation if a hard error was raised. Hard errors are recorded (see ErrorManager), so each stage checks for them
+ * afterwards.
  */
 public p SourceFile.checkForHardError() {
     const ErrorManager& errorManager = this.resourceManager.errorManager;

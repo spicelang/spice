@@ -12,8 +12,7 @@ import "bootstrap/symboltablebuilder/qual-type";
 /**
  * Generates the metadata, that is attached to instructions (branch weights, type metadata and TBAA metadata).
  *
- * The host builds the metadata nodes with llvm::MDBuilder, which has no counterpart in the LLVM C API. The nodes are built
- * with the same structure here.
+ * llvm::MDBuilder has no counterpart in the LLVM C API, so the metadata nodes are built by hand with the same structure.
  */
 public type MetadataGenerator struct {
     IRGenerator* irGenerator

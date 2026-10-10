@@ -10,8 +10,7 @@ import "bootstrap/irgenerator/ir-generator";
  * This struct is used to change the current scope to a child scope and change it back to the parent scope when the handle
  * object is destroyed. This can be used in visit functions to automatically leave the scope when the function returns.
  *
- * The host implements this via DeferredLogic. The constructors that take an IRGenerator additionally push/pop a lexical block
- * for the debug info.
+ * The constructors that take an IRGenerator additionally push/pop a lexical block for the debug info.
  */
 public type ScopeHandle struct {
     CompilerPass* pass

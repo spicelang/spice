@@ -60,8 +60,6 @@ f<ArgClass> mergeClasses(ArgClass accumulated, ArgClass field) {
  * the return registers, are returned via an sret pointer, small ones are coerced to the types, that are returned in the
  * return registers. Types, that are non-trivial for the purpose of calls (custom copy ctor or dtor), are always returned
  * via an sret pointer, like in the Itanium C++ ABI.
- *
- * Mirrors the host's ABIInfo.
  */
 public type ABIInfo struct {
     llvm::Triple targetTriple

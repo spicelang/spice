@@ -32,9 +32,9 @@ public type ResolverKind enum {
 }
 
 /**
- * Lazily resolves an operand of an operator to its value or address. The host passes lambdas (ResolverFct) for this purpose.
- * Spice lambdas cannot capture the IR generator and the expression results by reference safely, so the few kinds of
- * resolvers, that the host uses, are modeled explicitly here and resolved via IRGenerator.resolve().
+ * Lazily resolves an operand of an operator to its value or address. Spice lambdas cannot capture the IR generator and the
+ * expression results by reference safely, so the few kinds of resolvers are modeled explicitly here and resolved via
+ * IRGenerator.resolve().
  */
 public type Resolver struct {
     public ResolverKind kind
@@ -118,9 +118,7 @@ public p OperandResolvers.ctor(const Resolver& lhsV, const Resolver& lhsP, const
 /**
  * Helper class for the IRGenerator to resolve operator instructions for each valid operator/type combination
  *
- * Note: The host passes operand values as nested call arguments (e.g. builder.CreateAdd(lhsV(), rhsV())). The host is built
- * with GCC, which evaluates call arguments from right to left, so the rhs is resolved before the lhs there. The resolvers are
- * called in the same order here, so that the generated IR matches the one of the host.
+ * Note: If an instruction takes two operands, the rhs is resolved before the lhs. Changing the order changes the generated IR.
  */
 public type OpRuleConversionManager struct {
     llvm::IRBuilder* builder
@@ -162,12 +160,12 @@ f<unsigned int> getIntegerWidth(const QualType& integerType) {
     }
 }
 
-// Whether an integer operation on the given types has no signed wrap (only evaluated for integer types, like in the host)
+// Whether an integer operation on the given types has no signed wrap (only evaluated for integer types)
 f<bool> isNSW(const QualType& lhsSTy, const QualType& rhsSTy) {
     return lhsSTy.isSigned() && rhsSTy.isSigned();
 }
 
-// Check if the given super types match the expected combination (COMB(expectedLhs, expectedRhs) in the host)
+// Check if the given super types match the expected combination
 f<bool> isComb(SuperType lhs, SuperType rhs, SuperType expectedLhs, SuperType expectedRhs) {
     return lhs == expectedLhs && rhs == expectedRhs;
 }
@@ -510,7 +508,7 @@ public f<LLVMExprResult> OpRuleConversionManager.getBitwiseAndInst(ASTNode* node
 
 // --------------------------------------------------------- Equality ops --------------------------------------------------------
 
-// Shared implementation of getEqualInst and getNotEqualInst. The host implements both separately with the same structure
+// Shared implementation of getEqualInst and getNotEqualInst
 f<LLVMExprResult> OpRuleConversionManager.getEqualityInst(bool isEqual, ASTNode* node, LLVMExprResult& lhs, const QualType& origLhsSTy, LLVMExprResult& rhs, const QualType& origRhsSTy) {
     const OperandResolvers resolvers = getBinaryResolvers(lhs, origLhsSTy, rhs, origRhsSTy);
     const QualType lhsSTy = origLhsSTy.removeReferenceWrapper();
@@ -1225,7 +1223,7 @@ public f<LLVMExprResult> OpRuleConversionManager.callOperatorOverloadFct(ASTNode
 
 // ----------------------------------------------------------- Helpers -----------------------------------------------------------
 
-// Abort with an unhandled branch error for the given operator (the host throws a CompilerError)
+// Abort with an unhandled branch error for the given operator
 p raiseOperatorFallthrough(string opName) {
     const String message = String("Operator fallthrough: ") + opName;
     panic(Error(message.getRaw()));

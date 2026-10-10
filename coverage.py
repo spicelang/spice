@@ -5,7 +5,7 @@ There are two reports, both generated unless --only selects one:
 - compiler: the compiler sources in src/ exercised by the test suite. Requires the test suite to have been run once with
   `python test/run-tests.py --instrument coverage`, which builds the compiler with Spice code coverage instrumentation and
   runs the test cases against it. The resulting .gcno/.gcda files land next to the compiler executable in
-  build/test-tmp/bootstrap-compiler/ and next to its builtin tests in build/test-tmp/bootstrap-tests/. The report lands in
+  build/test-tmp/compiler/ and next to its builtin tests in build/test-tmp/compiler-tests/. The report lands in
   build/coverage-compiler/ and build/coverage-compiler.txt.
 - std: the std lib sources exercised by the test programs. Requires the test suite to have been run once with
   `python test/run-tests.py --coverage --work-dir build/test-tmp-coverage`, which instruments every Spice program compiled
@@ -27,7 +27,7 @@ BUILD_DIR = ROOT_DIR / "build"
 
 # Report name -> (output name, source filter, dirs containing the gcov data), paths relative to the build dir
 REPORTS = {
-    "compiler": ("coverage-compiler", "../src/.*", ["test-tmp/bootstrap-compiler", "test-tmp/bootstrap-tests"]),
+    "compiler": ("coverage-compiler", "../src/.*", ["test-tmp/compiler", "test-tmp/compiler-tests"]),
     # Only the test programs. The coverage-instrumented compiler also covers std lib files, which would mix the std lib
     # usage of the compiler into this report
     "std": ("coverage-spice", "../std/.*", ["test-tmp-coverage/tests"]),

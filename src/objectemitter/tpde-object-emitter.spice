@@ -18,9 +18,8 @@ import "bootstrap/objectemitter/abstract-object-emitter";
  * Consumes an LLVM module directly and emits an ELF object at roughly -O0 code quality but significantly faster than LLVM
  * CodeGen at -O0. Supported targets: ELF on x86_64 or aarch64; small code model; PIC relocation only; no LTO.
  *
- * The host only compiles its TPDE emitter in, if SPICE_ENABLE_TPDE is defined. The bootstrap compiler uses the std TPDE
- * bindings instead, which are only backed by TPDE, if the TPDE libraries were linked into the bootstrap compiler (see
- * std/bindings/tpde). The driver rejects the TPDE backend otherwise, so this emitter is only used if TPDE is available.
+ * The emitter uses the std TPDE bindings, which are only backed by TPDE, if the TPDE libraries were linked into the compiler
+ * (see std/bindings/tpde). The driver rejects the TPDE backend otherwise, so this emitter is only used if TPDE is available.
  */
 public type TPDEObjectEmitter struct : IAbstractObjectEmitter {
     llvm::Module* module

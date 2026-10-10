@@ -310,7 +310,7 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
     JsonSerializer serializer = JsonSerializer();
     const String metaJson = serializer.serialize(metadata);
     deleteJsonValue(metadata);
-    // A failure to write the metadata file is not fatal, like in the host. The cache entry will just not be found later on
+    // A failure to write the metadata file is not fatal. The cache entry will just not be found later on
     const Result<bool> _ = writeFile(cacheMetaPath.getRaw(), metaJson.getRaw());
 }
 
@@ -420,7 +420,7 @@ p CacheManager.cacheExecutable(const Vector<String>& objectFileCacheKeys, const 
     if mkDirs(this.cliOptions.cacheDir.toString(), 493) != 0 {
         return;
     }
-    const bool _ = copyFile(execPathStr, cachedExecPath); // Errors are ignored, like in the host
+    const bool _ = copyFile(execPathStr, cachedExecPath); // Errors are ignored
 }
 
 /**
@@ -452,7 +452,7 @@ public p CacheManager.linkOrRestoreExecutable(GlobalResourceManager& resourceMan
             const String parentDir = outputPathStr.getSubstring(0l, lastSlash);
             const int _ = mkDirs(parentDir.getRaw(), 493);
         }
-        const bool _ = copyFile(String(cachedExecutablePath.toString()), outputPathStr); // Errors are ignored, like in the host
+        const bool _ = copyFile(String(cachedExecutablePath.toString()), outputPathStr); // Errors are ignored
     } else {
         // Link and optionally cache the result
         resourceManager.linker.run();
