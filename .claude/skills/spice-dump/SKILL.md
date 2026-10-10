@@ -5,14 +5,14 @@ description: Dump compiler intermediate output (LLVM IR, assembly, AST, CST, sym
 
 # Dump Spice compiler output
 
-The `spice` compiler (built at `cmake-build-debug/src/spice`, see the
+The `spice` compiler (built at `cmake-build-debug/src-host/spice`, see the
 `spice-build` skill) can dump every stage of compilation via flags on the
 `build` / `run` / `test` subcommands.
 
 ## Quick start
 
 ```sh
-SPICE=cmake-build-debug/src/spice
+SPICE=cmake-build-debug/src-host/spice
 
 # Dump LLVM IR for a source file (unoptimized)
 $SPICE build -O0 -ir path/to/source.spice
@@ -59,7 +59,7 @@ Useful companions:
 ## Common recipes
 
 ```sh
-SPICE=cmake-build-debug/src/spice
+SPICE=cmake-build-debug/src-host/spice
 SRC=test/test-files/irgenerator/for-loops/success-for-loop/source.spice
 
 # Just the IR, nothing else, fast

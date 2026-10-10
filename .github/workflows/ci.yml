@@ -109,7 +109,7 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src/spice
+        run: python bootstrap.py --host-compiler build/src-host/spice
 
       - name: Upload bootstrap stage executables
         if: failure()
@@ -218,7 +218,7 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src/spice
+        run: python bootstrap.py --host-compiler build/src-host/spice
 
       - name: Upload bootstrap stage executables
         if: failure()
@@ -346,7 +346,7 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src/spice.exe
+        run: python bootstrap.py --host-compiler build/src-host/spice.exe
 
       - name: Upload bootstrap stage executables
         if: failure()
@@ -448,7 +448,7 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src/spice
+        run: python bootstrap.py --host-compiler build/src-host/spice
 
       - name: Upload bootstrap stage executables
         if: failure()

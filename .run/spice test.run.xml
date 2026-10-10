@@ -3,7 +3,7 @@
     <envs>
       <env name="LLVM_INCLUDE_DIRS" value="-I$PROJECT_DIR$/../llvm-project-latest/llvm/include -I$PROJECT_DIR$/../llvm-project-latest/build/include" />
       <env name="LLVM_LIB_DIR" value="$PROJECT_DIR$/../llvm-project-latest/build/lib" />
-      <env name="SPICE_BOOTSTRAP_DIR" value="$PROJECT_DIR$/src-bootstrap" />
+      <env name="SPICE_BOOTSTRAP_DIR" value="$PROJECT_DIR$/src" />
       <env name="SPICE_STD_DIR" value="$PROJECT_DIR$/std" />
     </envs>
     <method v="2">

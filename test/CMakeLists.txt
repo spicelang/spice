@@ -46,7 +46,7 @@ add_test(NAME spicetest COMMAND spicetest)
 
 # Symlinks
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/test-files ${CMAKE_CURRENT_BINARY_DIR}/test-files SYMBOLIC)
-file(CREATE_LINK ${CMAKE_SOURCE_DIR}/src-bootstrap ${CMAKE_CURRENT_BINARY_DIR}/bootstrap SYMBOLIC)
+file(CREATE_LINK ${CMAKE_SOURCE_DIR}/src ${CMAKE_CURRENT_BINARY_DIR}/bootstrap SYMBOLIC)
 
 ################# spicetest_leakcheck ################
 
@@ -67,7 +67,7 @@ if (PYTHON3_EXECUTABLE)
     add_custom_target(spicetest_parallel
             COMMAND ${CMAKE_COMMAND} -E env
             SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
-            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
+            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src
             LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
             LLVM_INCLUDE_DIRS=${LLVM_INCLUDE_FLAGS}
             ${PYTHON3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/deps/gtest-parallel/gtest-parallel $<TARGET_FILE:spicetest> -- ${SPICE_TEST_ARGS}
@@ -83,7 +83,7 @@ endif ()
 add_custom_target(spicetest_bootstrap
         COMMAND ${CMAKE_COMMAND} -E env
         SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
-        SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
+        SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src
         LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
         LLVM_INCLUDE_DIRS=${LLVM_INCLUDE_FLAGS}
         $<TARGET_FILE:spicetest> --bootstrap ${SPICE_TEST_ARGS}
@@ -101,13 +101,13 @@ if (PYTHON3_EXECUTABLE)
     add_custom_target(spicetest_bootstrap_parallel
             COMMAND ${CMAKE_COMMAND} -E env
             SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
-            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
+            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src
             LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
             LLVM_INCLUDE_DIRS=${LLVM_INCLUDE_FLAGS}
             $<TARGET_FILE:spicetest> --bootstrap-build-only ${SPICE_TEST_ARGS}
             COMMAND ${CMAKE_COMMAND} -E env
             SPICE_STD_DIR=${CMAKE_SOURCE_DIR}/std
-            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src-bootstrap
+            SPICE_BOOTSTRAP_DIR=${CMAKE_SOURCE_DIR}/src
             LLVM_LIB_DIR=${LLVM_LIBRARY_DIRS}
             LLVM_INCLUDE_DIRS=${LLVM_INCLUDE_FLAGS}
             ${PYTHON3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/deps/gtest-parallel/gtest-parallel $<TARGET_FILE:spicetest> --

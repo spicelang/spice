@@ -44,14 +44,14 @@ resulting worklist is the unit of scheduling; the order it defines is what the s
 
 ### Utilities
 
-- `src/util/ThreadPool.{h,cpp}` — a fixed-size worker pool. Tasks are `void()` and the submitter blocks in `waitForAll()`.
+- `src-host/util/ThreadPool.{h,cpp}` — a fixed-size worker pool. Tasks are `void()` and the submitter blocks in `waitForAll()`.
   Two properties matter for the compiler:
   - Passes report failures by **throwing** (`LexerError`, `SemanticError`, `CompilerError`, ...). An exception escaping
     a worker thread would terminate the process, so tasks are wrapped and the exception is re-thrown on the waiting
     thread.
   - If several tasks fail, the exception of the **task that was submitted first** wins, so the reported error does not
     depend on the scheduling. Queued tasks that have not started yet are dropped after the first failure.
-- `src/util/Concurrency.h` — `ParallelSection`, `ConditionalLock` and the shared `symbolRegistryMutex`.
+- `src-host/util/Concurrency.h` — `ParallelSection`, `ConditionalLock` and the shared `symbolRegistryMutex`.
   `ConditionalLock` only takes its mutex while a `ParallelSection` is active. The process-wide caches it protects sit on
   the hottest paths of the (single-threaded) front end and middle end, where an unconditional lock would be pure
   overhead; outside of a parallel section the lock degenerates to a relaxed atomic load plus a well-predicted branch.
@@ -149,7 +149,7 @@ cache key or the full path would fix it.
 
 ## Bootstrap compiler
 
-The bootstrap compiler (`src-bootstrap/`) mirrors this design, with these differences:
+The bootstrap compiler (`src/`) mirrors this design, with these differences:
 
 - **Thread pool.** It uses the `ThreadPool` of the std (`std/os/thread-pool`): the back-end tasks are enqueued, the pool is
   started and `join()` returns once the queue is drained and all workers have exited. The pool is created per call, since
@@ -157,7 +157,7 @@ The bootstrap compiler (`src-bootstrap/`) mirrors this design, with these differ
 - **Errors.** The bootstrap compiler has no exceptions. A failing back-end pass panics on its worker thread, which ends the
   process. If several source files fail concurrently, the first panic is reported, so the reported error can depend on
   the scheduling.
-- **Locks.** `src-bootstrap/util/concurrency.spice` provides `ParallelSection` and `ConditionalLock`. The type registry,
+- **Locks.** `src/util/concurrency.spice` provides `ParallelSection` and `ConditionalLock`. The type registry,
   the type name disambiguator and the symbol registry all use the `RecursiveMutex` of the std (`std/os/recursive-mutex`),
   which is a superset of the plain mutex semantics, that the host uses for the first two. Spice only supports globals of
   primitive type, so the mutexes are owned by the `GlobalResourceManager` (or the type registry / type name disambiguator

@@ -31,7 +31,7 @@ subprocess.run(
     check=True,
 )
 
-spice_src = build_dir / "src" / ("spice.exe" if sys.platform == "win32" else "spice")
+spice_src = build_dir / "src-host" / ("spice.exe" if sys.platform == "win32" else "spice")
 spice_link = build_dir / ("spice.exe" if sys.platform == "win32" else "spice")
 spicetest_src = build_dir / "test" / ("spicetest.exe" if sys.platform == "win32" else "spicetest")
 spicetest_link = build_dir / ("spicetest.exe" if sys.platform == "win32" else "spicetest")

@@ -11,13 +11,16 @@ for the Spice language.
 ## Repository at a glance
 
 - Project: **Spice Programming Language** compiler + standard library.
-- Build system: **CMake** (top-level `CMakeLists.txt`) with `src/` and `test/` subdirectories.
+- Build system: **CMake** (top-level `CMakeLists.txt`) with `src-host/` and `test/` subdirectories.
 - Main areas:
-    - `src/`: compiler implementation, written in C++
-        - `src/spice/`: main compiler executable and CLI handling
+    - `src/`: self-hosted compiler (bootstrap compiler), written in Spice; the default compiler
+        - `src/driver.spice`: CLI handling
         - `src/typechecker/`: type checking and inference, overload resolution, and related components
         - `src/irgenerator/`: LLVM IR code generation
-    - `src-bootstrap/`: early-stage self-hosted compiler, written in Spice
+    - `src-host/`: host compiler, written in C++; builds the bootstrap compiler and backs the test runner
+        - `src-host/driver/`: main compiler executable and CLI handling
+        - `src-host/typechecker/`: type checking and inference, overload resolution, and related components
+        - `src-host/irgenerator/`: LLVM IR code generation
     - `test/`: GoogleTest-based test executable `spicetest`
         - `test/test-files/`: test input files for various reference integration tests
         - `test/unittest/`: GoogleTest-based unit tests for compiler components
@@ -65,20 +68,20 @@ Instructions how to build when inside the respective build directory:
 ## Running Spice programs
 
 - Compile a Spice source file to an executable:
-    - `<build-directory>/src/spice build <source-file.spice> -o <output-executable>`
+    - `<build-directory>/src-host/spice build <source-file.spice> -o <output-executable>`
 - Run the compiled executable:
     - `./<output-executable>`
 - For quick testing, you can also use the `run` command to compile and execute in one step:
-    - `<build-directory>/src/spice run <source-file.spice>`
+    - `<build-directory>/src-host/spice run <source-file.spice>`
 - Use the `--help` option to see all available commands and options:
-    - `<build-directory>/src/spice --help`
+    - `<build-directory>/src-host/spice --help`
 - You can use an available sanitizer of your choice on Spice code (e.g. ASAN, TSAN, TYSAN, etc.)
-    - `<build-directory>/src/spice run --sanitizer=address <source-file.spice>`
+    - `<build-directory>/src-host/spice run --sanitizer=address <source-file.spice>`
 
 ## Debugging
 
 - Use a debugger like `gdb` or `lldb` to debug the compiler executable:
-    - `gdb <build-directory>/src/spice`
+    - `gdb <build-directory>/src-host/spice`
     - Set breakpoints, run the program, and inspect variables as needed.
 - For debugging test failures, you can run the test executable under the debugger:
     - `gdb <build-directory>/test/spicetest`
@@ -87,8 +90,8 @@ Instructions how to build when inside the respective build directory:
 
 ## Coding style
 
-Follow the project [Coding Style Guide](STYLE_GUIDE.md) for all C++ (`src/`, `test/`) and Spice (`std/`,
-`test/test-files/`) changes. It documents formatting (`.clang-format`), naming, file layout, the visitor pattern,
+Follow the project [Coding Style Guide](STYLE_GUIDE.md) for all C++ (`src-host/`, `test/`) and Spice (`src/`,
+`std/`, `test/test-files/`) changes. It documents formatting (`.clang-format`), naming, file layout, the visitor pattern,
 diagnostics, memory management, and Spice-source conventions. Read it before writing or modifying code.
 
 ## Editing expectations

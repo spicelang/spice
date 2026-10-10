@@ -25,7 +25,7 @@ import "bootstrap/symboltablebuilder/super-type";
 import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
 
 /**
- * Generates the debug info of a source file. This mirrors the host compiler's src/irgenerator/DebugInfoGenerator.cpp.
+ * Generates the debug info of a source file. This mirrors the host compiler's src-host/irgenerator/DebugInfoGenerator.cpp.
  *
  * The host uses the LLVM C++ DIBuilder; here we use the LLVM C API (llvm::DIBuilder wrapper in std/bindings/llvm), which
  * represents every debug info node as an llvm::Metadata. A few C++-only capabilities have no C-API equivalent and are

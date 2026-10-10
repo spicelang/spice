@@ -1,14 +1,14 @@
 'compiler':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src/**/*'
+          - 'src-host/**/*'
           - 'CMakeLists.txt'
           - '*.cmake'
 
 'bootstrap':
   - changed-files:
       - any-glob-to-any-file:
-          - 'src-bootstrap/**/*'
+          - 'src/**/*'
 
 'std':
   - changed-files:

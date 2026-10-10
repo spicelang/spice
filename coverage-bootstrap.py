@@ -26,7 +26,7 @@ base_args = [
     "--gcov-ignore-parse-errors",
     "negative_hits.warn_once_per_file",
     "--filter",
-    "../src-bootstrap/.*",
+    "../src/.*",
     "-r",
     "..",
     "test/test-tmp/bootstrap-compiler",

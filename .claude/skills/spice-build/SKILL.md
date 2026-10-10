@@ -8,7 +8,7 @@ description: Build the Spice compiler (`spice`) and/or the test runner (`spicete
 The Spice repo is a CMake project (top-level `CMakeLists.txt`) that produces two
 main artifacts:
 
-- `spice` — the compiler CLI (`src/`, output at `<build-dir>/src/spice`)
+- `spice` — the compiler CLI (`src-host/`, output at `<build-dir>/src-host/spice`)
 - `spicetest` — the GoogleTest runner (`test/`, output at `<build-dir>/test/spicetest`)
 
 ## Build directory convention
@@ -68,7 +68,7 @@ cmake --build cmake-build-debug --target spicetest_leakcheck
 
 - Incremental rebuilds: just re-run `cmake --build <dir> --target <t>`; Ninja
   only recompiles what changed. No need to reconfigure unless CMake files change.
-- After building, the compiler is at `cmake-build-debug/src/spice` — see the
+- After building, the compiler is at `cmake-build-debug/src-host/spice` — see the
   `spice-dump` skill for inspecting its IR/assembly output and `spice-test` for
   running the suite.
 - Configure options live in `Options.cmake` / `Conditionals.cmake` /

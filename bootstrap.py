@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bootstrap the self-hosted Spice compiler until it reaches a fixed point.
 
-Stage 0 is the bootstrap compiler (src-bootstrap/) built by the host compiler (src/). Every following stage n is the
+Stage 0 is the bootstrap compiler (src/) built by the host compiler (src-host/). Every following stage n is the
 bootstrap compiler built by stage n-1. Stage 0 and stage 1 naturally differ, because they come from different compilers.
 From stage 2 on, every stage is built by a compiler that was built from the very same sources, so stage n and stage n-1
 have to be bit-identical. The script succeeds as soon as two consecutive stages have the same hash (the fixed point) and
@@ -38,7 +38,7 @@ def fail(msg: str) -> None:
 
 def find_host_compiler() -> Path | None:
     for build_dir in ("build", "cmake-build-release", "cmake-build-debug"):
-        candidate = ROOT_DIR / build_dir / "src" / EXE_NAME
+        candidate = ROOT_DIR / build_dir / "src-host" / EXE_NAME
         if candidate.is_file():
             return candidate
     return None
@@ -160,7 +160,7 @@ def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[st
     stage_dir.mkdir(parents=True)
     output = stage_dir / EXE_NAME
     cmd = [str(compiler), "build", *build_flags, "--ignore-cache", "--output", str(output),
-           str(ROOT_DIR / "src-bootstrap" / "main.spice")]
+           str(ROOT_DIR / "src" / "main.spice")]
 
     log(f"[Stage {stage}] Building with {compiler} ...")
     start = time.monotonic()
@@ -215,7 +215,7 @@ def main() -> None:
 
     # Environment, the host and bootstrap compilers need to compile the bootstrap compiler
     os.environ.setdefault("SPICE_STD_DIR", str(ROOT_DIR / "std"))
-    os.environ.setdefault("SPICE_BOOTSTRAP_DIR", str(ROOT_DIR / "src-bootstrap"))
+    os.environ.setdefault("SPICE_BOOTSTRAP_DIR", str(ROOT_DIR / "src"))
     if "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = find_llvm_lib_dir()
         if llvm_lib_dir is None:

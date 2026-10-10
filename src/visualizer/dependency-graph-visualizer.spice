@@ -12,7 +12,7 @@ import "bootstrap/source-file";
 import "bootstrap/reader/code-loc";
 
 /**
- * Visualizer for the import dependency graph. Mirrors src/visualizer/DependencyGraphVisualizer.{h,cpp}.
+ * Visualizer for the import dependency graph. Mirrors src-host/visualizer/DependencyGraphVisualizer.{h,cpp}.
  *
  * Jobs:
  * - Walk the SourceFile dependency tree starting from the main file

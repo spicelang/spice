@@ -19,7 +19,7 @@ All work happens on a dedicated branch, never directly on `main`.
 | `chore/<slug>` | Build system, dependency updates, repo maintenance |
 | `ci/<slug>` | GitHub Actions workflows, CI scripts, test infrastructure |
 | `std/<slug>` | Standard library changes that aren't strictly a new feature or fix |
-| `bootstrap/<slug>` | Changes to the self-hosted bootstrap compiler (`src-bootstrap/`) |
+| `bootstrap/<slug>` | Changes to the self-hosted bootstrap compiler (`src/`) |
 | `test/<slug>` | New or updated test cases, test utilities, reference files |
 | `docs/<slug>` | Documentation-only changes under `docs/` |
 | `security/<slug>` | Security-sensitive fixes (prefer non-public disclosure first — see `CONTRIBUTING.md`) |
@@ -97,30 +97,30 @@ git checkout feature/my-new-thing      # continue on the branch
 
 ## Keep the host and bootstrap compilers in sync
 
-The host compiler (`src/`, C++) and the self-hosted bootstrap compiler
-(`src-bootstrap/`, Spice) implement the same pipeline and must not drift apart.
-The bootstrap compiler mirrors the host class by class: `src/<stage>/FooBar.{h,cpp}`
-corresponds to `src-bootstrap/<stage>/foo-bar.spice` (the host's split files such
+The host compiler (`src-host/`, C++) and the self-hosted bootstrap compiler
+(`src/`, Spice) implement the same pipeline and must not drift apart.
+The bootstrap compiler mirrors the host class by class: `src-host/<stage>/FooBar.{h,cpp}`
+corresponds to `src/<stage>/foo-bar.spice` (the host's split files such
 as `TypeCheckerExpressions.cpp` or `GenStatements.cpp` are merged into the one
 bootstrap file of that class).
 
-Whenever a PR changes compiler behavior in `src/`, port the same change to
-`src-bootstrap/` in the **same PR**:
+Whenever a PR changes compiler behavior in `src-host/`, port the same change to
+`src/` in the **same PR**:
 
 - Bug fixes, new or changed semantics, diagnostics, name mangling and codegen
   changes go into the matching bootstrap file, keeping the same structure,
   function names and control flow so the two stay easy to diff.
-- Grammar changes in `src/Spice.g4` must also be implemented in the hand-written
-  `src-bootstrap/lexer/` and `src-bootstrap/parser/`, and new or changed AST
-  nodes in `src-bootstrap/ast/`.
+- Grammar changes in `src-host/Spice.g4` must also be implemented in the hand-written
+  `src/lexer/` and `src/parser/`, and new or changed AST
+  nodes in `src/ast/`.
 - New diagnostics need the same error kind and message text in
-  `src-bootstrap/exception/`; the bootstrap test run checks every expected
+  `src/exception/`; the bootstrap test run checks every expected
   error and warning.
 - Changes to a stage the bootstrap compiler has not implemented yet need no
   port, but mention that in the PR description so it is not forgotten when
   the stage is ported.
-- The reverse holds too: a fix discovered while working on `src-bootstrap/`
-  that also affects the host compiler must be fixed in `src/` as well.
+- The reverse holds too: a fix discovered while working on `src/`
+  that also affects the host compiler must be fixed in `src-host/` as well.
 
 If a change cannot be ported (e.g. it relies on a Spice language feature or
 stdlib API that is not available yet), say so under "Follow-up / known
@@ -200,7 +200,7 @@ they will be squashed at merge time.
 - [ ] All commits have a short descriptive headline (no type prefix)
 - [ ] Build passes (`cmake --build cmake-build-debug --target spice spicetest`)
 - [ ] Relevant tests pass (full suite or focused filter)
-- [ ] Compiler changes ported between `src/` and `src-bootstrap/` (or the gap noted in the PR)
+- [ ] Compiler changes ported between `src-host/` and `src/` (or the gap noted in the PR)
 - [ ] Reference files updated and reviewed (`--update-refs` + `git diff`)
 - [ ] Docs updated if behavior/CLI/error messages changed
 - [ ] Issue linked in footer (`Fixes #N` or `Refs #N`)

@@ -53,7 +53,7 @@ These are `spicetest`'s own flags (not GoogleTest):
 - `--is-github-actions` — skip cases unsupported on CI.
 - `--verbose` — extra runner debug output.
 - `--bootstrap` — bootstrap mode: first build the bootstrap compiler
-  (`src-bootstrap/main.spice`) with the in-process host compiler into
+  (`src/main.spice`) with the in-process host compiler into
   `test-tmp/bootstrap-compiler/`, then run the reference-test suites against it
   (see below).
 - `--bootstrap-compiler=<path>` — bootstrap mode with an already built bootstrap
@@ -88,7 +88,7 @@ host compiler. CI uses the parallel target.
 In bootstrap mode, `BootstrapTests.BuiltinTests` additionally builds the
 bootstrap compiler sources in test build mode (`--build-mode test`, into
 `test-tmp/bootstrap-tests/`) and runs their builtin tests (`#[test]` functions,
-e.g. in `src-bootstrap/driver.spice`). It uses the same instrumentation as the
+e.g. in `src/driver.spice`). It uses the same instrumentation as the
 bootstrap compiler (`--bootstrap-asan`, `--bootstrap-coverage`), otherwise `-O0`.
 
 It is functionally equivalent to the host mode and checks the same references:

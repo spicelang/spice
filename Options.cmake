@@ -42,7 +42,7 @@ set(SPICE_VERSION "dev" CACHE STRING "Spice build version")
 message(STATUS "Spice: Build version is set to '${SPICE_VERSION}'")
 
 # Spice Git hash — not resolved here to avoid busting ccache on every commit;
-# passed as a per-file compile definition in src/CMakeLists.txt instead.
+# passed as a per-file compile definition in src-host/CMakeLists.txt instead.
 set(SPICE_GIT_HASH "dev" CACHE STRING "Spice Git hash")
 message(STATUS "Spice: Git hash is set to '${SPICE_GIT_HASH}'")
 

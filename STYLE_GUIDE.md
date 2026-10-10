@@ -7,7 +7,7 @@ The rules here are descriptive of the existing codebase, not aspirational — wh
 If a file you are editing already follows a clearly established local pattern, prefer that pattern over a rule here and,
 if the divergence is widespread, consider updating this guide.
 
-> **For AI agents:** Read this file before writing or modifying C++ (`src/`, `test/`) or Spice (`std/`, `test/test-files/`)
+> **For AI agents:** Read this file before writing or modifying C++ (`src-host/`, `test/`) or Spice (`src/`, `std/`, `test/test-files/`)
 > code. It is referenced from `AGENTS.md`. Keep changes minimal and idiomatic; do not reformat unrelated code.
 
 ## Table of contents
@@ -51,7 +51,7 @@ Always format before committing:
 
 ```bash
 # Format a single file in place
-clang-format -i src/path/To/File.cpp
+clang-format -i src-host/path/To/File.cpp
 
 # Format everything you changed (run from repo root)
 git diff --name-only --diff-filter=d origin/main | grep -E '\.(cpp|h)$' | xargs -r clang-format -i
@@ -100,7 +100,7 @@ Include rules:
 
 Within a class or large file, organize members under banner comments. Common banners, in order:
 `// Constructors`, `// Public methods`, `// Public members`, then `private:` with `// Members`. Large multi-type headers
-(e.g. `src/ast/ASTNodes.h`) use ASCII-art separators like `// =========== AstNode ===========`.
+(e.g. `src-host/ast/ASTNodes.h`) use ASCII-art separators like `// =========== AstNode ===========`.
 
 Namespaces:
 - Compiler code lives in `namespace spice::compiler`.
@@ -164,11 +164,11 @@ The compiler passes (symbol table builder, type checker, IR generator, …) trav
 - AST node children are declared with the `GET_CHILDREN(...)` macro, which expands to a `getChildren()` override built
   on `collectChildren(...)`.
 
-When adding a new AST node, follow the existing node definitions in `src/ast/ASTNodes.h` and add the corresponding
+When adding a new AST node, follow the existing node definitions in `src-host/ast/ASTNodes.h` and add the corresponding
 `visit*` method to the visitor interfaces and every concrete pass. See the `spice-language-feature` skill for the
 end-to-end recipe.
 
-In the bootstrap compiler (`src-bootstrap/`), the visitor interface `IAbstractAstVisitor`
+In the bootstrap compiler (`src/`), the visitor interface `IAbstractAstVisitor`
 (`ast/abstract-ast-visitor-intf.spice`) provides a [default method](docs/docs/language/interfaces.md#default-methods) for
 every visit method, which visits all children of the node via `visitChildren`. A pass only implements the visit methods
 it needs and can override `visitChildren` to customize the traversal. When adding a new AST node, add its signature and
@@ -176,7 +176,7 @@ default method to the interface.
 
 ## Error handling & diagnostics
 
-User-facing diagnostics are raised as **C++ exceptions** from a dedicated hierarchy under `src/exception/`:
+User-facing diagnostics are raised as **C++ exceptions** from a dedicated hierarchy under `src-host/exception/`:
 `SemanticError`, `ParserError`, `LexerError`, `LinkerError`, `CompilerError`, `CliError`. They are caught at pass
 boundaries.
 

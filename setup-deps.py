@@ -96,7 +96,7 @@ def build_libbacktrace() -> None:
 
 subprocess.run(["git", "submodule", "update", "--init", "--recursive"], check=True)
 
-jar_path = Path("src/thirdparty") / f"antlr-{ANTLR_VERSION}-complete.jar"
+jar_path = Path("src-host/thirdparty") / f"antlr-{ANTLR_VERSION}-complete.jar"
 if not jar_path.exists():
     url = f"https://www.antlr.org/download/antlr-{ANTLR_VERSION}-complete.jar"
     print(f"Downloading {url} ...")

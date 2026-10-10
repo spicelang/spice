@@ -13,7 +13,7 @@ spice
 /gen
 
 # ANTLR generator jar (downloaded by setup-deps)
-/src/thirdparty/antlr-*-complete.jar
+/src-host/thirdparty/antlr-*-complete.jar
 
 # CLion
 /.idea
