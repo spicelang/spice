@@ -87,6 +87,14 @@ WARNING_REGEX = re.compile(r"\x1B\[33m(\[Warning\] [^\n]*?)\x1B\[0m")
 ANSI_ESCAPE_REGEX = re.compile(r"\x1B\[[0-9;]*m")
 SANITIZER_REPORT_REGEX = re.compile(r"==\d+==ERROR: (AddressSanitizer|LeakSanitizer)")
 
+# File extensions of the output containers on the host, like getOutputFileExtension in src/util/system-util.spice
+OUTPUT_CONTAINER_EXTENSIONS = {
+    "exec": EXE_SUFFIX,
+    "obj": ".obj" if IS_WINDOWS else ".o",
+    "lib": ".lib" if IS_WINDOWS else ".a",
+    "dylib": ".dll" if IS_WINDOWS else ".dylib" if IS_MACOS else ".so",
+}
+
 
 @dataclass(frozen=True)
 class Suite:
@@ -228,6 +236,50 @@ def emits_debug_info(args: list[str]) -> bool:
         if arg == "-g" or arg.startswith("--debug-info"):
             debug_info = arg != "--debug-info=none"
     return debug_info
+
+
+def get_output_container(args: list[str]) -> str | None:
+    """Get the output container, the given compiler args request. Like for the compiler, the last one wins"""
+    output_container = None
+    for i, arg in enumerate(args):
+        if arg.startswith("--output-container="):
+            output_container = arg.split("=", 1)[1].lower()
+        elif arg == "--output-container" and i + 1 < len(args):
+            output_container = args[i + 1].lower()
+    return output_container
+
+
+def detect_output_container(path: Path) -> str | None:
+    """Detect the output container of the given compiler output file from its header (ELF, Mach-O, PE/COFF or ar archive)"""
+    data = path.read_bytes()[:4096]
+    if data.startswith(b"!<arch>\n"):
+        return "lib"
+    if data.startswith(b"\x7fELF") and len(data) >= 18:
+        byte_order = "little" if data[5] == 1 else "big"
+        return {1: "obj", 2: "exec", 3: "dylib"}.get(int.from_bytes(data[16:18], byte_order))
+    if data.startswith(b"\xcf\xfa\xed\xfe") and len(data) >= 16:  # 64-bit Mach-O, little endian
+        return {1: "obj", 2: "exec", 6: "dylib"}.get(int.from_bytes(data[12:16], "little"))
+    if data.startswith(b"MZ") and len(data) >= 0x40:  # PE image: the DLL flag in the COFF header tells DLLs and executables apart
+        coff_header_offset = int.from_bytes(data[0x3C:0x40], "little") + 4
+        if len(data) < coff_header_offset + 20:
+            return None
+        characteristics = int.from_bytes(data[coff_header_offset + 18:coff_header_offset + 20], "little")
+        return "dylib" if characteristics & 0x2000 else "exec"
+    if data[:2] in (b"\x64\x86", b"\x64\xaa"):  # COFF object file for amd64 or arm64
+        return "obj"
+    return None
+
+
+def check_output_container(result: TestResult, artifact_dir: Path, output_container: str) -> None:
+    """Check that the compiler emitted the output file of the requested output container"""
+    output_path = artifact_dir / f"source{OUTPUT_CONTAINER_EXTENSIONS[output_container]}"
+    if not output_path.exists():
+        result.fail(f"Compiler did not emit the {output_container} output file '{output_path}'")
+    # PIE executables and shared libraries both are ELF files of type ET_DYN, so executables are only checked for existence
+    if output_container != "exec":
+        actual_container = detect_output_container(output_path)
+        result.expect(actual_container == output_container,
+                      f"Expected an output file of container '{output_container}', but got '{actual_container}'")
 
 
 def extract_error_message(output: str, exit_code: int) -> str | None:
@@ -541,10 +593,12 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
 
     args = build_args(executable_path)
     # Only link an executable if it gets executed afterwards. If an error is expected, keep the executable output container:
-    # some errors (e.g. a missing main function) are only raised for executables
+    # some errors (e.g. a missing main function) are only raised for executables. A test case, that requests an output container
+    # itself, gets it and checks the emitted output file
     error_ref_path = test_case.file(REF_NAME_ERROR_OUTPUT)
     expects_error = does_ref_exist(error_ref_path)
-    if not needs_executable and not expects_error:
+    requested_output_container = get_output_container(test_args)
+    if not needs_executable and not expects_error and requested_output_container is None:
         args += ["--output-container", "obj"]
     # The graphs are dumped to the console, since dumping them to files requires Graphviz to render them
     if check_ast:
@@ -563,6 +617,10 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
         return
     if exit_code != 0:
         result.fail(f"Compiler exited with code {exit_code}:\n{output}")
+
+    # Check the output file of the requested output container
+    if requested_output_container is not None and not expects_error:
+        check_output_container(result, artifact_dir, requested_output_container)
 
     # Check AST
     def get_ast() -> str:
