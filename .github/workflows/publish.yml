@@ -13,12 +13,16 @@ jobs:
   build-compiler-linux-x86:
     name: Build compiler - Linux/x86_64
     runs-on: ubuntu-26.04
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Dependencies
         run: |
@@ -101,6 +105,11 @@ jobs:
           cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
           cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
+        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        run: python fetch-stage0.py
+
       - name: Build bootstrap compiler
         working-directory: build
         env:
@@ -109,13 +118,13 @@ jobs:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
-          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built for the host
+          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built along with the host
           # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
           # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
           # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
-          ./spice-host build -O3 -lto --static --ignore-cache \
+          ./stage0/spice build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \
@@ -145,12 +154,16 @@ jobs:
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64
     runs-on: ubuntu-26.04-arm
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Dependencies
         run: |
@@ -158,7 +171,8 @@ jobs:
           sudo apt-get update
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
           # zlib, zstd and ncurses provide the static archives for linking the bootstrap compiler (see std/bindings/llvm).
-          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
+          # upx: the UPX loader of the released Linux/arm64 binaries crashes, so fetch-stage0.py decompresses the stage0 compiler
+          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang upx
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -233,6 +247,11 @@ jobs:
           cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
           cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
+        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        run: python fetch-stage0.py
+
       - name: Build bootstrap compiler
         working-directory: build
         env:
@@ -241,13 +260,13 @@ jobs:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
-          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built for the host
+          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built along with the host
           # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
           # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
           # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
-          ./spice-host build -O3 -lto --static --ignore-cache \
+          ./stage0/spice build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \
@@ -277,11 +296,15 @@ jobs:
   build-compiler-windows-x86:
     name: Build compiler - Windows/x86_64
     runs-on: windows-2025-vs2026
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Dependencies
         run: |
@@ -358,6 +381,11 @@ jobs:
           New-Item -ItemType Directory -Force runtime | Out-Null
           Copy-Item -Recurse ../std/runtime/LICENSES runtime/LICENSES
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
+        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        run: python fetch-stage0.py
+
       - name: Build bootstrap compiler
         working-directory: build
         run: |
@@ -368,7 +396,7 @@ jobs:
           $env:LLVM_LIB_DIR = "$workspace/llvm/build/lib"
           $env:LLVM_INCLUDE_DIRS = "-I$workspace/llvm/llvm/include -I$workspace/llvm/build/include"
           # Linked statically like the host compiler, so it runs without the MinGW runtime DLLs
-          ./spice-host.exe build -O3 -lto --static --ignore-cache `
+          ./stage0/spice.exe build -O3 -lto --static --ignore-cache `
             --build-var SPICE_VERSION="${{ github.ref_name }}" `
             --build-var SPICE_GIT_HASH="${{ github.sha }}" `
             --build-var SPICE_BUILT_BY="ghactions" `
@@ -391,12 +419,16 @@ jobs:
   build-compiler-macos-aarch64:
     name: Build compiler - MacOS/AArch64
     runs-on: macos-26
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
@@ -455,6 +487,11 @@ jobs:
           # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
           mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
+        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        run: python fetch-stage0.py
+
       - name: Build bootstrap compiler
         working-directory: build
         env:
@@ -464,7 +501,7 @@ jobs:
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
           # Linked dynamically like the host compiler, macOS does not support static executables
-          ./spice-host build -O3 -lto --ignore-cache \
+          ./stage0/spice build -O3 -lto --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \
