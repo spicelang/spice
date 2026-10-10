@@ -624,9 +624,9 @@ f<bool> ExternalLinkerInterface.isTargetWasm() {
  *
  * @return Whether the target is Darwin based
  */
-f<bool> ExternalLinkerInterface.isTargetDarwin() {
-    return this.cliOptions.targetTriple.isOSDarwin();
-}
+f<bool> ExternalLinkerInterface.isTargetDarwin() {    // LCOV_EXCL_LINE - coverage runs on x86_64
+    return this.cliOptions.targetTriple.isOSDarwin(); // LCOV_EXCL_LINE - coverage runs on x86_64
+}                                                     // LCOV_EXCL_LINE - coverage runs on x86_64
 
 /**
  * Check if the configured target is a Windows based target

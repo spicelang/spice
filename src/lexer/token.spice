@@ -127,9 +127,9 @@ public type Token struct {
     public unsigned long endOffset = 0l // Offset after the last char of the token within the source code
 }
 
-public p Token.ctor(TokenType tokenType) {
-    this.tokenType = tokenType;
-}
+public p Token.ctor(TokenType tokenType) { // LCOV_EXCL_LINE - only used in error case
+    this.tokenType = tokenType;            // LCOV_EXCL_LINE - only used in error case
+}                                          // LCOV_EXCL_LINE - only used in error case
 
 public p Token.ctor(TokenType tokenType, const String& text, const CodeLoc& codeLoc) {
     this.tokenType = tokenType;

@@ -1,3 +1,6 @@
 [Lint] ./source.spice:2:1: naming-convention: Struct name 'My_Point' should be PascalCase
 [Lint] ./source.spice:23:8: naming-convention: Function name 'bad_function_name' should be camelCase
 [Lint] ./source.spice:33:1: naming-convention: Global variable name 'MaxRetries' should be SNAKE_CASE
+[Lint] ./source.spice:39:1: naming-convention: Interface name 'I_Shape' should be PascalCase
+[Lint] ./source.spice:49:1: naming-convention: Union name 'Int_Or_Double' should be PascalCase
+[Lint] ./source.spice:61:3: naming-convention: Procedure name 'print_point' should be camelCase
