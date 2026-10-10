@@ -36,6 +36,8 @@ public type ExternalLinkerInterface struct {
     public bool linkLibMath = false
     Mutex linkLibMathMutex // The IR generator requests libm linkage from the worker threads of the parallel back end
     Vector<FilePath> additionalSourcePaths
+    // Object files, that the compiler emitted itself. Only these are intermediary, so only these get cleaned up after linking
+    Vector<FilePath> emittedObjectFiles
     // Expanding a linker flag may run commands (backtick substitutions), so every flag is only expanded once
     UnorderedMap<String, Vector<String>> expandedLinkerFlags
     // Compilations of additional sources, that were started early to overlap with the back end
@@ -151,12 +153,9 @@ public p ExternalLinkerInterface.cleanup() {
             assert deleted;
         }
     }
-    const string objFileExt = isWindows() ? "obj" : "o";
-    foreach const FilePath& path : this.linkedFiles {
-        if path.getExtension() == objFileExt {
-            const bool deleted = deleteFile(path.toString());
-            assert deleted;
-        }
+    foreach const FilePath& path : this.emittedObjectFiles {
+        const bool deleted = deleteFile(path.toString());
+        assert deleted;
     }
 }
 
@@ -477,8 +476,13 @@ p ExternalLinkerInterface.archive() {
 
     // Build the archiver argument vector (passed verbatim, no shell involved)
     Vector<String> args;
-    args.pushBack(String("rcs")); // r = insert files into archive; c = create archive if not existing; s = create archive index
-    args.pushBack(String(this.outputPath.toString()));
+    if archiver.name == "llvm-lib" || archiver.name == "lib" {
+        // The archivers on Windows only understand the MSVC syntax
+        args.pushBack(String("/OUT:") + this.outputPath.toString());
+    } else {
+        args.pushBack(String("rcs")); // r = insert files into archive; c = create archive if not existing; s = create archive index
+        args.pushBack(String(this.outputPath.toString()));
+    }
     foreach const FilePath& path : this.linkedFiles {
         args.pushBack(String(path.toString()));
     }
@@ -531,6 +535,23 @@ public p ExternalLinkerInterface.addFileToLinkage(const FilePath& path) {
         }
     }
     this.linkedFiles.pushBack(path);
+}
+
+/**
+ * Add an object file, that the compiler emitted itself, to be linked when calling 'run()'. Unlike other linked files, it is
+ * intermediary and gets deleted on cleanup.
+ *
+ * @param path Path to the emitted object file
+ */
+public p ExternalLinkerInterface.addEmittedObjectFile(const FilePath& path) {
+    this.addFileToLinkage(path);
+    // Source files with the same file name emit to the same object file path, which must only be deleted once
+    foreach const FilePath& emittedObjectFile : this.emittedObjectFiles {
+        if emittedObjectFile == path {
+            return;
+        }
+    }
+    this.emittedObjectFiles.pushBack(path);
 }
 
 /**

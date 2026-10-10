@@ -186,21 +186,9 @@ public p CacheManager.cacheSourceFile(const SourceFile* sourceFile) {
         return;
     }
 
-    // Determine source object file path (mirrors runObjectEmitter's path logic)
-    StringStream sourceObjSS;
-    const String fileName = sourceFile.filePath.getFileName();
-    sourceObjSS << this.cliOptions.outputDir.toString() << "/" << fileName;
-    const String sourceObjBase = sourceObjSS.str();
-    // Replace or append .o extension: strip existing extension if present, then add .o
-    const long dotPos = fileName.rfind('.');
-    StringStream cachedObjNameSS;
-    if dotPos >= 0l {
-        const String stem = fileName.getSubstring(0l, dotPos);
-        cachedObjNameSS << this.cliOptions.outputDir.toString() << "/" << stem << ".o";
-    } else {
-        cachedObjNameSS << sourceObjBase << ".o";
-    }
-    const String sourceObjPath = cachedObjNameSS.str();
+    // Determine source object file path
+    const FilePath objectFilePath = sourceFile.getObjectFilePath();
+    const String sourceObjPath = String(objectFilePath.toString());
 
     // Verify source object file exists
     if !fileExists(sourceObjPath.getRaw()) {
@@ -763,9 +751,9 @@ f<bool> testMultiFileDependencyChangeForcesRecompilation() {
         mainFile.cacheKey = manager.computeCacheKey(mainSrc, makeKeys(utils.cacheKey.getRaw(), math.cacheKey.getRaw()));
 
         // Pretend the back end emitted object files into the output dir (cacheSourceFile picks them up there)
-        writeTestFile(outputDir / "math.o", "math-v1-obj");
-        writeTestFile(outputDir / "utils.o", "utils-obj");
-        writeTestFile(outputDir / "main.o", "main-obj");
+        writeTestFile(math.getObjectFilePath(), "math-v1-obj");
+        writeTestFile(utils.getObjectFilePath(), "utils-obj");
+        writeTestFile(mainFile.getObjectFilePath(), "main-obj");
         manager.cacheSourceFile(math);
         manager.cacheSourceFile(utils);
         manager.cacheSourceFile(mainFile);
