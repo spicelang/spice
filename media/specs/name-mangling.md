@@ -22,7 +22,7 @@ It's name stays the same on the ABI level.
 
 ### Implementation
 To see the implementation for function name mangling, have a look here:
-[Function::getMangledName](../../src-host/irgenerator/NameMangling.cpp#:~:text=NameMangling::mangleFunction)
+[mangleFunction](../../src/irgenerator/name-mangling.spice#:~:text=mangleFunction)
 
 
 ## Struct mangling
@@ -37,7 +37,7 @@ Here is the scheme, how Spice mangles structs:
 
 ### Implementation
 To see the implementation for struct name mangling, have a look here:
-[Struct::getMangledName](../../src-host/irgenerator/NameMangling.cpp#:~:text=NameMangling::mangleStruct)
+[mangleStruct](../../src/irgenerator/name-mangling.spice#:~:text=mangleStruct)
 
 ## Type mangling
 ### Mangled name

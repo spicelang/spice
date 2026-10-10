@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
-"""Download third-party dependencies (git submodules + ANTLR jar) and build the ones that need building."""
+"""Download third-party dependencies (git submodules) and build the ones that need building."""
 import argparse
 import os
 import shutil
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
-ANTLR_VERSION = "4.13.2"
-
-# libbacktrace is vendored as a submodule and built here, before CMake runs. Spice programs link it as
+# libbacktrace is vendored as a submodule and built here. Spice programs link it as
 # '-lbacktrace' (see std/runtime/impl/stack_trace_native.spice), and the compiler looks for it in the std tree, so the
 # archive is written to std/runtime/lib - where it is packaged and installed along with the rest of the std.
 LIBBACKTRACE_SRC = Path("deps/libbacktrace")
@@ -22,10 +19,10 @@ LIBBACKTRACE_LICENSE = Path("std/runtime/LICENSES/libbacktrace-LICENSE")
 # Records the submodule commit the archive was built from, so a bump rebuilds it but a repeat run does not.
 LIBBACKTRACE_STAMP = LIBBACKTRACE_BUILD / "built-from-revision"
 
-# TPDE is vendored as a submodule and built with its own CMake project, independent of the host compiler. The TPDE backend of
-# the self-hosted compiler and the std TPDE bindings (std/bindings/tpde) link its static libraries. They are installed into the
-# std tree in the layout the Linux release packages ship, so the compilers derive TPDE_FLAGS from it (see getStdTPDEFlags in
-# src/util/system-util.spice). TPDE only emits ELF objects, so it is only built on Linux.
+# TPDE is vendored as a submodule and built with its own CMake project. The TPDE backend of the compiler and the std TPDE
+# bindings (std/bindings/tpde) link its static libraries. They are installed into the std tree in the layout the Linux release
+# packages ship, so the compiler derives TPDE_FLAGS from it (see getStdTPDEFlags in src/util/system-util.spice). TPDE only
+# emits ELF objects, so it is only built on Linux.
 TPDE_SRC = Path("deps/tpde")
 TPDE_BUILD = Path("deps/tpde-build")
 TPDE_STD_DIR = Path("std/bindings/tpde")
@@ -207,12 +204,6 @@ parser.add_argument("--tpde", action="store_true",
 args = parser.parse_args()
 
 subprocess.run(["git", "submodule", "update", "--init", "--recursive"], check=True)
-
-jar_path = Path("src-host/thirdparty") / f"antlr-{ANTLR_VERSION}-complete.jar"
-if not jar_path.exists():
-    url = f"https://www.antlr.org/download/antlr-{ANTLR_VERSION}-complete.jar"
-    print(f"Downloading {url} ...")
-    urllib.request.urlretrieve(url, jar_path)
 
 build_libbacktrace()
 if args.tpde:

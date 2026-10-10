@@ -1,147 +1,102 @@
 ---
 name: spice-test
-description: Run the Spice `spicetest` suite (GoogleTest-based integration + unit tests). Use when the user wants to run all tests, a specific suite or case, update reference files, check for memory leaks with valgrind, or debug a failing test.
+description: Run the Spice test suite with `test/run-tests.py` (reference/integration tests in test/test-files, linter tests and the builtin #[test] unit tests of the compiler sources). Use when the user wants to run all tests, a specific suite or case, update reference files, check for memory errors with ASAN, collect coverage, or debug a failing test.
 ---
 
 # Run Spice tests
 
-`spicetest` is a GoogleTest binary built from `test/`. It drives two kinds of
-tests:
+`test/run-tests.py` is a standalone Python runner. It builds the compiler from `src/main.spice` with a given compiler
+(`--build-compiler`, default: the released stage0 compiler, that `python fetch-stage0.py` downloads into `build/stage0/`,
+version pinned in `.github/stage0-version`), or takes an already built one (`--compiler`), then runs all test cases against
+it in parallel (`-j`, default: number of CPUs). It drives three kinds of tests:
 
-- **Reference / integration tests** parameterized over directories in
-  `test/test-files/<group>/...`. Each test case dir has a `source.spice` plus
-  reference files the runner compares against (see below).
-- **Unit tests** in `test/unittest/` (e.g. `BlockAllocatorTest`, `CommonUtilTest`).
+- **Reference / integration tests** over the directories in `test/test-files/<group>/...`. Each test case dir has a
+  `source.spice` plus reference files the runner compares against (see below).
+- **Linter tests** (`LinterTests`), run against the `lint` subcommand.
+- **Unit tests**: `BootstrapTests.BuiltinTests` builds the compiler sources in test build mode (`--build-mode test`, into
+  `build/test-tmp/bootstrap-tests/`) and runs their builtin tests (`#[test]` functions, e.g. in `src/driver.spice`).
 
-Build it first (see the `spice-build` skill):
-`cmake --build cmake-build-debug --target spicetest`.
-
-The binary lands at `cmake-build-debug/test/spicetest`.
+Artifacts go to `build/test-tmp/` (`--work-dir`), which is also the working directory of the compiler and the test programs
+(it links `test-files/`).
 
 ## Running
 
 ```sh
-# All tests
-cmake-build-debug/test/spicetest
+# Build the compiler with the stage0 compiler, then run everything
+python test/run-tests.py
+
+# Reuse an already built compiler (much faster for iterating, see the spice-build skill)
+python test/run-tests.py --compiler build/spice
 
 # List every test name (best way to find an exact filter)
-cmake-build-debug/test/spicetest --gtest_list_tests
+python test/run-tests.py --list
 
-# Filter by suite or case (GoogleTest globbing)
-cmake-build-debug/test/spicetest --gtest_filter='IRGeneratorTests*'
-cmake-build-debug/test/spicetest --gtest_filter='CommonUtilTest.*'
-cmake-build-debug/test/spicetest --gtest_filter='*ForLoop*'
+# Filter by suite or case (GoogleTest-style globbing, '-' starts the negative patterns)
+python test/run-tests.py --compiler build/spice --filter='IRGeneratorTests.*'
+python test/run-tests.py --compiler build/spice --filter='*ForLoop*-*Error*'
 ```
 
-Reference-test suites (instantiated from `test/test-files/<group>`):
-`CommonTests`, `LexerTests`, `ParserTests`, `SymbolTableBuilderTests`,
-`TypeCheckerTests`, `IRGeneratorTests`, `StdTests`, `BenchmarkTests`,
-`ExampleTests`.
+Reference-test suites (from `test/test-files/<group>`): `CommonTests`, `LexerTests`, `ParserTests`,
+`SymbolTableBuilderTests`, `TypeCheckerTests`, `IRGeneratorTests`, `StdTests`, `BenchmarkTests`, `ExampleTests`.
 
-## Custom test-runner flags
+## Flags
 
-These are `spicetest`'s own flags (not GoogleTest):
-
-- `--update-refs` — regenerate/overwrite reference files from current output.
-  Use after an intentional change to compiler output, then review the diff.
-- `--run-benchmarks` — also run benchmark cases and check baselines.
-- `--asan` — build the compiled test programs with `--sanitizer address` and
-  fail on any AddressSanitizer or LeakSanitizer report. Only `cout.out` and
-  `exit-code.out` are compared, since the instrumentation changes the generated
-  code. Tests requesting another sanitizer are skipped.
+- `--update-refs` — overwrite the existing reference files of the selected cases with the actual output. Use after an
+  intentional change to the compiler output, then review `git diff test/test-files`. To add a new reference, create the
+  empty file first.
+- `--asan` — build the compiled test programs with `--sanitizer address` and fail on any AddressSanitizer or LeakSanitizer
+  report. Only `cout.out` and `exit-code.out` are compared, since the instrumentation changes the generated code. Tests
+  requesting another sanitizer are skipped.
+- `--coverage` — compile the test programs with Spice code coverage instrumentation, skipping all reference comparisons.
+  Every compiler run works in its output dir, so the gcov data lands per test case under `<work-dir>/tests/`;
+  `coverage-spice.py` (run from `build/`, expects `--work-dir build/test-tmp-coverage`) turns it into a std coverage
+  report.
+- `--instrument coverage` — build the compiler under test (and its builtin tests) with `-O0 --coverage` instead of
+  `-O3 -lto`; `coverage-bootstrap.py` (run from `build/`, `LLVM_COV` pointing at `llvm-cov`) turns the data into an HTML
+  report.
+- `--instrument asan` — build them with `-O1 --sanitizer address`. Every case fails, for which the compiler prints an
+  AddressSanitizer or LeakSanitizer report (weekly `ci-asan.yml` job).
 - `--skip-sanitizer-tests` — skip tests exercising language sanitizers.
-- `--is-github-actions` — skip cases unsupported on CI.
-- `--verbose` — extra runner debug output.
+- `--is-github-actions` — skip cases and checks unsupported on CI (GDB tests, assembly refs, `skip-gh-actions`).
+- `--build-only` — only build the compiler under test.
+- `--list`, `-v/--verbose` (prints every compiler invocation and its output), `--timeout` (per process, default 1800 s).
 
-`spicetest` only tests the host compiler. The bootstrap compiler has its own
-runner, see below.
+## What a reference test checks
 
-## Bootstrap compiler tests (`test/run-tests.py`)
+The runner invokes the compiler like a user would (`build [// TEST: args] --output ... source.spice`) and checks:
+`syntax-tree.dot` and `dependency-graph.dot` (via `--dump-ast` / `--dump-dependency-graph`, taken from the console output),
+`symbol-table.json`, `assembly.asm`, `type-registry.out` and `cache-stats.out` (via a separate run with `--dump-to-files`,
+only if one of these refs exists; it uses the last opt level with an IR reference, e.g. `-O3` if `ir-code-O3.ll` exists),
+`exception.out`, `warning.out`, the IR references (one run per opt level), `cout.out`, `exit-code.out` and `debug.out` (via
+GDB). `run-builtin-tests` cases are built with the internal `--test-main` flag (test main without the test build mode). The
+compiler prints compile errors and exits with a non-zero exit code; a panic (internal error) always fails the case.
+Warnings are taken from the console output, and only the ones of the main source file are compared.
 
-The bootstrap (self-hosted) compiler is tested by a standalone Python runner,
-independent of the C++ code, so it keeps working once the host compiler is gone.
-It builds the bootstrap compiler from `src/main.spice` with a given compiler
-(`--build-compiler`, default: the released stage0 compiler, that `python fetch-stage0.py`
-downloads into `build/stage0/` (version pinned in `.github/stage0-version`), else the host
-compiler found in `build/`, `cmake-build-release/` or `cmake-build-debug/`), or takes an already built one
-(`--compiler`), then runs all reference-test suites against it in parallel
-(`-j`, default: number of CPUs). It uses the same test names as `spicetest`
-(e.g. `ParserTests.parser_errorExtraneousInput`) and GoogleTest-style filters
-(`--filter`, alias `--gtest_filter`). Artifacts go to `build/test-tmp/`
-(`--work-dir`), which is also the working directory of the compiler and the
-test programs (it links `test-files/`).
+The IR comparison ignores `dso_local` markers: the compiler uses the LLVM C API, which cannot set them yet, while the refs
+keep them.
 
-It invokes the compiler like a user would (`build [// TEST: args] --output ...
-source.spice`) and checks the same references as the host runner:
-`syntax-tree.dot` and `dependency-graph.dot` (via `--dump-ast` /
-`--dump-dependency-graph`, taken from the console output), `symbol-table.json`,
-`assembly.asm`, `type-registry.out` and `cache-stats.out` (via a separate run with
-`--dump-to-files`, only if one of these refs exists; it uses the last opt level
-with an IR reference, e.g. `-O3` if `ir-code-O3.ll` exists), `exception.out`,
-`warning.out`, the IR references (one run per opt level), `cout.out`,
-`exit-code.out` and `debug.out` (via GDB). `run-builtin-tests` cases are built
-with the internal `--test-main` flag (test main without the test build mode).
-The compiler prints compile errors like the host and exits with a non-zero exit
-code; a panic (internal error) always fails the case. Warnings are taken from the
-console output, and only the ones of the main source file are compared.
-`LinterTests` run against the `lint` subcommand. `BootstrapTests.BuiltinTests`
-builds the compiler sources in test build mode (`--build-mode test`, into
-`test-tmp/bootstrap-tests/`) and runs their builtin tests (`#[test]` functions,
-e.g. in `src/driver.spice`).
+## Environment
 
-It sets `SPICE_STD_DIR` and `SPICE_BOOTSTRAP_DIR` to the checkout itself and
-derives `LLVM_LIB_DIR` / `LLVM_INCLUDE_DIRS` (needed to link the LLVM bindings)
-from `LLVM_DIR` or `llvm-config`, unless set. The TPDE test cases need the TPDE
-libraries: `TPDE_FLAGS`, or on Linux the ones `python setup-deps.py --tpde`
-installs into `std/bindings/tpde/`, where the compilers find them on their own.
-Without them, the TPDE test cases are skipped (`TPDE_FLAGS=` disables them).
+The runner sets `SPICE_STD_DIR` and `SPICE_BOOTSTRAP_DIR` to the checkout itself and derives `LLVM_LIB_DIR` /
+`LLVM_INCLUDE_DIRS` (needed to link the LLVM bindings) from `LLVM_DIR` or `llvm-config`, unless set. The TPDE test cases
+need the TPDE libraries: `TPDE_FLAGS`, or on Linux the ones `python setup-deps.py --tpde` installs into
+`std/bindings/tpde/`, where the compiler finds them on its own. Without them, the TPDE test cases are skipped
+(`TPDE_FLAGS=` disables them).
 
-Flags:
+CI (`ci.yml`, all platforms) builds the compiler with the stage0 compiler, runs all test suites against it without a
+filter, and bootstraps the compiler to a fixed point.
 
-- `--update-refs` — only updates bootstrap refs (e.g. `ir-code-bootstrap.ll`,
-  create the empty file first), so host refs are never overwritten.
-- `--asan` / `--coverage` / `--is-github-actions` / `--skip-sanitizer-tests` —
-  like for `spicetest`, applied to the compiled test programs.
-- `--instrument coverage` — build the bootstrap compiler (and its builtin tests)
-  with `-O0 --coverage` instead of `-O3 -lto`. Its gcov data lands in
-  `build/test-tmp/bootstrap-compiler/`; `coverage-bootstrap.py` (run from
-  `build/`, `LLVM_COV` pointing at `llvm-cov`) turns it into an HTML report.
-- `--instrument asan` — build them with `-O1 --sanitizer address`. Every case
-  fails, for which the compiler prints an AddressSanitizer or LeakSanitizer
-  report (weekly `ci-asan.yml` job).
-- `--build-only` — only build the bootstrap compiler.
-- `--list`, `-v/--verbose`, `--timeout` (per process, default 1800 s).
-
-Cases where the outputs of both compilers differ follow the bootstrap compiler
-(it is the default) and get a `skip-host` marker file instead of an exclusion.
-CI (`ci.yml`, all platforms) builds it with the stage0 compiler and runs all test suites against it, without a filter.
-The release workflow builds the released `spice` with the stage0 compiler as well. When `src/` starts to use a language
-feature the pinned stage0 compiler cannot compile, release that feature first, then bump `.github/stage0-version`.
+## Debugging a failing case
 
 ```sh
-python fetch-stage0.py && python test/run-tests.py            # build with the stage0 compiler, run all
-python test/run-tests.py --build-compiler build/src-host/spice --filter='ParserTests.*'
-python test/run-tests.py --compiler build/test-tmp/bootstrap-compiler/spice --filter='*Union*'
-cmake --build cmake-build-debug --target spicetest_bootstrap  # same, builds the host compiler first
-```
+# See the exact compiler invocations and outputs of one case
+python test/run-tests.py --compiler build/spice --filter='TypeCheckerTests.foo_bar' -v
 
-```sh
-# Update refs for one suite after an intended change, then inspect git diff
-cmake-build-debug/test/spicetest --gtest_filter='IRGeneratorTests*' --update-refs
-git diff test/test-files
-```
+# Re-run one of them under gdb, from the work dir (test case paths are relative to it)
+cd build/test-tmp && gdb --args ../spice build --test-mode --ignore-cache ./test-files/typechecker/foo/bar/source.spice
 
-## Memory-leak / debugging
-
-```sh
-# Valgrind on a focused set (full run is slow)
-valgrind --leak-check=full cmake-build-debug/test/spicetest --gtest_filter='ParserTests*'
-
-# Or the dedicated build target
-cmake --build cmake-build-debug --target spicetest_leakcheck
-
-# Debug a failing case under gdb
-gdb --args cmake-build-debug/test/spicetest --gtest_filter='TypeCheckerTests*'
+# Memory errors in the compiler: run the case against an ASAN-instrumented compiler
+python test/run-tests.py --instrument asan --filter='TypeCheckerTests.foo_bar'
 ```
 
 ## Reference files in a test-case directory
@@ -154,8 +109,8 @@ Common files the runner reads/compares (presence is optional per case):
 - `ir-code.ll`, `ir-code-O2.ll`, `ir-code-O3.ll`, … — expected LLVM IR per opt level
 - `assembly-linux-amd64.asm`, `assembly-linux-aarch64.asm` — expected assembly
 - `symbol-table.json`, `type-registry.out` — expected symbol/type dumps
-- `syntax-tree.dot` / `parse-tree.dot` / `dependency-graph.dot` — expected graphs
-- Platform/skip markers: `*-windows.*`, `*-macos.*`, `skip-windows`,
-  `skip-gh-actions`, `skip-bootstrap`, `skip-host`, `skip-without-tpde`, `run-builtin-tests`, `cli-flags.txt`
+- `syntax-tree.dot` / `dependency-graph.dot` — expected graphs
+- Platform/skip markers: `*-windows.*`, `*-macos.*`, `*-linux-aarch64.*`, `skip-windows`, `skip-macos`,
+  `skip-gh-actions`, `skip-without-tpde`, `disabled`, `run-builtin-tests`, `cli-flags.txt`, `debug.gdb`
 
 To produce these dumps manually for a single input, use the `spice-dump` skill.

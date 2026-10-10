@@ -3,6 +3,10 @@
 The back end runs one pipeline per source file, spread over a thread pool sized by the `--jobs`/`-j` cli option. This
 document describes that design and the synchronization it relies on.
 
+> **Note:** The design was first implemented in the former host compiler, written in C++, which was removed in v0.29.0. The
+> sections up to [Bootstrap compiler](#bootstrap-compiler) describe that implementation (the files they mention no longer
+> exist), the last section describes how the compiler in `src/` differs from it.
+
 ## Why the back end
 
 The compiler pipeline (see [compile-stages.md](compile-stages.md)) has three phases per source file:

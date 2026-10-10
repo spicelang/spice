@@ -5,7 +5,7 @@ import "std/text/analysis";
 // '_ZN13ArrayIteratorIiE3getEv' back into 'ArrayIterator<int>.get()'.
 //
 // The scheme is documented in media/specs/name-mangling.md and implemented in
-// src-host/irgenerator/NameMangling.cpp, which is the authority this file mirrors. It is oriented on the C++ Itanium
+// src/irgenerator/name-mangling.spice, which is the authority this file mirrors. It is oriented on the C++ Itanium
 // ABI but deliberately not identical to it, so a C++ demangler is not a drop-in substitute: Spice's function
 // types ('PFvE' for p(), 'PF' + return type for f<>()) are not valid Itanium, and abi::__cxa_demangle rejects
 // them. Going the other way, this decoder only understands what Spice actually emits, not the whole Itanium

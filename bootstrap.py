@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Bootstrap the self-hosted Spice compiler until it reaches a fixed point.
 
-Stage 0 is the compiler, that the bootstrapping starts from: the released self-hosted compiler, that fetch-stage0.py
-downloads, or the host compiler (src-host/). Every following stage n is the bootstrap compiler (src/) built by stage n-1.
+Stage 0 is the compiler, that the bootstrapping starts from: usually the released compiler, that fetch-stage0.py downloads.
+Every following stage n is the compiler from src/ built by stage n-1.
 Stage 1 and stage 2 naturally differ, because they come from different compilers. From stage 3 on, every stage is built by
 a compiler that was built from the very same sources, so stage n and stage n-1 have to be bit-identical. The script
 succeeds as soon as two consecutive stages have the same hash (the fixed point) and fails if this does not happen within
@@ -53,16 +53,8 @@ def find_stage0_compiler() -> Path | None:
     return candidate
 
 
-def find_host_compiler() -> Path | None:
-    for build_dir in ("build", "cmake-build-release", "cmake-build-debug"):
-        candidate = ROOT_DIR / build_dir / "src-host" / EXE_NAME
-        if candidate.is_file():
-            return candidate
-    return None
-
-
 def find_llvm_lib_dir() -> str | None:
-    # Derive it from LLVM_DIR (<llvm-build>/lib/cmake/llvm), which the CMake build of the host compiler uses as well
+    # Derive it from LLVM_DIR (<llvm-build>/lib/cmake/llvm), which the TPDE build in setup-deps.py uses as well
     if llvm_dir := os.environ.get("LLVM_DIR"):
         lib_dir = Path(llvm_dir).resolve().parent.parent
         if lib_dir.is_dir():
@@ -181,10 +173,9 @@ def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[st
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Bootstrap the self-hosted Spice compiler until it reaches a fixed point.")
-    parser.add_argument("--stage0-compiler", "--host-compiler", dest="stage0_compiler", type=Path, default=None,
+    parser.add_argument("--stage0-compiler", dest="stage0_compiler", type=Path, default=None,
                         help="Path to the stage0 compiler, that builds stage 1 (default: the released stage0 compiler from "
-                             "'fetch-stage0.py' in build/stage0/, else the host compiler, first found in build/, cmake-build-release/, "
-                             "cmake-build-debug/)")
+                             "'fetch-stage0.py' in build/stage0/)")
     parser.add_argument("--work-dir", type=Path, default=ROOT_DIR / "build" / "bootstrap",
                         help="Directory for the stage executables (default: build/bootstrap)")
     parser.add_argument("--max-iterations", type=int, default=5,
@@ -210,7 +201,7 @@ def main() -> None:
     if args.max_iterations < 2:
         fail("At least two iterations are required to compare two self-compiled stages")
 
-    stage0_compiler = args.stage0_compiler or find_stage0_compiler() or find_host_compiler()
+    stage0_compiler = args.stage0_compiler or find_stage0_compiler()
     if stage0_compiler is None or not stage0_compiler.is_file():
         fail("Stage0 compiler not found. Download it first ('python fetch-stage0.py') or pass --stage0-compiler")
     stage0_compiler = stage0_compiler.resolve()

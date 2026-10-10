@@ -31,27 +31,27 @@ $__tysan_v1_double_o_0 = comdat any
 @__tysan_app_memory_mask = external global i64
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_type uwtable
-define dso_local noundef i32 @main() #0 !dbg !9 {
+define noundef i32 @main() #0 !dbg !9 {
   %app.mem.mask = load i64, ptr @__tysan_app_memory_mask, align 8
   %shadow.base = load i64, ptr @__tysan_shadow_memory_address, align 8
-  %l = alloca i64, align 8, !type !15
+  %l = alloca i64, align 8, !type !20
   call void @__tysan_instrument_mem_inst(ptr %l, ptr null, i64 8, i1 false)
-  %ptr = alloca ptr, align 8, !dbg !16, !type !17
-    #dbg_declare(ptr %l, !18, !DIExpression(), !16)
-  call void @__tysan_instrument_mem_inst(ptr %ptr, ptr null, i64 8, i1 false), !dbg !16
-  call void @__tysan_instrument_with_shadow_update(ptr %l, ptr @__tysan_v1_long_o_0, i1 true, i64 8, i32 2), !dbg !16
-  store i64 100, ptr %l, align 8, !dbg !16, !tbaa !20
-    #dbg_declare(ptr %ptr, !24, !DIExpression(), !28)
-  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 2), !dbg !28
-  store ptr %l, ptr %ptr, align 8, !dbg !28, !tbaa !29
-  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr null, i1 true, i64 8, i32 1), !dbg !31
-  %1 = load ptr, ptr %ptr, align 8, !dbg !31
-  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr @__tysan_v1_double_o_0, i1 true, i64 8, i32 1), !dbg !31
-  %2 = load double, ptr %1, align 8, !dbg !31, !tbaa !32
-  %3 = fadd double %2, 2.000000e+00, !dbg !31
-  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr null, i1 true, i64 8, i32 2), !dbg !31
-  store double %3, ptr %1, align 8, !dbg !31
-  ret i32 0, !dbg !34
+  %ptr = alloca ptr, align 8, !dbg !21, !type !22
+    #dbg_declare(ptr %l, !14, !DIExpression(), !21)
+  call void @__tysan_instrument_mem_inst(ptr %ptr, ptr null, i64 8, i1 false), !dbg !21
+  call void @__tysan_instrument_with_shadow_update(ptr %l, ptr @__tysan_v1_long_o_0, i1 true, i64 8, i32 2), !dbg !21
+  store i64 100, ptr %l, align 8, !dbg !21, !tbaa !23
+    #dbg_declare(ptr %ptr, !16, !DIExpression(), !27)
+  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr @__tysan_v1_double_2a_o_0, i1 true, i64 8, i32 2), !dbg !27
+  store ptr %l, ptr %ptr, align 8, !dbg !27, !tbaa !28
+  call void @__tysan_instrument_with_shadow_update(ptr %ptr, ptr null, i1 true, i64 8, i32 1), !dbg !30
+  %1 = load ptr, ptr %ptr, align 8, !dbg !30
+  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr @__tysan_v1_double_o_0, i1 true, i64 8, i32 1), !dbg !30
+  %2 = load double, ptr %1, align 8, !dbg !30, !tbaa !31
+  %3 = fadd double %2, 2.000000e+00, !dbg !30
+  call void @__tysan_instrument_with_shadow_update(ptr %1, ptr null, i1 true, i64 8, i32 2), !dbg !30
+  store double %3, ptr %1, align 8, !dbg !30
+  ret i32 0, !dbg !33
 }
 
 declare void @__tysan_init()
@@ -88,32 +88,31 @@ attributes #2 = { nounwind }
 !3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{i32 7, !"Dwarf Version", i32 5}
 !5 = !{i32 2, !"Debug Info Version", i32 3}
-!6 = !{!"spice version dev [host] (https://github.com/spicelang/spice)"}
-!7 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !8, producer: "spice version dev [host] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
-!8 = !DIFile(filename: "/home/marc/Documents/Dev/spice/cmake-build-debug/test/./test-files/irgenerator/instrumentation/success-tysan-and-dbg-info/source.spice", directory: "./test-files/irgenerator/instrumentation/success-tysan-and-dbg-info")
-!9 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !10, file: !10, line: 3, type: !11, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !7, retainedNodes: !14)
-!10 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-tysan-and-dbg-info")
-!11 = !DISubroutineType(types: !12)
-!12 = !{!13}
-!13 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!14 = !{}
-!15 = !{i64 6042226155786013045, !"long"}
-!16 = !DILocation(line: 4, column: 14, scope: !9)
-!17 = !{i64 7516313782037075379, !"double*"}
-!18 = !DILocalVariable(name: "l", scope: !9, file: !10, line: 4, type: !19)
-!19 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
-!20 = !{!21, !21, i64 0}
-!21 = !{!"long", !22, i64 0}
-!22 = !{!"omnipotent byte", !23, i64 0}
-!23 = !{!"Simple Spice TBAA"}
-!24 = !DILocalVariable(name: "ptr", scope: !25, file: !10, line: 6, type: !26)
-!25 = distinct !DILexicalBlock(scope: !9, file: !10, line: 5, column: 5)
-!26 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !27, size: 64)
-!27 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)
-!28 = !DILocation(line: 6, column: 37, scope: !25)
-!29 = !{!30, !30, i64 0}
-!30 = !{!"double*", !22, i64 0}
-!31 = !DILocation(line: 7, column: 9, scope: !25)
-!32 = !{!33, !33, i64 0}
-!33 = !{!"double", !22, i64 0}
-!34 = !DILocation(line: 9, column: 1, scope: !9)
+!6 = !{!"spice version dev [self-hosted] (https://github.com/spicelang/spice)"}
+!7 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !8, producer: "spice version dev [self-hosted] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false)
+!8 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-tysan-and-dbg-info")
+!9 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !8, file: !8, line: 3, type: !10, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !7, retainedNodes: !13)
+!10 = !DISubroutineType(types: !11)
+!11 = !{!12}
+!12 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!13 = !{!14, !16}
+!14 = !DILocalVariable(name: "l", scope: !9, file: !8, line: 4, type: !15)
+!15 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
+!16 = !DILocalVariable(name: "ptr", scope: !17, file: !8, line: 6, type: !18)
+!17 = distinct !DILexicalBlock(scope: !9, file: !8, line: 5, column: 5)
+!18 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !19, size: 64, dwarfAddressSpace: 0)
+!19 = !DIBasicType(name: "double", size: 64, encoding: DW_ATE_float)
+!20 = !{i64 1048441731396222360, !"long"}
+!21 = !DILocation(line: 4, column: 14, scope: !9)
+!22 = !{i64 1632420314169214644, !"double*"}
+!23 = !{!24, !24, i64 0}
+!24 = !{!"long", !25, i64 0}
+!25 = !{!"omnipotent byte", !26, i64 0}
+!26 = !{!"Simple Spice TBAA"}
+!27 = !DILocation(line: 6, column: 37, scope: !17)
+!28 = !{!29, !29, i64 0}
+!29 = !{!"double*", !25, i64 0}
+!30 = !DILocation(line: 7, column: 9, scope: !17)
+!31 = !{!32, !32, i64 0}
+!32 = !{!"double", !25, i64 0}
+!33 = !DILocation(line: 9, column: 1, scope: !9)

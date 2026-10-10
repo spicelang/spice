@@ -13,45 +13,45 @@ source_filename = "source.spice"
 @__msan_va_arg_overflow_size_tls = external thread_local(initialexec) global i64
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_memory uwtable
-define dso_local noundef i32 @main() #0 !dbg !15 {
+define noundef i32 @main() #0 !dbg !16 {
   call void @llvm.donothing()
   %i = alloca i32, align 4
-  call void @llvm.lifetime.start.p0(ptr %i), !dbg !20
-    #dbg_declare(ptr %i, !21, !DIExpression(), !20)
-  %1 = ptrtoint ptr %i to i64, !dbg !20
-  %2 = xor i64 %1, 87960930222080, !dbg !20
-  %3 = inttoptr i64 %2 to ptr, !dbg !20
-  call void @llvm.memset.p0.i64(ptr align 4 %3, i8 -1, i64 4, i1 false), !dbg !20
-  %4 = load i32, ptr %i, align 4, !dbg !22
-  %5 = ptrtoint ptr %i to i64, !dbg !22
-  %6 = xor i64 %5, 87960930222080, !dbg !22
-  %7 = inttoptr i64 %6 to ptr, !dbg !22
-  %_msld = load i32, ptr %7, align 4, !dbg !22
-  %_msprop = or i32 %_msld, 0, !dbg !22
-  %8 = add nsw i32 %4, 1, !dbg !22
-  %9 = ptrtoint ptr %i to i64, !dbg !22
-  %10 = xor i64 %9, 87960930222080, !dbg !22
-  %11 = inttoptr i64 %10 to ptr, !dbg !22
-  store i32 %_msprop, ptr %11, align 4, !dbg !22
-  store i32 %8, ptr %i, align 4, !dbg !22
-  %12 = load i32, ptr %i, align 4, !dbg !23
-  %13 = ptrtoint ptr %i to i64, !dbg !23
-  %14 = xor i64 %13, 87960930222080, !dbg !23
-  %15 = inttoptr i64 %14 to ptr, !dbg !23
-  %_msld1 = load i32, ptr %15, align 4, !dbg !23
-  store i32 %_msld1, ptr getelementptr (i8, ptr @__msan_va_arg_tls, i64 8), align 8, !dbg !23
-  store i64 0, ptr @__msan_va_arg_overflow_size_tls, align 8, !dbg !23
-  %_mscmp = icmp ne i32 %_msld1, 0, !dbg !23
-  br i1 %_mscmp, label %16, label %17, !dbg !23, !prof !24
+  call void @llvm.lifetime.start.p0(ptr %i), !dbg !22
+    #dbg_declare(ptr %i, !21, !DIExpression(), !22)
+  %1 = ptrtoint ptr %i to i64, !dbg !22
+  %2 = xor i64 %1, 87960930222080, !dbg !22
+  %3 = inttoptr i64 %2 to ptr, !dbg !22
+  call void @llvm.memset.p0.i64(ptr align 4 %3, i8 -1, i64 4, i1 false), !dbg !22
+  %4 = load i32, ptr %i, align 4, !dbg !23
+  %5 = ptrtoint ptr %i to i64, !dbg !23
+  %6 = xor i64 %5, 87960930222080, !dbg !23
+  %7 = inttoptr i64 %6 to ptr, !dbg !23
+  %_msld = load i32, ptr %7, align 4, !dbg !23
+  %_msprop = or i32 %_msld, 0, !dbg !23
+  %8 = add nsw i32 %4, 1, !dbg !23
+  %9 = ptrtoint ptr %i to i64, !dbg !23
+  %10 = xor i64 %9, 87960930222080, !dbg !23
+  %11 = inttoptr i64 %10 to ptr, !dbg !23
+  store i32 %_msprop, ptr %11, align 4, !dbg !23
+  store i32 %8, ptr %i, align 4, !dbg !23
+  %12 = load i32, ptr %i, align 4, !dbg !24
+  %13 = ptrtoint ptr %i to i64, !dbg !24
+  %14 = xor i64 %13, 87960930222080, !dbg !24
+  %15 = inttoptr i64 %14 to ptr, !dbg !24
+  %_msld1 = load i32, ptr %15, align 4, !dbg !24
+  store i32 %_msld1, ptr getelementptr (i8, ptr @__msan_va_arg_tls, i64 8), align 8, !dbg !24
+  store i64 0, ptr @__msan_va_arg_overflow_size_tls, align 8, !dbg !24
+  %_mscmp = icmp ne i32 %_msld1, 0, !dbg !24
+  br i1 %_mscmp, label %16, label %17, !dbg !24, !prof !25
 
 16:                                               ; preds = %0
-  call void @__msan_warning_noreturn() #6, !dbg !23
-  unreachable, !dbg !23
+  call void @__msan_warning_noreturn() #6, !dbg !24
+  unreachable, !dbg !24
 
 17:                                               ; preds = %0
-  %18 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %12), !dbg !23
-  call void @llvm.lifetime.end.p0(ptr %i), !dbg !25
-  ret i32 0, !dbg !25
+  %18 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %12), !dbg !24
+  call void @llvm.lifetime.end.p0(ptr %i), !dbg !26
+  ret i32 0, !dbg !26
 }
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
@@ -123,33 +123,34 @@ attributes #4 = { nocallback nofree nosync nounwind willreturn memory(none) }
 attributes #5 = { nocallback nofree nosync nounwind willreturn memory(argmem: write) }
 attributes #6 = { nomerge }
 
-!llvm.module.flags = !{!7, !8, !9, !10, !11, !12, !13}
-!llvm.ident = !{!14}
+!llvm.module.flags = !{!8, !9, !10, !11, !12, !13, !14}
+!llvm.ident = !{!15}
 !llvm.dbg.cu = !{!2}
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
-!1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !5, line: 6, type: !6, isLocal: true, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev [host] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false, nameTableKind: None)
-!3 = !DIFile(filename: "/home/marc/Documents/Dev/spice/cmake-build-debug/test/./test-files/irgenerator/instrumentation/success-msan-and-dbg-info/source.spice", directory: "./test-files/irgenerator/instrumentation/success-msan-and-dbg-info")
+!1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !3, line: 6, type: !5, isLocal: true, isDefinition: true)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev [self-hosted] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false)
+!3 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-msan-and-dbg-info")
 !4 = !{!0}
-!5 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-msan-and-dbg-info")
-!6 = !DIStringType(name: "printf.str.0", size: 24)
-!7 = !{i32 8, !"PIC Level", i32 2}
-!8 = !{i32 7, !"PIE Level", i32 2}
-!9 = !{i32 7, !"uwtable", i32 2}
-!10 = !{i32 7, !"frame-pointer", i32 0}
-!11 = !{i32 7, !"Dwarf Version", i32 5}
-!12 = !{i32 2, !"Debug Info Version", i32 3}
-!13 = !{i32 4, !"nosanitize_memory", i32 1}
-!14 = !{!"spice version dev [host] (https://github.com/spicelang/spice)"}
-!15 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !5, file: !5, line: 3, type: !16, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !19)
-!16 = !DISubroutineType(types: !17)
-!17 = !{!18}
-!18 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!19 = !{}
-!20 = !DILocation(line: 4, column: 5, scope: !15)
-!21 = !DILocalVariable(name: "i", scope: !15, file: !5, line: 4, type: !18)
-!22 = !DILocation(line: 5, column: 5, scope: !15)
-!23 = !DILocation(line: 6, column: 18, scope: !15)
-!24 = !{!"branch_weights", i32 1, i32 1048575}
-!25 = !DILocation(line: 7, column: 1, scope: !15)
+!5 = !DICompositeType(tag: DW_TAG_array_type, baseType: !6, size: 24, elements: !7)
+!6 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_unsigned_char)
+!7 = !{}
+!8 = !{i32 8, !"PIC Level", i32 2}
+!9 = !{i32 7, !"PIE Level", i32 2}
+!10 = !{i32 7, !"uwtable", i32 2}
+!11 = !{i32 7, !"frame-pointer", i32 0}
+!12 = !{i32 7, !"Dwarf Version", i32 5}
+!13 = !{i32 2, !"Debug Info Version", i32 3}
+!14 = !{i32 4, !"nosanitize_memory", i32 1}
+!15 = !{!"spice version dev [self-hosted] (https://github.com/spicelang/spice)"}
+!16 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !3, file: !3, line: 3, type: !17, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !20)
+!17 = !DISubroutineType(types: !18)
+!18 = !{!19}
+!19 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!20 = !{!21}
+!21 = !DILocalVariable(name: "i", scope: !16, file: !3, line: 4, type: !19)
+!22 = !DILocation(line: 4, column: 5, scope: !16)
+!23 = !DILocation(line: 5, column: 5, scope: !16)
+!24 = !DILocation(line: 6, column: 18, scope: !16)
+!25 = !{!"branch_weights", i32 1, i32 1048575}
+!26 = !DILocation(line: 7, column: 1, scope: !16)

@@ -541,8 +541,8 @@ p Driver.addBuildSubcommand() {
     // --no-entry
     subCmd.addFlag("--no-entry", this.cliOptions.noEntryFct, "Do not generate main function");
     // --test-main
-    // The test runner of the host compiler builds the test cases, which run their enclosed tests, in debug mode. So it needs
-    // the test main function without switching to the test build mode, like the test subcommand would do
+    // The test runner builds the test cases, which run their enclosed tests, in debug mode. So it needs the test main function
+    // without switching to the test build mode, like the test subcommand would do
     const p(const bool&) testMainCallback = p(const bool& _v) {
         this.cliOptions.generateTestMain = true; // An alternative entry function is generated
         this.cliOptions.noEntryFct = true;       // To not have two main functions, disable normal main
@@ -712,7 +712,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         // end would only oversubscribe the machine, and the reference outputs stay strictly deterministic this way
         this.cliOptions.compileJobCount = 1u;
     };
-    subCmd.addFlag("--test-mode", testModeCallback, "Compile like the test runner of the host compiler does (test mode, comparable output). For internal use");
+    subCmd.addFlag("--test-mode", testModeCallback, "Compile like the test runner does (test mode, comparable output). For internal use");
 
     // Opt levels
     subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");
@@ -927,7 +927,7 @@ f<bool> testBuildAndRunSubcommands() {
     assert buildOptions.cliOptions.buildVars.get(String("flag")) == "true"; // a build var without a value is 'true'
     assert buildOptions.cliOptions.buildVars.get(String("spice.backend")) == "llvm";
 
-    // Build: test main without the test build mode, like the test runner of the host compiler requests it
+    // Build: test main without the test build mode, like the test runner requests it
     Driver buildTestMain;
     string[4] buildTestMainArgs = ["spice", "build", "--test-main", "main-file.spice"];
     assert parseAndEnrich(buildTestMain, 4, buildTestMainArgs);

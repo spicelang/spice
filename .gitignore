@@ -9,12 +9,6 @@ spice
 /bin
 /docker-libs
 
-# Generated output from ANTLR
-/gen
-
-# ANTLR generator jar (downloaded by setup-deps)
-/src-host/thirdparty/antlr-*-complete.jar
-
 # CLion
 /.idea
 
@@ -36,9 +30,6 @@ spice
 /std/bindings/tpde/lib
 /std/bindings/tpde/include
 /std/bindings/tpde/LICENSES
-
-# FASTBuild
-*.fdb
 
 # Zensical
 docs/site

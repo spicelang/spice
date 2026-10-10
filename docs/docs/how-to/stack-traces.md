@@ -187,7 +187,7 @@ container image carries the copy built for that platform, together with libbackt
 (`std/runtime/LICENSES/libbacktrace-LICENSE`).
 
 The same holds for a compiler you build yourself: libbacktrace is a git submodule, and `python setup-deps.py`
-builds it into the std tree along with the rest of the dependency setup, before CMake ever runs. It builds with
+builds it into the std tree along with the rest of the dependency setup, before the compiler gets built. It builds with
 autotools, so that step needs a POSIX shell (`sh` or `bash`) and `make`. On Windows, install
 [MSYS2](https://www.msys2.org), run `pacman -S --needed make`, and put its `usr/bin` on `PATH`; elsewhere a
 toolchain that can already build the compiler normally has both.

@@ -12,7 +12,7 @@ $asan.module_ctor = comdat any
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 1, ptr @asan.module_ctor, ptr @asan.module_ctor }]
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_address uwtable
-define dso_local noundef i32 @main() #0 !dbg !10 {
+define noundef i32 @main() #0 !dbg !10 {
   %asan_local_stack_base = alloca i64, align 8
   %1 = load i32, ptr @__asan_option_detect_stack_use_after_return, align 4
   %2 = icmp ne i32 %1, 0
@@ -47,104 +47,104 @@ define dso_local noundef i32 @main() #0 !dbg !10 {
   %18 = add i64 %17, 0
   %19 = inttoptr i64 %18 to ptr
   store i64 -868082052615769615, ptr %19, align 1
-  %20 = call ptr @_Z12sAllocUnsafem(i64 4), !dbg !16
-  %21 = ptrtoint ptr %20 to i64, !dbg !16
-  %22 = lshr i64 %21, 3, !dbg !16
-  %23 = add i64 %22, 2147450880, !dbg !16
-  %24 = inttoptr i64 %23 to ptr, !dbg !16
-  %25 = load i8, ptr %24, align 1, !dbg !16
-  %26 = icmp ne i8 %25, 0, !dbg !16
-  br i1 %26, label %27, label %33, !dbg !16, !prof !17
+  %20 = call ptr @_Z12sAllocUnsafem(i64 4), !dbg !17
+  %21 = ptrtoint ptr %20 to i64, !dbg !17
+  %22 = lshr i64 %21, 3, !dbg !17
+  %23 = add i64 %22, 2147450880, !dbg !17
+  %24 = inttoptr i64 %23 to ptr, !dbg !17
+  %25 = load i8, ptr %24, align 1, !dbg !17
+  %26 = icmp ne i8 %25, 0, !dbg !17
+  br i1 %26, label %27, label %33, !dbg !17, !prof !18
 
 27:                                               ; preds = %10
-  %28 = and i64 %21, 7, !dbg !16
-  %29 = add i64 %28, 3, !dbg !16
-  %30 = trunc i64 %29 to i8, !dbg !16
-  %31 = icmp sge i8 %30, %25, !dbg !16
-  br i1 %31, label %32, label %33, !dbg !16
+  %28 = and i64 %21, 7, !dbg !17
+  %29 = add i64 %28, 3, !dbg !17
+  %30 = trunc i64 %29 to i8, !dbg !17
+  %31 = icmp sge i8 %30, %25, !dbg !17
+  br i1 %31, label %32, label %33, !dbg !17
 
 32:                                               ; preds = %27
-  call void @__asan_report_store4(i64 %21) #4, !dbg !16
+  call void @__asan_report_store4(i64 %21) #4, !dbg !17
   unreachable
 
 33:                                               ; preds = %27, %10
-  store i32 0, ptr %20, align 4, !dbg !16
-  %34 = add i64 %17, 4, !dbg !16
-  %35 = inttoptr i64 %34 to ptr, !dbg !16
-  store i8 0, ptr %35, align 1, !dbg !16
-    #dbg_declare(ptr %asan_local_stack_base, !18, !DIExpression(DW_OP_deref, DW_OP_plus_uconst, 32), !16)
-  store ptr %20, ptr %12, align 8, !dbg !16
-  %36 = load ptr, ptr %12, align 8, !dbg !20
-  %37 = ptrtoint ptr %36 to i64, !dbg !21
-  %38 = lshr i64 %37, 3, !dbg !21
-  %39 = add i64 %38, 2147450880, !dbg !21
-  %40 = inttoptr i64 %39 to ptr, !dbg !21
-  %41 = load i8, ptr %40, align 1, !dbg !21
-  %42 = icmp ne i8 %41, 0, !dbg !21
-  br i1 %42, label %43, label %49, !dbg !21, !prof !17
+  store i32 0, ptr %20, align 4, !dbg !17
+  %34 = add i64 %17, 4, !dbg !17
+  %35 = inttoptr i64 %34 to ptr, !dbg !17
+  store i8 0, ptr %35, align 1, !dbg !17
+    #dbg_declare(ptr %asan_local_stack_base, !15, !DIExpression(DW_OP_deref, DW_OP_plus_uconst, 32), !17)
+  store ptr %20, ptr %12, align 8, !dbg !17
+  %36 = load ptr, ptr %12, align 8, !dbg !19
+  %37 = ptrtoint ptr %36 to i64, !dbg !20
+  %38 = lshr i64 %37, 3, !dbg !20
+  %39 = add i64 %38, 2147450880, !dbg !20
+  %40 = inttoptr i64 %39 to ptr, !dbg !20
+  %41 = load i8, ptr %40, align 1, !dbg !20
+  %42 = icmp ne i8 %41, 0, !dbg !20
+  br i1 %42, label %43, label %49, !dbg !20, !prof !18
 
 43:                                               ; preds = %33
-  %44 = and i64 %37, 7, !dbg !21
-  %45 = add i64 %44, 3, !dbg !21
-  %46 = trunc i64 %45 to i8, !dbg !21
-  %47 = icmp sge i8 %46, %41, !dbg !21
-  br i1 %47, label %48, label %49, !dbg !21
+  %44 = and i64 %37, 7, !dbg !20
+  %45 = add i64 %44, 3, !dbg !20
+  %46 = trunc i64 %45 to i8, !dbg !20
+  %47 = icmp sge i8 %46, %41, !dbg !20
+  br i1 %47, label %48, label %49, !dbg !20
 
 48:                                               ; preds = %43
-  call void @__asan_report_store4(i64 %37) #4, !dbg !21
+  call void @__asan_report_store4(i64 %37) #4, !dbg !20
   unreachable
 
 49:                                               ; preds = %43, %33
-  store i32 123, ptr %36, align 4, !dbg !21
-  call void @_Z8sDeallocRPVh(ptr noundef %12), !dbg !22
-  %50 = load ptr, ptr %12, align 8, !dbg !24
-  %51 = ptrtoint ptr %50 to i64, !dbg !25
-  %52 = lshr i64 %51, 3, !dbg !25
-  %53 = add i64 %52, 2147450880, !dbg !25
-  %54 = inttoptr i64 %53 to ptr, !dbg !25
-  %55 = load i8, ptr %54, align 1, !dbg !25
-  %56 = icmp ne i8 %55, 0, !dbg !25
-  br i1 %56, label %57, label %63, !dbg !25, !prof !17
+  store i32 123, ptr %36, align 4, !dbg !20
+  call void @_Z8sDeallocRPVh(ptr noundef %12), !dbg !21
+  %50 = load ptr, ptr %12, align 8, !dbg !23
+  %51 = ptrtoint ptr %50 to i64, !dbg !24
+  %52 = lshr i64 %51, 3, !dbg !24
+  %53 = add i64 %52, 2147450880, !dbg !24
+  %54 = inttoptr i64 %53 to ptr, !dbg !24
+  %55 = load i8, ptr %54, align 1, !dbg !24
+  %56 = icmp ne i8 %55, 0, !dbg !24
+  br i1 %56, label %57, label %63, !dbg !24, !prof !18
 
 57:                                               ; preds = %49
-  %58 = and i64 %51, 7, !dbg !25
-  %59 = add i64 %58, 3, !dbg !25
-  %60 = trunc i64 %59 to i8, !dbg !25
-  %61 = icmp sge i8 %60, %55, !dbg !25
-  br i1 %61, label %62, label %63, !dbg !25
+  %58 = and i64 %51, 7, !dbg !24
+  %59 = add i64 %58, 3, !dbg !24
+  %60 = trunc i64 %59 to i8, !dbg !24
+  %61 = icmp sge i8 %60, %55, !dbg !24
+  br i1 %61, label %62, label %63, !dbg !24
 
 62:                                               ; preds = %57
-  call void @__asan_report_store4(i64 %51) #4, !dbg !25
+  call void @__asan_report_store4(i64 %51) #4, !dbg !24
   unreachable
 
 63:                                               ; preds = %57, %49
-  store i32 321, ptr %50, align 4, !dbg !25
-  call void @_Z8sDeallocRPVh(ptr %12), !dbg !26
-  %64 = add i64 %17, 4, !dbg !26
-  %65 = inttoptr i64 %64 to ptr, !dbg !26
-  store i8 -8, ptr %65, align 1, !dbg !26
-  store i64 1172321806, ptr %11, align 8, !dbg !26
-  %66 = icmp ne i64 %6, 0, !dbg !26
-  br i1 %66, label %67, label %73, !dbg !26
+  store i32 321, ptr %50, align 4, !dbg !24
+  call void @_Z8sDeallocRPVh(ptr %12), !dbg !25
+  %64 = add i64 %17, 4, !dbg !25
+  %65 = inttoptr i64 %64 to ptr, !dbg !25
+  store i8 -8, ptr %65, align 1, !dbg !25
+  store i64 1172321806, ptr %11, align 8, !dbg !25
+  %66 = icmp ne i64 %6, 0, !dbg !25
+  br i1 %66, label %67, label %73, !dbg !25
 
 67:                                               ; preds = %63
-  %68 = add i64 %17, 0, !dbg !26
-  %69 = inttoptr i64 %68 to ptr, !dbg !26
-  store i64 -723401728380766731, ptr %69, align 1, !dbg !26
-  %70 = getelementptr i8, ptr %7, i64 56, !dbg !26
-  %71 = load i64, ptr %70, align 8, !dbg !26
-  %72 = inttoptr i64 %71 to ptr, !dbg !26
-  store i8 0, ptr %72, align 1, !dbg !26
-  br label %76, !dbg !26
+  %68 = add i64 %17, 0, !dbg !25
+  %69 = inttoptr i64 %68 to ptr, !dbg !25
+  store i64 -723401728380766731, ptr %69, align 1, !dbg !25
+  %70 = getelementptr i8, ptr %7, i64 56, !dbg !25
+  %71 = load i64, ptr %70, align 8, !dbg !25
+  %72 = inttoptr i64 %71 to ptr, !dbg !25
+  store i8 0, ptr %72, align 1, !dbg !25
+  br label %76, !dbg !25
 
 73:                                               ; preds = %63
-  %74 = add i64 %17, 0, !dbg !26
-  %75 = inttoptr i64 %74 to ptr, !dbg !26
-  store i64 0, ptr %75, align 1, !dbg !26
-  br label %76, !dbg !26
+  %74 = add i64 %17, 0, !dbg !25
+  %75 = inttoptr i64 %74 to ptr, !dbg !25
+  store i64 0, ptr %75, align 1, !dbg !25
+  br label %76, !dbg !25
 
 76:                                               ; preds = %73, %67
-  ret i32 0, !dbg !26
+  ret i32 0, !dbg !25
 }
 
 declare ptr @_Z12sAllocUnsafem(i64)
@@ -394,23 +394,22 @@ attributes #4 = { nomerge }
 !4 = !{i32 7, !"Dwarf Version", i32 5}
 !5 = !{i32 2, !"Debug Info Version", i32 3}
 !6 = !{i32 4, !"nosanitize_address", i32 1}
-!7 = !{!"spice version dev [host] (https://github.com/spicelang/spice)"}
-!8 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !9, producer: "spice version dev [host] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)
-!9 = !DIFile(filename: "/home/marc/Documents/Dev/spice/cmake-build-debug/test/./test-files/irgenerator/instrumentation/success-asan-and-dbg-info/source.spice", directory: "./test-files/irgenerator/instrumentation/success-asan-and-dbg-info")
-!10 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !11, file: !11, line: 3, type: !12, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !8, retainedNodes: !15)
-!11 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-asan-and-dbg-info")
-!12 = !DISubroutineType(types: !13)
-!13 = !{!14}
-!14 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
-!15 = !{}
-!16 = !DILocation(line: 4, column: 22, scope: !10)
-!17 = !{!"branch_weights", i32 1, i32 1048575}
-!18 = !DILocalVariable(name: "iPtr", scope: !10, file: !11, line: 4, type: !19)
-!19 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !14, size: 64)
-!20 = !DILocation(line: 5, column: 6, scope: !10)
-!21 = !DILocation(line: 5, column: 13, scope: !10)
-!22 = !DILocation(line: 7, column: 35, scope: !23)
-!23 = distinct !DILexicalBlock(scope: !10, file: !11, line: 6, column: 5)
-!24 = !DILocation(line: 9, column: 6, scope: !10)
-!25 = !DILocation(line: 9, column: 13, scope: !10)
-!26 = !DILocation(line: 10, column: 1, scope: !10)
+!7 = !{!"spice version dev [self-hosted] (https://github.com/spicelang/spice)"}
+!8 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !9, producer: "spice version dev [self-hosted] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false)
+!9 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-asan-and-dbg-info")
+!10 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !9, file: !9, line: 3, type: !11, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !8, retainedNodes: !14)
+!11 = !DISubroutineType(types: !12)
+!12 = !{!13}
+!13 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
+!14 = !{!15}
+!15 = !DILocalVariable(name: "iPtr", scope: !10, file: !9, line: 4, type: !16)
+!16 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !13, size: 64, dwarfAddressSpace: 0)
+!17 = !DILocation(line: 4, column: 22, scope: !10)
+!18 = !{!"branch_weights", i32 1, i32 1048575}
+!19 = !DILocation(line: 5, column: 6, scope: !10)
+!20 = !DILocation(line: 5, column: 13, scope: !10)
+!21 = !DILocation(line: 7, column: 35, scope: !22)
+!22 = distinct !DILexicalBlock(scope: !10, file: !9, line: 6, column: 5)
+!23 = !DILocation(line: 9, column: 6, scope: !10)
+!24 = !DILocation(line: 9, column: 13, scope: !10)
+!25 = !DILocation(line: 10, column: 1, scope: !10)

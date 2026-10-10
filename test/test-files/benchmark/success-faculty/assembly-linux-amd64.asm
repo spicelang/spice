@@ -29,5 +29,5 @@ main:                                   # @main
 	.asciz	"Faculty of %d is: %d"
 	.size	.Lprintf.str.0, 21
 
-	.ident	"spice version dev [host] (https://github.com/spicelang/spice)"
+	.ident	"spice version dev [self-hosted] (https://github.com/spicelang/spice)"
 	.section	".note.GNU-stack","",@progbits

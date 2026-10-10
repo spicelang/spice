@@ -1,9 +1,10 @@
 #!/bin/bash
 # SessionStart hook for Claude Code on the web.
-# Installs the toolchain and gets LLVM 23 ready so the spicetest/spice CMake
-# targets can be configured immediately. Mirrors the Linux job in
-# .github/workflows/ci.yml. Idempotent: safe to re-run, and cheap on a
-# cached container since it skips work that is already done.
+# Installs the toolchain, gets LLVM 23 ready and downloads the stage0 compiler,
+# so the compiler can be built (build.py) and tested (test/run-tests.py)
+# immediately. Mirrors the Linux job in .github/workflows/ci.yml. Idempotent:
+# safe to re-run, and cheap on a cached container since it skips work that is
+# already done.
 set -euo pipefail
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
@@ -92,9 +93,13 @@ else
   LLVM_DIR="$LLVM_BUILD_DIR/lib/cmake/llvm"
 fi
 
-# 3. Persist LLVM_DIR for the rest of the session (matches the LLVM_DIR env
-#    var used by the "Build test target" step in ci.yml)
+# 3. Persist LLVM_DIR for the rest of the session. The build and test scripts
+#    derive the LLVM lib and include dirs from it
 echo "export LLVM_DIR=\"$LLVM_DIR\"" >> "$CLAUDE_ENV_FILE"
 
 # 4. Third-party deps (matches "Download Libs" step)
 python3 "$CLAUDE_PROJECT_DIR/setup-deps.py"
+
+# 5. The released compiler, that builds the compiler from src/ (matches the
+#    "Fetch stage0 compiler" step)
+python3 "$CLAUDE_PROJECT_DIR/fetch-stage0.py"

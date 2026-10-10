@@ -29,7 +29,7 @@ jobs:
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
-          # zlib, zstd and ncurses provide the static archives for linking the bootstrap compiler (see std/bindings/llvm).
+          # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm).
           sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -59,58 +59,33 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: python setup-deps.py
-
-      - name: Build host compiler
+        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings. With the GCC
+        # toolchain, since the compiler links the TPDE archives statically together with its libstdc++
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DSPICE_ALL_TARGETS=ON \
-            -DSPICE_LINK_STATIC=ON \
-            -DSPICE_LTO=ON \
-            -DSPICE_ENABLE_TPDE=ON \
-            -DSPICE_VERSION="${{ github.ref_name }}" \
-            -DSPICE_GIT_HASH="${{ github.sha }}" \
-            -DSPICE_BUILT_BY="ghactions" \
-            ..
-          cmake --build . --target spice
+          CC: gcc
+          CXX: g++
+        run: python setup-deps.py --tpde
 
-      - name: Process build output
-        working-directory: build
+      - name: Collect std libraries
         run: |
-          mv ./src-host/spice spice-host
-          chmod +x spice-host
-          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
-          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
-          # packages std/ from a plain checkout and cannot produce it.
+          mkdir -p build && cd build
+          # The vendored libbacktrace that setup-deps.py built for this platform. Released packages ship it inside the std,
+          # and it is per-platform, so it has to travel with this job's binary - the release runner packages std/ from a
+          # plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
           # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
           mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
-          # The TPDE static libraries and headers, that the std TPDE bindings (std/bindings/tpde) use. Released Linux
-          # packages ship them inside the std as well, so they travel with this job's binary just like libbacktrace.
-          mkdir -p tpde/lib tpde/include tpde/LICENSES
-          cp deps/tpde/tpde-llvm/libtpde_llvm.a deps/tpde/tpde/libtpde.a deps/tpde/tpde/deps/fadec/libfadec.a \
-            deps/tpde/tpde/deps/disarm/libdisarm64.a deps/tpde/tpde/deps/spdlog/libspdlog.a tpde/lib/
-          cp -r ../deps/tpde/tpde-llvm/include/tpde-llvm tpde/include/
-          # Their licenses must accompany the archives
-          cp ../deps/tpde/LICENSES/Apache-2.0.txt tpde/LICENSES/tpde-Apache-2.0.txt
-          cp ../deps/tpde/LICENSES/LLVM-exception.txt tpde/LICENSES/tpde-LLVM-exception.txt
-          cp ../deps/tpde/deps/fadec/LICENSE tpde/LICENSES/fadec-LICENSE
-          cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
-          cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
+          # The TPDE static libraries, headers and licenses, that setup-deps.py put into the std for the std TPDE bindings
+          # (std/bindings/tpde). Released Linux packages ship them inside the std as well, so they travel with this job's
+          # binary just like libbacktrace.
+          mkdir -p tpde && cp -r ../std/bindings/tpde/lib ../std/bindings/tpde/include ../std/bindings/tpde/LICENSES tpde/
 
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
-        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
-      - name: Build bootstrap compiler
+      - name: Build compiler
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
@@ -118,12 +93,12 @@ jobs:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
-          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built along with the host
-          # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
+          # Back the TPDE backend of the compiler with the TPDE libraries, that setup-deps.py built. The flags have the layout
+          # the compiler derives from a std that ships them (see getStdTPDEFlags).
           # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
-          # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
+          # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner
           ./stage0/spice build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
@@ -138,7 +113,6 @@ jobs:
       - name: Run Checksec
         working-directory: build
         run: |
-          checksec --file=./spice-host --output=json | jq
           checksec --file=./spice --output=json | jq
 
       - name: Upload artifact
@@ -170,7 +144,7 @@ jobs:
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
-          # zlib, zstd and ncurses provide the static archives for linking the bootstrap compiler (see std/bindings/llvm).
+          # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm).
           sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -200,51 +174,27 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: python setup-deps.py
-
-      - name: Build host compiler
+        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings. With the GCC
+        # toolchain, since the compiler links the TPDE archives statically together with its libstdc++
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DSPICE_ALL_TARGETS=ON \
-            -DSPICE_LINK_STATIC=ON \
-            -DSPICE_LTO=ON \
-            -DSPICE_ENABLE_TPDE=ON \
-            -DSPICE_VERSION="${{ github.ref_name }}" \
-            -DSPICE_GIT_HASH="${{ github.sha }}" \
-            -DSPICE_BUILT_BY="ghactions" \
-            ..
-          cmake --build . --target spice
+          CC: gcc
+          CXX: g++
+        run: python setup-deps.py --tpde
 
-      - name: Process build output
-        working-directory: build
+      - name: Collect std libraries
         run: |
-          mv ./src-host/spice spice-host
-          chmod +x spice-host
-          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
-          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
-          # packages std/ from a plain checkout and cannot produce it.
+          mkdir -p build && cd build
+          # The vendored libbacktrace that setup-deps.py built for this platform. Released packages ship it inside the std,
+          # and it is per-platform, so it has to travel with this job's binary - the release runner packages std/ from a
+          # plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
           # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
           mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
-          # The TPDE static libraries and headers, that the std TPDE bindings (std/bindings/tpde) use. Released Linux
-          # packages ship them inside the std as well, so they travel with this job's binary just like libbacktrace.
-          mkdir -p tpde/lib tpde/include tpde/LICENSES
-          cp deps/tpde/tpde-llvm/libtpde_llvm.a deps/tpde/tpde/libtpde.a deps/tpde/tpde/deps/fadec/libfadec.a \
-            deps/tpde/tpde/deps/disarm/libdisarm64.a deps/tpde/tpde/deps/spdlog/libspdlog.a tpde/lib/
-          cp -r ../deps/tpde/tpde-llvm/include/tpde-llvm tpde/include/
-          # Their licenses must accompany the archives
-          cp ../deps/tpde/LICENSES/Apache-2.0.txt tpde/LICENSES/tpde-Apache-2.0.txt
-          cp ../deps/tpde/LICENSES/LLVM-exception.txt tpde/LICENSES/tpde-LLVM-exception.txt
-          cp ../deps/tpde/deps/fadec/LICENSE tpde/LICENSES/fadec-LICENSE
-          cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
-          cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
+          # The TPDE static libraries, headers and licenses, that setup-deps.py put into the std for the std TPDE bindings
+          # (std/bindings/tpde). Released Linux packages ship them inside the std as well, so they travel with this job's
+          # binary just like libbacktrace.
+          mkdir -p tpde && cp -r ../std/bindings/tpde/lib ../std/bindings/tpde/include ../std/bindings/tpde/LICENSES tpde/
 
       - name: Setup UPX
         # The released binaries are compressed with UPX, and fetch-stage0.py decompresses the stage0 compiler, since the UPX
@@ -254,11 +204,10 @@ jobs:
         run: bash .github/scripts/install-upx.sh
 
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
-        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
-      - name: Build bootstrap compiler
+      - name: Build compiler
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
@@ -266,12 +215,12 @@ jobs:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
-          # Back the TPDE backend of the bootstrap compiler with the TPDE libraries, that were just built along with the host
-          # compiler. The flags have the layout the compiler derives from a std that ships them (see getStdTPDEFlags).
+          # Back the TPDE backend of the compiler with the TPDE libraries, that setup-deps.py built. The flags have the layout
+          # the compiler derives from a std that ships them (see getStdTPDEFlags).
           # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
-          # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
+          # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner
           ./stage0/spice build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
@@ -286,7 +235,6 @@ jobs:
       - name: Run Checksec
         working-directory: build
         run: |
-          checksec --file=./spice-host --output=json | jq
           checksec --file=./spice --output=json | jq
 
       - name: Upload artifact
@@ -355,53 +303,32 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build host compiler
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-          CMAKE_TLS_VERIFY: "1"
-          SSL_CERT_FILE: "C:\\cacert.pem"
+      - name: Collect std libraries
         run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER=gcc `
-            -DCMAKE_CXX_COMPILER=g++ `
-            -DSPICE_ALL_TARGETS=ON `
-            -DSPICE_LINK_STATIC=ON `
-            -DSPICE_VERSION="${{ github.ref_name }}" `
-            -DSPICE_GIT_HASH="${{ github.sha }}" `
-            -DSPICE_BUILT_BY="ghactions" `
-            ..
-          cmake --build . --target spice
-
-      - name: Process build output
-        working-directory: build
-        run: |
-          mv ./src-host/spice.exe spice-host.exe
-          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
-          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
-          # packages std/ from a plain checkout and cannot produce it.
+          New-Item -ItemType Directory -Force build | Out-Null
+          cd build
+          # The vendored libbacktrace that setup-deps.py built for this platform. Released packages ship it inside the std,
+          # and it is per-platform, so it has to travel with this job's binary - the release runner packages std/ from a
+          # plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
           # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
           New-Item -ItemType Directory -Force runtime | Out-Null
           Copy-Item -Recurse ../std/runtime/LICENSES runtime/LICENSES
 
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
-        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
-      - name: Build bootstrap compiler
+      - name: Build compiler
         working-directory: build
         run: |
-          # Forward slashes, like CMake hands these paths to the bootstrap compiler build in the CI workflow
+          # Forward slashes, like in the paths that the CI workflow hands to the compiler build
           $workspace = "${{ github.workspace }}" -replace '\\', '/'
           $env:SPICE_STD_DIR = "$workspace/std"
           $env:SPICE_BOOTSTRAP_DIR = "$workspace/src"
           $env:LLVM_LIB_DIR = "$workspace/llvm/build/lib"
           $env:LLVM_INCLUDE_DIRS = "-I$workspace/llvm/llvm/include -I$workspace/llvm/build/include"
-          # Linked statically like the host compiler, so it runs without the MinGW runtime DLLs
+          # Linked statically, so it runs without the MinGW runtime DLLs
           ./stage0/spice.exe build -O3 -lto --static --ignore-cache `
             --build-var SPICE_VERSION="${{ github.ref_name }}" `
             --build-var SPICE_GIT_HASH="${{ github.sha }}" `
@@ -463,42 +390,21 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build host compiler
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+      - name: Collect std libraries
         run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DSPICE_ALL_TARGETS=ON \
-            -DSPICE_LTO=ON \
-            -DSPICE_VERSION="${{ github.ref_name }}" \
-            -DSPICE_GIT_HASH="${{ github.sha }}" \
-            -DSPICE_BUILT_BY="ghactions" \
-            ..
-          cmake --build . --target spice
-
-      - name: Process build output
-        working-directory: build
-        run: |
-          mv ./src-host/spice spice-host
-          chmod +x spice-host
-          # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
-          # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
-          # packages std/ from a plain checkout and cannot produce it.
+          mkdir -p build && cd build
+          # The vendored libbacktrace that setup-deps.py built for this platform. Released packages ship it inside the std,
+          # and it is per-platform, so it has to travel with this job's binary - the release runner packages std/ from a
+          # plain checkout and cannot produce it.
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
           # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
           mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
 
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
-        # released as 'spice'. The host compiler is only built to be released as 'spice-host'
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
-      - name: Build bootstrap compiler
+      - name: Build compiler
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
@@ -506,7 +412,7 @@ jobs:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
-          # Linked dynamically like the host compiler, macOS does not support static executables
+          # Linked dynamically, macOS does not support static executables
           ./stage0/spice build -O3 -lto --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
@@ -703,12 +609,6 @@ jobs:
         run: |
           echo "$WIX\\bin" >> $GITHUB_PATH
           echo "C:\\Program Files\\go-msi" >> $GITHUB_PATH
-
-      - name: Copy DLLs to source dir
-        shell: bash
-        env:
-          ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
-        run: cp ./src-host/thirdparty/zlib1__.dll ./
 
       - name: Build MSI
         shell: bash

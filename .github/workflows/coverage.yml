@@ -92,40 +92,23 @@ jobs:
         run: cmake --build . --target llvm-cov
 
       - name: Download Libs
-        # --tpde builds TPDE into the std, for the TPDE backend of the bootstrap compiler and the std TPDE bindings
+        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: python setup-deps.py --tpde
 
-      - name: Build test target
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DSPICE_BUILT_BY="ghactions" \
-            -DSPICE_ENABLE_TPDE=ON \
-            -DSPICE_TEST_ARGS=--is-github-actions \
-            ..
-          cmake --build . --target spice spicetest
-
       - name: Fetch stage0 compiler
-        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
         run: python fetch-stage0.py
 
-      - name: Run Test target (bootstrap compiler coverage)
-        # Builds the bootstrap compiler with Spice code coverage instrumentation (with the stage0 compiler) and runs the
-        # bootstrap test suites against it, to collect gcov data for the bootstrap compiler sources. Same test selection as
-        # the bootstrap compiler run in ci.yml. The gcov data lands next to the object files in build/test-tmp (see
-        # coverage-bootstrap.py).
+      - name: Run Test target (compiler coverage)
+        # Builds the compiler with Spice code coverage instrumentation (with the stage0 compiler) and runs the test suites
+        # against it, to collect gcov data for the compiler sources. Same test selection as the run in ci.yml. The gcov data
+        # lands next to the object files in build/test-tmp (see coverage-bootstrap.py).
         #
         # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by the
-        # bootstrap compiler run in ci.yml), so a single failing test should not block generating/uploading the reports
-        # below with whatever data the rest of the run did collect.
+        # run in ci.yml), so a single failing test should not block generating/uploading the reports below with whatever
+        # data the rest of the run did collect.
         continue-on-error: true
         env:
           LLVM_LIB_DIR: /${{ github.workspace }}/llvm/build/lib
@@ -133,24 +116,21 @@ jobs:
         run: python test/run-tests.py --build-compiler build/stage0/spice --instrument coverage --is-github-actions
 
       - name: Run Test target (Spice coverage)
-        # --coverage forces debug info on for every compiled test program, which changes the emitted LLVM IR and would
-        # spuriously fail the (unrelated) exact-match IR/assembly reference comparisons. This run skips those
-        # comparisons (see TestUtil::checkRefMatch) and just compiles, links and executes every test program that would
-        # normally run, to collect gcov data for the std lib code they exercise.
+        # Builds the compiler (without instrumentation) and compiles every test program with Spice code coverage
+        # instrumentation, to collect gcov data for the std lib code they exercise. --coverage forces debug info on for every
+        # compiled test program, which changes the emitted LLVM IR, so this run skips all reference comparisons and just
+        # compiles, links and executes every test program that would normally run. It uses its own work dir, since the
+        # compiler coverage run above keeps its data in build/test-tmp (see coverage-spice.py).
         #
-        # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by
-        # the host compiler run in ci.yml), and under sustained load across hundreds of sequential compiles, LLVM's
-        # GCOVProfilerPass has occasionally failed to open a single .gcno file, failing just that one test. A rare,
-        # isolated miss like that should not block generating/uploading the reports below with whatever data the rest
-        # of the run did collect.
+        # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by the
+        # run in ci.yml), and under sustained load across hundreds of compiles, LLVM's GCOVProfilerPass has occasionally
+        # failed to open a single .gcno file, failing just that one test. A rare, isolated miss like that should not block
+        # generating/uploading the reports below with whatever data the rest of the run did collect.
         continue-on-error: true
-        working-directory: build/test
         env:
-          LLVM_LIB_DIR: /${{ github.workspace }}/llvm/build/lib
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-          SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
-        run: ./spicetest --is-github-actions --coverage
+        run: python test/run-tests.py --build-compiler build/stage0/spice --coverage --work-dir build/test-tmp-coverage --is-github-actions
 
       - name: Save CCache
         uses: actions/cache/save@v6
@@ -159,21 +139,17 @@ jobs:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-coverage-${{ github.sha }}
 
-      - name: Generate bootstrap compiler coverage report
+      - name: Generate compiler coverage report
         working-directory: build
         env:
           LLVM_COV: ${{ github.workspace }}/llvm/build/bin/llvm-cov
-        run: |
-          sudo chmod +x coverage-bootstrap.py
-          python coverage-bootstrap.py
+        run: python ../coverage-bootstrap.py
 
       - name: Generate Spice coverage report
         working-directory: build
         env:
           LLVM_COV: ${{ github.workspace }}/llvm/build/bin/llvm-cov
-        run: |
-          sudo chmod +x coverage-spice.py
-          python coverage-spice.py
+        run: python ../coverage-spice.py
 
       - name: Upload coverage report
         uses: Dylan700/sftp-upload-action@v1.2.5

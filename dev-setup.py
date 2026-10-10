@@ -31,7 +31,7 @@ else:
     run(
         "sudo", "apt-get", "install", "-y",
         "cmake", "make", "ninja-build", "valgrind", "ccache",
-        "uuid-dev", "pkg-config", "openjdk-11-jre-headless", "clang", "lld", "libssl-dev",
+        "uuid-dev", "pkg-config", "clang", "lld", "libssl-dev",
     )
     log("done.")
 
@@ -73,9 +73,9 @@ setup_deps_env = {**os.environ, "LLVM_DIR": os.environ.get("LLVM_DIR", str((llvm
 run(sys.executable, "setup-deps.py", "--tpde", env=setup_deps_env)
 log("done.")
 
-# Step 5: build Spice
+# Step 5: build Spice with the released stage0 compiler, which build.py downloads first
 log("[Step 5] Building Spice ...")
-run(sys.executable, "build.py")
+run(sys.executable, "build.py", env=setup_deps_env)
 log("done.")
 
 log("The setup is done. Have fun coding!")
