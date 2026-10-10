@@ -127,7 +127,7 @@ stdlib API that is not available yet), say so under "Follow-up / known
 limitations" in the PR description instead of skipping it silently.
 
 Validate both sides: run the regular suite for the host compiler and the
-bootstrap suite (`--bootstrap`, see the quality gate below) for the port.
+bootstrap suite (`test/run-tests.py`, see the quality gate below) for the port.
 
 ## Pre-PR quality gate
 
@@ -146,7 +146,7 @@ git diff test/test-files   # review generated output before committing
 
 # 4. If you changed the compiler, stdlib or bootstrap, include relevant suite(s)
 cmake-build-debug/test/spicetest --gtest_filter='StdTests*'
-cmake-build-debug/test/spicetest --bootstrap --gtest_filter='LexerTests*:ParserTests*:SymbolTableBuilderTests*:TypeCheckerTests*'
+python test/run-tests.py --filter='LexerTests.*:ParserTests.*:SymbolTableBuilderTests.*:TypeCheckerTests.*'
 ```
 
 If the environment cannot run the full suite (e.g. LLVM not installed), say so

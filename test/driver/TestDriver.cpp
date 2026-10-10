@@ -52,40 +52,6 @@ void TestDriver::addOptions() {
   // Same goes for the ASAN mode. It cannot be combined with the coverage mode either, since the coverage mode does not test
   // the sanitizers
   asanOpt->excludes(updateRefsOpt)->excludes(coverageOpt);
-  // --bootstrap
-  app.add_flag<bool>("--bootstrap", testDriverCliOptions.bootstrapMode,
-                     "Build the bootstrap compiler with the host compiler first, then run the test cases against it");
-  // --bootstrap-compiler
-  CLI::Option *bootstrapCompilerOpt = app.add_option<std::string>(
-      "--bootstrap-compiler", testDriverCliOptions.bootstrapCompilerPath,
-      "Run the test cases against the given, already built bootstrap compiler executable (implies --bootstrap)");
-  // --bootstrap-coverage
-  CLI::Option *bootstrapCoverageOpt =
-      app.add_flag<bool>("--bootstrap-coverage", testDriverCliOptions.bootstrapCoverage,
-                         "Build the bootstrap compiler with Spice code coverage instrumentation enabled, then run the test "
-                         "cases against it (implies --bootstrap)");
-  // --bootstrap-asan
-  CLI::Option *bootstrapAsanOpt =
-      app.add_flag<bool>("--bootstrap-asan", testDriverCliOptions.bootstrapAsan,
-                         "Build the bootstrap compiler with AddressSanitizer instrumentation enabled, then run the test cases "
-                         "against it (implies --bootstrap). Fails every test case, for which the sanitizer reports an error. "
-                         "With --bootstrap-compiler, the given bootstrap compiler is used and only the builtin tests of the "
-                         "bootstrap compiler sources are built with AddressSanitizer");
-  // --bootstrap-build-only
-  CLI::Option *bootstrapBuildOnlyOpt =
-      app.add_flag<bool>("--bootstrap-build-only", testDriverCliOptions.bootstrapBuildOnly,
-                         "Only build the bootstrap compiler, without running any test cases (implies --bootstrap). Used to "
-                         "build it once before running the test cases in parallel via --bootstrap-compiler");
-  // In bootstrap mode, --update-refs only updates the bootstrap refs (e.g. ir-code-bootstrap.ll), so the reference files of
-  // the host compiler are never overwritten with bootstrap output. In bootstrap mode, the coverage mode instruments the
-  // programs compiled by the bootstrap compiler instead.
-  // Instrumenting the bootstrap compiler requires building it, so it cannot be combined with a pre-built one. Its coverage
-  // data would mix with the one of the instrumented test programs, so it cannot be combined with the coverage mode either
-  bootstrapCoverageOpt->excludes(updateRefsOpt)->excludes(coverageOpt)->excludes(bootstrapCompilerOpt);
-  // Coverage and ASAN instrumentation of the bootstrap compiler are separate builds, so they cannot be combined
-  bootstrapAsanOpt->excludes(updateRefsOpt)->excludes(bootstrapCoverageOpt);
-  // Building only makes no sense, if a pre-built bootstrap compiler is given
-  bootstrapBuildOnlyOpt->excludes(updateRefsOpt)->excludes(coverageOpt)->excludes(bootstrapCompilerOpt);
 }
 
 /**
@@ -98,9 +64,6 @@ void TestDriver::addOptions() {
 int TestDriver::parse(int argc, char **argv) {
   try {
     app.parse(argc, argv);
-    if (!testDriverCliOptions.bootstrapCompilerPath.empty() || testDriverCliOptions.bootstrapCoverage ||
-        testDriverCliOptions.bootstrapAsan || testDriverCliOptions.bootstrapBuildOnly)
-      testDriverCliOptions.bootstrapMode = true;
     return 0;
   } catch (const CLI::ParseError &parseError) {
     return app.exit(parseError);

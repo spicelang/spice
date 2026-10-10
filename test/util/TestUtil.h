@@ -41,7 +41,6 @@ const char *const CTL_SKIP_DISABLED = "disabled";
 const char *const CTL_SKIP_GH = "skip-gh-actions";
 const char *const CTL_SKIP_WINDOWS = "skip-windows";
 const char *const CTL_SKIP_MACOS = "skip-macos";
-const char *const CTL_SKIP_BOOTSTRAP = "skip-bootstrap";
 const char *const CTL_SKIP_HOST = "skip-host";
 const char *const CTL_SKIP_WITHOUT_TPDE = "skip-without-tpde";
 const char *const CTL_RUN_BUILTIN_TESTS = "run-builtin-tests";
@@ -86,9 +85,9 @@ public:
   static bool isDisabled(const TestCase &testCase);
   static void eraseGDBHeader(std::string &gdbOutput);
   static void eraseLinesBySubstring(std::string &irCode, const char *needle);
-  static std::filesystem::path getBootstrapRefPath(const std::filesystem::path &refPath);
   static std::vector<std::filesystem::path> expandRefPaths(const std::filesystem::path &refPath);
   static bool isComparedInCurrentMode(const std::filesystem::path &refPath);
+  static bool containsSanitizerReport(const std::string &output);
 };
 
 } // namespace spice::testing

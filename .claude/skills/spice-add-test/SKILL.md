@@ -63,18 +63,18 @@ For any ref, the runner prefers, in order:
 Examples: `assembly-linux-amd64.asm`, `assembly-linux-aarch64.asm`,
 `ir-code-windows.ll`, `cout-macos.out`. (os ∈ linux/windows/macos, arch ∈ amd64/aarch64).
 
-When running against the bootstrap compiler (`--bootstrap`), the runner first looks for bootstrap variants in the same
-order (`<stem>-bootstrap-<os>-<arch>.<ext>` → `<stem>-bootstrap-<os>.<ext>` → `<stem>-bootstrap.<ext>`), before falling
-back to the refs above. Use them where the bootstrap compiler deliberately differs from the host, e.g.
-`ir-code-bootstrap.ll` for debug info the LLVM C API can't express. To generate one, create the empty file and run the
-case with `--bootstrap --update-refs` (in bootstrap mode, only bootstrap refs are updated).
+The bootstrap compiler runner (`test/run-tests.py`) first looks for bootstrap variants in the same order
+(`<stem>-bootstrap-<os>-<arch>.<ext>` → `<stem>-bootstrap-<os>.<ext>` → `<stem>-bootstrap.<ext>`), before falling back to
+the refs above. Use them where the bootstrap compiler deliberately differs from the host, e.g. `ir-code-bootstrap.ll` for
+debug info the LLVM C API can't express. To generate one, create the empty file and run the case with
+`python test/run-tests.py --update-refs --filter=<name>` (it only updates bootstrap refs).
 
 ## 5. Control / skip marker files (empty files in the case dir)
 
 - `disabled` — skip the case entirely
 - `skip-gh-actions` — skip on CI
 - `skip-windows`, `skip-macos` — skip on that OS
-- `skip-bootstrap` — skip when running against the bootstrap compiler (`--bootstrap`). Prefer `skip-host`, since the bootstrap compiler becomes the default
+- `skip-bootstrap` — skip when running against the bootstrap compiler (`test/run-tests.py`). Prefer `skip-host`, since the bootstrap compiler is the default
 - `skip-host` — skip when running against the host compiler, e.g. for references that follow the bootstrap compiler, where both differ (like ANTLR error messages or typeid hash values)
 - `skip-without-tpde` — skip when the compiler was built without `SPICE_ENABLE_TPDE` (e.g. for tests of the std TPDE bindings)
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests

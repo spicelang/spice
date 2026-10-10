@@ -1,7 +1,6 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include "driver/TestDriver.h"
-#include "util/BootstrapUtil.h"
 
 #include <cstdlib>
 
@@ -25,7 +24,7 @@ int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
 #if defined(SPICE_ENABLE_TPDE) && !defined(OS_WINDOWS)
   // The std TPDE bindings need the TPDE libraries and headers, that were built along with the TPDE support. Point them to
-  // these, unless the caller does so already. Compiled test programs and the bootstrap compiler inherit the variable.
+  // these, unless the caller does so already. Compiled test programs inherit the variable.
   setenv("TPDE_FLAGS", SPICE_TPDE_FLAGS, /*overwrite=*/0);
 #endif
   // Initialize command line parser
@@ -35,14 +34,6 @@ int main(int argc, char **argv) {
   // Parse command line args
   if (const int parseResult = driver.parse(argc, argv); parseResult != 0)
     return parseResult;
-  // In bootstrap mode, build the bootstrap compiler first, unless a pre-built one was given. Listing the tests (e.g. by
-  // gtest-parallel) does not run them, so the build can be skipped then
-  if (testDriverCliOptions.bootstrapMode && testDriverCliOptions.bootstrapCompilerPath.empty() && !GTEST_FLAG_GET(list_tests))
-    if (!BootstrapUtil::buildBootstrapCompiler())
-      return 1;
-  // Only build the bootstrap compiler, e.g. to run the test cases against it in parallel afterwards
-  if (testDriverCliOptions.bootstrapBuildOnly)
-    return 0;
   // Run tests
   return RUN_ALL_TESTS();
 }
