@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Generate HTML and text coverage reports for the bootstrap compiler sources exercised by the test suite.
 
-Requires the test suite to have been run once with `spicetest --bootstrap-coverage`, which builds the bootstrap compiler
-with Spice code coverage instrumentation and runs the test cases against it. The resulting .gcno/.gcda files land next to
-the bootstrap compiler executable in test/test-tmp/bootstrap-compiler/ (see BootstrapUtil::buildBootstrapCompiler) and next
-to the builtin tests of the bootstrap compiler in test/test-tmp/bootstrap-tests/ (see BootstrapUtil::buildBootstrapBuiltinTests).
+Requires the test suite to have been run once with `python test/run-tests.py --instrument coverage`, which builds the
+bootstrap compiler with Spice code coverage instrumentation and runs the test cases against it. The resulting .gcno/.gcda
+files land next to the bootstrap compiler executable in build/test-tmp/bootstrap-compiler/ and next to the builtin tests of
+the bootstrap compiler in build/test-tmp/bootstrap-tests/. Run it from the build/ dir.
 
 The gcov data LLVM emits for Spice code is only understood by `llvm-cov gcov`, not GNU gcov (they disagree on the on-disk
 data format version), so LLVM_COV must point at a matching llvm-cov build.
@@ -29,8 +29,8 @@ base_args = [
     "../src/.*",
     "-r",
     "..",
-    "test/test-tmp/bootstrap-compiler",
-    "test/test-tmp/bootstrap-tests",
+    "test-tmp/bootstrap-compiler",
+    "test-tmp/bootstrap-tests",
 ]
 
 subprocess.run(

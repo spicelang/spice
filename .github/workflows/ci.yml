@@ -97,13 +97,15 @@ jobs:
         run: cmake --build . --target spicetest_parallel
 
       - name: Run Test target (bootstrap compiler)
-        working-directory: build
-        # Runs all test cases against the bootstrap compiler. Test cases that check outputs, where both compilers differ
-        # (e.g. ANTLR error messages or typeid values, since the bootstrap type hash differs from the host's
-        # std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test cases, where the
-        # bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g. ir-code-bootstrap.ll for
-        # the debug info, since the LLVM C API can't express everything the host emits).
-        run: cmake --build . --target spicetest_bootstrap_parallel
+        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
+        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
+        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
+        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python test/run-tests.py --build-compiler build/src-host/spice --is-github-actions
 
       - name: Bootstrap until fixed point
         env:
@@ -211,8 +213,15 @@ jobs:
         run: cmake --build . --target spicetest_parallel
 
       - name: Run Test target (bootstrap compiler)
-        working-directory: build
-        run: cmake --build . --target spicetest_bootstrap_parallel
+        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
+        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
+        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
+        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python test/run-tests.py --build-compiler build/src-host/spice --is-github-actions
 
       - name: Bootstrap until fixed point
         env:
@@ -339,8 +348,15 @@ jobs:
           cmake --build . --target spicetest_parallel
 
       - name: Run Test target (bootstrap compiler)
-        working-directory: build
-        run: cmake --build . --target spicetest_bootstrap_parallel
+        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
+        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
+        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
+        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python test/run-tests.py --build-compiler build/src-host/spice.exe --is-github-actions
 
       - name: Bootstrap until fixed point
         env:
@@ -441,8 +457,15 @@ jobs:
         run: cmake --build . --target spicetest_parallel
 
       - name: Run Test target (bootstrap compiler)
-        working-directory: build
-        run: cmake --build . --target spicetest_bootstrap_parallel
+        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
+        # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
+        # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
+        # ir-code-bootstrap.ll for the debug info, since the LLVM C API can't express everything the host emits).
+        env:
+          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
+          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
+        run: python test/run-tests.py --build-compiler build/src-host/spice --is-github-actions
 
       - name: Bootstrap until fixed point
         env:

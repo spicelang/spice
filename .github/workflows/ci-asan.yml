@@ -163,8 +163,8 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build test target
-        # The host compiler and the test runner are built without ASAN. Only the bootstrap compiler gets instrumented
+      - name: Build host compiler
+        # The host compiler is built without ASAN. Only the bootstrap compiler gets instrumented
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
@@ -177,29 +177,15 @@ jobs:
             -DSPICE_BUILT_BY="ghactions" \
             -DSPICE_ENABLE_TPDE=ON \
             ..
-          cmake --build . --target spicetest
-
-      - name: Build bootstrap compiler with ASAN
-        working-directory: build/test
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-          SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
-        run: ./spicetest --is-github-actions --bootstrap-asan --bootstrap-build-only
+          cmake --build . --target spice
 
       - name: Run Test target against the bootstrap compiler with ASAN
-        # Runs all test cases against the ASAN-instrumented bootstrap compiler. A test case fails, as soon as the bootstrap
-        # compiler prints a sanitizer report (including leaks) while compiling it (see BootstrapUtil::containsSanitizerReport)
-        working-directory: build/test
+        # Builds the bootstrap compiler with ASAN, then runs all test cases against it. A test case fails, as soon as the
+        # bootstrap compiler prints a sanitizer report (including leaks) while compiling it
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-          SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
-        run: |
-          python ${{ github.workspace }}/deps/gtest-parallel/gtest-parallel ./spicetest -- \
-            --is-github-actions --bootstrap-asan --bootstrap-compiler=./test-tmp/bootstrap-compiler/spice
+        run: python test/run-tests.py --build-compiler build/src-host/spice --instrument asan --is-github-actions
 
   test-programs-linux-x86-asan:
     name: CI - Linux/x86_64 test programs with ASAN

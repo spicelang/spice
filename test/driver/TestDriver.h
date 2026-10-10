@@ -22,11 +22,6 @@ struct TestDriverCliOptions {
   bool skipSanitizerTests = false;
   bool isVerbose = false;
   bool enableCoverage = false;
-  bool bootstrapMode = false;
-  bool bootstrapCoverage = false;
-  bool bootstrapAsan = false;
-  bool bootstrapBuildOnly = false;
-  std::string bootstrapCompilerPath;
 };
 
 /**

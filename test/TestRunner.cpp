@@ -1,7 +1,6 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 #include <algorithm>
-#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -25,11 +24,9 @@
 #include <typechecker/FunctionManager.h>
 #include <typechecker/InterfaceManager.h>
 #include <typechecker/StructManager.h>
-#include <util/FileUtil.h>
 #include <util/SystemUtil.h>
 
 #include "driver/TestDriver.h"
-#include "util/BootstrapUtil.h"
 #include "util/TestUtil.h"
 
 using namespace spice::compiler;
@@ -82,7 +79,6 @@ void reGenerateIRForLTO(SourceFile *sourceFile, std::unordered_set<const SourceF
 
 /**
  * Execute the compiled test program and check its output and exit code against the references, if there are any.
- * Shared by the host and the bootstrap test runner, so that both check the compiled programs the same way.
  *
  * @param testCase Test case to check
  * @param executablePath Path to the compiled test program
@@ -103,7 +99,7 @@ void checkExecution(const TestCase &testCase, const std::filesystem::path &execu
   // code, that might match the one of the sanitizer
   const auto [output, exitCode] = SystemUtil::exec(cmd.str(), checkExecutionOutput || testDriverCliOptions.enableAsan);
   if (testDriverCliOptions.enableAsan) {
-    EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
+    EXPECT_FALSE(TestUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
   }
 
   // Check if the execution output matches the expected output
@@ -124,7 +120,7 @@ void checkExecution(const TestCase &testCase, const std::filesystem::path &execu
 // GCOV_EXCL_START
 /**
  * Run the debug script of the test case on the compiled test program and check the debugger output against the reference,
- * if there is one. Shared by the host and the bootstrap test runner.
+ * if there is one.
  *
  * @param testCase Test case to check
  * @param executablePath Path to the compiled test program
@@ -444,332 +440,47 @@ static void execTestCase(const TestCase &testCase) {
   SUCCEED();
 }
 
-/**
- * Runs a test case against the bootstrap compiler, built at the start of the test run. The bootstrap compiler is invoked
- * like the host compiler would be invoked by a user, since it cannot be driven stage by stage from here.
- *
- * Like the host test runner, it checks all reference outputs: the serialized AST, the symbol table, the raised error, the
- * dependency graph, the IR code of all opt levels, the assembly code, the warnings of the main source file, the type registry,
- * the cache stats, the execution output and exit code of the compiled program, and the debugger output. Beyond that, each
- * test case checks that the bootstrap compiler runs through all stages without crashing or raising an unexpected error.
- */
-static void execBootstrapTestCase(const TestCase &testCase) {
-  // Check if test is disabled
-  if (TestUtil::isDisabled(testCase))
-    GTEST_SKIP();
-
-  const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
-  const std::filesystem::path artifactDir = TestUtil::prepareArtifactDir(testCase);
-  const std::filesystem::path executablePath = TestUtil::getExecutablePath(artifactDir);
-  const bool checkAST = TestUtil::doesRefExist(testCase.testPath / REF_NAME_SYNTAX_TREE);
-  const bool checkDepGraph = TestUtil::doesRefExist(testCase.testPath / REF_NAME_DEP_GRAPH);
-  const bool needsExecutable = TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXECUTION_OUTPUT) ||
-                               TestUtil::doesRefExist(testCase.testPath / REF_NAME_EXIT_CODE) ||
-                               TestUtil::doesRefExist(testCase.testPath / REF_NAME_GDB_OUTPUT);
-  std::vector<std::string> testArgs;
-  TestUtil::parseTestArgs(mainSourceFilePath, testArgs);
-
-  // Assemble the command line, mirroring the cli options the test runner passes to the host compiler
-  const auto buildArgs = [&](const std::filesystem::path &outputPath) {
-    // Like the host test runner, bypass the compilation cache: the dumps would be empty for files restored from it
-    std::vector<std::string> args = {"build", "--test-mode", "--ignore-cache"};
-    args.insert(args.end(), testArgs.begin(), testArgs.end());
-    if (exists(testCase.testPath / CTL_RUN_BUILTIN_TESTS))
-      args.emplace_back("--test-main");
-    if (testDriverCliOptions.enableCoverage)
-      args.emplace_back("--coverage");
-    if (testDriverCliOptions.enableAsan)
-      args.insert(args.end(), {"--sanitizer", "address"});
-    args.emplace_back("--output");
-    args.push_back(outputPath.string());
-    return args;
-  };
-  // Run the bootstrap compiler with the given args on the main source file
-  const auto runBootstrapCompiler = [&](std::vector<std::string> args) {
-    args.push_back(mainSourceFilePath.string());
-    ExecResult result = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
-    if (testDriverCliOptions.isVerbose)                             // GCOV_EXCL_LINE
-      std::cout << "Bootstrap compiler output:\n" << result.output; // GCOV_EXCL_LINE
-    // An ASAN-instrumented bootstrap compiler reports memory errors, even if it compiles the test case like expected
-    EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(result.output)) << "Sanitizer report:\n" << result.output;
-    return result;
-  };
-  // The bootstrap compiler writes the dumps of the main source file to '<output dir>/source-<dump name>'
-  const auto readDump = [](const std::filesystem::path &dumpDir, const std::string &dumpName) {
-    const std::filesystem::path dumpPath = dumpDir / ("source-" + dumpName);
-    if (!exists(dumpPath))
-      return std::string();
-    return FileUtil::getFileContent(dumpPath);
-  };
-
-  std::vector<std::string> args = buildArgs(executablePath);
-  // Like the host test runner, only link an executable if it gets executed afterwards. If an error is expected, keep the
-  // executable output container, like the host test runner does: some errors (e.g. a missing main function) are only raised
-  // for executables
-  const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
-  const bool expectsError = TestUtil::doesRefExist(errorRefPath);
-  if (!needsExecutable && !expectsError) {
-    args.emplace_back("--output-container");
-    args.emplace_back("obj");
-  }
-  // The graphs are dumped to the console, since dumping them to files requires Graphviz to render them
-  if (checkAST)
-    args.emplace_back("--dump-ast");
-  if (checkDepGraph)
-    args.emplace_back("--dump-dependency-graph");
-
-  // Run the bootstrap compiler
-  const auto [output, exitCode] = runBootstrapCompiler(args);
-
-  // Check if the bootstrap compiler raised an error
-  if (const std::optional<std::string> errorMessage = BootstrapUtil::extractErrorMessage(output, exitCode)) {
-    if (!expectsError)
-      FAIL() << "Expected no error, but got: " << *errorMessage;
-    TestUtil::checkRefMatch(errorRefPath, [&] { return *errorMessage; });
-    return;
-  }
-  if (exitCode != 0)
-    FAIL() << "Bootstrap compiler exited with code " << exitCode << ":\n" << output;
-
-  // Check AST
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYNTAX_TREE, [&] {
-    const std::optional<std::string> astString = BootstrapUtil::extractSerializedGraph(output, BOOTSTRAP_GRAPH_NAME_AST);
-    EXPECT_TRUE(astString.has_value()) << "Bootstrap compiler did not dump the AST:\n" << output;
-    return astString.value_or("");
-  });
-
-  // Dump the outputs, the bootstrap compiler can only write to files in a separate run, to not dump the graphs to files as
-  // well. Like the host test runner, the assembly code is not checked when running on GitHub Actions
-  const bool checkSymbolTable = TestUtil::doesRefExist(testCase.testPath / REF_NAME_SYMBOL_TABLE);
-  const bool checkAssembly = !testDriverCliOptions.isGitHubActions && TestUtil::doesRefExist(testCase.testPath / REF_NAME_ASM);
-  const bool checkTypeRegistry = TestUtil::doesRefExist(testCase.testPath / REF_NAME_TYPE_REGISTRY);
-  const bool checkCacheStats = TestUtil::doesRefExist(testCase.testPath / REF_NAME_CACHE_STATS);
-  const std::filesystem::path dumpDir = artifactDir / "dumps";
-  if (checkSymbolTable || checkAssembly || checkTypeRegistry || checkCacheStats) {
-    std::filesystem::create_directories(dumpDir);
-    std::vector<std::string> dumpArgs = buildArgs(dumpDir / "object.o");
-    dumpArgs.insert(dumpArgs.end(), {"--output-container", "obj", "--dump-to-files"});
-    // The host test runner checks the IR of each opt level, for which a reference exists, and keeps the last one of these opt
-    // levels for the rest of the compilation. So it emits the assembly code with it, which the dump run has to mirror
-    std::optional<uint8_t> lastCheckedOptLevel;
-    for (uint8_t i = 0; i <= 5; i++)
-      if (TestUtil::doesRefExist(testCase.testPath / REF_NAME_OPT_IR[i]))
-        lastCheckedOptLevel = i;
-    if (lastCheckedOptLevel.has_value())
-      dumpArgs.emplace_back("-O" + std::string(1, BOOTSTRAP_OPT_LEVEL_NAMES[lastCheckedOptLevel.value()]));
-    if (checkSymbolTable)
-      dumpArgs.emplace_back("--dump-symtab");
-    if (checkAssembly)
-      dumpArgs.emplace_back("--dump-assembly");
-    if (checkTypeRegistry)
-      dumpArgs.emplace_back("--dump-types");
-    if (checkCacheStats)
-      dumpArgs.emplace_back("--dump-cache-stats");
-    const auto [dumpOutput, dumpExitCode] = runBootstrapCompiler(dumpArgs);
-    EXPECT_EQ(0, dumpExitCode) << "Bootstrap compiler exited with code " << dumpExitCode << ":\n" << dumpOutput;
-  }
-
-  // Check symbol table
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_SYMBOL_TABLE, [&] { return readDump(dumpDir, "symbol-table.json"); });
-
-  // Fail if an error was expected
-  if (expectsError)
-    FAIL() << "Expected error, but got no error";
-
-  // Check dependency graph
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_DEP_GRAPH, [&] {
-    const std::optional<std::string> depGraphString =
-        BootstrapUtil::extractSerializedGraph(output, BOOTSTRAP_GRAPH_NAME_DEP_GRAPH);
-    EXPECT_TRUE(depGraphString.has_value()) << "Bootstrap compiler did not dump the dependency graph:\n" << output;
-    return depGraphString.value_or("");
-  });
-
-  // Check IR code. The host checks the IR after running the optimizer pipeline of each opt level, for which a reference exists.
-  // The bootstrap compiler dumps the optimized IR of every source file into the output dir, so it is compiled once per opt level.
-  const bool emitsDebugInfo = BootstrapUtil::emitsDebugInfo(testArgs);
-  for (uint8_t i = 0; i <= 5; i++) {
-    TestUtil::checkRefMatch(
-        testCase.testPath / REF_NAME_OPT_IR[i],
-        [&] {
-          const std::filesystem::path irArtifactDir = artifactDir / ("ir-O" + std::to_string(i));
-          std::filesystem::create_directories(irArtifactDir);
-          std::vector<std::string> irArgs = buildArgs(irArtifactDir / "object.o");
-          irArgs.emplace_back("-O" + std::string(1, BOOTSTRAP_OPT_LEVEL_NAMES[i]));
-          irArgs.insert(irArgs.end(), {"--output-container", "obj", "--dump-ir", "--dump-to-files"});
-          const auto [irOutput, irExitCode] = runBootstrapCompiler(irArgs);
-          EXPECT_EQ(0, irExitCode) << "Bootstrap compiler exited with code " << irExitCode << ":\n" << irOutput;
-          // With LTO, the bootstrap compiler dumps the IR of the LTO module after the post-link optimization
-          const bool useLTO = std::ranges::find(irArgs, "-lto") != irArgs.end();
-          return readDump(irArtifactDir, useLTO ? "ir-code-lto-post-link.ll" : "ir-code-O" + std::to_string(i) + ".ll");
-        },
-        [&](std::string &expectedOutput, std::string &actualOutput) {
-          if (emitsDebugInfo) {
-            // Remove the lines, containing paths on the local file system
-            TestUtil::eraseLinesBySubstring(expectedOutput, " = !DIFile(filename:");
-            TestUtil::eraseLinesBySubstring(actualOutput, " = !DIFile(filename:");
-          }
-          // The LLVM C API, which the bootstrap compiler uses, cannot mark global values as dso_local
-          BootstrapUtil::eraseDSOLocalMarkers(expectedOutput);
-          BootstrapUtil::eraseDSOLocalMarkers(actualOutput);
-          // The bootstrap compiler names itself differently in the producer string. Bootstrap refs (e.g. ir-code-bootstrap.ll)
-          // contain the producer string of the bootstrap compiler as well
-          BootstrapUtil::normalizeProducerString(expectedOutput);
-          BootstrapUtil::normalizeProducerString(actualOutput);
-        },
-        true);
-  }
-
-  // Check assembly code
-  if (checkAssembly)
-    TestUtil::checkRefMatch(
-        testCase.testPath / REF_NAME_ASM, [&] { return readDump(dumpDir, "assembly-code.s"); },
-        [](std::string &, std::string &actualOutput) {
-          // The bootstrap compiler names itself differently in the producer string
-          BootstrapUtil::normalizeProducerString(actualOutput);
-        });
-
-  // Check warnings
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_WARNING_OUTPUT, [&] { return BootstrapUtil::extractWarnings(output); });
-
-  // Check type registry output
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_TYPE_REGISTRY, [&] { return readDump(dumpDir, "type-registry.out"); });
-
-  // Check cache stats output
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_CACHE_STATS, [&] { return readDump(dumpDir, "cache-stats.out"); });
-
-  if (needsExecutable) {
-    // Check execution output and exit code
-    checkExecution(testCase, executablePath);
-
-    // Check if the debugger output matches the expected output
-    checkDebuggerOutput(testCase, executablePath);
-  }
-
-  SUCCEED();
-}
-
-/**
- * Runs a test case against the host compiler or, in bootstrap mode, against the bootstrap compiler
- */
-static void runTestCase(const TestCase &testCase) {
-  if (testDriverCliOptions.bootstrapMode)
-    execBootstrapTestCase(testCase);
-  else
-    execTestCase(testCase);
-}
-
-namespace {
-
-/**
- * Runs a lint test case against the bootstrap compiler: invokes its `lint` subcommand and compares the emitted
- * findings against lint.out. The bootstrap compiler colorizes its findings, so the captured output is
- * de-colorized before being matched against the plain-text reference.
- */
-void execBootstrapLinterTestCase(const TestCase &testCase) {
-  // Check if test is disabled
-  if (TestUtil::isDisabled(testCase))
-    GTEST_SKIP();
-
-  const std::filesystem::path mainSourceFilePath = testCase.testPath / REF_NAME_SOURCE;
-
-  // Assemble the command line
-  const std::vector<std::string> args = {"lint", mainSourceFilePath.string()};
-
-  // Run the bootstrap compiler
-  const auto [output, exitCode] = SystemUtil::exec(testDriverCliOptions.bootstrapCompilerPath, args, true);
-  if (testDriverCliOptions.isVerbose)                      // GCOV_EXCL_LINE
-    std::cout << "Bootstrap compiler output:\n" << output; // GCOV_EXCL_LINE
-  // An ASAN-instrumented bootstrap compiler reports memory errors, even if it lints the test case like expected
-  EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
-
-  // Check if the bootstrap compiler raised an error
-  const std::filesystem::path errorRefPath = testCase.testPath / REF_NAME_ERROR_OUTPUT;
-  if (const std::optional<std::string> errorMessage = BootstrapUtil::extractErrorMessage(output, exitCode)) {
-    if (!TestUtil::doesRefExist(errorRefPath))
-      FAIL() << "Expected no error, but got: " << *errorMessage;
-    TestUtil::checkRefMatch(errorRefPath, [&] { return *errorMessage; });
-    return;
-  }
-  if (exitCode != 0)
-    FAIL() << "Bootstrap compiler exited with code " << exitCode << ":\n" << output;
-
-  // Fail if an error was expected
-  if (TestUtil::doesRefExist(errorRefPath))
-    FAIL() << "Expected error, but got no error";
-
-  // Check lint findings against the reference (de-colorized)
-  TestUtil::checkRefMatch(testCase.testPath / REF_NAME_LINT_OUTPUT, [&] { return BootstrapUtil::stripAnsiCodes(output); });
-
-  SUCCEED();
-}
-
-} // namespace
-
 class CommonTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(CommonTests, ) { runTestCase(GetParam()); }
+TEST_P(CommonTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, CommonTests, ::testing::ValuesIn(TestUtil::collectTestCases("common", false)),
                          TestUtil::NameResolver());
 
 class LexerTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(LexerTests, ) { runTestCase(GetParam()); }
+TEST_P(LexerTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, LexerTests, ::testing::ValuesIn(TestUtil::collectTestCases("lexer", false)), TestUtil::NameResolver());
 
 class ParserTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(ParserTests, ) { runTestCase(GetParam()); }
+TEST_P(ParserTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, ParserTests, ::testing::ValuesIn(TestUtil::collectTestCases("parser", false)),
                          TestUtil::NameResolver());
 
 class SymbolTableBuilderTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(SymbolTableBuilderTests, ) { runTestCase(GetParam()); }
+TEST_P(SymbolTableBuilderTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, SymbolTableBuilderTests, ::testing::ValuesIn(TestUtil::collectTestCases("symboltablebuilder", true)),
                          TestUtil::NameResolver());
 
 class TypeCheckerTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(TypeCheckerTests, ) { runTestCase(GetParam()); }
+TEST_P(TypeCheckerTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, TypeCheckerTests, ::testing::ValuesIn(TestUtil::collectTestCases("typechecker", true)),
                          TestUtil::NameResolver());
 
 class IRGeneratorTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(IRGeneratorTests, ) { runTestCase(GetParam()); }
+TEST_P(IRGeneratorTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, IRGeneratorTests, ::testing::ValuesIn(TestUtil::collectTestCases("irgenerator", true)),
                          TestUtil::NameResolver());
 
 class StdTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(StdTests, ) { runTestCase(GetParam()); }
+TEST_P(StdTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, StdTests, ::testing::ValuesIn(TestUtil::collectTestCases("std", true)), TestUtil::NameResolver());
 
 class BenchmarkTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(BenchmarkTests, ) { runTestCase(GetParam()); }
+TEST_P(BenchmarkTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, BenchmarkTests, ::testing::ValuesIn(TestUtil::collectTestCases("benchmark", false)),
                          TestUtil::NameResolver());
 
 class ExampleTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(ExampleTests, ) { runTestCase(GetParam()); }
+TEST_P(ExampleTests, ) { execTestCase(GetParam()); }
 INSTANTIATE_TEST_SUITE_P(, ExampleTests, ::testing::ValuesIn(TestUtil::collectTestCases("examples", false)),
                          TestUtil::NameResolver());
-
-class LinterTests : public ::testing::TestWithParam<TestCase> {};
-TEST_P(LinterTests, ) {
-  if (!testDriverCliOptions.bootstrapMode)
-    GTEST_SKIP() << "Linter tests run against the bootstrap compiler only";
-  execBootstrapLinterTestCase(GetParam());
-}
-INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTestCases("linter", false)),
-                         TestUtil::NameResolver());
-
-// Builds the bootstrap compiler sources in test build mode and runs their builtin tests (#[test] functions, e.g. in
-// src/driver.spice), with the same instrumentation as the bootstrap compiler
-TEST(BootstrapTests, BuiltinTests) {
-  if (!testDriverCliOptions.bootstrapMode)
-    GTEST_SKIP() << "The builtin tests of the bootstrap compiler run in bootstrap mode only";
-  const std::optional<std::filesystem::path> executablePath = BootstrapUtil::buildBootstrapBuiltinTests();
-  if (!executablePath.has_value())
-    FAIL() << "Could not build the builtin tests of the bootstrap compiler";
-  const auto [output, exitCode] = SystemUtil::exec(executablePath->string(), {}, true);
-  if (testDriverCliOptions.isVerbose)                 // GCOV_EXCL_LINE
-    std::cout << "Builtin tests output:\n" << output; // GCOV_EXCL_LINE
-  EXPECT_FALSE(BootstrapUtil::containsSanitizerReport(output)) << "Sanitizer report:\n" << output;
-  EXPECT_EQ(0, exitCode) << "Builtin tests failed:\n" << output;
-}
 
 } // namespace spice::testing

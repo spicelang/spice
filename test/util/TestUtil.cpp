@@ -3,6 +3,7 @@
 #include "TestUtil.h"
 
 #include <dirent.h>
+#include <regex>
 #if OS_UNIX
 #include <cstring> // Required by builds on Unix
 #endif
@@ -93,7 +94,7 @@ std::vector<TestCase> TestUtil::collectTestCases(const char *suiteName, bool use
  * not compare any reference file. The ASAN mode only compares the output and exit code of the compiled test program, since
  * the sanitizer instrumentation changes the generated code, but must not change the behavior of the program.
  *
- * @param refPath Path to the reference file (without platform or bootstrap suffix)
+ * @param refPath Path to the reference file (without platform suffix)
  * @return Compared or not
  */
 bool TestUtil::isComparedInCurrentMode(const std::filesystem::path &refPath) {
@@ -132,14 +133,12 @@ bool TestUtil::checkRefMatch(const std::filesystem::path &originalRefPath, GetOu
 
 #ifndef ARCH_X86_64
     // Cancel early, before comparing or updating the refs
-    if (x86Only && (refPath == originalRefPath || refPath == getBootstrapRefPath(originalRefPath)))
+    if (x86Only && refPath == originalRefPath)
       return true;
 #endif
 
-    // In bootstrap mode, only the bootstrap refs may be updated. The other refs hold the output of the host compiler
-    const bool isBootstrapRef = refPath.filename().string().starts_with(getBootstrapRefPath(originalRefPath).stem().string());
-    if (testDriverCliOptions.updateRefs && (!testDriverCliOptions.bootstrapMode || isBootstrapRef)) { // GCOV_EXCL_LINE
-      FileUtil::writeToFile(refPath, actualOutput);                                                   // GCOV_EXCL_LINE
+    if (testDriverCliOptions.updateRefs) {          // GCOV_EXCL_LINE
+      FileUtil::writeToFile(refPath, actualOutput); // GCOV_EXCL_LINE
     } else if (isComparedInCurrentMode(originalRefPath)) {
       // In coverage and ASAN mode, the instrumentation changes the generated output, so comparing it against the
       // reference would fail spuriously. Still call getActualOutput() above though, to drive the pipeline stage that
@@ -282,11 +281,9 @@ bool TestUtil::isDisabled(const TestCase &testCase) {
     return true;
   if (testDriverCliOptions.isGitHubActions && exists(testCase.testPath / CTL_SKIP_GH))
     return true;
-  // Some test cases check host specifics, that the bootstrap compiler does not replicate
-  if (testDriverCliOptions.bootstrapMode && exists(testCase.testPath / CTL_SKIP_BOOTSTRAP))
-    return true;
-  // Some test cases check bootstrap specifics, that differ from the host compiler (e.g. ANTLR error messages or typeid values)
-  if (!testDriverCliOptions.bootstrapMode && exists(testCase.testPath / CTL_SKIP_HOST))
+  // Some test cases check specifics of the self-hosted compiler, that differ from the host compiler (e.g. ANTLR error messages
+  // or typeid values)
+  if (exists(testCase.testPath / CTL_SKIP_HOST))
     return true;
   // In ASAN mode, every test program is built with AddressSanitizer, which cannot be combined with another sanitizer
   if (testDriverCliOptions.skipSanitizerTests || testDriverCliOptions.enableAsan) {
@@ -380,40 +377,31 @@ void TestUtil::eraseLinesBySubstring(std::string &irCode, const char *const need
 }
 
 /**
- * Get the path of the bootstrap variant of the given ref file, e.g. 'ir-code-bootstrap.ll' for 'ir-code.ll'
- *
- * @param refPath Path to the reference file
- * @return Path to the bootstrap variant of the reference file
- */
-std::filesystem::path TestUtil::getBootstrapRefPath(const std::filesystem::path &refPath) {
-  const std::string fileName = refPath.stem().string() + "-bootstrap" + refPath.extension().string();
-  return refPath.parent_path() / fileName;
-}
-
-/**
- * Get all variants of the given ref file, ordered from the most to the least specific one. In bootstrap mode, the
- * bootstrap variants (e.g. 'ir-code-bootstrap.ll') come first, for references where the bootstrap compiler differs from
- * the host compiler.
+ * Get all variants of the given ref file, ordered from the most to the least specific one
  *
  * @param refPath Path to the reference file
  * @return Paths to the ref file variants
  */
 std::vector<std::filesystem::path> TestUtil::expandRefPaths(const std::filesystem::path &refPath) {
-  std::vector<std::filesystem::path> baseRefPaths = {refPath};
-  if (testDriverCliOptions.bootstrapMode)
-    baseRefPaths.insert(baseRefPaths.begin(), getBootstrapRefPath(refPath));
+  const std::filesystem::path parent = refPath.parent_path();
+  const std::string stem = refPath.stem().string();
+  const std::string ext = refPath.extension().string();
+  const std::string osFileName = stem + "-" + SPICE_TARGET_OS + ext;
+  const std::string osArchFileName = stem + "-" + SPICE_TARGET_OS + "-" + SPICE_TARGET_ARCH + ext;
+  return {parent / osArchFileName, parent / osFileName, refPath};
+}
 
-  // Construct list of files to search for
-  std::vector<std::filesystem::path> refPaths;
-  for (const std::filesystem::path &baseRefPath : baseRefPaths) {
-    const std::filesystem::path parent = baseRefPath.parent_path();
-    const std::string stem = baseRefPath.stem().string();
-    const std::string ext = baseRefPath.extension().string();
-    const std::string osFileName = stem + "-" + SPICE_TARGET_OS + ext;
-    const std::string osArchFileName = stem + "-" + SPICE_TARGET_OS + "-" + SPICE_TARGET_ARCH + ext;
-    refPaths.insert(refPaths.end(), {parent / osArchFileName, parent / osFileName, baseRefPath});
-  }
-  return refPaths;
+/**
+ * Check if the given output of a compiled test program contains a report of the AddressSanitizer or LeakSanitizer:
+ *
+ *   ==<pid>==ERROR: AddressSanitizer: heap-use-after-free on address ...
+ *
+ * @param output Combined stdout and stderr output of the test program
+ * @return Sanitizer report found or not
+ */
+bool TestUtil::containsSanitizerReport(const std::string &output) {
+  static const std::regex SANITIZER_REPORT_REGEX(R"(==\d+==ERROR: (AddressSanitizer|LeakSanitizer))");
+  return std::regex_search(output, SANITIZER_REPORT_REGEX);
 }
 
 } // namespace spice::testing
