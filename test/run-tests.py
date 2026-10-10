@@ -702,7 +702,9 @@ def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: st
     if builtin_tests:
         cmd += ["--build-mode", "test"]
     cmd += ["--ignore-cache", "--output", str(executable_path), str(ROOT_DIR / "src" / "main.spice")]
-    result = subprocess.run(cmd, cwd=ROOT_DIR, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+    # The coverage instrumentation writes the .gcno files into the working dir of the compiler, so they land next to the executable
+    cwd = output_dir if OPTS.instrument == "coverage" else ROOT_DIR
+    result = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             encoding="utf-8", errors="surrogateescape")
     # The compiler sources emit lots of warnings, so the output is only of interest if something went wrong
     if result.returncode != 0 or not executable_path.is_file():
