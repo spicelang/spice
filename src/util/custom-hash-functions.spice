@@ -65,8 +65,7 @@ public f<Hash> hashTypeQualifiers(const TypeQualifiers& qualifiers) {
 }
 
 /**
- * Hash a qualified type. Types are interned in the type registry, so the address of the type identifies its content, like
- * the content hash of the host does.
+ * Hash a qualified type. Types are interned in the type registry, so the address of the type identifies its content.
  *
  * @param qualType Qualified type
  * @return Hash value

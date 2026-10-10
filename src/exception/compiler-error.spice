@@ -12,7 +12,7 @@ public type CompilerErrorType enum {
     INTERNAL_ERROR,
     IO_ERROR,
     STD_NOT_FOUND,
-    BOOTSTRAP_NOT_FOUND,
+    COMPILER_SOURCES_NOT_FOUND,
     UNHANDLED_BRANCH,
     TARGET_NOT_AVAILABLE,
     OOM,
@@ -74,7 +74,7 @@ f<string> CompilerError.getMessagePrefix(const CompilerErrorType errorType) {
         case CompilerErrorType::INTERNAL_ERROR: { return "Internal compiler error"; }
         case CompilerErrorType::IO_ERROR: { return "I/O Error"; }
         case CompilerErrorType::STD_NOT_FOUND: { return "Std lib not found"; }
-        case CompilerErrorType::BOOTSTRAP_NOT_FOUND: { return "Bootstrap compiler not found"; }
+        case CompilerErrorType::COMPILER_SOURCES_NOT_FOUND: { return "Compiler sources not found"; }
         case CompilerErrorType::UNHANDLED_BRANCH: { return "Unhandled code branch"; }
         case CompilerErrorType::TARGET_NOT_AVAILABLE: { return "Selected target not available"; }
         case CompilerErrorType::OOM: { return "An out of memory error occurred"; }

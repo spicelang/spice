@@ -28,7 +28,7 @@ One alternative on `postfixUnaryExpr` (`Spice.g4:78`): `postfixUnaryExpr NOT`. F
 `Result<T>`:
 
 - The enclosing function/procedure must itself return `Result<U>`, or it's a compile error
-  (`TypeChecker::visitPostfixUnaryExpr`, `TypeCheckerExpressions.cpp`).
+  (`TypeChecker.visitPostfixUnaryExpr`, `src/typechecker/type-checker.spice`).
 - At runtime: if `isErr()`, the enclosing function returns `err<U>(operand.getErr())` immediately (same
   early-return-with-scope-cleanup shape `panic`'s `exit` path uses, minus the `exit` call). Otherwise the
   expression evaluates to `unwrap()`'s result.
@@ -67,7 +67,7 @@ Config cfg2 = loadConfig(path).unwrapOr(Config.default());
 
 Gated by `#![core.compiler.explicitErrorHandling = true]`. When enabled, a bare, receiver-less call statement
 whose type is `Result<T>` is a hard error (`DISCARDED_RESULT_VALUE`,
-`TypeCheckerValues.cpp:290`) instead of the generic `UNUSED_RETURN_VALUE` warning, and is **not** suppressible
+`src/typechecker/type-checker.spice`) instead of the generic `UNUSED_RETURN_VALUE` warning, and is **not** suppressible
 by `#[core.compiler.ignoreUnusedReturnValue]` (which keeps its weaker meaning for ordinary return values).
 
 The escape hatch is Spice's existing intentionally-unused-binding convention: a leading underscore.
@@ -87,7 +87,7 @@ zero-cost when the attribute is off (no instrumentation calls emitted at all).
 `ErrorTraceFrame { file, signature, line, column }` (`ERR_TRACE_CAPACITY = 16`) plus a frame count — a plain
 buffer, not a ring buffer: once it's full, further hops are dropped rather than overwriting earlier ones (see
 below). `signature` is the enclosing function/procedure's full signature (fully-qualified name plus parameter and
-return types, e.g. `f<Result<double>> TestStruct.frame0(bool)`), produced via `Function::getSignature()` for the
+return types, e.g. `f<Result<double>> TestStruct.frame0(bool)`), produced via `Function.getSignature()` for the
 manifestation that is actually being generated — not just its bare name. It is *not* part of
 `Result<T>`'s LLVM layout — that layout is shared across every file that instantiates `Result<T>` for a given
 `T`, so a hidden field gated by a per-file attribute would risk two files silently disagreeing on the type's

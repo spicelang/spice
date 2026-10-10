@@ -48,7 +48,7 @@ p assignBox(Box& target, const Box& source) {
     target = copy; // Box& = Box -> must deep-copy via the copy ctor, not alias
 }
 
-// Generic RAII helper mirroring the bootstrap compiler's SaveAndRestore, which is the real-world
+// Generic RAII helper mirroring the compiler's SaveAndRestore, which is the real-world
 // pattern that exposed the double-free: it stores a reference, applies a new value through it on
 // construction and restores the old value through it on destruction.
 type SaveAndRestore<T> struct {

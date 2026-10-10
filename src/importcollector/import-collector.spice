@@ -46,7 +46,7 @@ public f<Any> ImportCollector.visitEntry(ASTEntryNode* node) {
 public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     // Validate the import path before resolving it against any base directory. Import paths must be relative and
     // must not contain parent-directory ('..') components. Otherwise a malicious source file could escape the
-    // std/bootstrap/project roots (e.g. 'import "../../../etc/x"' or 'import "std/../../../etc/x"') and read
+    // std/compiler/project roots (e.g. 'import "../../../etc/x"' or 'import "std/../../../etc/x"') and read
     // arbitrary files, or worse, smuggle shell metacharacters into a filename that later ends up in a linker
     // invocation.
     ASTNode* baseNode = cast<ASTNode*>(node);
@@ -63,15 +63,27 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     }
 
     const bool isStd = node.importPath.startsWith("std/");
-    const bool isBootstrap = node.importPath.startsWith("bootstrap/");
+    // Imports of compiler source files. The legacy 'bootstrap/' prefix is still used by the compiler sources, since the
+    // stage0 compiler does not know the 'compiler/' prefix yet.
+    // ToDo: Remove the 'bootstrap/' prefix, once the stage0 compiler resolves the 'compiler/' prefix
+    string compilerSourceDirEnvVar = "";
+    unsigned long compilerPrefixLength = 0ul;
+    if node.importPath.startsWith("compiler/") && isCompilerSourceDirConfigured() {
+        compilerSourceDirEnvVar = "SPICE_COMPILER_DIR";
+        compilerPrefixLength = 9ul;
+    } else if node.importPath.startsWith("bootstrap/") {
+        compilerSourceDirEnvVar = "SPICE_BOOTSTRAP_DIR";
+        compilerPrefixLength = 10ul;
+    }
+    const bool isCompilerSource = compilerPrefixLength > 0ul;
 
     FilePath basePath;
     if isStd { // Include source file from standard library
         const FilePath stdPath = getStdDir();
         basePath = stdPath / node.importPath.getSubstring(node.importPath.find("std/") + 4l);
-    } else if isBootstrap { // Include source file from bootstrap library
-        const FilePath bootstrapPath = getBootstrapCompilerDir();
-        basePath = bootstrapPath / node.importPath.getSubstring(node.importPath.find("bootstrap/") + 10l);
+    } else if isCompilerSource { // Include source file of the compiler
+        const FilePath compilerSourceDir = getCompilerSourceDir(compilerSourceDirEnvVar);
+        basePath = compilerSourceDir / node.importPath.getSubstring(compilerPrefixLength);
     } else { // Include own source file
         basePath = FilePath(ownFilePath.getParentDir()) / node.importPath;
     }
@@ -119,7 +131,7 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     }
 
     // The lexical '..'-component check above only rejects traversal spelled out in the import path itself. A
-    // same-looking relative import can still resolve outside the intended std/bootstrap/project root if a
+    // same-looking relative import can still resolve outside the intended std/compiler/project root if a
     // directory along the way is a symlink. Canonicalize the resolved file and its intended base directory
     // (this also resolves symlinks) and reject the import unless the former stays contained in the latter.
     // A main source file given as a bare filename (e.g. 'spice build main.spice') has an empty parent dir;
@@ -132,8 +144,8 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     FilePath intendedRoot;
     if isStd {
         intendedRoot = getStdDir();
-    } else if isBootstrap {
-        intendedRoot = getBootstrapCompilerDir();
+    } else if isCompilerSource {
+        intendedRoot = getCompilerSourceDir(compilerSourceDirEnvVar);
     } else {
         intendedRoot = FilePath(ownFileDir);
     }

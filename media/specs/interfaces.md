@@ -8,8 +8,7 @@
 - [x] Add tests for semantic checks
 - [x] Allow template types for interface methods
 - [ ] Allow optional args for interface methods
-- [x] Default methods for interfaces (host compiler)
-- [x] Default methods for interfaces (bootstrap compiler)
+- [x] Default methods for interfaces
 - [ ] Default methods for generic interfaces
 
 ## Syntax
@@ -40,7 +39,7 @@ collection of structs, implementing this particular interface.
 
 ### Motivation
 Interfaces with many methods force every implementing struct to implement all of them, even if most implementations are
-identical. The visitor interface of the bootstrap compiler is a good example: every compiler pass implements ~80 visit methods,
+identical. The visitor interface of the compiler is a good example: every compiler pass implements ~80 visit methods,
 most of them only visiting the children of the node or doing nothing at all.
 
 ### Syntax
@@ -92,13 +91,13 @@ implementation of the concrete struct, regardless of whether it is the implement
 - **Symbol table builder:** The method definition `IVisitor.visitNode` resolves to the scope of the interface, if there is no
   struct with that name. The body scope of the default method is a child of the interface scope.
 - **Type checker (prepare):** The default method gets `this` type `IVisitor`. It is inserted into the interface scope, but is
-  marked as default method (`Function::isInterfaceDefaultMethod`), so that function matching ignores it. Calls on the interface
+  marked as default method (`Function.isInterfaceDefaultMethod`), so that function matching ignores it. Calls on the interface
   still resolve to the method signatures.
 - **Type checker (check):** The body of the default method is type-checked once against the interface. Additionally, the
   compiler verifies that the default method implements a method signature of the interface.
   When checking that a struct implements all methods of its interfaces, a missing method is looked up among the default
   methods of the respective interface. If found, an inherited method is inserted into the struct scope. It has no body of its
-  own, but refers to the default method (`Function::defaultMethod`). This makes direct calls like `counter.visitNode(node)` work
+  own, but refers to the default method (`Function.defaultMethod`). This makes direct calls like `counter.visitNode(node)` work
   and gives the inherited method a vtable slot.
 - **IR generator:** The default method is emitted once, by the source file that defines the interface. If the interface is
   public, the default method is public as well, because structs in other source files can inherit it. Inherited methods have
@@ -110,8 +109,7 @@ implementation of the concrete struct, regardless of whether it is the implement
 - Virtual calls through an interface, that is not the first interface of a struct, do not work correctly yet. This is
   independent of default methods, but also affects default methods of such interfaces.
 
-### Bootstrap compiler
-The bootstrap compiler implements default methods the same way as the host compiler (see `symbol-table-builder.spice`,
-`type-checker.spice`, `function-manager.spice` and `ir-generator.spice`). Since both compilers support them, the sources of
-the bootstrap compiler use default methods as well: The visitor interface `IAbstractAstVisitor` provides default visit
-methods, which visit all children of the node, so that each compiler pass only implements the visit methods it needs.
+### Usage in the compiler
+Default methods are implemented in `symbol-table-builder.spice`, `type-checker.spice`, `function-manager.spice` and
+`ir-generator.spice`. The compiler sources use them as well: The visitor interface `IAbstractAstVisitor` provides default
+visit methods, which visit all children of the node, so that each compiler pass only implements the visit methods it needs.

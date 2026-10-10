@@ -51,7 +51,7 @@ public p BuiltinFunctionInfo.ctor(unsigned int minTemplateTypes, unsigned int ma
 }
 
 /**
- * Look up the metadata of a builtin function. This is the equivalent of the host's BUILTIN_FUNCTIONS_MAP.
+ * Look up the metadata of a builtin function.
  *
  * @param name Function name
  * @param info Receives the metadata of the builtin function, if found

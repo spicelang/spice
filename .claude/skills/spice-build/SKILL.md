@@ -54,7 +54,7 @@ It succeeds as soon as two consecutive self-compiled stages are bit-identical. C
 
 ## Tips
 
-- `python test/run-tests.py` builds the compiler under test on its own (into `build/test-tmp/bootstrap-compiler`); pass
+- `python test/run-tests.py` builds the compiler under test on its own (into `build/test-tmp/compiler`); pass
   `--compiler build/spice` to reuse a build instead. See the `spice-test` skill.
 - See the `spice-dump` skill for inspecting the IR/assembly output of the built compiler.
 - When `src/` starts to use a language feature, that the pinned stage0 compiler does not support yet, the stage0 version

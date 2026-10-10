@@ -36,7 +36,7 @@ public type UnionRegistry alias Map</*unionId=*/String, /*manifestationList=*/Un
 public f<Union*> insertUnion(Scope* insertScope, Union& spiceUnion, Vector<Union*>* nodeUnionList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the union
     const String unionId = spiceUnion.name + ":" + spiceUnion.declNode.codeLoc.toString();
-    // Like std::map::emplace in the host, keep an existing manifestation list
+    // Keep an existing manifestation list
     if !insertScope.unions.contains(unionId) {
         insertScope.unions.insert(unionId, UnionManifestationList());
     }
@@ -62,8 +62,8 @@ f<Union*> insertSubstantiation(Scope* insertScope, Union& newManifestation, cons
     return &manifestationList.get(signature);
 }
 
-// Address of the active union lookup cache. The host keeps the lookup cache in static members of the UnionManager. Spice
-// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+// Address of the active union lookup cache. Spice only supports globals of primitive type, so the cache is owned by the
+// global resource manager and its address is stored here.
 long ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = 0l;
 
 /**

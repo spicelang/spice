@@ -512,7 +512,7 @@ attributes #4 = { nofree nounwind }
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !3, line: 70, type: !5, isLocal: true, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev [self-hosted] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false)
 !3 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-dbg-info-complex")
 !4 = !{!0}
 !5 = !DICompositeType(tag: DW_TAG_array_type, baseType: !6, size: 192, elements: !7)
@@ -524,7 +524,7 @@ attributes #4 = { nofree nounwind }
 !11 = !{i32 7, !"frame-pointer", i32 0}
 !12 = !{i32 7, !"Dwarf Version", i32 5}
 !13 = !{i32 2, !"Debug Info Version", i32 3}
-!14 = !{!"spice version dev [self-hosted] (https://github.com/spicelang/spice)"}
+!14 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !15 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainiPPKc", scope: !3, file: !3, line: 6, type: !16, scopeLine: 6, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !21)
 !16 = !DISubroutineType(types: !17)
 !17 = !{!18, !18, !19}

@@ -37,8 +37,7 @@ public f<bool> isReservedKeyword(const String& identifier) {
 type T dyn;
 
 /**
- * Builds the AST of a source file from its token stream. This is the equivalent of the ANTLR-generated parser and the
- * ASTBuilder of the host compiler.
+ * Builds the AST of a source file from its token stream.
  */
 public type Parser struct {
     compose public CompilerPass compilerPass
@@ -99,7 +98,7 @@ f<T*> Parser.concludeNode<T>(T* node) {
     ASTNode* nodeBase = cast<ASTNode*>(node);
     assert this.parentStack.top() == nodeBase;
     this.parentStack.pop();
-    // The node ends with the last token, that was consumed for it (like the stop token of a parser rule context in the host)
+    // The node ends with the last token, that was consumed for it
     const Token& stopToken = this.lexer.getPreviousRelevantToken();
     nodeBase.codeLoc.sourceIntervalStop = cast<long>(stopToken.endOffset) - 1l;
     return node;
@@ -107,7 +106,7 @@ f<T*> Parser.concludeNode<T>(T* node) {
 
 // Create a new node, which takes the place of the most recently parsed child of the current parent node and adopts it.
 // This is used for expressions, where the node type is only known after the first operand was parsed. Pass-through
-// expressions (e.g. an additive expression with only one operand) therefore never get a node, like in the host ASTBuilder.
+// expressions (e.g. an additive expression with only one operand) therefore never get a node.
 f<T*> Parser.createNodeWrappingLastChild<T>() {
     assert !this.parentStack.isEmpty();
     ASTNode* parent = this.parentStack.top();
@@ -126,8 +125,8 @@ f<T*> Parser.createNodeWrappingLastChild<T>() {
     return node;
 }
 
-// Move a child of the given parent node to the end of its children. The host lists the children of a node in the order of
-// its members (see GET_CHILDREN), which differs from the parse order for some nodes. This is used to mirror that order.
+// Move a child of the given parent node to the end of its children. The children of a node are listed in the order of its
+// members, which differs from the parse order for some nodes. This is used to establish that order.
 p Parser.moveChildToEnd(ASTNode* parent, ASTNode* child) {
     const unsigned long childCount = parent.children.getSize();
     for unsigned long i = 0l; i < childCount; i++ {
@@ -516,7 +515,7 @@ public f<ASTEntryNode*> Parser.parse() {
         this.parseTopLevelDef(entryNode);
     }
 
-    // The host lists the children of the entry node grouped by kind: mod attrs, import defs and top level defs
+    // The children of the entry node are listed grouped by kind: mod attrs, import defs and top level defs
     this.groupEntryChildren(entryNode);
 
     // Hand over all switch statements of this file
@@ -670,7 +669,7 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
         ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
         fctDefNode.attrs = attrs;
-        // Tell the attributes that they are function attributes (matches host semantics)
+        // Tell the attributes that they are function attributes
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_FCT_PROC;
         }
@@ -720,7 +719,7 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
         ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
         procDefNode.attrs = attrs;
-        // Tell the attributes that they are function attributes (matches host semantics)
+        // Tell the attributes that they are function attributes
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_FCT_PROC;
         }
@@ -734,8 +733,8 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
     this.expect(TokenType::P);
     procDefNode.name = this.parseFctName();
     procDefNode.isMethod = procDefNode.name.nameFragments.getSize() > 1l;
-    // Note: isCtor is derived later, by SymbolTableBuilder (matches host: it is set from
-    // name->nameFragments.back() == CTOR_FUNCTION_NAME during symbol-table building, not parsing).
+    // Note: isCtor is derived later, by SymbolTableBuilder (it is set from the last name fragment being
+    // CTOR_FUNCTION_NAME during symbol-table building, not parsing).
 
     // Parse typeLst (template type list)
     if this.isGenericOpenAhead() {
@@ -783,7 +782,7 @@ f<ASTFctNameNode*> Parser.parseFctName() {
         fctNameNode.nameFragments.pushBack(name);
         this.expect(TokenType::IDENTIFIER);
 
-        // Build the fully-qualified name (matches host's MEMBER_ACCESS_TOKEN-joined fqName)
+        // Build the fully-qualified name (name fragments joined by MEMBER_ACCESS_TOKEN)
         if !fctNameNode.structName.isEmpty() {
             fctNameNode.fqName = fctNameNode.structName + MEMBER_ACCESS_TOKEN + name;
         } else {
@@ -798,7 +797,7 @@ f<ASTFctNameNode*> Parser.parseFctName() {
 //               | GREATER GREATER | BITWISE_AND | BITWISE_OR | BITWISE_XOR | BITWISE_NOT | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL
 //               | DIV_EQUAL | PLUS_PLUS | MINUS_MINUS | LBRACKET RBRACKET | ASSIGN;
 // Note: the lexer merges '<<' and '>>' into single SHL / SHR tokens. Returns the mangled op.* function
-// name for the matched operator (matches host's ASTBuilder::visitOverloadableOp mapping).
+// name for the matched operator.
 f<String> Parser.parseOverloadableOp() {
     const TokenType tok = this.lexer.getToken().tokenType;
     String name;
@@ -886,7 +885,7 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
         ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
         structDefNode.attrs = attrs;
-        // Tell the attributes that they are struct attributes (matches host semantics)
+        // Tell the attributes that they are struct attributes
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_STRUCT;
         }
@@ -938,7 +937,7 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
         ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
         interfaceDefNode.attrs = attrs;
-        // Tell the attributes that they are interface attributes (matches host semantics)
+        // Tell the attributes that they are interface attributes
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_INTERFACE;
         }
@@ -983,7 +982,7 @@ f<ASTUnionDefNode*> Parser.parseUnionDef() {
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
         ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
         unionDefNode.attrs = attrs;
-        // Tell the attributes that they are union attributes (matches host semantics)
+        // Tell the attributes that they are union attributes
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_UNION;
         }
@@ -1038,7 +1037,7 @@ f<ASTEnumDefNode*> Parser.parseEnumDef() {
     this.expect(TokenType::LBRACE);
     ASTEnumItemLstNode* itemLst = this.parseEnumItemLst();
     enumDefNode.itemLst = itemLst;
-    // Back-link every item to its enclosing enum def (matches host semantics)
+    // Back-link every item to its enclosing enum def
     foreach ASTEnumItemNode* item : itemLst.items {
         item.enumDef = enumDefNode;
     }
@@ -1107,7 +1106,7 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
         ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
         extDeclNode.attrs = attrs;
-        // Tell the attributes that they are ext-decl attributes (matches host semantics)
+        // Tell the attributes that they are ext-decl attributes
         foreach ASTAttrNode* attr : attrs.attrLst.attributes {
             attr.target = AttrTarget::TARGET_EXT_DECL;
         }
@@ -1160,7 +1159,7 @@ f<ASTImportDefNode*> Parser.parseImportDef() {
         importDefNode.importName = this.getIdentifier(false);
         this.expect(TokenType::IDENTIFIER);
     } else {
-        // If no name is given, use the path as the name (matches host semantics)
+        // If no name is given, use the path as the name
         importDefNode.importName = importDefNode.importPath;
     }
     this.expect(TokenType::SEMICOLON);
@@ -1449,7 +1448,7 @@ f<ASTParamLstNode*> Parser.parseParamLst() {
         paramLstNode.params.pushBack(this.parseDeclStmt());
     }
 
-    // Mark each declaration as a function parameter (matches host semantics)
+    // Mark each declaration as a function parameter
     foreach ASTDeclStmtNode* param : paramLstNode.params {
         param.isFctParam = true;
         param.dataType.isParamType = true;
@@ -1500,7 +1499,7 @@ f<ASTEnumItemNode*> Parser.parseEnumItem() {
 f<ASTFieldNode*> Parser.parseField() {
     dyn fieldNode = this.createNode<ASTFieldNode>();
 
-    // Mark the data type and all its template types as field types (host: DataTypeNode::setFieldTypeRecursive)
+    // Mark the data type and all its template types as field types
     this.isParsingFieldType = true;
     fieldNode.dataType = this.parseDataType();
     this.isParsingFieldType = false;
@@ -1564,8 +1563,7 @@ f<ASTSignatureNode*> Parser.parseSignature() {
 }
 
 // stmt: (declStmt | exprStmt | returnStmt | breakStmt | continueStmt | fallthroughStmt) SEMICOLON;
-// Returns the actual matched node (as IVisitable*), not a generic wrapper, matching host's
-// ASTBuilder::visitStmt (which upcasts whichever alternative matched to the common StmtNode* type).
+// Returns the actual matched node (as IVisitable*), not a generic wrapper.
 f<IVisitable*> Parser.parseStmt() {
     IVisitable* stmtNode = nil<IVisitable*>;
 
@@ -1673,7 +1671,7 @@ f<ASTModAttrNode*> Parser.parseModAttr() {
     modAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
 
-    // Tell the attributes that they are module attributes (matches host semantics)
+    // Tell the attributes that they are module attributes
     foreach ASTAttrNode* attr : modAttrNode.attrLst.attributes {
         attr.target = AttrTarget::TARGET_MODULE;
     }
@@ -1691,7 +1689,7 @@ f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr() {
 
     // Note: the concrete target (TARGET_FCT_PROC / TARGET_STRUCT / TARGET_INTERFACE / TARGET_UNION /
     // TARGET_EXT_DECL) depends on which construct this attribute list is attached to, so it is set by
-    // the caller (parseFctDef, parseStructDef, ...), matching host's per-construct target propagation.
+    // the caller (parseFctDef, parseStructDef, ...).
 
     return this.concludeNode(topLevelDefAttrNode);
 }
@@ -1705,7 +1703,7 @@ f<ASTLambdaAttrNode*> Parser.parseLambdaAttr() {
     this.expect(TokenType::RBRACKET);
     this.expect(TokenType::RBRACKET);
 
-    // Tell the attributes that they are lambda attributes (matches host semantics)
+    // Tell the attributes that they are lambda attributes
     foreach ASTAttrNode* attr : lambdaAttrNode.attrLst.attributes {
         attr.target = AttrTarget::TARGET_LAMBDA;
     }
@@ -1742,7 +1740,7 @@ f<ASTAttrNode*> Parser.parseAttr() {
     // Parse attribute value
     if this.currentTokenIs(TokenType::ASSIGN) {
         this.expect(TokenType::ASSIGN);
-        // Classify the value's type from the upcoming literal token, matching host semantics
+        // Classify the value's type from the upcoming literal token
         // (values other than string/int/bool are rejected by later stages, not enforced here).
         const TokenType valueTok = this.lexer.getToken().tokenType;
         if valueTok == TokenType::STRING_LIT {
@@ -1756,7 +1754,7 @@ f<ASTAttrNode*> Parser.parseAttr() {
         }
         attrNode.value = this.parseConstant();
     } else {
-        // If no value is given, use the bool type (matches host semantics)
+        // If no value is given, use the bool type
         attrNode.attrType = AttrType::TYPE_BOOL;
     }
 
@@ -2536,7 +2534,7 @@ f<ASTLambdaFuncNode*> Parser.parseLambdaFunc() {
     // Parse body
     lambdaFuncNode.body = cast<IVisitable*>(this.parseStmtLst());
 
-    // The host lists the lambda attrs after the body in the children of the node
+    // The lambda attrs are listed after the body in the children of the node
     if lambdaFuncNode.lambdaAttr != nil<ASTLambdaAttrNode*> {
         this.moveChildToEnd(cast<ASTNode*>(lambdaFuncNode), cast<ASTNode*>(lambdaFuncNode.lambdaAttr));
     }
@@ -2566,7 +2564,7 @@ f<ASTLambdaProcNode*> Parser.parseLambdaProc() {
     // Parse body
     lambdaProcNode.body = cast<IVisitable*>(this.parseStmtLst());
 
-    // The host lists the lambda attrs after the body in the children of the node
+    // The lambda attrs are listed after the body in the children of the node
     if lambdaProcNode.lambdaAttr != nil<ASTLambdaAttrNode*> {
         this.moveChildToEnd(cast<ASTNode*>(lambdaProcNode), cast<ASTNode*>(lambdaProcNode.lambdaAttr));
     }

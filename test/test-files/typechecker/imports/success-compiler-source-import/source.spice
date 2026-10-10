@@ -1,0 +1,11 @@
+// The 'compiler/' prefix imports a source file of the compiler (from SPICE_COMPILER_DIR, which the test runner sets)
+import "compiler/util/save-and-restore";
+
+f<int> main() {
+    int value = 1;
+    {
+        SaveAndRestore<int> _ = SaveAndRestore<int>(value, 2);
+        printf("Inside: %d\n", value);
+    }
+    printf("Outside: %d\n", value);
+}

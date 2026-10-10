@@ -71,10 +71,9 @@ public type Scope struct {
     public Scope* parent
     public SourceFile* sourceFile
     public unsigned long scopeId
-    // The host owns the child scopes in its `map<string, shared_ptr<Scope>>`. Here, all scopes are owned by the scope pool of
-    // the resource manager. They are stored as stable pointers into the pool rather than by value, so that adding a child
+    // All scopes are owned by the scope pool of the resource manager. They are stored as stable pointers into the pool rather than by value, so that adding a child
     // never has to copy a Scope (which is not trivially copyable and must never be deep-copied implicitly).
-    public Map<String, Scope*> children // Ordered like in the host, since the order shows in the warnings
+    public Map<String, Scope*> children // Ordered, since the order shows in the warnings
     public SymbolTable symbolTable
     public CodeLoc* codeLoc = nil<CodeLoc*>
     public ScopeType scopeType
@@ -520,7 +519,7 @@ public f<bool> Scope.isImportedBy(const Scope* askingScope) {
 public f<JsonValue*> Scope.getSymbolTableJSON() {
     result = this.symbolTable.toJSON();
 
-    // Collect all children. The host keeps them in an ordered map, so sort them by name
+    // Collect all children, sorted by name
     Map<String, Scope*> sortedChildren;
     foreach Pair<const String&, Scope*&> childEntry : this.children {
         sortedChildren.insert(childEntry.getFirst(), childEntry.getSecond());
@@ -576,8 +575,7 @@ public p Scope.renameChildScope(const String& oldName, const String& newName) {
 #[ignoreUnusedReturnValue]
 public f<Scope*> Scope.copyChildScope(const String& oldName, const String& newName) {
     assert this.children.contains(oldName) && !this.children.contains(newName);
-    // Create copy. The host copy-constructs the scope into a new shared_ptr. Here, the copy is constructed in place in the
-    // scope pool of the resource manager, which owns it (no Scope copy).
+    // Create copy. The copy is constructed in place in the scope pool of the resource manager, which owns it (no Scope copy).
     Scope* oldScope = this.children.get(oldName);
     Scope* newScope = this.sourceFile.resourceManager.createScope(this, oldScope.sourceFile, oldScope.scopeType, oldScope.codeLoc);
     oldScope.deepCopyScope(newScope);
@@ -588,13 +586,13 @@ public f<Scope*> Scope.copyChildScope(const String& oldName, const String& newNa
 
 /**
  * Deep copy the current scope and all its children into the given scope. The target scope must be freshly constructed with
- * the same parent, source file, scope type and code location as the current scope. The host returns the copy instead, but
- * Spice scopes are owned by the scope pool of the resource manager, so the caller allocates the target.
+ * the same parent, source file, scope type and code location as the current scope. Scopes are owned by the scope pool of the
+ * resource manager, so the caller allocates the target.
  *
  * @param newScope Target scope of the copy
  */
 public p Scope.deepCopyScope(Scope* newScope) {
-    // Copy the members, like the copy ctor of the host scope does
+    // Copy the members
     newScope.symbolTable.copyContentsFrom(this.symbolTable);
     newScope.isGenericScope = this.isGenericScope;
     newScope.isAsyncScope = this.isAsyncScope;

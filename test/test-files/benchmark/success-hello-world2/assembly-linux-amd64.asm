@@ -41,5 +41,5 @@ main:                                   # @main
 	.size	main, .Lfunc_end0-main
 	.cfi_endproc
                                         # -- End function
-	.ident	"spice version dev [self-hosted] (https://github.com/spicelang/spice)"
+	.ident	"spice version dev (https://github.com/spicelang/spice)"
 	.section	".note.GNU-stack","",@progbits

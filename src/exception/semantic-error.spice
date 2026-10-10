@@ -138,7 +138,7 @@ public p SemanticError.ctor(const ASTNode* node, const SemanticErrorType errorTy
     msg << "[Error|Semantic] " << node.codeLoc.toPrettyString() << ":" << endl();
     msg << this.getMessagePrefix(errorType) << ": " << message;
     if printErrorMessage {
-        // Nodes without a source interval (not created by the parser) have no snippet. The host has one for every node
+        // Nodes without a source interval (not created by the parser) have no snippet
         const String nodeErrorMessage = node.getErrorMessage();
         if !nodeErrorMessage.isEmpty() {
             msg << "\n\n" << nodeErrorMessage;
@@ -148,8 +148,7 @@ public p SemanticError.ctor(const ASTNode* node, const SemanticErrorType errorTy
 }
 
 /**
- * Abort the compilation with a semantic error right away. This is the equivalent of the host's 'throw SemanticError(...)'
- * for places, that cannot continue after the error (e.g. because they have to return a valid type). Places that can
+ * Abort the compilation with a semantic error right away. This is meant for places, that cannot continue after the error (e.g. because they have to return a valid type). Places that can
  * continue should record the error with throwSemanticError (see ErrorManager) instead, which keeps them testable.
  *
  * @param node AST node, where the error occurred

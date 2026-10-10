@@ -52,11 +52,11 @@ public type BinaryOpRules alias Vector<BinaryOpRule>;
  * Helper class for the TypeChecker to check whether certain operator/type combinations are valid or not and which result type
  * is produced.
  *
- * The host keeps the operator rules in static constexpr arrays. Spice only supports globals of primitive type, so the rules
- * are stored in the OpRuleManager instead and filled once by its constructor (see initRules).
+ * Spice only supports globals of primitive type, so the operator rules are stored in the OpRuleManager and filled once by its
+ * constructor (see initRules).
  *
- * Error handling: the host throws a SemanticError for invalid operator/type combinations. Here, a soft error is recorded and
- * the unresolved type is returned instead, which the visit methods of the TypeChecker propagate.
+ * Error handling: for invalid operator/type combinations, a soft error is recorded and the unresolved type is returned, which
+ * the visit methods of the TypeChecker propagate.
  */
 public type OpRuleManager struct {
     TypeChecker* typeChecker = nil<TypeChecker*>
@@ -108,7 +108,7 @@ public p OpRuleManager.ctor(TypeChecker* typeChecker) {
     this.initRules();
 }
 
-// Fill the operator rule tables. Generated from the static rule arrays in the host's OpRuleManager.h
+// Fill the operator rule tables
 p OpRuleManager.initRules() {
     // Assign op rules
     this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double = double -> double
@@ -605,12 +605,12 @@ p OpRuleManager.initRules() {
     this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // cast<bool>(bool) -> bool
 }
 
-// Build an expression result without symbol table entry (implicit ExprResult(QualType) ctor in the host)
+// Build an expression result without symbol table entry
 f<ExprResult> toExprResult(const QualType& qualType) {
     return ExprResult{qualType, nil<SymbolTableEntry*>};
 }
 
-// Operand list for the overload lookup of a binary operator (std::array<ExprResult, 2> in the host)
+// Operand list for the overload lookup of a binary operator
 f<Vector<ExprResult>> binaryOperands(const ExprResult& lhs, const ExprResult& rhs) {
     Vector<ExprResult> operands;
     operands.pushBack(lhs);
@@ -618,14 +618,14 @@ f<Vector<ExprResult>> binaryOperands(const ExprResult& lhs, const ExprResult& rh
     return operands;
 }
 
-// Operand list for the overload lookup of a unary operator (std::array<ExprResult, 1> in the host)
+// Operand list for the overload lookup of a unary operator
 f<Vector<ExprResult>> unaryOperand(const ExprResult& lhs) {
     Vector<ExprResult> operands;
     operands.pushBack(lhs);
     return operands;
 }
 
-// Result of an assignment: the result type and the called copy ctor (std::pair<QualType, Function *> in the host)
+// Result of an assignment: the result type and the called copy ctor
 f<Pair<QualType, Function*>> assignResult(const QualType& qualType, Function* copyCtor = nil<Function*>) {
     return Pair<QualType, Function*>(qualType, copyCtor);
 }
@@ -1299,8 +1299,8 @@ public f<QualType> OpRuleManager.getCastResultType(const ASTNode* node, const Qu
 }
 
 /**
- * Check if there is an operator overloading function available for the given operator and operand types. The host has a
- * template parameter for the number of operands, here the operands are passed as a list of one or two elements.
+ * Check if there is an operator overloading function available for the given operator and operand types. The operands are
+ * passed as a list of one or two elements.
  *
  * @param node AST node of the operator
  * @param fctName Name of the operator function
@@ -1451,12 +1451,12 @@ f<QualType> OpRuleManager.validateBinaryOperation(const ASTNode* node, const Bin
     return QualType(SuperType::TY_UNRESOLVED);
 }
 
-// Message of the SemanticError, that getExceptionUnary builds in the host
+// Message of the semantic error for an invalid unary operator/type combination
 f<String> getUnaryErrorMessage(string name, const QualType& lhs) {
     return "Cannot apply '" + String(name) + "' operator on type " + lhs.getName(true);
 }
 
-// Message of the SemanticError, that getExceptionBinary builds in the host
+// Message of the semantic error for an invalid binary operator/type combination
 f<String> getBinaryErrorMessage(string name, const QualType& lhs, const QualType& rhs, string messagePrefix) {
     StringStream errorMsg;
     const String messagePrefixStr = String(messagePrefix);
@@ -1498,7 +1498,7 @@ p OpRuleManager.ensureNoConstAssign(const ASTNode* node, const QualType& lhs, bo
     }
 }
 
-// Add a soft error to the error list (SOFT_ERROR_* macros in the host)
+// Add a soft error to the error list
 p OpRuleManager.softError(const ASTNode* node, SemanticErrorType errorType, const String& message) {
     ErrorManager& errorManager = this.typeChecker.resourceManager.getErrorManager();
     errorManager.addSoftError(node, errorType, message);

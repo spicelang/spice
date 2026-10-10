@@ -20,10 +20,9 @@ public p SoftError.ctor(const CodeLoc& codeLoc, const String& message) {
  * Collects the errors of a compilation.
  *
  * Soft errors are collected and reported together at the end of the type checker (see SourceFile.checkForSoftErrors).
- * Hard errors are thrown as SemanticError in the host and abort the compilation right away. Spice has no exceptions, so a
- * hard error is recorded here instead and the pipeline aborts with it after the current stage (see
- * SourceFile.checkForHardError). Like in the host, where the first thrown error ends the compilation, only the first hard
- * error is kept. Recording instead of panicking also keeps hard errors testable.
+ * Hard errors abort the compilation. Spice has no exceptions, so a hard error is recorded here and the pipeline aborts with it
+ * after the current stage (see SourceFile.checkForHardError). Only the first hard error is kept, since it ends the
+ * compilation. Recording instead of panicking also keeps hard errors testable.
  */
 public type ErrorManager struct {
     public Vector<SoftError> softErrors
@@ -31,9 +30,9 @@ public type ErrorManager struct {
     public String hardErrorMessage
 }
 
-// Address of the active error manager. The host throws hard errors as exceptions from anywhere in the compiler, including
-// places that have no access to the resource manager (e.g. the FunctionManager). Spice only supports globals of primitive
-// type, so the address is stored as a long.
+// Address of the active error manager. Hard errors are raised from anywhere in the compiler, including places that have no
+// access to the resource manager (e.g. the FunctionManager). Spice only supports globals of primitive type, so the address
+// is stored as a long.
 unsigned long ACTIVE_ERROR_MANAGER_ADDRESS = 0ul;
 
 /**
@@ -60,7 +59,7 @@ public f<ErrorManager*> getActiveErrorManager() {
 }
 
 /**
- * Record a hard error. Only the first hard error is kept, since the host aborts the compilation with the first one.
+ * Record a hard error. Only the first hard error is kept, since it aborts the compilation.
  *
  * @param astNode AST node, where the error occurred
  * @param errorType Type of the error
@@ -79,8 +78,7 @@ public p ErrorManager.addHardError(const ASTNode* astNode, SemanticErrorType err
 }
 
 /**
- * Raise a hard error on the active error manager. This is the equivalent of the host's 'throw SemanticError(...)'.
- * The caller has to return afterwards, like after reporting a soft error.
+ * Raise a hard error on the active error manager. The caller has to return afterwards, like after reporting a soft error.
  *
  * @param astNode AST node, where the error occurred
  * @param errorType Type of the error

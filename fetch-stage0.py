@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Download the released self-hosted Spice compiler, that builds the compiler sources in src/ (the stage0 compiler).
+"""Download the released Spice compiler, that builds the compiler sources in src/ (the stage0 compiler).
 
 The release is pinned in .github/stage0-version, so every build starts from the same compiler. Bump it deliberately, e.g. when
-src/ starts to use a language feature the pinned stage0 compiler does not support yet. The stage0 compiler is the self-hosted compiler of that
-release: up to 0.28.x, it ships as 'spice-bootstrap' next to the host compiler 'spice', later as 'spice' itself, so it is
-picked by asking each binary of the release which compiler it is.
+src/ starts to use a language feature the pinned stage0 compiler does not support yet. Only releases from 0.29.0 on are
+supported, since older ones ship a different compiler as 'spice'.
 
 The stage0 compiler lands in build/stage0/ (see --output-dir), and the script prints the path of its executable.
 """
@@ -26,8 +25,6 @@ STAGE0_VERSION_FILE = ROOT_DIR / ".github" / "stage0-version"
 RELEASE_URL = "https://github.com/spicelang/spice/releases/download"
 IS_WINDOWS = sys.platform == "win32"
 EXE_NAME = "spice.exe" if IS_WINDOWS else "spice"
-# Executables of a release, that may be the self-hosted compiler
-CANDIDATE_NAMES = ["spice", "spice-bootstrap"]
 
 
 def fail(msg: str) -> None:
@@ -49,45 +46,38 @@ def download(url: str) -> bytes:
         return response.read()
 
 
-def extract_candidates(archive: bytes, asset_name: str, target_dir: Path) -> list[Path]:
-    """Extract the executables of the release, that may be the self-hosted compiler. The std of the release is not needed"""
-    suffix = ".exe" if IS_WINDOWS else ""
-    wanted = {name + suffix for name in CANDIDATE_NAMES}
-    extracted = []
+def extract_compiler(archive: bytes, asset_name: str, target_dir: Path) -> Path | None:
+    """Extract the compiler executable of the release. The std of the release is not needed"""
     if asset_name.endswith(".zip"):
         with zipfile.ZipFile(io.BytesIO(archive)) as zip_file:
-            for name in zip_file.namelist():
-                if name in wanted:
-                    (target_dir / name).write_bytes(zip_file.read(name))
-                    extracted.append(target_dir / name)
+            if EXE_NAME not in zip_file.namelist():
+                return None
+            (target_dir / EXE_NAME).write_bytes(zip_file.read(EXE_NAME))
     else:
         with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as tar_file:
-            for member in tar_file.getmembers():
-                if member.name in wanted and member.isfile():
-                    (target_dir / member.name).write_bytes(tar_file.extractfile(member).read())
-                    (target_dir / member.name).chmod(0o755)
-                    extracted.append(target_dir / member.name)
-    return extracted
+            member = next((member for member in tar_file.getmembers() if member.name == EXE_NAME and member.isfile()), None)
+            if member is None:
+                return None
+            (target_dir / EXE_NAME).write_bytes(tar_file.extractfile(member).read())
+            (target_dir / EXE_NAME).chmod(0o755)
+    return target_dir / EXE_NAME
 
 
-def check_self_hosted(executable: Path) -> str | None:
-    """Ask the executable, which compiler it is. Returns None if it is the self-hosted compiler, else the reason why not"""
+def check_runs(executable: Path) -> str | None:
+    """Check that the executable runs here. Returns None if it does, else the reason why not"""
     try:
         result = subprocess.run([str(executable), "--version"], capture_output=True, text=True, timeout=60)
     except (OSError, subprocess.TimeoutExpired) as error:
         return f"could not run it: {error}"
-    output = (result.stdout + result.stderr).strip()
     if result.returncode != 0:
+        output = (result.stdout + result.stderr).strip()
         status = f"signal {-result.returncode}" if result.returncode < 0 else f"exit code {result.returncode}"
         return f"'--version' failed with {status}: {output or '<no output>'}"
-    for line in result.stdout.splitlines():
-        if line.split(":")[0].strip() == "Compiler":
-            return None if "self-hosted" in line else f"it is not self-hosted ({line.strip()})"
-    return f"'--version' printed no compiler implementation: {output or '<no output>'}"
+    return None
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Download the released self-hosted Spice compiler (the stage0 compiler).")
+    parser = argparse.ArgumentParser(description="Download the released Spice compiler, that builds the compiler sources (the stage0 compiler).")
     parser.add_argument("--version", default=None,
                         help=f"Release to download (default: the one pinned in {STAGE0_VERSION_FILE.relative_to(ROOT_DIR)})")
     parser.add_argument("--output-dir", type=Path, default=ROOT_DIR / "build" / "stage0",
@@ -113,25 +103,19 @@ def main() -> None:
     if hashlib.sha256(archive).hexdigest() != expected_hash:
         fail(f"The checksum of {asset_name} does not match the one of the release {version}")
 
-    # Extract the candidates into a temp dir and keep the self-hosted one. Only the stage0 executable and its stamp in the
-    # output dir are replaced, since it might hold other files as well
+    # Extract the compiler into a temp dir first. Only the stage0 executable and its stamp in the output dir are replaced,
+    # since it might hold other files as well
     output_dir.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=output_dir) as candidates_dir:
-        candidates = extract_candidates(archive, asset_name, Path(candidates_dir))
-        rejections = {}
-        stage0 = None
-        for candidate in candidates:
-            if (reason := check_self_hosted(candidate)) is None:
-                stage0 = candidate
-                break
-            rejections[candidate.name] = reason
+    with tempfile.TemporaryDirectory(dir=output_dir) as extract_dir:
+        stage0 = extract_compiler(archive, asset_name, Path(extract_dir))
         if stage0 is None:
-            details = "".join(f"\n  {name}: {reason}" for name, reason in rejections.items()) or " (no candidates)"
-            fail(f"The release {version} contains no self-hosted compiler, that runs here:{details}")
+            fail(f"The release {version} contains no {EXE_NAME}")
+        if (reason := check_runs(stage0)) is not None:
+            fail(f"The stage0 compiler of {version} does not run here: {reason}")
         stamp_path.unlink(missing_ok=True)
         os.replace(stage0, stage0_path)
     stamp_path.write_text(version + "\n")
-    print(f"Stage0 compiler: {stage0.name} of {version}", file=sys.stderr)
+    print(f"Stage0 compiler: {version}", file=sys.stderr)
     print(stage0_path)
 
 

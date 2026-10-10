@@ -56,9 +56,8 @@ public f<bool> areConcurrentPassesRunning() {
 /**
  * RAII lock that is only actually acquired while compiler passes run concurrently.
  *
- * The host uses a std::recursive_mutex for the symbol registry and plain std::mutex instances for the type registry and
- * the type name disambiguator. The bootstrap compiler uses the std RecursiveMutex for all of them, which is a superset of
- * the plain mutex semantics.
+ * It uses the std RecursiveMutex for the symbol registry, the type registry and the type name disambiguator, which is a
+ * superset of the plain mutex semantics.
  *
  * Outside of a ParallelSection this degrades to a load of a global plus a well-predicted branch, which keeps the
  * single-threaded stages at their current speed.
@@ -83,8 +82,8 @@ public p ConditionalLock.dtor() {
 
 // Address of the symbol registry mutex. It guards the process-wide symbol lookup machinery: the lookup caches of the
 // FunctionManager, StructManager, InterfaceManager and UnionManager, plus the manifestation lists and symbol table entries
-// those matchers touch. The host keeps it in a global. Spice only supports globals of primitive type, so it is owned by the
-// GlobalResourceManager instead, which registers it here.
+// those matchers touch. Spice only supports globals of primitive type, so it is owned by the GlobalResourceManager, which
+// registers it here.
 long ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = 0l;
 
 /**
@@ -149,8 +148,8 @@ p incrementGuarded(UnorderedMap<unsigned long, unsigned long>* sharedMap, Recurs
     }
 }
 
-// Increment the counters of the given map from multiple threads. The lock is taken in a separate function, because the host
-// compiler captures the struct symbol of a ctor call within a lambda body, which crashes its IR generator
+// Increment the counters of the given map from multiple threads. The lock is taken in a separate function, because a ctor call
+// within a lambda body captures the struct symbol, which crashes the IR generator
 p incrementConcurrently(UnorderedMap<unsigned long, unsigned long>* sharedMap, RecursiveMutex* mutex) {
     ThreadPool pool = ThreadPool(4s);
     for unsigned int i = 0; i < 4; i++ {

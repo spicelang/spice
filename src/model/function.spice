@@ -109,8 +109,7 @@ public f<String> Function.getSignature(bool withThisType = true, bool withTempla
 }
 
 /**
- * Get a string representation of a function. This is the equivalent of the host's static Function::getSignature(), since
- * Spice has no static methods.
+ * Get a string representation of a function. This is a free function, since Spice has no static methods.
  *
  * @param name Function name
  * @param thisType This symbol type
@@ -194,9 +193,8 @@ public f<String> Function.getScopeName() {
  * @return Mangled name
  */
 public f<String> Function.getMangledName() {
-    // Note: members are returned via an explicit `String(...)` copy. The host compiler currently returns a
-    // struct member returned by value as a shallow alias of the member buffer instead of invoking the copy
-    // ctor, which leads to a double free once both the returned value and the owning struct are destructed.
+    // Note: members are returned via an explicit `String(...)` copy, so that the copy ctor is invoked for sure. A shallow
+    // alias of the member buffer leads to a double free once both the returned value and the owning struct are destructed.
     // A struct method, which is inherited from an interface default method, is implemented by the default method
     if this.defaultMethod != nil<Function*> {
         return this.defaultMethod.getMangledName();

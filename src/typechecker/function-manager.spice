@@ -36,8 +36,8 @@ type MatchResult enum {
 
 public const string MAIN_FUNCTION_NAME = "main";
 
-// Address of the active function lookup cache. The host keeps the lookup cache in static members of the FunctionManager. Spice
-// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+// Address of the active function lookup cache. Spice only supports globals of primitive type, so the cache is owned by the
+// global resource manager and its address is stored here.
 long ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = 0l;
 
 /**
@@ -72,13 +72,13 @@ f<LookupCache<Function>*> getActiveFunctionLookupCache() {
  * @param insertScope Scope to insert the function into
  * @param baseFunction Function to insert
  * @param nodeFunctionList Optional list to collect all inserted manifestations into (owned by the declaration node)
- * @return The first manifestation if nodeFunctionList is given, otherwise the last inserted one (like the host)
+ * @return The first manifestation if nodeFunctionList is given, otherwise the last inserted one
  */
 #[ignoreUnusedReturnValue]
 public f<Function*> insertFunction(Scope* insertScope, const Function& baseFunction, Vector<Function*>* nodeFunctionList = nil<Vector<Function*>*>) {
     // Open a new manifestation list for the function definition
     const String fctId = baseFunction.name + ":" + baseFunction.declNode.codeLoc.toString();
-    // Like std::map::emplace in the host, keep an existing list (e.g. of the implicit ctor and copy ctor, which share a decl node)
+    // Keep an existing list (e.g. of the implicit ctor and copy ctor, which share a decl node)
     if !insertScope.functions.contains(fctId) {
         insertScope.functions.insert(fctId, FunctionManifestationList());
     }
@@ -633,7 +633,6 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
         // In the case of a vararg function candidate, we can accept additional arguments, that are not defined in
         // the candidate, but we need to modify the candidate param list to accept them
         if candidate.isVararg && i >= candidate.paramList.getSize() {
-            // Copy into a value first: instantiating Param{...} from a reference crashes the host compiler's type checker
             const QualType varargType = arg.getFirst();
             candidate.paramList.pushBack(Param{varargType, false});
             needsSubstantiation = true; // We need to modify the candidate param types
@@ -754,7 +753,7 @@ public p breakOverloadTie(Vector<Function*>& matches, const ArgList& reqArgs) {
 }
 
 /**
- * Remove all occurrences of a function from a function list (std::erase in the host)
+ * Remove all occurrences of a function from a function list
  *
  * @param functions Function list
  * @param fct Function to remove

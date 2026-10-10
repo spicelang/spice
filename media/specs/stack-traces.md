@@ -48,7 +48,7 @@ deeper frames are dropped. It offers `getSize()`, `isEmpty()`, `getEntry(i)`, `t
 
 `StackTrace` implements `IIterable<StackTraceEntry>` through `StackTraceIterator<StackTraceEntry>`, so it works with
 `foreach`, with or without the frame number. The item type is a generic argument only because
-`TypeChecker::visitForeachLoop()` rejects iterators without generic arguments (pinned by
+`TypeChecker.visitForeachLoop()` rejects iterators without generic arguments (pinned by
 `typechecker/foreach-loops/error-foreach-non-generic-iterator`).
 
 ### Output format
@@ -66,11 +66,11 @@ deeper frames are dropped. It offers `getSize()`, `isEmpty()`, `getEntry(i)`, `t
 
 The compiler calls `sDumpStacktrace()` (`stack_trace_rt.spice`) with its default arguments - addresses on, no frames
 hidden - right before the `exit()` of a `panic`, of a failed `assert` and of a read of an inactive union field. Like
-`sErrTraceDump()`, it is reached through `StdFunctionManager::getDumpStacktraceFct()`, which rebuilds its mangled name.
+`sErrTraceDump()`, it is reached through `StdFunctionManager.getDumpStacktraceFct()`, which rebuilds its mangled name.
 In a `panic` the call comes after the error return trace and before the scope cleanup, so the trace shows the panicking
 function rather than the cleanup.
 
-- **When:** `CliOptions::printsStackTraceOnAbort()`, i.e. for a native target and not for `comparableOutput`. The first
+- **When:** `CliOptions.printsStackTraceOnAbort()`, i.e. for a native target and not for `comparableOutput`. The first
   is because `libbacktrace.a` is offered to the linker for a native target only (see
   [Linking libbacktrace](#linking-libbacktrace)); with a cross target the call is not emitted, so nothing is pulled in
   that could not be linked. The second is the test runner, whose outputs are compared across platforms and whose
@@ -209,7 +209,7 @@ libbacktrace is vendored as a git submodule in `deps/libbacktrace` and built by 
 `std/runtime/lib/libbacktrace.a` - inside the std tree, next to the runtime sources that need it.
 
 `stack_trace_rt.spice` links it with `core.linker.flag = "-lbacktrace"`. Linker flags are appended behind the object
-files, so a `-l` naming a static archive resolves. `ExternalLinkerInterface::link()` puts `std/runtime/lib` on the
+files, so a `-l` naming a static archive resolves. `ExternalLinkerInterface.link()` puts `std/runtime/lib` on the
 linker's search path ahead of those flags, so `-lbacktrace` finds the bundled archive; search directories are tried in
 the order given, which keeps the std's own copy ahead of any directory a binding's `-L` flag adds.
 

@@ -21,9 +21,6 @@ public f<String> getLastFragment(const String &haystack, const string needle) {
     return index != -1l ? haystack.getSubstring(index + getRawLength(needle)) : haystack;
 }
 
-// Which compiler implementation this is. Tells the self-hosted compiler apart from the former host compiler, written in C++
-public const string COMPILER_IMPLEMENTATION = "self-hosted";
-
 /**
  * Generate the version info string for the Spice driver
  *
@@ -38,7 +35,6 @@ public f<String> buildVersionInfo() {
 
     StringStream versionString;
     versionString << "Spice version: " << version << " " << targetOs << "/" << targetArch << endl();
-    versionString << "Compiler:      " << COMPILER_IMPLEMENTATION << endl();
     versionString << "Git hash:      " << gitHash << endl();
     versionString << "LLVM version:  " << llvm::getVersionString() << endl();
     versionString << "built by:      " << builtBy << endl() << endl();
@@ -47,8 +43,7 @@ public f<String> buildVersionInfo() {
 }
 
 /**
- * Checks if the first string sorts lexicographically before the second one. This compares byte-wise, like the comparison
- * operators of std::string in the host compiler.
+ * Checks if the first string sorts lexicographically before the second one. This compares byte-wise.
  *
  * @param lhs First string
  * @param rhs Second string
@@ -68,8 +63,7 @@ public f<bool> isStringLess(const String& lhs, const String& rhs) {
 }
 
 /**
- * Add a field to a JSON object, keeping the fields sorted by key. This mirrors 'json[key] = value' in the host compiler,
- * where nlohmann::json stores the fields of an object in a map, sorted by key.
+ * Add a field to a JSON object, keeping the fields sorted by key.
  * The object takes ownership of the heap-allocated field value.
  *
  * @param object JSON object

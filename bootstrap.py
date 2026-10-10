@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bootstrap the self-hosted Spice compiler until it reaches a fixed point.
+"""Bootstrap the Spice compiler until it reaches a fixed point.
 
 Stage 0 is the compiler, that the bootstrapping starts from: usually the released compiler, that fetch-stage0.py downloads.
 Every following stage n is the compiler from src/ built by stage n-1.
@@ -24,7 +24,7 @@ NC = "\033[0m"
 
 ROOT_DIR = Path(__file__).resolve().parent
 EXE_NAME = "spice.exe" if sys.platform == "win32" else "spice"
-# Optimized with LTO, like the test runner builds the bootstrap compiler (see test/run-tests.py)
+# Optimized with LTO, like the test runner builds the compiler under test (see test/run-tests.py)
 DEFAULT_BUILD_FLAGS = ["-O3", "-lto", "--native-features", "--strip-symbols"]
 
 
@@ -161,7 +161,7 @@ def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[st
         result = subprocess.run(cmd, cwd=ROOT_DIR, capture_output=not verbose, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
         fail(f"[Stage {stage}] Build timed out after {timeout}s: {' '.join(cmd)}")
-    # The bootstrap compiler sources emit lots of warnings, so only print the output if something went wrong
+    # The compiler sources emit lots of warnings, so only print the output if something went wrong
     if result.returncode != 0 or not output.is_file():
         if not verbose:
             print(result.stdout, end="")
@@ -172,7 +172,7 @@ def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[st
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Bootstrap the self-hosted Spice compiler until it reaches a fixed point.")
+    parser = argparse.ArgumentParser(description="Bootstrap the Spice compiler until it reaches a fixed point.")
     parser.add_argument("--stage0-compiler", dest="stage0_compiler", type=Path, default=None,
                         help="Path to the stage0 compiler, that builds stage 1 (default: the released stage0 compiler from "
                              "'fetch-stage0.py' in build/stage0/)")
@@ -206,7 +206,7 @@ def main() -> None:
         fail("Stage0 compiler not found. Download it first ('python fetch-stage0.py') or pass --stage0-compiler")
     stage0_compiler = stage0_compiler.resolve()
 
-    # Environment, the stage0 and bootstrap compilers need to compile the bootstrap compiler
+    # Environment, the stage compilers need to compile the compiler sources
     os.environ.setdefault("SPICE_STD_DIR", str(ROOT_DIR / "std"))
     os.environ.setdefault("SPICE_BOOTSTRAP_DIR", str(ROOT_DIR / "src"))
     if "LLVM_LIB_DIR" not in os.environ:

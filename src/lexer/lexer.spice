@@ -77,8 +77,7 @@ public f<const Token&> Lexer.getToken() {
 }
 
 /**
- * Get the last relevant (non-comment) token before the current one. This is the equivalent of ANTLR's stop token of a
- * parser rule context, when the rule is exited.
+ * Get the last relevant (non-comment) token before the current one, e.g. the last token of a node, that was just parsed.
  *
  * @return Previous relevant token or the current token, if there is none
  */
@@ -108,7 +107,6 @@ public f<unsigned long> Lexer.getTokenIndex() {
 
 /**
  * Concatenate the texts of all relevant (non-comment) tokens in the index range [startIdx, endIdx), without whitespace.
- * This is the equivalent of ANTLR's getText() on a parser rule context.
  *
  * @param startIdx Index of the first token
  * @param endIdx Index after the last token
@@ -127,7 +125,6 @@ public f<String> Lexer.getTokenText(unsigned long startIdx, unsigned long endIdx
 
 /**
  * Get the source code, that is covered by the relevant (non-comment) tokens in the index range [startIdx, endIdx).
- * This is the equivalent of ANTLR's getText() on the input stream with the interval of a parser rule context.
  *
  * @param startIdx Index of the first token
  * @param endIdx Index after the last token
@@ -162,7 +159,7 @@ f<Token> Lexer.readRawToken() {
     Token token = this.consumeToken();
     token.startOffset = startOffset;
     token.endOffset = this.reader.getOffset();
-    // A code location, created from a token, covers the token, like the host's CodeLoc(antlr4::Token*)
+    // A code location, created from a token, covers the token
     token.codeLoc.sourceIntervalStart = cast<long>(token.startOffset);
     token.codeLoc.sourceIntervalStop = cast<long>(token.endOffset) - 1l;
     return token;
@@ -549,11 +546,11 @@ f<Token> Lexer.consumeNumberLiteral(const CodeLoc& codeLoc) {
 }
 
 f<Token> Lexer.consumeCharLiteral(const CodeLoc& codeLoc) {
-    // Parse the following ANTLR regex: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\''
+    // Parse the following regex: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\''
     String charStr;
     this.reader.expect('\''); // Consume '\''
     if this.reader.getChar() == '\\' { // Escape sequence
-        // Keep the escape sequence as is. It gets resolved by the parser, like the host compiler does
+        // Keep the escape sequence as is. It gets resolved by the parser
         charStr += '\\';
         this.reader.advance(); // Consume '\\'
         charStr += this.reader.getChar();
@@ -567,7 +564,7 @@ f<Token> Lexer.consumeCharLiteral(const CodeLoc& codeLoc) {
 }
 
 f<Token> Lexer.consumeStringLiteral(const CodeLoc& codeLoc) {
-    // Parse the following ANTLR regex: '"' (~["\\\r\n] | '\\' (. | EOF))* '"'
+    // Parse the following regex: '"' (~["\\\r\n] | '\\' (. | EOF))* '"'
     String stringStr;
     this.reader.expect('"'); // Consume '"'
     while this.reader.getChar() != '"' {
@@ -577,7 +574,7 @@ f<Token> Lexer.consumeStringLiteral(const CodeLoc& codeLoc) {
             this.throwLexerError(codeLoc, message.getRaw());
         }
         if this.reader.getChar() == '\\' { // Escape sequence
-            // Keep the escape sequence as is. It gets resolved by the parser, like the host compiler does
+            // Keep the escape sequence as is. It gets resolved by the parser
             stringStr += '\\';
             this.reader.advance(); // Consume '\\'
             stringStr += this.reader.getChar();

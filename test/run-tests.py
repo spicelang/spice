@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the reference test suites in test/test-files against the self-hosted Spice compiler.
+"""Run the reference test suites in test/test-files against the Spice compiler.
 
 The compiler under test is invoked like a user would invoke it ('spice build ...'), and its dumps, diagnostics and the
 behavior of the compiled test programs are compared against the reference files of each test case. Either pass an already
@@ -108,7 +108,7 @@ SUITES = [
     Suite("ExampleTests", "examples", False),
     Suite("LinterTests", "linter", False, linter=True),
 ]
-BUILTIN_TESTS_NAME = "BootstrapTests.BuiltinTests"
+BUILTIN_TESTS_NAME = "CompilerTests.BuiltinTests"
 
 
 @dataclass(frozen=True)
@@ -721,7 +721,7 @@ def exec_builtin_tests(result: TestResult) -> None:
     """
     compiler = OPTS.build_compiler or OPTS.compiler
     try:
-        executable_path = build_compiler_sources(compiler, OPTS.work_dir / "bootstrap-tests", "spice-tests", True)
+        executable_path = build_compiler_sources(compiler, OPTS.work_dir / "compiler-tests", "spice-tests", True)
     except RuntimeError as error:
         result.fail(f"Could not build the builtin tests of the compiler sources: {error}")
     output, exit_code, _ = run_process([str(executable_path)])
@@ -792,6 +792,8 @@ def setup_environment() -> None:
     """Set up the environment, that the compilers need to build the compiler sources and the test cases"""
     # Always test the std and compiler sources of this checkout
     os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")
+    os.environ["SPICE_COMPILER_DIR"] = str(ROOT_DIR / "src")
+    # ToDo: Remove, once the compiler sources use the 'compiler/' import prefix instead of 'bootstrap/'
     os.environ["SPICE_BOOTSTRAP_DIR"] = str(ROOT_DIR / "src")
     if "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = bootstrap.find_llvm_lib_dir()
@@ -807,7 +809,7 @@ def setup_environment() -> None:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the reference test suites against the self-hosted Spice compiler.")
+    parser = argparse.ArgumentParser(description="Run the reference test suites against the Spice compiler.")
     compiler_group = parser.add_mutually_exclusive_group()
     compiler_group.add_argument("--compiler", type=Path, default=None,
                                 help="Run the test cases against the given, already built compiler")
@@ -816,7 +818,7 @@ def parse_args() -> argparse.Namespace:
                                      "stage0 compiler or a previously built compiler (default: the stage0 compiler from "
                                      "'fetch-stage0.py' in build/stage0/)")
     parser.add_argument("--build-only", action="store_true",
-                        help="Only build the compiler under test into <work-dir>/bootstrap-compiler, without running any test")
+                        help="Only build the compiler under test into <work-dir>/compiler, without running any test")
     parser.add_argument("--instrument", choices=["coverage", "asan"], default=None,
                         help="Build the compiler under test and its builtin tests with Spice code coverage or AddressSanitizer "
                              "instrumentation. With asan, every test case fails, for which the sanitizer reports an error. "
@@ -904,7 +906,7 @@ def main() -> None:
         bootstrap.log(f"Building the compiler under test with {OPTS.build_compiler} ...")
         start = time.monotonic()
         try:
-            OPTS.compiler = build_compiler_sources(OPTS.build_compiler, OPTS.work_dir / "bootstrap-compiler", "spice", False)
+            OPTS.compiler = build_compiler_sources(OPTS.build_compiler, OPTS.work_dir / "compiler", "spice", False)
         except RuntimeError as error:
             bootstrap.fail(str(error))
         bootstrap.log(f"Built {OPTS.compiler} in {time.monotonic() - start:.1f}s.")

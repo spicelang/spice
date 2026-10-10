@@ -130,5 +130,5 @@ attributes #6 = { nomerge }
 !2 = !{i32 7, !"uwtable", i32 2}
 !3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{i32 4, !"nosanitize_memory", i32 1}
-!5 = !{!"spice version dev [self-hosted] (https://github.com/spicelang/spice)"}
+!5 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !6 = !{!"branch_weights", i32 1, i32 1048575}

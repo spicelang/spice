@@ -35,8 +35,7 @@ const string ENUM_SCOPE_PREFIX = "enum:";
  * Jobs:
  * - Build symbol table
  *
- * Error handling: the host throws a SemanticError at the first problem. Spice has no exceptions, so this pass records a
- * soft error and returns from the visit method of the offending node instead (SourceFile.checkForSoftErrors() aborts the
+ * Error handling: Spice has no exceptions, so this pass records a soft error at the first problem and returns from the visit method of the offending node instead (SourceFile.checkForSoftErrors() aborts the
  * compilation afterwards).
  */
 public type SymbolTableBuilder struct : IAbstractAstVisitor {
@@ -50,14 +49,14 @@ public p SymbolTableBuilder.ctor(GlobalResourceManager& resourceManager, SourceF
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-// All errors of the symbol table builder are hard errors (thrown as SemanticError in the host)
+// All errors of the symbol table builder are hard errors
 p SymbolTableBuilder.reportError(const ASTNode* node, SemanticErrorType errorType, const String& message, bool printErrorMessage = true) {
     ErrorManager& errorManager = this.resourceManager.getErrorManager();
     errorManager.addHardError(node, errorType, message, printErrorMessage);
 }
 
-// Entry name of a function/procedure in its symbol table. Mirrors Function::getSymbolTableEntryName of the host, which
-// cannot be called here because the model's version is an instance method.
+// Entry name of a function/procedure in its symbol table. Function.getSymbolTableEntryName cannot be called here, because it is
+// an instance method.
 f<String> getFctSymbolTableEntryName(const String& name, const CodeLoc& codeLoc) {
     return name + ":" + codeLoc.toString();
 }
@@ -809,7 +808,7 @@ public f<Any> SymbolTableBuilder.visitDeclStmt(ASTDeclStmtNode* node) {
 public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
     // Visit attributes
     this.visitChildren(cast<ASTNode*>(node));
-    // The host throws on an invalid attribute. Stop here, the compilation is aborted after this stage
+    // Stop at an invalid attribute, the compilation is aborted after this stage
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
     if errorManager.hasHardError {
         return Any();

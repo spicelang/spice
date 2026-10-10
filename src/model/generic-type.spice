@@ -69,7 +69,7 @@ f<bool> GenericType.checkTypeConditionOf(const QualType& requestedType, QualType
         QualType requestedTypeCopy = requestedType;
         unwrapBothWithRefWrappers(typeConditionCopy, requestedTypeCopy);
         if typeConditionCopy.matches(requestedTypeCopy, ignoreArraySize, ignoreQualifiers, ignoreQualifiers) {
-            // Field-wise copy: see note above on the host's const-ref-through-reference assignment limitation.
+            // Field-wise copy instead of assigning the const reference through the reference
             substantiation.rawType = typeCondition.rawType;
             substantiation.qualifiers = typeCondition.qualifiers;
             return true;

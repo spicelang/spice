@@ -51,7 +51,7 @@ import "bootstrap/util/compiler-warning";
 
 // Constants
 const string FCT_NAME_DEALLOC = "sDealloc";
-const unsigned long UNION_NO_DEFAULT_FIELD_INDEX = 18446744073709551615ul; // SIZE_MAX in the host
+const unsigned long UNION_NO_DEFAULT_FIELD_INDEX = 18446744073709551615ul; // SIZE_MAX
 const unsigned long SIZE_MAX = 18446744073709551615ul;
 
 /**
@@ -89,11 +89,10 @@ public type TypeCheckerMode enum {
  * - Ensure that all actual types match the expected types
  * - Perform type inference
  *
- * This file mirrors the host TypeChecker, which is split over several files (TypeChecker.cpp, TypeCheckerMeta.cpp, ...).
- * Spice requires all methods of a struct to live in the file of the struct, so the sections below are named after them.
+ * Spice requires all methods of a struct to live in the file of the struct, so this file is split into sections, that are
+ * named after the checked constructs (top level definitions, statements, expressions, ...).
  *
- * Error handling: the host throws a SemanticError for some problems. Spice has no exceptions, so this pass records a soft
- * error and returns from the visit method of the offending node instead (SourceFile.checkForSoftErrors() aborts the
+ * Error handling: Spice has no exceptions, so this pass records a soft error and returns from the visit method of the offending node instead (SourceFile.checkForSoftErrors() aborts the
  * compilation afterwards).
  */
 public type TypeChecker struct : IAbstractAstVisitor {
@@ -112,9 +111,8 @@ public p TypeChecker.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     this.warnings = &sourceFile.compilerOutput.warnings;
 }
 
-// Default behavior of every visit method that is not implemented below: visit all children (like the host's ASTVisitor).
-// The host aborts the whole visitor by throwing on a hard error. The bootstrap records the hard error instead and stops
-// visiting further children here, because the following nodes may depend on what the erroneous node failed to set up.
+// Default behavior of every visit method that is not implemented below: visit all children. After a hard error, it stops
+// visiting further children, because the following nodes may depend on what the erroneous node failed to set up.
 #[ignoreUnusedReturnValue]
 f<Any> TypeChecker.visitChildren(ASTNode* node) {
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
@@ -146,24 +144,24 @@ f<ExprResult> TypeChecker.visitExpr(IVisitable* node) {
     return visitResult.get<ExprResult>();
 }
 
-// Return value of a visit method, that evaluates to an unresolved type after a soft error (SOFT_ERROR_QT in the host)
+// Return value of a visit method, that evaluates to an unresolved type after a soft error
 f<Any> TypeChecker.softErrorQT(const ASTNode* node, SemanticErrorType errorType, const String& message) {
     this.softError(node, errorType, message);
     return Any(QualType(SuperType::TY_UNRESOLVED));
 }
 
-// Return value of a visit method, that evaluates to an expression result, after a soft error (SOFT_ERROR_ER in the host)
+// Return value of a visit method, that evaluates to an expression result, after a soft error
 f<Any> TypeChecker.softErrorER(const ASTNode* node, SemanticErrorType errorType, const String& message) {
     this.softError(node, errorType, message);
     return unresolvedER();
 }
 
-// Return value of a visit method, that evaluates to an unresolved expression result (HANDLE_UNRESOLVED_TYPE_ER in the host)
+// Return value of a visit method, that evaluates to an unresolved expression result
 f<Any> unresolvedER() {
     return Any(ExprResult{QualType(SuperType::TY_UNRESOLVED), nil<SymbolTableEntry*>});
 }
 
-// ======================================================== TypeChecker.cpp ======================================================
+// ======================================================== Type checker =========================================================
 
 public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     // Initialize
@@ -187,7 +185,7 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
 
     // Visit children
     this.visitChildren(baseNode);
-    // The host would have thrown on a hard error, so skip the rest (the compilation is aborted after this stage)
+    // Skip the rest after a hard error (the compilation is aborted after this stage)
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
     if errorManager.hasHardError {
         return Any();
@@ -526,11 +524,11 @@ f<bool> TypeChecker.isCopyCtorCall(const ArgList& ctorArgs, const QualType& this
 
 /**
  * Collect the generic types of a template type list (used by the prepare visitors of functions, procedures, structs and
- * unions). Mirrors the loop, that the host has in each of these visitors.
+ * unions).
  *
  * @param templateTypeLst Template type list node
  * @param genericTypes Receives the generic types
- * @return False if an error occurred (the host throws a SemanticError in this case)
+ * @return False if an error occurred
  */
 f<bool> TypeChecker.collectTemplateTypes(ASTTypeLstNode* templateTypeLst, Vector<GenericType>& genericTypes) {
     foreach ASTDataTypeNode* dataType : templateTypeLst.dataTypes {
@@ -554,7 +552,7 @@ f<bool> TypeChecker.collectTemplateTypes(ASTTypeLstNode* templateTypeLst, Vector
 
 /**
  * Add a template type of the 'this' type to the given generic types, if it is not included yet, and mark the last generic type
- * as used. Mirrors the lambda based loop over the template types of the 'this' type in the host.
+ * as used.
  *
  * @param genericTypes Generic types
  * @param templateType Template type of the 'this' type
@@ -574,7 +572,7 @@ p addUsedTemplateType(Vector<GenericType>& genericTypes, const QualType& templat
     lastGenericType.used = true;
 }
 
-// ================================================= TypeCheckerTopLevelDefinitions.cpp ==========================================
+// ==================================================== Top level definitions ====================================================
 
 public f<Any> TypeChecker.visitMainFctDef(ASTMainFctDefNode* node) {
     if this.typeCheckerMode == TypeCheckerMode::TC_MODE_PRE {
@@ -724,7 +722,7 @@ public f<Any> TypeChecker.visitImportDef(ASTImportDefNode* node) {
     return Any();
 }
 
-// =============================================== TypeCheckerTopLevelDefinitionsCheck.cpp =======================================
+// ============================================= Top level definitions (check stage) =============================================
 
 f<Any> TypeChecker.visitMainFctDefCheck(ASTMainFctDefNode* node) {
     // Skip if already type-checked
@@ -754,8 +752,8 @@ f<Any> TypeChecker.visitFctDefCheck(ASTFctDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this function definition
-    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
-    // not covered by the resize above and get checked in a revisit)
+    // Only visit the manifestations, that exist at this point (manifestations inserted during the loop are not covered by the
+    // resize above and get checked in a revisit)
     const unsigned long manifestationCount = fctDefBase.manifestations.getSize();
     for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
         Function* manifestation = fctDefBase.manifestations.get(manifestationIdx);
@@ -823,8 +821,8 @@ f<Any> TypeChecker.visitProcDefCheck(ASTProcDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this procedure definition
-    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
-    // not covered by the resize above and get checked in a revisit)
+    // Only visit the manifestations, that exist at this point (manifestations inserted during the loop are not covered by the
+    // resize above and get checked in a revisit)
     const unsigned long manifestationCount = fctDefBase.manifestations.getSize();
     for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
         Function* manifestation = fctDefBase.manifestations.get(manifestationIdx);
@@ -886,7 +884,6 @@ f<Any> TypeChecker.visitProcDefCheck(ASTProcDefNode* node) {
 /**
  * Annotate function/procedure-typed params with lambda-capture info from the resolved manifestation type.
  * This must happen in the TypeChecker so that the IRGenerator can treat SymbolTableEntry as immutable.
- * The host has this loop inline in visitFctDefCheck and visitProcDefCheck.
  *
  * @param fctDefBase Function or procedure definition node
  * @param manifestation Manifestation, whose params to annotate
@@ -960,8 +957,8 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this procedure definition
-    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
-    // not covered by the resize above and get checked in a revisit)
+    // Only visit the manifestations, that exist at this point (manifestations inserted during the loop are not covered by the
+    // resize above and get checked in a revisit)
     const unsigned long manifestationCount = node.structManifestations.getSize();
     for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
         Struct* manifestation = node.structManifestations.get(manifestationIdx);
@@ -1111,8 +1108,8 @@ f<Any> TypeChecker.visitUnionDefCheck(ASTUnionDefNode* node) {
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this union definition
-    // Only visit the manifestations, that exist at this point, like the host does (manifestations inserted during the loop are
-    // not covered by the resize above and get checked in a revisit)
+    // Only visit the manifestations, that exist at this point (manifestations inserted during the loop are not covered by the
+    // resize above and get checked in a revisit)
     const unsigned long manifestationCount = node.unionManifestations.getSize();
     for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
         Union* manifestation = node.unionManifestations.get(manifestationIdx);
@@ -1155,7 +1152,7 @@ f<Any> TypeChecker.visitUnionDefCheck(ASTUnionDefNode* node) {
     return Any();
 }
 
-// ============================================== TypeCheckerTopLevelDefinitionsPrepare.cpp ======================================
+// ============================================ Top level definitions (prepare stage) ============================================
 
 f<Any> TypeChecker.visitMainFctDefPrepare(ASTMainFctDefNode* node) {
     // Mark unreachable statements
@@ -1315,7 +1312,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
     spiceFunc.bodyScope = fctDefBase.scope;
     spiceFunc.isInterfaceDefaultMethod = thisType.is(SuperType::TY_INTERFACE);
     insertFunction(this.currentScope, spiceFunc, &fctDefBase.manifestations);
-    // The host throws on a duplicate declaration. Stop here, the compilation is aborted after this stage
+    // Stop at a duplicate declaration, the compilation is aborted after this stage
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
     if errorManager.hasHardError {
         this.currentScope = this.rootScope;
@@ -1469,7 +1466,7 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
     spiceProc.bodyScope = fctDefBase.scope;
     spiceProc.isInterfaceDefaultMethod = thisType.is(SuperType::TY_INTERFACE);
     insertFunction(this.currentScope, spiceProc, &fctDefBase.manifestations);
-    // The host throws on a duplicate declaration. Stop here, the compilation is aborted after this stage
+    // Stop at a duplicate declaration, the compilation is aborted after this stage
     const ErrorManager& errorManager = this.resourceManager.getErrorManager();
     if errorManager.hasHardError {
         this.currentScope = this.rootScope;
@@ -1518,7 +1515,7 @@ f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
  * @param fieldType Type of the field to inspect
  * @param originScope Body scope of the struct/union whose infinite size we are checking for
  * @param node Accessing AST node (for struct/union lookup diagnostics)
- * @param visited Already-visited struct/union scopes, to keep the walk finite (a set in the host)
+ * @param visited Already-visited struct/union scopes, to keep the walk finite
  * @return true if the origin struct/union is reachable by value, i.e. it has infinite size
  */
 f<bool> fieldContainsAggregateByValue(const QualType& fieldType, const Scope* originScope, const ASTNode* node, Vector<const Scope*>& visited) {
@@ -1950,7 +1947,7 @@ f<Any> TypeChecker.visitEnumDefPrepare(ASTEnumDefNode* node) {
     return Any();
 }
 
-// Check if the given list of enum item values contains the given value (std::ranges::find in the host)
+// Check if the given list of enum item values contains the given value
 f<bool> containsValue(const Vector<unsigned int>& values, unsigned int value) {
     foreach const unsigned int existingValue : values {
         if existingValue == value {
@@ -2167,7 +2164,7 @@ f<Any> TypeChecker.visitImportDefPrepare(ASTImportDefNode* node) {
     return Any();
 }
 
-// ================================================================ TypeCheckerMeta.cpp ==========================================
+// ============================================================ Meta =============================================================
 
 public f<Any> TypeChecker.visitParamLst(ASTParamLstNode* node) {
     NamedParamList namedParams;
@@ -2417,7 +2414,7 @@ public f<Any> TypeChecker.visitDataType(ASTDataTypeNode* node) {
 }
 
 public f<Any> TypeChecker.visitBaseDataType(ASTBaseDataTypeNode* node) {
-    // Note: The host returns from within each case. Here, the type is assigned in the cases and returned afterwards
+    // Note: The type is assigned in the cases and returned afterwards
     QualType qualType = QualType(SuperType::TY_DYN);
     switch node.baseType {
         case BaseDataTypeType::TYPE_DOUBLE: {
@@ -2628,7 +2625,6 @@ public f<Any> TypeChecker.visitFunctionDataType(ASTFunctionDataTypeNode* node) {
             return Any(returnType);
         }
         if returnType.is(SuperType::TY_DYN) {
-            // Note: The host returns an ExprResult here (SOFT_ERROR_ER), but the callers expect a type
             return this.softErrorQT(cast<ASTNode*>(node.returnType), SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Function types cannot have return type dyn"));
         }
     }
@@ -2653,7 +2649,7 @@ public f<Any> TypeChecker.visitFunctionDataType(ASTFunctionDataTypeNode* node) {
     return Any(node.node.setEvaluatedSymbolType(functionType, this.manIdx));
 }
 
-// ============================================================ TypeCheckerStatements.cpp =========================================
+// ========================================================== Statements ==========================================================
 
 public f<Any> TypeChecker.visitStmtLst(ASTStmtLstNode* node) {
     // Visit nodes in this scope
@@ -2907,7 +2903,7 @@ public f<Any> TypeChecker.visitAssertStmt(ASTAssertStmtNode* node) {
     return Any();
 }
 
-// ======================================================= TypeCheckerControlStructures.cpp ========================================
+// ====================================================== Control structures =======================================================
 
 public f<Any> TypeChecker.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
     // Change to unsafe block body scope
@@ -2990,7 +2986,6 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
             node.getIteratorFct = matchFunction(matchScope, String("getIterator"), iterableType, noArgs, noTemplateTypeHints, true, iteratorBaseNode);
         }
         if node.getIteratorFct == nil<Function*> {
-            // The host throws a SemanticError here
             throwSemanticError(iteratorBaseNode, SemanticErrorType::INVALID_ITERATOR, String("No getIterator() function found for the given iterable type"));
             return Any();
         }
@@ -3292,7 +3287,7 @@ public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* nod
     return Any();
 }
 
-// ========================================================== TypeCheckerExpressions.cpp ==========================================
+// ========================================================= Expressions ==========================================================
 
 /**
  * Check if a temporary struct is moved into the lhs of an assignment (temp stealing) and the old value of the lhs can
@@ -3431,7 +3426,7 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
 
     // Check if assignment
     if node.op == AssignOp::OP_NONE {
-        panic(Error("AssignExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        panic(Error("AssignExpr fall-through"));
     }
 
     // Visit the right side first
@@ -3649,14 +3644,14 @@ public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
     return Any(ExprResult{node.node.setEvaluatedSymbolType(resultType, this.manIdx), anonymousSymbol});
 }
 
-// Visit a ternary branch in its expression scope (visitBranch lambda in the host's visitTernaryExpr)
+// Visit a ternary branch in its expression scope
 f<Pair<ExprResult, Scope*>> TypeChecker.visitTernaryBranch(IVisitable* branch) {
     ExprScopeHandle exprScopeHandle = ExprScopeHandle(&this.compilerPass, branch);
     const ExprResult branchResult = this.visitExpr(branch);
     return Pair<ExprResult, Scope*>(branchResult, exprScopeHandle.getExprScope());
 }
 
-// Consider the dtor calls for the temporaries of a ternary branch (doBranchCleanup lambda in the host's visitTernaryExpr)
+// Consider the dtor calls for the temporaries of a ternary branch
 p TypeChecker.doTernaryBranchCleanup(IVisitable* branch, const Scope* branchScope, bool resultIsRef) {
     if branchScope == nil<const Scope*> {
         return;
@@ -3670,7 +3665,7 @@ p TypeChecker.doTernaryBranchCleanup(IVisitable* branch, const Scope* branchScop
     }
 }
 
-// Check if a ternary operand is a temporary (isTemporary lambda in the host's visitTernaryExpr)
+// Check if a ternary operand is a temporary
 f<bool> isTemporaryTernaryOperand(const SymbolTableEntry* entry) {
     if entry == nil<const SymbolTableEntry*> || !entry.anonymous {
         return false;
@@ -3816,7 +3811,7 @@ public f<Any> TypeChecker.visitEqualityExpr(ASTEqualityExprNode* node) {
     } else if node.op == EqualityOp::OP_NOT_EQUAL { // Operator was not equal
         equalityResult = this.opRuleManager.getNotEqualResultType(baseNode, lhs, rhs);
     } else {
-        panic(Error("EqualityExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        panic(Error("EqualityExpr fall-through"));
     }
 
     node.node.setEvaluatedSymbolType(equalityResult.ty, this.manIdx);
@@ -3847,7 +3842,7 @@ public f<Any> TypeChecker.visitRelationalExpr(ASTRelationalExprNode* node) {
     } else if node.op == RelationalOp::OP_GREATER_EQUAL { // Operator was greater equal
         relationalResult = this.opRuleManager.getGreaterEqualResultType(baseNode, lhs, rhs);
     } else {
-        panic(Error("RelationalExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+        panic(Error("RelationalExpr fall-through"));
     }
 
     node.node.setEvaluatedSymbolType(relationalResult.ty, this.manIdx);
@@ -3878,7 +3873,7 @@ public f<Any> TypeChecker.visitShiftExpr(ASTShiftExprNode* node) {
         } else if op == ShiftOp::OP_SHIFT_RIGHT {
             currentResult = this.opRuleManager.getShiftRightResultType(baseNode, currentResult, operandResult, i);
         } else {
-            panic(Error("ShiftExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+            panic(Error("ShiftExpr fall-through"));
         }
 
         // Push the new item and pop the old one on the other side of the queue
@@ -3914,7 +3909,7 @@ public f<Any> TypeChecker.visitAdditiveExpr(ASTAdditiveExprNode* node) {
         } else if op == AdditiveOp::OP_MINUS {
             currentResult = this.opRuleManager.getMinusResultType(baseNode, currentResult, operandResult, i);
         } else {
-            panic(Error("AdditiveExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+            panic(Error("AdditiveExpr fall-through"));
         }
 
         // Push the new item and pop the old one on the other side of the queue
@@ -3951,7 +3946,7 @@ public f<Any> TypeChecker.visitMultiplicativeExpr(ASTMultiplicativeExprNode* nod
         } else if op == MultiplicativeOp::OP_REM {
             currentResult = this.opRuleManager.getRemResultType(baseNode, currentResult, operandResult);
         } else {
-            panic(Error("Multiplicative fall-through")); // UNHANDLED_BRANCH compiler error in the host
+            panic(Error("Multiplicative fall-through"));
         }
 
         // Push the new item and pop the old one on the other side of the queue
@@ -4051,7 +4046,7 @@ public f<Any> TypeChecker.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) {
             operandType = this.opRuleManager.getPrefixBitwiseAndResultType(baseNode, operand);
         }
         default: {
-            panic(Error("PrefixUnaryExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+            panic(Error("PrefixUnaryExpr fall-through"));
         }
     }
 
@@ -4300,7 +4295,7 @@ public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
             operandEntry = nil<SymbolTableEntry*>;
         }
         default: {
-            panic(Error("PostfixUnaryExpr fall-through")); // UNHANDLED_BRANCH compiler error in the host
+            panic(Error("PostfixUnaryExpr fall-through"));
         }
     }
 
@@ -4432,7 +4427,7 @@ public f<Any> TypeChecker.visitAtomicExpr(ASTAtomicExprNode* node) {
     return Any(ExprResult{node.node.setEvaluatedSymbolType(varType, this.manIdx), entry});
 }
 
-// ============================================================== TypeCheckerValues.cpp ===========================================
+// ============================================================ Values ============================================================
 
 public f<Any> TypeChecker.visitValue(ASTValueNode* node) {
     // Function call
@@ -4503,7 +4498,7 @@ public f<Any> TypeChecker.visitConstant(ASTConstantNode* node) {
             superType = SuperType::TY_BOOL;
         }
         default: {
-            panic(Error("Constant fall-through")); // UNHANDLED_BRANCH compiler error in the host
+            panic(Error("Constant fall-through"));
         }
     }
     QualType constantType = QualType(superType);
@@ -4647,8 +4642,8 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             ParamList errArgTypes;
             errArgTypes.reserve(cast<unsigned long>(data.args.getSize()));
             foreach const Arg& arg : data.args {
-                // The host compiler aborts on a struct literal field, initialized with a reference to a type with an
-                // overloaded assign operator, so the arg type is copied into a local first
+                // Copy the arg type into a local first, instead of initializing a struct literal field with a reference to
+                // a type with an overloaded assign operator
                 const QualType argType = arg.getFirst();
                 errArgTypes.pushBack(Param{argType, false});
             }
@@ -4885,8 +4880,7 @@ f<bool> TypeChecker.visitFctPtrCall(ASTFctCallNode* node, const QualType& functi
         return false;
     }
 
-    // The host passes a resolver function, that never resolves a generic type. The equivalent is an empty list of candidate
-    // template types
+    // Never resolve a generic type here, which an empty list of candidate template types does
     const Vector<GenericType> noCandidateTemplateTypes;
 
     for unsigned long i = 0l; i < data.args.getSize(); i++ {
@@ -5104,8 +5098,8 @@ public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* n
             // Get expected type
             SymbolTableEntry* expectedField = structScope.lookupField(cast<unsigned int>(explicitFieldsStartIdx + i));
             assert expectedField != nil<SymbolTableEntry*>;
-            // The host compiler aborts on a struct literal field, initialized with a reference to a type with an overloaded
-            // assign operator, so the field type is copied into a local first
+            // Copy the field type into a local first, instead of initializing a struct literal field with a reference to a
+            // type with an overloaded assign operator
             const QualType expectedFieldType = expectedField.getQualType();
             const ExprResult expected = ExprResult{expectedFieldType, expectedField};
             const bool rhsIsImmediate = assignExprNode.hasCompileTimeValue(this.manIdx);
@@ -5289,7 +5283,7 @@ public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) {
 }
 
 /**
- * Visit the param list of a lambda and collect the param types (shared part of the host's visitLambdaFunc/Proc/Expr)
+ * Visit the param list of a lambda and collect the param types (shared part of visitLambdaFunc/Proc/Expr)
  *
  * @param node Lambda node
  * @param paramLst Param list node
@@ -5311,7 +5305,7 @@ p TypeChecker.visitLambdaParams(ASTNode* node, IVisitable* paramLst, QualTypeLis
 }
 
 /**
- * Create the function object of a lambda for the current manifestation (shared part of the host's visitLambdaFunc/Proc/Expr)
+ * Create the function object of a lambda for the current manifestation (shared part of visitLambdaFunc/Proc/Expr)
  *
  * @param node Lambda node
  * @param bodyScope Body scope of the lambda
@@ -5328,7 +5322,7 @@ p TypeChecker.createLambdaManifestation(ASTNode* node, Scope* bodyScope, const Q
     manifestation.mangleSuffix = String(".") + toString(cast<long>(this.manIdx));
 }
 
-// ======================================================== TypeCheckerBuiltinFunctions.cpp =======================================
+// ====================================================== Builtin functions =======================================================
 
 /**
  * Build the error message for a mismatching number of template types or arguments of a builtin call
@@ -5378,8 +5372,7 @@ f<Any> TypeChecker.visitBuiltinCall(ASTFctCallNode* node) {
         }
     }
 
-    // Call to TypeChecker delegate to execute further checks. This is the equivalent of the host's BUILTIN_DISPATCH_MAP,
-    // since Spice has no method pointers
+    // Call to TypeChecker delegate to execute further checks. This is a switch, since Spice has no method pointers
     const String& name = node.fqFunctionName;
     if name == BUILTIN_FCT_NAME_PRINTF { return this.visitBuiltinPrintfCall(node); }
     if name == BUILTIN_FCT_NAME_SIZEOF { return this.visitBuiltinSizeOfCall(node); }
@@ -5434,7 +5427,7 @@ f<Any> TypeChecker.builtinResult(ASTFctCallNode* node, const QualType& qualType)
     return Any(ExprResult{node.node.setEvaluatedSymbolType(qualType, this.manIdx), nil<SymbolTableEntry*>});
 }
 
-// Set the compile time value of a function call for the current manifestation (FctCallNode::setCompileTimeValue in the host)
+// Set the compile time value of a function call for the current manifestation
 p TypeChecker.setCompileTimeValue(ASTFctCallNode* node, const CompileTimeValue& value) {
     FctCallData& data = node.data.get(this.manIdx);
     data.setCompileTimeValue(value);
@@ -5902,7 +5895,7 @@ f<Any> TypeChecker.visitBuiltinGetBuildVarCall(ASTFctCallNode* node) {
             compileTimeValue.setStringValueOffset(this.resourceManager.compileTimeStringValues.getSize());
             this.resourceManager.compileTimeStringValues.pushBack(buildVarValue);
         } else if requestedType.is(SuperType::TY_INT) {
-            // The host parses the value with std::stoi, which throws on invalid values
+            // Invalid values are rejected
             int value = 0;
             if !parseIntLikeStoi(buildVarValue, value) {
                 return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String("Error while parsing the provided value to the requested type"));
@@ -5967,7 +5960,7 @@ f<Any> TypeChecker.visitBuiltinIsHeap(ASTFctCallNode* node) {
 }
 
 /**
- * Check the constructor of a struct for __new and __placement_new. Shared part of the host's visitBuiltinNewCall and
+ * Check the constructor of a struct for __new and __placement_new. Shared part of visitBuiltinNewCall and
  * visitBuiltinPlacementNewCall.
  *
  * @param node Builtin call node
@@ -6135,7 +6128,7 @@ f<Any> TypeChecker.visitBuiltinFrameAddressCall(ASTFctCallNode* node) {
     return this.builtinResult(node, byteType.toPtr(cast<ASTNode*>(node)));
 }
 
-// ============================================================== TypeCheckerImplicit.cpp ========================================
+// ===================================================== Implicit functions ======================================================
 
 /**
  * Check whether the given struct and all of its by-value struct fields are manifested, transitively, and have already
@@ -7147,7 +7140,7 @@ p TypeChecker.implicitlyCallDeallocate(const ASTNode* node) {
  * @param vars Variables to sort
  */
 p TypeChecker.sortByReverseDeclarationOrder(Vector<SymbolTableEntry*>& vars) {
-    // Stable insertion sort (std::ranges::stable_sort in the host)
+    // Stable insertion sort
     for unsigned long i = 1l; i < vars.getSize(); i++ {
         SymbolTableEntry* current = vars.get(i);
         unsigned long j = i;
@@ -7161,7 +7154,7 @@ p TypeChecker.sortByReverseDeclarationOrder(Vector<SymbolTableEntry*>& vars) {
     }
 }
 
-// Comparator of sortByReverseDeclarationOrder (comp lambda in the host)
+// Comparator of sortByReverseDeclarationOrder
 f<bool> TypeChecker.isDeclaredAfter(const SymbolTableEntry* a, const SymbolTableEntry* b) {
     const ASTNode* aDeclNode = a.declNode;
     const ASTNode* bDeclNode = b.declNode;

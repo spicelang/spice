@@ -204,7 +204,7 @@ attributes #2 = { nofree nounwind }
 
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "printf.str.0", linkageName: "printf.str.0", scope: !2, file: !3, line: 15, type: !12, isLocal: true, isDefinition: true)
-!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev [self-hosted] (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false)
+!2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false)
 !3 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-dbg-info-lambda")
 !4 = !{!0, !5, !10, !13, !16}
 !5 = !DIGlobalVariableExpression(var: !6, expr: !DIExpression())
@@ -227,7 +227,7 @@ attributes #2 = { nofree nounwind }
 !22 = !{i32 7, !"frame-pointer", i32 0}
 !23 = !{i32 7, !"Dwarf Version", i32 5}
 !24 = !{i32 2, !"Debug Info Version", i32 3}
-!25 = !{!"spice version dev [self-hosted] (https://github.com/spicelang/spice)"}
+!25 = !{!"spice version dev (https://github.com/spicelang/spice)"}
 !26 = distinct !DISubprogram(name: "applyTwice", linkageName: "_Z10applyTwicePFiiEi", scope: !3, file: !3, line: 3, type: !27, scopeLine: 3, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !38)
 !27 = !DISubroutineType(types: !28)
 !28 = !{!29, !30, !29}

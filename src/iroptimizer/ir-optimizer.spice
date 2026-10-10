@@ -14,9 +14,9 @@ import "bootstrap/global/global-resource-manager";
 /**
  * Runs the LLVM optimization pipelines on the modules of the source files.
  *
- * The host sets up an llvm::PassBuilder with its analysis managers. The LLVM C API only allows to run a textual pass pipeline,
- * which sets up the same pass builder internally. So the pipelines of the host are described textually here, e.g. the
- * pipeline of passBuilder->buildPerModuleDefaultPipeline(O2) is 'default<O2>'.
+ * The LLVM C API only allows to run a textual pass pipeline, which sets up an llvm::PassBuilder with its analysis managers
+ * internally. So the pipelines are described textually here, e.g. the pipeline of buildPerModuleDefaultPipeline(O2) is
+ * 'default<O2>'.
  */
 public type IROptimizer struct {
     compose public CompilerPass compilerPass
@@ -28,7 +28,7 @@ public p IROptimizer.ctor(GlobalResourceManager& resourceManager, SourceFile* so
 }
 
 public p IROptimizer.prepare() {
-    // The host verifies the IR after each pass in test mode (StandardInstrumentations with VerifyEach)
+    // Verify the IR after each pass in test mode
     this.passBuilderOptions.setVerifyEach(this.resourceManager.cliOptions.testMode);
 }
 
@@ -59,7 +59,7 @@ public p IROptimizer.optimizePreLink() {
     passBuilder.addPass("lto-pre-link<" + this.getLLVMOptLevelName() + ">");
 
     // Run pipeline
-    // The host additionally generates the module summary index here, which the LLVM C API does not offer
+    // Note: The LLVM C API does not offer to generate the module summary index here
     this.runPipeline(passBuilder, this.sourceFile.llvmModule);
 }
 
@@ -69,7 +69,7 @@ public p IROptimizer.optimizePostLink() {
     }                                                                                                         // LCOV_EXCL_LINE
 
     // Prepare pipeline
-    // The host passes a module summary index with whole program visibility, which the LLVM C API does not offer
+    // Note: The LLVM C API does not offer to pass a module summary index with whole program visibility
     llvm::PassBuilder passBuilder = llvm::PassBuilder(this.passBuilderOptions);
     passBuilder.addPass("lto<" + this.getLLVMOptLevelName() + ">");
 
@@ -116,11 +116,11 @@ p IROptimizer.addCoveragePassToPipeline(llvm::PassBuilder& passBuilder) {
     if !this.cliOptions.instrumentation.codeCoverage {
         return;
     }
-    // The host additionally passes a virtual file system with the output dir as working dir, which the LLVM C API does not offer
+    // Note: The LLVM C API does not offer to pass a virtual file system with the output dir as working dir
     passBuilder.addPass("insert-gcov-profiling");
 }
 
-// Get the name of the LLVM optimization level for the pass pipeline (getLLVMOptLevelFromSpiceOptLevel in the host)
+// Get the name of the LLVM optimization level for the pass pipeline
 f<string> IROptimizer.getLLVMOptLevelName() {
     switch this.cliOptions.optLevel {
         case OptLevel::O1: {

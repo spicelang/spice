@@ -180,7 +180,7 @@ public p CliOptions.setBuildVar(const String& key, const String& value) {
 
 /**
  * Whether a panic or failed assertion prints the stack trace of the failing call. It needs the std's libbacktrace, which is
- * built for the host only, so cross-compiling leaves it out rather than fail to link. Comparable output leaves it out too,
+ * built for the host machine only, so cross-compiling leaves it out rather than fail to link. Comparable output leaves it out too,
  * as the frames and their offsets differ between platforms and compilers.
  *
  * @return Prints a stack trace or not
@@ -245,9 +245,8 @@ public f<int> Driver.parse(int argc, string[] argv) {
         return exitCode;
     }
 
-    // The main source file has to exist, like the host's cli parser checks it (CLI::ExistingFile). The host's test runner does
-    // not use the cli parser, so a missing file is reported by the pipeline (SourceFile.runParser) instead. --test-mode mirrors
-    // that, and the compile path skips the check here. So do the builtin tests (dry run), which parse made-up file names.
+    // The main source file has to exist. In --test-mode, a missing file is reported by the pipeline (SourceFile.runParser)
+    // instead, so the compile path skips the check here. So do the builtin tests (dry run), which parse made-up file names.
     const bool checkCompileSourceFile = (this.shouldCompile || this.shouldInstall) && !this.dryRun && !this.cliOptions.testMode;
     if (checkCompileSourceFile || this.shouldUninstall) && !this.cliOptions.mainSourceFile.exists() {
         printf("<main-source-file>: File does not exist: %s\n", this.cliOptions.mainSourceFile.toString());
@@ -265,10 +264,10 @@ public f<int> Driver.parse(int argc, string[] argv) {
 public p Driver.enrich() {
     // Make path of given main source file canonical and relative
     this.cliOptions.mainSourceFile.makeGeneric();
-    // The host's test runner enriches the cli options in dry run mode, which keeps the path as given. --test-mode mirrors that
+    // --test-mode keeps the path as given
     if !this.dryRun && !this.cliOptions.testMode {
-        // Like std::filesystem::relative in the host, FilePath.relative() returns an empty path if there is no relative path
-        // (e.g. the file is on another drive than the working directory). Unlike the host, keep the path as it is then.
+        // FilePath.relative() returns an empty path if there is no relative path (e.g. the file is on another drive than the
+        // working directory). Keep the path as it is then.
         const FilePath relativeMainSourceFile = this.cliOptions.mainSourceFile.relative();
         if !relativeMainSourceFile.isEmpty() {
             this.cliOptions.mainSourceFile = relativeMainSourceFile;
@@ -309,8 +308,8 @@ public p Driver.enrich() {
     }
 
     // In comparable-output (test) mode, an explicitly selected target is treated as a cross-compilation target, even if it
-    // matches the host triple. This mirrors the host test runner and makes the target info in the emitted IR deterministic,
-    // instead of being stripped as it is for a native build. See the equivalent handling in the host test runner.
+    // matches the host triple. This makes the target info in the emitted IR deterministic, instead of being stripped as it is
+    // for a native build.
     if targetExplicitlySelected && this.cliOptions.comparableOutput {
         this.cliOptions.isNativeTarget = false;
     }
@@ -409,7 +408,7 @@ public p Driver.runBinary() {
 }
 
 /**
- * Create the given directory, including all missing parent directories. Like create_directories in the host, a failure is fatal
+ * Create the given directory, including all missing parent directories. A failure is fatal
  *
  * @param path Path of the directory to create
  */
@@ -702,13 +701,12 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --native-features
     subCmd.addFlag("--native-features", this.cliOptions.useNativeFeatures, "Tune the output for the CPU of the compiling machine and use all of its features. The output might not run on other machines of the same architecture");
     // --test-mode
-    // The host has no such option: its test runner sets up the cli options in-process. The test runner drives the bootstrap
-    // compiler as separate process, so it needs an option to compile in the same mode.
+    // The test runner drives the compiler as separate process, so it needs an option to compile in the test mode.
     const p(const bool&) testModeCallback = p(const bool& _v) {
         this.cliOptions.testMode = true;
         this.cliOptions.comparableOutput = true;
         this.cliOptions.namesForIRValues = true;
-        // Compile serially like the host's test runner: the test cases are already spread over processes, so a parallel back
+        // Compile serially: the test cases are already spread over processes, so a parallel back
         // end would only oversubscribe the machine, and the reference outputs stay strictly deterministic this way
         this.cliOptions.compileJobCount = 1u;
     };
@@ -729,8 +727,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         if inputString == BACKEND_LLVM {
             this.cliOptions.backend = Backend::LLVM;
         } else if inputString == BACKEND_TPDE {
-            // The host compiles the TPDE backend in with SPICE_ENABLE_TPDE. The bootstrap compiler is backed by TPDE, if the TPDE
-            // libraries were linked into it via TPDE_FLAGS (see std/bindings/tpde)
+            // The compiler is backed by TPDE, if the TPDE libraries were linked into it via TPDE_FLAGS (see std/bindings/tpde)
             if !tpde::isAvailable() {
                 raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend is not available in this build. Rebuild the compiler with TPDE_FLAGS set.");
             }
@@ -792,7 +789,7 @@ p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
 
     const p(const string&) debugInfoCallback = p(const string& debugInfoLevel) {
         const String inputString = toLower(String(debugInfoLevel));
-        // The host reports a flag without an attached value as 'true', so accept the boolean values like the host does
+        // A flag without an attached value is reported as 'true', so accept the boolean values
         if inputString == "true" || inputString == DEBUG_INFO_FULL {
             this.setDebugInfoLevel(DebugInfoLevel::FULL);
         } else if inputString == DEBUG_INFO_LINE_ONLY {
@@ -1050,7 +1047,7 @@ f<bool> testInstrumentation() {
     assert parseDebugInfoLevel("--debug-info=full", "-d", "main-file.spice") == DebugInfoLevel::FULL;
     assert parseDebugInfoLevel("--debug-info=line-only", "-d", "main-file.spice") == DebugInfoLevel::LINE_ONLY;
     assert parseDebugInfoLevel("--debug-info=none", "-d", "main-file.spice") == DebugInfoLevel::NONE;
-    // Levels are case-insensitive, and the boolean values are accepted like in the host
+    // Levels are case-insensitive, and the boolean values are accepted
     assert parseDebugInfoLevel("--debug-info=LINE-ONLY", "-d", "main-file.spice") == DebugInfoLevel::LINE_ONLY;
     assert parseDebugInfoLevel("--debug-info=Full", "-d", "main-file.spice") == DebugInfoLevel::FULL;
     assert parseDebugInfoLevel("--debug-info=true", "-d", "main-file.spice") == DebugInfoLevel::FULL;
@@ -1105,7 +1102,7 @@ f<bool> testBuildVarsAndTarget() {
     assert release.cliOptions.buildVars.contains(String("spice.is_native_target"));
     assert release.cliOptions.buildVars.contains(String("spice.target_triple"));
 
-    // The TPDE backend can only be selected, if the bootstrap compiler is backed by TPDE
+    // The TPDE backend can only be selected, if the compiler is backed by TPDE
     if tpde::isAvailable() {
         Driver tpdeBackend;
         string[7] tpdeBackendArgs = ["spice", "build", "--backend", "TPDE", "--target", "x86_64-unknown-linux-gnu", "main-file.spice"];

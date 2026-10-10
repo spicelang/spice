@@ -24,8 +24,8 @@ import "bootstrap/util/concurrency";
 
 // Type aliases
 public type InterfaceManifestationList alias UnorderedMap</*mangledName=*/String, Interface>;
-// Keyed by the interface name and its declaration code location, like the other registries. The host keys this map by
-// CodeLoc directly, but CodeLoc cannot be ordered by std/data/red-black-tree (Spice cannot overload '<').
+// Keyed by the interface name and its declaration code location, like the other registries. CodeLoc alone cannot be ordered by
+// std/data/red-black-tree (Spice cannot overload '<').
 public type InterfaceRegistry alias Map</*interfaceId=*/String, /*manifestationList=*/InterfaceManifestationList>;
 
 /**
@@ -40,7 +40,7 @@ public type InterfaceRegistry alias Map</*interfaceId=*/String, /*manifestationL
 public f<Interface*> insertInterface(Scope* insertScope, Interface& spiceInterface, Vector<Interface*>* nodeInterfaceList) {
     // Open a new manifestation list. Which gets filled by the substantiated manifestations of the interface
     const String interfaceId = spiceInterface.name + ":" + spiceInterface.declNode.codeLoc.toString();
-    // Like std::map::emplace in the host, keep an existing manifestation list
+    // Keep an existing manifestation list
     if !insertScope.interfaces.contains(interfaceId) {
         insertScope.interfaces.insert(interfaceId, InterfaceManifestationList());
     }
@@ -66,8 +66,8 @@ f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestati
     return &manifestationList.get(signature);
 }
 
-// Address of the active interface lookup cache. The host keeps the lookup cache in static members of the InterfaceManager. Spice
-// only supports globals of primitive type, so the cache is owned by the global resource manager and its address is stored here.
+// Address of the active interface lookup cache. Spice only supports globals of primitive type, so the cache is owned by the
+// global resource manager and its address is stored here.
 long ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = 0l;
 
 /**

@@ -12,7 +12,7 @@ import "bootstrap/source-file";
 import "bootstrap/reader/code-loc";
 
 /**
- * Visualizer for the import dependency graph. Mirrors the DependencyGraphVisualizer of the former host compiler.
+ * Visualizer for the import dependency graph.
  *
  * Jobs:
  * - Walk the SourceFile dependency tree starting from the main file
@@ -54,8 +54,7 @@ p DependencyGraphVisualizer.getDependencyGraphNode(StringStream& output, SourceF
     }
     this.printedFiles.pushBack(currentSourceFile);
 
-    // Emit a node for this source file using a path relative to the main file. Like std::filesystem::relative() of the host,
-    // both paths are resolved to their canonical form first, so symlinks along the way (e.g. to the std) do not matter
+    // Emit a node for this source file using a path relative to the main file. Both paths are resolved to their canonical form first, so symlinks along the way (e.g. to the std) do not matter
     const String mainFilePath = String(this.sourceFile.filePath.toString());
     const String nodeId = getRelativePath(String(currentSourceFile.filePath.toString()), mainFilePath);
     output << " \"" << nodeId << "\" [color=\"lightgreen\",label=\"" << currentSourceFile.fileName << "\"];\n";

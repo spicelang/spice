@@ -384,7 +384,7 @@ public f<String> getStdTPDEFlags(const FilePath& stdDir) {
 
 /**
  * Point the std TPDE bindings to the TPDE headers and libraries, that the std ships, unless TPDE_FLAGS is set already.
- * The bindings only use TPDE on Linux, and the shipped libraries are built for the host, so this only applies to native
+ * The bindings only use TPDE on Linux, and the shipped libraries are built for the host machine, so this only applies to native
  * builds on Linux. Has to be called before the compilation starts, because it changes the process environment.
  *
  * @param cliOptions Command line options
@@ -409,17 +409,33 @@ public p exportStdTPDEFlags(const CliOptions& cliOptions) {
 }
 
 /**
- * Retrieve the dir, where the bootstrap compiler lives.
+ * Check if the dir of the compiler sources is configured via the env var SPICE_COMPILER_DIR. Only then, imports with the
+ * 'compiler/' prefix are resolved against it. Otherwise, they are ordinary relative imports, so that projects with an own
+ * 'compiler' dir are not affected.
  *
- * @return Bootstrap compiler directory
+ * @return Compiler source dir configured or not
  */
-public f<FilePath> getBootstrapCompilerDir() {
-    Result<string> value = getEnv("SPICE_BOOTSTRAP_DIR");
+public f<bool> isCompilerSourceDirConfigured() {
+    const Result<string> value = getEnv("SPICE_COMPILER_DIR");
+    return value.isOk();
+}
+
+/**
+ * Retrieve the dir, where the compiler sources live, from the given env var.
+ * ToDo: Remove the envVarName param, once the stage0 compiler resolves the 'compiler/' import prefix and the compiler
+ *       sources do not use the legacy 'bootstrap/' prefix (resolved against SPICE_BOOTSTRAP_DIR) anymore.
+ *
+ * @param envVarName Name of the env var, that holds the dir: SPICE_COMPILER_DIR or SPICE_BOOTSTRAP_DIR
+ * @return Compiler source directory
+ */
+public f<FilePath> getCompilerSourceDir(string envVarName) {
+    Result<string> value = getEnv(envVarName);
     if value.isOk() {
         result = FilePath(value.unwrap());
         if result.exists() { return; }
     }
-    const CompilerError error = CompilerError(CompilerErrorType::BOOTSTRAP_NOT_FOUND, "Bootstrap compiler could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists");
+    const String message = String("Compiler sources could not be found. Check if the env var ") + envVarName + " exists";
+    const CompilerError error = CompilerError(CompilerErrorType::COMPILER_SOURCES_NOT_FOUND, message.getRaw());
     abortWithError(error.getMessage());
     return FilePath(); // Unreachable, abortWithError exits the process
 }
@@ -443,7 +459,7 @@ f<bool> isDarwinTriple(const String& triple) {
 
 /**
  * Retrieve the file extension of the output file for a certain output container. It depends on the target, which is derived
- * from the target triple. As long as there is none yet, e.g. because the cli options are not enriched yet, the host is assumed.
+ * from the target triple. As long as there is none yet, e.g. because the cli options are not enriched yet, the host machine is assumed.
  *
  * @param cliOptions Cli options
  * @param outputContainer Output container

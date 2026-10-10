@@ -8,9 +8,8 @@ import "std/os/os";
 // Own imports
 import "bootstrap/util/test-util";
 
-// Path of the root source file of the compilation. The host's CodeLoc references its source file and retrieves the root source
-// file from it. The bootstrap CodeLoc only carries the path of its source file, so the path of the root source file is registered
-// here by the GlobalResourceManager, when it creates the root source file.
+// Path of the root source file of the compilation. A CodeLoc only carries the path of its source file, so the path of the root
+// source file is registered here by the GlobalResourceManager, when it creates the root source file.
 string ROOT_SOURCE_FILE_PATH = ""; // Empty as long as no root source file is registered
 
 /**
@@ -26,8 +25,8 @@ public type CodeLoc struct {
     public unsigned long line
     public unsigned long col
     public string sourceFilePath
-    // Interval of the located source code as offsets of its first and last char (both inclusive), like the host's
-    // sourceInterval. The default is an empty interval, like the default of antlr4::misc::Interval.
+    // Interval of the located source code as offsets of its first and last char (both inclusive). The default is an empty
+    // interval.
     public long sourceIntervalStart = -1l
     public long sourceIntervalStop = -2l
 }
@@ -138,8 +137,7 @@ public f<String> CodeLoc.toPrettyLineAndColumn() {
 }
 
 /**
- * Check if this code location is located before the given one. This is the equivalent of the host's operator<, since
- * Spice does not support overloading '<'.
+ * Check if this code location is located before the given one. Spice does not support overloading '<', so this is a method.
  *
  * @param other Other code location
  * @return Before or not
@@ -149,7 +147,7 @@ public f<bool> CodeLoc.isBefore(const CodeLoc& other) {
 }
 
 /**
- * Check if this code location is located after the given one. This is the equivalent of the host's operator>.
+ * Check if this code location is located after the given one.
  *
  * @param other Other code location
  * @return After or not

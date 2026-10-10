@@ -20,8 +20,8 @@ import "bootstrap/linter/rules/cyclomatic-complexity-rule";
  *
  * Modeled on PostTypeCheckingVerifier: each overridden visit method fans out to every rule interested in that
  * node kind, so adding a new rule only requires adding its call to the matching visit method, never a new AST
- * walk. The host keeps the rules behind a polymorphic LintRule registry; the bootstrap has no heap-allocated
- * polymorphic collections, so the rules live in linter/rules/ as free functions that this pass dispatches to.
+ * walk. Spice has no heap-allocated polymorphic collections, so the rules live in linter/rules/ as free functions that this
+ * pass dispatches to.
  */
 public type LintPass struct : IAbstractAstVisitor {
     compose public CompilerPass compilerPass

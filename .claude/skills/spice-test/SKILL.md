@@ -13,8 +13,8 @@ it in parallel (`-j`, default: number of CPUs). It drives three kinds of tests:
 - **Reference / integration tests** over the directories in `test/test-files/<group>/...`. Each test case dir has a
   `source.spice` plus reference files the runner compares against (see below).
 - **Linter tests** (`LinterTests`), run against the `lint` subcommand.
-- **Unit tests**: `BootstrapTests.BuiltinTests` builds the compiler sources in test build mode (`--build-mode test`, into
-  `build/test-tmp/bootstrap-tests/`) and runs their builtin tests (`#[test]` functions, e.g. in `src/driver.spice`).
+- **Unit tests**: `CompilerTests.BuiltinTests` builds the compiler sources in test build mode (`--build-mode test`, into
+  `build/test-tmp/compiler-tests/`) and runs their builtin tests (`#[test]` functions, e.g. in `src/driver.spice`).
 
 Artifacts go to `build/test-tmp/` (`--work-dir`), which is also the working directory of the compiler and the test programs
 (it links `test-files/`).
@@ -76,8 +76,9 @@ keep them.
 
 ## Environment
 
-The runner sets `SPICE_STD_DIR` and `SPICE_BOOTSTRAP_DIR` to the checkout itself and derives `LLVM_LIB_DIR` /
-`LLVM_INCLUDE_DIRS` (needed to link the LLVM bindings) from `LLVM_DIR` or `llvm-config`, unless set. The TPDE test cases
+The runner sets `SPICE_STD_DIR`, `SPICE_COMPILER_DIR` and `SPICE_BOOTSTRAP_DIR` (for the legacy `bootstrap/` import
+prefix of the compiler sources) to the checkout itself and derives `LLVM_LIB_DIR` / `LLVM_INCLUDE_DIRS` (needed to link
+the LLVM bindings) from `LLVM_DIR` or `llvm-config`, unless set. The TPDE test cases
 need the TPDE libraries: `TPDE_FLAGS`, or on Linux the ones `python setup-deps.py --tpde` installs into
 `std/bindings/tpde/`, where the compiler finds them on its own. Without them, the TPDE test cases are skipped
 (`TPDE_FLAGS=` disables them).

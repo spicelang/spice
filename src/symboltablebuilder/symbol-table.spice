@@ -19,8 +19,8 @@ import "bootstrap/util/common-util";
 import "bootstrap/source-file";
 
 // Type aliases
-public type CaptureMap alias Map</*name=*/String, /*capture*/Capture>; // Ordered like in the host, since the order determines the capture struct layout
-public type SymbolMap alias Map</*name=*/String, /*entry*/SymbolTableEntry>; // Ordered like in the host, since the order shows in the warnings
+public type CaptureMap alias Map</*name=*/String, /*capture*/Capture>; // Ordered, since the order determines the capture struct layout
+public type SymbolMap alias Map</*name=*/String, /*entry*/SymbolTableEntry>; // Ordered, since the order shows in the warnings
 
 /**
  * Class for storing information about symbols of the program.
@@ -41,8 +41,8 @@ public p SymbolTable.ctor(SymbolTable* parent, Scope* scope) {
 }
 
 /**
- * Copy the symbols and captures of another symbol table into this one. The parent and scope stay untouched. This mirrors
- * the member-wise copy of the symbol table, that the host performs when copying a scope.
+ * Copy the symbols and captures of another symbol table into this one. The parent and scope stay untouched. This is used
+ * when copying a scope.
  *
  * @param other Symbol table to copy from
  */
@@ -53,7 +53,7 @@ public p SymbolTable.copyContentsFrom(const SymbolTable& other) {
 }
 
 /**
- * Count the number of field symbols in this symbol table (struct scopes). Mirrors the host Scope::getFieldCount:
+ * Count the number of field symbols in this symbol table (struct scopes):
  * skip anonymous symbols, imports and nested function/struct/union definitions.
  *
  * @return Number of field symbols
@@ -80,7 +80,7 @@ public f<unsigned long> SymbolTable.getFieldCount() {
  */
 public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode* declNode, bool isAnonymousSymbol = false) {
     const bool isGlobal = this.parent == nil<SymbolTable*>;
-    // Anonymous symbols do not get an order index (SIZE_MAX in the host)
+    // Anonymous symbols do not get an order index (SIZE_MAX)
     unsigned long orderIndex = 18446744073709551615ul;
     if !isAnonymousSymbol {
         orderIndex = 0ul;
@@ -359,7 +359,7 @@ public p SymbolTable.deleteAnonymous(const String& name) {
  * @return Symbol table if form of a string
  */
 public f<JsonValue*> SymbolTable.toJSON() {
-    // Collect all symbols. The host keeps them in an ordered map, so sort them by name
+    // Collect all symbols, sorted by name
     Map<String, SymbolTableEntry*> sortedSymbols;
     foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbols {
         sortedSymbols.insert(symbol.getFirst(), &symbol.getSecond());
@@ -370,7 +370,7 @@ public f<JsonValue*> SymbolTable.toJSON() {
         jsonSymbols.addArrayItem(entry.toJSON());
     }
 
-    // Collect all captures. The host keeps them in an ordered map, so sort them by name
+    // Collect all captures, sorted by name
     Map<String, Capture*> sortedCaptures;
     foreach Pair<const String&, Capture&> capture : this.captures {
         sortedCaptures.insert(capture.getFirst(), &capture.getSecond());

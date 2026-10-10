@@ -32,5 +32,3 @@ all resources that Spice needs to run.
 ```sh
 spice [options] <input>
 ```
-
-`spice` is the self-hosted compiler, which is written in Spice itself.
