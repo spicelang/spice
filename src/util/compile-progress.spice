@@ -417,3 +417,262 @@ public p clearActiveCompileProgress() {
         compileProgress.clear();
     }
 }
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testDivideRoundingUp() {
+    assert divideRoundingUp(0ul, 3ul) == 0ul;
+    assert divideRoundingUp(5ul, 1ul) == 5ul;
+    assert divideRoundingUp(5ul, 6ul) == 1ul; // A stage, that takes any time, never ends up with zero steps
+    assert divideRoundingUp(6ul, 6ul) == 1ul;
+    assert divideRoundingUp(21ul, 6ul) == 4ul;
+    return true;
+}
+
+#[test]
+f<bool> testIsWholeProgramStage() {
+    assert !isWholeProgramStage(BackEndStage::IR_GENERATOR);
+    assert !isWholeProgramStage(BackEndStage::IR_OPTIMIZER);
+    assert !isWholeProgramStage(BackEndStage::OBJECT_EMITTER);
+    assert isWholeProgramStage(BackEndStage::LTO_IR_OPTIMIZER);
+    assert isWholeProgramStage(BackEndStage::LTO_OBJECT_EMITTER);
+    return true;
+}
+
+#[test]
+f<bool> testEnableComputesStepsPerSourceFile() {
+    { // Neither back end nor linking
+        CompileProgress progress;
+        progress.enable(false, false, true, false, 4ul);
+        assert progress.enabled;
+        assert progress.stepsIrGenerator == 0ul;
+        assert progress.stepsIrOptimizer == 0ul;
+        assert progress.stepsObjectEmitter == 0ul;
+        assert progress.stepsLtoIrOptimizer == 0ul;
+        assert progress.stepsLtoObjectEmitter == 0ul;
+        assert progress.stepsLinking == 0ul;
+    }
+    { // O0 skips the optimizer, the parallel back end divides the serial steps by the job count
+        CompileProgress progress;
+        progress.enable(true, true, false, false, 4ul);
+        assert progress.stepsIrGenerator == 2ul;
+        assert progress.stepsIrOptimizer == 0ul;
+        assert progress.stepsObjectEmitter == 2ul;
+        assert progress.stepsLtoIrOptimizer == 0ul;
+        assert progress.stepsLtoObjectEmitter == 0ul;
+        assert progress.stepsLinking == STEPS_LINKING;
+    }
+    { // The speedup is capped for many jobs
+        CompileProgress progress;
+        progress.enable(true, false, true, false, 32ul);
+        assert progress.stepsIrGenerator == 1ul;
+        assert progress.stepsIrOptimizer == 4ul;
+        assert progress.stepsObjectEmitter == 4ul;
+        assert progress.stepsLinking == 0ul;
+    }
+    { // No jobs count as one job
+        CompileProgress progress;
+        progress.enable(true, false, true, false, 0ul);
+        assert progress.stepsIrGenerator == STEPS_IR_GENERATOR;
+        assert progress.stepsIrOptimizer == STEPS_IR_OPTIMIZER;
+        assert progress.stepsObjectEmitter == STEPS_OBJECT_EMITTER_OPTIMIZED;
+    }
+    { // LTO runs serially and replaces the object emitter per source file with the stages for the whole program
+        CompileProgress progress;
+        progress.enable(true, true, true, true, 8ul);
+        assert progress.stepsIrGenerator == STEPS_IR_GENERATOR;
+        assert progress.stepsIrOptimizer == STEPS_IR_OPTIMIZER;
+        assert progress.stepsObjectEmitter == 0ul;
+        assert progress.stepsLtoIrOptimizer == STEPS_LTO_IR_OPTIMIZER;
+        assert progress.stepsLtoObjectEmitter == STEPS_LTO_OBJECT_EMITTER;
+        assert progress.stepsLinking == STEPS_LINKING;
+    }
+    return true;
+}
+
+#[test]
+f<bool> testDisabledProgressIgnoresReports() {
+    CompileProgress progress;
+    assert !progress.enabled;
+    progress.addSourceFile();
+    progress.finishFrontEnd();
+    progress.startBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
+    progress.finishBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
+    progress.skipBackEnd(true);
+    progress.startLinking();
+    progress.finishLinking();
+    assert progress.sourceFileCount == 0ul;
+    assert progress.bar.getTotal() == 0ul;
+    assert progress.bar.getCurrent() == 0ul;
+    assert progress.heartbeatThreads.isEmpty();
+    assert !isCompileProgressActive();
+    return true;
+}
+
+#[test]
+f<bool> testProgressCompletesWithoutLTO() {
+    CompileProgress progress;
+    progress.enable(true, true, true, false, 1ul);
+    // Every source file adds the steps of all its stages to the total
+    const unsigned long stepsPerFile = 2ul + 2ul + 10ul + 5ul + 21ul + 19ul + 2ul;
+    for unsigned long i = 0ul; i < 3ul; i++ {
+        progress.addSourceFile();
+    }
+    assert progress.sourceFileCount == 3ul;
+    assert progress.bar.getTotal() == 3ul * stepsPerFile;
+    assert progress.bar.getCurrent() == 0ul;
+
+    for unsigned long i = 0ul; i < 3ul; i++ {
+        progress.finishFrontEnd();
+        progress.finishTypeCheckerPre();
+        progress.finishTypeCheckerPost();
+    }
+    assert progress.bar.getCurrent() == 3ul * 14ul;
+
+    for unsigned long i = 0ul; i < 3ul; i++ {
+        progress.startBackEndStage(BackEndStage::IR_GENERATOR);
+        progress.finishBackEndStage(BackEndStage::IR_GENERATOR);
+        progress.startBackEndStage(BackEndStage::IR_OPTIMIZER);
+        progress.finishBackEndStage(BackEndStage::IR_OPTIMIZER);
+        progress.startBackEndStage(BackEndStage::OBJECT_EMITTER);
+        progress.finishBackEndStage(BackEndStage::OBJECT_EMITTER);
+        assert progress.heartbeatThreads.isEmpty(); // Stages per source file need no heartbeat
+    }
+    assert progress.bar.getCurrent() == 3ul * (stepsPerFile - STEPS_LINKING);
+
+    // Linking runs on a heartbeat and completes the steps of all source files
+    progress.startLinking();
+    const String line = progress.bar.format(0l);
+    assert line.startsWith(COMPILE_PHASE_LINKING);
+    assert progress.heartbeatThreads.getSize() == 1ul;
+    progress.finishLinking();
+    assert progress.heartbeatThreads.isEmpty();
+    assert !progress.heartbeatRunning;
+    assert progress.bar.getCurrent() == progress.bar.getTotal();
+    return true;
+}
+
+#[test]
+f<bool> testProgressCompletesWithLTO() {
+    CompileProgress progress;
+    progress.enable(true, false, true, true, 4ul);
+    progress.addSourceFile();
+    progress.addSourceFile();
+    const unsigned long stepsPerFile = 2ul + 2ul + 10ul + 5ul + 21ul + 30ul + 30ul;
+    assert progress.bar.getTotal() == 2ul * stepsPerFile;
+
+    // Front end, type checker and the stages per source file
+    for unsigned long i = 0ul; i < 2ul; i++ {
+        progress.finishFrontEnd();
+        progress.finishTypeCheckerPre();
+        progress.finishTypeCheckerPost();
+        progress.finishBackEndStage(BackEndStage::IR_GENERATOR);
+        progress.finishBackEndStage(BackEndStage::IR_OPTIMIZER);
+    }
+    assert progress.bar.getCurrent() == 2ul * (14ul + 5ul + 21ul);
+
+    // The stages for the whole program run on a heartbeat and complete the steps of all source files at once
+    progress.startBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
+    assert progress.heartbeatRunning;
+    assert progress.heartbeatThreads.getSize() == 1ul;
+    progress.finishBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
+    assert !progress.heartbeatRunning;
+    assert progress.heartbeatThreads.isEmpty();
+    assert progress.bar.getCurrent() == 2ul * (14ul + 5ul + 21ul + 30ul);
+
+    progress.startBackEndStage(BackEndStage::LTO_OBJECT_EMITTER);
+    progress.finishBackEndStage(BackEndStage::LTO_OBJECT_EMITTER);
+    assert progress.heartbeatThreads.isEmpty();
+    assert progress.bar.getCurrent() == progress.bar.getTotal();
+    return true;
+}
+
+#[test]
+f<bool> testSkipBackEndCompletesCachedSourceFiles() {
+    { // Without LTO, every cached source file completes its own back end steps
+        CompileProgress progress;
+        progress.enable(true, false, false, false, 1ul);
+        progress.addSourceFile();
+        progress.addSourceFile();
+        progress.skipBackEnd(false);
+        assert progress.bar.getCurrent() == STEPS_IR_GENERATOR + STEPS_OBJECT_EMITTER_O0;
+        progress.skipBackEnd(true); // Has no stages for the whole program without LTO
+        assert progress.bar.getCurrent() == 2ul * (STEPS_IR_GENERATOR + STEPS_OBJECT_EMITTER_O0);
+    }
+    { // With LTO, the main source file also completes the stages for the whole program
+        CompileProgress progress;
+        progress.enable(true, false, true, true, 1ul);
+        progress.addSourceFile();
+        progress.addSourceFile();
+        progress.skipBackEnd(true);
+        const unsigned long ltoSteps = 2ul * (STEPS_LTO_IR_OPTIMIZER + STEPS_LTO_OBJECT_EMITTER);
+        assert progress.bar.getCurrent() == STEPS_IR_GENERATOR + STEPS_IR_OPTIMIZER + ltoSteps;
+        progress.skipBackEnd(false);
+        assert progress.bar.getCurrent() == 2ul * (STEPS_IR_GENERATOR + STEPS_IR_OPTIMIZER) + ltoSteps;
+    }
+    return true;
+}
+
+#[test]
+f<bool> testActiveCompileProgress() {
+    {
+        CompileProgress progress;
+        assert !isCompileProgressActive(); // Not registered before it is enabled
+        progress.enable(false, false, false, false, 1ul);
+        progress.addSourceFile();
+        assert isCompileProgressActive();
+        printAboveActiveCompileProgress(String()); // Keeps the bar enabled
+        assert isCompileProgressActive();
+
+        // Clearing the active progress removes the bar for good
+        clearActiveCompileProgress();
+        assert !progress.enabled;
+        assert !isCompileProgressActive();
+        progress.finishFrontEnd();
+        assert progress.bar.getCurrent() == 0ul;
+    }
+    // The destructor unregisters the progress
+    unsafe {
+        assert ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul;
+    }
+    assert !isCompileProgressActive();
+    clearActiveCompileProgress(); // No-op without an active progress
+    printAboveActiveCompileProgress(String());
+    return true;
+}
+
+#[test]
+f<bool> testShouldShowCompileProgressRespectsOptions() {
+    { // Quiet
+        CliOptions cliOptions;
+        cliOptions.quiet = true;
+        assert !shouldShowCompileProgress(cliOptions);
+    }
+    { // Debug output
+        CliOptions cliOptions;
+        cliOptions.printDebugOutput = true;
+        assert !shouldShowCompileProgress(cliOptions);
+    }
+    { // Dump to the console
+        CliOptions cliOptions;
+        cliOptions.dump.dumpIR = true;
+        assert !shouldShowCompileProgress(cliOptions);
+    }
+    { // The AST and dependency graph dumps print their SVG generation status even when dumping to files
+        CliOptions cliOptions;
+        cliOptions.dump.dumpAST = true;
+        cliOptions.dump.dumpToFiles = true;
+        assert !shouldShowCompileProgress(cliOptions);
+        cliOptions.dump.dumpAST = false;
+        cliOptions.dump.dumpDependencyGraph = true;
+        assert !shouldShowCompileProgress(cliOptions);
+    }
+    { // Other dumps to files depend on the terminal only
+        CliOptions cliOptions;
+        cliOptions.dump.dumpIR = true;
+        cliOptions.dump.dumpToFiles = true;
+        assert shouldShowCompileProgress(cliOptions) == isStdoutTerminal();
+    }
+    return true;
+}
