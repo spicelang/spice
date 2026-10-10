@@ -398,6 +398,8 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
   return nullptr;
 }
 
+namespace {
+
 /**
  * Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
  * yet attach the qualifiers to the type of the global at this point
@@ -405,13 +407,15 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
  * @param node Global variable definition node
  * @return Public or not
  */
-static bool isPublicGlobalVar(const GlobalVarDefNode *node) {
+bool isPublicGlobalVar(const GlobalVarDefNode *node) {
   if (const QualifierLstNode *qualifierLst = node->dataType->qualifierLst)
     for (const QualifierNode *qualifier : qualifierLst->qualifiers)
       if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
         return true;
   return false;
 }
+
+} // namespace
 
 std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   // Check if this name already exists
