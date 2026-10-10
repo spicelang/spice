@@ -10,6 +10,7 @@
 #include <driver/Driver.h>
 #include <exception/AntlrThrowingErrorListener.h>
 #include <exception/CompilerError.h>
+#include <exception/SemanticError.h>
 #include <global/CacheManager.h>
 #include <global/GlobalResourceManager.h>
 #include <global/TypeRegistry.h>
@@ -1064,6 +1065,35 @@ bool SourceFile::dependsOn(const SourceFile *other) const {
   return false;
 }
 
+namespace {
+
+/**
+ * Get the global variable definition, that declared the given symbol table entry
+ *
+ * @param entry Symbol table entry
+ * @return Global variable definition node or nullptr if the entry is no global variable
+ */
+const GlobalVarDefNode *getGlobalVarDef(const SymbolTableEntry *entry) {
+  return entry ? dynamic_cast<const GlobalVarDefNode *>(entry->declNode) : nullptr;
+}
+
+/**
+ * Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
+ * yet attach the qualifiers to the type of the global at this point
+ *
+ * @param node Global variable definition node
+ * @return Public or not
+ */
+bool isPublicGlobalVar(const GlobalVarDefNode *node) {
+  if (const QualifierLstNode *qualifierLst = node->dataType->qualifierLst)
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers)
+      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        return true;
+  return false;
+}
+
+} // namespace
+
 /**
  * Acquire all publicly visible symbols from the imported source file and put them in the name registry of the current one.
  * But only do that for the symbols that are actually defined in the imported source file. Do not allow transitive dependencies.
@@ -1096,7 +1126,14 @@ void SourceFile::mergeNameRegistries(const SourceFile &importedSourceFile, const
     const auto existing = exportedNameRegistry.find(originalName);
     const bool existingIsOwn =
         existing != exportedNameRegistry.end() && existing->second.targetScope->sourceFile->globalScope == globalScope;
-    if (!existingIsOwn) {
+    if (existingIsOwn) {
+      // A global of this file must not share its name with a public global of the imported file. Non-public globals of
+      // the imported file are not visible here, so the own global shadows them, like any other own symbol
+      const auto *ownGlobal = getGlobalVarDef(existing->second.targetEntry);
+      const auto *importedGlobal = getGlobalVarDef(entry.targetEntry);
+      if (ownGlobal && importedGlobal && isPublicGlobalVar(importedGlobal))
+        throw SemanticError(ownGlobal, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + originalName + "' in other module");
+    } else {
       const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
       addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
     }

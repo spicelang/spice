@@ -25,6 +25,7 @@ import "bootstrap/global/runtime-module-manager";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/error-manager";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/model/function" as model;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/system-util";
@@ -805,6 +806,7 @@ public p SourceFile.runMiddleEnd() {
     // why it cannot live inside the per-file front-end recursion (a circular import would otherwise merge a dependency
     // whose registry is not populated yet). runMiddleEnd is the first stage that is only ever invoked at the top level.
     this.mergeNameRegistriesRecursive();
+    this.checkForHardError();
     if this.resourceManager.abortCompilation { return; }
     // From here on, struct manifestations may be substantiated, and each of them gets its compiler-generated default
     // members decided right at that point (see TypeChecker.createImplicitDefaultMembers). Once the middle end is done,
@@ -1033,40 +1035,6 @@ public p SourceFile.addSourceAdditionalSourcePath(const FilePath& path) {
 public f<bool> SourceFile.hasNameRegistryTarget(const String& symbolName, const SymbolTableEntry* target) {
     const NameRegistryEntry* existing = this.getNameRegistryEntry(symbolName);
     return existing != nil<NameRegistryEntry*> && existing.targetEntry == target;
-}
-
-// True if any imported source file exports a symbol with the given name, that a global of this file would collide with.
-// Non-public globals of other files are not visible here, so they cannot collide
-public f<bool> SourceFile.anyDependencyExportsCollidingName(const String& symbolName) {
-    foreach dyn dependency : this.dependencies {
-        SourceFile* sourceFile = dependency.getSecond();
-        if !sourceFile.exportedNameRegistry.contains(symbolName) {
-            continue;
-        }
-        SymbolTableEntry* targetEntry = sourceFile.exportedNameRegistry.get(symbolName).targetEntry;
-        if targetEntry == nil<SymbolTableEntry*> || targetEntry.declNode.kind != ASTNodeKind::GLOBAL_VAR_DEF {
-            return true;
-        }
-        if isPublicGlobalVar(downcast<ASTGlobalVarDefNode>(targetEntry.declNode)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-// Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
-// yet attach the qualifiers to the type of the global at this point
-f<bool> isPublicGlobalVar(ASTGlobalVarDefNode* node) {
-    ASTQualifierLstNode* qualifierLst = node.dataType.qualifierLst;
-    if qualifierLst == nil<ASTQualifierLstNode*> {
-        return false;
-    }
-    foreach ASTQualifierNode* qualifier : qualifierLst.qualifiers {
-        if qualifier.qualifierType == QualifierType::PUBLIC {
-            return true;
-        }
-    }
-    return false;
 }
 
 public p SourceFile.setAlwaysKeepSymbolsOnNameCollision(bool value) { this.alwaysKeepSymbolsOnNameCollision = value; }
@@ -1420,6 +1388,29 @@ public f<llvm::Type> SourceFile.getLLVMType(const symboltable::Type* rawType) {
     return llvmType;
 }
 
+// Get the global variable definition, that declared the given symbol table entry. Returns nil if the entry is no global
+f<ASTGlobalVarDefNode*> getGlobalVarDef(SymbolTableEntry* entry) {
+    if entry == nil<SymbolTableEntry*> || entry.declNode.kind != ASTNodeKind::GLOBAL_VAR_DEF {
+        return nil<ASTGlobalVarDefNode*>;
+    }
+    return downcast<ASTGlobalVarDefNode>(entry.declNode);
+}
+
+// Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
+// yet attach the qualifiers to the type of the global at this point
+f<bool> isPublicGlobalVar(ASTGlobalVarDefNode* node) {
+    ASTQualifierLstNode* qualifierLst = node.dataType.qualifierLst;
+    if qualifierLst == nil<ASTQualifierLstNode*> {
+        return false;
+    }
+    foreach ASTQualifierNode* qualifier : qualifierLst.qualifiers {
+        if qualifier.qualifierType == QualifierType::PUBLIC {
+            return true;
+        }
+    }
+    return false;
+}
+
 /**
  * Check if this source file is the given runtime module itself
  *
@@ -1480,7 +1471,17 @@ public p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, co
         // circular imports work), we must explicitly avoid letting an import overwrite or erase such an own symbol.
         const NameRegistryEntry* existing = this.exportedNameRegistry.contains(originalName) ? &this.exportedNameRegistry.get(originalName) : nil<NameRegistryEntry*>;
         const bool existingIsOwn = existing != nil<NameRegistryEntry*> && existing.targetScope.sourceFile.globalScope == this.globalScope;
-        if !existingIsOwn {
+        if existingIsOwn {
+            // A global of this file must not share its name with a public global of the imported file. Non-public globals
+            // of the imported file are not visible here, so the own global shadows them, like any other own symbol
+            ASTGlobalVarDefNode* ownGlobal = getGlobalVarDef(existing.targetEntry);
+            ASTGlobalVarDefNode* importedGlobal = getGlobalVarDef(entry.targetEntry);
+            if ownGlobal != nil<ASTGlobalVarDefNode*> && importedGlobal != nil<ASTGlobalVarDefNode*> && isPublicGlobalVar(importedGlobal) {
+                ErrorManager& errorManager = this.resourceManager.getErrorManager();
+                errorManager.addHardError(cast<ASTNode*>(ownGlobal), SemanticErrorType::GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + originalName + "' in other module");
+                return;
+            }
+        } else {
             const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
             this.addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
         }
