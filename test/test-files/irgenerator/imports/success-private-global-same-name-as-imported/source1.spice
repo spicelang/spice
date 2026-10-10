@@ -1,0 +1,5 @@
+const string NAME = "lib";
+
+public f<string> getLibName() {
+    return NAME;
+}

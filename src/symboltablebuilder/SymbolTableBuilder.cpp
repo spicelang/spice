@@ -398,15 +398,38 @@ std::any SymbolTableBuilder::visitAliasDef(AliasDefNode *node) {
   return nullptr;
 }
 
+/**
+ * Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
+ * yet attach the qualifiers to the type of the global at this point
+ *
+ * @param node Global variable definition node
+ * @return Public or not
+ */
+static bool isPublicGlobalVar(const GlobalVarDefNode *node) {
+  if (const QualifierLstNode *qualifierLst = node->dataType->qualifierLst)
+    for (const QualifierNode *qualifier : qualifierLst->qualifiers)
+      if (qualifier->type == QualifierNode::QualifierType::TY_PUBLIC)
+        return true;
+  return false;
+}
+
 std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   // Check if this name already exists
   if (rootScope->lookupStrict(node->varName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->varName + "'");
 
-  // Check if global already exists in an imported source file
-  for (const auto &dependency : sourceFile->dependencies | std::views::values)
-    if (dependency->exportedNameRegistry.contains(node->varName))
-      throw SemanticError(node, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node->varName + "' in other module");
+  // Check if global already exists in an imported source file. Non-public globals of other files are not visible here,
+  // so they cannot collide with this one
+  for (const auto &dependency : sourceFile->dependencies | std::views::values) {
+    const auto it = dependency->exportedNameRegistry.find(node->varName);
+    if (it == dependency->exportedNameRegistry.end())
+      continue;
+    const SymbolTableEntry *otherEntry = it->second.targetEntry;
+    const auto *otherGlobalVarDef = otherEntry ? dynamic_cast<const GlobalVarDefNode *>(otherEntry->declNode) : nullptr;
+    if (otherGlobalVarDef && !isPublicGlobalVar(otherGlobalVarDef))
+      continue;
+    throw SemanticError(node, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node->varName + "' in other module");
+  }
 
   // Add the global to the symbol table
   node->entry = rootScope->insert(node->varName, node);

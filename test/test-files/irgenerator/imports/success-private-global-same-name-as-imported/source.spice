@@ -1,0 +1,7 @@
+import "source1";
+
+const string NAME = "main";
+
+f<int> main() {
+    printf("%s %s\n", NAME, getLibName());
+}

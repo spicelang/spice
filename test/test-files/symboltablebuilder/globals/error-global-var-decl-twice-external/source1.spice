@@ -1,1 +1,1 @@
-int GLOBAL_VARIABLE = 12;
+public int GLOBAL_VARIABLE = 12;
