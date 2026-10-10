@@ -806,7 +806,6 @@ public p SourceFile.runMiddleEnd() {
     // why it cannot live inside the per-file front-end recursion (a circular import would otherwise merge a dependency
     // whose registry is not populated yet). runMiddleEnd is the first stage that is only ever invoked at the top level.
     this.mergeNameRegistriesRecursive();
-    this.checkForHardError();
     if this.resourceManager.abortCompilation { return; }
     // From here on, struct manifestations may be substantiated, and each of them gets its compiler-generated default
     // members decided right at that point (see TypeChecker.createImplicitDefaultMembers). Once the middle end is done,
@@ -847,6 +846,9 @@ public p SourceFile.runMiddleEnd() {
             anySourceFileRevisitPending = true;
         }
     }
+    if this.resourceManager.abortCompilation { return; }
+    // Check that no two definitions of the program are exported under the same linker symbol name
+    this.checkForExportedSymbolCollisions();
     if this.resourceManager.abortCompilation { return; }
     // Visualize dependency graph
     this.runDependencyGraphVisualizer();
@@ -1286,6 +1288,90 @@ public p SourceFile.checkForHardError() {
     }
 }
 
+/**
+ * Check that no two definitions of the program are exported under the same linker symbol name. Non-public symbols get
+ * internal linkage and therefore can never collide. Public ones get external linkage under a name that does not contain
+ * the source file, so e.g. two public functions with the same signature in different source files would break the linking.
+ * Every collision is reported as soft error.
+ */
+p SourceFile.checkForExportedSymbolCollisions() {
+    UnorderedMap<String, ASTNode*> exportedSymbols;
+    // Spice cannot hash pointers, so the visited files are identified by their file path, which is unique per source file
+    UnorderedSet<String> visitedSourceFiles;
+    this.registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+    this.checkForSoftErrors();
+}
+
+/**
+ * Register the exported symbols of this source file and all its (transitive) dependencies in the given registry. This
+ * covers the same source files as collectBackEndSourceFiles, so exactly the ones that end up in the linked program.
+ *
+ * @param exportedSymbols Registry, that maps each linker symbol name to the AST node of its definition
+ * @param visitedSourceFiles File paths of the source files, that were already registered
+ */
+p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSymbols, UnorderedSet<String>& visitedSourceFiles) {
+    // Guard against circular imports
+    const String filePath = String(this.filePath.toString());
+    if visitedSourceFiles.contains(filePath) {
+        return;
+    }
+    visitedSourceFiles.insert(filePath);
+
+    // Register the symbols of all dependencies first, so that a collision is reported at the definition in the importing file
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        sourceFile.registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+    }
+
+    foreach IVisitable* topLevelDef : this.ast.topLevelDefs {
+        ASTNode* node = getASTNode(topLevelDef);
+        if node.kind == ASTNodeKind::GLOBAL_VAR_DEF {
+            // Public globals are exported under their plain name
+            const ASTGlobalVarDefNode* globalVarDef = downcast<ASTGlobalVarDefNode>(node);
+            const QualType& globalVarType = globalVarDef.entry.getQualType();
+            if globalVarType.isPublic() {
+                this.registerExportedSymbol(exportedSymbols, globalVarDef.varName, globalVarDef.varName, node);
+            }
+        } else if node.kind == ASTNodeKind::FCT_DEF || node.kind == ASTNodeKind::PROC_DEF {
+            ASTFctDefBaseNode* fctDef = nil<ASTFctDefBaseNode*>;
+            if node.kind == ASTNodeKind::FCT_DEF {
+                ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(node);
+                fctDef = &fctDefNode.node;
+            } else {
+                ASTProcDefNode* procDefNode = downcast<ASTProcDefNode>(node);
+                fctDef = &procDefNode.node;
+            }
+            // Each emitted manifestation of an exported function is exported under its mangled name
+            foreach const model::Function* manifestation : fctDef.manifestations {
+                if manifestation.isFullySubstantiated() && isExportedFunction(manifestation) {
+                    this.registerExportedSymbol(exportedSymbols, manifestation.getMangledName(), manifestation.getSignature(), node);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Register a single exported symbol and report a soft error if another definition is already exported under its name
+ *
+ * @param exportedSymbols Registry, that maps each linker symbol name to the AST node of its definition
+ * @param linkerName Name of the symbol for the linker
+ * @param displayName Name of the symbol for the error message
+ * @param declNode Definition of the symbol
+ */
+p SourceFile.registerExportedSymbol(UnorderedMap<String, ASTNode*>& exportedSymbols, const String& linkerName, const String& displayName, ASTNode* declNode) {
+    if !exportedSymbols.contains(linkerName) {
+        exportedSymbols.upsert(linkerName, declNode);
+        return;
+    }
+    const ASTNode* existingDeclNode = exportedSymbols.get(linkerName);
+    if existingDeclNode == declNode {
+        return;
+    }
+    const String message = "Exported symbol '" + displayName + "' collides with the exported symbol defined at " + existingDeclNode.codeLoc.toPrettyString() + ", because both have the linker name '" + linkerName + "'";
+    this.resourceManager.errorManager.addSoftError(declNode, SemanticErrorType::EXPORTED_SYMBOL_COLLISION, message);
+}
+
 public p SourceFile.checkForSoftErrors() {
     // Check if there are any soft errors and if so, print them
     if !this.resourceManager.errorManager.softErrors.isEmpty() {
@@ -1388,29 +1474,6 @@ public f<llvm::Type> SourceFile.getLLVMType(const symboltable::Type* rawType) {
     return llvmType;
 }
 
-// Get the global variable definition, that declared the given symbol table entry. Returns nil if the entry is no global
-f<ASTGlobalVarDefNode*> getGlobalVarDef(SymbolTableEntry* entry) {
-    if entry == nil<SymbolTableEntry*> || entry.declNode.kind != ASTNodeKind::GLOBAL_VAR_DEF {
-        return nil<ASTGlobalVarDefNode*>;
-    }
-    return downcast<ASTGlobalVarDefNode>(entry.declNode);
-}
-
-// Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
-// yet attach the qualifiers to the type of the global at this point
-f<bool> isPublicGlobalVar(ASTGlobalVarDefNode* node) {
-    ASTQualifierLstNode* qualifierLst = node.dataType.qualifierLst;
-    if qualifierLst == nil<ASTQualifierLstNode*> {
-        return false;
-    }
-    foreach ASTQualifierNode* qualifier : qualifierLst.qualifiers {
-        if qualifier.qualifierType == QualifierType::PUBLIC {
-            return true;
-        }
-    }
-    return false;
-}
-
 /**
  * Check if this source file is the given runtime module itself
  *
@@ -1471,17 +1534,7 @@ public p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, co
         // circular imports work), we must explicitly avoid letting an import overwrite or erase such an own symbol.
         const NameRegistryEntry* existing = this.exportedNameRegistry.contains(originalName) ? &this.exportedNameRegistry.get(originalName) : nil<NameRegistryEntry*>;
         const bool existingIsOwn = existing != nil<NameRegistryEntry*> && existing.targetScope.sourceFile.globalScope == this.globalScope;
-        if existingIsOwn {
-            // A global of this file must not share its name with a public global of the imported file. Non-public globals
-            // of the imported file are not visible here, so the own global shadows them, like any other own symbol
-            ASTGlobalVarDefNode* ownGlobal = getGlobalVarDef(existing.targetEntry);
-            ASTGlobalVarDefNode* importedGlobal = getGlobalVarDef(entry.targetEntry);
-            if ownGlobal != nil<ASTGlobalVarDefNode*> && importedGlobal != nil<ASTGlobalVarDefNode*> && isPublicGlobalVar(importedGlobal) {
-                ErrorManager& errorManager = this.resourceManager.getErrorManager();
-                errorManager.addHardError(cast<ASTNode*>(ownGlobal), SemanticErrorType::GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + originalName + "' in other module");
-                return;
-            }
-        } else {
+        if !existingIsOwn {
             const bool keepOnCollision = importedSourceFile.alwaysKeepSymbolsOnNameCollision;
             this.addNameRegistryEntry(originalName, entry.typeId, entry.targetEntry, entry.targetScope, keepOnCollision, importEntry);
         }

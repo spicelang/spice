@@ -1737,10 +1737,9 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
     foreach const model::Function* manifestation : node.manifestations {
         assert manifestation.entry != nil<SymbolTableEntry*>;
 
-        // Check if the manifestation is substantiated or not public and not used by anybody. Default methods of public
-        // interfaces are public, because structs in other source files can inherit them
+        // Check if the manifestation is substantiated or not public and not used by anybody
         const QualType& entryType = manifestation.entry.getQualType();
-        bool isPublic = entryType.isPublic() || isPublicDefaultMethod(manifestation);
+        const bool isPublic = isExportedFunction(manifestation);
         if !manifestation.isFullySubstantiated() || (!isPublic && !manifestation.used) {
             this.manIdx++; // Increment symbolTypeIndex
             continue;
@@ -1802,16 +1801,6 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
             returnType = manifestation.returnType.toLLVMType(this.sourceFile);
         }
         const unsigned int argOffset = this.getArgOffset(returnSType);
-
-        // Get function linkage
-        if isFunction && node.attrs != nil<IVisitable*> {
-            const ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(node.attrs);
-            const String testAttrName = String(ATTR_TEST);
-            if attrs.attrLst.hasAttr(testAttrName) {
-                const CompileTimeValue testAttrValue = attrs.attrLst.getAttrValueByName(testAttrName);
-                isPublic = isPublic || testAttrValue.getBoolValue();
-            }
-        }
 
         // Create function or implement declared function
         const String mangledName = manifestation.getMangledName();
@@ -7050,6 +7039,35 @@ f<llvm::Function> IRGenerator.getOrDeclareDefaultMethod(const model::Function* d
 
 f<bool> isPublicDefaultMethod(const model::Function* function) {
     return function.isInterfaceDefaultMethod && function.thisType.isPublic();
+}
+
+/**
+ * Check if the given function is emitted with external linkage and therefore visible to the linker under its mangled name.
+ * Default methods of public interfaces are public, because structs in other source files can inherit them. Test functions
+ * are public, because the test main calls them
+ *
+ * @param function Function or procedure
+ * @return Exported or not
+ */
+public f<bool> isExportedFunction(const model::Function* function) {
+    const QualType& entryType = function.entry.getQualType();
+    if entryType.isPublic() || isPublicDefaultMethod(function) {
+        return true;
+    }
+    if function.declNode.kind != ASTNodeKind::FCT_DEF {
+        return false;
+    }
+    const ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(function.declNode);
+    if fctDefNode.node.attrs == nil<IVisitable*> {
+        return false;
+    }
+    const ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDefNode.node.attrs);
+    const String testAttrName = String(ATTR_TEST);
+    if !attrs.attrLst.hasAttr(testAttrName) {
+        return false;
+    }
+    const CompileTimeValue testAttrValue = attrs.attrLst.getAttrValueByName(testAttrName);
+    return testAttrValue.getBoolValue();
 }
 
 f<llvm::Function> IRGenerator.getOrCreateCovariantReturnThunk(const model::Function* method, llvm::Function target) {

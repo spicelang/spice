@@ -18,7 +18,7 @@ public type SemanticErrorType enum {
     INTERFACE_AMBIGUITY,
     DUPLICATE_SYMBOL,
     VARIABLE_DECLARED_TWICE,
-    GLOBAL_DECLARED_TWICE,
+    EXPORTED_SYMBOL_COLLISION,
     FUNCTION_DECLARED_TWICE,
     PROCEDURE_DECLARED_TWICE,
     GENERIC_TYPE_DECLARED_TWICE,
@@ -190,7 +190,7 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::INTERFACE_AMBIGUITY: { return "Interface ambiguity"; }
         case SemanticErrorType::DUPLICATE_SYMBOL: { return "Duplicate symbol"; }
         case SemanticErrorType::VARIABLE_DECLARED_TWICE: { return "Multiple declarations of the same variable"; }
-        case SemanticErrorType::GLOBAL_DECLARED_TWICE: { return "Multiple declarations of the same global variable"; }
+        case SemanticErrorType::EXPORTED_SYMBOL_COLLISION: { return "Multiple exported symbols with the same linker name"; }
         case SemanticErrorType::FUNCTION_DECLARED_TWICE: { return "Multiple declarations of a function"; }
         case SemanticErrorType::PROCEDURE_DECLARED_TWICE: { return "Multiple declarations of a procedure"; }
         case SemanticErrorType::GENERIC_TYPE_DECLARED_TWICE: { return "Multiple declarations of a generic type with the same name"; }
