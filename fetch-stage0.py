@@ -6,17 +6,12 @@ src/ starts to use a language feature the pinned stage0 compiler does not suppor
 release: up to 0.28.x, it ships as 'spice-bootstrap' next to the host compiler 'spice', later as 'spice' itself, so it is
 picked by asking each binary of the release which compiler it is.
 
-The release binaries are compressed with UPX. If 'upx' is on the PATH, the stage0 compiler is decompressed, since the UPX
-loader of the Linux/arm64 binaries of up to 0.28.2 makes them crash at exit (SIGILL, https://github.com/upx/upx/issues/758),
-and decompressing also saves that work on every start.
-
 The stage0 compiler lands in build/stage0/ (see --output-dir), and the script prints the path of its executable.
 """
 import argparse
 import hashlib
 import io
 import os
-import shutil
 import platform
 import subprocess
 import sys
@@ -75,24 +70,6 @@ def extract_candidates(archive: bytes, asset_name: str, target_dir: Path) -> lis
     return extracted
 
 
-def is_upx_packed(executable: Path) -> bool:
-    """Check for the UPX marker, which UPX puts into the headers of the executables it compresses"""
-    with executable.open("rb") as f:
-        return b"UPX!" in f.read(4096)
-
-
-def unpack_upx(executable: Path) -> str | None:
-    """Decompress a UPX-compressed executable in place, if UPX is available. Returns a note, why it was not decompressed"""
-    if not is_upx_packed(executable):
-        return None
-    if (upx := shutil.which("upx")) is None:
-        return "it is compressed with UPX, which is not installed to decompress it"
-    result = subprocess.run([upx, "-d", "-q", str(executable)], capture_output=True, text=True)
-    if result.returncode != 0:
-        return f"decompressing it with UPX failed: {(result.stdout + result.stderr).strip()}"
-    return None
-
-
 def check_self_hosted(executable: Path) -> str | None:
     """Ask the executable, which compiler it is. Returns None if it is the self-hosted compiler, else the reason why not"""
     try:
@@ -144,11 +121,10 @@ def main() -> None:
         rejections = {}
         stage0 = None
         for candidate in candidates:
-            unpack_note = unpack_upx(candidate)
             if (reason := check_self_hosted(candidate)) is None:
                 stage0 = candidate
                 break
-            rejections[candidate.name] = reason + (f" ({unpack_note})" if unpack_note else "")
+            rejections[candidate.name] = reason
         if stage0 is None:
             details = "".join(f"\n  {name}: {reason}" for name, reason in rejections.items()) or " (no candidates)"
             fail(f"The release {version} contains no self-hosted compiler, that runs here:{details}")

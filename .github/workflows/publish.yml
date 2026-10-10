@@ -196,13 +196,6 @@ jobs:
           # binary just like libbacktrace.
           mkdir -p tpde && cp -r ../std/bindings/tpde/lib ../std/bindings/tpde/include ../std/bindings/tpde/LICENSES tpde/
 
-      - name: Setup UPX
-        # The released binaries are compressed with UPX, and fetch-stage0.py decompresses the stage0 compiler, since the UPX
-        # loader of the released Linux/arm64 binaries of up to 0.28.2 crashes (see the script)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bash .github/scripts/install-upx.sh
-
       - name: Fetch stage0 compiler
         # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
