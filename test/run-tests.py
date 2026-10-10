@@ -190,21 +190,14 @@ def exit_code_of(return_code: int) -> int:
     return 128 - return_code if return_code < 0 else return_code
 
 
-def decode_output(output: bytes, truncate_at_nul: bool = False) -> str:
+def decode_output(output: bytes) -> str:
     # Like reading a file in text mode on Windows, convert the line endings
     if IS_WINDOWS:
         output = output.replace(b"\r\n", b"\n")
-    # The host test runner reads the output of the test programs via fgets() into a 128 byte buffer and appends each chunk as C
-    # string, which drops everything from a NUL char to the end of the chunk. The refs are shared, so mirror that
-    if truncate_at_nul and b"\0" in output:
-        # fgets() reads up to 127 bytes per call, including the terminating line break
-        chunks = re.findall(rb"[^\n]{0,126}\n|[^\n]{1,127}", output)
-        output = b"".join(chunk.split(b"\0", 1)[0] for chunk in chunks)
     return output.decode("utf-8", errors="surrogateescape")
 
 
-def run_process(cmd: list[str] | str, capture_stderr: bool = True, shell: bool = False,
-                truncate_at_nul: bool = False) -> tuple[str, int, str]:
+def run_process(cmd: list[str] | str, capture_stderr: bool = True, shell: bool = False) -> tuple[str, int, str]:
     """Run the given command. Returns the output (incl. stderr, if captured), the exit code and the separately captured
     stderr output otherwise"""
     try:
@@ -212,8 +205,7 @@ def run_process(cmd: list[str] | str, capture_stderr: bool = True, shell: bool =
                                 stderr=subprocess.STDOUT if capture_stderr else subprocess.PIPE, timeout=OPTS.timeout or None)
     except subprocess.TimeoutExpired:
         raise TimeoutError(f"Timed out after {OPTS.timeout}s: {cmd if isinstance(cmd, str) else shlex.join(cmd)}")
-    return (decode_output(result.stdout, truncate_at_nul), exit_code_of(result.returncode),
-            decode_output(result.stderr or b""))
+    return decode_output(result.stdout), exit_code_of(result.returncode), decode_output(result.stderr or b"")
 
 
 def parse_test_args(source_path: str) -> list[str]:
@@ -499,7 +491,7 @@ def check_execution(result: TestResult, test_case: TestCase, executable_path: Pa
     # In ASAN mode, always capture stderr as well: a sanitizer report has to fail the test case, even if it only checks an exit
     # code, that might match the one of the sanitizer
     capture_stderr = check_output or OPTS.asan
-    output, exit_code, stderr = run_process(cmd, capture_stderr=capture_stderr, shell=True, truncate_at_nul=True)
+    output, exit_code, stderr = run_process(cmd, capture_stderr=capture_stderr, shell=True)
     if OPTS.asan:
         result.expect(not contains_sanitizer_report(output), f"Sanitizer report:\n{output}")
 
