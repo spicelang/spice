@@ -1035,11 +1035,34 @@ public f<bool> SourceFile.hasNameRegistryTarget(const String& symbolName, const 
     return existing != nil<NameRegistryEntry*> && existing.targetEntry == target;
 }
 
-// True if any imported source file exports a symbol with the given name
-public f<bool> SourceFile.anyDependencyExports(const String& symbolName) {
+// True if any imported source file exports a symbol with the given name, that a global of this file would collide with.
+// Non-public globals of other files are not visible here, so they cannot collide
+public f<bool> SourceFile.anyDependencyExportsCollidingName(const String& symbolName) {
     foreach dyn dependency : this.dependencies {
         SourceFile* sourceFile = dependency.getSecond();
-        if sourceFile.exportedNameRegistry.contains(symbolName) {
+        if !sourceFile.exportedNameRegistry.contains(symbolName) {
+            continue;
+        }
+        SymbolTableEntry* targetEntry = sourceFile.exportedNameRegistry.get(symbolName).targetEntry;
+        if targetEntry == nil<SymbolTableEntry*> || targetEntry.declNode.kind != ASTNodeKind::GLOBAL_VAR_DEF {
+            return true;
+        }
+        if isPublicGlobalVar(downcast<ASTGlobalVarDefNode>(targetEntry.declNode)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Check if the given global variable is declared public. This is checked syntactically, because the type checker did not
+// yet attach the qualifiers to the type of the global at this point
+f<bool> isPublicGlobalVar(ASTGlobalVarDefNode* node) {
+    ASTQualifierLstNode* qualifierLst = node.dataType.qualifierLst;
+    if qualifierLst == nil<ASTQualifierLstNode*> {
+        return false;
+    }
+    foreach ASTQualifierNode* qualifier : qualifierLst.qualifiers {
+        if qualifier.qualifierType == QualifierType::PUBLIC {
             return true;
         }
     }

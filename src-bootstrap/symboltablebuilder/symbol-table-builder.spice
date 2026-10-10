@@ -494,7 +494,7 @@ public f<Any> SymbolTableBuilder.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
     }
 
     // Check if global already exists in an imported source file
-    if this.sourceFile.anyDependencyExports(node.varName) {
+    if this.sourceFile.anyDependencyExportsCollidingName(node.varName) {
         this.reportError(baseNode, SemanticErrorType::GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node.varName + "' in other module");
         return Any();
     }
