@@ -11,11 +11,12 @@ The stage0 compiler lands in build/stage0/ (see --output-dir), and the script pr
 import argparse
 import hashlib
 import io
+import os
 import platform
-import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -69,10 +70,20 @@ def extract_candidates(archive: bytes, asset_name: str, target_dir: Path) -> lis
     return extracted
 
 
-def is_self_hosted(executable: Path) -> bool:
-    result = subprocess.run([str(executable), "--version"], capture_output=True, text=True)
-    return result.returncode == 0 and any(line.split(":")[0].strip() == "Compiler" and "self-hosted" in line
-                                          for line in result.stdout.splitlines())
+def check_self_hosted(executable: Path) -> str | None:
+    """Ask the executable, which compiler it is. Returns None if it is the self-hosted compiler, else the reason why not"""
+    try:
+        result = subprocess.run([str(executable), "--version"], capture_output=True, text=True, timeout=60)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return f"could not run it: {error}"
+    output = (result.stdout + result.stderr).strip()
+    if result.returncode != 0:
+        status = f"signal {-result.returncode}" if result.returncode < 0 else f"exit code {result.returncode}"
+        return f"'--version' failed with {status}: {output or '<no output>'}"
+    for line in result.stdout.splitlines():
+        if line.split(":")[0].strip() == "Compiler":
+            return None if "self-hosted" in line else f"it is not self-hosted ({line.strip()})"
+    return f"'--version' printed no compiler implementation: {output or '<no output>'}"
 
 
 def main() -> None:
@@ -102,16 +113,23 @@ def main() -> None:
     if hashlib.sha256(archive).hexdigest() != expected_hash:
         fail(f"The checksum of {asset_name} does not match the one of the release {version}")
 
-    # Extract the candidates into a clean dir and keep the self-hosted one
-    shutil.rmtree(output_dir, ignore_errors=True)
-    candidates_dir = output_dir / "candidates"
-    candidates_dir.mkdir(parents=True)
-    candidates = extract_candidates(archive, asset_name, candidates_dir)
-    stage0 = next((candidate for candidate in candidates if is_self_hosted(candidate)), None)
-    if stage0 is None:
-        fail(f"The release {version} contains no self-hosted compiler ({', '.join(c.name for c in candidates) or 'none'})")
-    shutil.move(stage0, stage0_path)
-    shutil.rmtree(candidates_dir)
+    # Extract the candidates into a temp dir and keep the self-hosted one. Only the stage0 executable and its stamp in the
+    # output dir are replaced, since it might hold other files as well
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=output_dir) as candidates_dir:
+        candidates = extract_candidates(archive, asset_name, Path(candidates_dir))
+        rejections = {}
+        stage0 = None
+        for candidate in candidates:
+            if (reason := check_self_hosted(candidate)) is None:
+                stage0 = candidate
+                break
+            rejections[candidate.name] = reason
+        if stage0 is None:
+            details = "".join(f"\n  {name}: {reason}" for name, reason in rejections.items()) or " (no candidates)"
+            fail(f"The release {version} contains no self-hosted compiler, that runs here:{details}")
+        stamp_path.unlink(missing_ok=True)
+        os.replace(stage0, stage0_path)
     stamp_path.write_text(version + "\n")
     print(f"Stage0 compiler: {stage0.name} of {version}", file=sys.stderr)
     print(stage0_path)

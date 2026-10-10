@@ -38,9 +38,19 @@ def fail(msg: str) -> None:
 
 
 def find_stage0_compiler() -> Path | None:
-    # Downloaded by fetch-stage0.py
-    candidate = ROOT_DIR / "build" / "stage0" / EXE_NAME
-    return candidate if candidate.is_file() else None
+    # Downloaded by fetch-stage0.py. A download of another version than the pinned one (e.g. from before a version bump or
+    # from another checkout) is not used silently
+    stage0_dir = ROOT_DIR / "build" / "stage0"
+    candidate = stage0_dir / EXE_NAME
+    if not candidate.is_file():
+        return None
+    pinned_version = (ROOT_DIR / ".github" / "stage0-version").read_text().strip()
+    stamp = stage0_dir / "version"
+    downloaded_version = stamp.read_text().strip() if stamp.is_file() else "unknown"
+    if downloaded_version != pinned_version:
+        fail(f"The stage0 compiler in {stage0_dir} has version {downloaded_version}, but {pinned_version} is pinned. "
+             "Download it again with 'python fetch-stage0.py'")
+    return candidate
 
 
 def find_host_compiler() -> Path | None:

@@ -19,12 +19,16 @@ jobs:
   coverage-linux-x86:
     name: Coverage - Linux/x86_64
     runs-on: ubuntu-26.04
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Dependencies
         run: |

@@ -13,12 +13,16 @@ jobs:
   build-compiler-linux-x86:
     name: Build compiler - Linux/x86_64
     runs-on: ubuntu-26.04
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Dependencies
         run: |
@@ -150,12 +154,16 @@ jobs:
   build-compiler-linux-aarch64:
     name: Build compiler - Linux/AArch64
     runs-on: ubuntu-26.04-arm
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Dependencies
         run: |
@@ -287,11 +295,15 @@ jobs:
   build-compiler-windows-x86:
     name: Build compiler - Windows/x86_64
     runs-on: windows-2025-vs2026
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Dependencies
         run: |
@@ -406,12 +418,16 @@ jobs:
   build-compiler-macos-aarch64:
     name: Build compiler - MacOS/AArch64
     runs-on: macos-26
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
+          persist-credentials: false
 
       - name: Setup Mold
         uses: rui314/setup-mold@v1
