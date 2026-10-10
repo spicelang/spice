@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Full first-time dev environment setup: deps, LLVM, third-party libs, initial build."""
+import os
 import shutil
 import subprocess
 import sys
@@ -67,7 +68,9 @@ log("done.")
 
 # Step 4: download third-party libs
 log("[Step 4] Downloading third-party libraries ...")
-run(sys.executable, "setup-deps.py")
+# Also build TPDE (Linux only) against the LLVM from step 3, for the TPDE backend and the std TPDE bindings
+setup_deps_env = {**os.environ, "LLVM_DIR": os.environ.get("LLVM_DIR", str((llvm_build / "lib" / "cmake" / "llvm").resolve()))}
+run(sys.executable, "setup-deps.py", "--tpde", env=setup_deps_env)
 log("done.")
 
 # Step 5: build Spice

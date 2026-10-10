@@ -161,7 +161,10 @@ jobs:
           cmake --build .
 
       - name: Download Libs
-        run: python setup-deps.py
+        # --tpde builds TPDE into the std, for the TPDE backend of the bootstrap compiler and the std TPDE bindings
+        env:
+          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
+        run: python setup-deps.py --tpde
 
       - name: Build host compiler
         # The host compiler is built without ASAN. Only the bootstrap compiler gets instrumented

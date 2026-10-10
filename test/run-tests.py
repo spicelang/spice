@@ -795,7 +795,18 @@ def prepare_work_dir() -> None:
     os.chdir(OPTS.work_dir)
 
 
-def setup_environment(args: argparse.Namespace) -> None:
+def is_tpde_available() -> bool:
+    """
+    The TPDE backend of the compiler under test and the std TPDE bindings, that some test cases use, need the TPDE libraries.
+    The compilers take them from TPDE_FLAGS or, if it is not set, from the std (see 'setup-deps.py --tpde'). An empty TPDE_FLAGS
+    disables them. TPDE only supports ELF targets
+    """
+    if "TPDE_FLAGS" in os.environ:
+        return bool(os.environ["TPDE_FLAGS"])
+    return sys.platform.startswith("linux") and bootstrap.std_ships_tpde()
+
+
+def setup_environment() -> None:
     """Set up the environment, that the compilers need to build the compiler sources and the test cases"""
     # Always test the std and compiler sources of this checkout
     os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")
@@ -811,13 +822,6 @@ def setup_environment(args: argparse.Namespace) -> None:
             bootstrap.fail("LLVM include directories not found. Set LLVM_INCLUDE_DIRS (e.g. '-I<dir1> -I<dir2>') or "
                            "LLVM_DIR, or put llvm-config on the PATH")
         os.environ["LLVM_INCLUDE_DIRS"] = llvm_include_dirs
-    # The TPDE backend of the compiler under test and the std TPDE bindings, that some test cases use, need the TPDE libraries.
-    # Take them from the CMake build tree of the host compiler (built with -DSPICE_ENABLE_TPDE=ON), unless given. TPDE only
-    # supports ELF targets
-    if sys.platform.startswith("linux") and "TPDE_FLAGS" not in os.environ:
-        tpde_flags = bootstrap.find_tpde_flags((args.build_compiler or args.compiler).resolve())
-        if tpde_flags is not None:
-            os.environ["TPDE_FLAGS"] = tpde_flags
 
 
 def parse_args() -> argparse.Namespace:
@@ -887,7 +891,7 @@ def main() -> None:
     args = parse_args()
     if TARGET_ARCH is None:
         bootstrap.fail(f"Unsupported architecture: {platform.machine()}")
-    setup_environment(args)
+    setup_environment()
     OPTS = Options(
         compiler=args.compiler.resolve() if args.compiler else None,
         build_compiler=args.build_compiler.resolve() if args.build_compiler else None,
@@ -899,7 +903,7 @@ def main() -> None:
         is_github_actions=args.is_github_actions,
         skip_sanitizer_tests=args.skip_sanitizer_tests,
         verbose=args.verbose,
-        tpde=bool(os.environ.get("TPDE_FLAGS")),
+        tpde=is_tpde_available(),
         timeout=args.timeout,
     )
     prepare_work_dir()
