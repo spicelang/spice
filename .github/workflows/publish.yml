@@ -57,7 +57,7 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build compiler
+      - name: Build host compiler
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
@@ -80,8 +80,8 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src-host/spice spice
-          chmod +x spice
+          mv ./src-host/spice spice-host
+          chmod +x spice-host
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
@@ -113,22 +113,22 @@ jobs:
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
           # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
-          ./spice build -O3 -lto --static --ignore-cache \
+          ./spice-host build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \
             --build-var SPICE_TARGET_OS="linux" \
             --build-var SPICE_TARGET_ARCH="amd64" \
-            --output spice-bootstrap \
+            --output spice \
             ../src/main.spice
-          chmod +x spice-bootstrap
-          ./spice-bootstrap --version
+          chmod +x spice
+          ./spice --version
 
       - name: Run Checksec
         working-directory: build
         run: |
+          checksec --file=./spice-host --output=json | jq
           checksec --file=./spice --output=json | jq
-          checksec --file=./spice-bootstrap --output=json | jq
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -186,7 +186,7 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build compiler
+      - name: Build host compiler
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
@@ -209,8 +209,8 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src-host/spice spice
-          chmod +x spice
+          mv ./src-host/spice spice-host
+          chmod +x spice-host
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
@@ -242,22 +242,22 @@ jobs:
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
           # Linked statically like the host compiler, so it runs without the libstdc++ of the GCC installed on this runner
-          ./spice build -O3 -lto --static --ignore-cache \
+          ./spice-host build -O3 -lto --static --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \
             --build-var SPICE_TARGET_OS="linux" \
             --build-var SPICE_TARGET_ARCH="aarch64" \
-            --output spice-bootstrap \
+            --output spice \
             ../src/main.spice
-          chmod +x spice-bootstrap
-          ./spice-bootstrap --version
+          chmod +x spice
+          ./spice --version
 
       - name: Run Checksec
         working-directory: build
         run: |
+          checksec --file=./spice-host --output=json | jq
           checksec --file=./spice --output=json | jq
-          checksec --file=./spice-bootstrap --output=json | jq
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -320,7 +320,7 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build compiler
+      - name: Build host compiler
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
           CMAKE_TLS_VERIFY: "1"
@@ -343,7 +343,7 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src-host/spice.exe spice.exe
+          mv ./src-host/spice.exe spice-host.exe
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
@@ -359,16 +359,16 @@ jobs:
           $env:LLVM_LIB_DIR = "$workspace/llvm/build/lib"
           $env:LLVM_INCLUDE_DIRS = "-I$workspace/llvm/llvm/include -I$workspace/llvm/build/include"
           # Linked statically like the host compiler, so it runs without the MinGW runtime DLLs
-          ./spice.exe build -O3 -lto --static --ignore-cache `
+          ./spice-host.exe build -O3 -lto --static --ignore-cache `
             --build-var SPICE_VERSION="${{ github.ref_name }}" `
             --build-var SPICE_GIT_HASH="${{ github.sha }}" `
             --build-var SPICE_BUILT_BY="ghactions" `
             --build-var SPICE_TARGET_OS="windows" `
             --build-var SPICE_TARGET_ARCH="amd64" `
-            --output spice-bootstrap.exe `
+            --output spice.exe `
             ../src/main.spice
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          ./spice-bootstrap.exe --version
+          ./spice.exe --version
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -415,7 +415,7 @@ jobs:
       - name: Download Libs
         run: python setup-deps.py
 
-      - name: Build compiler
+      - name: Build host compiler
         env:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: |
@@ -436,8 +436,8 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src-host/spice spice
-          chmod +x spice
+          mv ./src-host/spice spice-host
+          chmod +x spice-host
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
@@ -452,18 +452,18 @@ jobs:
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
           # Linked dynamically like the host compiler, macOS does not support static executables
-          ./spice build -O3 -lto --ignore-cache \
+          ./spice-host build -O3 -lto --ignore-cache \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \
             --build-var SPICE_TARGET_OS="macos" \
             --build-var SPICE_TARGET_ARCH="aarch64" \
-            --output spice-bootstrap \
+            --output spice \
             ../src/main.spice
-          chmod +x spice-bootstrap
-          ./spice-bootstrap --version
+          chmod +x spice
+          ./spice --version
           # The shared libraries it needs at runtime
-          otool -L spice-bootstrap
+          otool -L spice
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

@@ -73,10 +73,11 @@ all resources that Spice needs to run.
 spice [options] <input>
 ```
 
-The release also ships the self-hosted bootstrap compiler, which is written in Spice itself, as `spice-bootstrap`. It is
-experimental and does not support every feature of `spice` yet.
+`spice` is the self-hosted compiler, which is written in Spice itself. The release also ships the host compiler, which is
+written in C++ and builds the self-hosted compiler, as `spice-host`. It takes the same options, so you can fall back to it
+if you hit a problem with `spice`:
 ```sh
-spice-bootstrap [options] <input>
+spice-host [options] <input>
 ```
 
 The `Compiler` line of the `--version` output tells which of the two compilers you are running (`host` or `self-hosted`).

@@ -25,7 +25,7 @@ You can apply following options to the `install` subcommand:
 | Option       | Long                      | Description                                                                                    |
 |--------------|---------------------------|------------------------------------------------------------------------------------------------|
 | `-d`         | `--debug-output`          | Print compiler output for debugging.                                                           |
-| `-q`         | `--quiet`                 | Do not show the compile progress bar (self-hosted compiler only).                              |
+| `-q`         | `--quiet`                 | Do not show the compile progress bar.                                                          |
 | `-ast`       | `--dump-ast`              | Dump AST as serialized string and SVG image                                                    |
 | -            | `--dump-symtab`           | Dump serialized symbol tables                                                                  |
 | -            | `--dump-types`            | Dump all used types                                                                            |

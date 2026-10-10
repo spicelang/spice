@@ -49,6 +49,15 @@ To build Spice, you can use the `dev-setup.py` script. This will prepare your de
     .\spice [options] <input>
     ```
 
+### Build the self-hosted compiler
+The steps above build the host compiler, which is written in C++. The release packages ship the self-hosted compiler as
+`spice` instead, which is written in Spice itself and built by the host compiler. To build it as well, run:
+```sh
+python bootstrap.py --output build/spice-self-hosted
+```
+The script builds the self-hosted compiler from `src/` with the host compiler, lets it compile itself until two consecutive
+builds are identical, and copies the result to the given path.
+
 ### Optional build flags
 
 The following CMake options are available when configuring the build (pass them as `-D<name>=ON` to `cmake`):
