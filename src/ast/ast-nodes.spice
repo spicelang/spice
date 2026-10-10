@@ -264,7 +264,7 @@ public type ASTNodeKind enum {
 
 // =========================================================== ASTNode ===========================================================
 
-public type ASTNode struct/*: IVisitable*/ {
+public type ASTNode struct {
     public ASTNode* parent = nil<ASTNode*>
     public Vector<ASTNode*> children
     public CodeLoc codeLoc
@@ -289,10 +289,10 @@ public p ASTNode.ctor(const CodeLoc& codeLoc) {
 // destruction free the vector storage.
 public p ASTNode.dtor() {}
 
-public f<Any> ASTNode.accept(IAbstractAstVisitor* _) {
-    assert false; // Concrete node types must override accept()
-    return Any();
-}
+public f<Any> ASTNode.accept(IAbstractAstVisitor* _) { // LCOV_EXCL_LINE
+    assert false;                                      // LCOV_EXCL_LINE - Concrete node types must override accept()
+    return Any();                                      // LCOV_EXCL_LINE
+}                                                      // LCOV_EXCL_LINE
 
 // Register a child node and set its parent to this node.
 public p ASTNode.addChild(ASTNode* child) {
@@ -464,7 +464,7 @@ public f<Any> ASTEntryNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================= TopLevelDefNode =======================================================
 
-public type ASTTopLevelDefNode struct/*: IVisitable*/ {
+public type ASTTopLevelDefNode struct {
     compose public ASTNode node
 }
 
@@ -474,7 +474,7 @@ public p ASTTopLevelDefNode.ctor(CodeLoc codeLoc) {
 
 // =========================================================== StmtNode ==========================================================
 
-public type ASTStmtNode struct/*: IVisitable*/ {
+public type ASTStmtNode struct {
     compose public ASTNode node
     public bool unreachable = false
 }
@@ -486,7 +486,7 @@ public p ASTStmtNode.ctor(CodeLoc codeLoc) {
 
 // =========================================================== ExprNode ==========================================================
 
-public type ASTExprNode struct/*: IVisitable*/ {
+public type ASTExprNode struct {
     compose public ASTNode node
     QualTypeList symbolTypes
 }
@@ -889,7 +889,7 @@ public f<Any> ASTFctNameNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== FctDefBaseNode =======================================================
 
-public type ASTFctDefBaseNode struct/*: IVisitable*/ {
+public type ASTFctDefBaseNode struct {
     compose public ASTTopLevelDefNode node
 
     public IVisitable* attrs = nil<IVisitable*>
@@ -2414,7 +2414,7 @@ public f<Any> ASTStructInstantiationNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= LambdaBaseNode ======================================================
 
-public type ASTLambdaBaseNode struct/*: IVisitable*/ {
+public type ASTLambdaBaseNode struct {
     compose public ASTExprNode node
     public IVisitable* paramLst = nil<IVisitable*>
     public bool hasParams = false

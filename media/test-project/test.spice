@@ -1,15 +1,3 @@
-p frameC() {
-    sDumpStacktrace(true, true);
-}
-
-p frameB() {
-    frameC();
-}
-
-p frameA() {
-    frameB();
-}
-
 f<int> main() {
-    frameA();
+    printf("Hello World!\n");
 }
