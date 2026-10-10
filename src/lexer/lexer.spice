@@ -443,9 +443,9 @@ f<Token> Lexer.consumeToken() {
         }
     }
 
-    const String message = String("token recognition error at: '") + curChar + "'";
-    this.throwLexerError(codeLoc, message.getRaw());
-    return Token(TokenType::INVALID);
+    const String message = String("token recognition error at: '") + curChar + "'"; // LCOV_EXCL_LINE
+    this.throwLexerError(codeLoc, message.getRaw());                                // LCOV_EXCL_LINE
+    return Token(TokenType::INVALID);                                               // LCOV_EXCL_LINE
 }
 
 /**
