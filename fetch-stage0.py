@@ -7,7 +7,8 @@ release: up to 0.28.x, it ships as 'spice-bootstrap' next to the host compiler '
 picked by asking each binary of the release which compiler it is.
 
 The release binaries are compressed with UPX. If 'upx' is on the PATH, the stage0 compiler is decompressed, since the UPX
-loader of the Linux/arm64 binaries crashes at startup (SIGILL), and decompressing also saves that work on every start.
+loader of the Linux/arm64 binaries of up to 0.28.2 makes them crash at exit (SIGILL, https://github.com/upx/upx/issues/758),
+and decompressing also saves that work on every start.
 
 The stage0 compiler lands in build/stage0/ (see --output-dir), and the script prints the path of its executable.
 """
