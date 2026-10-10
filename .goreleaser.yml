@@ -4,7 +4,7 @@ version: 2
 project_name: spice
 
 builds:
-  # The host compiler (src-host/)
+  # The self-hosted bootstrap compiler (src/), the default compiler. The compiler jobs build it with the host compiler
   - id: spice
     binary: spice
     main: ./.github/media/dummy.go
@@ -25,16 +25,16 @@ builds:
     hooks:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
-  # The self-hosted bootstrap compiler (src/), that the compiler jobs build with the host compiler
-  - id: spice-bootstrap
-    binary: spice-bootstrap
+  # The host compiler (src-host/)
+  - id: spice-host
+    binary: spice-host
     main: ./.github/media/dummy.go
     goos: *goos
     goarch: *goarch
     ignore: *ignore
     hooks:
       post:
-        - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice-bootstrap{{ .Ext }} {{ .Path }}"
+        - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice-host{{ .Ext }} {{ .Path }}"
 
 upx:
   - enabled: true
@@ -179,7 +179,7 @@ homebrew_casks:
   - name: spice
     binaries:
       - spice
-      - spice-bootstrap
+      - spice-host
     homepage: https://www.spicelang.com
     description: Spice programming language.
     license: MIT
@@ -195,7 +195,7 @@ homebrew_casks:
       post:
         install: |
           system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice"]
-          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice-bootstrap"]
+          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice-host"]
     caveats: |
       The Spice standard library is staged alongside the binary in the cask's
       staged path. If the compiler cannot locate it automatically, set:
