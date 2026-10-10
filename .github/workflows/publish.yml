@@ -171,8 +171,7 @@ jobs:
           sudo apt-get update
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
           # zlib, zstd and ncurses provide the static archives for linking the bootstrap compiler (see std/bindings/llvm).
-          # upx: the UPX loader of the released Linux/arm64 binaries crashes, so fetch-stage0.py decompresses the stage0 compiler
-          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang upx
+          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -246,6 +245,13 @@ jobs:
           cp ../deps/tpde/deps/fadec/LICENSE tpde/LICENSES/fadec-LICENSE
           cp ../deps/tpde/deps/disarm/LICENSE tpde/LICENSES/disarm-LICENSE
           cp ../deps/tpde/deps/spdlog/LICENSE tpde/LICENSES/spdlog-LICENSE
+
+      - name: Setup UPX
+        # The released binaries are compressed with UPX, and fetch-stage0.py decompresses the stage0 compiler, since the UPX
+        # loader of the released Linux/arm64 binaries of up to 0.28.2 crashes (see the script)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/install-upx.sh
 
       - name: Fetch stage0 compiler
         # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler, which is
@@ -567,9 +573,10 @@ jobs:
           password: ${{ secrets.DOCKER_HUB_SECRET }}
 
       - name: Setup UPX
-        run: |
-          sudo apt-get update
-          sudo apt-get install upx
+        # GoReleaser compresses the compiler binaries with UPX. The latest UPX release, not the distribution's (see the script)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/install-upx.sh
 
       - name: Download all artifacts of compiler build
         uses: actions/download-artifact@v8

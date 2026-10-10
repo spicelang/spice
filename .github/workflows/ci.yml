@@ -158,8 +158,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:ubuntu-toolchain-r/test
           sudo apt-get update
-          # upx: the UPX loader of the released Linux/arm64 binaries crashes, so fetch-stage0.py decompresses the stage0 compiler
-          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang upx
+          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
           sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
           sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
@@ -231,6 +230,13 @@ jobs:
       - name: Run Test target (host compiler)
         working-directory: build
         run: cmake --build . --target spicetest_parallel
+
+      - name: Setup UPX
+        # The released binaries are compressed with UPX, and fetch-stage0.py decompresses the stage0 compiler, since the UPX
+        # loader of the released Linux/arm64 binaries of up to 0.28.2 crashes (see the script)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/install-upx.sh
 
       - name: Fetch stage0 compiler
         # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
