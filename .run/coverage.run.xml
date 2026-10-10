@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="coverage" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value='python3 test/run-tests.py --instrument coverage; python3 test/run-tests.py --coverage --work-dir build/test-tmp-coverage; cd build &amp;&amp; python3 ../coverage-bootstrap.py &amp;&amp; python3 ../coverage-spice.py &amp;&amp; echo "Reports: build/coverage-bootstrap/index.html, build/coverage-spice/index.html"' />
+    <option name="SCRIPT_TEXT" value='python3 test/run-tests.py --instrument coverage; python3 test/run-tests.py --coverage --work-dir build/test-tmp-coverage; python3 coverage.py &amp;&amp; echo "Reports: build/coverage-compiler/index.html, build/coverage-spice/index.html"' />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />

@@ -104,7 +104,7 @@ jobs:
       - name: Run Test target (compiler coverage)
         # Builds the compiler with Spice code coverage instrumentation (with the stage0 compiler) and runs the test suites
         # against it, to collect gcov data for the compiler sources. Same test selection as the run in ci.yml. The gcov data
-        # lands next to the object files in build/test-tmp (see coverage-bootstrap.py).
+        # lands next to the object files in build/test-tmp (see coverage.py).
         #
         # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by the
         # run in ci.yml), so a single failing test should not block generating/uploading the reports below with whatever
@@ -120,7 +120,7 @@ jobs:
         # instrumentation, to collect gcov data for the std lib code they exercise. --coverage forces debug info on for every
         # compiled test program, which changes the emitted LLVM IR, so this run skips all reference comparisons and just
         # compiles, links and executes every test program that would normally run. It uses its own work dir, since the
-        # compiler coverage run above keeps its data in build/test-tmp (see coverage-spice.py).
+        # compiler coverage run above keeps its data in build/test-tmp (see coverage.py).
         #
         # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by the
         # run in ci.yml), and under sustained load across hundreds of compiles, LLVM's GCOVProfilerPass has occasionally
@@ -139,17 +139,10 @@ jobs:
           path: ~/.cache/ccache
           key: ccache-${{ runner.os }}-${{ runner.arch }}-coverage-${{ github.sha }}
 
-      - name: Generate compiler coverage report
-        working-directory: build
+      - name: Generate coverage reports
         env:
           LLVM_COV: ${{ github.workspace }}/llvm/build/bin/llvm-cov
-        run: python ../coverage-bootstrap.py
-
-      - name: Generate Spice coverage report
-        working-directory: build
-        env:
-          LLVM_COV: ${{ github.workspace }}/llvm/build/bin/llvm-cov
-        run: python ../coverage-spice.py
+        run: python coverage.py
 
       - name: Upload coverage report
         uses: Dylan700/sftp-upload-action@v1.2.5
@@ -158,6 +151,6 @@ jobs:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           uploads: |
-            ./build/coverage-bootstrap/ => coverage/
+            ./build/coverage-compiler/ => coverage/
             ./build/coverage-spice/ => coverage/std/
           delete: 'true'
