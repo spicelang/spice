@@ -27,7 +27,7 @@ attributes #2 = { mustprogress nofree norecurse nosync nounwind willreturn memor
 !llvm.module.flags = !{!2, !3, !4, !5}
 
 !0 = !{i64 -3005221672275489307}
-!1 = !{!"spice version dev [host] (https://github.com/spicelang/spice)"}
+!1 = !{!"spice version dev [self-hosted] (https://github.com/spicelang/spice)"}
 !2 = !{i32 8, !"PIC Level", i32 2}
 !3 = !{i32 7, !"PIE Level", i32 2}
 !4 = !{i32 7, !"uwtable", i32 2}

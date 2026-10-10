@@ -267,5 +267,5 @@ _Z15lambda.L12C29.0v:                   # @_Z15lambda.L12C29.0v
 	.asciz	"Started all threads. Waiting for results ..."
 	.size	.Lstr, 45
 
-	.ident	"spice version dev [host] (https://github.com/spicelang/spice)"
+	.ident	"spice version dev [self-hosted] (https://github.com/spicelang/spice)"
 	.section	".note.GNU-stack","",@progbits
