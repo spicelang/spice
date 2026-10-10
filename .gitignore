@@ -30,6 +30,12 @@ spice
 /deps/libbacktrace-build
 /std/runtime/lib
 
+# Vendored TPDE: its out-of-tree build dir, and the libraries, headers and licenses setup-deps.py --tpde puts in the std tree
+/deps/tpde-build
+/std/bindings/tpde/lib
+/std/bindings/tpde/include
+/std/bindings/tpde/LICENSES
+
 # FASTBuild
 *.fdb
 

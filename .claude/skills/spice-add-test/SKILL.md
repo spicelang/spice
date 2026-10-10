@@ -76,7 +76,7 @@ debug info the LLVM C API can't express. To generate one, create the empty file 
 - `skip-windows`, `skip-macos` — skip on that OS
 - `skip-bootstrap` — skip when running against the bootstrap compiler (`test/run-tests.py`). Prefer `skip-host`, since the bootstrap compiler is the default
 - `skip-host` — skip when running against the host compiler, e.g. for references that follow the bootstrap compiler, where both differ (like ANTLR error messages or typeid hash values)
-- `skip-without-tpde` — skip when the compiler was built without `SPICE_ENABLE_TPDE` (e.g. for tests of the std TPDE bindings)
+- `skip-without-tpde` — skip when the TPDE libraries are not available: host compiler built without `SPICE_ENABLE_TPDE`, or no `TPDE_FLAGS` / `setup-deps.py --tpde` for `test/run-tests.py` (e.g. for tests of the std TPDE bindings)
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests
 - `debug.gdb` — gdb script (used with `debug.out`)
 

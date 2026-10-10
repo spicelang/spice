@@ -83,27 +83,11 @@ def uses_tpde_backend(build_flags: list[str]) -> bool:
     return False
 
 
-def find_tpde_flags(host_compiler: Path) -> str | None:
-    # Each stage compiler only supports the TPDE backend, if the TPDE libraries are linked into it via TPDE_FLAGS (see
-    # std/bindings/tpde). Take them from the CMake build tree of the host compiler (built with -DSPICE_ENABLE_TPDE=ON) and
-    # build the flags with the same layout the host derives from a std that ships them (see SystemUtil::getStdTPDEFlags)
-    include_dir = ROOT_DIR / "deps" / "tpde" / "tpde-llvm" / "include"
-    if not (include_dir / "tpde-llvm" / "LLVMCompiler.hpp").is_file():
-        return None
-    build_dirs = [host_compiler.parent.parent] + [ROOT_DIR / d for d in ("build", "cmake-build-release", "cmake-build-debug")]
-    for build_dir in build_dirs:
-        tpde_dir = build_dir / "deps" / "tpde"
-        libs = [tpde_dir / "tpde-llvm" / "libtpde_llvm.a", tpde_dir / "tpde" / "libtpde.a",
-                tpde_dir / "tpde" / "deps" / "fadec" / "libfadec.a", tpde_dir / "tpde" / "deps" / "disarm" / "libdisarm64.a"]
-        if not all(lib.is_file() for lib in libs[:3]):
-            continue
-        libs = [lib for lib in libs if lib.is_file()]
-        # spdlog carries a 'd' suffix in debug builds
-        spdlog_dir = tpde_dir / "tpde" / "deps" / "spdlog"
-        libs += [lib for lib in (spdlog_dir / "libspdlog.a", spdlog_dir / "libspdlogd.a") if lib.is_file()][:1]
-        # The libraries reference each other, so they go into a group, that the linker rescans until all references resolve
-        return f"-I{include_dir} -Wl,--start-group {' '.join(str(lib) for lib in libs)} -Wl,--end-group"
-    return None
+def std_ships_tpde() -> bool:
+    # The compilers derive TPDE_FLAGS from the TPDE libraries in the std, unless TPDE_FLAGS is set (see getStdTPDEFlags in
+    # src/util/system-util.spice). 'setup-deps.py --tpde' builds them into the std, like the Linux release packages ship them
+    tpde_dir = ROOT_DIR / "std" / "bindings" / "tpde"
+    return (tpde_dir / "include" / "tpde-llvm" / "LLVMCompiler.hpp").is_file() and (tpde_dir / "lib" / "libtpde_llvm.a").is_file()
 
 
 def sha256(path: Path) -> str:
@@ -189,7 +173,7 @@ def main() -> None:
                         help="Maximum number of self-compilations, after stage 0 was built by the host (default: 5)")
     parser.add_argument("--build-flags", default=" ".join(DEFAULT_BUILD_FLAGS),
                         help=f"Flags passed to every 'spice build' invocation (default: '{' '.join(DEFAULT_BUILD_FLAGS)}'). "
-                             "With '--backend=tpde', the TPDE libraries are taken from the host compiler's build tree, "
+                             "With '--backend=tpde', the TPDE libraries are taken from the std (see 'setup-deps.py --tpde'), "
                              "unless TPDE_FLAGS is set")
     parser.add_argument("--stage-timeout", type=int, default=1800,
                         help="Timeout in seconds for building a single stage (default: 1800)")
@@ -237,12 +221,9 @@ def main() -> None:
             fail("The TPDE backend is only supported on Linux")
         if "-lto" in build_flags:
             fail("The TPDE backend does not support LTO. Remove -lto from --build-flags")
-        if not os.environ.get("TPDE_FLAGS"):
-            tpde_flags = find_tpde_flags(host_compiler)
-            if tpde_flags is None:
-                fail("TPDE libraries not found. Build the host compiler with -DSPICE_ENABLE_TPDE=ON or set TPDE_FLAGS "
-                     "(e.g. '-I<tpde-include-dir> <libtpde_llvm.a> <libtpde.a> ...')")
-            os.environ["TPDE_FLAGS"] = tpde_flags
+        if not os.environ.get("TPDE_FLAGS") and ("TPDE_FLAGS" in os.environ or not std_ships_tpde()):
+            fail("TPDE libraries not found. Build them with 'python setup-deps.py --tpde' or set TPDE_FLAGS "
+                 "(e.g. '-I<tpde-include-dir> <libtpde_llvm.a> <libtpde.a> ...')")
 
     # Stage 0: built by the host compiler
     compiler = build_stage(host_compiler, 0, work_dir, build_flags, args.stage_timeout, args.verbose)

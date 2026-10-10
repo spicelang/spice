@@ -33,7 +33,10 @@ export LLVM_DIR=$PWD/llvm/build-release/lib/cmake/llvm
 
 If LLVM and third-party libs are missing, run `python dev-setup.py` once (slow: it
 clones and builds LLVM). `python setup-deps.py` alone fetches just the header-only
-deps (json, CLI11) into `lib/`.
+deps (json, CLI11) into `lib/`. `python setup-deps.py --tpde` (Linux, needs `LLVM_DIR`
+or `llvm-config`) also builds TPDE with its own CMake project and installs it into
+`std/bindings/tpde/`, where both compilers pick it up for `--backend=tpde` and the std
+TPDE bindings.
 
 ## Configure (first time / after CMakeLists changes)
 

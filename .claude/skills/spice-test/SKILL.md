@@ -90,9 +90,10 @@ e.g. in `src/driver.spice`).
 
 It sets `SPICE_STD_DIR` and `SPICE_BOOTSTRAP_DIR` to the checkout itself and
 derives `LLVM_LIB_DIR` / `LLVM_INCLUDE_DIRS` (needed to link the LLVM bindings)
-from `LLVM_DIR` or `llvm-config`, unless set. On Linux, `TPDE_FLAGS` is taken from
-the host build tree (built with `-DSPICE_ENABLE_TPDE=ON`), unless set; the TPDE
-test cases are skipped without it (`TPDE_FLAGS=` disables them).
+from `LLVM_DIR` or `llvm-config`, unless set. The TPDE test cases need the TPDE
+libraries: `TPDE_FLAGS`, or on Linux the ones `python setup-deps.py --tpde`
+installs into `std/bindings/tpde/`, where the compilers find them on their own.
+Without them, the TPDE test cases are skipped (`TPDE_FLAGS=` disables them).
 
 Flags:
 

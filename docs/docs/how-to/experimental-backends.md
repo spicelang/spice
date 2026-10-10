@@ -66,8 +66,8 @@ If the compiler was built without `SPICE_ENABLE_TPDE`, passing `--backend=tpde` 
 you to rebuild with the option turned on.
 
 The self-hosted bootstrap compiler (`src/`) supports `--backend=tpde` as well. It emits objects via the std
-TPDE bindings (see [Using TPDE from Spice code](#using-tpde-from-spice-code)), so it is only backed by TPDE if
-`TPDE_FLAGS` was set while building it. Otherwise, `--backend=tpde` produces a CLI error.
+TPDE bindings (see [Using TPDE from Spice code](#using-tpde-from-spice-code)), so it is only backed by TPDE if the
+TPDE libraries were available while building it. Otherwise, `--backend=tpde` produces a CLI error.
 
 ## Limitations you may hit
 
@@ -108,15 +108,19 @@ The Linux release packages ship them inside the std, at `std/bindings/tpde/lib` 
 compiler points the bindings to them on its own. The shipped libraries are built against the LLVM version of the release
 (see `LLVM_VERSION` in the release workflow), so the LLVM the program links against has to be the same version.
 
-When building Spice from source, a build with `-DSPICE_ENABLE_TPDE=ON` produces the TPDE libraries. Point the bindings
-to them with the `TPDE_FLAGS` environment variable, which also takes precedence over the libraries shipped with the std.
-It holds the include flag for the TPDE headers and the paths of the TPDE static libraries, space-separated:
+When building Spice from source on Linux, build TPDE with `python setup-deps.py --tpde`. It builds the `deps/tpde`
+submodule with its own CMake project, against the LLVM from `LLVM_DIR` (`<llvm>/lib/cmake/llvm`) or `llvm-config`, and
+installs the libraries, headers and licenses into `std/bindings/tpde`, like the release packages ship them. The compiler
+then finds them on its own. It needs a `clang` matching the LLVM version, to compile TPDE's encoding templates.
+
+The `TPDE_FLAGS` environment variable takes precedence over the libraries in the std. It holds the include flag for the
+TPDE headers and the paths of the TPDE static libraries, space-separated:
 
 ```sh
-TPDE_FLAGS="-I<spice-src>/deps/tpde/tpde-llvm/include \
-  <build>/deps/tpde/tpde-llvm/libtpde_llvm.a <build>/deps/tpde/tpde/libtpde.a \
-  <build>/deps/tpde/tpde/deps/fadec/libfadec.a <build>/deps/tpde/tpde/deps/disarm/libdisarm64.a \
-  <build>/deps/tpde/tpde/deps/spdlog/libspdlog.a" # spdlog only with TPDE logging enabled (default)
+TPDE_FLAGS="-I<spice-src>/std/bindings/tpde/include -Wl,--start-group \
+  <spice-src>/std/bindings/tpde/lib/libtpde_llvm.a <spice-src>/std/bindings/tpde/lib/libtpde.a \
+  <spice-src>/std/bindings/tpde/lib/libfadec.a <spice-src>/std/bindings/tpde/lib/libdisarm64.a \
+  <spice-src>/std/bindings/tpde/lib/libspdlog.a -Wl,--end-group"
 ```
 
 Without TPDE libraries, or on platforms other than Linux, the bindings still compile and link, but `tpde::isAvailable()` returns
