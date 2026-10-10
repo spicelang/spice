@@ -49,11 +49,10 @@ Reference-test suites (from `test/test-files/<group>`): `CommonTests`, `LexerTes
   requesting another sanitizer are skipped.
 - `--coverage` — compile the test programs with Spice code coverage instrumentation, skipping all reference comparisons.
   Every compiler run works in its output dir, so the gcov data lands per test case under `<work-dir>/tests/`;
-  `coverage-spice.py` (run from `build/`, expects `--work-dir build/test-tmp-coverage`) turns it into a std coverage
-  report.
+  `python coverage.py --only std` (expects `--work-dir build/test-tmp-coverage`) turns it into a std coverage report.
 - `--instrument coverage` — build the compiler under test (and its builtin tests) with `-O0 --coverage` instead of
-  `-O3 -lto`; `coverage-bootstrap.py` (run from `build/`, `LLVM_COV` pointing at `llvm-cov`) turns the data into an HTML
-  report.
+  `-O3 -lto`; `python coverage.py --only compiler` turns the data into an HTML report. `coverage.py` needs `LLVM_COV`
+  pointing at `llvm-cov` and generates both reports without `--only`.
 - `--instrument asan` — build them with `-O1 --sanitizer address`. Every case fails, for which the compiler prints an
   AddressSanitizer or LeakSanitizer report (weekly `ci-asan.yml` job).
 - `--skip-sanitizer-tests` — skip tests exercising language sanitizers.
