@@ -5,11 +5,11 @@ description: Find, diagnose, and fix bugs in the Spice compiler or in a compiled
 
 # Spice — Debug & Reduce Bugs
 
-Uses the compiler at `cmake-build-debug/src/spice` and the test runner at
+Uses the compiler at `cmake-build-debug/src-host/spice` and the test runner at
 `cmake-build-debug/test/spicetest` (build them via the `spice-build` skill):
 
 ```sh
-SPICE=cmake-build-debug/src/spice
+SPICE=cmake-build-debug/src-host/spice
 SPICETEST=cmake-build-debug/test/spicetest
 ```
 

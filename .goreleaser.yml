@@ -4,7 +4,7 @@ version: 2
 project_name: spice
 
 builds:
-  # The host compiler (src/)
+  # The host compiler (src-host/)
   - id: spice
     binary: spice
     main: ./.github/media/dummy.go
@@ -25,7 +25,7 @@ builds:
     hooks:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
-  # The self-hosted bootstrap compiler (src-bootstrap/), that the compiler jobs build with the host compiler
+  # The self-hosted bootstrap compiler (src/), that the compiler jobs build with the host compiler
   - id: spice-bootstrap
     binary: spice-bootstrap
     main: ./.github/media/dummy.go

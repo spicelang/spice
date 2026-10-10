@@ -80,7 +80,7 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src/spice spice
+          mv ./src-host/spice spice
           chmod +x spice
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
@@ -103,7 +103,7 @@ jobs:
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
@@ -120,7 +120,7 @@ jobs:
             --build-var SPICE_TARGET_OS="linux" \
             --build-var SPICE_TARGET_ARCH="amd64" \
             --output spice-bootstrap \
-            ../src-bootstrap/main.spice
+            ../src/main.spice
           chmod +x spice-bootstrap
           ./spice-bootstrap --version
 
@@ -209,7 +209,7 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src/spice spice
+          mv ./src-host/spice spice
           chmod +x spice
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
@@ -232,7 +232,7 @@ jobs:
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
@@ -249,7 +249,7 @@ jobs:
             --build-var SPICE_TARGET_OS="linux" \
             --build-var SPICE_TARGET_ARCH="aarch64" \
             --output spice-bootstrap \
-            ../src-bootstrap/main.spice
+            ../src/main.spice
           chmod +x spice-bootstrap
           ./spice-bootstrap --version
 
@@ -343,7 +343,7 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src/spice.exe spice.exe
+          mv ./src-host/spice.exe spice.exe
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
           # packages std/ from a plain checkout and cannot produce it.
@@ -355,7 +355,7 @@ jobs:
           # Forward slashes, like CMake hands these paths to the bootstrap compiler build in the CI workflow
           $workspace = "${{ github.workspace }}" -replace '\\', '/'
           $env:SPICE_STD_DIR = "$workspace/std"
-          $env:SPICE_BOOTSTRAP_DIR = "$workspace/src-bootstrap"
+          $env:SPICE_BOOTSTRAP_DIR = "$workspace/src"
           $env:LLVM_LIB_DIR = "$workspace/llvm/build/lib"
           $env:LLVM_INCLUDE_DIRS = "-I$workspace/llvm/llvm/include -I$workspace/llvm/build/include"
           # Linked statically like the host compiler, so it runs without the MinGW runtime DLLs
@@ -366,7 +366,7 @@ jobs:
             --build-var SPICE_TARGET_OS="windows" `
             --build-var SPICE_TARGET_ARCH="amd64" `
             --output spice-bootstrap.exe `
-            ../src-bootstrap/main.spice
+            ../src/main.spice
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           ./spice-bootstrap.exe --version
 
@@ -436,7 +436,7 @@ jobs:
       - name: Process build output
         working-directory: build
         run: |
-          mv ./src/spice spice
+          mv ./src-host/spice spice
           chmod +x spice
           # The vendored libbacktrace that the 'spice' target built for this platform. Released packages ship it
           # inside the std, and it is per-platform, so it has to travel with this job's binary - the release runner
@@ -447,7 +447,7 @@ jobs:
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
@@ -459,7 +459,7 @@ jobs:
             --build-var SPICE_TARGET_OS="macos" \
             --build-var SPICE_TARGET_ARCH="aarch64" \
             --output spice-bootstrap \
-            ../src-bootstrap/main.spice
+            ../src/main.spice
           chmod +x spice-bootstrap
           ./spice-bootstrap --version
           # The shared libraries it needs at runtime
@@ -654,7 +654,7 @@ jobs:
         shell: bash
         env:
           ZIP_FILE: ${{ steps.download_exe.outputs.zip }}
-        run: cp ./src/thirdparty/zlib1__.dll ./
+        run: cp ./src-host/thirdparty/zlib1__.dll ./
 
       - name: Build MSI
         shell: bash

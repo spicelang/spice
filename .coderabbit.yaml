@@ -25,12 +25,12 @@ reviews:
     - "!cmake-build-*/**"
     - "!media/**"
   path_instructions:
-    - path: "src/**/*.{h,hpp,cpp}"
+    - path: "src-host/**/*.{h,hpp,cpp}"
       instructions: >
         Follow the project's C++ coding conventions in STYLE_GUIDE.md
         (formatting per .clang-format, naming, file layout, the visitor
         pattern, diagnostics, and memory-management rules). Flag deviations.
-    - path: "src-bootstrap/**/*.spice"
+    - path: "src/**/*.spice"
       instructions: >
         This is the self-hosted bootstrap compiler written in Spice. Follow
         the Spice-source conventions in STYLE_GUIDE.md.

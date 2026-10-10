@@ -76,7 +76,7 @@ file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage-spice.py ${CMAKE_CURRENT_B
 file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/coverage-bootstrap.py ${CMAKE_CURRENT_BINARY_DIR}/coverage-bootstrap.py SYMBOLIC)
 
 # Include main module
-add_subdirectory(src)
+add_subdirectory(src-host)
 
 # Include test module
 enable_testing()

@@ -758,7 +758,7 @@ INSTANTIATE_TEST_SUITE_P(, LinterTests, ::testing::ValuesIn(TestUtil::collectTes
                          TestUtil::NameResolver());
 
 // Builds the bootstrap compiler sources in test build mode and runs their builtin tests (#[test] functions, e.g. in
-// src-bootstrap/driver.spice), with the same instrumentation as the bootstrap compiler
+// src/driver.spice), with the same instrumentation as the bootstrap compiler
 TEST(BootstrapTests, BuiltinTests) {
   if (!testDriverCliOptions.bootstrapMode)
     GTEST_SKIP() << "The builtin tests of the bootstrap compiler run in bootstrap mode only";

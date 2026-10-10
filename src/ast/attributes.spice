@@ -25,7 +25,7 @@ public const string ATTR_TEST_SKIP = "test.skip";
 public const string ATTR_ASYNC = "async";
 public const string ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
 
-// Enums mirror AttrNode::AttrTarget and AttrNode::AttrType from src/ast/ASTNodes.h
+// Enums mirror AttrNode::AttrTarget and AttrNode::AttrType from src-host/ast/ASTNodes.h
 public type AttrTarget enum {
     TARGET_INVALID = 0,
     TARGET_MODULE = 1,

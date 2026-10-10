@@ -1,12 +1,12 @@
 ---
 name: spice-diagnostics
-description: Locate or add a Spice compiler diagnostic — errors (semantic, parser, lexer, compiler-internal, linker, CLI) and warnings. Covers the exception classes in src/exception, the message tables, how to throw a diagnostic from a pass, the warning mechanism, and the matching test convention (exception.out / warning.out). Use when adding a new error/warning or tracking down where a message comes from.
+description: Locate or add a Spice compiler diagnostic — errors (semantic, parser, lexer, compiler-internal, linker, CLI) and warnings. Covers the exception classes in src-host/exception, the message tables, how to throw a diagnostic from a pass, the warning mechanism, and the matching test convention (exception.out / warning.out). Use when adding a new error/warning or tracking down where a message comes from.
 ---
 
 # Spice compiler diagnostics
 
-All diagnostics live in `src/exception/` (errors) and `src/util/CompilerWarning.*`
-(warnings). `src/exception/ErrorManager.*` coordinates collection/reporting, and
+All diagnostics live in `src-host/exception/` (errors) and `src-host/util/CompilerWarning.*`
+(warnings). `src-host/exception/ErrorManager.*` coordinates collection/reporting, and
 `AntlrThrowingErrorListener.*` converts ANTLR parse errors into Spice exceptions.
 
 ## Error classes
@@ -43,7 +43,7 @@ Pattern (using `SemanticError` as the example):
 Keep prefixes terse and consistent with existing entries; put the specifics in
 the per-call message string.
 
-## Warnings — `src/util/CompilerWarning.*`
+## Warnings — `src-host/util/CompilerWarning.*`
 
 Non-fatal diagnostics use `CompilerWarning` with a `WarningType` enum (+ message
 text in the `.cpp`). Warnings are collected per source file

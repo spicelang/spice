@@ -32,7 +32,7 @@ extern TestDriverCliOptions testDriverCliOptions;
 namespace {
 
 /**
- * Build the sources of the bootstrap compiler with the host compiler, like 'spice build src-bootstrap/main.spice' would do
+ * Build the sources of the bootstrap compiler with the host compiler, like 'spice build src/main.spice' would do
  *
  * @param executablePath Path of the executable to build
  * @param buildBuiltinTests Build the builtin tests (#[test] functions) instead of the bootstrap compiler
@@ -137,7 +137,7 @@ std::filesystem::path prepareBootstrapOutputDir(const char *outputDir, const std
 } // namespace
 
 /**
- * Build the bootstrap compiler with the host compiler, like 'spice build src-bootstrap/main.spice' would do.
+ * Build the bootstrap compiler with the host compiler, like 'spice build src/main.spice' would do.
  * On success, the path of the built executable is stored in the test driver cli options.
  *
  * @return Successful or not
@@ -153,7 +153,7 @@ bool BootstrapUtil::buildBootstrapCompiler() {
 
 /**
  * Build the builtin tests (#[test] functions) of the bootstrap compiler sources with the host compiler, like
- * 'spice build --build-mode test src-bootstrap/main.spice' would do. They are built with the same instrumentation as the
+ * 'spice build --build-mode test src/main.spice' would do. They are built with the same instrumentation as the
  * bootstrap compiler (see --bootstrap-asan and --bootstrap-coverage).
  *
  * @return Path of the built executable, if successful

@@ -15,7 +15,7 @@ There are two distinct things to profile — pick the layer first:
    opt level + debug info, then profile the binary like any other native exe.
 
 ```sh
-SPICE=cmake-build-release/src/spice   # build via the spice-build skill
+SPICE=cmake-build-release/src-host/spice   # build via the spice-build skill
 ```
 
 ## Preferred compile settings (read this first)
@@ -44,7 +44,7 @@ for development/testing and is never the right thing to profile.
 
 ## 1. Built-in compiler timers — always start here
 
-The compiler instruments every pipeline stage (`src/util/Timer.h`, results in
+The compiler instruments every pipeline stage (`src-host/util/Timer.h`, results in
 `CompilerOutput::times`). `-d` / `--debug-output` prints each stage's runtime
 plus an end-of-run summary:
 

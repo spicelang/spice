@@ -5,7 +5,7 @@
       <env name="LLVM_LIB_DIR" value="$PROJECT_DIR$/../llvm-project-latest/build/lib" />
       <env name="RUN_TESTS" value="ON" />
       <env name="SPICE_STD_DIR" value="$PROJECT_DIR$/std" />
-      <env name="SPICE_BOOTSTRAP_DIR" value="$PROJECT_DIR$/src-bootstrap" />
+      <env name="SPICE_BOOTSTRAP_DIR" value="$PROJECT_DIR$/src" />
     </envs>
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />

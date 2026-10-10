@@ -1,5 +1,5 @@
 ---
-# clang-tidy configuration for the Spice compiler (src/, test/).
+# clang-tidy configuration for the Spice compiler (src-host/, test/).
 #
 # Scope: bug-finding checks (bugprone, clang-analyzer, performance, portability,
 # misc) rather than style/opinion checks — formatting is handled by .clang-format

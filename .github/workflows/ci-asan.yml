@@ -185,7 +185,7 @@ jobs:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
           SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
         run: ./spicetest --is-github-actions --bootstrap-asan --bootstrap-build-only
 
       - name: Run Test target against the bootstrap compiler with ASAN
@@ -196,7 +196,7 @@ jobs:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
           SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src-bootstrap
+          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
         run: |
           python ${{ github.workspace }}/deps/gtest-parallel/gtest-parallel ./spicetest -- \
             --is-github-actions --bootstrap-asan --bootstrap-compiler=./test-tmp/bootstrap-compiler/spice

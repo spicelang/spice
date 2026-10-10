@@ -5,11 +5,11 @@ description: Compile and/or run a Spice program with the `spice` CLI — build t
 
 # Compile & run Spice programs
 
-Uses the `spice` compiler at `cmake-build-debug/src/spice` (build it via the
+Uses the `spice` compiler at `cmake-build-debug/src-host/spice` (build it via the
 `spice-build` skill first).
 
 ```sh
-SPICE=cmake-build-debug/src/spice
+SPICE=cmake-build-debug/src-host/spice
 ```
 
 ## Subcommands
