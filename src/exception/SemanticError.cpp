@@ -56,8 +56,8 @@ std::string SemanticError::getMessagePrefix(SemanticErrorType errorType) {
     return "Duplicate symbol";
   case VARIABLE_DECLARED_TWICE:
     return "Multiple declarations of the same variable";
-  case GLOBAL_DECLARED_TWICE:
-    return "Multiple declarations of the same global variable";
+  case EXPORTED_SYMBOL_COLLISION:
+    return "Multiple exported symbols with the same linker name";
   case FUNCTION_DECLARED_TWICE:
     return "Multiple declarations of a function";
   case PROCEDURE_DECLARED_TWICE:

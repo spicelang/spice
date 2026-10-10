@@ -1,0 +1,11 @@
+import "source1" as s1;
+
+#[core.compiler.mangledName = "COUNTER"]
+public f<int> getCounter() {
+    return 1;
+}
+
+f<int> main() {
+    printf("Counter: %d\n", getCounter());
+    printf("Counter: %d\n", s1::COUNTER);
+}

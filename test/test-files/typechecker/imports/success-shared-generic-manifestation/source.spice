@@ -1,0 +1,7 @@
+import "source1" as s1;
+import "source2" as s2;
+
+f<int> main() {
+    printf("Main: %d\n", s1::identity(1));
+    s2::printIdentity();
+}

@@ -1,0 +1,28 @@
+int COUNTER = 2;
+
+f<int> getValue() {
+    return 20;
+}
+
+p printValue(int value) {
+    printf("Lib value: %d\n", value);
+}
+
+type T dyn;
+
+f<T> identity<T>(T value) {
+    return value;
+}
+
+public p printOwnValues() {
+    printValue(getValue());
+    printValue(identity(COUNTER));
+}
+
+public f<int> getPublicValue() {
+    return publicValue();
+}
+
+public f<int> publicValue() {
+    return 40;
+}

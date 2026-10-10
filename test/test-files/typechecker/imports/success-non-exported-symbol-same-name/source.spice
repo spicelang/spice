@@ -1,0 +1,31 @@
+import "source1" as s1;
+
+// Non-public symbols with the same names and signatures as symbols of the imported file
+int COUNTER = 1;
+
+f<int> getValue() {
+    return 10;
+}
+
+p printValue(int value) {
+    printf("Main value: %d\n", value);
+}
+
+type T dyn;
+
+f<T> identity<T>(T value) {
+    return value;
+}
+
+f<int> main() {
+    printValue(getValue());
+    printValue(identity(COUNTER));
+    s1::printOwnValues();
+    // Own symbols hide the public symbols of the imported file
+    printValue(s1::getPublicValue());
+    printf("Public value: %d\n", publicValue());
+}
+
+f<int> publicValue() {
+    return 30;
+}

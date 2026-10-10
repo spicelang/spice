@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:1:
+Multiple exported symbols with the same linker name: Exported symbol 'GLOBAL_VARIABLE' collides with the exported symbol defined at ../source1.spice:1:1, because both have the linker name 'GLOBAL_VARIABLE'
+
+3  public double GLOBAL_VARIABLE = 14.4;
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -54,6 +54,28 @@ f<int> main() {
 }
 ```
 
+A symbol declared in a source file itself hides imported symbols with the same name. The imported ones stay reachable via
+the import name, e.g. `libA::getValue()`.
+
+Non-public functions, procedures and global variables are only visible within their own source file, so they may share
+names and signatures with symbols of other source files. Public ones, however, are visible to the linker under a name that
+only consists of their name and signature (plus the struct name for methods), but not of the source file. Therefore,
+two public functions or procedures with the same name and signature, or two public global variables with the same name,
+must not exist in the same program. The compiler reports each of these collisions with a
+`Multiple exported symbols with the same linker name` error:
+
+```spice
+// lib.spice
+public f<int> getValue() { return 1; }
+f<int> getHelper() { return 2; }
+
+// main.spice
+import "lib" as lib;
+
+public f<int> getValue() { return 3; } // Error: same linker name as 'getValue' in lib.spice
+f<int> getHelper() { return 4; }       // Ok, both are non-public
+```
+
 !!! tip "Linking against source files with another main function"
     Spice supports linking against source files which include a main function. Although the main function in the imported source
     file will be ignored and only the main function in the main source file will be taken into account.

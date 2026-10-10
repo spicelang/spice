@@ -725,6 +725,9 @@ void SourceFile::runMiddleEnd() {
       anySourceFileRevisitPending = true;
   } while (anySourceFileRevisitPending);
   CHECK_ABORT_FLAG_V()
+  // Check that no two definitions of the program are exported under the same linker symbol name
+  checkForExportedSymbolCollisions();
+  CHECK_ABORT_FLAG_V()
   // Visualize dependency graph
   runDependencyGraphVisualizer();
   CHECK_ABORT_FLAG_V()
@@ -989,6 +992,60 @@ void SourceFile::checkForSoftErrors() const {
     for (const auto &[codeLoc, message] : resourceManager.errorManager.softErrors)
       errorStream << "\n\n" << message;
     throw CompilerError(UNRESOLVED_SOFT_ERRORS, errorStream.str());
+  }
+}
+
+/**
+ * Check that no two definitions of the program are exported under the same linker symbol name. Non-public symbols get
+ * internal linkage and therefore can never collide. Public ones get external linkage under a name that does not contain
+ * the source file, so e.g. two public functions with the same signature in different source files would break the linking.
+ * Every collision is reported as soft error.
+ */
+void SourceFile::checkForExportedSymbolCollisions() const {
+  std::unordered_map<std::string, const ASTNode *> exportedSymbols;
+  std::unordered_set<const SourceFile *> visitedSourceFiles;
+  registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+  checkForSoftErrors();
+}
+
+/**
+ * Register the exported symbols of this source file and all its (transitive) dependencies in the given registry. This
+ * covers the same source files as collectBackEndSourceFiles, so exactly the ones that end up in the linked program.
+ *
+ * @param exportedSymbols Registry, that maps each linker symbol name to the AST node of its definition
+ * @param visitedSourceFiles Source files, that were already registered
+ */
+void SourceFile::registerExportedSymbols(
+    std::unordered_map<std::string, const ASTNode *> &exportedSymbols,
+    std::unordered_set<const SourceFile *> &visitedSourceFiles) const { // NOLINT(misc-no-recursion)
+  // Guard against circular imports
+  if (!visitedSourceFiles.insert(this).second)
+    return;
+
+  // Register the symbols of all dependencies first, so that a collision is reported at the definition in the importing file
+  for (const SourceFile *sourceFile : dependencies | std::views::values)
+    sourceFile->registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+
+  const auto registerSymbol = [&](const std::string &linkerName, const std::string &displayName, const ASTNode *declNode) {
+    const auto [it, inserted] = exportedSymbols.emplace(linkerName, declNode);
+    if (inserted || it->second == declNode)
+      return;
+    const std::string message = "Exported symbol '" + displayName + "' collides with the exported symbol defined at " +
+                                it->second->codeLoc.toPrettyString() + ", because both have the linker name '" + linkerName + "'";
+    resourceManager.errorManager.addSoftError(declNode, EXPORTED_SYMBOL_COLLISION, message);
+  };
+
+  for (const TopLevelDefNode *topLevelDef : ast->topLevelDefs) {
+    if (const auto globalVarDef = dynamic_cast<const GlobalVarDefNode *>(topLevelDef)) {
+      // Public globals are exported under their plain name
+      if (globalVarDef->entry->getQualType().isPublic())
+        registerSymbol(globalVarDef->varName, globalVarDef->varName, globalVarDef);
+    } else if (const auto fctDef = dynamic_cast<const FctDefBaseNode *>(topLevelDef)) {
+      // Each emitted manifestation of an exported function is exported under its mangled name
+      for (const Function *manifestation : fctDef->manifestations)
+        if (manifestation->isFullySubstantiated() && IRGenerator::isExportedFunction(manifestation))
+          registerSymbol(manifestation->getMangledName(), manifestation->getSignature(), fctDef);
+    }
   }
 }
 

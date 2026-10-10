@@ -403,11 +403,6 @@ std::any SymbolTableBuilder::visitGlobalVarDef(GlobalVarDefNode *node) {
   if (rootScope->lookupStrict(node->varName))
     throw SemanticError(node, DUPLICATE_SYMBOL, "Duplicate symbol '" + node->varName + "'");
 
-  // Check if global already exists in an imported source file
-  for (const auto &dependency : sourceFile->dependencies | std::views::values)
-    if (dependency->exportedNameRegistry.contains(node->varName))
-      throw SemanticError(node, GLOBAL_DECLARED_TWICE, "Duplicate global variable '" + node->varName + "' in other module");
-
   // Add the global to the symbol table
   node->entry = rootScope->insert(node->varName, node);
   // Register the name in the exported name registry

@@ -25,6 +25,7 @@ import "bootstrap/global/runtime-module-manager";
 import "bootstrap/ast/ast-nodes";
 import "bootstrap/exception/compiler-error";
 import "bootstrap/exception/error-manager";
+import "bootstrap/exception/semantic-error";
 import "bootstrap/model/function" as model;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/system-util";
@@ -846,6 +847,9 @@ public p SourceFile.runMiddleEnd() {
         }
     }
     if this.resourceManager.abortCompilation { return; }
+    // Check that no two definitions of the program are exported under the same linker symbol name
+    this.checkForExportedSymbolCollisions();
+    if this.resourceManager.abortCompilation { return; }
     // Visualize dependency graph
     this.runDependencyGraphVisualizer();
     if this.resourceManager.abortCompilation { return; }
@@ -1033,17 +1037,6 @@ public p SourceFile.addSourceAdditionalSourcePath(const FilePath& path) {
 public f<bool> SourceFile.hasNameRegistryTarget(const String& symbolName, const SymbolTableEntry* target) {
     const NameRegistryEntry* existing = this.getNameRegistryEntry(symbolName);
     return existing != nil<NameRegistryEntry*> && existing.targetEntry == target;
-}
-
-// True if any imported source file exports a symbol with the given name
-public f<bool> SourceFile.anyDependencyExports(const String& symbolName) {
-    foreach dyn dependency : this.dependencies {
-        SourceFile* sourceFile = dependency.getSecond();
-        if sourceFile.exportedNameRegistry.contains(symbolName) {
-            return true;
-        }
-    }
-    return false;
 }
 
 public p SourceFile.setAlwaysKeepSymbolsOnNameCollision(bool value) { this.alwaysKeepSymbolsOnNameCollision = value; }
@@ -1293,6 +1286,90 @@ public p SourceFile.checkForHardError() {
     if errorManager.hasHardError {
         abortWithError(errorManager.hardErrorMessage);
     }
+}
+
+/**
+ * Check that no two definitions of the program are exported under the same linker symbol name. Non-public symbols get
+ * internal linkage and therefore can never collide. Public ones get external linkage under a name that does not contain
+ * the source file, so e.g. two public functions with the same signature in different source files would break the linking.
+ * Every collision is reported as soft error.
+ */
+p SourceFile.checkForExportedSymbolCollisions() {
+    UnorderedMap<String, ASTNode*> exportedSymbols;
+    // Spice cannot hash pointers, so the visited files are identified by their file path, which is unique per source file
+    UnorderedSet<String> visitedSourceFiles;
+    this.registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+    this.checkForSoftErrors();
+}
+
+/**
+ * Register the exported symbols of this source file and all its (transitive) dependencies in the given registry. This
+ * covers the same source files as collectBackEndSourceFiles, so exactly the ones that end up in the linked program.
+ *
+ * @param exportedSymbols Registry, that maps each linker symbol name to the AST node of its definition
+ * @param visitedSourceFiles File paths of the source files, that were already registered
+ */
+p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSymbols, UnorderedSet<String>& visitedSourceFiles) {
+    // Guard against circular imports
+    const String filePath = String(this.filePath.toString());
+    if visitedSourceFiles.contains(filePath) {
+        return;
+    }
+    visitedSourceFiles.insert(filePath);
+
+    // Register the symbols of all dependencies first, so that a collision is reported at the definition in the importing file
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        sourceFile.registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+    }
+
+    foreach IVisitable* topLevelDef : this.ast.topLevelDefs {
+        ASTNode* node = getASTNode(topLevelDef);
+        if node.kind == ASTNodeKind::GLOBAL_VAR_DEF {
+            // Public globals are exported under their plain name
+            const ASTGlobalVarDefNode* globalVarDef = downcast<ASTGlobalVarDefNode>(node);
+            const QualType& globalVarType = globalVarDef.entry.getQualType();
+            if globalVarType.isPublic() {
+                this.registerExportedSymbol(exportedSymbols, globalVarDef.varName, globalVarDef.varName, node);
+            }
+        } else if node.kind == ASTNodeKind::FCT_DEF || node.kind == ASTNodeKind::PROC_DEF {
+            ASTFctDefBaseNode* fctDef = nil<ASTFctDefBaseNode*>;
+            if node.kind == ASTNodeKind::FCT_DEF {
+                ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(node);
+                fctDef = &fctDefNode.node;
+            } else {
+                ASTProcDefNode* procDefNode = downcast<ASTProcDefNode>(node);
+                fctDef = &procDefNode.node;
+            }
+            // Each emitted manifestation of an exported function is exported under its mangled name
+            foreach const model::Function* manifestation : fctDef.manifestations {
+                if manifestation.isFullySubstantiated() && isExportedFunction(manifestation) {
+                    this.registerExportedSymbol(exportedSymbols, manifestation.getMangledName(), manifestation.getSignature(), node);
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Register a single exported symbol and report a soft error if another definition is already exported under its name
+ *
+ * @param exportedSymbols Registry, that maps each linker symbol name to the AST node of its definition
+ * @param linkerName Name of the symbol for the linker
+ * @param displayName Name of the symbol for the error message
+ * @param declNode Definition of the symbol
+ */
+p SourceFile.registerExportedSymbol(UnorderedMap<String, ASTNode*>& exportedSymbols, const String& linkerName, const String& displayName, ASTNode* declNode) {
+    if !exportedSymbols.contains(linkerName) {
+        exportedSymbols.upsert(linkerName, declNode);
+        return;
+    }
+    const ASTNode* existingDeclNode = exportedSymbols.get(linkerName);
+    if existingDeclNode == declNode {
+        return;
+    }
+    const String message = "Exported symbol '" + displayName + "' collides with the exported symbol defined at " + existingDeclNode.codeLoc.toPrettyString() + ", because both have the linker name '" + linkerName + "'";
+    this.resourceManager.errorManager.addSoftError(declNode, SemanticErrorType::EXPORTED_SYMBOL_COLLISION, message);
 }
 
 public p SourceFile.checkForSoftErrors() {

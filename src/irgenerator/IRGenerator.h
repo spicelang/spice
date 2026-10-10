@@ -179,6 +179,9 @@ public:
   std::any visitBuiltinStdErrCall(const FctCallNode *node);
   std::any visitBuiltinFrameAddressCall(const FctCallNode *node);
 
+  // Public methods
+  [[nodiscard]] static bool isExportedFunction(const Function *function);
+
 private:
   // Private methods
   [[nodiscard]] llvm::Value *getStdErrValue() const;

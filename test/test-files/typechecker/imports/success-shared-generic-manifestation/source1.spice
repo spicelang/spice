@@ -1,0 +1,5 @@
+type T dyn;
+
+public f<T> identity<T>(T value) {
+    return value;
+}

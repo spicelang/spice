@@ -143,9 +143,8 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
   for (const Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
-    // Check if the manifestation is substantiated or not public and not used by anybody. Default methods of public
-    // interfaces are public, because structs in other source files can inherit them
-    bool isPublic = manifestation->entry->getQualType().isPublic() || isPublicDefaultMethod(manifestation);
+    // Check if the manifestation is substantiated or not public and not used by anybody
+    const bool isPublic = isExportedFunction(manifestation);
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
@@ -198,10 +197,6 @@ std::any IRGenerator::visitFctDef(const FctDefNode *node) {
     // Get return type
     llvm::Type *returnType = manifestation->returnType.toLLVMType(sourceFile);
     const unsigned int argOffset = getArgOffset(manifestation->returnType);
-
-    // Get function linkage
-    if (node->attrs && node->attrs->attrLst->hasAttr(ATTR_TEST))
-      isPublic |= node->attrs->attrLst->getAttrValueByName(ATTR_TEST)->boolValue;
 
     // Create function or implement declared function
     const std::string mangledName = manifestation->getMangledName();
@@ -316,9 +311,8 @@ std::any IRGenerator::visitProcDef(const ProcDefNode *node) {
   for (const Function *manifestation : node->manifestations) {
     assert(manifestation->entry != nullptr);
 
-    // Check if the manifestation is substantiated or not public and not used by anybody. Default methods of public
-    // interfaces are public, because structs in other source files can inherit them
-    const bool isPublic = manifestation->entry->getQualType().isPublic() || isPublicDefaultMethod(manifestation);
+    // Check if the manifestation is substantiated or not public and not used by anybody
+    const bool isPublic = isExportedFunction(manifestation);
     if (!manifestation->isFullySubstantiated() || (!isPublic && !manifestation->used)) {
       manIdx++; // Increment symbolTypeIndex
       continue;
