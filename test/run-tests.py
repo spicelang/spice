@@ -4,7 +4,7 @@
 The compiler under test is invoked like a user would invoke it ('spice build ...'), and its dumps, diagnostics and the
 behavior of the compiled test programs are compared against the reference files of each test case. Either pass an already
 built compiler via --compiler, or let the runner build it from the sources in src/ first via --build-compiler (e.g. with
-the host compiler or a released Spice compiler).
+the released stage0 compiler from fetch-stage0.py or the host compiler).
 
 Besides the reference test cases, the runner builds the compiler sources in test build mode and runs their builtin tests
 (#[test] functions), and runs the linter test cases against the 'lint' subcommand.
@@ -831,7 +831,8 @@ def parse_args() -> argparse.Namespace:
                                 help="Run the test cases against the given, already built compiler")
     compiler_group.add_argument("--build-compiler", type=Path, default=None,
                                 help="Build the compiler under test from src/ with the given compiler first, e.g. the host "
-                                     "compiler or a released Spice compiler (default: the host compiler, first found in "
+                                     "compiler or the released stage0 compiler (default: the stage0 compiler from 'fetch-stage0.py' in "
+                                     "build/stage0/, else the host compiler, first found in "
                                      "build/, cmake-build-release/, cmake-build-debug/)")
     parser.add_argument("--build-only", action="store_true",
                         help="Only build the compiler under test into <work-dir>/bootstrap-compiler, without running any test")
@@ -877,9 +878,10 @@ def parse_args() -> argparse.Namespace:
     if args.build_only and args.compiler:
         parser.error("--build-only cannot be combined with --compiler")
     if args.compiler is None and args.build_compiler is None:
-        args.build_compiler = bootstrap.find_host_compiler()
+        args.build_compiler = bootstrap.find_stage0_compiler() or bootstrap.find_host_compiler()
         if args.build_compiler is None:
-            parser.error("No compiler found to build the compiler under test with. Pass --build-compiler or --compiler")
+            parser.error("No compiler found to build the compiler under test with. Download the stage0 compiler "
+                         "('python fetch-stage0.py'), or pass --build-compiler or --compiler")
     for path in (args.compiler, args.build_compiler):
         if path is not None and not path.is_file():
             parser.error(f"Compiler not found: {path}")

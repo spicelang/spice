@@ -51,12 +51,15 @@ To build Spice, you can use the `dev-setup.py` script. This will prepare your de
 
 ### Build the self-hosted compiler
 The steps above build the host compiler, which is written in C++. The release packages ship the self-hosted compiler as
-`spice` instead, which is written in Spice itself and built by the host compiler. To build it as well, run:
+`spice` instead, which is written in Spice itself. It is built by a released self-hosted compiler (the stage0 compiler),
+whose version is pinned in `.github/stage0-version`. To build it as well, run:
 ```sh
+python fetch-stage0.py
 python bootstrap.py --output build/spice-self-hosted
 ```
-The script builds the self-hosted compiler from `src/` with the host compiler, lets it compile itself until two consecutive
-builds are identical, and copies the result to the given path.
+`fetch-stage0.py` downloads the stage0 compiler for your platform into `build/stage0/`. `bootstrap.py` builds the self-hosted
+compiler from `src/` with it, lets it compile itself until two consecutive builds are identical, and copies the result to
+the given path. Without a downloaded stage0 compiler, `bootstrap.py` starts from the host compiler instead.
 
 ### Optional build flags
 

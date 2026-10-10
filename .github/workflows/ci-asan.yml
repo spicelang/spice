@@ -166,21 +166,10 @@ jobs:
           LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: python setup-deps.py --tpde
 
-      - name: Build host compiler
-        # The host compiler is built without ASAN. Only the bootstrap compiler gets instrumented
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DSPICE_BUILT_BY="ghactions" \
-            -DSPICE_ENABLE_TPDE=ON \
-            ..
-          cmake --build . --target spice
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version. It is not instrumented, only the bootstrap
+        # compiler, that it builds, gets instrumented with ASAN
+        run: python fetch-stage0.py
 
       - name: Run Test target against the bootstrap compiler with ASAN
         # Builds the bootstrap compiler with ASAN, then runs all test cases against it. A test case fails, as soon as the
@@ -188,7 +177,7 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python test/run-tests.py --build-compiler build/src-host/spice --instrument asan --is-github-actions
+        run: python test/run-tests.py --build-compiler build/stage0/spice --instrument asan --is-github-actions
 
   test-programs-linux-x86-asan:
     name: CI - Linux/x86_64 test programs with ASAN

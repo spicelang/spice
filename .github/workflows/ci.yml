@@ -99,8 +99,12 @@ jobs:
         working-directory: build
         run: cmake --build . --target spicetest_parallel
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        run: python fetch-stage0.py
+
       - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
         # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
         # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
         # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
@@ -108,13 +112,13 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python test/run-tests.py --build-compiler build/src-host/spice --is-github-actions
+        run: python test/run-tests.py --build-compiler build/stage0/spice --is-github-actions
 
       - name: Bootstrap until fixed point
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src-host/spice
+        run: python bootstrap.py --stage0-compiler build/stage0/spice
 
       - name: Upload bootstrap stage executables
         if: failure()
@@ -218,8 +222,12 @@ jobs:
         working-directory: build
         run: cmake --build . --target spicetest_parallel
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        run: python fetch-stage0.py
+
       - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
         # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
         # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
         # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
@@ -227,13 +235,13 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python test/run-tests.py --build-compiler build/src-host/spice --is-github-actions
+        run: python test/run-tests.py --build-compiler build/stage0/spice --is-github-actions
 
       - name: Bootstrap until fixed point
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src-host/spice
+        run: python bootstrap.py --stage0-compiler build/stage0/spice
 
       - name: Upload bootstrap stage executables
         if: failure()
@@ -353,8 +361,12 @@ jobs:
         run: |
           cmake --build . --target spicetest_parallel
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        run: python fetch-stage0.py
+
       - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
         # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
         # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
         # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
@@ -362,13 +374,13 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python test/run-tests.py --build-compiler build/src-host/spice.exe --is-github-actions
+        run: python test/run-tests.py --build-compiler build/stage0/spice.exe --is-github-actions
 
       - name: Bootstrap until fixed point
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src-host/spice.exe
+        run: python bootstrap.py --stage0-compiler build/stage0/spice.exe
 
       - name: Upload bootstrap stage executables
         if: failure()
@@ -401,7 +413,8 @@ jobs:
       - name: Setup Dependencies
         run: |
           brew update
-          brew install ccache graphviz sqlite
+          # zstd: the stage0 compiler loads Homebrew's libzstd
+          brew install ccache graphviz sqlite zstd
           echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
           mkdir -p ~/Library/Caches/ccache
 
@@ -462,8 +475,12 @@ jobs:
         working-directory: build
         run: cmake --build . --target spicetest_parallel
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        run: python fetch-stage0.py
+
       - name: Run Test target (bootstrap compiler)
-        # Builds the bootstrap compiler with the host compiler, then runs all test cases against it. Test cases that check
+        # Builds the bootstrap compiler with the stage0 compiler, then runs all test cases against it. Test cases that check
         # outputs, where both compilers differ (e.g. ANTLR error messages or typeid values, since the bootstrap type hash
         # differs from the host's std::hash<Type>), follow the bootstrap compiler and have a 'skip-host' marker file. Test
         # cases, where the bootstrap compiler deliberately differs from the host, have bootstrap refs instead (e.g.
@@ -471,13 +488,13 @@ jobs:
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python test/run-tests.py --build-compiler build/src-host/spice --is-github-actions
+        run: python test/run-tests.py --build-compiler build/stage0/spice --is-github-actions
 
       - name: Bootstrap until fixed point
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --host-compiler build/src-host/spice
+        run: python bootstrap.py --stage0-compiler build/stage0/spice
 
       - name: Upload bootstrap stage executables
         if: failure()

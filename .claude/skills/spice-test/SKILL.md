@@ -61,8 +61,9 @@ runner, see below.
 The bootstrap (self-hosted) compiler is tested by a standalone Python runner,
 independent of the C++ code, so it keeps working once the host compiler is gone.
 It builds the bootstrap compiler from `src/main.spice` with a given compiler
-(`--build-compiler`, default: the host compiler found in `build/`,
-`cmake-build-release/` or `cmake-build-debug/`), or takes an already built one
+(`--build-compiler`, default: the released stage0 compiler, that `python fetch-stage0.py`
+downloads into `build/stage0/` (version pinned in `.github/stage0-version`), else the host
+compiler found in `build/`, `cmake-build-release/` or `cmake-build-debug/`), or takes an already built one
 (`--compiler`), then runs all reference-test suites against it in parallel
 (`-j`, default: number of CPUs). It uses the same test names as `spicetest`
 (e.g. `ParserTests.parser_errorExtraneousInput`) and GoogleTest-style filters
@@ -113,10 +114,12 @@ Flags:
 
 Cases where the outputs of both compilers differ follow the bootstrap compiler
 (it is the default) and get a `skip-host` marker file instead of an exclusion.
-CI (`ci.yml`, all platforms) runs all test suites against it, without a filter.
+CI (`ci.yml`, all platforms) builds it with the stage0 compiler and runs all test suites against it, without a filter.
+The release workflow builds the released `spice` with the stage0 compiler as well. When `src/` starts to use a language
+feature the pinned stage0 compiler cannot compile, release that feature first, then bump `.github/stage0-version`.
 
 ```sh
-python test/run-tests.py                                    # build with the host compiler, run all
+python fetch-stage0.py && python test/run-tests.py            # build with the stage0 compiler, run all
 python test/run-tests.py --build-compiler build/src-host/spice --filter='ParserTests.*'
 python test/run-tests.py --compiler build/test-tmp/bootstrap-compiler/spice --filter='*Union*'
 cmake --build cmake-build-debug --target spicetest_bootstrap  # same, builds the host compiler first

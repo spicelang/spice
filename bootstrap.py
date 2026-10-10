@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Bootstrap the self-hosted Spice compiler until it reaches a fixed point.
 
-Stage 0 is the bootstrap compiler (src/) built by the host compiler (src-host/). Every following stage n is the
-bootstrap compiler built by stage n-1. Stage 0 and stage 1 naturally differ, because they come from different compilers.
-From stage 2 on, every stage is built by a compiler that was built from the very same sources, so stage n and stage n-1
-have to be bit-identical. The script succeeds as soon as two consecutive stages have the same hash (the fixed point) and
-fails if this does not happen within the given number of iterations or if any stage fails to build.
+Stage 0 is the compiler, that the bootstrapping starts from: the released self-hosted compiler, that fetch-stage0.py
+downloads, or the host compiler (src-host/). Every following stage n is the bootstrap compiler (src/) built by stage n-1.
+Stage 1 and stage 2 naturally differ, because they come from different compilers. From stage 3 on, every stage is built by
+a compiler that was built from the very same sources, so stage n and stage n-1 have to be bit-identical. The script
+succeeds as soon as two consecutive stages have the same hash (the fixed point) and fails if this does not happen within
+the given number of iterations or if any stage fails to build.
 """
 import argparse
 import hashlib
@@ -34,6 +35,12 @@ def log(msg: str) -> None:
 def fail(msg: str) -> None:
     print(f"{RED}{msg}{NC}", file=sys.stderr, flush=True)
     sys.exit(1)
+
+
+def find_stage0_compiler() -> Path | None:
+    # Downloaded by fetch-stage0.py
+    candidate = ROOT_DIR / "build" / "stage0" / EXE_NAME
+    return candidate if candidate.is_file() else None
 
 
 def find_host_compiler() -> Path | None:
@@ -164,13 +171,14 @@ def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[st
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Bootstrap the self-hosted Spice compiler until it reaches a fixed point.")
-    parser.add_argument("--host-compiler", type=Path, default=None,
-                        help="Path to the host compiler executable (default: first found in build/, cmake-build-release/, "
+    parser.add_argument("--stage0-compiler", "--host-compiler", dest="stage0_compiler", type=Path, default=None,
+                        help="Path to the stage0 compiler, that builds stage 1 (default: the released stage0 compiler from "
+                             "'fetch-stage0.py' in build/stage0/, else the host compiler, first found in build/, cmake-build-release/, "
                              "cmake-build-debug/)")
     parser.add_argument("--work-dir", type=Path, default=ROOT_DIR / "build" / "bootstrap",
                         help="Directory for the stage executables (default: build/bootstrap)")
     parser.add_argument("--max-iterations", type=int, default=5,
-                        help="Maximum number of self-compilations, after stage 0 was built by the host (default: 5)")
+                        help="Maximum number of self-compilations, after stage 1 was built by the stage0 compiler (default: 5)")
     parser.add_argument("--build-flags", default=" ".join(DEFAULT_BUILD_FLAGS),
                         help=f"Flags passed to every 'spice build' invocation (default: '{' '.join(DEFAULT_BUILD_FLAGS)}'). "
                              "With '--backend=tpde', the TPDE libraries are taken from the std (see 'setup-deps.py --tpde'), "
@@ -192,12 +200,12 @@ def main() -> None:
     if args.max_iterations < 2:
         fail("At least two iterations are required to compare two self-compiled stages")
 
-    host_compiler = args.host_compiler or find_host_compiler()
-    if host_compiler is None or not host_compiler.is_file():
-        fail("Host compiler not found. Build it first (e.g. 'python build.py') or pass --host-compiler")
-    host_compiler = host_compiler.resolve()
+    stage0_compiler = args.stage0_compiler or find_stage0_compiler() or find_host_compiler()
+    if stage0_compiler is None or not stage0_compiler.is_file():
+        fail("Stage0 compiler not found. Download it first ('python fetch-stage0.py') or pass --stage0-compiler")
+    stage0_compiler = stage0_compiler.resolve()
 
-    # Environment, the host and bootstrap compilers need to compile the bootstrap compiler
+    # Environment, the stage0 and bootstrap compilers need to compile the bootstrap compiler
     os.environ.setdefault("SPICE_STD_DIR", str(ROOT_DIR / "std"))
     os.environ.setdefault("SPICE_BOOTSTRAP_DIR", str(ROOT_DIR / "src"))
     if "LLVM_LIB_DIR" not in os.environ:
@@ -215,7 +223,7 @@ def main() -> None:
     work_dir = args.work_dir.resolve()
     build_flags = args.build_flags.split()
 
-    # The TPDE backend is used to build every stage from stage 1 on, so the stage compilers must be backed by TPDE as well
+    # The TPDE backend is used to build every stage from stage 2 on, so the stage compilers must be backed by TPDE as well
     if uses_tpde_backend(build_flags):
         if not sys.platform.startswith("linux"):
             fail("The TPDE backend is only supported on Linux")
@@ -225,17 +233,17 @@ def main() -> None:
             fail("TPDE libraries not found. Build them with 'python setup-deps.py --tpde' or set TPDE_FLAGS "
                  "(e.g. '-I<tpde-include-dir> <libtpde_llvm.a> <libtpde.a> ...')")
 
-    # Stage 0: built by the host compiler
-    compiler = build_stage(host_compiler, 0, work_dir, build_flags, args.stage_timeout, args.verbose)
+    # Stage 1: built by the stage0 compiler
+    compiler = build_stage(stage0_compiler, 1, work_dir, build_flags, args.stage_timeout, args.verbose)
     hashes = [sha256(compiler)]
     print(f"  sha256: {hashes[0]}")
 
-    # Stage 1..n: built by the previous stage, until two consecutive self-compiled stages are identical
-    for stage in range(1, args.max_iterations + 1):
+    # Stage 2..n: built by the previous stage, until two consecutive self-compiled stages are identical
+    for stage in range(2, args.max_iterations + 2):
         compiler = build_stage(compiler, stage, work_dir, build_flags, args.stage_timeout, args.verbose)
         hashes.append(sha256(compiler))
         print(f"  sha256: {hashes[-1]}")
-        if stage >= 2 and hashes[-1] == hashes[-2]:
+        if stage >= 3 and hashes[-1] == hashes[-2]:
             log(f"Fixed point reached: stage {stage - 1} and stage {stage} are identical.")
             if args.output:
                 args.output.parent.mkdir(parents=True, exist_ok=True)
@@ -244,9 +252,9 @@ def main() -> None:
             return
 
     print("\nStage hashes:", file=sys.stderr)
-    for stage, digest in enumerate(hashes):
+    for stage, digest in enumerate(hashes, start=1):
         print(f"  stage{stage}: {digest}", file=sys.stderr)
-    print_stage_diff(work_dir / f"stage{args.max_iterations - 1}" / EXE_NAME, compiler)
+    print_stage_diff(work_dir / f"stage{args.max_iterations}" / EXE_NAME, compiler)
     fail(f"No fixed point reached within {args.max_iterations} iterations. The stage executables are kept in {work_dir}")
 
 

@@ -109,10 +109,15 @@ jobs:
             ..
           cmake --build . --target spice spicetest
 
+      - name: Fetch stage0 compiler
+        # The released self-hosted compiler, pinned in .github/stage0-version, that builds the bootstrap compiler
+        run: python fetch-stage0.py
+
       - name: Run Test target (bootstrap compiler coverage)
-        # Builds the bootstrap compiler with Spice code coverage instrumentation and runs the bootstrap test suites against
-        # it, to collect gcov data for the bootstrap compiler sources. Same test selection as the bootstrap compiler run in
-        # ci.yml. The gcov data lands next to the object files in build/test-tmp (see coverage-bootstrap.py).
+        # Builds the bootstrap compiler with Spice code coverage instrumentation (with the stage0 compiler) and runs the
+        # bootstrap test suites against it, to collect gcov data for the bootstrap compiler sources. Same test selection as
+        # the bootstrap compiler run in ci.yml. The gcov data lands next to the object files in build/test-tmp (see
+        # coverage-bootstrap.py).
         #
         # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by the
         # bootstrap compiler run in ci.yml), so a single failing test should not block generating/uploading the reports
@@ -121,7 +126,7 @@ jobs:
         env:
           LLVM_LIB_DIR: /${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python test/run-tests.py --build-compiler build/src-host/spice --instrument coverage --is-github-actions
+        run: python test/run-tests.py --build-compiler build/stage0/spice --instrument coverage --is-github-actions
 
       - name: Run Test target (Spice coverage)
         # --coverage forces debug info on for every compiled test program, which changes the emitted LLVM IR and would
