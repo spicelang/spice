@@ -65,13 +65,15 @@ ExecResult SystemUtil::exec(const std::string &command, bool redirectStdErrToStd
   if (!pipe)                                                                // LCOV_EXCL_LINE
     throw CompilerError(IO_ERROR, "Failed to execute command: " + command); // LCOV_EXCL_LINE
 
+  // Read the raw bytes. Unlike line-wise reading via fgets(), this keeps NUL chars, that the command may print
   std::array<char, 128> buffer{};
-  std::stringstream result;
-  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
-    result << buffer.data();
+  std::string result;
+  size_t readBytes;
+  while ((readBytes = fread(buffer.data(), 1, buffer.size(), pipe)) > 0)
+    result.append(buffer.data(), readBytes);
 
   const int status = pclose(pipe);
-  return {.output = result.str(), .exitCode = transformStatusToExitCode(status)};
+  return {.output = result, .exitCode = transformStatusToExitCode(status)};
 }
 
 /**
