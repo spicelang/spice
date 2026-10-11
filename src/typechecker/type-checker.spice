@@ -746,18 +746,32 @@ f<Any> TypeChecker.visitMainFctDefCheck(ASTMainFctDefNode* node) {
 }
 
 f<Any> TypeChecker.visitFctDefCheck(ASTFctDefNode* node) {
-    ASTFctDefBaseNode* fctDefBase = &node.node;
-    ASTNode* baseNode = cast<ASTNode*>(node);
+    return this.checkFctOrProcDef(&node.node, cast<ASTNode*>(node), /*isFunction=*/true, /*isCtor=*/false);
+}
+
+f<Any> TypeChecker.visitProcDefCheck(ASTProcDefNode* node) {
+    return this.checkFctOrProcDef(&node.node, cast<ASTNode*>(node), /*isFunction=*/false, node.isCtor);
+}
+
+/**
+ * Type-check the bodies of all manifestations of a function or procedure definition
+ *
+ * @param fctDefBase Function or procedure definition node
+ * @param baseNode AST node of the definition
+ * @param isFunction Whether the definition is a function (otherwise a procedure)
+ * @param isCtor Whether the definition is a constructor
+ */
+f<Any> TypeChecker.checkFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* baseNode, bool isFunction, bool isCtor) {
     baseNode.resizeToNumberOfManifestations(cast<unsigned long>(fctDefBase.manifestations.getSize()));
     this.manIdx = 0l; // Reset the manifestation index
 
-    // Get all manifestations for this function definition
+    // Get all manifestations for this function/procedure definition
     // Only visit the manifestations, that exist at this point (manifestations inserted during the loop are not covered by the
     // resize above and get checked in a revisit)
     const unsigned long manifestationCount = fctDefBase.manifestations.getSize();
     for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
         Function* manifestation = fctDefBase.manifestations.get(manifestationIdx);
-        // Skip non-substantiated or already checked functions
+        // Skip non-substantiated or already checked functions/procedures
         if !manifestation.isFullySubstantiated() || manifestation.alreadyTypeChecked {
             this.manIdx++; // Increase the manifestation index
             continue;
@@ -773,7 +787,7 @@ f<Any> TypeChecker.visitFctDefCheck(ASTFctDefNode* node) {
             this.compilerPass.changeToScope(scopeName, ScopeType::STRUCT);
         }
 
-        // Change to function scope
+        // Change to function/procedure scope
         this.compilerPass.changeToScope(manifestation.bodyScope, ScopeType::FUNC_PROC_BODY);
 
         // Mount type mapping for this manifestation
@@ -782,82 +796,22 @@ f<Any> TypeChecker.visitFctDefCheck(ASTFctDefNode* node) {
 
         // Set return type to the result variable. A manifestation for a capturing lambda argument copies the body scope of an
         // already type-checked manifestation, so the result variable might already have a type
-        SymbolTableEntry* resultVarEntry = this.currentScope.lookupStrict(String(RETURN_VARIABLE_NAME));
-        assert resultVarEntry != nil<SymbolTableEntry*>;
-        resultVarEntry.updateType(manifestation.returnType, true);
-        resultVarEntry.used = true;
+        if isFunction {
+            SymbolTableEntry* resultVarEntry = this.currentScope.lookupStrict(String(RETURN_VARIABLE_NAME));
+            assert resultVarEntry != nil<SymbolTableEntry*>;
+            resultVarEntry.updateType(manifestation.returnType, true);
+            resultVarEntry.used = true;
+        }
 
         // Visit parameters
-        // This happens once in the type checker prepare stage. This second time is only required if we have a generic function
-        if fctDefBase.hasParams {
-            this.visit(fctDefBase.paramLst);
-            this.annotateLambdaCaptureParams(fctDefBase, manifestation);
-        }
-
-        // Visit statements in new scope
-        this.visit(fctDefBase.body);
-
-        // Clear type mapping
-        this.typeMapping.clear();
-
-        // Change to root scope
-        this.currentScope = this.rootScope;
-        assert this.currentScope.scopeType == ScopeType::GLOBAL;
-
-        // Do not type-check this manifestation again
-        manifestation.alreadyTypeChecked = true;
-
-        this.manIdx++; // Increase the manifestation index
-    }
-    this.manIdx = 0l; // Reset the manifestation index
-
-    return Any();
-}
-
-f<Any> TypeChecker.visitProcDefCheck(ASTProcDefNode* node) {
-    ASTFctDefBaseNode* fctDefBase = &node.node;
-    ASTNode* baseNode = cast<ASTNode*>(node);
-    baseNode.resizeToNumberOfManifestations(cast<unsigned long>(fctDefBase.manifestations.getSize()));
-    this.manIdx = 0l; // Reset the manifestation index
-
-    // Get all manifestations for this procedure definition
-    // Only visit the manifestations, that exist at this point (manifestations inserted during the loop are not covered by the
-    // resize above and get checked in a revisit)
-    const unsigned long manifestationCount = fctDefBase.manifestations.getSize();
-    for unsigned long manifestationIdx = 0l; manifestationIdx < manifestationCount; manifestationIdx++ {
-        Function* manifestation = fctDefBase.manifestations.get(manifestationIdx);
-        // Skip non-substantiated or already checked procedures
-        if !manifestation.isFullySubstantiated() || manifestation.alreadyTypeChecked {
-            this.manIdx++; // Increase the manifestation index
-            continue;
-        }
-
-        // Change scope to concrete struct specialization scope or to the interface scope for default methods
-        if manifestation.isInterfaceDefaultMethod {
-            this.checkDefaultMethodImplementsInterfaceMethod(manifestation);
-            this.compilerPass.changeToScope(fctDefBase.structScope, ScopeType::INTERFACE);
-        } else if fctDefBase.isMethod {
-            const QualTypeList thisTemplateTypes = manifestation.thisType.getTemplateTypes();
-            const String scopeName = getStructScopeName(fctDefBase.name.structName, thisTemplateTypes);
-            this.compilerPass.changeToScope(scopeName, ScopeType::STRUCT);
-        }
-
-        // Change to procedure scope
-        this.compilerPass.changeToScope(manifestation.bodyScope, ScopeType::FUNC_PROC_BODY);
-
-        // Mount type mapping for this manifestation
-        assert this.typeMapping.isEmpty();
-        this.typeMapping = manifestation.typeMapping;
-
-        // Visit parameters
-        // This happens once in the type checker prepare stage. This second time is only required if we have a generic procedure
+        // This happens once in the type checker prepare stage. This second time is only required if we have a generic function/procedure
         if fctDefBase.hasParams {
             this.visit(fctDefBase.paramLst);
             this.annotateLambdaCaptureParams(fctDefBase, manifestation);
         }
 
         // Prepare generation of special ctor preamble to store VTable, default field values, etc. if required
-        if node.isCtor {
+        if isCtor {
             this.createCtorBodyPreamble(manifestation.bodyScope);
         }
 
@@ -1199,27 +1153,51 @@ f<Any> TypeChecker.visitMainFctDefPrepare(ASTMainFctDefNode* node) {
 }
 
 f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
-    ASTNode* baseNode = cast<ASTNode*>(node);
-    ASTFctDefBaseNode* fctDefBase = &node.node;
+    return this.prepareFctOrProcDef(&node.node, cast<ASTNode*>(node), node.getScopeId(), node.returnType);
+}
+
+f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
+    return this.prepareFctOrProcDef(&node.node, cast<ASTNode*>(node), node.getScopeId(), nil<ASTDataTypeNode*>);
+}
+
+/**
+ * Prepare a function or procedure definition: check its signature, build the function object and create the body scopes
+ * of its manifestations
+ *
+ * @param fctDefBase Function or procedure definition node
+ * @param baseNode AST node of the definition
+ * @param scopeId Scope id of the definition
+ * @param returnTypeNode Return type of a function, nil for a procedure
+ */
+f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* baseNode, const String& scopeId, ASTDataTypeNode* returnTypeNode) {
+    const bool isFunction = returnTypeNode != nil<ASTDataTypeNode*>;
+    const string kind = isFunction ? "function" : "procedure";
 
     // Check if name is dtor
-    if fctDefBase.name.name == DTOR_FUNCTION_NAME {
+    if isFunction && fctDefBase.name.name == DTOR_FUNCTION_NAME {
         this.softError(baseNode, SemanticErrorType::DTOR_MUST_BE_PROCEDURE, String("Destructors are not allowed to be of type function"));
         return Any();
     }
 
-    // Check if all control paths in the function return
+    // Mark unreachable statements and check if all control paths in a function return
     bool doSetPredecessorsUnreachable = true;
-    if !baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx) {
+    const bool returnsOnAllControlPaths = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
+    if isFunction && !returnsOnAllControlPaths {
         this.softError(baseNode, SemanticErrorType::MISSING_RETURN_STMT, String("Not all control paths of this function have a return statement"));
         return Any();
     }
 
-    // Change to function scope
+    // Check if dtor and has params
+    if !isFunction && fctDefBase.hasParams && fctDefBase.name.name == DTOR_FUNCTION_NAME {
+        throwSemanticError(baseNode, SemanticErrorType::DTOR_WITH_PARAMS, String("It is not allowed to specify parameters for destructors"));
+        return Any();
+    }
+
+    // Change to function/procedure scope
     this.currentScope = fctDefBase.scope;
     assert this.currentScope.scopeType == ScopeType::FUNC_PROC_BODY;
 
-    // Retrieve function template types
+    // Retrieve template types
     Vector<GenericType> usedGenericTypes;
     if fctDefBase.hasTemplateTypes {
         if !this.collectTemplateTypes(fctDefBase.templateTypeLst, usedGenericTypes) {
@@ -1228,7 +1206,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
     }
 
     // Retrieve 'this' type
-    QualType thisType = QualType(SuperType::TY_DYN); // If the function is not a method, the default this type is TY_DYN
+    QualType thisType = QualType(SuperType::TY_DYN); // If the function/procedure is not a method, the default this type is TY_DYN
     if fctDefBase.isMethod {
         Scope* structParentScope = fctDefBase.structScope.parent;
         SymbolTableEntry* structEntry = structParentScope.lookupStrict(fctDefBase.name.structName);
@@ -1266,42 +1244,46 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
             paramList.pushBack(Param{qualType, namedParam.isOptional});
             // Check if the type is present in the template for generic types
             if !qualType.isCoveredByGenericTypeList(usedGenericTypes) {
-                throwSemanticError(getASTNode(fctDefBase.paramLst), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic param type not included in the template type list of the function"));
+                const String message = String("Generic param type not included in the template type list of the ") + kind;
+                throwSemanticError(getASTNode(fctDefBase.paramLst), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, message);
                 return Any();
             }
         }
     }
 
-    // Retrieve return type
-    const QualType returnType = this.getDataType(node.returnType);
-    if returnType.is(SuperType::TY_UNRESOLVED) {
-        return Any();
-    }
-    if returnType.is(SuperType::TY_DYN) {
-        this.softError(baseNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Dyn return types are not allowed"));
-        return Any();
-    }
-    if !returnType.isCoveredByGenericTypeList(usedGenericTypes) {
-        this.softError(cast<ASTNode*>(node.returnType), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic return type not included in the template type list of the function"));
-        return Any();
+    // Retrieve return type. Procedures have no return type, which is represented by TY_DYN
+    QualType returnType = QualType(SuperType::TY_DYN);
+    if isFunction {
+        returnType = this.getDataType(returnTypeNode);
+        if returnType.is(SuperType::TY_UNRESOLVED) {
+            return Any();
+        }
+        if returnType.is(SuperType::TY_DYN) {
+            this.softError(baseNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Dyn return types are not allowed"));
+            return Any();
+        }
+        if !returnType.isCoveredByGenericTypeList(usedGenericTypes) {
+            this.softError(cast<ASTNode*>(returnTypeNode), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic return type not included in the template type list of the function"));
+            return Any();
+        }
     }
 
-    // Check if the function is a valid default method, if it is defined as method of an interface
+    // Check if the function/procedure is a valid default method, if it is defined as method of an interface
     if thisType.is(SuperType::TY_INTERFACE) && !this.checkDefaultMethod(fctDefBase, thisType, paramList) {
         this.currentScope = this.rootScope;
         return Any();
     }
 
-    // Leave function body scope
+    // Leave function/procedure body scope
     this.currentScope = fctDefBase.scope.parent;
     assert this.currentScope.scopeType == ScopeType::GLOBAL || this.currentScope.scopeType == ScopeType::STRUCT || this.currentScope.scopeType == ScopeType::INTERFACE;
 
-    // Prepare type of function
-    const QualType functionTypeBase = QualType(SuperType::TY_FUNCTION);
+    // Prepare type of function/procedure
+    const QualType functionTypeBase = QualType(isFunction ? SuperType::TY_FUNCTION : SuperType::TY_PROCEDURE);
     QualType functionType = functionTypeBase.getWithFunctionParamAndReturnTypes(returnType, paramTypes);
     functionType.setQualifiers(fctDefBase.qualifiers);
 
-    // Update type of function entry
+    // Update type of function/procedure entry
     const String entryName = fctDefBase.getSymbolTableEntryName();
     SymbolTableEntry* functionEntry = this.currentScope.lookupStrict(entryName);
     assert functionEntry != nil<SymbolTableEntry*>;
@@ -1319,7 +1301,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
         return Any();
     }
 
-    // Check function attributes
+    // Check function/procedure attributes
     if fctDefBase.attrs != nil<IVisitable*> {
         ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDefBase.attrs);
         ASTAttrLstNode* attrLst = attrs.attrLst;
@@ -1332,7 +1314,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
             firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         }
-        if attrLst.hasAttr(String(ATTR_TEST)) {
+        if isFunction && attrLst.hasAttr(String(ATTR_TEST)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_TEST));
             if value.getBoolValue() {
                 // Make sure that the function has the correct signature
@@ -1341,7 +1323,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
                     return Any();
                 }
                 if !returnType.is(SuperType::TY_BOOL) {
-                    throwSemanticError(cast<ASTNode*>(node.returnType), SemanticErrorType::TEST_FUNCTION_WRONG_RETURN_TYPE, String("Test function must return a bool"));
+                    throwSemanticError(cast<ASTNode*>(returnTypeNode), SemanticErrorType::TEST_FUNCTION_WRONG_RETURN_TYPE, String("Test function must return a bool"));
                     return Any();
                 }
                 // Add to test function list
@@ -1353,143 +1335,7 @@ f<Any> TypeChecker.visitFctDefPrepare(ASTFctDefNode* node) {
         }
     }
 
-    // Duplicate / rename the original child scope to reflect the substantiated versions of the function
-    const String scopeId = node.getScopeId();
-    for unsigned long i = 1l; i < fctDefBase.manifestations.getSize(); i++ {
-        Function* manifestation = fctDefBase.manifestations.get(i);
-        manifestation.bodyScope = this.currentScope.copyChildScope(scopeId, manifestation.getScopeName());
-    }
-    Function* firstManifestation = fctDefBase.manifestations.front();
-    this.currentScope.renameChildScope(scopeId, firstManifestation.getScopeName());
-
-    // Change to the root scope
-    this.currentScope = this.rootScope;
-    assert this.currentScope.scopeType == ScopeType::GLOBAL;
-
-    return Any();
-}
-
-f<Any> TypeChecker.visitProcDefPrepare(ASTProcDefNode* node) {
-    ASTNode* baseNode = cast<ASTNode*>(node);
-    ASTFctDefBaseNode* fctDefBase = &node.node;
-
-    // Mark unreachable statements
-    bool doSetPredecessorsUnreachable = true;
-    const bool _ = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
-
-    // Check if dtor and has params
-    if fctDefBase.hasParams && fctDefBase.name.name == DTOR_FUNCTION_NAME {
-        throwSemanticError(baseNode, SemanticErrorType::DTOR_WITH_PARAMS, String("It is not allowed to specify parameters for destructors"));
-        return Any();
-    }
-
-    // Change to procedure scope
-    this.currentScope = fctDefBase.scope;
-    assert this.currentScope.scopeType == ScopeType::FUNC_PROC_BODY;
-
-    // Retrieve procedure template types
-    Vector<GenericType> usedGenericTypes;
-    if fctDefBase.hasTemplateTypes {
-        if !this.collectTemplateTypes(fctDefBase.templateTypeLst, usedGenericTypes) {
-            return Any();
-        }
-    }
-
-    // Retrieve 'this' type
-    QualType thisType = QualType(SuperType::TY_DYN); // If the procedure is not a method, the default this type is TY_DYN
-    if fctDefBase.isMethod {
-        Scope* structParentScope = fctDefBase.structScope.parent;
-        SymbolTableEntry* structEntry = structParentScope.lookupStrict(fctDefBase.name.structName);
-        assert structEntry != nil<SymbolTableEntry*>;
-        // Set struct to used
-        structEntry.used = true;
-        // Get type and ptr type
-        thisType = structEntry.getQualType();
-        const QualType thisPtrType = thisType.toPtr(baseNode);
-        // Collect template types of 'this' type
-        const QualTypeList thisTemplateTypes = thisType.getTemplateTypes();
-        foreach const QualType& templateType : thisTemplateTypes {
-            addUsedTemplateType(usedGenericTypes, templateType);
-        }
-
-        // Set type of 'this' variable
-        SymbolTableEntry* thisEntry = this.currentScope.lookupStrict(String(THIS_VARIABLE_NAME));
-        assert thisEntry != nil<SymbolTableEntry*>;
-        thisEntry.updateType(thisPtrType, false);
-    }
-
-    // Visit parameters
-    QualTypeList paramTypes;
-    ParamList paramList;
-    if fctDefBase.hasParams {
-        // Visit param list to retrieve the param names
-        Any paramLstResult = this.visit(fctDefBase.paramLst);
-        NamedParamList namedParamList = paramLstResult.get<NamedParamList>();
-        foreach const NamedParam& namedParam : namedParamList {
-            const QualType qualType = namedParam.qualType;
-            paramTypes.pushBack(qualType);
-            if qualType.is(SuperType::TY_UNRESOLVED) {
-                return Any();
-            }
-            paramList.pushBack(Param{qualType, namedParam.isOptional});
-            // Check if the type is present in the template for generic types
-            if !qualType.isCoveredByGenericTypeList(usedGenericTypes) {
-                throwSemanticError(getASTNode(fctDefBase.paramLst), SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE, String("Generic param type not included in the template type list of the procedure"));
-                return Any();
-            }
-        }
-    }
-
-    // Check if the procedure is a valid default method, if it is defined as method of an interface
-    if thisType.is(SuperType::TY_INTERFACE) && !this.checkDefaultMethod(fctDefBase, thisType, paramList) {
-        this.currentScope = this.rootScope;
-        return Any();
-    }
-
-    // Leave procedure body scope
-    this.currentScope = fctDefBase.scope.parent;
-    assert this.currentScope.scopeType == ScopeType::GLOBAL || this.currentScope.scopeType == ScopeType::STRUCT || this.currentScope.scopeType == ScopeType::INTERFACE;
-
-    // Prepare type of procedure
-    const QualType procedureTypeBase = QualType(SuperType::TY_PROCEDURE);
-    QualType procedureType = procedureTypeBase.getWithFunctionParamAndReturnTypes(QualType(SuperType::TY_DYN), paramTypes);
-    procedureType.setQualifiers(fctDefBase.qualifiers);
-
-    // Update type of procedure entry
-    const String entryName = fctDefBase.getSymbolTableEntryName();
-    SymbolTableEntry* procedureEntry = this.currentScope.lookupStrict(entryName);
-    assert procedureEntry != nil<SymbolTableEntry*>;
-    procedureEntry.updateType(procedureType, false);
-
-    // Build procedure object
-    Function spiceProc = Function(fctDefBase.name.name, procedureEntry, thisType, QualType(SuperType::TY_DYN), paramList, usedGenericTypes, baseNode);
-    spiceProc.bodyScope = fctDefBase.scope;
-    spiceProc.isInterfaceDefaultMethod = thisType.is(SuperType::TY_INTERFACE);
-    insertFunction(this.currentScope, spiceProc, &fctDefBase.manifestations);
-    // Stop at a duplicate declaration, the compilation is aborted after this stage
-    const ErrorManager& errorManager = this.resourceManager.getErrorManager();
-    if errorManager.hasHardError {
-        this.currentScope = this.rootScope;
-        return Any();
-    }
-
-    // Check procedure attributes
-    if fctDefBase.attrs != nil<IVisitable*> {
-        ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDefBase.attrs);
-        ASTAttrLstNode* attrLst = attrs.attrLst;
-        Function* firstManifestation = fctDefBase.manifestations.front();
-        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLE)) {
-            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLE));
-            firstManifestation.mangleFunctionName = value.getBoolValue();
-        }
-        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLED_NAME)) {
-            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
-            firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
-        }
-    }
-
-    // Duplicate / rename the original child scope to reflect the substantiated versions of the procedure
-    const String scopeId = node.getScopeId();
+    // Duplicate / rename the original child scope to reflect the substantiated versions of the function/procedure
     for unsigned long i = 1l; i < fctDefBase.manifestations.getSize(); i++ {
         Function* manifestation = fctDefBase.manifestations.get(i);
         manifestation.bodyScope = this.currentScope.copyChildScope(scopeId, manifestation.getScopeName());
