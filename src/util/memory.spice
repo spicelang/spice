@@ -1,3 +1,5 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
 public type IMemoryManager interface {
     public f<heap byte*> allocate(unsigned long);
     public p deallocate(heap byte*&);
