@@ -77,16 +77,20 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     }
     const bool isCompilerSource = compilerPrefixLength > 0ul;
 
-    FilePath basePath;
+    // Determine the root dir, that the import is resolved against, and the path of the imported file within it
+    const String ownFileDir = ownFilePath.getParentDir();
+    FilePath rootDir;
+    String pathInRootDir = node.importPath;
     if isStd { // Include source file from standard library
-        const FilePath stdPath = getStdDir();
-        basePath = stdPath / node.importPath.getSubstring(node.importPath.find("std/") + 4l);
+        rootDir = getStdDir();
+        pathInRootDir = node.importPath.getSubstring(node.importPath.find("std/") + 4l);
     } else if isCompilerSource { // Include source file of the compiler
-        const FilePath compilerSourceDir = getCompilerSourceDir(compilerSourceDirEnvVar);
-        basePath = compilerSourceDir / node.importPath.getSubstring(compilerPrefixLength);
+        rootDir = getCompilerSourceDir(compilerSourceDirEnvVar);
+        pathInRootDir = node.importPath.getSubstring(compilerPrefixLength);
     } else { // Include own source file
-        basePath = FilePath(ownFilePath.getParentDir()) / node.importPath;
+        rootDir = FilePath(ownFileDir);
     }
+    FilePath basePath = rootDir / pathInRootDir;
 
     const String osName = this.cliOptions.targetTriple.getOSTypeName();
     const String archName = this.cliOptions.targetTriple.getArchTypeName();
@@ -137,17 +141,9 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     // A main source file given as a bare filename (e.g. 'spice build main.spice') has an empty parent dir;
     // treat that as the current directory, since that is what the empty path already means to every other
     // join above.
-    String ownFileDir = ownFilePath.getParentDir();
-    if ownFileDir.isEmpty() {
-        ownFileDir = String(".");
-    }
-    FilePath intendedRoot;
-    if isStd {
-        intendedRoot = getStdDir();
-    } else if isCompilerSource {
-        intendedRoot = getCompilerSourceDir(compilerSourceDirEnvVar);
-    } else {
-        intendedRoot = FilePath(ownFileDir);
+    FilePath intendedRoot = rootDir;
+    if !isStd && !isCompilerSource && ownFileDir.isEmpty() {
+        intendedRoot = FilePath(String("."));
     }
     const FilePath allowedRoot = intendedRoot.canonical();
     const FilePath canonicalImportPath = importPath.canonical();
