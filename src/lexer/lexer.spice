@@ -223,219 +223,100 @@ f<Token> Lexer.consumeToken() {
         return this.consumeStringLiteral(codeLoc);
     }
 
-    // Check if operator can consumed
-    if curChar == '{' {
-        this.reader.advance(); // Consume '{'
-        return Token(TokenType::LBRACE, "{", codeLoc);
+    // Double literal without integer part, e.g. '.5'
+    if curChar == '.' && isDigit(this.reader.peekChar()) {
+        return this.consumeNumberLiteral(codeLoc);
     }
-    if curChar == '}' {
-        this.reader.advance(); // Consume '}'
-        return Token(TokenType::RBRACE, "}", codeLoc);
-    }
-    if curChar == '(' {
-        this.reader.advance(); // Consume '('
-        return Token(TokenType::LPAREN, "(", codeLoc);
-    }
-    if curChar == ')' {
-        this.reader.advance(); // Consume ')'
-        return Token(TokenType::RPAREN, ")", codeLoc);
-    }
-    if curChar == '[' {
-        this.reader.advance(); // Consume '['
-        return Token(TokenType::LBRACKET, "[", codeLoc);
-    }
-    if curChar == ']' {
-        this.reader.advance(); // Consume ']'
-        return Token(TokenType::RBRACKET, "]", codeLoc);
-    }
-    if curChar == '|' {
-        this.reader.advance(); // Consume '|'
-        if this.reader.getChar() == '|' { // "||"
-            this.reader.advance(); // Consume '|'
-            return Token(TokenType::LOGICAL_OR, "||", codeLoc);
-        } else if this.reader.getChar() == '=' { // "|="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::OR_EQUAL, "|=", codeLoc);
-        } else { // '|'
+
+    // Consume the first char of the operator and check for longer operators, starting with it
+    this.reader.advance();
+    switch curChar {
+        case '{': { return Token(TokenType::LBRACE, "{", codeLoc); }
+        case '}': { return Token(TokenType::RBRACE, "}", codeLoc); }
+        case '(': { return Token(TokenType::LPAREN, "(", codeLoc); }
+        case ')': { return Token(TokenType::RPAREN, ")", codeLoc); }
+        case '[': { return Token(TokenType::LBRACKET, "[", codeLoc); }
+        case ']': { return Token(TokenType::RBRACKET, "]", codeLoc); }
+        case '~': { return Token(TokenType::BITWISE_NOT, "~", codeLoc); }
+        case '?': { return Token(TokenType::QUESTION_MARK, "?", codeLoc); }
+        case ';': { return Token(TokenType::SEMICOLON, ";", codeLoc); }
+        case ',': { return Token(TokenType::COMMA, ",", codeLoc); }
+        case '|': {
+            if this.consumeIf('|') { return Token(TokenType::LOGICAL_OR, "||", codeLoc); }
+            if this.consumeIf('=') { return Token(TokenType::OR_EQUAL, "|=", codeLoc); }
             return Token(TokenType::BITWISE_OR, "|", codeLoc);
         }
-    }
-    if curChar == '&' {
-        this.reader.advance(); // Consume '&'
-        if this.reader.getChar() == '&' { // "&&"
-            this.reader.advance(); // Consume '&'
-            return Token(TokenType::LOGICAL_AND, "&&", codeLoc);
-        } else if this.reader.getChar() == '=' { // "&="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::AND_EQUAL, "&=", codeLoc);
-        } else { // '&'
+        case '&': {
+            if this.consumeIf('&') { return Token(TokenType::LOGICAL_AND, "&&", codeLoc); }
+            if this.consumeIf('=') { return Token(TokenType::AND_EQUAL, "&=", codeLoc); }
             return Token(TokenType::BITWISE_AND, "&", codeLoc);
         }
-    }
-    if curChar == '^' {
-        this.reader.advance(); // Consume '^'
-        if this.reader.getChar() == '=' { // "^="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::XOR_EQUAL, "^=", codeLoc);
-        } else { // '^'
+        case '^': {
+            if this.consumeIf('=') { return Token(TokenType::XOR_EQUAL, "^=", codeLoc); }
             return Token(TokenType::BITWISE_XOR, "^", codeLoc);
         }
-    }
-    if curChar == '~' {
-        this.reader.advance(); // Consume '~'
-        return Token(TokenType::BITWISE_NOT, "~", codeLoc);
-    }
-    if curChar == '!' {
-        this.reader.advance(); // Consume '!'
-        if this.reader.getChar() == '=' { // "!="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::NOT_EQUAL, "!=", codeLoc);
-        } else { // '!'
+        case '!': {
+            if this.consumeIf('=') { return Token(TokenType::NOT_EQUAL, "!=", codeLoc); }
             return Token(TokenType::NOT, "!", codeLoc);
         }
-    }
-    if curChar == '+' {
-        this.reader.advance(); // Consume '+'
-        if this.reader.getChar() == '+' { // "++"
-            this.reader.advance(); // Consume '+'
-            return Token(TokenType::PLUS_PLUS, "++", codeLoc);
-        } else if this.reader.getChar() == '=' { // "+="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::PLUS_EQUAL, "+=", codeLoc);
-        } else { // '+'
+        case '+': {
+            if this.consumeIf('+') { return Token(TokenType::PLUS_PLUS, "++", codeLoc); }
+            if this.consumeIf('=') { return Token(TokenType::PLUS_EQUAL, "+=", codeLoc); }
             return Token(TokenType::PLUS, "+", codeLoc);
         }
-    }
-    if curChar == '-' {
-        this.reader.advance(); // Consume '-'
-        if this.reader.getChar() == '-' { // "--"
-            this.reader.advance(); // Consume '-'
-            return Token(TokenType::MINUS_MINUS, "--", codeLoc);
-        } else if this.reader.getChar() == '=' { // "-="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::MINUS_EQUAL, "-=", codeLoc);
-        } else if this.reader.getChar() == '>' { // "->"
-            this.reader.advance(); // Consume '>'
-            return Token(TokenType::ARROW, "->", codeLoc);
-        } else { // '-'
+        case '-': {
+            if this.consumeIf('-') { return Token(TokenType::MINUS_MINUS, "--", codeLoc); }
+            if this.consumeIf('=') { return Token(TokenType::MINUS_EQUAL, "-=", codeLoc); }
+            if this.consumeIf('>') { return Token(TokenType::ARROW, "->", codeLoc); }
             return Token(TokenType::MINUS, "-", codeLoc);
         }
-    }
-    if curChar == '*' {
-        this.reader.advance(); // Consume '*'
-        if this.reader.getChar() == '=' { // "*="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::MUL_EQUAL, "*=", codeLoc);
-        } else { // '*'
+        case '*': {
+            if this.consumeIf('=') { return Token(TokenType::MUL_EQUAL, "*=", codeLoc); }
             return Token(TokenType::MUL, "*", codeLoc);
         }
-    }
-    if curChar == '/' {
-        this.reader.advance(); // Consume '/'
-        if this.reader.getChar() == '=' { // "/="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::DIV_EQUAL, "/=", codeLoc);
-        } else if this.reader.getChar() == '/' { // "//"
-            return this.consumeLineComment(codeLoc);
-        } else if this.reader.getChar() == '*' { // "/*"
-            return this.consumeBlockOrDocComment(codeLoc);
-        } else { // '/'
+        case '/': {
+            if this.consumeIf('=') { return Token(TokenType::DIV_EQUAL, "/=", codeLoc); }
+            if this.reader.getChar() == '/' { return this.consumeLineComment(codeLoc); }
+            if this.reader.getChar() == '*' { return this.consumeBlockOrDocComment(codeLoc); }
             return Token(TokenType::DIV, "/", codeLoc);
         }
-    }
-    if curChar == '%' {
-        this.reader.advance(); // Consume '%'
-        if this.reader.getChar() == '=' { // "%="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::REM_EQUAL, "%=", codeLoc);
-        } else { // '%'
+        case '%': {
+            if this.consumeIf('=') { return Token(TokenType::REM_EQUAL, "%=", codeLoc); }
             return Token(TokenType::REM, "%", codeLoc);
         }
-    }
-    if curChar == '=' {
-        this.reader.advance(); // Consume '='
-        if this.reader.getChar() == '=' { // "=="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::EQUAL, "==", codeLoc);
-        } else { // '='
+        case '=': {
+            if this.consumeIf('=') { return Token(TokenType::EQUAL, "==", codeLoc); }
             return Token(TokenType::ASSIGN, "=", codeLoc);
         }
-    }
-    if curChar == '<' {
-        this.reader.advance(); // Consume '<'
-        if this.reader.getChar() == '=' { // "<="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::LESS_EQUAL, "<=", codeLoc);
-        } else if this.reader.getChar() == '<' { // "<<"
-            this.reader.advance(); // Consume '<'
-            if this.reader.getChar() == '=' { // "<<="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::SHL_EQUAL, "<<=", codeLoc);
-            } else { // "<<"
+        case '<': {
+            if this.consumeIf('=') { return Token(TokenType::LESS_EQUAL, "<=", codeLoc); }
+            if this.consumeIf('<') {
+                if this.consumeIf('=') { return Token(TokenType::SHL_EQUAL, "<<=", codeLoc); }
                 return Token(TokenType::SHL, "<<", codeLoc);
             }
-        } else { // '<'
             return Token(TokenType::LESS, "<", codeLoc);
         }
-    }
-    if curChar == '>' {
-        this.reader.advance(); // Consume '>'
-        if this.reader.getChar() == '=' { // ">="
-            this.reader.advance(); // Consume '='
-            return Token(TokenType::GREATER_EQUAL, ">=", codeLoc);
-        } else if this.reader.getChar() == '>' { // ">>"
-            this.reader.advance(); // Consume '>'
-            if this.reader.getChar() == '=' { // ">>="
-                this.reader.advance(); // Consume '='
-                return Token(TokenType::SHR_EQUAL, ">>=", codeLoc);
-            } else { // ">>"
+        case '>': {
+            if this.consumeIf('=') { return Token(TokenType::GREATER_EQUAL, ">=", codeLoc); }
+            if this.consumeIf('>') {
+                if this.consumeIf('=') { return Token(TokenType::SHR_EQUAL, ">>=", codeLoc); }
                 return Token(TokenType::SHR, ">>", codeLoc);
             }
-        } else { // '>'
             return Token(TokenType::GREATER, ">", codeLoc);
         }
-    }
-    if curChar == '?' {
-        this.reader.advance(); // Consume '?'
-        return Token(TokenType::QUESTION_MARK, "?", codeLoc);
-    }
-    if curChar == ':' {
-        this.reader.advance(); // Consume ':'
-        if this.reader.getChar() == ':' { // "::"
-            this.reader.advance(); // Consume ':'
-            return Token(TokenType::SCOPE_ACCESS, "::", codeLoc);
-        } else { // ':'
+        case ':': {
+            if this.consumeIf(':') { return Token(TokenType::SCOPE_ACCESS, "::", codeLoc); }
             return Token(TokenType::COLON, ":", codeLoc);
         }
-    }
-    if curChar == ';' {
-        this.reader.advance(); // Consume ';'
-        return Token(TokenType::SEMICOLON, ";", codeLoc);
-    }
-    if curChar == ',' {
-        this.reader.advance(); // Consume ','
-        return Token(TokenType::COMMA, ",", codeLoc);
-    }
-    if curChar == '.' {
-        // Double literal without integer part, e.g. '.5'
-        if isDigit(this.reader.peekChar()) {
-            return this.consumeNumberLiteral(codeLoc);
-        }
-        this.reader.advance(); // Consume '.'
-        if this.reader.getChar() == '.' { // ".."
-            this.reader.advance(); // Consume second '.'
-            this.reader.expect('.'); // Consume third '.'
-            return Token(TokenType::ELLIPSIS, "...", codeLoc);
-        } else { // '.'
+        case '.': {
+            if this.consumeIf('.') {
+                this.reader.expect('.'); // Consume third '.'
+                return Token(TokenType::ELLIPSIS, "...", codeLoc);
+            }
             return Token(TokenType::DOT, ".", codeLoc);
         }
-    }
-    if curChar == '#' {
-        this.reader.advance(); // Consume '#'
-        if this.reader.getChar() == '!' { // "#!"
-            this.reader.advance(); // Consume '!'
-            return Token(TokenType::MOD_ATTR_PREAMBLE, "#!", codeLoc);
-        } else { // '#'
+        case '#': {
+            if this.consumeIf('!') { return Token(TokenType::MOD_ATTR_PREAMBLE, "#!", codeLoc); }
             return Token(TokenType::FCT_ATTR_PREAMBLE, "#", codeLoc);
         }
     }
@@ -443,6 +324,20 @@ f<Token> Lexer.consumeToken() {
     const String message = String("token recognition error at: '") + curChar + "'"; // LCOV_EXCL_LINE
     this.throwLexerError(codeLoc, message.getRaw());                                // LCOV_EXCL_LINE
     return Token(TokenType::INVALID);                                               // LCOV_EXCL_LINE
+}
+
+/**
+ * Consume the current char, if it is the expected one
+ *
+ * @param expected Expected char
+ * @return Whether the char was consumed
+ */
+inline f<bool> Lexer.consumeIf(char expected) {
+    if this.reader.getChar() != expected {
+        return false;
+    }
+    this.reader.advance();
+    return true;
 }
 
 /**
