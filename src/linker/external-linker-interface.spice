@@ -216,31 +216,8 @@ p ExternalLinkerInterface.link() {
         printf("\nEmitting executable to path: %s\n", this.outputPath.toString());
     }
 
-    // Call the linker. While the progress bar is shown, also capture the stderr of the linker, so that it does not end up
-    // behind the bar. It is printed after removing the bar, if linking fails
-    const bool captureStdErr = isCompileProgressActive();
-    const ExecResult linkResult = exec(linkerInvoker.path, args, captureStdErr);
-
-    // Check for linker error
-    if linkResult.exitCode != 0 {
-        if captureStdErr {
-            printAboveActiveCompileProgress(linkResult.output);
-        }
-        const String command = renderCommandForDisplay(linkerInvoker.path, args);
-        const String msg = "Linker exited with non-zero exit code\nLinker command: " + command;
-        const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
-        abortWithError(error.errorMessage);
-    }
-
-    // The captured output of a successful link (e.g. linker warnings) would be lost otherwise
-    if captureStdErr && !linkResult.output.isEmpty() {
-        printAboveActiveCompileProgress(linkResult.output);
-    }
-
-    // Print linker result if appropriate
-    if this.cliOptions.printDebugOutput && !linkResult.output.isEmpty() {
-        printf("Linking result: %s\n\n", linkResult.output.getRaw());
-    }
+    // Call the linker
+    this.runTool(linkerInvoker.path, args, "Linker", "Linking");
 }
 
 /**
@@ -498,29 +475,42 @@ p ExternalLinkerInterface.archive() {
     }
 
     // Call the archiver
-    // Capture the stderr of the archiver while the progress bar is shown (see link)
-    const bool captureStdErr = isCompileProgressActive();
-    const ExecResult archiveResult = exec(archiver.path, args, captureStdErr);
+    this.runTool(archiver.path, args, "Archiver", "Archiving");
+}
 
-    // Check for archiver error
-    if archiveResult.exitCode != 0 {
+/**
+ * Run the linker invoker or the archiver and abort with a linker error, if it fails
+ *
+ * @param toolPath Path to the tool
+ * @param args Arguments for the tool
+ * @param toolName Name of the tool for the error message, e.g. "Linker"
+ * @param activityName Name of the activity for the debug output, e.g. "Linking"
+ */
+p ExternalLinkerInterface.runTool(const String& toolPath, const Vector<String>& args, string toolName, string activityName) {
+    // While the progress bar is shown, also capture the stderr of the tool, so that it does not end up behind the bar. It is
+    // printed after removing the bar, if the tool fails
+    const bool captureStdErr = isCompileProgressActive();
+    const ExecResult result = exec(toolPath, args, captureStdErr);
+
+    // Check for error
+    if result.exitCode != 0 {
         if captureStdErr {
-            printAboveActiveCompileProgress(archiveResult.output);
+            printAboveActiveCompileProgress(result.output);
         }
-        const String command = renderCommandForDisplay(archiver.path, args);
-        const String msg = "Archiver exited with non-zero exit code\nArchiver command: " + command;
+        const String command = renderCommandForDisplay(toolPath, args);
+        const String msg = String(toolName) + " exited with non-zero exit code\n" + toolName + " command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
         abortWithError(error.errorMessage);
     }
 
-    // The captured output of a successful archiving would be lost otherwise (see link)
-    if captureStdErr && !archiveResult.output.isEmpty() {
-        printAboveActiveCompileProgress(archiveResult.output);
+    // The captured output of a successful run (e.g. linker warnings) would be lost otherwise
+    if captureStdErr && !result.output.isEmpty() {
+        printAboveActiveCompileProgress(result.output);
     }
 
-    // Print archiver result if appropriate
-    if this.cliOptions.printDebugOutput && !archiveResult.output.isEmpty() {
-        printf("Archiving result: %s\n\n", archiveResult.output.getRaw());
+    // Print the result if appropriate
+    if this.cliOptions.printDebugOutput && !result.output.isEmpty() {
+        printf("%s result: %s\n\n", activityName, result.output.getRaw());
     }
 }
 
