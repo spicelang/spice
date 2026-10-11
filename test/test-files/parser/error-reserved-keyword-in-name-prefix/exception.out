@@ -1,0 +1,1 @@
+[Error|Parser] ./source.spice:2:5: Usage of reserved keyword: 'new' is a reserved keyword. Please use another name instead
