@@ -1,3 +1,5 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
 // Own imports
 import "bootstrap/global/global-resource-manager";
 import "bootstrap/driver";

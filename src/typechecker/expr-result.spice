@@ -1,3 +1,5 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/qual-type";
 

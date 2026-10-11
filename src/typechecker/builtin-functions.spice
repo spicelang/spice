@@ -1,3 +1,5 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
 // Constants
 public const unsigned int BUILTIN_UNLIMITED_COUNT = 4294967295u; // Max value of unsigned int
 // Documented builtins
