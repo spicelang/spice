@@ -173,7 +173,7 @@ public f<CodeLoc> Lexer.getCodeLoc() {
 
 f<Token> Lexer.consumeToken() {
     // Get the current char from the reader instance
-    char curChar = this.reader.getChar();
+    const char curChar = this.reader.getChar();
     const CodeLoc codeLoc = this.reader.getCodeLoc();
 
     // Check if EOF
@@ -250,7 +250,6 @@ f<Token> Lexer.consumeToken() {
     }
     if curChar == '|' {
         this.reader.advance(); // Consume '|'
-        curChar = this.reader.getChar();
         if this.reader.getChar() == '|' { // "||"
             this.reader.advance(); // Consume '|'
             return Token(TokenType::LOGICAL_OR, "||", codeLoc);
@@ -263,7 +262,6 @@ f<Token> Lexer.consumeToken() {
     }
     if curChar == '&' {
         this.reader.advance(); // Consume '&'
-        curChar = this.reader.getChar();
         if this.reader.getChar() == '&' { // "&&"
             this.reader.advance(); // Consume '&'
             return Token(TokenType::LOGICAL_AND, "&&", codeLoc);
@@ -356,7 +354,6 @@ f<Token> Lexer.consumeToken() {
     }
     if curChar == '=' {
         this.reader.advance(); // Consume '='
-        curChar = this.reader.getChar();
         if this.reader.getChar() == '=' { // "=="
             this.reader.advance(); // Consume '='
             return Token(TokenType::EQUAL, "==", codeLoc);
@@ -366,7 +363,6 @@ f<Token> Lexer.consumeToken() {
     }
     if curChar == '<' {
         this.reader.advance(); // Consume '<'
-        curChar = this.reader.getChar();
         if this.reader.getChar() == '=' { // "<="
             this.reader.advance(); // Consume '='
             return Token(TokenType::LESS_EQUAL, "<=", codeLoc);
@@ -384,7 +380,6 @@ f<Token> Lexer.consumeToken() {
     }
     if curChar == '>' {
         this.reader.advance(); // Consume '>'
-        curChar = this.reader.getChar();
         if this.reader.getChar() == '=' { // ">="
             this.reader.advance(); // Consume '='
             return Token(TokenType::GREATER_EQUAL, ">=", codeLoc);
