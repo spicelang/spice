@@ -646,8 +646,8 @@ public f<ASTMainFctDefNode*> Parser.parseMainFctDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
-        mainFctDefNode.attrs = attrs;
+        // The attributes of the main function keep the default target
+        mainFctDefNode.attrs = this.parseTopLevelDefAttr(AttrTarget::TARGET_INVALID);
     }
 
     // Consume expected tokens 'f<int> main'
@@ -657,14 +657,10 @@ public f<ASTMainFctDefNode*> Parser.parseMainFctDef() {
     this.consumeGenericClose();
     this.expect(TokenType::MAIN);
 
-    // Parse pramLst
-    this.expect(TokenType::LPAREN);
-    if !this.currentTokenIs(TokenType::RPAREN) {
-        mainFctDefNode.takesArgs = true;
-        ASTParamLstNode* paramLst = this.parseParamLst();
-        mainFctDefNode.paramLst = paramLst;
-    }
-    this.expect(TokenType::RPAREN);
+    // Parse paramLst
+    ASTParamLstNode* paramLst = this.parseParenthesizedParamLst();
+    mainFctDefNode.takesArgs = paramLst != nil<ASTParamLstNode*>;
+    mainFctDefNode.paramLst = paramLst;
 
     // Parse stmtLst
     ASTStmtLstNode* body = this.parseStmtLst();
@@ -678,12 +674,7 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
-        fctDefNode.attrs = attrs;
-        // Tell the attributes that they are function attributes
-        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
-            attr.target = AttrTarget::TARGET_FCT_PROC;
-        }
+        fctDefNode.attrs = this.parseTopLevelDefAttr(AttrTarget::TARGET_FCT_PROC);
     }
 
     // Parse qualifierLst
@@ -708,13 +699,9 @@ public f<ASTFctDefNode*> Parser.parseFctDef() {
     }
 
     // Parse paramLst
-    this.expect(TokenType::LPAREN);
-    if !this.currentTokenIs(TokenType::RPAREN) {
-        fctDefNode.hasParams = true;
-        ASTParamLstNode* paramLst = this.parseParamLst();
-        fctDefNode.paramLst = paramLst;
-    }
-    this.expect(TokenType::RPAREN);
+    ASTParamLstNode* paramLst = this.parseParenthesizedParamLst();
+    fctDefNode.hasParams = paramLst != nil<ASTParamLstNode*>;
+    fctDefNode.paramLst = paramLst;
 
     // Parse stmtLst
     ASTStmtLstNode* body = this.parseStmtLst();
@@ -728,12 +715,7 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
-        procDefNode.attrs = attrs;
-        // Tell the attributes that they are function attributes
-        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
-            attr.target = AttrTarget::TARGET_FCT_PROC;
-        }
+        procDefNode.attrs = this.parseTopLevelDefAttr(AttrTarget::TARGET_FCT_PROC);
     }
 
     // Parse qualifierLst
@@ -756,13 +738,9 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
     }
 
     // Parse paramLst
-    this.expect(TokenType::LPAREN);
-    if !this.currentTokenIs(TokenType::RPAREN) {
-        procDefNode.hasParams = true;
-        ASTParamLstNode* paramLst = this.parseParamLst();
-        procDefNode.paramLst = paramLst;
-    }
-    this.expect(TokenType::RPAREN);
+    ASTParamLstNode* paramLst = this.parseParenthesizedParamLst();
+    procDefNode.hasParams = paramLst != nil<ASTParamLstNode*>;
+    procDefNode.paramLst = paramLst;
 
     // Parse stmtLst
     ASTStmtLstNode* body = this.parseStmtLst();
@@ -856,6 +834,29 @@ f<String> Parser.parseOverloadableOp() {
     return String(); // LCOV_EXCL_LINE
 }
 
+// Parse an optional paramLst, enclosed in parentheses. Returns nil, if the parentheses are empty.
+f<ASTParamLstNode*> Parser.parseParenthesizedParamLst() {
+    this.expect(TokenType::LPAREN);
+    ASTParamLstNode* paramLst = nil<ASTParamLstNode*>;
+    if !this.currentTokenIs(TokenType::RPAREN) {
+        paramLst = this.parseParamLst();
+    }
+    this.expect(TokenType::RPAREN);
+    return paramLst;
+}
+
+// Parse a name prefix (IDENTIFIER separator)* and append its fragments to the fragment list and the fully-qualified name.
+p Parser.parseNamePrefix(TokenType separatorType, string separator, Vector<String>& fragments, String& fqName) {
+    while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == separatorType {
+        const String fragment = this.lexer.getToken().text;
+        fragments.pushBack(fragment);
+        fqName += fragment;
+        fqName += separator;
+        this.expect(TokenType::IDENTIFIER);
+        this.expect(separatorType);
+    }
+}
+
 // Override the type id of a struct, interface or union, if the fixed type id attribute is set
 p Parser.applyFixedTypeId(ASTTopLevelDefAttrNode* attrs, unsigned long& typeId) {
     const String fixedTypeIdKey = String(ATTR_CORE_COMPILER_FIXED_TYPE_ID);
@@ -871,12 +872,8 @@ f<ASTStructDefNode*> Parser.parseStructDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr(AttrTarget::TARGET_STRUCT);
         structDefNode.attrs = attrs;
-        // Tell the attributes that they are struct attributes
-        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
-            attr.target = AttrTarget::TARGET_STRUCT;
-        }
         // Check if a custom type id was set
         this.applyFixedTypeId(attrs, structDefNode.typeId);
     }
@@ -923,12 +920,8 @@ f<ASTInterfaceDefNode*> Parser.parseInterfaceDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr(AttrTarget::TARGET_INTERFACE);
         interfaceDefNode.attrs = attrs;
-        // Tell the attributes that they are interface attributes
-        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
-            attr.target = AttrTarget::TARGET_INTERFACE;
-        }
         // Check if a custom type id was set
         this.applyFixedTypeId(attrs, interfaceDefNode.typeId);
     }
@@ -968,12 +961,8 @@ f<ASTUnionDefNode*> Parser.parseUnionDef() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
+        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr(AttrTarget::TARGET_UNION);
         unionDefNode.attrs = attrs;
-        // Tell the attributes that they are union attributes
-        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
-            attr.target = AttrTarget::TARGET_UNION;
-        }
         // Check if a custom type id was set
         this.applyFixedTypeId(attrs, unionDefNode.typeId);
     }
@@ -1091,12 +1080,7 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
 
     // Parse topLevelDefAttr
     if this.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
-        ASTTopLevelDefAttrNode* attrs = this.parseTopLevelDefAttr();
-        extDeclNode.attrs = attrs;
-        // Tell the attributes that they are ext-decl attributes
-        foreach ASTAttrNode* attr : attrs.attrLst.attributes {
-            attr.target = AttrTarget::TARGET_EXT_DECL;
-        }
+        extDeclNode.attrs = this.parseTopLevelDefAttr(AttrTarget::TARGET_EXT_DECL);
     }
 
     this.expect(TokenType::EXT);
@@ -1641,7 +1625,7 @@ f<ASTModAttrNode*> Parser.parseModAttr() {
     return this.concludeNode(modAttrNode);
 }
 
-f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr() {
+f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr(AttrTarget target) {
     dyn topLevelDefAttrNode = this.createNode<ASTTopLevelDefAttrNode>();
 
     this.expect(TokenType::FCT_ATTR_PREAMBLE);
@@ -1649,9 +1633,10 @@ f<ASTTopLevelDefAttrNode*> Parser.parseTopLevelDefAttr() {
     topLevelDefAttrNode.attrLst = this.parseAttrLst();
     this.expect(TokenType::RBRACKET);
 
-    // Note: the concrete target (TARGET_FCT_PROC / TARGET_STRUCT / TARGET_INTERFACE / TARGET_UNION /
-    // TARGET_EXT_DECL) depends on which construct this attribute list is attached to, so it is set by
-    // the caller (parseFctDef, parseStructDef, ...).
+    // Tell the attributes which construct they are attached to (function, struct, ...)
+    foreach ASTAttrNode* attr : topLevelDefAttrNode.attrLst.attributes {
+        attr.target = target;
+    }
 
     return this.concludeNode(topLevelDefAttrNode);
 }
@@ -2337,23 +2322,9 @@ f<ASTFctCallNode*> Parser.parseFctCall() {
 
     // Scope prefix: (IDENTIFIER SCOPE_ACCESS)*
     String fqFunctionName;
-    while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == TokenType::SCOPE_ACCESS {
-        const String fragment = this.lexer.getToken().text;
-        fctCallNode.functionNameFragments.pushBack(fragment);
-        fqFunctionName += fragment;
-        fqFunctionName += SCOPE_ACCESS_TOKEN;
-        this.expect(TokenType::IDENTIFIER);
-        this.expect(TokenType::SCOPE_ACCESS);
-    }
+    this.parseNamePrefix(TokenType::SCOPE_ACCESS, SCOPE_ACCESS_TOKEN, fctCallNode.functionNameFragments, fqFunctionName);
     // Member prefix: (IDENTIFIER DOT)*
-    while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == TokenType::DOT {
-        const String fragment = this.lexer.getToken().text;
-        fctCallNode.functionNameFragments.pushBack(fragment);
-        fqFunctionName += fragment;
-        fqFunctionName += MEMBER_ACCESS_TOKEN;
-        this.expect(TokenType::IDENTIFIER);
-        this.expect(TokenType::DOT);
-    }
+    this.parseNamePrefix(TokenType::DOT, MEMBER_ACCESS_TOKEN, fctCallNode.functionNameFragments, fqFunctionName);
     // Final name segment
     const String fragment = this.lexer.getToken().text;
     fctCallNode.functionNameFragments.pushBack(fragment);
@@ -2399,14 +2370,7 @@ f<ASTStructInstantiationNode*> Parser.parseStructInstantiation() {
 
     // Scope prefix: (IDENTIFIER SCOPE_ACCESS)*
     String fqStructName;
-    while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == TokenType::SCOPE_ACCESS {
-        const String fragment = this.lexer.getToken().text;
-        structInstantiationNode.structNameFragments.pushBack(fragment);
-        fqStructName += fragment;
-        fqStructName += SCOPE_ACCESS_TOKEN;
-        this.expect(TokenType::IDENTIFIER);
-        this.expect(TokenType::SCOPE_ACCESS);
-    }
+    this.parseNamePrefix(TokenType::SCOPE_ACCESS, SCOPE_ACCESS_TOKEN, structInstantiationNode.structNameFragments, fqStructName);
     const String structName = this.lexer.getToken().text;
     structInstantiationNode.structNameFragments.pushBack(structName);
     fqStructName += structName;
@@ -2438,12 +2402,9 @@ f<ASTLambdaFuncNode*> Parser.parseLambdaFunc() {
     this.consumeGenericClose();
 
     // Parse paramLst
-    this.expect(TokenType::LPAREN);
-    if !this.currentTokenIs(TokenType::RPAREN) {
-        lambdaFuncNode.hasParams = true;
-        lambdaFuncNode.paramLst = cast<IVisitable*>(this.parseParamLst());
-    }
-    this.expect(TokenType::RPAREN);
+    ASTParamLstNode* paramLst = this.parseParenthesizedParamLst();
+    lambdaFuncNode.hasParams = paramLst != nil<ASTParamLstNode*>;
+    lambdaFuncNode.paramLst = paramLst;
 
     // Parse lambda attrs
     if this.currentTokenIs(TokenType::LBRACKET) {
@@ -2468,12 +2429,9 @@ f<ASTLambdaProcNode*> Parser.parseLambdaProc() {
     this.expect(TokenType::P);
 
     // Parse paramLst
-    this.expect(TokenType::LPAREN);
-    if !this.currentTokenIs(TokenType::RPAREN) {
-        lambdaProcNode.hasParams = true;
-        lambdaProcNode.paramLst = cast<IVisitable*>(this.parseParamLst());
-    }
-    this.expect(TokenType::RPAREN);
+    ASTParamLstNode* paramLst = this.parseParenthesizedParamLst();
+    lambdaProcNode.hasParams = paramLst != nil<ASTParamLstNode*>;
+    lambdaProcNode.paramLst = paramLst;
 
     // Parse lambda attrs
     if this.currentTokenIs(TokenType::LBRACKET) {
@@ -2496,12 +2454,9 @@ f<ASTLambdaExprNode*> Parser.parseLambdaExpr() {
     dyn lambdaExprNode = this.createNode<ASTLambdaExprNode>();
 
     // Parse paramLst
-    this.expect(TokenType::LPAREN);
-    if !this.currentTokenIs(TokenType::RPAREN) {
-        lambdaExprNode.hasParams = true;
-        lambdaExprNode.paramLst = cast<IVisitable*>(this.parseParamLst());
-    }
-    this.expect(TokenType::RPAREN);
+    ASTParamLstNode* paramLst = this.parseParenthesizedParamLst();
+    lambdaExprNode.hasParams = paramLst != nil<ASTParamLstNode*>;
+    lambdaExprNode.paramLst = paramLst;
 
     this.expect(TokenType::ARROW);
     lambdaExprNode.lambdaExpr = this.parseAssignExpr();
@@ -2602,14 +2557,7 @@ f<ASTCustomDataTypeNode*> Parser.parseCustomDataType() {
 
     // Parse type name: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER
     String fqTypeName;
-    while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == TokenType::SCOPE_ACCESS {
-        const String fragment = this.lexer.getToken().text;
-        customDataTypeNode.typeNameFragments.pushBack(fragment);
-        fqTypeName += fragment;
-        fqTypeName += SCOPE_ACCESS_TOKEN;
-        this.expect(TokenType::IDENTIFIER);
-        this.expect(TokenType::SCOPE_ACCESS);
-    }
+    this.parseNamePrefix(TokenType::SCOPE_ACCESS, SCOPE_ACCESS_TOKEN, customDataTypeNode.typeNameFragments, fqTypeName);
     const String typeName = this.lexer.getToken().text;
     customDataTypeNode.typeNameFragments.pushBack(typeName);
     fqTypeName += typeName;
