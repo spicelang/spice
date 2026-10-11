@@ -848,7 +848,7 @@ f<ASTParamLstNode*> Parser.parseParenthesizedParamLst() {
 // Parse a name prefix (IDENTIFIER separator)* and append its fragments to the fragment list and the fully-qualified name.
 p Parser.parseNamePrefix(TokenType separatorType, string separator, Vector<String>& fragments, String& fqName) {
     while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == separatorType {
-        const String fragment = this.lexer.getToken().text;
+        const String fragment = this.getIdentifier(false);
         fragments.pushBack(fragment);
         fqName += fragment;
         fqName += separator;
