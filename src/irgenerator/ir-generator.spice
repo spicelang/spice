@@ -5940,13 +5940,7 @@ p IRGenerator.generateFctDecl(const model::Function* fct, const Vector<llvm::Val
             assert !callee.isNull();
 
             // Set attributes to 'this' param
-            // Get 'this' entry
-            const SymbolTableEntry* thisEntry = fct.bodyScope.lookupStrict(String(THIS_VARIABLE_NAME));
-            assert thisEntry != nil<const SymbolTableEntry*>;
-            const QualType& thisType = thisEntry.getQualType();
-            const QualType structSType = thisType.getContained();
-            const llvm::Type structType = structSType.toLLVMType(this.sourceFile);
-            assert !structType.isNull();
+            const llvm::Type structType = this.getThisStructType(fct);
             callee.addParamAttr(0, "noundef");
             callee.addParamAttr(0, "nonnull");
             callee.addDereferenceableParamAttr(0, this.module.getTypeStoreSize(structType));
@@ -5969,13 +5963,7 @@ f<llvm::Value> IRGenerator.generateFctCall(const model::Function* fct, const Vec
 
     // Set attributes to 'this' param
     if fct.isMethod() {
-        // Get 'this' entry
-        const SymbolTableEntry* thisEntry = fct.bodyScope.lookupStrict(String(THIS_VARIABLE_NAME));
-        assert thisEntry != nil<const SymbolTableEntry*>;
-        const QualType& thisType = thisEntry.getQualType();
-        const QualType structSType = thisType.getContained();
-        const llvm::Type structType = structSType.toLLVMType(this.sourceFile);
-        assert !structType.isNull();
+        const llvm::Type structType = this.getThisStructType(fct);
         callInst.addCallParamAttr(0, "noundef");
         callInst.addCallParamAttr(0, "nonnull");
         callInst.addCallDereferenceableParamAttr(0, this.module.getTypeStoreSize(structType));
@@ -5983,6 +5971,22 @@ f<llvm::Value> IRGenerator.generateFctCall(const model::Function* fct, const Vec
     }
 
     return callInst;
+}
+
+/**
+ * Get the LLVM type of the struct, that the 'this' param of the given method points to
+ *
+ * @param method Method
+ * @return LLVM struct type
+ */
+f<llvm::Type> IRGenerator.getThisStructType(const model::Function* method) {
+    const SymbolTableEntry* thisEntry = method.bodyScope.lookupStrict(String(THIS_VARIABLE_NAME));
+    assert thisEntry != nil<const SymbolTableEntry*>;
+    const QualType& thisType = thisEntry.getQualType();
+    const QualType structSType = thisType.getContained();
+    const llvm::Type structType = structSType.toLLVMType(this.sourceFile);
+    assert !structType.isNull();
+    return structType;
 }
 
 p IRGenerator.generateProcDeclAndCall(const model::Function* proc, const Vector<llvm::Value>& args) {
