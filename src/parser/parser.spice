@@ -187,6 +187,15 @@ p Parser.expect(TokenType expectedTokenType) {
     this.advance();
 }
 
+// Consume the current token, if it has the expected type.
+inline f<bool> Parser.consumeIf(TokenType expectedTokenType) {
+    if !this.currentTokenIs(expectedTokenType) {
+        return false;
+    }
+    this.advance();
+    return true;
+}
+
 // Return the type of the token at the given offset, where offset 0 is the current token.
 // Comment tokens are skipped, so the offset counts relevant tokens only. The lexer resolves this
 // in O(1) via its precomputed comment-free index, which keeps speculative lookahead cheap.
@@ -765,8 +774,7 @@ public f<ASTProcDefNode*> Parser.parseProcDef() {
 f<ASTFctNameNode*> Parser.parseFctName() {
     dyn fctNameNode = this.createNode<ASTFctNameNode>();
 
-    if this.currentTokenIs(TokenType::OPERATOR) {
-        this.expect(TokenType::OPERATOR);
+    if this.consumeIf(TokenType::OPERATOR) {
         const String opName = this.parseOverloadableOp();
         fctNameNode.name = opName;
         fctNameNode.fqName = opName;
@@ -801,73 +809,51 @@ f<ASTFctNameNode*> Parser.parseFctName() {
 // Note: the lexer merges '<<' and '>>' into single SHL / SHR tokens. Returns the mangled op.* function
 // name for the matched operator.
 f<String> Parser.parseOverloadableOp() {
-    const TokenType tok = this.lexer.getToken().tokenType;
-    String name;
-    if tok == TokenType::PLUS {
-        name = String(OP_FCT_PLUS);
-    } else if tok == TokenType::MINUS {
-        name = String(OP_FCT_MINUS);
-    } else if tok == TokenType::MUL {
-        name = String(OP_FCT_MUL);
-    } else if tok == TokenType::DIV {
-        name = String(OP_FCT_DIV);
-    } else if tok == TokenType::EQUAL {
-        name = String(OP_FCT_EQUAL);
-    } else if tok == TokenType::NOT_EQUAL {
-        name = String(OP_FCT_NOT_EQUAL);
-    } else if tok == TokenType::LESS {
-        name = String(OP_FCT_LESS);
-    } else if tok == TokenType::GREATER {
-        name = String(OP_FCT_GREATER);
-    } else if tok == TokenType::LESS_EQUAL {
-        name = String(OP_FCT_LESS_EQUAL);
-    } else if tok == TokenType::GREATER_EQUAL {
-        name = String(OP_FCT_GREATER_EQUAL);
-    } else if tok == TokenType::SHL {
-        // '<<' is the shift left operator, if the parameter list or a template type list follows. Otherwise, it is the less
-        // operator, followed by the opening '<' of a template type list (e.g. 'operator<<T>(...)'), which stays pending
-        const TokenType nextTok = this.tokenAt(1l);
-        if nextTok == TokenType::LPAREN || nextTok == TokenType::LESS {
-            name = String(OP_FCT_SHL);
-        } else {
-            name = String(OP_FCT_LESS);
-            this.pendingLess = true;
-        }
-    } else if tok == TokenType::SHR {
-        name = String(OP_FCT_SHR);
-    } else if tok == TokenType::BITWISE_AND {
-        name = String(OP_FCT_BITWISE_AND);
-    } else if tok == TokenType::BITWISE_OR {
-        name = String(OP_FCT_BITWISE_OR);
-    } else if tok == TokenType::BITWISE_XOR {
-        name = String(OP_FCT_BITWISE_XOR);
-    } else if tok == TokenType::BITWISE_NOT {
-        name = String(OP_FCT_BITWISE_NOT);
-    } else if tok == TokenType::PLUS_EQUAL {
-        name = String(OP_FCT_PLUS_EQUAL);
-    } else if tok == TokenType::MINUS_EQUAL {
-        name = String(OP_FCT_MINUS_EQUAL);
-    } else if tok == TokenType::MUL_EQUAL {
-        name = String(OP_FCT_MUL_EQUAL);
-    } else if tok == TokenType::DIV_EQUAL {
-        name = String(OP_FCT_DIV_EQUAL);
-    } else if tok == TokenType::PLUS_PLUS {
-        name = String(OP_FCT_POSTFIX_PLUS_PLUS);
-    } else if tok == TokenType::MINUS_MINUS {
-        name = String(OP_FCT_POSTFIX_MINUS_MINUS);
-    } else if tok == TokenType::ASSIGN {
-        name = String(OP_FCT_ASSIGN);
+    const TokenType tokenType = this.lexer.getToken().tokenType;
+
+    // Subscript operator '[]'
+    if this.consumeIf(TokenType::LBRACKET) {
+        this.expect(TokenType::RBRACKET);
+        return String(OP_FCT_SUBSCRIPT);
     }
 
-    if tok == TokenType::LBRACKET { // Subscript operator '[]'
-        this.expect(TokenType::LBRACKET);
-        this.expect(TokenType::RBRACKET);
-        name = String(OP_FCT_SUBSCRIPT);
-    } else {
-        // All remaining overloadable operators are a single token
-        this.advance();
+    // All remaining overloadable operators are a single token
+    this.advance();
+    switch tokenType {
+        case TokenType::PLUS: { return String(OP_FCT_PLUS); }
+        case TokenType::MINUS: { return String(OP_FCT_MINUS); }
+        case TokenType::MUL: { return String(OP_FCT_MUL); }
+        case TokenType::DIV: { return String(OP_FCT_DIV); }
+        case TokenType::EQUAL: { return String(OP_FCT_EQUAL); }
+        case TokenType::NOT_EQUAL: { return String(OP_FCT_NOT_EQUAL); }
+        case TokenType::LESS: { return String(OP_FCT_LESS); }
+        case TokenType::GREATER: { return String(OP_FCT_GREATER); }
+        case TokenType::LESS_EQUAL: { return String(OP_FCT_LESS_EQUAL); }
+        case TokenType::GREATER_EQUAL: { return String(OP_FCT_GREATER_EQUAL); }
+        case TokenType::SHL: {
+            // '<<' is the shift left operator, if the parameter list or a template type list follows. Otherwise, it is the less
+            // operator, followed by the opening '<' of a template type list (e.g. 'operator<<T>(...)'), which stays pending
+            const TokenType nextTokenType = this.lexer.getToken().tokenType;
+            if nextTokenType == TokenType::LPAREN || nextTokenType == TokenType::LESS {
+                return String(OP_FCT_SHL);
+            }
+            this.pendingLess = true;
+            return String(OP_FCT_LESS);
+        }
+        case TokenType::SHR: { return String(OP_FCT_SHR); }
+        case TokenType::BITWISE_AND: { return String(OP_FCT_BITWISE_AND); }
+        case TokenType::BITWISE_OR: { return String(OP_FCT_BITWISE_OR); }
+        case TokenType::BITWISE_XOR: { return String(OP_FCT_BITWISE_XOR); }
+        case TokenType::BITWISE_NOT: { return String(OP_FCT_BITWISE_NOT); }
+        case TokenType::PLUS_EQUAL: { return String(OP_FCT_PLUS_EQUAL); }
+        case TokenType::MINUS_EQUAL: { return String(OP_FCT_MINUS_EQUAL); }
+        case TokenType::MUL_EQUAL: { return String(OP_FCT_MUL_EQUAL); }
+        case TokenType::DIV_EQUAL: { return String(OP_FCT_DIV_EQUAL); }
+        case TokenType::PLUS_PLUS: { return String(OP_FCT_POSTFIX_PLUS_PLUS); }
+        case TokenType::MINUS_MINUS: { return String(OP_FCT_POSTFIX_MINUS_MINUS); }
+        case TokenType::ASSIGN: { return String(OP_FCT_ASSIGN); }
     }
-    return name;
+    return String(); // LCOV_EXCL_LINE
 }
 
 // Override the type id of a struct, interface or union, if the fixed type id attribute is set
@@ -1090,8 +1076,7 @@ f<ASTGlobalVarDefNode*> Parser.parseGlobalVarDef() {
     this.expect(TokenType::TYPE_IDENTIFIER);
 
     // Parse initializer
-    if this.currentTokenIs(TokenType::ASSIGN) {
-        this.expect(TokenType::ASSIGN);
+    if this.consumeIf(TokenType::ASSIGN) {
         globalVarDefNode.hasValue = true;
         globalVarDefNode.constant = this.parseConstant();
     }
@@ -1117,8 +1102,7 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
     this.expect(TokenType::EXT);
 
     // Parse parse function prefix / procedure prefix
-    if this.currentTokenIs(TokenType::F) {
-        this.expect(TokenType::F);
+    if this.consumeIf(TokenType::F) {
         this.expect(TokenType::LESS);
         extDeclNode.returnType = this.parseDataType();
         extDeclNode.returnType.isReturnType = true;
@@ -1129,9 +1113,7 @@ f<ASTExtDeclNode*> Parser.parseExtDecl() {
 
     // Parse external function name
     extDeclNode.extFunctionName = this.getIdentifier(false);
-    if this.currentTokenIs(TokenType::IDENTIFIER) {
-        this.expect(TokenType::IDENTIFIER);
-    } else {
+    if !this.consumeIf(TokenType::IDENTIFIER) {
         this.expect(TokenType::TYPE_IDENTIFIER);
     }
 
@@ -1156,8 +1138,7 @@ f<ASTImportDefNode*> Parser.parseImportDef() {
     importDefNode.importPath = this.lexer.getToken().text;
     this.expect(TokenType::STRING_LIT);
 
-    if this.currentTokenIs(TokenType::AS) {
-        this.expect(TokenType::AS);
+    if this.consumeIf(TokenType::AS) {
         importDefNode.importName = this.getIdentifier(false);
         this.expect(TokenType::IDENTIFIER);
     } else {
@@ -1185,8 +1166,7 @@ f<ASTForLoopNode*> Parser.parseForLoop() {
     this.expect(TokenType::FOR);
 
     // Parse head
-    if this.currentTokenIs(TokenType::LPAREN) {
-        this.expect(TokenType::LPAREN);
+    if this.consumeIf(TokenType::LPAREN) {
         this.parseForHead(forLoopNode);
         this.expect(TokenType::RPAREN);
     } else {
@@ -1213,8 +1193,7 @@ f<ASTForeachLoopNode*> Parser.parseForeachLoop() {
     this.expect(TokenType::FOREACH);
 
     // Parse head
-    if this.currentTokenIs(TokenType::LPAREN) {
-        this.expect(TokenType::LPAREN);
+    if this.consumeIf(TokenType::LPAREN) {
         this.parseForeachHead(foreachLoopNode);
         this.expect(TokenType::RPAREN);
     } else {
@@ -1331,8 +1310,7 @@ f<ASTCaseBranchNode*> Parser.parseCaseBranch() {
 
     this.expect(TokenType::CASE);
     caseBranchNode.caseConstants.pushBack(cast<IVisitable*>(this.parseCaseConstant()));
-    while this.currentTokenIs(TokenType::COMMA) {
-        this.expect(TokenType::COMMA);
+    while this.consumeIf(TokenType::COMMA) {
         caseBranchNode.caseConstants.pushBack(cast<IVisitable*>(this.parseCaseConstant()));
     }
     this.expect(TokenType::COLON);
@@ -1398,8 +1376,7 @@ f<ASTTypeLstNode*> Parser.parseTypeLst() {
     dyn typeLstNode = this.createNode<ASTTypeLstNode>();
 
     typeLstNode.dataTypes.pushBack(this.parseDataType());
-    while this.currentTokenIs(TokenType::COMMA) {
-        this.expect(TokenType::COMMA);
+    while this.consumeIf(TokenType::COMMA) {
         typeLstNode.dataTypes.pushBack(this.parseDataType());
     }
 
@@ -1420,8 +1397,7 @@ f<ASTTypeLstWithEllipsisNode*> Parser.parseTypeLstWithEllipsis() {
     typeLstWithEllipsisNode.typeLst = this.concludeNode(typeLstNode);
 
     // Parse optional ellipsis
-    if this.currentTokenIs(TokenType::COMMA) {
-        this.expect(TokenType::COMMA);
+    if this.consumeIf(TokenType::COMMA) {
         this.expect(TokenType::ELLIPSIS);
         typeLstWithEllipsisNode.hasEllipsis = true;
     }
@@ -1433,8 +1409,7 @@ f<ASTTypeAltsLstNode*> Parser.parseTypeAltsLst() {
     dyn typeAltsLstNode = this.createNode<ASTTypeAltsLstNode>();
 
     typeAltsLstNode.dataTypes.pushBack(this.parseDataType());
-    while this.currentTokenIs(TokenType::BITWISE_OR) {
-        this.expect(TokenType::BITWISE_OR);
+    while this.consumeIf(TokenType::BITWISE_OR) {
         typeAltsLstNode.dataTypes.pushBack(this.parseDataType());
     }
 
@@ -1445,8 +1420,7 @@ f<ASTParamLstNode*> Parser.parseParamLst() {
     dyn paramLstNode = this.createNode<ASTParamLstNode>();
 
     paramLstNode.params.pushBack(this.parseDeclStmt());
-    while this.currentTokenIs(TokenType::COMMA) {
-        this.expect(TokenType::COMMA);
+    while this.consumeIf(TokenType::COMMA) {
         paramLstNode.params.pushBack(this.parseDeclStmt());
     }
 
@@ -1463,8 +1437,7 @@ f<ASTArgLstNode*> Parser.parseArgLst() {
     dyn argLstNode = this.createNode<ASTArgLstNode>();
 
     argLstNode.args.pushBack(this.parseAssignExpr());
-    while this.currentTokenIs(TokenType::COMMA) {
-        this.expect(TokenType::COMMA);
+    while this.consumeIf(TokenType::COMMA) {
         argLstNode.args.pushBack(this.parseAssignExpr());
     }
 
@@ -1475,8 +1448,7 @@ f<ASTEnumItemLstNode*> Parser.parseEnumItemLst() {
     dyn enumItemLstNode = this.createNode<ASTEnumItemLstNode>();
 
     enumItemLstNode.items.pushBack(this.parseEnumItem());
-    while this.currentTokenIs(TokenType::COMMA) {
-        this.expect(TokenType::COMMA);
+    while this.consumeIf(TokenType::COMMA) {
         enumItemLstNode.items.pushBack(this.parseEnumItem());
     }
 
@@ -1488,8 +1460,7 @@ f<ASTEnumItemNode*> Parser.parseEnumItem() {
 
     enumItemNode.itemName = this.getIdentifier(false);
     this.expect(TokenType::TYPE_IDENTIFIER);
-    if this.currentTokenIs(TokenType::ASSIGN) {
-        this.expect(TokenType::ASSIGN);
+    if this.consumeIf(TokenType::ASSIGN) {
         enumItemNode.hasValue = true;
         enumItemNode.itemValue = cast<unsigned int>(this.parseNumeric(this.lexer.getToken(), false, 32));
         this.expect(TokenType::INT_LIT);
@@ -1508,8 +1479,7 @@ f<ASTFieldNode*> Parser.parseField() {
     fieldNode.fieldName = this.getIdentifier(false);
     this.expect(TokenType::IDENTIFIER);
 
-    if this.currentTokenIs(TokenType::ASSIGN) {
-        this.expect(TokenType::ASSIGN);
+    if this.consumeIf(TokenType::ASSIGN) {
         fieldNode.defaultValue = this.parseTernaryExpr();
     }
 
@@ -1525,8 +1495,7 @@ f<ASTSignatureNode*> Parser.parseSignature() {
         signatureNode.qualifierLst = this.parseQualifierLst();
     }
 
-    if this.currentTokenIs(TokenType::F) {
-        this.expect(TokenType::F);
+    if this.consumeIf(TokenType::F) {
         this.expect(TokenType::LESS);
         signatureNode.hasReturnType = true;
         signatureNode.signatureType = SignatureType::TYPE_FUNCTION;
@@ -1544,8 +1513,7 @@ f<ASTSignatureNode*> Parser.parseSignature() {
     this.expect(TokenType::IDENTIFIER);
 
     // Parse typeLst (template type list)
-    if this.currentTokenIs(TokenType::LESS) {
-        this.expect(TokenType::LESS);
+    if this.consumeIf(TokenType::LESS) {
         signatureNode.hasTemplateTypes = true;
         signatureNode.templateTypeLst = this.parseTypeLst();
         this.consumeGenericClose();
@@ -1600,8 +1568,7 @@ f<ASTDeclStmtNode*> Parser.parseDeclStmt() {
     this.expect(TokenType::IDENTIFIER);
 
     // Parse initializer
-    if this.currentTokenIs(TokenType::ASSIGN) {
-        this.expect(TokenType::ASSIGN);
+    if this.consumeIf(TokenType::ASSIGN) {
         declStmtNode.hasAssignment = true;
         declStmtNode.assignExpr = this.parseAssignExpr();
     }
@@ -1637,26 +1604,19 @@ f<ASTQualifierLstNode*> Parser.parseQualifierLst() {
 f<ASTQualifierNode*> Parser.parseQualifier() {
     dyn qualifierNode = this.createNode<ASTQualifierNode>();
 
-    if this.currentTokenIs(TokenType::CONST) {
-        this.expect(TokenType::CONST);
+    if this.consumeIf(TokenType::CONST) {
         qualifierNode.qualifierType = QualifierType::CONST;
-    } else if this.currentTokenIs(TokenType::SIGNED) {
-        this.expect(TokenType::SIGNED);
+    } else if this.consumeIf(TokenType::SIGNED) {
         qualifierNode.qualifierType = QualifierType::SIGNED;
-    } else if this.currentTokenIs(TokenType::UNSIGNED) {
-        this.expect(TokenType::UNSIGNED);
+    } else if this.consumeIf(TokenType::UNSIGNED) {
         qualifierNode.qualifierType = QualifierType::UNSIGNED;
-    } else if this.currentTokenIs(TokenType::INLINE) {
-        this.expect(TokenType::INLINE);
+    } else if this.consumeIf(TokenType::INLINE) {
         qualifierNode.qualifierType = QualifierType::INLINE;
-    } else if this.currentTokenIs(TokenType::PUBLIC) {
-        this.expect(TokenType::PUBLIC);
+    } else if this.consumeIf(TokenType::PUBLIC) {
         qualifierNode.qualifierType = QualifierType::PUBLIC;
-    } else if this.currentTokenIs(TokenType::HEAP) {
-        this.expect(TokenType::HEAP);
+    } else if this.consumeIf(TokenType::HEAP) {
         qualifierNode.qualifierType = QualifierType::HEAP;
-    } else if this.currentTokenIs(TokenType::COMPOSE) {
-        this.expect(TokenType::COMPOSE);
+    } else if this.consumeIf(TokenType::COMPOSE) {
         qualifierNode.qualifierType = QualifierType::COMPOSE;
     } else {
         assert false;
@@ -1717,8 +1677,7 @@ f<ASTAttrLstNode*> Parser.parseAttrLst() {
     dyn attrLstNode = this.createNode<ASTAttrLstNode>();
 
     attrLstNode.attributes.pushBack(this.parseAttr());
-    while this.currentTokenIs(TokenType::COMMA) {
-        this.expect(TokenType::COMMA);
+    while this.consumeIf(TokenType::COMMA) {
         attrLstNode.attributes.pushBack(this.parseAttr());
     }
 
@@ -1731,8 +1690,7 @@ f<ASTAttrNode*> Parser.parseAttr() {
     // Parse attribute name
     String key = this.lexer.getToken().text;
     this.expect(TokenType::IDENTIFIER);
-    while this.currentTokenIs(TokenType::DOT) {
-        this.expect(TokenType::DOT);
+    while this.consumeIf(TokenType::DOT) {
         key += ".";
         key += this.lexer.getToken().text;
         this.expect(TokenType::IDENTIFIER);
@@ -1740,8 +1698,7 @@ f<ASTAttrNode*> Parser.parseAttr() {
     attrNode.key = key;
 
     // Parse attribute value
-    if this.currentTokenIs(TokenType::ASSIGN) {
-        this.expect(TokenType::ASSIGN);
+    if this.consumeIf(TokenType::ASSIGN) {
         // Classify the value's type from the upcoming literal token
         // (values other than string/int/bool are rejected by later stages, not enforced here).
         const TokenType valueTok = this.lexer.getToken().tokenType;
@@ -1782,8 +1739,7 @@ f<ASTCaseConstantNode*> Parser.parseCaseConstant() {
         caseConstantNode.identifierFragments.pushBack(typeFragment);
         fqIdentifier += typeFragment;
         this.expect(TokenType::TYPE_IDENTIFIER);
-        while this.currentTokenIs(TokenType::SCOPE_ACCESS) {
-            this.expect(TokenType::SCOPE_ACCESS);
+        while this.consumeIf(TokenType::SCOPE_ACCESS) {
             const String fragment = this.getIdentifier(false);
             caseConstantNode.identifierFragments.pushBack(fragment);
             fqIdentifier += SCOPE_ACCESS_TOKEN;
@@ -1915,8 +1871,7 @@ f<IVisitable*> Parser.parseTernaryExpr() {
 
     // Parse both branches. The true branch is omitted in the shortened form (COND ?: FALSE_EXPR)
     this.expect(TokenType::QUESTION_MARK);
-    if this.currentTokenIs(TokenType::COLON) {
-        this.expect(TokenType::COLON);
+    if this.consumeIf(TokenType::COLON) {
         ternaryExprNode.isShortened = true;
         ternaryExprNode.falseExpr = this.parseLogicalOrExpr();
     } else {
@@ -1942,8 +1897,7 @@ f<IVisitable*> Parser.parseLogicalOrExpr() {
     logicalOrExprNode.operands.pushBack(firstOperand);
 
     // Parse remaining operands
-    while this.currentTokenIs(TokenType::LOGICAL_OR) {
-        this.expect(TokenType::LOGICAL_OR);
+    while this.consumeIf(TokenType::LOGICAL_OR) {
         logicalOrExprNode.operands.pushBack(this.parseLogicalAndExpr());
     }
 
@@ -1964,8 +1918,7 @@ f<IVisitable*> Parser.parseLogicalAndExpr() {
     logicalAndExprNode.operands.pushBack(firstOperand);
 
     // Parse remaining operands
-    while this.currentTokenIs(TokenType::LOGICAL_AND) {
-        this.expect(TokenType::LOGICAL_AND);
+    while this.consumeIf(TokenType::LOGICAL_AND) {
         logicalAndExprNode.operands.pushBack(this.parseBitwiseOrExpr());
     }
 
@@ -1986,8 +1939,7 @@ f<IVisitable*> Parser.parseBitwiseOrExpr() {
     bitwiseOrExprNode.operands.pushBack(firstOperand);
 
     // Parse remaining operands
-    while this.currentTokenIs(TokenType::BITWISE_OR) {
-        this.expect(TokenType::BITWISE_OR);
+    while this.consumeIf(TokenType::BITWISE_OR) {
         bitwiseOrExprNode.operands.pushBack(this.parseBitwiseXorExpr());
     }
 
@@ -2008,8 +1960,7 @@ f<IVisitable*> Parser.parseBitwiseXorExpr() {
     bitwiseXorExprNode.operands.pushBack(firstOperand);
 
     // Parse remaining operands
-    while this.currentTokenIs(TokenType::BITWISE_XOR) {
-        this.expect(TokenType::BITWISE_XOR);
+    while this.consumeIf(TokenType::BITWISE_XOR) {
         bitwiseXorExprNode.operands.pushBack(this.parseBitwiseAndExpr());
     }
 
@@ -2030,8 +1981,7 @@ f<IVisitable*> Parser.parseBitwiseAndExpr() {
     bitwiseAndExprNode.operands.pushBack(firstOperand);
 
     // Parse remaining operands
-    while this.currentTokenIs(TokenType::BITWISE_AND) {
-        this.expect(TokenType::BITWISE_AND);
+    while this.consumeIf(TokenType::BITWISE_AND) {
         bitwiseAndExprNode.operands.pushBack(this.parseEqualityExpr());
     }
 
@@ -2053,11 +2003,7 @@ f<IVisitable*> Parser.parseEqualityExpr() {
     equalityExprNode.operands.pushBack(firstOperand);
 
     // Extract operator
-    if this.currentTokenIs(TokenType::EQUAL) {
-        equalityExprNode.op = EqualityOp::OP_EQUAL;
-    } else {
-        equalityExprNode.op = EqualityOp::OP_NOT_EQUAL;
-    }
+    equalityExprNode.op = this.currentTokenIs(TokenType::EQUAL) ? EqualityOp::OP_EQUAL : EqualityOp::OP_NOT_EQUAL;
     this.advance();
 
     // Parse second operand
@@ -2081,16 +2027,14 @@ f<IVisitable*> Parser.parseRelationalExpr() {
     relationalExprNode.operands.pushBack(firstOperand);
 
     // Extract operator
-    if this.currentTokenIs(TokenType::LESS) {
-        relationalExprNode.op = RelationalOp::OP_LESS;
-    } else if this.currentTokenIs(TokenType::GREATER) {
-        relationalExprNode.op = RelationalOp::OP_GREATER;
-    } else if this.currentTokenIs(TokenType::LESS_EQUAL) {
-        relationalExprNode.op = RelationalOp::OP_LESS_EQUAL;
-    } else {
-        relationalExprNode.op = RelationalOp::OP_GREATER_EQUAL;
-    }
+    const TokenType tokenType = this.lexer.getToken().tokenType;
     this.advance();
+    switch tokenType {
+        case TokenType::LESS: { relationalExprNode.op = RelationalOp::OP_LESS; }
+        case TokenType::GREATER: { relationalExprNode.op = RelationalOp::OP_GREATER; }
+        case TokenType::LESS_EQUAL: { relationalExprNode.op = RelationalOp::OP_LESS_EQUAL; }
+        case TokenType::GREATER_EQUAL: { relationalExprNode.op = RelationalOp::OP_GREATER_EQUAL; }
+    }
 
     // Parse second operand
     relationalExprNode.operands.pushBack(this.parseShiftExpr());
@@ -2116,10 +2060,7 @@ f<IVisitable*> Parser.parseShiftExpr() {
     // Parse remaining operands
     while this.currentTokenIsOneOf(options, len(options)) {
         // Extract operator
-        ShiftOp op = ShiftOp::OP_SHIFT_RIGHT;
-        if this.currentTokenIs(TokenType::SHL) {
-            op = ShiftOp::OP_SHIFT_LEFT;
-        }
+        const ShiftOp op = this.currentTokenIs(TokenType::SHL) ? ShiftOp::OP_SHIFT_LEFT : ShiftOp::OP_SHIFT_RIGHT;
         shiftExprNode.opQueue.push(Pair<ShiftOp, QualType>(op, QualType(SuperType::TY_INVALID)));
         this.advance();
 
@@ -2147,10 +2088,7 @@ f<IVisitable*> Parser.parseAdditiveExpr() {
     // Parse remaining operands
     while this.currentTokenIsOneOf(options, len(options)) {
         // Extract operator
-        AdditiveOp op = AdditiveOp::OP_MINUS;
-        if this.currentTokenIs(TokenType::PLUS) {
-            op = AdditiveOp::OP_PLUS;
-        }
+        const AdditiveOp op = this.currentTokenIs(TokenType::PLUS) ? AdditiveOp::OP_PLUS : AdditiveOp::OP_MINUS;
         additiveExprNode.opQueue.push(Pair<AdditiveOp, QualType>(op, QualType(SuperType::TY_INVALID)));
         this.advance();
 
@@ -2228,22 +2166,16 @@ f<IVisitable*> Parser.parsePrefixUnaryExpr() {
 
     // Extract operator
     const TokenType tokenType = this.lexer.getToken().tokenType;
-    if tokenType == TokenType::MINUS {
-        prefixUnaryExprNode.op = PrefixUnaryOp::OP_MINUS;
-    } else if tokenType == TokenType::PLUS_PLUS {
-        prefixUnaryExprNode.op = PrefixUnaryOp::OP_PLUS_PLUS;
-    } else if tokenType == TokenType::MINUS_MINUS {
-        prefixUnaryExprNode.op = PrefixUnaryOp::OP_MINUS_MINUS;
-    } else if tokenType == TokenType::NOT {
-        prefixUnaryExprNode.op = PrefixUnaryOp::OP_NOT;
-    } else if tokenType == TokenType::BITWISE_NOT {
-        prefixUnaryExprNode.op = PrefixUnaryOp::OP_BITWISE_NOT;
-    } else if tokenType == TokenType::MUL {
-        prefixUnaryExprNode.op = PrefixUnaryOp::OP_DEREFERENCE;
-    } else {
-        prefixUnaryExprNode.op = PrefixUnaryOp::OP_ADDRESS_OF;
-    }
     this.advance();
+    switch tokenType {
+        case TokenType::MINUS: { prefixUnaryExprNode.op = PrefixUnaryOp::OP_MINUS; }
+        case TokenType::PLUS_PLUS: { prefixUnaryExprNode.op = PrefixUnaryOp::OP_PLUS_PLUS; }
+        case TokenType::MINUS_MINUS: { prefixUnaryExprNode.op = PrefixUnaryOp::OP_MINUS_MINUS; }
+        case TokenType::NOT: { prefixUnaryExprNode.op = PrefixUnaryOp::OP_NOT; }
+        case TokenType::BITWISE_NOT: { prefixUnaryExprNode.op = PrefixUnaryOp::OP_BITWISE_NOT; }
+        case TokenType::MUL: { prefixUnaryExprNode.op = PrefixUnaryOp::OP_DEREFERENCE; }
+        case TokenType::BITWISE_AND: { prefixUnaryExprNode.op = PrefixUnaryOp::OP_ADDRESS_OF; }
+    }
 
     // Parse operand
     prefixUnaryExprNode.prefixUnaryExpr = this.parsePrefixUnaryExpr();
@@ -2262,21 +2194,17 @@ f<IVisitable*> Parser.parsePostfixUnaryExpr() {
         postfixUnaryExprNode.postfixUnaryExpr = expr;
 
         // Extract operator
-        if this.currentTokenIs(TokenType::LBRACKET) {
-            this.expect(TokenType::LBRACKET);
+        if this.consumeIf(TokenType::LBRACKET) {
             postfixUnaryExprNode.op = PostfixUnaryOp::OP_SUBSCRIPT;
             postfixUnaryExprNode.subscriptIndexExpr = this.parseAssignExpr();
             this.expect(TokenType::RBRACKET);
-        } else if this.currentTokenIs(TokenType::DOT) {
-            this.expect(TokenType::DOT);
+        } else if this.consumeIf(TokenType::DOT) {
             postfixUnaryExprNode.op = PostfixUnaryOp::OP_MEMBER_ACCESS;
             postfixUnaryExprNode.identifier = this.getIdentifier(false);
             this.expect(TokenType::IDENTIFIER);
-        } else if this.currentTokenIs(TokenType::PLUS_PLUS) {
-            this.expect(TokenType::PLUS_PLUS);
+        } else if this.consumeIf(TokenType::PLUS_PLUS) {
             postfixUnaryExprNode.op = PostfixUnaryOp::OP_PLUS_PLUS;
-        } else if this.currentTokenIs(TokenType::MINUS_MINUS) {
-            this.expect(TokenType::MINUS_MINUS);
+        } else if this.consumeIf(TokenType::MINUS_MINUS) {
             postfixUnaryExprNode.op = PostfixUnaryOp::OP_MINUS_MINUS;
         } else {
             this.expect(TokenType::NOT);
@@ -2306,12 +2234,9 @@ f<ASTAtomicExprNode*> Parser.parseAtomicExpr() {
         String fqIdentifier = firstFragment;
         atomicExprNode.identifierFragments.pushBack(firstFragment);
         this.advance();
-        while this.currentTokenIs(TokenType::SCOPE_ACCESS) {
-            this.expect(TokenType::SCOPE_ACCESS);
+        while this.consumeIf(TokenType::SCOPE_ACCESS) {
             const String fragment = this.getIdentifier(false);
-            if this.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
-                this.expect(TokenType::TYPE_IDENTIFIER);
-            } else {
+            if !this.consumeIf(TokenType::TYPE_IDENTIFIER) {
                 this.expect(TokenType::IDENTIFIER);
             }
             atomicExprNode.identifierFragments.pushBack(fragment);
@@ -2330,8 +2255,7 @@ f<ASTAtomicExprNode*> Parser.parseAtomicExpr() {
 f<ASTValueNode*> Parser.parseValue() {
     dyn valueNode = this.createNode<ASTValueNode>();
 
-    if this.currentTokenIs(TokenType::NIL) {
-        this.expect(TokenType::NIL);
+    if this.consumeIf(TokenType::NIL) {
         this.expect(TokenType::LESS);
         valueNode.isNil = true;
         valueNode.nilType = this.parseDataType();
@@ -2358,10 +2282,7 @@ f<ASTConstantNode*> Parser.parseConstant() {
     dyn constantNode = this.createNode<ASTConstantNode>();
 
     // Detect an optional leading minus sign for numeric literals
-    const bool isNegative = this.currentTokenIs(TokenType::MINUS);
-    if isNegative {
-        this.expect(TokenType::MINUS);
-    }
+    const bool isNegative = this.consumeIf(TokenType::MINUS);
 
     const Token& token = this.lexer.getToken();
     if this.currentTokenIs(TokenType::DOUBLE_LIT) {
@@ -2437,16 +2358,13 @@ f<ASTFctCallNode*> Parser.parseFctCall() {
     const String fragment = this.lexer.getToken().text;
     fctCallNode.functionNameFragments.pushBack(fragment);
     fqFunctionName += fragment;
-    if this.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
-        this.expect(TokenType::TYPE_IDENTIFIER);
-    } else {
+    if !this.consumeIf(TokenType::TYPE_IDENTIFIER) {
         this.expect(TokenType::IDENTIFIER);
     }
     fctCallNode.fqFunctionName = fqFunctionName;
 
     // Template type list
-    if this.currentTokenIs(TokenType::LESS) {
-        this.expect(TokenType::LESS);
+    if this.consumeIf(TokenType::LESS) {
         fctCallNode.hasTemplateTypes = true;
         fctCallNode.templateTypeLst = this.parseTypeLst();
         this.consumeGenericClose();
@@ -2495,8 +2413,7 @@ f<ASTStructInstantiationNode*> Parser.parseStructInstantiation() {
     this.expect(TokenType::TYPE_IDENTIFIER);
     structInstantiationNode.fqStructName = fqStructName;
 
-    if this.currentTokenIs(TokenType::LESS) {
-        this.expect(TokenType::LESS);
+    if this.consumeIf(TokenType::LESS) {
         structInstantiationNode.hasTemplateTypes = true;
         structInstantiationNode.templateTypeLst = this.parseTypeLst();
         this.consumeGenericClose();
@@ -2700,8 +2617,7 @@ f<ASTCustomDataTypeNode*> Parser.parseCustomDataType() {
     customDataTypeNode.fqTypeName = fqTypeName;
 
     // Parse typeLst (template type list)
-    if this.currentTokenIs(TokenType::LESS) {
-        this.expect(TokenType::LESS);
+    if this.consumeIf(TokenType::LESS) {
         customDataTypeNode.templateTypeLst = cast<IVisitable*>(this.parseTypeLst());
         this.consumeGenericClose();
     }
@@ -2717,8 +2633,7 @@ f<ASTFunctionDataTypeNode*> Parser.parseFunctionDataType() {
     const bool wasParsingFieldType = this.isParsingFieldType;
     this.isParsingFieldType = false;
 
-    if this.currentTokenIs(TokenType::F) {
-        this.expect(TokenType::F);
+    if this.consumeIf(TokenType::F) {
         this.expect(TokenType::LESS);
         functionDataTypeNode.isFunction = true;
         functionDataTypeNode.returnType = this.parseDataType();
