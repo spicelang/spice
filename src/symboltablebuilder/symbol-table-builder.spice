@@ -907,80 +907,56 @@ p SymbolTableBuilder.applyLambdaAttr(ASTLambdaAttrNode* lambdaAttr, Scope* bodyS
     }
 }
 
-public f<Any> SymbolTableBuilder.visitLambdaFunc(ASTLambdaFuncNode* node) {
-
+/**
+ * Build the symbol table for a lambda: create its body scope, the 'result' variable of a lambda function and the param
+ * symbols, and visit its body or expression
+ *
+ * @param lambdaBase Lambda base node
+ * @param baseNode AST node of the lambda
+ * @param scopeId Scope id of the lambda
+ * @param lambdaAttr Lambda attributes, nil if the lambda has none
+ * @param hasResultVar Whether the lambda has a 'result' variable (lambda functions)
+ * @param body Body or expression of the lambda
+ */
+f<Any> SymbolTableBuilder.visitLambda(ASTLambdaBaseNode* lambdaBase, ASTNode* baseNode, const String& scopeId, ASTLambdaAttrNode* lambdaAttr, bool hasResultVar, IVisitable* body) {
     // Create scope for the lambda body
-    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
-    node.bodyScope = bodyScope;
+    Scope* bodyScope = this.currentScope.createChildScope(scopeId, ScopeType::LAMBDA_BODY, &baseNode.codeLoc);
+    lambdaBase.bodyScope = bodyScope;
     this.currentScope = bodyScope;
     // Requires capturing because the LLVM IR will end up in a separate function
     bodyScope.symbolTable.setCapturingRequired();
     // Set to async scope if this is an async lambda
-    this.applyLambdaAttr(node.lambdaAttr, bodyScope);
+    this.applyLambdaAttr(lambdaAttr, bodyScope);
 
     // Create symbol for 'result' variable
-    bodyScope.insert(String(RETURN_VARIABLE_NAME), cast<ASTNode*>(node));
-
-    // Create symbols for the parameters
-    if node.hasParams {
-        this.visit(node.paramLst);
+    if hasResultVar {
+        bodyScope.insert(String(RETURN_VARIABLE_NAME), baseNode);
     }
 
-    // Visit body
-    this.visit(node.body);
+    // Create symbols for the parameters
+    if lambdaBase.hasParams {
+        this.visit(lambdaBase.paramLst);
+    }
+
+    // Visit body or lambda expression
+    this.visit(body);
 
     // Leave lambda body scope
     this.currentScope = bodyScope.parent;
 
     return Any();
+}
+
+public f<Any> SymbolTableBuilder.visitLambdaFunc(ASTLambdaFuncNode* node) {
+    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), node.lambdaAttr, /*hasResultVar=*/true, node.body);
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaProc(ASTLambdaProcNode* node) {
-
-    // Create scope for the lambda body
-    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
-    node.bodyScope = bodyScope;
-    this.currentScope = bodyScope;
-    // Requires capturing because the LLVM IR will end up in a separate function
-    bodyScope.symbolTable.setCapturingRequired();
-    // Set to async scope if this is an async lambda
-    this.applyLambdaAttr(node.lambdaAttr, bodyScope);
-
-    // Create symbols for the parameters
-    if node.hasParams {
-        this.visit(node.paramLst);
-    }
-
-    // Visit body
-    this.visit(node.body);
-
-    // Leave lambda body scope
-    this.currentScope = bodyScope.parent;
-
-    return Any();
+    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), node.lambdaAttr, /*hasResultVar=*/false, node.body);
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaExpr(ASTLambdaExprNode* node) {
-
-    // Create scope for the lambda body
-    Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LAMBDA_BODY, &node.codeLoc);
-    node.bodyScope = bodyScope;
-    this.currentScope = bodyScope;
-    // Requires capturing because the LLVM IR will end up in a separate function
-    bodyScope.symbolTable.setCapturingRequired();
-
-    // Create symbols for the parameters
-    if node.hasParams {
-        this.visit(node.paramLst);
-    }
-
-    // Visit lambda expression
-    this.visit(node.lambdaExpr);
-
-    // Leave lambda body scope
-    this.currentScope = bodyScope.parent;
-
-    return Any();
+    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), nil<ASTLambdaAttrNode*>, /*hasResultVar=*/false, node.lambdaExpr);
 }
 
 public f<Any> SymbolTableBuilder.visitTernaryExpr(ASTTernaryExprNode* node) {
