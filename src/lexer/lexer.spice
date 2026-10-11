@@ -38,7 +38,6 @@ public p Lexer.ctor(const FilePath& filePath) {
         const bool isEof = token.tokenType == TokenType::EOF;
         this.tokens.pushBack(token);
         if isEof {
-            break;
         }
     }
 
@@ -597,154 +596,89 @@ f<Token> Lexer.consumeKeywordOrIdentifier(const CodeLoc& codeLoc) {
         this.reader.advance();
     } while isAlphaNum(this.reader.getChar()) || this.reader.getChar() == '_';
 
-    // Check if identifier is a keyword
-    if identifier == "double" {
-        return Token(TokenType::TYPE_DOUBLE, "double", codeLoc);
-    }
-    if identifier == "int" {
-        return Token(TokenType::TYPE_INT, "int", codeLoc);
-    }
-    if identifier == "short" {
-        return Token(TokenType::TYPE_SHORT, "short", codeLoc);
-    }
-    if identifier == "long" {
-        return Token(TokenType::TYPE_LONG, "long", codeLoc);
-    }
-    if identifier == "byte" {
-        return Token(TokenType::TYPE_BYTE, "byte", codeLoc);
-    }
-    if identifier == "char" {
-        return Token(TokenType::TYPE_CHAR, "char", codeLoc);
-    }
-    if identifier == "string" {
-        return Token(TokenType::TYPE_STRING, "string", codeLoc);
-    }
-    if identifier == "bool" {
-        return Token(TokenType::TYPE_BOOL, "bool", codeLoc);
-    }
-    if identifier == "dyn" {
-        return Token(TokenType::TYPE_DYN, "dyn", codeLoc);
-    }
-    if identifier == "const" {
-        return Token(TokenType::CONST, "const", codeLoc);
-    }
-    if identifier == "signed" {
-        return Token(TokenType::SIGNED, "signed", codeLoc);
-    }
-    if identifier == "unsigned" {
-        return Token(TokenType::UNSIGNED, "unsigned", codeLoc);
-    }
-    if identifier == "inline" {
-        return Token(TokenType::INLINE, "inline", codeLoc);
-    }
-    if identifier == "public" {
-        return Token(TokenType::PUBLIC, "public", codeLoc);
-    }
-    if identifier == "heap" {
-        return Token(TokenType::HEAP, "heap", codeLoc);
-    }
-    if identifier == "compose" {
-        return Token(TokenType::COMPOSE, "compose", codeLoc);
-    }
-    if identifier == "f" {
-        return Token(TokenType::F, "f", codeLoc);
-    }
-    if identifier == "p" {
-        return Token(TokenType::P, "p", codeLoc);
-    }
-    if identifier == "if" {
-        return Token(TokenType::IF, "if", codeLoc);
-    }
-    if identifier == "else" {
-        return Token(TokenType::ELSE, "else", codeLoc);
-    }
-    if identifier == "switch" {
-        return Token(TokenType::SWITCH, "switch", codeLoc);
-    }
-    if identifier == "case" {
-        return Token(TokenType::CASE, "case", codeLoc);
-    }
-    if identifier == "default" {
-        return Token(TokenType::DEFAULT, "default", codeLoc);
-    }
-    if identifier == "fallthrough" {
-        return Token(TokenType::FALLTHROUGH, "fallthrough", codeLoc);
-    }
-    if identifier == "assert" {
-        return Token(TokenType::ASSERT, "assert", codeLoc);
-    }
-    if identifier == "for" {
-        return Token(TokenType::FOR, "for", codeLoc);
-    }
-    if identifier == "foreach" {
-        return Token(TokenType::FOREACH, "foreach", codeLoc);
-    }
-    if identifier == "do" {
-        return Token(TokenType::DO, "do", codeLoc);
-    }
-    if identifier == "while" {
-        return Token(TokenType::WHILE, "while", codeLoc);
-    }
-    if identifier == "import" {
-        return Token(TokenType::IMPORT, "import", codeLoc);
-    }
-    if identifier == "break" {
-        return Token(TokenType::BREAK, "break", codeLoc);
-    }
-    if identifier == "continue" {
-        return Token(TokenType::CONTINUE, "continue", codeLoc);
-    }
-    if identifier == "return" {
-        return Token(TokenType::RETURN, "return", codeLoc);
-    }
-    if identifier == "as" {
-        return Token(TokenType::AS, "as", codeLoc);
-    }
-    if identifier == "struct" {
-        return Token(TokenType::STRUCT, "struct", codeLoc);
-    }
-    if identifier == "interface" {
-        return Token(TokenType::INTERFACE, "interface", codeLoc);
-    }
-    if identifier == "union" {
-        return Token(TokenType::UNION, "union", codeLoc);
-    }
-    if identifier == "type" {
-        return Token(TokenType::TYPE, "type", codeLoc);
-    }
-    if identifier == "enum" {
-        return Token(TokenType::ENUM, "enum", codeLoc);
-    }
-    if identifier == "operator" {
-        return Token(TokenType::OPERATOR, "operator", codeLoc);
-    }
-    if identifier == "alias" {
-        return Token(TokenType::ALIAS, "alias", codeLoc);
-    }
-    if identifier == "unsafe" {
-        return Token(TokenType::UNSAFE, "unsafe", codeLoc);
-    }
-    if identifier == "nil" {
-        return Token(TokenType::NIL, "nil", codeLoc);
-    }
-    if identifier == "main" {
-        return Token(TokenType::MAIN, "main", codeLoc);
-    }
-    if identifier == "ext" {
-        return Token(TokenType::EXT, "ext", codeLoc);
-    }
-    if identifier == "cast" {
-        return Token(TokenType::CAST, "cast", codeLoc);
-    }
-    if identifier == "true" {
-        return Token(TokenType::TRUE, "true", codeLoc);
-    }
-    if identifier == "false" {
-        return Token(TokenType::FALSE, "false", codeLoc);
-    }
+    // Keywords keep their text as token text, so only the token type needs to be looked up
+    return Token(this.getKeywordTokenType(identifier), identifier, codeLoc);
+}
 
-    // No keyword was matched -> treat as identifier
-    return Token(TokenType::IDENTIFIER, identifier, codeLoc);
+/**
+ * Map an identifier to its keyword token type.
+ *
+ * @param identifier Identifier text
+ * @return Token type of the keyword or IDENTIFIER, if the text is not a keyword
+ */
+f<TokenType> Lexer.getKeywordTokenType(const String& identifier) {
+    // Dispatch on the length first, so that an identifier is only compared against the keywords of the same length
+    switch identifier.getLength() {
+        case 1l: {
+            if identifier == "f" { return TokenType::F; }
+            if identifier == "p" { return TokenType::P; }
+        }
+        case 2l: {
+            if identifier == "if" { return TokenType::IF; }
+            if identifier == "do" { return TokenType::DO; }
+            if identifier == "as" { return TokenType::AS; }
+        }
+        case 3l: {
+            if identifier == "int" { return TokenType::TYPE_INT; }
+            if identifier == "dyn" { return TokenType::TYPE_DYN; }
+            if identifier == "for" { return TokenType::FOR; }
+            if identifier == "nil" { return TokenType::NIL; }
+            if identifier == "ext" { return TokenType::EXT; }
+        }
+        case 4l: {
+            if identifier == "long" { return TokenType::TYPE_LONG; }
+            if identifier == "byte" { return TokenType::TYPE_BYTE; }
+            if identifier == "char" { return TokenType::TYPE_CHAR; }
+            if identifier == "bool" { return TokenType::TYPE_BOOL; }
+            if identifier == "heap" { return TokenType::HEAP; }
+            if identifier == "else" { return TokenType::ELSE; }
+            if identifier == "case" { return TokenType::CASE; }
+            if identifier == "type" { return TokenType::TYPE; }
+            if identifier == "enum" { return TokenType::ENUM; }
+            if identifier == "main" { return TokenType::MAIN; }
+            if identifier == "cast" { return TokenType::CAST; }
+            if identifier == "true" { return TokenType::TRUE; }
+        }
+        case 5l: {
+            if identifier == "short" { return TokenType::TYPE_SHORT; }
+            if identifier == "const" { return TokenType::CONST; }
+            if identifier == "while" { return TokenType::WHILE; }
+            if identifier == "break" { return TokenType::BREAK; }
+            if identifier == "union" { return TokenType::UNION; }
+            if identifier == "alias" { return TokenType::ALIAS; }
+            if identifier == "false" { return TokenType::FALSE; }
+        }
+        case 6l: {
+            if identifier == "double" { return TokenType::TYPE_DOUBLE; }
+            if identifier == "string" { return TokenType::TYPE_STRING; }
+            if identifier == "signed" { return TokenType::SIGNED; }
+            if identifier == "inline" { return TokenType::INLINE; }
+            if identifier == "public" { return TokenType::PUBLIC; }
+            if identifier == "switch" { return TokenType::SWITCH; }
+            if identifier == "assert" { return TokenType::ASSERT; }
+            if identifier == "import" { return TokenType::IMPORT; }
+            if identifier == "return" { return TokenType::RETURN; }
+            if identifier == "struct" { return TokenType::STRUCT; }
+            if identifier == "unsafe" { return TokenType::UNSAFE; }
+        }
+        case 7l: {
+            if identifier == "compose" { return TokenType::COMPOSE; }
+            if identifier == "default" { return TokenType::DEFAULT; }
+            if identifier == "foreach" { return TokenType::FOREACH; }
+        }
+        case 8l: {
+            if identifier == "unsigned" { return TokenType::UNSIGNED; }
+            if identifier == "continue" { return TokenType::CONTINUE; }
+            if identifier == "operator" { return TokenType::OPERATOR; }
+        }
+        case 9l: {
+            if identifier == "interface" { return TokenType::INTERFACE; }
+        }
+        case 11l: {
+            if identifier == "fallthrough" { return TokenType::FALLTHROUGH; }
+        }
+    }
+    return TokenType::IDENTIFIER;
 }
 
 f<Token> Lexer.consumeTypeIdentifier(const CodeLoc& codeLoc) {
@@ -764,7 +698,6 @@ f<Token> Lexer.consumeLineComment(const CodeLoc& codeLoc) {
         // Check for comment end
         if this.reader.getChar() == '\n' {
             this.reader.advance(); // Consume '\n'
-            break;
         }
 
         comment += this.reader.getChar();
