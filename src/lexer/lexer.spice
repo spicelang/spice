@@ -38,6 +38,7 @@ public p Lexer.ctor(const FilePath& filePath) {
         const bool isEof = token.tokenType == TokenType::EOF;
         this.tokens.pushBack(token);
         if isEof {
+            break;
         }
     }
 
@@ -698,6 +699,7 @@ f<Token> Lexer.consumeLineComment(const CodeLoc& codeLoc) {
         // Check for comment end
         if this.reader.getChar() == '\n' {
             this.reader.advance(); // Consume '\n'
+            break;
         }
 
         comment += this.reader.getChar();
