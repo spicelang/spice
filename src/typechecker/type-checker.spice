@@ -6586,12 +6586,21 @@ p createDefaultDtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
     SourceFile* sourceFile = structScope.sourceFile;
 
     // Abort if the struct already has a destructor. See createDefaultCtorIfRequired for why the name registry is asked
-    // first and the struct scope only on top of it.
+    // first and the struct scope only on top of it. A registry entry that stems from the default dtor of the generic
+    // preset does not count for a manifestation, that has no dtor in its scope: Such a manifestation was substantiated
+    // before the preset got its default dtor, so it could not inherit it through its copied scope and has to create its own.
     const SymbolTableEntry* structEntry = spiceStruct.structBase.entry;
     const QualType structType = structEntry.getQualType();
     const String fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + DTOR_FUNCTION_NAME;
-    if sourceFile.getNameRegistryEntry(fqFctName) != nil<const NameRegistryEntry*> || hasDtor(structScope) {
+    const NameRegistryEntry* registryEntry = sourceFile.getNameRegistryEntry(fqFctName);
+    if hasDtor(structScope) {
         return;
+    }
+    if registryEntry != nil<const NameRegistryEntry*> {
+        const bool isPresetDefaultDtor = spiceStruct.structBase.isGenericSubstantiation() && registryEntry.targetEntry.name == getSymbolTableEntryNameDefaultDtor(node.codeLoc);
+        if !isPresetDefaultDtor {
+            return;
+        }
     }
 
     // Check we have field types, that require use to do anything in the destructor
