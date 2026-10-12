@@ -7,9 +7,13 @@ inputs:
   llvm-version:
     description: Git tag of the LLVM release to build
     default: llvmorg-23.1.3
+  cache:
+    description: >
+      Cache the LLVM build. Release builds turn this off, so that the LLVM of a release is always built from scratch
+    default: "true"
   cache-key-suffix:
-    description: Platform suffix of the LLVM cache key, e.g. linux-x64
-    required: true
+    description: Platform suffix of the LLVM cache key, e.g. linux-x64. Required if the cache is enabled
+    default: ""
   targets:
     description: Value of LLVM_TARGETS_TO_BUILD
     default: AArch64;X86;WebAssembly
@@ -31,6 +35,7 @@ runs:
 
     - name: Cache LLVM
       id: cache-llvm
+      if: inputs.cache == 'true'
       uses: actions/cache@v6
       with:
         path: ${{ github.workspace }}/llvm/build
@@ -45,6 +50,15 @@ runs:
         USE_CCACHE: ${{ inputs.use-ccache }}
         EXTRA_CMAKE_ARGS: ${{ inputs.extra-cmake-args }}
       run: |
+        # The tools that the LLVM build runs on the way (llvm-tblgen etc.) are built with gcc as well. On Windows, Git Bash puts
+        # the MinGW directory of Git for Windows in front of the PATH, so these tools would load its libstdc++ and libgcc
+        # DLLs instead of the ones of the gcc that built them and fail with 0xc0000139 (entry point not found)
+        if [ "$RUNNER_OS" = "Windows" ]; then
+          gcc_path="$(command -v gcc || true)"
+          if [ -n "$gcc_path" ]; then
+            PATH="$(dirname "$gcc_path"):$PATH"
+          fi
+        fi
         mkdir ./build
         cd ./build
         ccache_args=()

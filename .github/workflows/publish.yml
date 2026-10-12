@@ -5,18 +5,26 @@ on:
     tags:
       - '*'
 
-env:
-  # Keep in sync with the default of .github/actions/setup-llvm, until this workflow uses that action
-  LLVM_VERSION: "llvmorg-23.1.3"
-  GCC_VERSION: "16"
-
 jobs:
-  build-compiler-linux-x86:
-    name: Build compiler - Linux/x86_64
-    runs-on: ubuntu-26.04
+  build-compiler-linux:
+    name: Build compiler - ${{ matrix.name }}
+    runs-on: ${{ matrix.runs-on }}
     # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
     permissions:
       contents: read
+    strategy:
+      # The platforms are independent of each other, like separate jobs
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux/x86_64
+            runs-on: ubuntu-26.04
+            target-arch: amd64
+            artifact: spice-linux-x64
+          - name: Linux/AArch64
+            runs-on: ubuntu-26.04-arm
+            target-arch: aarch64
+            artifact: spice-linux-arm64
 
     steps:
       - name: Checkout
@@ -25,45 +33,29 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Dependencies
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
+      - name: Setup Linux toolchain
+        uses: ./.github/actions/setup-linux-toolchain
+        with:
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
           # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm).
-          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
+          packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq clang
+          # Neither the faster linker nor the ccache is used for release builds
+          use-mold: "false"
+          use-ccache: "false"
 
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Build LLVM
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
-            -DLLVM_BUILD_TOOLS=OFF \
-            -DLLVM_INCLUDE_TESTS=OFF \
-            -DLLVM_INCLUDE_EXAMPLES=OFF \
-            -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            -DLLVM_ENABLE_ZLIB=OFF \
-            -DLLVM_ENABLE_ZSTD=OFF \
-            ../llvm
-          cmake --build .
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
+        with:
+          # Release builds always build LLVM from scratch
+          cache: "false"
+          targets: AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86
+          use-ccache: "false"
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3 -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_ZSTD=OFF
 
       - name: Download Libs
         # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings. With the GCC
         # toolchain, since the compiler links the TPDE archives statically together with its libstdc++
         env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
           CC: gcc
           CXX: g++
         run: python setup-deps.py --tpde
@@ -91,8 +83,6 @@ jobs:
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
           # Back the TPDE backend of the compiler with the TPDE libraries, that setup-deps.py built. The flags have the layout
           # the compiler derives from a std that ships them (see getStdTPDEFlags).
@@ -105,7 +95,7 @@ jobs:
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \
             --build-var SPICE_TARGET_OS="linux" \
-            --build-var SPICE_TARGET_ARCH="amd64" \
+            --build-var SPICE_TARGET_ARCH="${{ matrix.target-arch }}" \
             --output spice \
             ../src/main.spice
           chmod +x spice
@@ -119,122 +109,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: spice-linux-x64
-          path: |
-            ./build/spice**
-            ./build/libbacktrace.a
-            ./build/runtime/**
-            ./build/tpde/**
-
-  build-compiler-linux-aarch64:
-    name: Build compiler - Linux/AArch64
-    runs-on: ubuntu-26.04-arm
-    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
-          persist-credentials: false
-
-      - name: Setup Dependencies
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
-          # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
-          # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm).
-          sudo apt-get install ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Build LLVM
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
-            -DLLVM_BUILD_TOOLS=OFF \
-            -DLLVM_INCLUDE_TESTS=OFF \
-            -DLLVM_INCLUDE_EXAMPLES=OFF \
-            -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            -DLLVM_ENABLE_ZLIB=OFF \
-            -DLLVM_ENABLE_ZSTD=OFF \
-            ../llvm
-          cmake --build .
-
-      - name: Download Libs
-        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings. With the GCC
-        # toolchain, since the compiler links the TPDE archives statically together with its libstdc++
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-          CC: gcc
-          CXX: g++
-        run: python setup-deps.py --tpde
-
-      - name: Collect std libraries
-        run: |
-          mkdir -p build && cd build
-          # The vendored libbacktrace that setup-deps.py built for this platform. Released packages ship it inside the std,
-          # and it is per-platform, so it has to travel with this job's binary - the release runner packages std/ from a
-          # plain checkout and cannot produce it.
-          cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
-          # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
-          mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
-          # The TPDE static libraries, headers and licenses, that setup-deps.py put into the std for the std TPDE bindings
-          # (std/bindings/tpde). Released Linux packages ship them inside the std as well, so they travel with this job's
-          # binary just like libbacktrace.
-          mkdir -p tpde && cp -r ../std/bindings/tpde/lib ../std/bindings/tpde/include ../std/bindings/tpde/LICENSES tpde/
-
-      - name: Fetch stage0 compiler
-        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
-        run: python fetch-stage0.py
-
-      - name: Build compiler
-        working-directory: build
-        env:
-          SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: |
-          # Back the TPDE backend of the compiler with the TPDE libraries, that setup-deps.py built. The flags have the layout
-          # the compiler derives from a std that ships them (see getStdTPDEFlags).
-          # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
-          # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
-          export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
-          # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner
-          ./stage0/spice build -O3 -lto --static --ignore-cache \
-            --build-var SPICE_VERSION="${{ github.ref_name }}" \
-            --build-var SPICE_GIT_HASH="${{ github.sha }}" \
-            --build-var SPICE_BUILT_BY="ghactions" \
-            --build-var SPICE_TARGET_OS="linux" \
-            --build-var SPICE_TARGET_ARCH="aarch64" \
-            --output spice \
-            ../src/main.spice
-          chmod +x spice
-          ./spice --version
-
-      - name: Run Checksec
-        working-directory: build
-        run: |
-          checksec --file=./spice --output=json | jq
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: spice-linux-arm64
+          name: ${{ matrix.artifact }}
           path: |
             ./build/spice**
             ./build/libbacktrace.a
@@ -258,26 +133,14 @@ jobs:
         run: |
           choco install ninja -y
 
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Build LLVM
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER=gcc `
-            -DCMAKE_CXX_COMPILER=g++ `
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" `
-            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" `
-            -DLLVM_BUILD_TOOLS=OFF `
-            -DLLVM_INCLUDE_TESTS=OFF `
-            -DLLVM_INCLUDE_EXAMPLES=OFF `
-            -DLLVM_INCLUDE_BENCHMARKS=OFF `
-            ../llvm
-          cmake --build .
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
+        with:
+          # Release builds always build LLVM from scratch
+          cache: "false"
+          targets: AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86
+          use-ccache: "false"
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
 
       # libbacktrace (deps/libbacktrace) builds with autotools, so setup-deps.py below needs a POSIX shell and
       # make. MSYS2 supplies both; 'path-type: inherit' keeps the runner's own PATH, so configure picks up the very
@@ -320,8 +183,6 @@ jobs:
           $workspace = "${{ github.workspace }}" -replace '\\', '/'
           $env:SPICE_STD_DIR = "$workspace/std"
           $env:SPICE_BOOTSTRAP_DIR = "$workspace/src"
-          $env:LLVM_LIB_DIR = "$workspace/llvm/build/lib"
-          $env:LLVM_INCLUDE_DIRS = "-I$workspace/llvm/llvm/include -I$workspace/llvm/build/include"
           # Linked statically, so it runs without the MinGW runtime DLLs
           ./stage0/spice.exe build -O3 -lto --static --ignore-cache `
             --build-var SPICE_VERSION="${{ github.ref_name }}" `
@@ -360,26 +221,14 @@ jobs:
       - name: Setup Mold
         uses: rui314/setup-mold@v1
 
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Build LLVM
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86" \
-            -DLLVM_BUILD_TOOLS=OFF \
-            -DLLVM_INCLUDE_TESTS=OFF \
-            -DLLVM_INCLUDE_EXAMPLES=OFF \
-            -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            ../llvm
-          cmake --build .
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
+        with:
+          # Release builds always build LLVM from scratch
+          cache: "false"
+          targets: AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86
+          use-ccache: "false"
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
 
       - name: Download Libs
         run: python setup-deps.py
@@ -403,8 +252,6 @@ jobs:
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
           SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: |
           # Linked dynamically, macOS does not support static executables
           ./stage0/spice build -O3 -lto --ignore-cache \
@@ -432,8 +279,7 @@ jobs:
   build-artifacts:
     name: Build artifacts
     needs: [
-      build-compiler-linux-x86,
-      build-compiler-linux-aarch64,
+      build-compiler-linux,
       build-compiler-windows-x86,
       build-compiler-macos-aarch64
     ]
