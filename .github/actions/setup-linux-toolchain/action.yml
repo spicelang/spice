@@ -5,12 +5,21 @@ description: >
   actions/cache/save, using the ccache-key output.
 
 inputs:
+  packages:
+    description: apt packages to install besides GCC and the ones of extra-packages, separated by spaces
+    default: ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev clang
   gcc-version:
     description: Major version of GCC to install and make the default
     default: "16"
   extra-packages:
     description: Additional apt packages, separated by spaces
     default: ""
+  use-mold:
+    description: Make mold the default linker
+    default: "true"
+  use-ccache:
+    description: Create the ccache dir and restore the ccache. The packages have to contain ccache
+    default: "true"
   ccache-key-suffix:
     description: Optional suffix after the platform in the ccache key, e.g. -coverage
     default: ""
@@ -27,21 +36,27 @@ runs:
       shell: bash
       env:
         GCC_VERSION: ${{ inputs.gcc-version }}
+        PACKAGES: ${{ inputs.packages }}
         EXTRA_PACKAGES: ${{ inputs.extra-packages }}
+        USE_CCACHE: ${{ inputs.use-ccache }}
       run: |
         sudo add-apt-repository ppa:ubuntu-toolchain-r/test
         sudo apt-get update
-        sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev "gcc-$GCC_VERSION" "g++-$GCC_VERSION" clang $EXTRA_PACKAGES
+        sudo apt-get install "gcc-$GCC_VERSION" "g++-$GCC_VERSION" $PACKAGES $EXTRA_PACKAGES
         sudo update-alternatives --install /usr/bin/gcc gcc "/usr/bin/gcc-$GCC_VERSION" "1$GCC_VERSION"
         sudo update-alternatives --install /usr/bin/g++ g++ "/usr/bin/g++-$GCC_VERSION" "1$GCC_VERSION"
         sudo update-alternatives --install /usr/bin/gcov gcov "/usr/bin/gcov-$GCC_VERSION" "1$GCC_VERSION"
-        mkdir -p ~/.cache/ccache
+        if [ "$USE_CCACHE" = "true" ]; then
+          mkdir -p ~/.cache/ccache
+        fi
 
     - name: Setup Mold
+      if: inputs.use-mold == 'true'
       uses: rui314/setup-mold@v1
 
     - name: Compute ccache key
       id: ccache-key
+      if: inputs.use-ccache == 'true'
       shell: bash
       env:
         PREFIX: ccache-${{ runner.os }}-${{ runner.arch }}
@@ -57,6 +72,7 @@ runs:
         } >> "$GITHUB_OUTPUT"
 
     - name: Restore CCache
+      if: inputs.use-ccache == 'true'
       uses: actions/cache/restore@v6
       with:
         path: ~/.cache/ccache
