@@ -7,6 +7,7 @@ on:
       - ci/composite-publish
     paths:
       - .github/workflows/test-actions.yml
+      - .github/actions/**
 
 jobs:
   linux:
@@ -54,10 +55,15 @@ jobs:
           grep -E "CMAKE_C_COMPILER:|LLVM_ENABLE_ZLIB:|LLVM_ENABLE_ZSTD:|CMAKE_C_COMPILER_LAUNCHER:" llvm/build/CMakeCache.txt
 
   windows:
-    name: Windows release inputs
+    name: Windows, ccache ${{ matrix.ccache }}
     runs-on: windows-2025-vs2026
     permissions:
       contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        # false: inputs of the release build, true: inputs of the CI workflows
+        ccache: ["false", "true"]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -65,14 +71,14 @@ jobs:
           persist-credentials: false
 
       - name: Setup Dependencies
-        run: choco install ninja -y
+        run: choco install ninja ccache -y
 
       - name: Setup LLVM
         uses: ./.github/actions/setup-llvm
         with:
           cache: "false"
           targets: X86
-          use-ccache: "false"
+          use-ccache: ${{ matrix.ccache }}
           extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
 
       - name: Check LLVM
