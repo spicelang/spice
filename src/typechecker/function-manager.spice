@@ -49,7 +49,7 @@ long ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = 0l;
  */
 public p setActiveFunctionLookupCache(LookupCache<Function>* cache) {
     unsafe {
-        ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+        ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = cast<long>(cache);
     }
 }
 
@@ -59,12 +59,10 @@ public p setActiveFunctionLookupCache(LookupCache<Function>* cache) {
  * @return Active lookup cache
  */
 f<LookupCache<Function>*> getActiveFunctionLookupCache() {
-    LookupCache<Function>* cache = nil<LookupCache<Function>*>;
     unsafe {
-        cache = cast<LookupCache<Function>*>(cast<byte*>(ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS));
+        result = cast<LookupCache<Function>*>(ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS);
     }
-    assert cache != nil<LookupCache<Function>*>;
-    return cache;
+    assert result != nil<LookupCache<Function>*>;
 }
 
 /**

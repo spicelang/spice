@@ -29,16 +29,12 @@ public type ParallelSection struct {
 
 public p ParallelSection.ctor() {
     this.active = true;
-    unsafe {
-        CONCURRENT_PASSES_RUNNING = true;
-    }
+    CONCURRENT_PASSES_RUNNING = true;
 }
 
 public p ParallelSection.dtor() {
     if this.active {
-        unsafe {
-            CONCURRENT_PASSES_RUNNING = false;
-        }
+        CONCURRENT_PASSES_RUNNING = false;
     }
 }
 
@@ -48,9 +44,7 @@ public p ParallelSection.dtor() {
  * @return Concurrent passes running or not
  */
 public f<bool> areConcurrentPassesRunning() {
-    unsafe {
-        return CONCURRENT_PASSES_RUNNING;
-    }
+    return CONCURRENT_PASSES_RUNNING;
 }
 
 /**
@@ -93,7 +87,7 @@ long ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = 0l;
  */
 public p setActiveSymbolRegistryMutex(RecursiveMutex* mutex) {
     unsafe {
-        ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = cast<long>(cast<byte*>(mutex));
+        ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = cast<long>(mutex);
     }
 }
 
@@ -110,7 +104,7 @@ public p setActiveSymbolRegistryMutex(RecursiveMutex* mutex) {
  */
 public f<RecursiveMutex*> getSymbolRegistryMutex() {
     unsafe {
-        result = cast<RecursiveMutex*>(cast<byte*>(ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS));
+        result = cast<RecursiveMutex*>(ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS);
     }
     assert result != nil<RecursiveMutex*>;
 }

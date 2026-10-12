@@ -1,7 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
-// Constants
-public const unsigned int BUILTIN_UNLIMITED_COUNT = 4294967295u; // Max value of unsigned int
+import "std/type/types";
+
 // Documented builtins
 public const string BUILTIN_FCT_NAME_PRINTF = "printf";
 public const string BUILTIN_FCT_NAME_SIZEOF = "sizeof";
@@ -60,7 +60,7 @@ public p BuiltinFunctionInfo.ctor(unsigned int minTemplateTypes, unsigned int ma
  * @return True if the given name is the name of a builtin function
  */
 public f<bool> lookupBuiltinFunction(const String& name, BuiltinFunctionInfo& info) {
-    const unsigned int unlimited = BUILTIN_UNLIMITED_COUNT;
+    const unsigned int unlimited = UINT_MAX_VALUE;
     if name == BUILTIN_FCT_NAME_PRINTF {
         info = BuiltinFunctionInfo(0u, 0u, 1u, unlimited);
     } else if name == BUILTIN_FCT_NAME_SIZEOF || name == BUILTIN_FCT_NAME_ALIGNOF || name == BUILTIN_FCT_NAME_TYPEID || name == BUILTIN_FCT_NAME_TYPENAME {

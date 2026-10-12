@@ -197,13 +197,9 @@ p mangleName(StringStream& out, const String& name, bool& nestedType) {
 f<Vector<String>> splitLikeGetline(const String& input, char delimiter) {
     Vector<String> tokens;
     String token;
-    const string rawInput = input.getRaw();
     const unsigned long length = input.getLength();
     for unsigned long i = 0l; i < length; i++ {
-        char c = '\0';
-        unsafe {
-            c = rawInput[i];
-        }
+        const char c = input[i];
         if c == delimiter {
             tokens.pushBack(token);
             token.clear();

@@ -44,7 +44,7 @@ unsigned long ACTIVE_ERROR_MANAGER_ADDRESS = 0ul;
  */
 public p setActiveErrorManager(ErrorManager* errorManager) {
     unsafe {
-        ACTIVE_ERROR_MANAGER_ADDRESS = cast<unsigned long>(cast<byte*>(errorManager));
+        ACTIVE_ERROR_MANAGER_ADDRESS = cast<unsigned long>(errorManager);
     }
 }
 
@@ -55,7 +55,7 @@ public p setActiveErrorManager(ErrorManager* errorManager) {
  */
 public f<ErrorManager*> getActiveErrorManager() {
     unsafe {
-        result = cast<ErrorManager*>(cast<byte*>(ACTIVE_ERROR_MANAGER_ADDRESS));
+        result = cast<ErrorManager*>(ACTIVE_ERROR_MANAGER_ADDRESS);
     }
     assert result != nil<ErrorManager*>;
 }

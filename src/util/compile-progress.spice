@@ -90,7 +90,7 @@ public p CompileProgress.dtor() {
     this.stopHeartbeat();
     this.clear();
     unsafe {
-        if ACTIVE_COMPILE_PROGRESS_ADDRESS == cast<unsigned long>(cast<byte*>(this)) {
+        if ACTIVE_COMPILE_PROGRESS_ADDRESS == cast<unsigned long>(this) {
             ACTIVE_COMPILE_PROGRESS_ADDRESS = 0ul;
         }
     }
@@ -127,7 +127,7 @@ public p CompileProgress.enable(bool runBackEnd, bool link, bool optimized, bool
 
     this.enabled = true;
     unsafe {
-        ACTIVE_COMPILE_PROGRESS_ADDRESS = cast<unsigned long>(cast<byte*>(this));
+        ACTIVE_COMPILE_PROGRESS_ADDRESS = cast<unsigned long>(this);
     }
     // The bar is drawn for the first time with the first source file, because a bar without any steps counts as complete
 }
@@ -389,7 +389,7 @@ public f<bool> shouldShowCompileProgress(const CliOptions& cliOptions) {
 public f<bool> isCompileProgressActive() {
     unsafe {
         if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return false; }
-        CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
+        CompileProgress* compileProgress = cast<CompileProgress*>(ACTIVE_COMPILE_PROGRESS_ADDRESS);
         return compileProgress.enabled;
     }
 }
@@ -403,7 +403,7 @@ public f<bool> isCompileProgressActive() {
 public p printAboveActiveCompileProgress(const String& output) {
     unsafe {
         if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return; }
-        CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
+        CompileProgress* compileProgress = cast<CompileProgress*>(ACTIVE_COMPILE_PROGRESS_ADDRESS);
         compileProgress.printAboveBar(output);
     }
 }
@@ -415,7 +415,7 @@ public p printAboveActiveCompileProgress(const String& output) {
 public p clearActiveCompileProgress() {
     unsafe {
         if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return; }
-        CompileProgress* compileProgress = cast<CompileProgress*>(cast<byte*>(ACTIVE_COMPILE_PROGRESS_ADDRESS));
+        CompileProgress* compileProgress = cast<CompileProgress*>(ACTIVE_COMPILE_PROGRESS_ADDRESS);
         compileProgress.clear();
     }
 }

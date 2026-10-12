@@ -5659,20 +5659,19 @@ f<Any> TypeChecker.visitBuiltinImplementsInterfaceCall(ASTFctCallNode* node) {
  * @return Successfully parsed or not
  */
 f<bool> parseIntLikeStoi(const String& input, int& output) {
-    const string rawInput = input.getRaw();
     const unsigned long length = input.getLength();
     unsigned long idx = 0l;
     char c = '\0';
     // Skip leading whitespace
     while idx < length {
-        unsafe { c = rawInput[idx]; }
+        c = input[idx];
         if c != ' ' && c != '\t' && c != '\n' && c != '\r' && c != '\f' && c != '\v' { break; }
         idx++;
     }
     // Sign
     bool isNegative = false;
     if idx < length {
-        unsafe { c = rawInput[idx]; }
+        c = input[idx];
         if c == '+' || c == '-' {
             isNegative = c == '-';
             idx++;
@@ -5682,7 +5681,7 @@ f<bool> parseIntLikeStoi(const String& input, int& output) {
     long value = 0l;
     unsigned long digitCount = 0l;
     while idx < length {
-        unsafe { c = rawInput[idx]; }
+        c = input[idx];
         if !isDecimalDigit(c) { break; }
         value = value * 10l + cast<long>(toInt(c) - toInt('0'));
         if value > 2147483648l { return false; } // Out of range

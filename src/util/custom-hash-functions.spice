@@ -42,7 +42,7 @@ public p hashCombine64(Hash& hash, Hash value) {
  */
 public f<Hash> hashPointer<T>(const T* value) {
     unsafe {
-        return cast<Hash>(cast<byte*>(value)) >> 3ul;
+        return cast<Hash>(value) >> 3ul;
     }
 }
 
