@@ -1,0 +1,109 @@
+# TEMPORARY: verifies the release-only inputs of the composite actions on this branch. Removed before the merge.
+name: Test actions (temporary)
+
+on:
+  push:
+    branches:
+      - ci/composite-publish
+    paths:
+      - .github/workflows/test-actions.yml
+
+jobs:
+  linux:
+    name: Linux release inputs
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Linux toolchain
+        id: toolchain
+        uses: ./.github/actions/setup-linux-toolchain
+        with:
+          packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq clang
+          use-mold: "false"
+          use-ccache: "false"
+
+      - name: Check the toolchain
+        run: |
+          command -v checksec jq ninja clang
+          gcc --version | head -1
+          g++ --version | head -1
+          ld --version | head -1
+          if ld --version | grep -qi mold; then echo "mold is the default linker"; exit 1; fi
+          if [ -d ~/.cache/ccache ]; then echo "ccache dir exists"; exit 1; fi
+          test -z "${{ steps.toolchain.outputs.ccache-key }}"
+
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
+        with:
+          cache: "false"
+          targets: X86
+          use-ccache: "false"
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3 -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_ZSTD=OFF
+
+      - name: Check LLVM
+        run: |
+          echo "LLVM_DIR=$LLVM_DIR"; echo "LLVM_LIB_DIR=$LLVM_LIB_DIR"; echo "LLVM_INCLUDE_DIRS=$LLVM_INCLUDE_DIRS"
+          test -f "$LLVM_LIB_DIR/libLLVMCore.a"
+          test -d "$LLVM_DIR"
+          grep -E "CMAKE_C_COMPILER:|LLVM_ENABLE_ZLIB:|LLVM_ENABLE_ZSTD:|CMAKE_C_COMPILER_LAUNCHER:" llvm/build/CMakeCache.txt
+
+  windows:
+    name: Windows release inputs
+    runs-on: windows-2025-vs2026
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Dependencies
+        run: choco install ninja -y
+
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
+        with:
+          cache: "false"
+          targets: X86
+          use-ccache: "false"
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
+
+      - name: Check LLVM
+        shell: bash
+        run: |
+          echo "LLVM_LIB_DIR=$LLVM_LIB_DIR"; echo "LLVM_INCLUDE_DIRS=$LLVM_INCLUDE_DIRS"
+          ls "$LLVM_LIB_DIR" | head -3
+          test -d "$LLVM_DIR"
+          grep -E "CMAKE_C_COMPILER:|CMAKE_C_COMPILER_LAUNCHER:" llvm/build/CMakeCache.txt
+
+  macos:
+    name: MacOS release inputs
+    runs-on: macos-26
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
+        with:
+          cache: "false"
+          targets: X86
+          use-ccache: "false"
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
+
+      - name: Check LLVM
+        run: |
+          echo "LLVM_LIB_DIR=$LLVM_LIB_DIR"
+          test -f "$LLVM_LIB_DIR/libLLVMCore.a"
+          grep -E "CMAKE_C_COMPILER:|CMAKE_C_COMPILER_LAUNCHER:" llvm/build/CMakeCache.txt
