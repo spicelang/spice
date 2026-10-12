@@ -1,0 +1,53 @@
+name: Setup Linux toolchain
+description: >
+  Installs the build dependencies and the GCC toolchain on an Ubuntu runner, sets up mold and restores the ccache.
+  The ccache is not saved by this action, because composite actions have no post step. Save it at the end of the job with
+  actions/cache/save, using the ccache-key output.
+
+inputs:
+  gcc-version:
+    description: Major version of GCC to install and make the default
+    default: "16"
+  extra-packages:
+    description: Additional apt packages, separated by spaces
+    default: ""
+  ccache-key-suffix:
+    description: Optional suffix after the platform in the ccache key, e.g. -coverage
+    default: ""
+
+outputs:
+  ccache-key:
+    description: Key under which the ccache has to be saved at the end of the job
+    value: ${{ steps.ccache-key.outputs.key }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Dependencies
+      shell: bash
+      env:
+        GCC_VERSION: ${{ inputs.gcc-version }}
+        EXTRA_PACKAGES: ${{ inputs.extra-packages }}
+      run: |
+        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+        sudo apt-get update
+        sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev "gcc-$GCC_VERSION" "g++-$GCC_VERSION" clang $EXTRA_PACKAGES
+        sudo update-alternatives --install /usr/bin/gcc gcc "/usr/bin/gcc-$GCC_VERSION" "1$GCC_VERSION"
+        sudo update-alternatives --install /usr/bin/g++ g++ "/usr/bin/g++-$GCC_VERSION" "1$GCC_VERSION"
+        sudo update-alternatives --install /usr/bin/gcov gcov "/usr/bin/gcov-$GCC_VERSION" "1$GCC_VERSION"
+        mkdir -p ~/.cache/ccache
+
+    - name: Setup Mold
+      uses: rui314/setup-mold@v1
+
+    - name: Compute ccache key
+      id: ccache-key
+      shell: bash
+      run: echo "key=ccache-${{ runner.os }}-${{ runner.arch }}${{ inputs.ccache-key-suffix }}-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+
+    - name: Restore CCache
+      uses: actions/cache/restore@v6
+      with:
+        path: ~/.cache/ccache
+        key: ${{ steps.ccache-key.outputs.key }}
+        restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-

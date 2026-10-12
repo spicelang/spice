@@ -16,7 +16,10 @@ updates:
 
   # GitHub Actions
   - package-ecosystem: github-actions
-    directory: .github/workflows/
+    # The composite actions use actions as well
+    directories:
+      - /.github/workflows
+      - /.github/actions/*
     schedule:
       interval: daily
       time: "04:00"
