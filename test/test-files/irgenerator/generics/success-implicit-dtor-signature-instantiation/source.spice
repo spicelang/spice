@@ -1,0 +1,41 @@
+type T dyn;
+
+type Tracker struct {
+    int id
+}
+
+p Tracker.ctor(int id) {
+    this.id = id;
+}
+
+p Tracker.dtor() {
+    printf("Tracker %d destroyed\n", this.id);
+}
+
+// Box has no user-defined dtor, so it gets an implicit one that destructs the tracker field
+type Box<T> struct {
+    T value
+    Tracker tracker
+}
+
+p Box.ctor(const T& value, int id) {
+    this.value = value;
+    this.tracker = Tracker(id);
+}
+
+// Box<int> is first substantiated by the return type of this function, before the implicit dtor of the generic Box is created.
+// The substantiation must nevertheless get its own implicit dtor
+f<Box<int>> makeBox(int id) {
+    return Box<int>(42, id);
+}
+
+f<int> main() {
+    {
+        Box<int> returned = makeBox(1);
+        printf("Value: %d\n", returned.value);
+    }
+    {
+        Box<int> constructed = Box<int>(7, 2);
+        printf("Value: %d\n", constructed.value);
+    }
+}
