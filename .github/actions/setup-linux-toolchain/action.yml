@@ -43,11 +43,22 @@ runs:
     - name: Compute ccache key
       id: ccache-key
       shell: bash
-      run: echo "key=ccache-${{ runner.os }}-${{ runner.arch }}${{ inputs.ccache-key-suffix }}-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+      env:
+        PREFIX: ccache-${{ runner.os }}-${{ runner.arch }}
+        SUFFIX: ${{ inputs.ccache-key-suffix }}
+      run: |
+        echo "key=$PREFIX$SUFFIX-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        # Fall back to the cache of the same kind of run first, then to the one of any run on this platform
+        {
+          echo "restore-keys<<EOF"
+          if [ -n "$SUFFIX" ]; then echo "$PREFIX$SUFFIX-"; fi
+          echo "$PREFIX-"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Restore CCache
       uses: actions/cache/restore@v6
       with:
         path: ~/.cache/ccache
         key: ${{ steps.ccache-key.outputs.key }}
-        restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+        restore-keys: ${{ steps.ccache-key.outputs.restore-keys }}
