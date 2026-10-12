@@ -129,9 +129,12 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Dependencies
-        run: |
-          choco install ninja -y
+      - name: Setup Windows toolchain
+        uses: ./.github/actions/setup-windows-toolchain
+        with:
+          packages: ninja
+          vcpkg-packages: ""
+          use-ccache: "false"
 
       - name: Setup LLVM
         uses: ./.github/actions/setup-llvm
@@ -218,8 +221,11 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Mold
-        uses: rui314/setup-mold@v1
+      - name: Setup macOS toolchain
+        uses: ./.github/actions/setup-macos-toolchain
+        with:
+          packages: ""
+          use-ccache: "false"
 
       - name: Setup LLVM
         uses: ./.github/actions/setup-llvm

@@ -1,0 +1,75 @@
+name: Setup macOS toolchain
+description: >
+  Sets up mold, installs the build dependencies with Homebrew and restores the ccache on a macOS runner. The ccache is not saved
+  by this action, because composite actions have no post step. Save it at the end of the job with actions/cache/save, using the
+  ccache-key output.
+
+inputs:
+  packages:
+    description: >
+      Homebrew packages to install, separated by spaces. If sqlite is among them, its pkg-config dir is added to PKG_CONFIG_PATH.
+      zstd is needed because the stage0 compiler loads Homebrew's libzstd. ccache is needed for use-ccache. Empty to install none
+    default: ccache graphviz sqlite zstd
+  use-mold:
+    description: Set up mold
+    default: "true"
+  use-ccache:
+    description: Create the ccache dir and restore the ccache
+    default: "true"
+  ccache-key-suffix:
+    description: Optional suffix after the platform in the ccache key, e.g. -coverage
+    default: ""
+
+outputs:
+  ccache-key:
+    description: Key under which the ccache has to be saved at the end of the job
+    value: ${{ steps.ccache-key.outputs.key }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Mold
+      if: inputs.use-mold == 'true'
+      uses: rui314/setup-mold@v1
+
+    - name: Setup Dependencies
+      if: inputs.packages != ''
+      shell: bash
+      env:
+        PACKAGES: ${{ inputs.packages }}
+      run: |
+        brew update
+        brew install $PACKAGES
+        case " $PACKAGES " in
+          *" sqlite "*) echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> "$GITHUB_ENV" ;;
+        esac
+
+    - name: Create ccache dir
+      if: inputs.use-ccache == 'true'
+      shell: bash
+      run: mkdir -p ~/Library/Caches/ccache
+
+    - name: Compute ccache key
+      id: ccache-key
+      if: inputs.use-ccache == 'true'
+      shell: bash
+      env:
+        PREFIX: ccache-${{ runner.os }}-${{ runner.arch }}
+        SUFFIX: ${{ inputs.ccache-key-suffix }}
+      run: |
+        echo "key=$PREFIX$SUFFIX-${{ github.sha }}" >> "$GITHUB_OUTPUT"
+        # Fall back to the cache of the same kind of run first, then to the one of any run on this platform
+        {
+          echo "restore-keys<<EOF"
+          if [ -n "$SUFFIX" ]; then echo "$PREFIX$SUFFIX-"; fi
+          echo "$PREFIX-"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    - name: Restore CCache
+      if: inputs.use-ccache == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: ~/Library/Caches/ccache
+        key: ${{ steps.ccache-key.outputs.key }}
+        restore-keys: ${{ steps.ccache-key.outputs.restore-keys }}
