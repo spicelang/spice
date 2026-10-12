@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="spice build" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="python3 build.py --build-type Debug &amp;&amp; build/spice build -d -O0 --ignore-cache --output build/test-project/test media/test-project/test.spice" />
+    <option name="SCRIPT_TEXT" value="python3 build.py --build-type Debug &amp;&amp; build/spice build -d -O0 --ignore-cache --output build/test-project/spice src/main.spice" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />
@@ -13,7 +13,7 @@
     <option name="EXECUTE_SCRIPT_FILE" value="false" />
     <envs>
       <env name="LLVM_LIB_DIR" value="$PROJECT_DIR$/../llvm-project-latest/build/lib" />
-      <env name="LLVM_INCLUDE_DIRS" value="-I$PROJECT_DIR$/../llvm-project-latest/llvm/include -I$PROJECT_DIR$/../llvm-project-latest/build/include" />
+      <env name="LLVM_INCLUDE_DIRS" value="-I/home/marc/Documents/Dev/llvm-project-latest/llvm/include -I/home/marc/Documents/Dev/llvm-project-latest/build/include" />
       <env name="SPICE_STD_DIR" value="$PROJECT_DIR$/std" />
       <env name="SPICE_BOOTSTRAP_DIR" value="$PROJECT_DIR$/src" />
     </envs>
