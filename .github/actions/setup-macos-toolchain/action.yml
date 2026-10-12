@@ -11,7 +11,7 @@ inputs:
       zstd is needed because the stage0 compiler loads Homebrew's libzstd. ccache is needed for use-ccache. Empty to install none
     default: ccache graphviz sqlite zstd
   use-mold:
-    description: Set up mold
+    description: Run rui314/setup-mold. It only acts on Linux, so this has no effect on macOS runners at the moment
     default: "true"
   use-ccache:
     description: Create the ccache dir and restore the ccache

@@ -90,7 +90,6 @@ jobs:
       - name: Check the release variant
         if: matrix.variant == 'release'
         run: |
-          command -v mold
           if [ -d ~/Library/Caches/ccache ]; then echo "ccache dir exists"; exit 1; fi
           if [ -n "${PKG_CONFIG_PATH:-}" ]; then echo "PKG_CONFIG_PATH is set: $PKG_CONFIG_PATH"; fi
           test -z "${{ steps.toolchain-release.outputs.ccache-key }}"
@@ -98,7 +97,7 @@ jobs:
       - name: Check the CI variant
         if: matrix.variant == 'ci'
         run: |
-          command -v mold; command -v ccache; command -v dot
+          command -v ccache; command -v dot
           test -d ~/Library/Caches/ccache
           echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH"
           case "$PKG_CONFIG_PATH" in *sqlite*pkgconfig*) ;; *) echo "sqlite pkg-config dir missing"; exit 1 ;; esac
