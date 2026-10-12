@@ -78,7 +78,7 @@ long ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS = 0l;
  */
 public p setActiveStructLookupCache(LookupCache<Struct>* cache) {
     unsafe {
-        ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+        ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS = cast<long>(cache);
     }
 }
 
@@ -88,12 +88,10 @@ public p setActiveStructLookupCache(LookupCache<Struct>* cache) {
  * @return Active lookup cache
  */
 f<LookupCache<Struct>*> getActiveStructLookupCache() {
-    LookupCache<Struct>* cache = nil<LookupCache<Struct>*>;
     unsafe {
-        cache = cast<LookupCache<Struct>*>(cast<byte*>(ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS));
+        result = cast<LookupCache<Struct>*>(ACTIVE_STRUCT_LOOKUP_CACHE_ADDRESS);
     }
-    assert cache != nil<LookupCache<Struct>*>;
-    return cache;
+    assert result != nil<LookupCache<Struct>*>;
 }
 
 /**

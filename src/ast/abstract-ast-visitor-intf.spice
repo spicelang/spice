@@ -112,7 +112,12 @@ public f<Any> IAbstractAstVisitor.visit(IVisitable* node) {
 // Depth-first structural traversal. Visitors can override this to customize the traversal of all default visit methods.
 #[ignoreUnusedReturnValue]
 public f<Any> IAbstractAstVisitor.visitChildren(ASTNode* node) {
-    return visitChildrenOf(node, this);
+    foreach ASTNode* child : node.children {
+        assert child != nil<ASTNode*>;
+        assert child.visitable != nil<IVisitable*>;
+        const Any _ = child.visitable.accept(this);
+    }
+    return Any();
 }
 
 public f<Any> IAbstractAstVisitor.visitEntry(ASTEntryNode* node) { return this.visitChildren(cast<ASTNode*>(node)); }

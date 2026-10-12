@@ -223,24 +223,15 @@ f<CompileTimeValue> IRGenerator.getCompileTimeValue(IVisitable* node) {
     return astNode.getCompileTimeValue(this.manIdx);
 }
 
-// Address of a symbol table entry, function or struct, which is used as map key (pointers cannot be hashed)
-f<long> getAddressKey(const byte* ptr) {
-    long address = 0l;
-    unsafe {
-        address = cast<long>(ptr);
-    }
-    return address;
-}
-
 f<long> getEntryKey(const SymbolTableEntry* entry) {
     unsafe {
-        return getAddressKey(cast<const byte*>(entry));
+        return cast<long>(entry);
     }
 }
 
 f<long> getFunctionKey(const model::Function* function) {
     unsafe {
-        return getAddressKey(cast<const byte*>(function));
+        return cast<long>(function);
     }
 }
 
@@ -6891,12 +6882,11 @@ f<llvm::Value> IRGenerator.generateTypeInfo(StructBase* spiceStruct) {
     QualTypeList interfaceTypes;
     const QualType& entryType = spiceStruct.entry.getQualType();
     if entryType.is(SuperType::TY_STRUCT) {
-        // StructBase is the first member of Struct, so both share the same address
-        Struct* spiceStructWithInterfaces = nil<Struct*>;
         unsafe {
-            spiceStructWithInterfaces = cast<Struct*>(spiceStruct);
+            // StructBase is the first member of Struct, so both share the same address
+            Struct* spiceStructWithInterfaces = cast<Struct*>(spiceStruct);
+            interfaceTypes = spiceStructWithInterfaces.interfaceTypes;
         }
-        interfaceTypes = spiceStructWithInterfaces.interfaceTypes;
     }
 
     // Build type info LLVM type

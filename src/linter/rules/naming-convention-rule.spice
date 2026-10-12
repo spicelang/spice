@@ -20,9 +20,7 @@ const string NAMING_CONVENTION_RULE_ID = "naming-convention";
  * Get the first char of a non-empty string
  */
 f<char> firstChar(const String& input) {
-    unsafe {
-        return input.getRaw()[0];
-    }
+    return input[0];
 }
 
 /**
@@ -44,13 +42,9 @@ f<bool> isPascalCase(const String& input) {
  */
 f<bool> isSnakeCase(const String& input) {
     if input.isEmpty() { return false; }
-    const string raw = input.getRaw();
     const unsigned long length = input.getLength();
     for unsigned long i = 0l; i < length; i++ {
-        char c = '\0';
-        unsafe {
-            c = raw[i];
-        }
+        const char c = input[i];
         if !isUpper(c) && c != '_' {
             return false;
         }

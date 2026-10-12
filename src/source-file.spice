@@ -1200,11 +1200,9 @@ p SourceFile.untrackNameRegistryTargetEntry(const SymbolTableEntry* targetEntry)
  * @return Address of the entry
  */
 f<long> getEntryAddress(const SymbolTableEntry* entry) {
-    long entryAddress = 0l;
     unsafe {
-        entryAddress = cast<long>(cast<byte*>(entry));
+        return cast<long>(entry);
     }
-    return entryAddress;
 }
 
 /**
@@ -1485,7 +1483,7 @@ public f<llvm::Type> SourceFile.getLLVMType(const symboltable::Type* rawType) {
     // Check if the type is already in the mapping
     long typeAddress = 0l;
     unsafe {
-        typeAddress = cast<long>(cast<byte*>(rawType));
+        typeAddress = cast<long>(rawType);
     }
     if this.typeToLLVMTypeMapping.contains(typeAddress) {
         return this.typeToLLVMTypeMapping.get(typeAddress);

@@ -47,7 +47,7 @@ long ACTIVE_TYPE_REGISTRY_ADDRESS = 0l;
  */
 public p setActiveTypeRegistry(TypeRegistry* registry) {
     unsafe {
-        ACTIVE_TYPE_REGISTRY_ADDRESS = cast<long>(cast<byte*>(registry));
+        ACTIVE_TYPE_REGISTRY_ADDRESS = cast<long>(registry);
     }
 }
 
@@ -58,7 +58,7 @@ public p setActiveTypeRegistry(TypeRegistry* registry) {
  */
 public f<TypeRegistry*> getActiveTypeRegistry() {
     unsafe {
-        return cast<TypeRegistry*>(cast<byte*>(ACTIVE_TYPE_REGISTRY_ADDRESS));
+        return cast<TypeRegistry*>(ACTIVE_TYPE_REGISTRY_ADDRESS);
     }
 }
 

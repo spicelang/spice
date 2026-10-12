@@ -38,7 +38,7 @@ long ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = 0l;
  */
 public p setActiveTypeNameDisambiguator(TypeNameDisambiguator* disambiguator) {
     unsafe {
-        ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = cast<long>(cast<byte*>(disambiguator));
+        ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = cast<long>(disambiguator);
     }
 }
 
@@ -49,7 +49,7 @@ public p setActiveTypeNameDisambiguator(TypeNameDisambiguator* disambiguator) {
  */
 f<TypeNameDisambiguator*> getActiveTypeNameDisambiguator() {
     unsafe {
-        result = cast<TypeNameDisambiguator*>(cast<byte*>(ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS));
+        result = cast<TypeNameDisambiguator*>(ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS);
     }
     assert result != nil<TypeNameDisambiguator*>;
 }

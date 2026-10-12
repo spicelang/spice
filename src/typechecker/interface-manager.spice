@@ -79,7 +79,7 @@ long ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = 0l;
  */
 public p setActiveInterfaceLookupCache(LookupCache<Interface>* cache) {
     unsafe {
-        ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+        ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = cast<long>(cache);
     }
 }
 
@@ -89,12 +89,10 @@ public p setActiveInterfaceLookupCache(LookupCache<Interface>* cache) {
  * @return Active lookup cache
  */
 f<LookupCache<Interface>*> getActiveInterfaceLookupCache() {
-    LookupCache<Interface>* cache = nil<LookupCache<Interface>*>;
     unsafe {
-        cache = cast<LookupCache<Interface>*>(cast<byte*>(ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS));
+        result = cast<LookupCache<Interface>*>(ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS);
     }
-    assert cache != nil<LookupCache<Interface>*>;
-    return cache;
+    assert result != nil<LookupCache<Interface>*>;
 }
 
 /**

@@ -156,16 +156,12 @@ public p CompileTimeValue.setStringValueOffset(unsigned long value) {
 
 // A bool occupies one byte, which is interpreted like a C++ bool (any non-zero value is true)
 public f<bool> CompileTimeValue.getBoolValue() {
-    unsafe {
-        const byte* valuePtr = this.getStorageAddress();
-        return *valuePtr != cast<byte>(0);
-    }
+    const byte* valuePtr = this.getStorageAddress();
+    return *valuePtr != cast<byte>(0);
 }
 public p CompileTimeValue.setBoolValue(bool value) {
-    unsafe {
-        byte* valuePtr = this.getStorageAddress();
-        *valuePtr = value ? cast<byte>(1) : cast<byte>(0);
-    }
+    byte* valuePtr = this.getStorageAddress();
+    *valuePtr = value ? cast<byte>(1) : cast<byte>(0);
 }
 
 public type IVisitable interface {
@@ -327,10 +323,9 @@ f<String> getSourceText(const String& sourceCode, long start, long stop) {
 f<char> getSourceChar(const String& sourceCode, long idx) {
     const String text = getSourceText(sourceCode, idx, idx);
     if text.isEmpty() { return '\0'; }
-    const string rawText = text.getRaw();
-    char c = '\0';
-    unsafe { c = rawText[0]; }
-    return c;
+    unsafe {
+        return text[0];
+    }
 }
 
 // Get the length of the interval [start, stop]
@@ -427,22 +422,6 @@ public f<String> ASTNode.getErrorMessage() {
         errorMessage += '^';
     }
     return errorMessage;
-}
-
-/**
- * Dispatch to all registered children of a node. Passes use this as the default behavior of every visit method they do not
- * implement themselves.
- *
- * @param node Node whose children should be visited
- * @param visitor Visitor to dispatch to
- */
-public f<Any> visitChildrenOf(ASTNode* node, IAbstractAstVisitor* visitor) {
-    foreach ASTNode* child : node.children {
-        assert child != nil<ASTNode*>;
-        assert child.visitable != nil<IVisitable*>;
-        const Any _ = child.visitable.accept(visitor);
-    }
-    return Any();
 }
 
 // ========================================================== EntryNode ==========================================================
@@ -2433,11 +2412,9 @@ public type ASTLambdaBaseNode struct {
  */
 public f<ASTLambdaBaseNode*> asLambdaBaseNode(ASTNode* node) {
     assert node.kind == ASTNodeKind::LAMBDA_FUNC || node.kind == ASTNodeKind::LAMBDA_PROC || node.kind == ASTNodeKind::LAMBDA_EXPR;
-    ASTLambdaBaseNode* lambdaBaseNode = nil<ASTLambdaBaseNode*>;
     unsafe {
-        lambdaBaseNode = cast<ASTLambdaBaseNode*>(node);
+        return cast<ASTLambdaBaseNode*>(node);
     }
-    return lambdaBaseNode;
 }
 
 public p ASTLambdaBaseNode.ctor(CodeLoc codeLoc) {
@@ -2541,11 +2518,9 @@ public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
  * @return Concrete node
  */
 public f<ConcreteNode*> downcast<ConcreteNode>(ASTNode* node) {
-    ConcreteNode* concreteNode = nil<ConcreteNode*>;
     unsafe {
-        concreteNode = cast<ConcreteNode*>(node.visitable);
+        return cast<ConcreteNode*>(node.visitable);
     }
-    return concreteNode;
 }
 
 /**
@@ -2555,11 +2530,9 @@ public f<ConcreteNode*> downcast<ConcreteNode>(ASTNode* node) {
  * @return Concrete node
  */
 public f<ConcreteNode*> downcast<ConcreteNode>(IVisitable* node) {
-    ConcreteNode* concreteNode = nil<ConcreteNode*>;
     unsafe {
-        concreteNode = cast<ConcreteNode*>(node);
+        return cast<ConcreteNode*>(node);
     }
-    return concreteNode;
 }
 
 /**
@@ -3745,11 +3718,9 @@ public f<byte*> ASTFunctionDataTypeNode.getASTNodeAddress() { unsafe { return ca
  * @return Address of the node
  */
 public f<long> getNodeAddress(const ASTNode* node) {
-    long address = 0l;
     unsafe {
-        address = cast<long>(cast<byte*>(node));
+        return cast<long>(node);
     }
-    return address;
 }
 
 /**

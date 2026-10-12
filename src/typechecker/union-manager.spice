@@ -75,7 +75,7 @@ long ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = 0l;
  */
 public p setActiveUnionLookupCache(LookupCache<Union>* cache) {
     unsafe {
-        ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = cast<long>(cast<byte*>(cache));
+        ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = cast<long>(cache);
     }
 }
 
@@ -85,12 +85,10 @@ public p setActiveUnionLookupCache(LookupCache<Union>* cache) {
  * @return Active lookup cache
  */
 f<LookupCache<Union>*> getActiveUnionLookupCache() {
-    LookupCache<Union>* cache = nil<LookupCache<Union>*>;
     unsafe {
-        cache = cast<LookupCache<Union>*>(cast<byte*>(ACTIVE_UNION_LOOKUP_CACHE_ADDRESS));
+        result = cast<LookupCache<Union>*>(ACTIVE_UNION_LOOKUP_CACHE_ADDRESS);
     }
-    assert cache != nil<LookupCache<Union>*>;
-    return cache;
+    assert result != nil<LookupCache<Union>*>;
 }
 
 /**
