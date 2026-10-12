@@ -102,7 +102,7 @@ jobs:
         # Only the execution output and exit code are compared, since the instrumentation changes the generated code. TPDE is
         # not used, since the TPDE backend is not tested in combination with the sanitizers. The empty TPDE_FLAGS disables it,
         # although the TPDE libraries are part of the std, because the previous step needs them
-        if: ${{ !cancelled() }}
+        if: ${{ success() || failure() }}
         env:
           LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
           LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
