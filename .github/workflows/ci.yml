@@ -7,17 +7,24 @@ on:
       - 'media/**'
       - '**.md'
 
-env:
-  LLVM_VERSION: "llvmorg-23.1.3"
-  GCC_VERSION: "16"
-
 jobs:
-  build-linux-x86:
-    name: Linux/x86_64
-    runs-on: ubuntu-26.04
+  build-linux:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runs-on }}
     # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
     permissions:
       contents: read
+    strategy:
+      # The platforms are independent of each other, like separate jobs
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux/x86_64
+            runs-on: ubuntu-26.04
+            platform: linux-x64
+          - name: Linux/AArch64
+            runs-on: ubuntu-26.04-arm
+            platform: linux-aarch64
 
     steps:
       - name: Checkout
@@ -26,61 +33,18 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Dependencies
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          mkdir -p ~/.cache/ccache
+      - name: Setup Linux toolchain
+        id: toolchain
+        uses: ./.github/actions/setup-linux-toolchain
 
-      - name: Setup Mold
-        uses: rui314/setup-mold@v1
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
         with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-x64
-
-      - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_BUILD_TOOLS=OFF \
-            -DLLVM_INCLUDE_TESTS=OFF \
-            -DLLVM_INCLUDE_EXAMPLES=OFF \
-            -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            ../llvm
-          cmake --build .
+          cache-key-suffix: ${{ matrix.platform }}
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
 
       - name: Download Libs
         # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
         run: python setup-deps.py --tpde
 
       - name: Fetch stage0 compiler
@@ -89,22 +53,16 @@ jobs:
 
       - name: Run Test target
         # Builds the compiler with the stage0 compiler, then runs all test cases against it
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: python test/run-tests.py --build-compiler build/stage0/spice --is-github-actions
 
       - name: Bootstrap until fixed point
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: python bootstrap.py --stage0-compiler build/stage0/spice
 
       - name: Upload bootstrap stage executables
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: bootstrap-stages-linux-x64
+          name: bootstrap-stages-${{ matrix.platform }}
           path: build/bootstrap
           retention-days: 7
 
@@ -113,111 +71,7 @@ jobs:
         if: always()
         with:
           path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-
-  build-linux-aarch64:
-    name: Linux/AArch64
-    runs-on: ubuntu-26.04-arm
-    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          submodules: recursive
-          persist-credentials: false
-
-
-      - name: Setup Dependencies
-        run: |
-          sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-          sudo apt-get update
-          sudo apt-get install ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev gcc-${{ env.GCC_VERSION }} g++-${{ env.GCC_VERSION }} clang
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          sudo update-alternatives --install /usr/bin/gcov gcov /usr/bin/gcov-${{ env.GCC_VERSION }} 1${{ env.GCC_VERSION }}
-          mkdir -p ~/.cache/ccache
-
-      - name: Setup Mold
-        uses: rui314/setup-mold@v1
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
-
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
-        with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-linux-aarch64
-
-      - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_C_COMPILER=gcc \
-            -DCMAKE_CXX_COMPILER=g++ \
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_BUILD_TOOLS=OFF \
-            -DLLVM_INCLUDE_TESTS=OFF \
-            -DLLVM_INCLUDE_EXAMPLES=OFF \
-            -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            ../llvm
-          cmake --build .
-
-      - name: Download Libs
-        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings
-        env:
-          LLVM_DIR: ${{ github.workspace }}/llvm/build/lib/cmake/llvm
-        run: python setup-deps.py --tpde
-
-      - name: Fetch stage0 compiler
-        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
-        run: python fetch-stage0.py
-
-      - name: Run Test target
-        # Builds the compiler with the stage0 compiler, then runs all test cases against it
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python test/run-tests.py --build-compiler build/stage0/spice --is-github-actions
-
-      - name: Bootstrap until fixed point
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
-        run: python bootstrap.py --stage0-compiler build/stage0/spice
-
-      - name: Upload bootstrap stage executables
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: bootstrap-stages-linux-aarch64
-          path: build/bootstrap
-          retention-days: 7
-
-      - name: Save CCache
-        uses: actions/cache/save@v6
-        if: always()
-        with:
-          path: ~/.cache/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          key: ${{ steps.toolchain.outputs.ccache-key }}
 
   build-windows-x86:
     name: Windows/x86_64
@@ -255,36 +109,11 @@ jobs:
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
         with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-win-x64
-
-      - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache `
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache `
-            -DCMAKE_C_COMPILER=gcc `
-            -DCMAKE_CXX_COMPILER=g++ `
-            -DCMAKE_CXX_FLAGS_RELEASE="-O3" `
-            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" `
-            -DLLVM_BUILD_TOOLS=OFF `
-            -DLLVM_INCLUDE_TESTS=OFF `
-            -DLLVM_INCLUDE_EXAMPLES=OFF `
-            -DLLVM_INCLUDE_BENCHMARKS=OFF `
-            ../llvm
-          cmake --build .
+          cache-key-suffix: win-x64
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
 
       # libbacktrace (deps/libbacktrace) builds with autotools, so setup-deps.py below needs a POSIX shell and
       # make. MSYS2 supplies both; 'path-type: inherit' keeps the runner's own PATH, so configure picks up the very
@@ -310,15 +139,9 @@ jobs:
 
       - name: Run Test target
         # Builds the compiler with the stage0 compiler, then runs all test cases against it
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: python test/run-tests.py --build-compiler build/stage0/spice.exe --is-github-actions
 
       - name: Bootstrap until fixed point
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: python bootstrap.py --stage0-compiler build/stage0/spice.exe
 
       - name: Upload bootstrap stage executables
@@ -368,33 +191,10 @@ jobs:
           key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
           restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
 
-      - name: Clone LLVM
-        run: git clone --depth 1 --branch ${{ env.LLVM_VERSION }} https://github.com/llvm/llvm-project llvm
-
-      - name: Cache LLVM
-        id: cache-llvm
-        uses: actions/cache@v6
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
         with:
-          path: ${{ github.workspace }}/llvm/build
-          key: llvm-${{ env.LLVM_VERSION }}-macos-aarch64
-
-      - name: Build LLVM
-        if: steps.cache-llvm.outputs.cache-hit != 'true'
-        working-directory: llvm
-        run: |
-          mkdir ./build
-          cd ./build
-          cmake -GNinja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DLLVM_TARGETS_TO_BUILD="AArch64;X86;WebAssembly" \
-            -DLLVM_BUILD_TOOLS=OFF \
-            -DLLVM_INCLUDE_TESTS=OFF \
-            -DLLVM_INCLUDE_EXAMPLES=OFF \
-            -DLLVM_INCLUDE_BENCHMARKS=OFF \
-            ../llvm
-          cmake --build .
+          cache-key-suffix: macos-aarch64
 
       - name: Download Libs
         run: python setup-deps.py
@@ -405,15 +205,9 @@ jobs:
 
       - name: Run Test target
         # Builds the compiler with the stage0 compiler, then runs all test cases against it
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: python test/run-tests.py --build-compiler build/stage0/spice --is-github-actions
 
       - name: Bootstrap until fixed point
-        env:
-          LLVM_LIB_DIR: ${{ github.workspace }}/llvm/build/lib
-          LLVM_INCLUDE_DIRS: -I${{ github.workspace }}/llvm/llvm/include -I${{ github.workspace }}/llvm/build/include
         run: python bootstrap.py --stage0-compiler build/stage0/spice
 
       - name: Upload bootstrap stage executables
