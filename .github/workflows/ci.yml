@@ -91,23 +91,9 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Install Dependencies
-        run: |
-          choco install graphviz ccache ninja -y
-          echo "C:\Program Files\Graphviz\bin" >> $env:GITHUB_PATH
-          New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install sqlite3:x64-windows
-          # The compiler links via clang's GNU driver (--target=x86_64-w64-windows-gnu, MinGW), which reads
-          # LIBRARY_PATH for '-l' search dirs, not the MSVC-only LIB variable.
-          echo "LIBRARY_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib;$env:LIBRARY_PATH" >> $env:GITHUB_ENV
-          echo "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin" >> $env:GITHUB_PATH
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/AppData/Local/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+      - name: Setup Windows toolchain
+        id: toolchain
+        uses: ./.github/actions/setup-windows-toolchain
 
       - name: Setup LLVM
         uses: ./.github/actions/setup-llvm
@@ -157,7 +143,7 @@ jobs:
         if: always()
         with:
           path: ~/AppData/Local/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          key: ${{ steps.toolchain.outputs.ccache-key }}
 
   build-macos-aarch64:
     name: MacOS/AArch64
@@ -173,23 +159,9 @@ jobs:
           submodules: recursive
           persist-credentials: false
 
-      - name: Setup Mold
-        uses: rui314/setup-mold@v1
-
-      - name: Setup Dependencies
-        run: |
-          brew update
-          # zstd: the stage0 compiler loads Homebrew's libzstd
-          brew install ccache graphviz sqlite zstd
-          echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> $GITHUB_ENV
-          mkdir -p ~/Library/Caches/ccache
-
-      - name: Restore CCache
-        uses: actions/cache/restore@v6
-        with:
-          path: ~/Library/Caches/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
-          restore-keys: ccache-${{ runner.os }}-${{ runner.arch }}-
+      - name: Setup macOS toolchain
+        id: toolchain
+        uses: ./.github/actions/setup-macos-toolchain
 
       - name: Setup LLVM
         uses: ./.github/actions/setup-llvm
@@ -223,4 +195,4 @@ jobs:
         if: always()
         with:
           path: ~/Library/Caches/ccache
-          key: ccache-${{ runner.os }}-${{ runner.arch }}-${{ github.sha }}
+          key: ${{ steps.toolchain.outputs.ccache-key }}
