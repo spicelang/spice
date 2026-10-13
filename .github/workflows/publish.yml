@@ -89,22 +89,32 @@ jobs:
           # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
-          # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner
-          ./stage0/spice build -O3 -lto --static --ignore-cache \
-            --build-var SPICE_VERSION="${{ github.ref_name }}" \
-            --build-var SPICE_GIT_HASH="${{ github.sha }}" \
-            --build-var SPICE_BUILT_BY="ghactions" \
-            --build-var SPICE_TARGET_OS="linux" \
-            --build-var SPICE_TARGET_ARCH="${{ matrix.target-arch }}" \
-            --output spice \
-            ../src/main.spice
+          # Two-stage build for Full RELRO: the pinned stage0 compiler predates the RELRO linker flags, so what it links is
+          # not hardened. The stage1 compiler built from this checkout links with '-z relro -z now' and builds the released
+          # compiler. Stage1 lives outside the artifact upload globs.
+          build_compiler() {
+            # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner
+            "$1" build -O3 -lto --static --ignore-cache \
+              --build-var SPICE_VERSION="${{ github.ref_name }}" \
+              --build-var SPICE_GIT_HASH="${{ github.sha }}" \
+              --build-var SPICE_BUILT_BY="ghactions" \
+              --build-var SPICE_TARGET_OS="linux" \
+              --build-var SPICE_TARGET_ARCH="${{ matrix.target-arch }}" \
+              --output "$2" \
+              ../src/main.spice
+          }
+          mkdir -p stage1
+          build_compiler ./stage0/spice stage1/spice
+          build_compiler ./stage1/spice spice
           chmod +x spice
           ./spice --version
 
       - name: Run Checksec
         working-directory: build
         run: |
-          checksec --file=./spice --output=json | jq
+          checksec --file=./spice --output=json | tee checksec.json | jq
+          # The release must be linked with Full RELRO
+          jq -e 'to_entries[0].value.relro == "full"' checksec.json
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
