@@ -50,7 +50,7 @@ jobs:
           cache: "false"
           targets: AArch64;AMDGPU;ARM;Mips;NVPTX;PowerPC;RISCV;WebAssembly;X86
           use-ccache: "false"
-          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3 -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_ZSTD=OFF
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3 -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_ZSTD=OFF -DLLVM_ENABLE_PIC=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 
       - name: Download Libs
         # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings. With the GCC
@@ -115,6 +115,8 @@ jobs:
           checksec --file=./spice --output=json | tee checksec.json | jq
           # The release must be linked with Full RELRO
           jq -e 'to_entries[0].value.relro == "full"' checksec.json
+          # ... and as a (static) PIE: ET_DYN instead of ET_EXEC
+          readelf -h ./spice | grep -E 'Type:\s+DYN'
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

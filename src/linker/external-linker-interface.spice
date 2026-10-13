@@ -66,7 +66,10 @@ public p ExternalLinkerInterface.prepare() {
     if this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
         this.addLinkerFlag("-shared");
     } else if this.cliOptions.staticLinking {
-        this.addLinkerFlag("-static");
+        // A static PIE on Linux, so that static executables get ASLR for their image as well. This needs all linked archives
+        // to be position independent (see setup-deps.py and the release workflow for the archives of the compiler itself)
+        const bool staticPie = this.isTargetLinux() && this.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+        this.addLinkerFlag(staticPie ? "-static-pie" : "-static");
     }
 
     // Windows linkers stamp the link time into the PE header. Leave it out, so that the same input always links to the same
@@ -89,8 +92,7 @@ public p ExternalLinkerInterface.prepare() {
 
     // Position independent executable on Linux: the code is always generated position independent (see the 'PIE Level' module
     // flag), so request a PIE explicitly, instead of relying on the default of the linker invoker (e.g. distributions, whose
-    // toolchain defaults to non-PIE). Static executables are excluded, because a static PIE requires all statically linked
-    // archives to be position independent as well, which the archives, that ship with the std, do not guarantee.
+    // toolchain defaults to non-PIE). Static executables are linked with '-static-pie' above.
     if this.isTargetLinux() && !this.cliOptions.staticLinking {
         this.addLinkerFlag("-pie");
     }
@@ -304,6 +306,10 @@ f<Vector<String>> ExternalLinkerInterface.getAdditionalSourceCompileArgs(const F
     const ExternalBinaryFinderResult linker = findLinker(this.cliOptions);
     const bool isGccInvoker = linkerInvoker.name == "gcc";
     Vector<String> args = this.getInvokerArgs(linker, isGccInvoker);
+    // Position independent code on Linux, because the object file is linked into a PIE or a shared library
+    if this.isTargetLinux() {
+        args.pushBack(String("-fPIC"));
+    }
     args.pushBack(String("-c"));
     args.pushBack(String("-o"));
     args.pushBack(String(objectFilePath.toString()));
