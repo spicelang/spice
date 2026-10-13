@@ -168,6 +168,8 @@ def build_tpde() -> None:
         "-DTPDE_ENABLE_ENCODEGEN=ON",
         # Spice links LLVM statically, so TPDE has to as well, to be linked into the same executable
         "-DTPDE_LINK_LLVM_STATIC=ON",
+        # The archives are linked into the compiler, that is released as a static PIE, so all of them have to be PIC
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
     ]
     if shutil.which("ninja"):
         configure_cmd += ["-G", "Ninja"]
