@@ -87,6 +87,14 @@ public p ExternalLinkerInterface.prepare() {
         return;
     }
 
+    // Position independent executable on Linux: the code is always generated position independent (see the 'PIE Level' module
+    // flag), so request a PIE explicitly, instead of relying on the default of the linker invoker (e.g. distributions, whose
+    // toolchain defaults to non-PIE). Static executables are excluded, because a static PIE requires all statically linked
+    // archives to be position independent as well, which the archives, that ship with the std, do not guarantee.
+    if this.isTargetLinux() && !this.cliOptions.staticLinking {
+        this.addLinkerFlag("-pie");
+    }
+
     // Stripping symbols, on request only: the symbol table is what a run-time symbolizer such as the stack trace runtime
     // resolves addresses against, so a stripped executable prints nothing but addresses. Darwin is excluded, because its
     // linker has no equivalent of '-Wl,-s'.
