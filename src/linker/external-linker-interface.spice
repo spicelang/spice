@@ -75,6 +75,13 @@ public p ExternalLinkerInterface.prepare() {
         this.addLinkerFlag("-Wl,--no-insert-timestamp");
     }
 
+    // Full RELRO on Linux: resolve all symbols at load time ('now') and remap the relocation sections, including the GOT, as
+    // read-only afterwards ('relro'). This takes away the GOT overwrite primitive of memory corruption exploits.
+    if this.isTargetLinux() && (this.cliOptions.outputContainer == OutputContainer::EXECUTABLE || this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY) {
+        this.addLinkerFlag("-Wl,-z,relro");
+        this.addLinkerFlag("-Wl,-z,now");
+    }
+
     // The following flags only make sense if we want to emit an executable
     if this.cliOptions.outputContainer != OutputContainer::EXECUTABLE {
         return;
@@ -609,6 +616,15 @@ public p ExternalLinkerInterface.requestLibMathLinkage() {
  */
 f<bool> ExternalLinkerInterface.isTargetWasm() {
     return this.cliOptions.targetTriple.isWasm();
+}
+
+/**
+ * Check if the configured target is a Linux based target
+ *
+ * @return Whether the target is Linux based
+ */
+f<bool> ExternalLinkerInterface.isTargetLinux() {
+    return this.cliOptions.targetTriple.isOSLinux();
 }
 
 /**
