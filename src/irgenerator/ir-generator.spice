@@ -2977,7 +2977,8 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
     this.generateScopeCleanupUpTo(cast<ASTNode*>(node), this.currentScope.getFunctionScope(), node.returnedLocals.get(this.manIdx));
     this.blockAlreadyTerminated = true;
 
-    // Create return instruction
+    // Create return instruction. The cleanup code is attributed to the closing braces of the scopes, the return to this statement
+    this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     this.insertReturn(returnValue);
 
     return Any();
@@ -2989,7 +2990,8 @@ public f<Any> IRGenerator.visitBreakStmt(ASTBreakStmtNode* node) {
     // Clean up all scopes between here and the loop/switch statement we are breaking out of
     this.generateScopeCleanupUpTo(cast<ASTNode*>(node), target.scope);
 
-    // Jump to destination block
+    // Jump to destination block. The cleanup code is attributed to the closing braces of the scopes, the jump to this statement
+    this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     this.insertJump(target.block);
 
     return Any();
@@ -3001,7 +3003,8 @@ public f<Any> IRGenerator.visitContinueStmt(ASTContinueStmtNode* node) {
     // Clean up all scopes between here and the loop statement we are continuing
     this.generateScopeCleanupUpTo(cast<ASTNode*>(node), target.scope);
 
-    // Jump to destination block
+    // Jump to destination block. The cleanup code is attributed to the closing braces of the scopes, the jump to this statement
+    this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     this.insertJump(target.block);
 
     return Any();
@@ -4075,6 +4078,7 @@ f<LLVMExprResult> IRGenerator.generateErrorPropagation(ASTPostfixUnaryExprNode* 
     // Clean up all scopes between here and the enclosing function/procedure/lambda body, then return the error
     this.generateScopeCleanupUpTo(cast<ASTNode*>(node), this.currentScope.getFunctionScope());
     this.blockAlreadyTerminated = true;
+    this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     this.insertReturn(propagatedResult);
 
     // Switch to exit block: unwrap the payload, which becomes the value of the whole expression

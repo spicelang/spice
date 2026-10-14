@@ -1,0 +1,48 @@
+// TEST: --debug-info=line-only
+
+// Jumps (return, break, continue, error propagation) are attributed to their own statement, not to the closing brace of
+// the outermost scope they clean up
+
+type Color enum { RED, GREEN, BLUE }
+
+f<string> getColorName(Color color) {
+    switch color {
+        case Color::RED: { return "red"; }
+        case Color::GREEN: { return "green"; }
+        case Color::BLUE: { return "blue"; }
+    }
+}
+
+f<int> sumUntil(int limit) {
+    int sum = 0;
+    for int i = 0; i < 10; i++ {
+        String label = String("item");
+        if i == 1 {
+            continue;
+        }
+        if i == limit {
+            break;
+        }
+        sum += i + cast<int>(label.getLength());
+    }
+    return sum;
+}
+
+f<Result<int>> mightFail(bool doFail) {
+    if doFail {
+        return err<int>(1, "failed");
+    }
+    return ok<int>(3);
+}
+
+f<Result<int>> propagate(bool doFail) {
+    int value = mightFail(doFail)!;
+    return ok<int>(value * 2);
+}
+
+f<int> main() {
+    printf("Color: %s\n", getColorName(Color::GREEN));
+    printf("Sum: %d\n", sumUntil(4));
+    Result<int> propagated = propagate(false);
+    printf("Propagated: %d\n", propagated.unwrap());
+}
