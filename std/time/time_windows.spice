@@ -20,7 +20,7 @@ ext f<int> gettimeofday(TimeVal*, TimeZone*);
 public f<long> getCurrentSecs() {
     TimeVal time = TimeVal{};
     gettimeofday(&time, nil<TimeZone*>);
-    return time.tvSec * 1000l;
+    return cast<long>(time.tvSec);
 }
 
 /**
