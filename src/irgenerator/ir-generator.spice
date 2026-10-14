@@ -3010,8 +3010,16 @@ public f<Any> IRGenerator.visitContinueStmt(ASTContinueStmtNode* node) {
     return Any();
 }
 
-public f<Any> IRGenerator.visitFallthroughStmt(ASTFallthroughStmtNode* _) {
-    // Jump to destination block
+public f<Any> IRGenerator.visitFallthroughStmt(ASTFallthroughStmtNode* node) {
+    // Clean up all scopes between here and the body of the case branch we are falling through from
+    Scope* caseBodyScope = this.currentScope;
+    while caseBodyScope.scopeType != ScopeType::CASE_BODY {
+        caseBodyScope = caseBodyScope.parent;
+    }
+    this.generateScopeCleanupUpTo(cast<ASTNode*>(node), caseBodyScope);
+
+    // Jump to destination block. The cleanup code is attributed to the closing braces of the scopes, the jump to this statement
+    this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     this.insertJump(this.fallthroughBlocks.top());
 
     return Any();

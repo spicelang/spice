@@ -1,0 +1,59 @@
+// A fallthrough leaves the body of its case branch, so it must run the same cleanup (dtor calls) as falling off the end of
+// that body. If it is nested in other scopes of the body (e.g. an if or a loop), it must clean up those as well. Locals,
+// that are declared after the fallthrough, are not constructed yet and must not be destructed.
+
+type Tracker struct {
+    string name
+}
+
+p Tracker.ctor(string name) {
+    this.name = name;
+    printf("ctor %s\n", name);
+}
+
+p Tracker.dtor() {
+    printf("dtor %s\n", this.name);
+}
+
+// Fallthrough directly in the case body
+p direct(int i) {
+    switch i {
+        case 1: {
+            Tracker t = Tracker("direct-1");
+            fallthrough;
+        }
+        case 2: {
+            Tracker t = Tracker("direct-2");
+        }
+        default: {}
+    }
+}
+
+// Fallthrough nested in an if and a loop within the case body; a local declared after the nested fallthrough
+p nested(int i, bool doFallthrough) {
+    switch i {
+        case 1: {
+            Tracker outer = Tracker("nested-outer");
+            for int j = 0; j < 3; j++ {
+                Tracker inLoop = Tracker("nested-loop");
+                if doFallthrough && j == 1 {
+                    Tracker inIf = Tracker("nested-if");
+                    fallthrough;
+                }
+            }
+            Tracker after = Tracker("nested-after");
+        }
+        case 2: {
+            printf("case 2\n");
+        }
+        default: {}
+    }
+}
+
+f<int> main() {
+    direct(1);
+    printf("---\n");
+    nested(1, true);
+    printf("---\n");
+    nested(1, false);
+}
