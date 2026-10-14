@@ -4,6 +4,14 @@ f<int> main() {
     // Words are wrapped at the given width, without splitting words that fit
     printColumn("The quick brown fox jumps over the lazy dog", 15u);
     printf("--\n");
+    // A word longer than the width is split at the width
+    printColumn("Supercalifragilistic word", 10u);
+    printf("--\n");
+    printColumn("abcdefghij", 4u);
+    printf("--\n");
+    // A width of zero is treated as one
+    printColumn("abc", 0u);
+    printf("--\n");
     // Text that fits stays in a single line, String overload
     printColumn(String("Short text"), 40u);
 }

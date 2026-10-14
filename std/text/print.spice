@@ -40,20 +40,26 @@ public inline p beep() {
 }
 
 /**
- * Print the given text wrapped into a column of the given width, breaking on whitespace
+ * Print the given text wrapped into a column of the given width, breaking on whitespace. Words, that are longer than the
+ * width, are split at the width.
  *
  * @param text Text to print
- * @param width Column width in characters
+ * @param width Column width in characters. Values below 1 are treated as 1
  */
 public p printColumn(string text, unsigned int width) {
     const unsigned long length = len(text);
+    const unsigned long columnWidth = width < 1u ? 1l : cast<unsigned long>(width);
     unsigned long i = 0l;
 
     while i < length {
         // Find the last word that fits within the width
-        unsigned long j = i + width;
+        unsigned long j = i + columnWidth;
         while j > i & j < length && !isWhitespace(text[j]) {
             j--;
+        }
+        // A word that is longer than the width has no break to fall back to, so split it at the width
+        if j == i {
+            j = i + columnWidth;
         }
         // Print the word
         for unsigned long k = i; k < j & k < length; k++ {
@@ -70,10 +76,11 @@ public p printColumn(string text, unsigned int width) {
 }
 
 /**
- * Print the given text wrapped into a column of the given width, breaking on whitespace
+ * Print the given text wrapped into a column of the given width, breaking on whitespace. Words, that are longer than the
+ * width, are split at the width.
  *
  * @param text Text to print
- * @param width Column width in characters
+ * @param width Column width in characters. Values below 1 are treated as 1
  */
 public p printColumn(const String& text, unsigned int width) {
     printColumn(text.getRaw(), width);
