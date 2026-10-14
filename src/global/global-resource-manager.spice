@@ -4,6 +4,7 @@
 import "std/type/types";
 import "std/data/vector";
 import "std/data/unordered-map";
+import "std/data/unordered-set";
 import "std/data/pair";
 import "std/time/timer";
 import "std/io/filepath";
@@ -12,6 +13,8 @@ import "std/os/system";
 import "std/bindings/llvm/llvm" as llvm;
 import "std/os/recursive-mutex";
 import "std/math/hash";
+import "std/text/format";
+import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -66,6 +69,7 @@ public type GlobalResourceManager struct {
     BlockAllocator<SourceFile> sourceFileAlloc
     public UnorderedMap<String, SourceFile*> sourceFiles // Maps the file paths to the source files owned by the pool above
     public Vector<SourceFile*> sourceFilesInCreationOrder // For a deterministic order where it matters (e.g. the test main)
+    UnorderedSet<String> objectFileStems // Lower-cased object file names of all source files, see reserveObjectFileStem
     String rootSourceFilePath // Path of the root source file, which the code locations are pretty-printed relative to
     public Vector<Pair<Struct*, bool>> pendingStructDefaultMemberDecisions
     public CliOptions& cliOptions
@@ -234,6 +238,28 @@ public f<Scope*> GlobalResourceManager.createScope(Scope* parent, SourceFile* so
     return scope;
 }
 
+/**
+ * Reserve the name of the object file of a source file (without extension), that no other source file of the compilation
+ * uses. All object files go to the same output dir, so source files with the same name in different dirs would otherwise
+ * overwrite each other's object file. The first source file keeps its plain name, the following ones get a numeric suffix.
+ * The names are compared case-insensitively, since the file systems of Windows and macOS are case-insensitive by default.
+ *
+ * @param sourceFilePath Path of the source file
+ * @return Unique object file name without extension
+ */
+public f<String> GlobalResourceManager.reserveObjectFileStem(const FilePath& sourceFilePath) {
+    FilePath fileName = FilePath(sourceFilePath.getFileName());
+    const String baseName = fileName.getBaseName();
+    String stem = baseName;
+    long suffix = 1l;
+    while this.objectFileStems.contains(toLower(stem)) {
+        suffix++;
+        stem = baseName + "-" + toString(suffix);
+    }
+    this.objectFileStems.insert(toLower(stem));
+    return stem;
+}
+
 public f<unsigned long> GlobalResourceManager.getNextCustomTypeId() {
     return this.nextCustomTypeId++;
 }
@@ -318,5 +344,35 @@ f<bool> testGetTotalLineCount() {
     removeTestDir(testDir);
     assert firstLineCount == 5l;
     assert totalLineCount == 7l;
+    return true;
+}
+
+#[test]
+f<bool> testReserveObjectFileStemIsUniquePerCompilation() {
+    String first;
+    String second;
+    String third;
+    String differentCase;
+    String otherName;
+    String suffixLookalike;
+    {
+        CliOptions cliOptions;
+        cliOptions.targetTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+        cliOptions.isNativeTarget = true;
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        first = resourceManager.reserveObjectFileStem(FilePath(String("project/shared.spice")));
+        second = resourceManager.reserveObjectFileStem(FilePath(String("project/sub/shared.spice")));
+        third = resourceManager.reserveObjectFileStem(FilePath(String("project/other/shared.spice")));
+        differentCase = resourceManager.reserveObjectFileStem(FilePath(String("project/upper/SHARED.spice")));
+        otherName = resourceManager.reserveObjectFileStem(FilePath(String("project/main.spice")));
+        // A source file, whose name looks like an already reserved name with suffix, gets a suffix itself
+        suffixLookalike = resourceManager.reserveObjectFileStem(FilePath(String("project/shared-2.spice")));
+    }
+    assert first == "shared";
+    assert second == "shared-2";
+    assert third == "shared-3";
+    assert differentCase == "SHARED-4";
+    assert otherName == "main";
+    assert suffixLookalike == "shared-2-2";
     return true;
 }

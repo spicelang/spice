@@ -1,0 +1,11 @@
+// The source files have the same name, but live in different dirs. Their object files must not overwrite each other
+import "shared" as rootShared;
+import "sub/shared" as subShared;
+// Differs only in case, which is the same file name on case-insensitive file systems
+import "upper/SHARED" as upperShared;
+
+f<int> main() {
+    printf("Root: %d\n", rootShared::getRootValue());
+    printf("Sub: %d\n", subShared::getSubValue());
+    printf("Upper: %d\n", upperShared::getUpperValue());
+}
