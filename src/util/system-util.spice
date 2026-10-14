@@ -5,6 +5,7 @@ import "std/os/os";
 import "std/data/vector";
 import "std/os/process";
 import "std/text/analysis";
+import "std/text/stringstream";
 import "std/os/env";
 import "std/io/file";
 import "std/io/filepath";
@@ -78,12 +79,12 @@ public f<int> run(const String& executablePath) {
  * @return Command string
  */
 public f<String> renderCommandForDisplay(const String& program, const Vector<String>& args) {
-    String command = program;
+    StringStream command;
+    command << program;
     foreach const String& arg : args {
-        command += " ";
-        command += arg;
+        command << " " << arg;
     }
-    return command;
+    return command.str();
 }
 
 /**
@@ -229,13 +230,13 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
                     return ExternalBinaryFinderResult{linkerInvoker, linkerInvokerPath};
                 }
             }
-        } else if isWindows() {
-            if isCommandAvailable(linkerInvoker) {
-                return ExternalBinaryFinderResult{linkerInvoker, String(linkerInvoker)};
-            }
-        } else {
-            panic(Error("Unsupported platform"));
-        }
+        } else if isWindows() {                                                          // LCOV_EXCL_LINE - coverage runs on Linux
+            if isCommandAvailable(linkerInvoker) {                                       // LCOV_EXCL_LINE - coverage runs on Linux
+                return ExternalBinaryFinderResult{linkerInvoker, String(linkerInvoker)}; // LCOV_EXCL_LINE - coverage runs on Linux
+            }                                                                            // LCOV_EXCL_LINE - coverage runs on Linux
+        } else {                                                                         // LCOV_EXCL_LINE
+            panic(Error("Unsupported platform"));                                        // LCOV_EXCL_LINE
+        }                                                                                // LCOV_EXCL_LINE
     }
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_INVOKER_NOT_FOUND, "No supported linker invoker was found on the system. Supported are: clang and gcc");
     abortWithError(error.errorMessage);
@@ -263,15 +264,15 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions) {
                 }
             }
         }
-    } else if isWindows() {
-        foreach const string linkerName : ["lld", "ld"] {
-            if isCommandAvailable(linkerName) {
-                return ExternalBinaryFinderResult{linkerName, String(linkerName)};
-            }
-        }
-    } else {
-        panic(Error("Unsupported platform"));
-    }
+    } else if isWindows() {                                                        // LCOV_EXCL_LINE - coverage runs on Linux
+        foreach const string linkerName : ["lld", "ld"] {                          // LCOV_EXCL_LINE - coverage runs on Linux
+            if isCommandAvailable(linkerName) {                                    // LCOV_EXCL_LINE - coverage runs on Linux
+                return ExternalBinaryFinderResult{linkerName, String(linkerName)}; // LCOV_EXCL_LINE - coverage runs on Linux
+            }                                                                      // LCOV_EXCL_LINE - coverage runs on Linux
+        }                                                                          // LCOV_EXCL_LINE - coverage runs on Linux
+    } else {                                                                       // LCOV_EXCL_LINE
+        panic(Error("Unsupported platform"));                                      // LCOV_EXCL_LINE
+    }                                                                              // LCOV_EXCL_LINE
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: mold, lld, gold and ld");
     abortWithError(error.errorMessage);
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
@@ -293,15 +294,15 @@ public f<ExternalBinaryFinderResult> findArchiver() {
                 }
             }
         }
-    } else if isWindows() {
-        foreach const string archiverName : ["llvm-lib", "lib"] {
-            if isCommandAvailable(archiverName) {
-                return ExternalBinaryFinderResult{archiverName, String(archiverName)};
-            }
-        }
-    } else {
-        panic(Error("Unsupported platform"));
-    }
+    } else if isWindows() {                                                            // LCOV_EXCL_LINE - coverage runs on Linux
+        foreach const string archiverName : ["llvm-lib", "lib"] {                      // LCOV_EXCL_LINE - coverage runs on Linux
+            if isCommandAvailable(archiverName) {                                      // LCOV_EXCL_LINE - coverage runs on Linux
+                return ExternalBinaryFinderResult{archiverName, String(archiverName)}; // LCOV_EXCL_LINE - coverage runs on Linux
+            }                                                                          // LCOV_EXCL_LINE - coverage runs on Linux
+        }                                                                              // LCOV_EXCL_LINE - coverage runs on Linux
+    } else {                                                                           // LCOV_EXCL_LINE
+        panic(Error("Unsupported platform"));                                          // LCOV_EXCL_LINE
+    }                                                                                  // LCOV_EXCL_LINE
     const LinkerError error = LinkerError(LinkerErrorType::ARCHIVER_NOT_FOUND, "No supported archiver was found on the system. Supported are: llvm-ar and ar");
     abortWithError(error.errorMessage);
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
@@ -476,11 +477,11 @@ public f<string> getOutputFileExtension(const CliOptions& cliOptions, OutputCont
 
     const String triple = String(cliOptions.targetTriple.value);
     if triple.isEmpty() {
-        if isWindows() {
-            return extensionsWindows[outputContainer];
-        } else if isMacOS() {
-            return extensionsMacos[outputContainer];
-        }
+        if isWindows() {                               // LCOV_EXCL_LINE - coverage runs on Linux
+            return extensionsWindows[outputContainer]; // LCOV_EXCL_LINE - coverage runs on Linux
+        } else if isMacOS() {                          // LCOV_EXCL_LINE - coverage runs on Linux
+            return extensionsMacos[outputContainer];   // LCOV_EXCL_LINE - coverage runs on Linux
+        }                                              // LCOV_EXCL_LINE - coverage runs on Linux
         return extensionsLinux[outputContainer];
     }
 
@@ -502,14 +503,14 @@ public f<string> getOutputFileExtension(const CliOptions& cliOptions, OutputCont
  * @return Installation directory
  */
 public f<FilePath> getSpiceBinDir() {
-    if isWindows() {
-        Result<string> userprofile = getEnv("USERPROFILE");
-        return FilePath(userprofile.unwrap()) / "spice" / "bin";
+    if isWindows() {                                             // LCOV_EXCL_LINE - coverage runs on Linux
+        Result<string> userprofile = getEnv("USERPROFILE");      // LCOV_EXCL_LINE - coverage runs on Linux
+        return FilePath(userprofile.unwrap()) / "spice" / "bin"; // LCOV_EXCL_LINE - coverage runs on Linux
     } else if isUnixBased() {
         return FilePath("/usr/local/bin");
-    } else {
-        panic(Error("Unsupported platform"));
-    }
+    } else {                                  // LCOV_EXCL_LINE
+        panic(Error("Unsupported platform")); // LCOV_EXCL_LINE
+    }                                         // LCOV_EXCL_LINE
 }
 // ─── tests ────────────────────────────────────────────────────────────────────
 
