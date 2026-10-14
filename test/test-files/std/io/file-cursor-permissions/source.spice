@@ -25,12 +25,12 @@ f<int> main() {
     assert file.getCursorPos() == 1ul;
     assert file.getSize() == 13ul;
     assert file.getCursorPos() == 1ul; // The size query restores the cursor
-    file.setCursorPos(7l);
+    file.setCursorPos(7l, SEEK_SET);
     assert file.readChar() == 'w';
-    file.setCursorPos(-1l, 2); // SEEK_END
+    file.setCursorPos(-1l, SEEK_END);
     assert file.readChar() == '!';
     file.setCursorPos(0l);
-    file.setCursorPos(4l, 1); // SEEK_CUR
+    file.setCursorPos(4l, SEEK_CUR);
     assert file.readChar() == 'o';
     bool _ = file.close();
 

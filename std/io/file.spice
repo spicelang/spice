@@ -52,10 +52,10 @@ const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
-// File seek modes
-const int SEEK_SET = 0;
-const int SEEK_CUR = 1;
-const int SEEK_END = 2;
+// File seek modes, usable as origin of File.setCursorPos
+public const int SEEK_SET = 0; // Beginning of the file
+public const int SEEK_CUR = 1; // Current cursor position
+public const int SEEK_END = 2; // End of the file
 
 const int EOF = -1;
 
