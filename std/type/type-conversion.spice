@@ -429,6 +429,8 @@ public f<String> toString(double input) {
  */
 public f<String> toString(double input, int precision) {
     const int length = snprintf(nil<char*>, 0l, "%.*f", precision, input);
+    // snprintf fails if the formatted result does not fit into an int
+    if length < 0 { panic(Error("Formatted double exceeds the maximum string length")); }
     result = String(length);
     snprintf(cast<char*>(result.getRaw()), length + 1l, "%.*f", precision, input);
 }
