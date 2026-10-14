@@ -23,15 +23,11 @@ unsigned long CREATED_TEST_DIRS = 0l;
  * @return Path of the created dir
  */
 public f<FilePath> makeUniqueTestDir(const string prefix) {
-    unsigned long dirIdx;
-    unsafe {
-        dirIdx = CREATED_TEST_DIRS++;
-    }
+    unsigned long dirIdx = CREATED_TEST_DIRS++;
     const String dirName = String(prefix) + "-" + toString(getCurrentMicros()) + "-" + toString(cast<long>(dirIdx));
-    const FilePath dir = FilePath(getTempDir()) / dirName.getRaw();
+    result = FilePath(getTempDir()) / dirName.getRaw();
     // Pass the path as is, because toGenericString() would convert the separators of the path in place
-    assert mkDirs(dir.toString(), MODE_ALL_RWX) == 0;
-    return dir;
+    assert mkDirs(result.toString(), MODE_ALL_RWX) == 0;
 }
 
 /**
@@ -41,14 +37,14 @@ public f<FilePath> makeUniqueTestDir(const string prefix) {
  */
 public p removeTestDir(const FilePath& dir) {
     Vector<String> args;
-    if isWindows() {
-        args.pushBack(String("/c"));
-        args.pushBack(String("rmdir"));
-        args.pushBack(String("/s"));
-        args.pushBack(String("/q"));
-        args.pushBack(String(dir.toNativeString()));
-        const Result<ProcessResult> _ = runProcessCaptured(String("cmd"), args);
-    } else {
+    if isWindows() {                                                             // LCOV_EXCL_LINE - coverage runs on Linux
+        args.pushBack(String("/c"));                                             // LCOV_EXCL_LINE - coverage runs on Linux
+        args.pushBack(String("rmdir"));                                          // LCOV_EXCL_LINE - coverage runs on Linux
+        args.pushBack(String("/s"));                                             // LCOV_EXCL_LINE - coverage runs on Linux
+        args.pushBack(String("/q"));                                             // LCOV_EXCL_LINE - coverage runs on Linux
+        args.pushBack(String(dir.toNativeString()));                             // LCOV_EXCL_LINE - coverage runs on Linux
+        const Result<ProcessResult> _ = runProcessCaptured(String("cmd"), args); // LCOV_EXCL_LINE - coverage runs on Linux
+    } else {                                                                     // LCOV_EXCL_LINE - coverage runs on Linux
         args.pushBack(String("-rf"));
         args.pushBack(String(dir.toString()));
         const Result<ProcessResult> _ = runProcessCaptured(String("rm"), args);

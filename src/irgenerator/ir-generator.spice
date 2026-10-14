@@ -46,7 +46,6 @@ import "bootstrap/symboltablebuilder/type-chain";
 import "bootstrap/symboltablebuilder/type-qualifiers";
 import "bootstrap/typechecker/builtin-functions";
 import "bootstrap/typechecker/function-manager";
-import "bootstrap/util/common-util";
 
 // Constants
 public const string ANON_GLOBAL_STRING_NAME = "anon.string.";

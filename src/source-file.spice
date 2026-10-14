@@ -31,7 +31,6 @@ import "bootstrap/exception/semantic-error";
 import "bootstrap/model/function" as model;
 import "bootstrap/util/compiler-warning";
 import "bootstrap/util/system-util";
-import "bootstrap/util/common-util";
 import "bootstrap/util/compile-progress";
 import "bootstrap/symboltablebuilder/symbol-table-entry";
 import "bootstrap/symboltablebuilder/scope";

@@ -23,18 +23,12 @@ public type SemanticErrorType enum {
     EXPORTED_SYMBOL_COLLISION,
     FUNCTION_DECLARED_TWICE,
     PROCEDURE_DECLARED_TWICE,
-    GENERIC_TYPE_DECLARED_TWICE,
-    STRUCT_WITH_ILLEGAL_NAME,
     STRUCT_INFINITE_SIZE,
-    STRUCT_DECLARED_TWICE,
     NO_MATCHING_CTOR_FOUND,
     COPY_CTOR_REQUIRED,
-    INTERFACE_DECLARED_TWICE,
     INTERFACE_METHOD_NOT_IMPLEMENTED,
     INVALID_DEFAULT_METHOD,
-    ENUM_DECLARED_TWICE,
     INVALID_SYMBOL_ACCESS,
-    DUPLICATE_ENUM_ITEM_NAME,
     DUPLICATE_ENUM_ITEM_VALUE,
     GLOBAL_OF_TYPE_DYN,
     GLOBAL_OF_INVALID_TYPE,
@@ -65,11 +59,9 @@ public type SemanticErrorType enum {
     INVALID_IMPORT_PATH,
     ACCESS_TO_NON_EXISTING_MEMBER,
     INVALID_MEMBER_ACCESS,
-    SCOPE_ACCESS_ONLY_IMPORTS,
     UNKNOWN_DATATYPE,
     UNKNOWN_ATTR,
     INVALID_ATTR_TARGET,
-    INVALID_ATTR_VALUE,
     MISSING_ATTR_VALUE,
     NUMBER_OF_FIELDS_NOT_MATCHING,
     FIELD_TYPE_NOT_MATCHING,
@@ -81,7 +73,6 @@ public type SemanticErrorType enum {
     EXPECTED_ERROR_TYPE,
     INVALID_SYSCALL_NUMBER_TYPE,
     SYSCALL_NUMBER_OUT_OF_RANGE,
-    TOO_MANY_SYSCALL_ARGS,
     BUILTIN_TEMPLATE_TYPE_COUNT_MISMATCH,
     BUILTIN_ARG_COUNT_MISMATCH,
     BUILTIN_SIGNATURE_MISMATCH,
@@ -100,16 +91,13 @@ public type SemanticErrorType enum {
     GENERIC_TYPE_NOT_IN_TEMPLATE,
     QUALIFIER_AT_ILLEGAL_CONTEXT,
     INSUFFICIENT_VISIBILITY,
-    JOIN_ARG_MUST_BE_TID,
     EXPECTED_GENERIC_TYPE,
     EXPECTED_NON_GENERIC_TYPE,
     EXPECTED_STRUCT_TYPE,
     EXPECTED_INTERFACE_TYPE,
     EXPECTED_COMPILE_TIME_VALUE,
     ALIAS_WITH_TEMPLATE_LIST,
-    INTERFACE_WITH_TEMPLATE_LIST,
     INVALID_TEMPLATE_TYPES,
-    EXPECTED_VALUE,
     EXPECTED_TYPE,
     UNSAFE_OPERATION_IN_SAFE_CONTEXT,
     ASSERTION_CONDITION_BOOL,
@@ -194,18 +182,12 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::EXPORTED_SYMBOL_COLLISION: { return "Multiple exported symbols with the same linker name"; }
         case SemanticErrorType::FUNCTION_DECLARED_TWICE: { return "Multiple declarations of a function"; }
         case SemanticErrorType::PROCEDURE_DECLARED_TWICE: { return "Multiple declarations of a procedure"; }
-        case SemanticErrorType::GENERIC_TYPE_DECLARED_TWICE: { return "Multiple declarations of a generic type with the same name"; }
-        case SemanticErrorType::STRUCT_WITH_ILLEGAL_NAME: { return "Struct name illegal"; }
         case SemanticErrorType::STRUCT_INFINITE_SIZE: { return "Struct with infinite size"; }
-        case SemanticErrorType::STRUCT_DECLARED_TWICE: { return "Multiple declarations of a struct with the same name"; }
         case SemanticErrorType::NO_MATCHING_CTOR_FOUND: { return "No matching ctor found"; }
         case SemanticErrorType::COPY_CTOR_REQUIRED: { return "Missing mandatory copy ctor"; }
-        case SemanticErrorType::INTERFACE_DECLARED_TWICE: { return "Multiple declarations of an interface with the same name"; }
         case SemanticErrorType::INTERFACE_METHOD_NOT_IMPLEMENTED: { return "Interface method not implemented"; }
         case SemanticErrorType::INVALID_DEFAULT_METHOD: { return "Invalid default method"; }
-        case SemanticErrorType::ENUM_DECLARED_TWICE: { return "Multiple declarations of an enum with the same name"; }
         case SemanticErrorType::INVALID_SYMBOL_ACCESS: { return "Invalid symbol access"; }
-        case SemanticErrorType::DUPLICATE_ENUM_ITEM_NAME: { return "Duplicate enum item name"; }
         case SemanticErrorType::DUPLICATE_ENUM_ITEM_VALUE: { return "Duplicate enum item value"; }
         case SemanticErrorType::GLOBAL_OF_TYPE_DYN: { return "Global of type dyn"; }
         case SemanticErrorType::GLOBAL_OF_INVALID_TYPE: { return "Global of invalid type"; }
@@ -236,11 +218,9 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::INVALID_IMPORT_PATH: { return "Invalid import path"; }
         case SemanticErrorType::ACCESS_TO_NON_EXISTING_MEMBER: { return "Access to non-existing member"; }
         case SemanticErrorType::INVALID_MEMBER_ACCESS: { return "Member access is only allowed on structs and Strings"; }
-        case SemanticErrorType::SCOPE_ACCESS_ONLY_IMPORTS: { return "Scope access is only allowed on imports"; }
         case SemanticErrorType::UNKNOWN_DATATYPE: { return "Unknown datatype"; }
         case SemanticErrorType::UNKNOWN_ATTR: { return "Unknown attribute"; }
         case SemanticErrorType::INVALID_ATTR_TARGET: { return "Invalid attribute target"; }
-        case SemanticErrorType::INVALID_ATTR_VALUE: { return "Invalid attribute value"; }
         case SemanticErrorType::MISSING_ATTR_VALUE: { return "Missing attribute value"; }
         case SemanticErrorType::NUMBER_OF_FIELDS_NOT_MATCHING: { return "Number of struct fields not matching declaration"; }
         case SemanticErrorType::FIELD_TYPE_NOT_MATCHING: { return "The type of a field value does not match the declaration"; }
@@ -252,7 +232,6 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::EXPECTED_ERROR_TYPE: { return "Expected error type"; }
         case SemanticErrorType::INVALID_SYSCALL_NUMBER_TYPE: { return "Invalid syscall number type"; }
         case SemanticErrorType::SYSCALL_NUMBER_OUT_OF_RANGE: { return "Syscall number out of range"; }
-        case SemanticErrorType::TOO_MANY_SYSCALL_ARGS: { return "Too many syscall args"; }
         case SemanticErrorType::BUILTIN_TEMPLATE_TYPE_COUNT_MISMATCH: { return "Builtin function template type count mismatch"; }
         case SemanticErrorType::BUILTIN_ARG_COUNT_MISMATCH: { return "Builtin function argument count mismatch"; }
         case SemanticErrorType::BUILTIN_SIGNATURE_MISMATCH: { return "Builtin function signature mismatch"; }
@@ -271,16 +250,13 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE: { return "Generic type not contained in template"; }
         case SemanticErrorType::QUALIFIER_AT_ILLEGAL_CONTEXT: { return "Qualifier at illegal context"; }
         case SemanticErrorType::INSUFFICIENT_VISIBILITY: { return "Insufficient symbol visibility"; }
-        case SemanticErrorType::JOIN_ARG_MUST_BE_TID: { return "Argument of join builtin must be a tid"; }
         case SemanticErrorType::EXPECTED_GENERIC_TYPE: { return "Expected a generic type"; }
         case SemanticErrorType::EXPECTED_NON_GENERIC_TYPE: { return "Expected a non-generic type"; }
         case SemanticErrorType::EXPECTED_STRUCT_TYPE: { return "Expected a struct type"; }
         case SemanticErrorType::EXPECTED_INTERFACE_TYPE: { return "Expected an interface type"; }
         case SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE: { return "Expected compile time value"; }
         case SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST: { return "Alias with template list"; }
-        case SemanticErrorType::INTERFACE_WITH_TEMPLATE_LIST: { return "Interface reference with template list"; }
         case SemanticErrorType::INVALID_TEMPLATE_TYPES: { return "Invalid template types"; }
-        case SemanticErrorType::EXPECTED_VALUE: { return "Expected value"; }
         case SemanticErrorType::EXPECTED_TYPE: { return "Expected type"; }
         case SemanticErrorType::UNSAFE_OPERATION_IN_SAFE_CONTEXT: { return "Unsafe operation in safe context"; }
         case SemanticErrorType::ASSERTION_CONDITION_BOOL: { return "Assertion condition must be bool"; }

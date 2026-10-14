@@ -39,7 +39,7 @@ public type AttrTarget enum {
 }
 
 public type AttrType enum {
-    ATTR_TYPE_INVALID,
+    TYPE_INVALID,
     TYPE_STRING,
     TYPE_BOOL,
     TYPE_INT
@@ -48,7 +48,7 @@ public type AttrType enum {
 // Structs
 public type AttrConfigValue struct {
     public unsigned byte target
-    public AttrType attrType
+    public AttrType attrType = AttrType::TYPE_INVALID
 }
 
 /**
