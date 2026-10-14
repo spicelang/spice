@@ -5,7 +5,8 @@
     "files": {
         "guid": "064e9d15-7d0f-4800-869d-d097c2be9bd4",
         "items": [
-            "spice.exe"
+            "spice.exe",
+            "tools/wix/spice-file.ico"
         ]
     },
     "directories": [

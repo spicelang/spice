@@ -1,4 +1,8 @@
 <?xml version="1.0"?>
+<!--
+   Spice installer template for go-msi (https://github.com/mh-cbon/go-msi), rendered from the wix.json manifest.
+   Based on the default product.wxs template of go-msi 1.0.2 (MIT license), extended by a file association for .spice files.
+-->
 
 <?if $(sys.BUILDARCH)="x86"?>
     <?define Program_Files="ProgramFilesFolder"?>
@@ -36,6 +40,12 @@
                   {{range $i, $e := .Files.Items}}
                     <File Id="ApplicationFile{{$i}}" Source="{{$e}}"/>
                   {{end}}
+                  <!-- Register .spice files as "Spice Source File". Relies on the order of the files in wix.json: [0] = spice.exe, [1] = spice-file.ico -->
+                  <ProgId Id="Spice.SourceFile" Description="Spice Source File" Icon="ApplicationFile1" IconIndex="0">
+                    <Extension Id="spice" ContentType="text/x-spice"/>
+                  </ProgId>
+                  <!-- Offer text editors in the "Open with" menu of .spice files -->
+                  <RegistryValue Root="HKCR" Key=".spice" Name="PerceivedType" Type="string" Value="text"/>
                </Component>
                {{end}}
                {{if gt (.Directories | len) 0}}
