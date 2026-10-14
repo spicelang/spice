@@ -1,0 +1,21 @@
+import "std/time/time";
+
+f<int> main() {
+    const long millisBefore = getCurrentMillis();
+    const long micros = getCurrentMicros();
+    const long millisAfter = getCurrentMillis();
+    assert millisBefore > 0l;
+    assert micros / 1000l >= millisBefore; // The microsecond sample lies between the two millisecond samples
+    assert micros / 1000l <= millisAfter;
+    assert getCurrentSecs() > 0l;
+
+    // Leap years follow the Gregorian calendar
+    assert isLeapYear(2024);
+    assert !isLeapYear(2023);
+    assert !isLeapYear(1900);
+    assert isLeapYear(2000);
+
+    assert getCurrentYear() >= 2024;
+
+    printf("All assertions passed!\n");
+}

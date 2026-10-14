@@ -1,0 +1,41 @@
+Subcommand: build (Build something)
+This is a simple test program
+
+Usage: prog [options]
+
+Subcommands:
+  build, b, make         Build something                                                                      
+
+Flags:
+  --help,-h                        Print this help message                                                              
+  --version,-v                     Print the version of the application                                                 
+
+Footer text
+Exit code: 0, name=, mode=, count=0, out=, target=
+Subcommand: build (Build something)
+v1.2.3
+Exit code: 0, name=, mode=, count=0, out=, target=
+Subcommand: build (Build something)
+Build callback invoked
+Exit code: 0, name=Foo, mode=fast, count=3, out=dir/file.txt, target=tgt
+Subcommand: build (Build something)
+Build callback invoked
+Exit code: 0, name=Bar, mode=, count=7, out=other.txt, target=positional
+Subcommand: build (Build something)
+Option --name requires a value.
+Exit code: 1, name=, mode=, count=0, out=, target=
+Subcommand: build (Build something)
+Option --count requires a value.
+Exit code: 1, name=, mode=, count=0, out=, target=
+Subcommand: build (Build something)
+Option --out requires a value.
+Exit code: 1, name=, mode=, count=0, out=, target=
+Subcommand: build (Build something)
+Option --mode requires a value.
+Exit code: 1, name=, mode=, count=0, out=, target=
+Subcommand: build (Build something)
+Missing required positional argument(s).
+Exit code: 1, name=, mode=, count=0, out=, target=
+Subcommand: build (Build something)
+Build callback invoked
+Exit code: 0, name=, mode=, count=0, out=, target=value

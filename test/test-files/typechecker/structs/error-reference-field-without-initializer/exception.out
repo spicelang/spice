@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:6:16:
+Reference without initializer: The struct takes at least one reference field. You need to instantiate it with all fields.
+
+6  Struct s = Struct{};
+              ^^^^^^^^

@@ -1,0 +1,3 @@
+// TEST: --coverage -lto
+
+f<int> main() {}

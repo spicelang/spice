@@ -1,0 +1,5 @@
+f<dyn> foo() {
+    return 1;
+}
+
+f<int> main() {}

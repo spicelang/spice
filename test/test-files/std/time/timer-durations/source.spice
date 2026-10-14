@@ -1,0 +1,49 @@
+import "std/time/timer";
+import "std/time/delay";
+
+f<int> main() {
+    // The duration getters are consistent with each other
+    Timer timer = Timer(TimerMode::MICROS);
+    timer.start();
+    delay(20);
+    timer.stop();
+    const unsigned long micros = timer.getDurationInMicros();
+    assert micros >= 15000l;
+    assert timer.getDurationInMillis() == micros / 1000l;
+    assert timer.getDurationInSeconds() == micros / 1000000.0;
+    assert timer.getDurationInMinutes() == micros / 60000000.0;
+
+    // The configured mode selects the unit of getDuration
+    assert timer.getDuration() == micros;
+    Timer millis = Timer(TimerMode::MILLIS);
+    millis.start();
+    delay(20);
+    millis.stop();
+    assert millis.getDuration() == millis.getDurationInMillis();
+    Timer seconds = Timer(TimerMode::SECONDS);
+    seconds.start();
+    delay(20);
+    seconds.stop();
+    assert seconds.getDuration() == cast<unsigned long>(seconds.getDurationInSeconds()); // Truncated
+    Timer minutes = Timer(TimerMode::MINUTES);
+    minutes.start();
+    delay(20);
+    minutes.stop();
+    assert minutes.getDuration() == cast<unsigned long>(minutes.getDurationInMinutes()); // Truncated
+
+    // Start resets the output, pause accumulates the paused durations into it
+    unsigned long output = 42l;
+    Timer accumulating = Timer(TimerMode::MICROS, &output);
+    accumulating.start();
+    assert output == 0l;
+    delay(10);
+    accumulating.pause();
+    const unsigned long firstPause = output;
+    assert firstPause >= 5000l;
+    accumulating.resume();
+    delay(10);
+    accumulating.stop();
+    assert output >= firstPause + 5000l;
+
+    printf("All assertions passed!\n");
+}

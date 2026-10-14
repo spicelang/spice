@@ -1,0 +1,3 @@
+// TEST: --sanitizer=bogus
+
+f<int> main() {}

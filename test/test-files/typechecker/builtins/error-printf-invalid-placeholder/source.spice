@@ -1,0 +1,3 @@
+f<int> main() {
+    printf("%q", 1); // Invalid placeholder
+}

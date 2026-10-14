@@ -1,0 +1,3 @@
+// TEST: --build-mode=bogus
+
+f<int> main() {}

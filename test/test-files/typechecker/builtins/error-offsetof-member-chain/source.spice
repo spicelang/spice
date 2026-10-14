@@ -1,0 +1,19 @@
+type Inner struct {
+    int a
+}
+
+type Outer struct {
+    Inner[2] inners
+    int b
+}
+
+type Other struct {
+    int b
+}
+
+f<int> main() {
+    Outer o;
+    Other other;
+    __offsetof(o, o.inners[0].a); // Not a plain member access chain
+    __offsetof(o, other.b); // Not rooted in the struct of the first argument
+}

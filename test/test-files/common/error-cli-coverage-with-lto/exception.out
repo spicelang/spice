@@ -1,0 +1,1 @@
+[Error|CLI] Incompatible options: Code coverage instrumentation is not supported in combination with LTO

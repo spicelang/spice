@@ -1,0 +1,5 @@
+f<int> main() {
+    int i = 5;
+    int* ptr = &i;
+    int x = ptr[0]; // Subscript on pointers is unsafe
+}

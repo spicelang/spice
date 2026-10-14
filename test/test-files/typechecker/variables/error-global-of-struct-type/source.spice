@@ -1,0 +1,7 @@
+type Struct struct {
+    int field
+}
+
+const Struct GLOBAL_STRUCT; // Only globals of primitive type are supported
+
+f<int> main() {}

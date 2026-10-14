@@ -1,0 +1,128 @@
+import "std/io/filepath";
+
+f<String> normal(string path) {
+    FilePath filePath = FilePath(path);
+    FilePath normalized = filePath.lexicallyNormal();
+    return String(normalized.toGenericString());
+}
+
+f<String> relativeTo(string path, string base) {
+    FilePath filePath = FilePath(path);
+    FilePath basePath = FilePath(base);
+    FilePath relativePath = filePath.lexicallyRelative(basePath);
+    return String(relativePath.toGenericString());
+}
+
+f<String> parentDir(string path) {
+    FilePath filePath = FilePath(path);
+    return filePath.getParentDir();
+}
+
+f<bool> isAbsolute(string path) {
+    FilePath filePath = FilePath(path);
+    return filePath.isAbsolute();
+}
+
+f<bool> hasParentDirComponent(string path) {
+    FilePath filePath = FilePath(path);
+    return filePath.hasParentDirComponent();
+}
+
+f<bool> exists(string path) {
+    FilePath filePath = FilePath(path);
+    return filePath.exists();
+}
+
+f<bool> equivalent(string path, string other) {
+    FilePath filePath = FilePath(path);
+    FilePath otherPath = FilePath(other);
+    return filePath.equivalent(otherPath);
+}
+
+f<int> main() {
+    // isEmpty and comparison
+    FilePath empty;
+    FilePath nonEmpty = FilePath("a/b");
+    assert empty.isEmpty();
+    assert !nonEmpty.isEmpty();
+    assert nonEmpty == FilePath(String("a/b"));
+    assert nonEmpty != FilePath("a/c");
+
+    // Separator conversion
+    FilePath mixed = FilePath("a/b\\c");
+    mixed.replaceSeparator('|');
+    assert mixed.toString() == "a|b|c";
+    mixed = FilePath("a/b/c");
+    mixed.replaceSeparator('\\');
+    assert mixed.toString() == "a\\b\\c";
+    mixed.makeGeneric();
+    assert mixed.toString() == "a/b/c";
+    mixed.makeNative();
+    assert mixed.toGenericString() == "a/b/c";
+
+    // Parent dir
+    assert parentDir("/home/user/file.txt") == "/home/user";
+    assert parentDir("home\\user\\file.txt") == "home/user";
+    const String noParent = parentDir("file.txt");
+    assert noParent.isEmpty();
+
+    // Joining with all overloads
+    FilePath base = FilePath("dir");
+    const String subDir = String("sub");
+    const FilePath fileName = FilePath("file.txt");
+    base /= subDir;
+    assert base.toGenericString() == "dir/sub";
+    base /= fileName;
+    assert base.toGenericString() == "dir/sub/file.txt";
+    FilePath left = FilePath("a");
+    const String rightString = String("b");
+    const FilePath rightPath = FilePath("b");
+    FilePath joined1 = left / rightString;
+    assert joined1.toGenericString() == "a/b";
+    FilePath joined2 = left / rightPath;
+    assert joined2.toGenericString() == "a/b";
+    FilePath joined3 = left / "b";
+    assert joined3.toGenericString() == "a/b";
+
+    // Root path detection
+    assert isAbsolute("/usr");
+    assert !isAbsolute("usr");
+    assert isAbsolute("C:\\Windows");
+    assert !isAbsolute("C:");
+
+    // Parent dir components
+    assert hasParentDirComponent("a/../b");
+    assert hasParentDirComponent("a\\..\\b");
+    assert !hasParentDirComponent("a/b/c");
+
+    // Existence and equivalence
+    assert exists(".");
+    assert !exists("this-file-does-not-exist-7d1c2a");
+    assert equivalent(".", "./.");
+    assert !equivalent(".", "this-file-does-not-exist-7d1c2a");
+
+    // Lexical normalization
+    assert normal("a/./b//c/../d") == "a/b/d";
+    assert normal("../a/../../b") == "../../b";
+    assert normal("/../a") == "/a";
+    assert normal("a/..") == ".";
+    assert normal("") == ".";
+    assert normal("C:\\a\\..\\b") == "C:/b";
+
+    // Lexical relative paths
+    assert relativeTo("/a/b/c", "/a") == "b/c";
+    assert relativeTo("/a/b", "/a/c/d") == "../../b";
+    assert relativeTo("/a/b", "/a/b") == ".";
+    const String differentRoots = relativeTo("/a/b", "a/b");
+    assert differentRoots.isEmpty(); // Different roots
+
+    // Relative to the working directory
+    FilePath current = FilePath(".");
+    FilePath currentRelative = current.relative();
+    assert currentRelative.toGenericString() == ".";
+    FilePath nested = FilePath("sub/../other");
+    FilePath nestedRelative = nested.relative();
+    assert nestedRelative.toGenericString() == "other";
+
+    printf("All assertions passed!\n");
+}

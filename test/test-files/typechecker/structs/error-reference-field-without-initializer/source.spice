@@ -1,0 +1,7 @@
+type Struct struct {
+    int& ref
+}
+
+f<int> main() {
+    Struct s = Struct{};
+}
