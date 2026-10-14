@@ -16,6 +16,9 @@ f<int> main() {
     // toString()
     //String asString = toString(3.14);
     //assert asString.getRaw() == "3.14";
+    assert toString(3.14159, 2) == "3.14";
+    assert toString(2.005, 0) == "2";
+    assert toString(-1.5, 3) == "-1.500";
 
     // toBool()
     bool asBool1 = toBool(1.0);

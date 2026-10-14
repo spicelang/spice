@@ -1,6 +1,5 @@
 // Imports
 import "std/text/analysis";
-import "std/math/fct";
 import "std/type/type-conversion";
 
 // Constants
@@ -115,6 +114,5 @@ public f<String> formatStorageSize(unsigned long bytes, bool useFactor1024 = fal
         unitIndex++;
     }
 
-    const double sizeRounded = round(size, 2);
-    return toString(sizeRounded) + ' ' + storageUnits[unitIndex];
+    return toString(size, 2) + ' ' + storageUnits[unitIndex];
 }

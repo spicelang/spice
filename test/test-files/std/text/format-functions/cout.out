@@ -3,17 +3,17 @@ toUpper: THIS IS A TEST.
 toLower: l
 toLower: this is a test.
 capizalize: Word
-formatStorageSize: 1.000000 B
-formatStorageSize: 1.000000 B
-formatStorageSize: 1.230000 KB
-formatStorageSize: 1.210000 KiB
-formatStorageSize: 1.230000 MB
-formatStorageSize: 1.180000 MiB
-formatStorageSize: 1.230000 GB
-formatStorageSize: 1.150000 GiB
-formatStorageSize: 1.230000 TB
-formatStorageSize: 1.120000 TiB
-formatStorageSize: 1.230000 PB
-formatStorageSize: 1.100000 PiB
-formatStorageSize: 1.230000 EB
-formatStorageSize: 1.070000 EiB
+formatStorageSize: 1.00 B
+formatStorageSize: 1.00 B
+formatStorageSize: 1.23 KB
+formatStorageSize: 1.21 KiB
+formatStorageSize: 1.23 MB
+formatStorageSize: 1.18 MiB
+formatStorageSize: 1.23 GB
+formatStorageSize: 1.15 GiB
+formatStorageSize: 1.23 TB
+formatStorageSize: 1.12 TiB
+formatStorageSize: 1.23 PB
+formatStorageSize: 1.10 PiB
+formatStorageSize: 1.23 EB
+formatStorageSize: 1.07 EiB

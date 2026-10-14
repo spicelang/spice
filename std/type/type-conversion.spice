@@ -421,6 +421,21 @@ public f<String> toString(double input) {
 }
 
 /**
+ * Convert a double to a string with a fixed number of decimal places
+ *
+ * @param input Double value
+ * @param precision Number of decimal places
+ * @return String value
+ */
+public f<String> toString(double input, int precision) {
+    const int length = snprintf(nil<char*>, 0l, "%.*f", precision, input);
+    // snprintf fails if the formatted result does not fit into an int
+    if length < 0 { panic(Error("Formatted double exceeds the maximum string length")); }
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), length + 1l, "%.*f", precision, input);
+}
+
+/**
  * Convert an int to a string
  *
  * @param input Int value
