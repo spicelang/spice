@@ -1,0 +1,3 @@
+// TEST: --static --output-container=dylib
+
+f<int> main() {}

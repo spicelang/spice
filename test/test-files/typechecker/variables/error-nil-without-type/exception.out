@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:17:
+Unexpected dyn type: Nil must have an explicit type
+
+2  dyn x = nil<dyn>; // Nil must have
+               ^^^

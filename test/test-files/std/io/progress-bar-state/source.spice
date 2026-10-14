@@ -1,0 +1,14 @@
+import "std/io/progress-bar";
+
+f<int> main() {
+    // A bar, that was not started, has no elapsed time and nothing to clear
+    ProgressBar bar = ProgressBar(10ul, "Idle", 8u);
+    assert bar.getElapsedMicros() == 0l;
+    bar.clear();
+    bar.redraw(); // No effect before the start
+
+    // The test output is redirected, so it is no terminal
+    assert !isStdoutTerminal();
+
+    printf("All assertions passed!\n");
+}

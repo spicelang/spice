@@ -1,0 +1,24 @@
+f<int> main() {
+    // Reverse
+    String empty = String();
+    empty.reverse();
+    assert empty.isEmpty();
+    String single = String("a");
+    single.reverse();
+    assert single == "a";
+    String even = String("abcd");
+    even.reverse();
+    assert even == "dcba";
+    String odd = String("abcde");
+    odd.reverse();
+    assert odd == "edcba";
+
+    // Comparison of a raw string on the left with a string object on the right
+    const String text = String("Hello");
+    assert "Hello" == text;
+    assert !("World" == text);
+    assert "World" != text;
+    assert !("Hello" != text);
+
+    printf("All assertions passed!\n");
+}

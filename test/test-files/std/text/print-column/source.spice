@@ -1,0 +1,9 @@
+import "std/text/print";
+
+f<int> main() {
+    // Words are wrapped at the given width, without splitting words that fit
+    printColumn("The quick brown fox jumps over the lazy dog", 15u);
+    printf("--\n");
+    // Text that fits stays in a single line, String overload
+    printColumn(String("Short text"), 40u);
+}

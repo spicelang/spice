@@ -1,0 +1,60 @@
+import "std/io/file";
+
+f<int> main() {
+    const string path = "./file-cursor-permissions.txt";
+    const String movedPath = String("./file-cursor-permissions-moved.txt");
+    const String copiedPath = String("./file-cursor-permissions-copied.txt");
+
+    // Write via writeFile and check the size without opening the file manually
+    Result<bool> writeResult = writeFile(path, "Hello, world!\n");
+    assert writeResult.isOk();
+    Result<unsigned long> sizeResult = getFileSize(path);
+    assert sizeResult.isOk();
+    assert sizeResult.unwrap() == 14ul;
+    Result<unsigned long> missingSizeResult = getFileSize("./file-cursor-permissions-missing.txt");
+    assert missingSizeResult.isErr();
+
+    // Cursor position and size of an open file
+    Result<File> fileResult = openFile(String(path), MODE_READ);
+    assert fileResult.isOk();
+    File file = fileResult.unwrap();
+    assert file.getRawHandle() != nil<FilePtr>;
+    assert file.getCursorPos() == 0ul;
+    assert file.readChar() == 'H';
+    assert file.getCursorPos() == 1ul;
+    assert file.getSize() == 14ul;
+    assert file.getCursorPos() == 1ul; // The size query restores the cursor
+    file.setCursorPos(7l);
+    assert file.readChar() == 'w';
+    file.setCursorPos(-2l, 2); // SEEK_END
+    assert file.readChar() == '!';
+    file.setCursorPos(0l);
+    file.setCursorPos(4l, 1); // SEEK_CUR
+    assert file.readChar() == 'o';
+    bool _ = file.close();
+
+    // Permissions
+    assert isFileReadable(path);
+    assert isFileWritable(path);
+    assert !isFileExecutable(path);
+    assert changeFilePermissions(path, S_IRUSR | S_IWUSR | S_IXUSR);
+    assert isFileExecutable(path);
+    assert !changeFilePermissions("./file-cursor-permissions-missing.txt", S_IRUSR);
+    assert !isFileReadable("./file-cursor-permissions-missing.txt");
+    assert !isFileWritable("./file-cursor-permissions-missing.txt");
+
+    // Copy and move with String paths
+    assert copyFile(String(path), copiedPath);
+    assert fileExists(copiedPath.getRaw());
+    assert moveFile(copiedPath, movedPath);
+    assert !fileExists(copiedPath.getRaw());
+    Result<String> contentResult = readFile(movedPath.getRaw());
+    assert contentResult.isOk();
+    assert contentResult.unwrap() == "Hello, world!\n";
+
+    // Clean up
+    assert deleteFile(path);
+    assert deleteFile(movedPath.getRaw());
+
+    printf("All assertions passed!\n");
+}

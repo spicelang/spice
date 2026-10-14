@@ -1,0 +1,93 @@
+import "std/data/vector";
+import "std/data/deque";
+import "std/data/queue";
+import "std/data/doubly-linked-list";
+import "std/data/red-black-tree";
+import "std/data/pair";
+
+f<int> main() {
+    // Vector: packing an empty vector frees its buffer, inserting into it allocates again
+    Vector<int> vector;
+    vector.reserve(8ul);
+    assert vector.getCapacity() == 8l;
+    vector.pack();
+    assert vector.getCapacity() == 0l;
+    vector.insertAt(0ul, 5);
+    assert vector.getSize() == 1l;
+    assert vector.getCapacity() > 0l;
+    assert vector.get(0ul) == 5;
+
+    // Deque: packing an empty deque frees its buffer
+    Deque<int> deque;
+    deque.reserve(8ul);
+    deque.pack();
+    assert deque.getCapacity() == 0l;
+
+    // Deque: copy-assignment between deques of different capacity
+    Deque<int> emptyDeque;
+    Deque<int> filledDeque;
+    filledDeque.pushBack(1);
+    filledDeque.pushBack(2);
+    filledDeque.pushFront(0);
+    Deque<int> target;
+    target.pushBack(9);
+    target = filledDeque; // Grows the buffer to the capacity of the source
+    assert target.getSize() == 3l;
+    assert target.front() == 0;
+    assert target.back() == 2;
+    target = emptyDeque; // Drops the buffer to match the unallocated source
+    assert target.isEmpty();
+    assert target.getCapacity() == 0l;
+
+    // Queue: copy-assignment between queues of different capacity
+    Queue<int> emptyQueue;
+    Queue<int> filledQueue;
+    filledQueue.push(1);
+    filledQueue.push(2);
+    Queue<int> targetQueue;
+    targetQueue.push(9);
+    targetQueue = filledQueue;
+    assert targetQueue.getSize() == 2l;
+    assert targetQueue.front() == 1;
+    assert targetQueue.back() == 2;
+    targetQueue = emptyQueue;
+    assert targetQueue.isEmpty();
+    assert targetQueue.getCapacity() == 0l;
+
+    // Doubly linked list: remove the only, the first and the last element, then clear
+    DoublyLinkedList<int> list;
+    list.pushBack(1);
+    list.remove(1);
+    assert list.isEmpty();
+    list.pushBack(1);
+    list.pushBack(2);
+    list.pushBack(3);
+    list.remove(1); // The tail
+    assert list.getSize() == 2ul;
+    assert list.get(0ul) == 2;
+    list.remove(3); // The head
+    assert list.getSize() == 1ul;
+    assert list.get(0ul) == 2;
+    list.pushBack(4);
+    list.pushBack(5);
+    list.clear();
+    assert list.isEmpty();
+
+    // Red-black tree: move construction and indexed iteration
+    RedBlackTree<int, int> tree;
+    tree.insert(2, 20);
+    tree.insert(1, 10);
+    tree.insert(3, 30);
+    RedBlackTree<int, int> moved = RedBlackTree<int, int>(tree);
+    assert moved.getSize() == 3ul;
+    assert moved.find(2) == 20;
+    assert tree.isEmpty();
+    foreach unsigned long idx, Pair<const int&, int&>& item : moved {
+        const int& key = item.getFirst();
+        int& value = item.getSecond();
+        assert key == cast<int>(idx) + 1;
+        assert value == key * 10;
+    }
+
+    printf("All assertions passed!\n");
+}

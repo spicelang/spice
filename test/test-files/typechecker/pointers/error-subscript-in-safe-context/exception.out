@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:4:13:
+Unsafe operation in safe context: The subscript operator on pointers is an unsafe operation. Use unsafe blocks if you know what you are doing.
+
+4  int x = ptr[0]; // Subscript on pointers
+           ^^^^^^

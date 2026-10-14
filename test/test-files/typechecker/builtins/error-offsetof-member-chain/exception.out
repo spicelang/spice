@@ -1,0 +1,14 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:17:19:
+Member access is only allowed on structs and Strings: The offsetof builtin only supports plain member accesses
+
+17  __offsetof(o, o.inners[0].a); // Not a plain member
+                  ^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:18:19:
+Member access is only allowed on structs and Strings: The member access must be rooted in the struct passed as first argument
+
+18  __offsetof(o, other.b); // Not rooted in
+                  ^^^^^^^

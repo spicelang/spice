@@ -1,0 +1,3 @@
+// TEST: --backend=bogus
+
+f<int> main() {}

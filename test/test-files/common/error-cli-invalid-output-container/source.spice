@@ -1,0 +1,3 @@
+// TEST: --output-container=bogus
+
+f<int> main() {}

@@ -1,0 +1,14 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:15:
+Referenced undefined struct: Cannot find struct 'Foo'
+
+2  Foo foo = Foo{};
+             ^^^^^
+
+[Error|Semantic] ./source.spice:2:5:
+Unknown datatype: Unknown datatype 'Foo'
+
+2  Foo foo = Foo{};
+   ^^^

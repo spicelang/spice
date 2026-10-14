@@ -1,0 +1,79 @@
+import "std/io/cli-parser";
+import "std/io/cli-subcommand";
+import "std/io/filepath";
+
+type State struct {
+    String name
+    string mode = ""
+    int count = 0
+    FilePath output
+    String target
+}
+
+p onBuild() {
+    printf("Build callback invoked\n");
+}
+
+f<CliParser> createParser(State& state) {
+    result = CliParser("Test Program", "This is a simple test program");
+    result.setVersion("v1.2.3");
+    result.setFooter("Footer text");
+    CliSubcommand& build = result.addSubcommand("build", "Build something");
+    build.addAlias("b");
+    build.addAlias(String("make"));
+    build.addOption("--name", state.name, "String option");
+    build.addOption("--mode", state.mode, "Raw string option");
+    build.addOption("--count", state.count, "Int option");
+    build.addOption("--out", state.output, "FilePath option");
+    build.addOption("target", state.target, "Positional String option");
+    build.setCallback(onBuild);
+    const String& buildName = build.getName();
+    const String& buildDescription = build.getDescription();
+    printf("Subcommand: %s (%s)\n", buildName.getRaw(), buildDescription.getRaw());
+    build.allowUnknownOptions();
+}
+
+f<int> run(string[] args, unsigned int argc) {
+    State state;
+    CliParser parser = createParser(state);
+    const int exitCode = parser.parse(argc, args);
+    printf("Exit code: %d, name=%s, mode=%s, count=%d, out=%s, target=%s\n", exitCode, state.name.getRaw(), state.mode, state.count,
+           state.output.toString(), state.target.getRaw());
+    return exitCode;
+}
+
+f<int> main() {
+    // Without arguments, the root subcommand prints its help including the subcommands, the footer and the version flag
+    string[2] noArgs = ["prog", ""];
+    run(noArgs, 1u);
+
+    // Version
+    string[2] versionArgs = ["prog", "--version"];
+    run(versionArgs, 2u);
+
+    // Options with space-separated values, selected via the alias of the subcommand
+    string[11] spaceArgs = ["prog", "b", "--name", "Foo", "--count", "3", "--out", "dir/file.txt", "--mode", "fast", "tgt"];
+    run(spaceArgs, 11u);
+
+    // Options with inline values, selected via the second alias, and a positional
+    string[6] inlineArgs = ["prog", "make", "--name=Bar", "--out=other.txt", "positional", "--count=7"];
+    run(inlineArgs, 6u);
+
+    // Options without a value
+    string[3] missingName = ["prog", "build", "--name"];
+    run(missingName, 3u);
+    string[3] missingCount = ["prog", "build", "--count"];
+    run(missingCount, 3u);
+    string[3] missingOut = ["prog", "build", "--out"];
+    run(missingOut, 3u);
+    string[3] missingMode = ["prog", "build", "--mode"];
+    run(missingMode, 3u);
+
+    // Missing positional argument
+    string[2] noPositional = ["prog", "build"];
+    run(noPositional, 2u);
+
+    // Unknown options are ignored, as the subcommand allows them
+    string[4] unknownArgs = ["prog", "build", "--bogus", "value"];
+    run(unknownArgs, 4u);
+}
