@@ -412,33 +412,19 @@ public p exportStdTPDEFlags(const CliOptions& cliOptions) {
 }
 
 /**
- * Check if the dir of the compiler sources is configured via the env var SPICE_COMPILER_DIR. Only then, imports with the
- * 'compiler/' prefix are resolved against it. Otherwise, they are ordinary relative imports, so that projects with an own
- * 'compiler' dir are not affected.
+ * Retrieve the dir, where the compiler sources live, from the env var SPICE_BOOTSTRAP_DIR.
+ * ToDo: Remove, once the stage0 compiler resolves the '@/' import prefix and the compiler sources do not use the legacy
+ *       'bootstrap/' prefix anymore.
  *
- * @return Compiler source dir configured or not
- */
-public f<bool> isCompilerSourceDirConfigured() {
-    const Result<string> value = getEnv("SPICE_COMPILER_DIR");
-    return value.isOk();
-}
-
-/**
- * Retrieve the dir, where the compiler sources live, from the given env var.
- * ToDo: Remove the envVarName param, once the stage0 compiler resolves the 'compiler/' import prefix and the compiler
- *       sources do not use the legacy 'bootstrap/' prefix (resolved against SPICE_BOOTSTRAP_DIR) anymore.
- *
- * @param envVarName Name of the env var, that holds the dir: SPICE_COMPILER_DIR or SPICE_BOOTSTRAP_DIR
  * @return Compiler source directory
  */
-public f<FilePath> getCompilerSourceDir(string envVarName) {
-    Result<string> value = getEnv(envVarName);
+public f<FilePath> getCompilerSourceDir() {
+    Result<string> value = getEnv("SPICE_BOOTSTRAP_DIR");
     if value.isOk() {
         result = FilePath(value.unwrap());
         if result.exists() { return; }
     }
-    const String message = String("Compiler sources could not be found. Check if the env var ") + envVarName + " exists";
-    const CompilerError error = CompilerError(CompilerErrorType::COMPILER_SOURCES_NOT_FOUND, message.getRaw());
+    const CompilerError error = CompilerError(CompilerErrorType::COMPILER_SOURCES_NOT_FOUND, "Compiler sources could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists");
     abortWithError(error.getMessage());
     return FilePath(); // Unreachable, abortWithError exits the process
 }

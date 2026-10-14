@@ -1,0 +1,4 @@
+// Must not be picked up by the '@/shared' import in inner.spice
+public f<int> getLocalValue() {
+    return 2;
+}

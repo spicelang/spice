@@ -29,6 +29,17 @@ f<int> main() {
 In the example above, the imported file lives in the same directory as the main source file. If you have a nested folder structure
 you can state the import like this: `import "sub-folder/sub-sub-folder/utils" as fibonacci`.
 
+Such import paths are relative to the directory of the importing source file. Import paths must not contain parent-directory
+(`..`) components, so a source file in a sub-folder cannot import a source file from a parent folder this way. For that, prefix
+the import path with `@/`. Then it is relative to the directory of the main source file, no matter which source file contains
+the import:
+
+```spice
+// sub-folder/sub-sub-folder/utils.spice
+import "@/helpers/math" as math; // Imports helpers/math.spice next to main.spice
+import "math" as localMath;      // Imports sub-folder/sub-sub-folder/math.spice
+```
+
 You can also write the source file like this, using anonymous imports:
 
 ```spice

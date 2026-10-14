@@ -1,0 +1,6 @@
+// Resolved against the dir of the main source file, although a file with the same name exists next to this file
+import "@/shared" as rootShared;
+
+public f<int> getRootValueViaInner() {
+    return rootShared::getRootValue();
+}

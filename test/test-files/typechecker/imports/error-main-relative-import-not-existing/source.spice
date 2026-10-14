@@ -1,0 +1,5 @@
+import "@/sub/inner" as inner;
+
+f<int> main() {
+    inner::foo();
+}

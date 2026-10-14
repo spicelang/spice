@@ -1,0 +1,12 @@
+// The legacy 'bootstrap/' prefix imports a source file of the compiler (from SPICE_BOOTSTRAP_DIR, which the test runner sets)
+// ToDo: Remove this test case, once the compiler sources use the '@/' prefix and the 'bootstrap/' prefix is gone
+import "bootstrap/util/save-and-restore";
+
+f<int> main() {
+    int value = 1;
+    {
+        SaveAndRestore<int> _ = SaveAndRestore<int>(value, 2);
+        printf("Inside: %d\n", value);
+    }
+    printf("Outside: %d\n", value);
+}

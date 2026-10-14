@@ -850,8 +850,7 @@ def setup_environment() -> None:
     """Set up the environment, that the compilers need to build the compiler sources and the test cases"""
     # Always test the std and compiler sources of this checkout
     os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")
-    os.environ["SPICE_COMPILER_DIR"] = str(ROOT_DIR / "src")
-    # ToDo: Remove, once the compiler sources use the 'compiler/' import prefix instead of 'bootstrap/'
+    # ToDo: Remove, once the compiler sources use the '@/' import prefix instead of 'bootstrap/'
     os.environ["SPICE_BOOTSTRAP_DIR"] = str(ROOT_DIR / "src")
     if "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = bootstrap.find_llvm_lib_dir()
