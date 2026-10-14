@@ -166,6 +166,7 @@ public type SourceFile struct {
     public llvm::TargetMachine targetMachine
     public llvm::Module llvmModule
     public FilePath objectFilePath
+    public String objectFileStem // Name of the object file without extension, unique within the compilation
     public Map<String, SourceFile*> dependencies // Has to be an ordered map to keep the compilation order deterministic
     public Vector<const SourceFile*> dependants
     public Map<String, NameRegistryEntry> exportedNameRegistry
@@ -205,6 +206,7 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     const FilePath path = FilePath(filePath);
     this.fileName = path.getFileName();
     this.fileDir = path.getParentDir();
+    this.objectFileStem = resourceManager.reserveObjectFileStem(path);
 
     // Discard value names if not required
     this.context.setDiscardValueNames(!this.cliOptions.namesForIRValues);
@@ -1412,9 +1414,8 @@ public f<FilePath> SourceFile.getObjectFilePath() {
     if this.isMainFile && this.cliOptions.outputContainer == OutputContainer::OBJECT_FILE {
         return this.cliOptions.outputPath;
     }
-    FilePath objectFilePath = this.cliOptions.outputDir / this.filePath.getFileName();
-    objectFilePath.replaceExtension(getOutputFileExtension(this.cliOptions, OutputContainer::OBJECT_FILE));
-    return objectFilePath;
+    const string objectFileExt = getOutputFileExtension(this.cliOptions, OutputContainer::OBJECT_FILE);
+    return this.cliOptions.outputDir / (this.objectFileStem + "." + objectFileExt);
 }
 
 public p SourceFile.collectAndPrintWarnings() {
