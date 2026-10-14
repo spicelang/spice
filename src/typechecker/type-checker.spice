@@ -2726,6 +2726,17 @@ public f<Any> TypeChecker.visitFallthroughStmt(ASTFallthroughStmtNode* node) {
         return this.softErrorER(cast<ASTNode*>(node), SemanticErrorType::FALLTHROUGH_NOT_ALLOWED, String("Fallthrough is only allowed in case branches"));
     }
 
+    // Check if there is a branch to fall through to. This is not the case in the last case branch of a switch without default
+    ASTNode* caseBranch = node.parent;
+    while caseBranch.kind != ASTNodeKind::CASE_BRANCH {
+        caseBranch = caseBranch.parent;
+    }
+    assert caseBranch.parent.kind == ASTNodeKind::SWITCH_STMT;
+    const ASTSwitchStmtNode* switchStmt = downcast<ASTSwitchStmtNode>(caseBranch.parent);
+    if !switchStmt.hasDefaultBranch && getASTNode(switchStmt.caseBranches.back()) == caseBranch {
+        return this.softErrorER(cast<ASTNode*>(node), SemanticErrorType::FALLTHROUGH_NOT_ALLOWED, String("There is no branch to fall through to from the last case branch of a switch without default branch"));
+    }
+
     return Any();
 }
 

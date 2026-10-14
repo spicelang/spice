@@ -93,3 +93,6 @@ switch i {
 ```
 The `fallthrough` keyword ensures that in the above example, the `case 6, 9` branch gets executed, even though the value of `i`
 is `1` or `2` and the respective branch was executed beforehand.
+
+The last case branch falls through to the `default` branch. If the switch statement has no `default` branch, there is no branch
+to fall through to, so `fallthrough` is not allowed in its last case branch.

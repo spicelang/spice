@@ -1,0 +1,12 @@
+f<int> main() {
+    int i = 1;
+    switch i {
+        case 0: {
+            fallthrough;
+        }
+        case 1: {
+            printf("One\n");
+            fallthrough;
+        }
+    }
+}
