@@ -1,0 +1,25 @@
+ctor direct-1
+dtor direct-1
+ctor direct-2
+dtor direct-2
+---
+ctor nested-outer
+ctor nested-loop
+dtor nested-loop
+ctor nested-loop
+ctor nested-if
+dtor nested-if
+dtor nested-loop
+dtor nested-outer
+case 2
+---
+ctor nested-outer
+ctor nested-loop
+dtor nested-loop
+ctor nested-loop
+dtor nested-loop
+ctor nested-loop
+dtor nested-loop
+ctor nested-after
+dtor nested-after
+dtor nested-outer
