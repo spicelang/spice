@@ -58,22 +58,28 @@ jobs:
         # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
         run: python fetch-stage0.py
 
+      - name: Build compiler
+        # Builds the compiler from src/ with the stage0 compiler. It instruments the compiler sources and the test programs
+        # below, so the reports reflect the coverage instrumentation (e.g. the debug locations, that the counters are mapped
+        # to) of the compiler on this branch, instead of the one of the possibly much older stage0 compiler.
+        run: python build.py --compiler build/stage0/spice
+
       - name: Run Test target (compiler coverage)
-        # Builds the compiler with Spice code coverage instrumentation (with the stage0 compiler) and runs the test suites
-        # against it, to collect gcov data for the compiler sources. Same test selection as the run in ci.yml. The gcov data
-        # lands next to the object files in build/test-tmp (see coverage.py).
+        # Builds the compiler with Spice code coverage instrumentation (with the compiler built above) and runs the test
+        # suites against it, to collect gcov data for the compiler sources. Same test selection as the run in ci.yml. The gcov
+        # data lands next to the object files in build/test-tmp (see coverage.py).
         #
         # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by the
         # run in ci.yml), so a single failing test should not block generating/uploading the reports below with whatever
         # data the rest of the run did collect.
         continue-on-error: true
-        run: python test/run-tests.py --build-compiler build/stage0/spice --instrument coverage --is-github-actions
+        run: python test/run-tests.py --build-compiler build/spice --instrument coverage --is-github-actions
 
       - name: Run Test target (Spice coverage)
-        # Builds the compiler (without instrumentation) and compiles every test program with Spice code coverage
-        # instrumentation, to collect gcov data for the std lib code they exercise. --coverage forces debug info on for every
-        # compiled test program, which changes the emitted LLVM IR, so this run skips all reference comparisons and just
-        # compiles, links and executes every test program that would normally run. It uses its own work dir, since the
+        # Compiles every test program with Spice code coverage instrumentation (with the compiler built above, which is not
+        # instrumented itself), to collect gcov data for the std lib code they exercise. --coverage forces debug info on for
+        # every compiled test program, which changes the emitted LLVM IR, so this run skips all reference comparisons and
+        # just compiles, links and executes every test program that would normally run. It uses its own work dir, since the
         # compiler coverage run above keeps its data in build/test-tmp (see coverage.py).
         #
         # continue-on-error: this run's only purpose is collecting coverage data (correctness is already verified by the
@@ -81,7 +87,7 @@ jobs:
         # failed to open a single .gcno file, failing just that one test. A rare, isolated miss like that should not block
         # generating/uploading the reports below with whatever data the rest of the run did collect.
         continue-on-error: true
-        run: python test/run-tests.py --build-compiler build/stage0/spice --coverage --work-dir build/test-tmp-coverage --is-github-actions
+        run: python test/run-tests.py --compiler build/spice --coverage --work-dir build/test-tmp-coverage --is-github-actions
 
       - name: Save CCache
         uses: actions/cache/save@v6
