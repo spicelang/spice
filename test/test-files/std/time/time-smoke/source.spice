@@ -1,11 +1,12 @@
 import "std/time/time";
 
 f<int> main() {
-    const long millis = getCurrentMillis();
+    const long millisBefore = getCurrentMillis();
     const long micros = getCurrentMicros();
-    assert millis > 0l;
-    assert micros / 1000l >= millis;
-    assert micros / 1000l - millis < 1000l; // Both calls are within a second
+    const long millisAfter = getCurrentMillis();
+    assert millisBefore > 0l;
+    assert micros / 1000l >= millisBefore; // The microsecond sample lies between the two millisecond samples
+    assert micros / 1000l <= millisAfter;
     assert getCurrentSecs() > 0l;
 
     // Leap years follow the Gregorian calendar

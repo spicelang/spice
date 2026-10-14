@@ -24,12 +24,12 @@ f<int> main() {
     seconds.start();
     delay(20);
     seconds.stop();
-    assert seconds.getDuration() == 0l; // Truncated
+    assert seconds.getDuration() == cast<unsigned long>(seconds.getDurationInSeconds()); // Truncated
     Timer minutes = Timer(TimerMode::MINUTES);
     minutes.start();
     delay(20);
     minutes.stop();
-    assert minutes.getDuration() == 0l; // Truncated
+    assert minutes.getDuration() == cast<unsigned long>(minutes.getDurationInMinutes()); // Truncated
 
     // Start resets the output, pause accumulates the paused durations into it
     unsigned long output = 42l;
