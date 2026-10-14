@@ -598,7 +598,7 @@ public f<Any> ASTConstantNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTAttrNode struct : IVisitable {
     compose public ASTNode node
     public String key
-    // Defaults to TARGET_INVALID / ATTR_TYPE_INVALID (both enum ordinal 0) without naming the enum value
+    // Defaults to TARGET_INVALID / TYPE_INVALID (both enum ordinal 0) without naming the enum value
     // here: attributes.spice imports this file, so resolving AttrTarget::TARGET_INVALID as a field default
     // can hit a 'used before declared' error depending on which file is the compile entry point.
     public AttrTarget target
