@@ -477,7 +477,7 @@ jobs:
           mkdir -p build
           msi="$(basename "$ZIP_FILE" ".zip").msi"
           printf "::set-output name=msi::%s\n" "$msi"
-          go-msi make --msi "$PWD/$msi" --out "$PWD/build" --version ${{ github.ref_name }}
+          go-msi make --msi "$PWD/$msi" --src "$PWD/tools/wix" --out "$PWD/build" --version ${{ github.ref_name }}
           printf "::set-output name=msi::%s\n" *.msi
 
       - name: Upload MSI
