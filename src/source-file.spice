@@ -402,6 +402,12 @@ p SourceFile.runTypeCheckerPost() {
         return;
     }
 
+    // Nothing to do if this file already finished the post stage and nobody asked for another visit since. This is the
+    // common case, because every visit of a file runs the post stage of all its dependencies again.
+    if !this.reVisitRequested && this.previousStage >= CompileStageType::TYPE_CHECKER_POST {
+        return;
+    }
+
     // Skip if not all dependants finished type checking yet. This still has to run for files restored from the cache,
     // for the same reason as runTypeCheckerPre.
     if !this.haveAllDependantsBeenTypeChecked() {
@@ -436,6 +442,8 @@ p SourceFile.runTypeCheckerPost() {
 
     this.typeCheckerPostRunning = false;
 
+    // Measure the remaining work of this stage as well. The time spent in the dependencies above is not part of it
+    timer.resume();
     this.checkForSoftErrors();
 
     // Check if all dyn variables were type-inferred successfully
@@ -1518,12 +1526,13 @@ public inline f<bool> SourceFile.isResultRT() { return this.isRT(RuntimeModule::
 
 f<bool> SourceFile.haveAllDependantsBeenTypeChecked() {
     foreach const SourceFile* dependant : this.dependants {
-        // Ignore dependants that are part of the same import cycle (i.e. this file transitively depends on them). They
-        // cannot be type-checked before us either, so waiting on them would deadlock the whole cycle.
-        if this.dependsOn(dependant) {
+        if dependant.totalTypeCheckerRuns != 0s {
             continue;
         }
-        if dependant.totalTypeCheckerRuns == 0s {
+        // Ignore dependants that are part of the same import cycle (i.e. this file transitively depends on them). They
+        // cannot be type-checked before us either, so waiting on them would deadlock the whole cycle. Searching the import
+        // graph is expensive, so this is only checked for dependants that were not type-checked yet.
+        if !this.dependsOn(dependant) {
             return false;
         }
     }
