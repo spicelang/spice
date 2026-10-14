@@ -63,19 +63,13 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     }
 
     const bool isStd = node.importPath.startsWith("std/");
+    // Imports with the '@/' prefix are resolved against the dir of the main source file, independent of the dir of the
+    // importing source file
+    const bool isMainRelative = node.importPath.startsWith("@/");
     // Imports of compiler source files. The legacy 'bootstrap/' prefix is still used by the compiler sources, since the
-    // stage0 compiler does not know the 'compiler/' prefix yet.
-    // ToDo: Remove the 'bootstrap/' prefix, once the stage0 compiler resolves the 'compiler/' prefix
-    string compilerSourceDirEnvVar = "";
-    unsigned long compilerPrefixLength = 0ul;
-    if node.importPath.startsWith("compiler/") && isCompilerSourceDirConfigured() {
-        compilerSourceDirEnvVar = "SPICE_COMPILER_DIR";
-        compilerPrefixLength = 9ul;
-    } else if node.importPath.startsWith("bootstrap/") {
-        compilerSourceDirEnvVar = "SPICE_BOOTSTRAP_DIR";
-        compilerPrefixLength = 10ul;
-    }
-    const bool isCompilerSource = compilerPrefixLength > 0ul;
+    // stage0 compiler does not know the '@/' prefix yet.
+    // ToDo: Remove the 'bootstrap/' prefix, once the stage0 compiler resolves the '@/' prefix
+    const bool isCompilerSource = node.importPath.startsWith("bootstrap/");
 
     // Determine the root dir, that the import is resolved against, and the path of the imported file within it
     const String ownFileDir = ownFilePath.getParentDir();
@@ -84,10 +78,13 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     if isStd { // Include source file from standard library
         rootDir = getStdDir();
         pathInRootDir = node.importPath.getSubstring(node.importPath.find("std/") + 4l);
+    } else if isMainRelative { // Include own source file, relative to the main source file
+        rootDir = FilePath(this.cliOptions.mainSourceFile.getParentDir());
+        pathInRootDir = node.importPath.getSubstring(2ul);
     } else if isCompilerSource { // Include source file of the compiler
-        rootDir = getCompilerSourceDir(compilerSourceDirEnvVar);
-        pathInRootDir = node.importPath.getSubstring(compilerPrefixLength);
-    } else { // Include own source file
+        rootDir = getCompilerSourceDir();
+        pathInRootDir = node.importPath.getSubstring(10ul);
+    } else { // Include own source file, relative to the importing source file
         rootDir = FilePath(ownFileDir);
     }
     FilePath basePath = rootDir / pathInRootDir;
@@ -138,11 +135,10 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     // same-looking relative import can still resolve outside the intended std/compiler/project root if a
     // directory along the way is a symlink. Canonicalize the resolved file and its intended base directory
     // (this also resolves symlinks) and reject the import unless the former stays contained in the latter.
-    // A main source file given as a bare filename (e.g. 'spice build main.spice') has an empty parent dir;
-    // treat that as the current directory, since that is what the empty path already means to every other
-    // join above.
+    // A source file given as a bare filename (e.g. 'spice build main.spice') has an empty parent dir; treat that
+    // as the current directory, since that is what the empty path already means to every other join above.
     FilePath intendedRoot = rootDir;
-    if !isStd && !isCompilerSource && ownFileDir.isEmpty() {
+    if !isStd && !isCompilerSource && rootDir.isEmpty() {
         intendedRoot = FilePath(String("."));
     }
     const FilePath allowedRoot = intendedRoot.canonical();

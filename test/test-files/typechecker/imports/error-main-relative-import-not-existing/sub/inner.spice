@@ -1,0 +1,6 @@
+// 'other.spice' only exists next to this file, but the '@/' prefix resolves against the dir of the main source file
+import "@/other" as other;
+
+public p foo() {
+    other::bar();
+}

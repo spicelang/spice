@@ -1,0 +1,6 @@
+// The '@/' prefix resolves imports against the dir of the main source file, independent of the importing source file
+import "@/sub/nested/inner" as inner;
+
+f<int> main() {
+    printf("Root: %d\n", inner::getRootValueViaInner());
+}
