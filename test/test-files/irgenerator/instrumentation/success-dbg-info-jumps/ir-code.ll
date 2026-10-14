@@ -11,6 +11,9 @@ source_filename = "source.spice"
 @0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @anon.string.3 = private unnamed_addr constant [5 x i8] c"item\00", align 4
 @anon.string.4 = private unnamed_addr constant [7 x i8] c"failed\00", align 4
+@anon.string.5 = private unnamed_addr constant [15 x i8] c"limit too high\00", align 4
+@stderr = external local_unnamed_addr global ptr, align 8
+@anon.string.6 = private unnamed_addr constant [116 x i8] c"Program panicked at ./source.spice:46:9: %s\0A46  panic(Error(message.getRaw()));\0A    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Color: %s\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [9 x i8] c"Sum: %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [16 x i8] c"Propagated: %d\0A\00", align 4
@@ -170,26 +173,68 @@ declare void @_Z3errIiE6ResultIiERK5Error(ptr dead_on_unwind noalias writable sr
 
 declare ptr @_ZN6ResultIiE6unwrapEv(ptr)
 
+; Function Attrs: noinline nounwind optnone uwtable
+define internal void @_Z10checkLimiti(i32 noundef %0) #0 !dbg !48 {
+  %limit = alloca i32, align 4
+  %message = alloca %struct.String, align 8
+  %2 = alloca %struct.Error, align 8
+  store i32 %0, ptr %limit, align 4, !dbg !49
+  %3 = load i32, ptr %limit, align 4, !dbg !50
+  %4 = icmp sgt i32 %3, 10, !dbg !50
+  br i1 %4, label %if.then.L44, label %if.exit.L44, !dbg !50
+
+if.then.L44:                                      ; preds = %1
+  call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %message, ptr noundef @anon.string.5), !dbg !51
+  %5 = load ptr, ptr @stderr, align 8, !dbg !52
+  %6 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %message), !dbg !53
+  call void @_ZN5Error4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(16) %2, ptr noundef %6), !dbg !53
+  %7 = getelementptr inbounds nuw %struct.Error, ptr %2, i32 0, i32 1, !dbg !53
+  %8 = load ptr, ptr %7, align 8, !dbg !53
+  %9 = call i32 (ptr, ptr, ...) @fprintf(ptr %5, ptr @anon.string.6, ptr %8), !dbg !53
+  call void @_Z13sErrTraceDumpv(), !dbg !53
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %message), !dbg !54
+  call void @exit(i32 1), !dbg !52
+  unreachable, !dbg !52
+
+if.exit.L44:                                      ; preds = %1
+  ret void, !dbg !55
+}
+
+declare ptr @_ZN6String6getRawEv(ptr)
+
+declare void @_ZN5Error4ctorEPKc(ptr, ptr)
+
+; Function Attrs: nofree
+declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #1
+
+declare void @_Z13sErrTraceDumpv()
+
+; Function Attrs: cold noreturn nounwind
+declare void @exit(i32) #2
+
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define noundef i32 @main() #1 !dbg !48 {
+define noundef i32 @main() #3 !dbg !56 {
   %propagated = alloca %struct.Result, align 8
-  %1 = call noundef ptr @_Z12getColorNamei(i32 noundef 1), !dbg !49
-  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1), !dbg !49
-  %3 = call noundef i32 @_Z8sumUntili(i32 noundef 4), !dbg !50
-  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %3), !dbg !50
-  call void @_Z9propagateb(ptr dead_on_unwind writable sret(%struct.Result) align 8 %propagated, i1 noundef zeroext false), !dbg !51
-  %5 = call noundef ptr @_ZN6ResultIiE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %propagated), !dbg !52
-  %6 = load i32, ptr %5, align 4, !dbg !52
-  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6), !dbg !52
-  ret i32 0, !dbg !53
+  call void @_Z10checkLimiti(i32 noundef 4), !dbg !57
+  %1 = call noundef ptr @_Z12getColorNamei(i32 noundef 1), !dbg !58
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %1), !dbg !58
+  %3 = call noundef i32 @_Z8sumUntili(i32 noundef 4), !dbg !59
+  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %3), !dbg !59
+  call void @_Z9propagateb(ptr dead_on_unwind writable sret(%struct.Result) align 8 %propagated, i1 noundef zeroext false), !dbg !60
+  %5 = call noundef ptr @_ZN6ResultIiE6unwrapEv(ptr noundef nonnull align 8 dereferenceable(24) %propagated), !dbg !61
+  %6 = load i32, ptr %5, align 4, !dbg !61
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6), !dbg !61
+  ret i32 0, !dbg !62
 }
 
 ; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #4
 
 attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+attributes #1 = { nofree }
+attributes #2 = { cold noreturn nounwind }
+attributes #3 = { mustprogress noinline norecurse nounwind optnone uwtable }
+attributes #4 = { nofree nounwind }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4, !5}
 !llvm.ident = !{!6}
@@ -243,9 +288,18 @@ attributes #2 = { nofree nounwind }
 !45 = !DILocation(line: 39, column: 17, scope: !41)
 !46 = !DILocation(line: 40, column: 28, scope: !41)
 !47 = !DILocation(line: 40, column: 5, scope: !41)
-!48 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !8, file: !8, line: 43, type: !10, scopeLine: 43, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !7)
-!49 = !DILocation(line: 44, column: 40, scope: !48)
-!50 = !DILocation(line: 45, column: 34, scope: !48)
-!51 = !DILocation(line: 46, column: 40, scope: !48)
-!52 = !DILocation(line: 47, column: 32, scope: !48)
-!53 = !DILocation(line: 48, column: 1, scope: !48)
+!48 = distinct !DISubprogram(name: "checkLimit", linkageName: "_Z10checkLimiti", scope: !8, file: !8, line: 43, type: !10, scopeLine: 43, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !7)
+!49 = !DILocation(line: 43, column: 14, scope: !48)
+!50 = !DILocation(line: 44, column: 16, scope: !48)
+!51 = !DILocation(line: 45, column: 33, scope: !48)
+!52 = !DILocation(line: 46, column: 9, scope: !48)
+!53 = !DILocation(line: 46, column: 21, scope: !48)
+!54 = !DILocation(line: 47, column: 5, scope: !48)
+!55 = !DILocation(line: 48, column: 1, scope: !48)
+!56 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !8, file: !8, line: 50, type: !10, scopeLine: 50, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !7)
+!57 = !DILocation(line: 51, column: 16, scope: !56)
+!58 = !DILocation(line: 52, column: 40, scope: !56)
+!59 = !DILocation(line: 53, column: 34, scope: !56)
+!60 = !DILocation(line: 54, column: 40, scope: !56)
+!61 = !DILocation(line: 55, column: 32, scope: !56)
+!62 = !DILocation(line: 56, column: 1, scope: !56)

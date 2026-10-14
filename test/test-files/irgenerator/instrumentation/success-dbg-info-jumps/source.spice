@@ -1,6 +1,6 @@
 // TEST: --debug-info=line-only
 
-// Jumps (return, break, continue, error propagation) are attributed to their own statement, not to the closing brace of
+// Jumps (return, break, continue, error propagation, panic) are attributed to their own statement, not to the closing brace of
 // the outermost scope they clean up
 
 type Color enum { RED, GREEN, BLUE }
@@ -40,7 +40,15 @@ f<Result<int>> propagate(bool doFail) {
     return ok<int>(value * 2);
 }
 
+p checkLimit(int limit) {
+    if limit > 10 {
+        String message = String("limit too high");
+        panic(Error(message.getRaw()));
+    }
+}
+
 f<int> main() {
+    checkLimit(4);
     printf("Color: %s\n", getColorName(Color::GREEN));
     printf("Sum: %d\n", sumUntil(4));
     Result<int> propagated = propagate(false);
