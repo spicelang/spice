@@ -9,7 +9,6 @@ import "std/type/type-conversion";
 
 // External functions
 ext f<int> memcmp(string, string, unsigned long);
-ext f<int> snprintf(char*, unsigned long, string, ...);
 
 /**
  * Split the given haystack by the needle and return the last fragment

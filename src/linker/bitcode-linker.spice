@@ -1,7 +1,6 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Std imports
-import "std/data/pair";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
