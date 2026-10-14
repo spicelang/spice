@@ -57,8 +57,9 @@ public p printColumn(string text, unsigned int width) {
         while j > i & j < length && !isWhitespace(text[j]) {
             j--;
         }
-        // A word that is longer than the width has no break to fall back to, so split it at the width
-        if j == i {
+        // A word that is longer than the width has no break to fall back to, so split it at the width. Leading whitespace
+        // is no word and is skipped below instead
+        if j == i && !isWhitespace(text[i]) {
             j = i + columnWidth;
         }
         // Print the word

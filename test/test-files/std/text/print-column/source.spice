@@ -9,6 +9,9 @@ f<int> main() {
     printf("--\n");
     printColumn("abcdefghij", 4u);
     printf("--\n");
+    // Leading whitespace does not cause a word that fits to be split
+    printColumn(" ab", 2u);
+    printf("--\n");
     // A width of zero is treated as one
     printColumn("abc", 0u);
     printf("--\n");
