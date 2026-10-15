@@ -5,16 +5,16 @@
 # hashes for the Linux tarballs from the SHA256SUMS asset of the new release.
 set -euo pipefail
 
-komac_version=2.16.0
+komac_version=2.17.1
 
 case "$(uname -m)" in
   x86_64)
     target=x86_64-unknown-linux-gnu
-    sha256=7d2707fa6210f2789a3702de49fbd150b736dbf426ee0b9bc8e098736f9fd82d
+    sha256=e694e79cd451afabf47bead66ed34586fef4814f7b94e4b61a098f419978d5d7
     ;;
   aarch64 | arm64)
     target=aarch64-unknown-linux-gnu
-    sha256=d742d0783b48c20105976bfcc363cf2f1a8140bb2018cfc7b500d6b4a875ab12
+    sha256=413fd4ac86aea1675d89e0868a72cf3e9869ceb02806076e6b49b901f75acd16
     ;;
   *) echo "Unsupported architecture for Komac: $(uname -m)" >&2; exit 1 ;;
 esac
