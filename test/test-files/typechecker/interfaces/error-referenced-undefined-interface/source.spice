@@ -1,0 +1,12 @@
+type TestStruct struct : IPrintable {}
+
+type IPrintable interface {
+    p print();
+}
+
+p TestStruct.print() {}
+
+f<int> main() {
+    TestStruct s;
+    s.print();
+}

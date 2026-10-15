@@ -1,0 +1,5 @@
+const int GLOBAL = 1;
+
+p foo(GLOBAL value) {}
+
+f<int> main() {}

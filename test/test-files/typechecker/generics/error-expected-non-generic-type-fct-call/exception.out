@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:9:
+Expected a non-generic type: You must specify a concrete type here
+
+8  foo<T>(1);
+       ^

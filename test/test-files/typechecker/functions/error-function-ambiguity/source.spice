@@ -1,0 +1,9 @@
+type T dyn;
+
+p foo<T>(T a, int b) {}
+
+p foo<T>(int a, T b) {}
+
+f<int> main() {
+    foo(1, 2);
+}

@@ -1,0 +1,8 @@
+type Color enum {
+    RED,
+    GREEN
+}
+
+f<int> main() {
+    dyn color = Color;
+}

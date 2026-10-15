@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:1:7:
+Dyn references not allowed: Just use the dyn type without '&' instead
+
+1  p foo(dyn& value) {}
+         ^^^^

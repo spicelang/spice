@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:7:
+Expected type: Expected type, but got int
+
+3  p foo(GLOBAL value) {}
+         ^^^^^^

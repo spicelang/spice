@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:1:26:
+Referenced undefined interface: Interfaces must be defined before usage
+
+1  TestStruct struct : IPrintable {}
+                       ^^^^^^^^^^

@@ -1,0 +1,15 @@
+type T dyn;
+
+type Wrapper<T> struct {
+    T value
+}
+
+p Wrapper.ctor(T value) {
+    this.value = value;
+}
+
+type IntWrapper alias Wrapper<int>;
+
+f<int> main() {
+    IntWrapper wrapper = IntWrapper<int>(1);
+}

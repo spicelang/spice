@@ -1,0 +1,7 @@
+[Error|Semantic] ./source.spice:8:5:
+Function ambiguity: The function/procedure 'foo' is ambiguous. All of the following match the requested criteria:
+  p foo<int>(int,int)
+  p foo<int>(int,int)
+
+8  foo(1, 2);
+   ^^^^^^^^^

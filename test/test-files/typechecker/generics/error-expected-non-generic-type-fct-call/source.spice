@@ -1,0 +1,9 @@
+type T dyn;
+
+f<int> foo<T>(T value) {
+    return 1;
+}
+
+f<int> main() {
+    foo<T>(1);
+}

@@ -1,0 +1,5 @@
+p foo(dyn& value) {}
+
+f<int> main() {
+    foo(1);
+}
