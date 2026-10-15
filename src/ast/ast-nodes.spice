@@ -1227,6 +1227,16 @@ public f<String> ASTForLoopNode.getBodyScopeId() {
 
 // ======================================================== ForeachLoopNode ======================================================
 
+// Functions, that a foreach loop calls. They depend on the iterator type, so they are resolved once per manifestation
+public type ForeachLoopData struct {
+    public Function* getIteratorFct = nil<Function*>
+    public Function* getFct = nil<Function*>
+    public Function* getIdxFct = nil<Function*>
+    public Function* isValidFct = nil<Function*>
+    public Function* nextFct = nil<Function*>
+    public Function* calledItemCopyCtor = nil<Function*>
+}
+
 public type ASTForeachLoopNode struct : IVisitable {
     compose public ASTStmtNode node
 
@@ -1237,12 +1247,7 @@ public type ASTForeachLoopNode struct : IVisitable {
     public Scope* headScope = nil<Scope*>
     public Scope* bodyScope = nil<Scope*>
     public Vector<ResourcesForManifestationToCleanup> headResourcesToCleanup
-    public Function* getIteratorFct = nil<Function*>
-    public Function* getFct = nil<Function*>
-    public Function* getIdxFct = nil<Function*>
-    public Function* isValidFct = nil<Function*>
-    public Function* nextFct = nil<Function*>
-    public Function* calledItemCopyCtor = nil<Function*>
+    public Vector<ForeachLoopData> data
 }
 
 public p ASTForeachLoopNode.ctor(CodeLoc codeLoc) {
@@ -1510,6 +1515,13 @@ public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
 // back-annotates each param's 'isFctParam' field directly (not via dispatch), so the list needs to stay
 // concretely typed, which in turn needs DeclStmtNode defined first (same-file ordering rule).
 
+// Ctors, that a declaration calls. They depend on the type of the variable, so they are resolved once per manifestation
+public type DeclStmtData struct {
+    public bool isCtorCallRequired = false // For struct, in case there are reference fields, we need to call a user-defined ctor
+    public Function* calledInitCtor = nil<Function*>
+    public Function* calledCopyCtor = nil<Function*>
+}
+
 public type ASTDeclStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
@@ -1519,10 +1531,8 @@ public type ASTDeclStmtNode struct : IVisitable {
     public IVisitable* assignExpr = nil<IVisitable*>
     public bool isFctParam = false
     public bool isForEachItem = false
-    public bool isCtorCallRequired = false // For struct, in case there are reference fields, we need to call a user-defined ctor
     public Vector<SymbolTableEntry*> entries
-    public Function* calledInitCtor = nil<Function*>
-    public Function* calledCopyCtor = nil<Function*>
+    public Vector<DeclStmtData> data
 }
 
 public p ASTDeclStmtNode.ctor(CodeLoc codeLoc) {
@@ -1560,7 +1570,7 @@ public type ASTArgLstNode struct : IVisitable {
     compose public ASTNode node
 
     public Vector<IVisitable*> args
-    public Vector<ArgInfo> argInfos
+    public Vector<Vector<ArgInfo>> argInfos // Per manifestation, since the copy ctors depend on the argument types
 }
 
 public p ASTArgLstNode.ctor(CodeLoc codeLoc) {
@@ -1753,12 +1763,21 @@ public f<Any> ASTCaseConstantNode.accept(IAbstractAstVisitor* visitor) {
 
 // ========================================================= ReturnStmtNode ======================================================
 
+// Return type and copy ctor of a return statement. They depend on the return type, so they are resolved once per manifestation
+public type ReturnStmtData struct {
+    public QualType returnType
+    public Function* calledCopyCtor = nil<Function*>
+}
+
+public p ReturnStmtData.ctor() {
+    this.returnType = QualType(SuperType::TY_INVALID);
+}
+
 public type ASTReturnStmtNode struct : IVisitable {
     compose public ASTStmtNode node
 
     public IVisitable* assignExpr = nil<IVisitable*>
-    public QualType returnType
-    public Function* calledCopyCtor = nil<Function*>
+    public Vector<ReturnStmtData> data
     public bool hasReturnValue = false
     // Local variable, that is handed over to the caller without a copy (per manifestation). Its dtor is skipped on the
     // cleanup path of this return statement only, all other paths out of its scope still destruct it.
@@ -1880,15 +1899,20 @@ public f<Any> ASTAssignExprNode.accept(IAbstractAstVisitor* visitor) {
 
 // ======================================================== TernaryExprNode ======================================================
 
+// Copy ctor calls of a ternary. They depend on the operand types, so they are resolved once per manifestation
+public type TernaryExprData struct {
+    public Function* calledCopyCtor = nil<Function*>
+    public bool trueSideCallsCopyCtor = false
+    public bool falseSideCallsCopyCtor = false
+}
+
 public type ASTTernaryExprNode struct : IVisitable {
     compose public ASTExprNode node
 
     public IVisitable* condition = nil<IVisitable*>
     public IVisitable* trueExpr = nil<IVisitable*>
     public IVisitable* falseExpr = nil<IVisitable*>
-    public Function* calledCopyCtor = nil<Function*>
-    public bool trueSideCallsCopyCtor = false
-    public bool falseSideCallsCopyCtor = false
+    public Vector<TernaryExprData> data
     public bool isShortened = false
 }
 
@@ -2173,6 +2197,15 @@ public type PostfixUnaryOp enum {
     OP_ERR_PROPAGATION
 }
 
+// Functions, that the error propagation operator calls. They depend on the Result<T> type of the operand, so they are resolved
+// once per manifestation
+public type ErrPropagationData struct {
+    public const Function* isErrFct = nil<const Function*>  // Result<T>.isErr()
+    public const Function* unwrapFct = nil<const Function*> // Result<T>.unwrap()
+    public const Function* getErrFct = nil<const Function*> // Result<T>.getErr()
+    public const Function* ctorFct = nil<const Function*>   // err<U>(const Error&), where Result<U> is the enclosing function's return type
+}
+
 public type ASTPostfixUnaryExprNode struct : IVisitable {
     compose public ASTExprNode node
     public IVisitable* atomicExpr = nil<IVisitable*>
@@ -2181,11 +2214,7 @@ public type ASTPostfixUnaryExprNode struct : IVisitable {
     public PostfixUnaryOp op = PostfixUnaryOp::OP_NONE
     public Vector<Vector<const Function*>> opFct // Operator overloading functions
     public String identifier // Only set when operator is member access
-    // Only set when operator is error propagation
-    public const Function* errPropIsErrFct = nil<const Function*>  // Result<T>.isErr()
-    public const Function* errPropUnwrapFct = nil<const Function*> // Result<T>.unwrap()
-    public const Function* errPropGetErrFct = nil<const Function*> // Result<T>.getErr()
-    public const Function* errPropCtorFct = nil<const Function*>   // err<U>(const Error&), where Result<U> is the enclosing function's return type
+    public Vector<ErrPropagationData> errPropData // Only set when operator is error propagation
 }
 
 public p ASTPostfixUnaryExprNode.ctor(CodeLoc codeLoc) {
@@ -2379,8 +2408,7 @@ public type ASTStructInstantiationNode struct : IVisitable {
     public Vector<Struct*> instantiatedStructs
     // Per-manifestation (the struct itself may be/depend on a generic type, e.g. inside a generic function), per-field
     // copy ctor to call for a field value that needs to be deep-copied instead of raw-stored. Kept here rather than on
-    // the (manifestation-unaware) shared fieldLst.argInfos, since a struct literal inside a generic function is
-    // re-type-checked once per manifestation and each needs its own copy-ctor set.
+    // fieldLst.argInfos, since that one is only filled for the arguments of function calls.
     public Vector<Vector<Function*>> fieldCopyCtors
 }
 
@@ -2794,6 +2822,39 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         while declStmtNode.entries.getSize() < manifestationCount {
             declStmtNode.entries.pushBack(nil<SymbolTableEntry*>);
         }
+        if declStmtNode.data.isEmpty() {
+            declStmtNode.data.reserve(manifestationCount);
+        }
+        while declStmtNode.data.getSize() < manifestationCount {
+            declStmtNode.data.pushBack(DeclStmtData{});
+        }
+    }
+    if node.kind == ASTNodeKind::ARG_LST {
+        ASTArgLstNode* argLstNode = downcast<ASTArgLstNode>(node);
+        if argLstNode.argInfos.isEmpty() {
+            argLstNode.argInfos.reserve(manifestationCount);
+        }
+        while argLstNode.argInfos.getSize() < manifestationCount {
+            argLstNode.argInfos.pushBack(Vector<ArgInfo>());
+        }
+    }
+    if node.kind == ASTNodeKind::TERNARY_EXPR {
+        ASTTernaryExprNode* ternaryExprNode = downcast<ASTTernaryExprNode>(node);
+        if ternaryExprNode.data.isEmpty() {
+            ternaryExprNode.data.reserve(manifestationCount);
+        }
+        while ternaryExprNode.data.getSize() < manifestationCount {
+            ternaryExprNode.data.pushBack(TernaryExprData{});
+        }
+    }
+    if node.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
+        ASTPostfixUnaryExprNode* postfixUnaryExprNode = downcast<ASTPostfixUnaryExprNode>(node);
+        if postfixUnaryExprNode.errPropData.isEmpty() {
+            postfixUnaryExprNode.errPropData.reserve(manifestationCount);
+        }
+        while postfixUnaryExprNode.errPropData.getSize() < manifestationCount {
+            postfixUnaryExprNode.errPropData.pushBack(ErrPropagationData{});
+        }
     }
     if node.kind == ASTNodeKind::FCT_CALL {
         ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(node);
@@ -2858,6 +2919,12 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         while foreachLoopNode.headResourcesToCleanup.getSize() < manifestationCount {
             foreachLoopNode.headResourcesToCleanup.pushBack(ResourcesForManifestationToCleanup{});
         }
+        if foreachLoopNode.data.isEmpty() {
+            foreachLoopNode.data.reserve(manifestationCount);
+        }
+        while foreachLoopNode.data.getSize() < manifestationCount {
+            foreachLoopNode.data.pushBack(ForeachLoopData{});
+        }
     }
     if node.kind == ASTNodeKind::RETURN_STMT {
         ASTReturnStmtNode* returnStmtNode = downcast<ASTReturnStmtNode>(node);
@@ -2866,6 +2933,12 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
         while returnStmtNode.returnedLocals.getSize() < manifestationCount {
             returnStmtNode.returnedLocals.pushBack(nil<SymbolTableEntry*>);
+        }
+        if returnStmtNode.data.isEmpty() {
+            returnStmtNode.data.reserve(manifestationCount);
+        }
+        while returnStmtNode.data.getSize() < manifestationCount {
+            returnStmtNode.data.pushBack(ReturnStmtData());
         }
     }
     if node.kind == ASTNodeKind::ATOMIC_EXPR {
