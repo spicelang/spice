@@ -1,0 +1,48 @@
+type T dyn;
+
+type Tracker struct {
+    int id
+}
+
+p Tracker.ctor() {
+    this.id = 7;
+    printf("Tracker constructed\n");
+}
+
+// The user-defined copy ctor makes the generic Box get an implicit copy ctor in addition to its implicit ctor
+p Tracker.ctor(const Tracker& other) {
+    this.id = other.id;
+    printf("Tracker copied\n");
+}
+
+p Tracker.dtor() {
+    printf("Tracker destroyed\n");
+}
+
+// Box has no user-defined ctor, so it gets an implicit one that constructs the tracker field
+type Box<T> struct {
+    Tracker tracker
+    T value
+    int count = 3
+}
+
+// Box<int> and Box<double> are first substantiated by the parameter types of these procedures, before the implicit ctor of
+// the generic Box is created. The substantiations must nevertheless get their own implicit ctor
+p printIntBox(const Box<int>& box) {
+    printf("Int box: count %d, tracker %d\n", box.count, box.tracker.id);
+}
+
+p printDoubleBox(const Box<double>& box) {
+    printf("Double box: count %d, tracker %d\n", box.count, box.tracker.id);
+}
+
+f<int> main() {
+    {
+        Box<int> intBox;
+        printIntBox(intBox);
+    }
+    {
+        Box<double> doubleBox;
+        printDoubleBox(doubleBox);
+    }
+}

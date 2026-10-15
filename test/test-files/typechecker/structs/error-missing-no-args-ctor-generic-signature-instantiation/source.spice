@@ -1,0 +1,20 @@
+type T dyn;
+
+type Box<T> struct {
+    String label
+    T value
+}
+
+// Box<int> is first substantiated by the parameter type of this procedure, before the user-defined ctor of Box below is
+// prepared. The implicit copy ctor of the generic Box replaces the user-defined ctor in the name registry, but the
+// user-defined ctor must nevertheless keep Box<int> from getting an implicit no-args ctor
+p inspect(const Box<int>& box) {}
+
+p Box.ctor(const T& value) {
+    this.label = String("Box");
+    this.value = value;
+}
+
+f<int> main() {
+    Box<int> box;
+}

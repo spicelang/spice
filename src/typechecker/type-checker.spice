@@ -6335,11 +6335,23 @@ p createDefaultCtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
     // in the file and therefore has not been registered in the struct scope yet. It also covers a ctor that the generic
     // preset received, which every manifestation inherits through its copied scope. The scope scan on top of it only
     // guards against creating a second ctor into a scope that visibly has one already.
+    // A registry entry that stems from a default ctor of the generic preset does not count for a manifestation, that has no
+    // ctor in its scope: Such a manifestation was substantiated before the preset got its default ctors, so it could not
+    // inherit them through its copied scope and has to create its own. The registry entry itself cannot tell this apart,
+    // since all ctors share the registry name, and a default copy or move ctor of the preset replaces the entry of a
+    // user-defined ctor. Ask the scope of the preset instead, which knows all user-defined ctors at this point.
     const SymbolTableEntry* structEntry = spiceStruct.structBase.entry;
     const QualType structType = structEntry.getQualType();
     const String fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
-    if sourceFile.getNameRegistryEntry(fqFctName) != nil<const NameRegistryEntry*> || hasAnyCtor(structScope) {
+    const NameRegistryEntry* registryEntry = sourceFile.getNameRegistryEntry(fqFctName);
+    if hasAnyCtor(structScope) {
         return;
+    }
+    if registryEntry != nil<const NameRegistryEntry*> {
+        const bool hasOnlyPresetDefaultCtors = spiceStruct.structBase.isGenericSubstantiation() && !hasUserMethodWithName(spiceStruct.structBase.genericPreset.scope, String(CTOR_FUNCTION_NAME));
+        if !hasOnlyPresetDefaultCtors {
+            return;
+        }
     }
 
     // Check if we have fields, that require us to do anything in the ctor
