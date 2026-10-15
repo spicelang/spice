@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:19:5:
+No matching ctor found: Struct 'Box' is not trivially constructible and has no no-args constructor.
+
+19  Box<int> box;
+    ^^^^^^^^^^^^
