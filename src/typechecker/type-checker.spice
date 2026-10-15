@@ -6316,6 +6316,21 @@ p createDefaultStructMethod(const Struct& spiceStruct, const String& entryName, 
 }
 
 /**
+ * Check if the given symbol table entry name is the one of a default ctor, copy ctor or move ctor of the struct, that is
+ * declared at the given code location
+ *
+ * @param entryName Symbol table entry name
+ * @param structCodeLoc Code location of the struct declaration
+ * @return Name of a default ctor or not
+ */
+f<bool> isDefaultCtorEntryName(const String& entryName, const CodeLoc& structCodeLoc) {
+    const bool isDefaultCtor = entryName == getSymbolTableEntryNameDefaultCtor(structCodeLoc);
+    const bool isDefaultCopyCtor = entryName == getSymbolTableEntryNameDefaultCopyCtor(structCodeLoc);
+    const bool isDefaultMoveCtor = entryName == getSymbolTableEntryNameDefaultMoveCtor(structCodeLoc);
+    return isDefaultCtor || isDefaultCopyCtor || isDefaultMoveCtor;
+}
+
+/**
  * Checks if the given struct scope already has a user-defined constructor and creates a default one if not.
  *
  * For generating a default ctor, the following conditions need to be met:
@@ -6335,11 +6350,22 @@ p createDefaultCtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
     // in the file and therefore has not been registered in the struct scope yet. It also covers a ctor that the generic
     // preset received, which every manifestation inherits through its copied scope. The scope scan on top of it only
     // guards against creating a second ctor into a scope that visibly has one already.
+    // A registry entry that stems from a default ctor of the generic preset does not count for a manifestation, that has no
+    // ctor in its scope: Such a manifestation was substantiated before the preset got its default ctors, so it could not
+    // inherit them through its copied scope and has to create its own. All default ctors of the preset share the registry
+    // name, so the entry might also point to its default copy or move ctor, which the preset created after its default ctor.
     const SymbolTableEntry* structEntry = spiceStruct.structBase.entry;
     const QualType structType = structEntry.getQualType();
     const String fqFctName = structType.getSubType() + MEMBER_ACCESS_TOKEN + CTOR_FUNCTION_NAME;
-    if sourceFile.getNameRegistryEntry(fqFctName) != nil<const NameRegistryEntry*> || hasAnyCtor(structScope) {
+    const NameRegistryEntry* registryEntry = sourceFile.getNameRegistryEntry(fqFctName);
+    if hasAnyCtor(structScope) {
         return;
+    }
+    if registryEntry != nil<const NameRegistryEntry*> {
+        const bool isPresetDefaultCtor = spiceStruct.structBase.isGenericSubstantiation() && isDefaultCtorEntryName(registryEntry.targetEntry.name, baseNode.codeLoc);
+        if !isPresetDefaultCtor {
+            return;
+        }
     }
 
     // Check if we have fields, that require us to do anything in the ctor
