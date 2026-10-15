@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:10:
+Ref pointers not allowed: Pointers to references are not allowed. Use pointer instead
+
+3  p foo<T>(T* ptr) {}
+            ^^

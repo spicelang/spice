@@ -1,0 +1,7 @@
+type Base struct {}
+
+type TestStruct struct : Base {}
+
+f<int> main() {
+    TestStruct s;
+}

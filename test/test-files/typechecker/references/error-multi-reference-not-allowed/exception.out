@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:5:5:
+Multi references not allowed: References to references are not allowed
+
+5  IntRef& ref = i;
+   ^^^^^^^

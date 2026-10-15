@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:26:
+Expected an interface type: Expected interface type, got Base
+
+3  TestStruct struct : Base {}
+                       ^^^^

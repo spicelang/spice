@@ -1,0 +1,6 @@
+type IntRef alias int&;
+
+f<int> main() {
+    int i = 1;
+    IntRef& ref = i;
+}

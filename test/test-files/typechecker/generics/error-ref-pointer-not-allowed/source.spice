@@ -1,0 +1,8 @@
+type T dyn;
+
+p foo<T>(T* ptr) {}
+
+f<int> main() {
+    int i = 1;
+    foo<int&>(&i);
+}

@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:14:37:
+Alias with template list: The aliased type already has a template list
+
+14  wrapper = IntWrapper<int>(1);
+                         ^^^
