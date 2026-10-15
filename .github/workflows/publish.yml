@@ -488,11 +488,35 @@ jobs:
           asset_name: spice_${{ matrix.config.label }}_setup.msi
           tag: ${{ github.ref }}
 
-      - name: Deploy to WinGet
-        uses: vedantmgoyal9/winget-releaser@v2
-        continue-on-error: true
+  deploy-winget:
+    name: Deploy to WinGet
+    needs: build-win-installers
+    runs-on: ubuntu-latest
+    # Release candidates would become the newest version of the package for every WinGet user
+    if: contains(github.ref, 'rc') == false
+    # Komac only reads the release from GitHub and submits the manifest PR with the token, the checkout needs no more
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
         with:
-          identifier: ChilliBits.Spice
-          version: ${{ github.ref_name }}
-          release-tag: ${{ github.ref_name }}
-          token: ${{ secrets.CR_PAT }}
+          persist-credentials: false
+
+      - name: Setup Komac
+        run: bash .github/scripts/install-komac.sh
+
+      # Komac downloads the installer to fill in its hash, product code and so on, and opens the PR against
+      # microsoft/winget-pkgs from a fork of the token owner. It needs a classic token with the 'public_repo' scope,
+      # fine-grained tokens cannot open the PR.
+      - name: Submit manifest to winget-pkgs
+        env:
+          GITHUB_TOKEN: ${{ secrets.CR_PAT }}
+          VERSION: ${{ github.ref_name }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          komac update ChilliBits.Spice \
+            --version "$VERSION" \
+            --urls "$REPO_URL/releases/download/$VERSION/spice_x64_setup.msi" \
+            --release-notes-url "$REPO_URL/releases/tag/$VERSION" \
+            --submit
