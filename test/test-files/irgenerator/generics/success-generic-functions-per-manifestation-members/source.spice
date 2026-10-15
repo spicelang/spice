@@ -1,0 +1,115 @@
+import "std/data/vector";
+
+type T dyn;
+
+// Small and Big differ in size, so that calling a member of the one on the other overflows. Both record which type ran their
+// ctor and copy ctor, so that a member of the wrong manifestation shows up in the output
+public type Small struct {
+    String name
+    String copiedBy
+}
+
+public p Small.ctor() {
+    this.name = String("Small");
+    this.copiedBy = String("nobody");
+}
+
+public p Small.ctor(const Small& other) {
+    this.name = other.name;
+    this.copiedBy = String("Small");
+}
+
+public type Big struct {
+    String name
+    String copiedBy
+    String b
+    String c
+    String d
+}
+
+public p Big.ctor() {
+    this.name = String("Big");
+    this.copiedBy = String("nobody");
+    this.b = String("b");
+    this.c = String("c");
+    this.d = String("d");
+}
+
+public p Big.ctor(const Big& other) {
+    this.name = other.name;
+    this.copiedBy = String("Big");
+    this.b = other.b;
+    this.c = other.c;
+    this.d = other.d;
+}
+
+// Each of the following generic functions resolves members of T. Every manifestation has to call the members of its own T
+p declInit<T>() {
+    T item;
+    printf("declInit: %s\n", item.name.getRaw());
+}
+
+p declCopy<T>(const T& original) {
+    T item = original;
+    printf("declCopy: %s, copied by %s\n", item.name.getRaw(), item.copiedBy.getRaw());
+}
+
+p iterate<T>(const Vector<T>& items) {
+    foreach const T& item : items {
+        printf("iterate: %s\n", item.name.getRaw());
+    }
+}
+
+p iterateCopy<T>(const Vector<T>& items) {
+    foreach T item : items {
+        printf("iterateCopy: %s, copied by %s\n", item.name.getRaw(), item.copiedBy.getRaw());
+    }
+}
+
+f<T> returnCopy<T>(const T& original) {
+    return original;
+}
+
+p takeByValue<T>(T value) {
+    printf("takeByValue: %s, copied by %s\n", value.name.getRaw(), value.copiedBy.getRaw());
+}
+
+f<T> ternary<T>(bool cond) {
+    T local;
+    return cond ? local : T();
+}
+
+f<Result<T>> makeResult<T>() {
+    return ok<T>(T());
+}
+
+f<Result<T>> propagate<T>() {
+    T value = makeResult<T>()!;
+    printf("propagate: %s\n", value.name.getRaw());
+    return ok<T>(value);
+}
+
+p testAll<T>() {
+    declInit<T>();
+    T original;
+    declCopy<T>(original);
+    Vector<T> items;
+    items.pushBack(T());
+    items.pushBack(T());
+    iterate<T>(items);
+    iterateCopy<T>(items);
+    T returned = returnCopy<T>(original);
+    printf("returnCopy: %s, copied by %s\n", returned.name.getRaw(), returned.copiedBy.getRaw());
+    T local;
+    takeByValue<T>(local);
+    T fromTernary = ternary<T>(true);
+    printf("ternary: %s, copied by %s\n", fromTernary.name.getRaw(), fromTernary.copiedBy.getRaw());
+    Result<T> result = propagate<T>();
+    printf("result is ok: %d\n", result.isOk());
+}
+
+f<int> main() {
+    // Small is instantiated first. Without a separate member per manifestation, it would call the members of Big
+    testAll<Small>();
+    testAll<Big>();
+}

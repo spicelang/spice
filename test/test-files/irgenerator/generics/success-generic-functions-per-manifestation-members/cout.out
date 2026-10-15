@@ -1,0 +1,22 @@
+declInit: Small
+declCopy: Small, copied by Small
+iterate: Small
+iterate: Small
+iterateCopy: Small, copied by Small
+iterateCopy: Small, copied by Small
+returnCopy: Small, copied by Small
+takeByValue: Small, copied by Small
+ternary: Small, copied by Small
+propagate: Small
+result is ok: 1
+declInit: Big
+declCopy: Big, copied by Big
+iterate: Big
+iterate: Big
+iterateCopy: Big, copied by Big
+iterateCopy: Big, copied by Big
+returnCopy: Big, copied by Big
+takeByValue: Big, copied by Big
+ternary: Big, copied by Big
+propagate: Big
+result is ok: 1

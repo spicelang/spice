@@ -2384,35 +2384,36 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     this.continueTargets.pushBack(BreakContinueTarget{bodyScope, bTail});
 
     // Resolve iterator
+    const ForeachLoopData& data = node.data.get(this.manIdx);
     IVisitable* iteratorAssignNode = node.iteratorAssign;
     llvm::Value iteratorPtr;
-    if node.getIteratorFct != nil<model::Function*> { // The iteratorAssignExpr is of type Iterable
+    if data.getIteratorFct != nil<model::Function*> { // The iteratorAssignExpr is of type Iterable
         const llvm::Value iterablePtr = this.resolveAddress(iteratorAssignNode);
 
         llvm::Value iterator;
         llvm::Value iteratorAddr;
-        const QualTypeList getIteratorParamTypes = node.getIteratorFct.getParamTypes();
+        const QualTypeList getIteratorParamTypes = data.getIteratorFct.getParamTypes();
         bool isArrayIterable = false;
-        if !node.getIteratorFct.isMethod() {
+        if !data.getIteratorFct.isMethod() {
             const QualType& firstParamType = getIteratorParamTypes.front();
             isArrayIterable = firstParamType.isArray();
         }
         if isArrayIterable { // Array as iterable
             // Call iterate() function from std/iterator/array-iterator
-            const llvm::Function iterateFct = this.stdFunctionManager.getIterateFct(node.getIteratorFct);
+            const llvm::Function iterateFct = this.stdFunctionManager.getIterateFct(data.getIteratorFct);
             const QualType iterableType = this.getEvaluatedType(iteratorAssignNode);
             const unsigned long arraySize = cast<unsigned long>(iterableType.getArraySize());
             assert arraySize > 0l;
             Vector<llvm::Value> args;
             args.pushBack(iterablePtr);
             args.pushBack(this.builder.getInt64(arraySize));
-            iterator = this.insertCall(iterateFct, args, node.getIteratorFct.returnType, iteratorAddr);
+            iterator = this.insertCall(iterateFct, args, data.getIteratorFct.returnType, iteratorAddr);
         } else { // Struct as iterable
             // Call .getIterator() on iterable
-            const llvm::Function getIteratorFct = this.stdFunctionManager.getIteratorFct(node.getIteratorFct);
+            const llvm::Function getIteratorFct = this.stdFunctionManager.getIteratorFct(data.getIteratorFct);
             Vector<llvm::Value> args;
             args.pushBack(iterablePtr);
-            iterator = this.insertCall(getIteratorFct, args, node.getIteratorFct.returnType, iteratorAddr);
+            iterator = this.insertCall(getIteratorFct, args, data.getIteratorFct.returnType, iteratorAddr);
         }
 
         // Resolve address of iterator. If it is returned via memory or coerced, it already lives in memory
@@ -2438,11 +2439,11 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     const bool hasIdx = node.idxVarDecl != nil<IVisitable*>;
     // Retrieve item ref type
     if hasIdx {
-        assert node.getIdxFct != nil<model::Function*>;
+        assert data.getIdxFct != nil<model::Function*>;
     } else {
-        assert node.getFct != nil<model::Function*>;
+        assert data.getFct != nil<model::Function*>;
     }
-    const QualType itemRefSTy = hasIdx ? node.getIdxFct.returnType : node.getFct.returnType;
+    const QualType itemRefSTy = hasIdx ? data.getIdxFct.returnType : data.getFct.returnType;
 
     // Visit idx variable declaration if required
     const SymbolTableEntry* idxEntry = nil<const SymbolTableEntry*>;
@@ -2463,8 +2464,8 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     this.switchToBlock(bHead);
     this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     // Call .isValid() on iterator
-    assert node.isValidFct != nil<model::Function*>;
-    const llvm::Function isValidFct = this.stdFunctionManager.getIteratorIsValidFct(node.isValidFct);
+    assert data.isValidFct != nil<model::Function*>;
+    const llvm::Function isValidFct = this.stdFunctionManager.getIteratorIsValidFct(data.isValidFct);
     Vector<llvm::Value> iteratorArgs;
     iteratorArgs.pushBack(iteratorPtr);
     const llvm::Value isValid = this.builder.createCall(isValidFct, iteratorArgs);
@@ -2487,11 +2488,11 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     // Get the current iterator values
     LLVMExprResult itemResult;
     if hasIdx {
-        const QualType& pairSTy = node.getIdxFct.returnType;
+        const QualType& pairSTy = data.getIdxFct.returnType;
         const llvm::Type pairTy = pairSTy.toLLVMType(this.sourceFile);
         // Call .getIdx() on iterator. If the pair is returned via memory or coerced, it already lives in memory
-        assert node.getIdxFct != nil<model::Function*>;
-        const llvm::Function getIdxFct = this.stdFunctionManager.getIteratorGetIdxFct(node.getIdxFct);
+        assert data.getIdxFct != nil<model::Function*>;
+        const llvm::Function getIdxFct = this.stdFunctionManager.getIteratorGetIdxFct(data.getIdxFct);
         llvm::Value pairPtr;
         llvm::Value pair = this.insertCall(getIdxFct, iteratorArgs, pairSTy, pairPtr);
         if pairPtr.isNull() {
@@ -2509,17 +2510,17 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
         itemResult.refPtr = this.insertStructGEP(pairTy, pairPtr, 1, String("item.addr"));
     } else {
         // Call .get() on iterator
-        assert node.getFct != nil<model::Function*>;
-        const llvm::Function getFct = this.stdFunctionManager.getIteratorGetFct(node.getFct);
+        assert data.getFct != nil<model::Function*>;
+        const llvm::Function getFct = this.stdFunctionManager.getIteratorGetFct(data.getFct);
         itemResult.ptr = this.builder.createCall(getFct, iteratorArgs);
     }
-    if node.calledItemCopyCtor != nil<model::Function*> {
+    if data.calledItemCopyCtor != nil<model::Function*> {
         // Call copy ctor
         const llvm::Value rhsAddress = this.resolveAddress(itemResult);
         assert !rhsAddress.isNull();
         Vector<llvm::Value> ctorArgs;
         ctorArgs.pushBack(rhsAddress);
-        this.generateCtorOrDtorCall(itemEntry, node.calledItemCopyCtor, ctorArgs);
+        this.generateCtorOrDtorCall(itemEntry, data.calledItemCopyCtor, ctorArgs);
     } else {
         // Perform normal assignment
         this.doAssignment(itemAddress, itemEntry, itemResult, itemRefSTy, cast<ASTNode*>(node), true);
@@ -2535,8 +2536,8 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     this.switchToBlock(bTail);
     this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     // Call .next() on iterator
-    assert node.nextFct != nil<model::Function*>;
-    const llvm::Function nextFct = this.stdFunctionManager.getIteratorNextFct(node.nextFct);
+    assert data.nextFct != nil<model::Function*>;
+    const llvm::Function nextFct = this.stdFunctionManager.getIteratorNextFct(data.nextFct);
     this.builder.createCall(nextFct, iteratorArgs);
     // Create jump from tail to head block
     this.insertJump(bHead);
@@ -2856,6 +2857,7 @@ public f<Any> IRGenerator.visitTypeAltsLst(ASTTypeAltsLstNode* _) {
 public f<Any> IRGenerator.visitDeclStmt(ASTDeclStmtNode* node) {
     // Get variable entry
     const SymbolTableEntry* varEntry = node.entries.get(this.manIdx);
+    const DeclStmtData& data = node.data.get(this.manIdx);
     assert varEntry != nil<const SymbolTableEntry*>;
     const QualType varSymbolType = varEntry.getQualType();
 
@@ -2865,7 +2867,7 @@ public f<Any> IRGenerator.visitDeclStmt(ASTDeclStmtNode* node) {
     // Check if the declaration is with an assignment or the default value
     llvm::Value varAddress;
     if node.hasAssignment { // Assignment
-        if node.calledCopyCtor != nil<model::Function*> {
+        if data.calledCopyCtor != nil<model::Function*> {
             // Allocate memory
             varAddress = this.insertAlloca(varTy);
             this.updateAddress(varEntry, varAddress);
@@ -2876,7 +2878,7 @@ public f<Any> IRGenerator.visitDeclStmt(ASTDeclStmtNode* node) {
             assert !rhsAddress.isNull();
             Vector<llvm::Value> ctorArgs;
             ctorArgs.pushBack(rhsAddress);
-            this.generateCtorOrDtorCall(varEntry, node.calledCopyCtor, ctorArgs);
+            this.generateCtorOrDtorCall(varEntry, data.calledCopyCtor, ctorArgs);
         } else {
             // Assign rhs to lhs
             const LLVMExprResult assignResult = this.doAssignment(varAddress, varEntry, node.assignExpr, cast<ASTNode*>(node), true);
@@ -2892,15 +2894,15 @@ public f<Any> IRGenerator.visitDeclStmt(ASTDeclStmtNode* node) {
         // Generate debug info for variable declaration
         this.diGenerator.generateLocalVarDebugInfo(node.varName, varAddress);
 
-        if node.calledInitCtor != nil<model::Function*> {
+        if data.calledInitCtor != nil<model::Function*> {
             // Call no-args constructor
             const Vector<llvm::Value> noArgs;
-            this.generateCtorOrDtorCall(varEntry, node.calledInitCtor, noArgs);
+            this.generateCtorOrDtorCall(varEntry, data.calledInitCtor, noArgs);
             // A union with no default field must start in the "unset" tag state, and a union with a default field must
             // start with that field active. Either way, the tag bits carry real runtime safety meaning (unlike a struct's
             // all-zero debug-only default), so they must be initialized unconditionally, in every build mode.
         } else if !node.isForEachItem && (this.cliOptions.buildMode != BuildMode::RELEASE || varSymbolType.is(SuperType::TY_UNION)) {
-            assert !node.isCtorCallRequired;
+            assert !data.isCtorCallRequired;
             // Retrieve default value for lhs symbol type and store it
             const llvm::Value defaultValue = this.getDefaultValueForSymbolType(varSymbolType);
             this.insertStore(defaultValue, varAddress);
@@ -2945,19 +2947,20 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
     llvm::Value returnValue;
     if node.hasReturnValue { // Return value is attached to the return statement
         IVisitable* returnExpr = node.assignExpr;
-        if node.calledCopyCtor != nil<model::Function*> {
+        const ReturnStmtData& data = node.data.get(this.manIdx);
+        if data.calledCopyCtor != nil<model::Function*> {
             // Perform a copy
             const llvm::Value originalAddress = this.resolveAddress(returnExpr);
-            const llvm::Type returnTy = node.returnType.toLLVMType(this.sourceFile);
+            const llvm::Type returnTy = data.returnType.toLLVMType(this.sourceFile);
             const llvm::Value newAddress = sretArg.isNull() ? this.insertAlloca(returnTy) : sretArg;
             Vector<llvm::Value> ctorArgs;
             ctorArgs.pushBack(originalAddress);
-            this.generateCtorOrDtorCall(newAddress, node.calledCopyCtor, ctorArgs);
+            this.generateCtorOrDtorCall(newAddress, data.calledCopyCtor, ctorArgs);
             if sretArg.isNull() {
                 returnValue = this.insertLoad(returnTy, newAddress);
             }
         } else {
-            returnValue = node.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
+            returnValue = data.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
         }
     } else { // Try to load result variable value
         const SymbolTableEntry* resultEntry = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
@@ -3188,6 +3191,7 @@ public f<Any> IRGenerator.visitTernaryExpr(ASTTernaryExprNode* node) {
     const llvm::Value condValue = this.resolveValue(node.condition);
     IVisitable* trueNode = node.isShortened ? node.condition : node.trueExpr;
     IVisitable* falseNode = node.falseExpr;
+    const TernaryExprData& data = node.data.get(this.manIdx);
 
     llvm::Value resultValue;
     llvm::Value resultPtr;
@@ -3217,9 +3221,9 @@ public f<Any> IRGenerator.visitTernaryExpr(ASTTernaryExprNode* node) {
         if !node.isShortened {
             trueScope = this.enterExprScope(trueNode);
         }
-        if node.falseSideCallsCopyCtor || resultType.isRef() { // both sides or only the false side needs copy ctor call
+        if data.falseSideCallsCopyCtor || resultType.isRef() { // both sides or only the false side needs copy ctor call
             truePtr = this.resolveAddress(trueNode);
-        } else if node.trueSideCallsCopyCtor { // only true side needs copy ctor call
+        } else if data.trueSideCallsCopyCtor { // only true side needs copy ctor call
             const llvm::Value originalPtr = this.resolveAddress(trueNode);
             // Allocate storage for the copy using the ternary's own result type, not trueNode's own evaluated type:
             // trueNode may be a reference (e.g. a 'const T&' parameter), whose LLVM type is just a pointer and would
@@ -3227,7 +3231,7 @@ public f<Any> IRGenerator.visitTernaryExpr(ASTTernaryExprNode* node) {
             truePtr = this.insertAlloca(resultType);
             Vector<llvm::Value> ctorArgs;
             ctorArgs.pushBack(originalPtr);
-            this.generateCtorOrDtorCall(truePtr, node.calledCopyCtor, ctorArgs);
+            this.generateCtorOrDtorCall(truePtr, data.calledCopyCtor, ctorArgs);
         } else { // neither true nor false side need copy ctor call
             trueValue = this.resolveValue(trueNode);
         }
@@ -3242,16 +3246,16 @@ public f<Any> IRGenerator.visitTernaryExpr(ASTTernaryExprNode* node) {
         llvm::Value falsePtr;
         // The false branch has an expression scope for its temporaries
         Scope* falseScope = this.enterExprScope(falseNode);
-        if node.trueSideCallsCopyCtor || resultType.isRef() { // both sides or only the true side needs copy ctor call
+        if data.trueSideCallsCopyCtor || resultType.isRef() { // both sides or only the true side needs copy ctor call
             falsePtr = this.resolveAddress(falseNode);
-        } else if node.falseSideCallsCopyCtor { // only false side needs copy ctor call
+        } else if data.falseSideCallsCopyCtor { // only false side needs copy ctor call
             const llvm::Value originalPtr = this.resolveAddress(falseNode);
             // See the analogous truePtr allocation above: use the ternary's result type, not falseNode's own
             // (possibly reference-qualified) evaluated type.
             falsePtr = this.insertAlloca(resultType);
             Vector<llvm::Value> ctorArgs;
             ctorArgs.pushBack(originalPtr);
-            this.generateCtorOrDtorCall(falsePtr, node.calledCopyCtor, ctorArgs);
+            this.generateCtorOrDtorCall(falsePtr, data.calledCopyCtor, ctorArgs);
         } else { // neither true nor false side need copy ctor call
             falseValue = this.resolveValue(falseNode);
         }
@@ -3262,15 +3266,15 @@ public f<Any> IRGenerator.visitTernaryExpr(ASTTernaryExprNode* node) {
 
         // Fill the exit block
         this.switchToBlock(condExit);
-        if node.trueSideCallsCopyCtor || node.falseSideCallsCopyCtor || resultType.isRef() { // one side calls copy ctor
+        if data.trueSideCallsCopyCtor || data.falseSideCallsCopyCtor || resultType.isRef() { // one side calls copy ctor
             llvm::Value phiInst = this.builder.createPhi(this.builder.getPtrTy(), "cond.result");
             phiInst.addIncoming(truePtr, condTrue);
             phiInst.addIncoming(falsePtr, condFalse);
-            if node.trueSideCallsCopyCtor && node.falseSideCallsCopyCtor { // both sides need copy ctor call
+            if data.trueSideCallsCopyCtor && data.falseSideCallsCopyCtor { // both sides need copy ctor call
                 resultPtr = this.insertAlloca(resultType);
                 Vector<llvm::Value> ctorArgs;
                 ctorArgs.pushBack(phiInst);
-                this.generateCtorOrDtorCall(resultPtr, node.calledCopyCtor, ctorArgs);
+                this.generateCtorOrDtorCall(resultPtr, data.calledCopyCtor, ctorArgs);
             } else {
                 resultPtr = phiInst;
             }
@@ -4042,14 +4046,16 @@ p IRGenerator.generateUnionFieldAccess(ASTPostfixUnaryExprNode* node, LLVMExprRe
 
 // Error propagation branch of visitPostfixUnaryExpr
 f<LLVMExprResult> IRGenerator.generateErrorPropagation(ASTPostfixUnaryExprNode* node, LLVMExprResult& lhs) {
+    const ErrPropagationData& errPropData = node.errPropData.get(this.manIdx);
+
     // Get the address of the Result<T> operand
     const llvm::Value operandPtr = this.resolveAddress(lhs);
     Vector<llvm::Value> operandArgs;
     operandArgs.pushBack(operandPtr);
 
     // Call isErr() on the operand
-    assert node.errPropIsErrFct != nil<const model::Function*>;
-    const llvm::Function isErrFct = this.stdFunctionManager.getResultIsErrFct(node.errPropIsErrFct);
+    assert errPropData.isErrFct != nil<const model::Function*>;
+    const llvm::Function isErrFct = this.stdFunctionManager.getResultIsErrFct(errPropData.isErrFct);
     const llvm::Value isErr = this.builder.createCall(isErrFct, operandArgs);
 
     // Create blocks
@@ -4060,14 +4066,14 @@ f<LLVMExprResult> IRGenerator.generateErrorPropagation(ASTPostfixUnaryExprNode* 
 
     // Switch to then block: propagate the error as the enclosing function's Result<U>
     this.switchToBlock(bThen);
-    assert node.errPropGetErrFct != nil<const model::Function*> && node.errPropCtorFct != nil<const model::Function*>;
-    const llvm::Function getErrFct = this.stdFunctionManager.getResultGetErrFct(node.errPropGetErrFct);
+    assert errPropData.getErrFct != nil<const model::Function*> && errPropData.ctorFct != nil<const model::Function*>;
+    const llvm::Function getErrFct = this.stdFunctionManager.getResultGetErrFct(errPropData.getErrFct);
     const llvm::Value errorPtr = this.builder.createCall(getErrFct, operandArgs);
-    const llvm::Function errCtorFct = this.stdFunctionManager.getResultErrCtorFct(node.errPropCtorFct);
+    const llvm::Function errCtorFct = this.stdFunctionManager.getResultErrCtorFct(errPropData.ctorFct);
     Vector<llvm::Value> errCtorArgs;
     errCtorArgs.pushBack(errorPtr);
     // If the enclosing function returns via memory, construct the result directly in the memory of its caller
-    const QualType& propagatedResultType = node.errPropCtorFct.returnType;
+    const QualType& propagatedResultType = errPropData.ctorFct.returnType;
     const llvm::BasicBlock currentBlock = this.builder.getInsertBlock();
     const llvm::Value sretArg = getSRetArg(currentBlock.getParent());
     llvm::Value propagatedResultAddr;
@@ -4091,8 +4097,8 @@ f<LLVMExprResult> IRGenerator.generateErrorPropagation(ASTPostfixUnaryExprNode* 
 
     // Switch to exit block: unwrap the payload, which becomes the value of the whole expression
     this.switchToBlock(bExit);
-    assert node.errPropUnwrapFct != nil<const model::Function*>;
-    const llvm::Function unwrapFct = this.stdFunctionManager.getResultUnwrapFct(node.errPropUnwrapFct);
+    assert errPropData.unwrapFct != nil<const model::Function*>;
+    const llvm::Function unwrapFct = this.stdFunctionManager.getResultUnwrapFct(errPropData.unwrapFct);
     const llvm::Value unwrapped = this.builder.createCall(unwrapFct, operandArgs);
     return exprResultWithPtr(unwrapped);
 }
@@ -4369,9 +4375,10 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
             paramSTypes = spiceFunc.getParamTypes();
         }
         assert paramSTypes.getSize() == args.getSize();
+        const Vector<ArgInfo>& argInfos = node.argLst.argInfos.get(this.manIdx);
         for unsigned long i = 0l; i < args.getSize(); i++ {
             IVisitable* argNode = args.get(i);
-            const ArgInfo& argInfo = node.argLst.argInfos.get(i);
+            const ArgInfo& argInfo = argInfos.get(i);
             const model::Function* copyCtor = argInfo.copyCtor;
 
             const QualType& expectedSTy = paramSTypes.get(i);
