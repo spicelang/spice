@@ -1,3 +1,6 @@
+// Std imports
+import "std/data/vector";
+
 // File permission modes
 public const int MODE_ALL_RWX   = 0o0000777;
 public const int MODE_ALL_RW    = 0o0000666;
@@ -29,6 +32,7 @@ const unsigned short IF_DIR = 0o0040000us;
 const int INVALID_HANDLE = -1; // Decimal for 0xFFFFFFFF
 
 const int FILE_ATTRIBUTE_DIRECTORY = 16;
+const int FILE_ATTRIBUTE_REPARSE_POINT = 1024; // Symbolic links and junctions
 
 type FileStat struct {
     unsigned int st_dev    // ID of the device containing file
@@ -170,59 +174,76 @@ public f<int> mkDirs(string path, int mode) {
 }
 
 /**
- * Lists all files/subdirectories at a given path.
+ * Lists the names of all files and subdirectories directly inside the given directory. The entries '.' and '..' are left
+ * out. The names are listed in the order, in which the operating system reports them.
+ *
+ * @param path Path to the directory
+ * @return Names of the entries, or an error if the directory could not be opened
  */
-public p listDir(string path) {
-    DirEntry dirEntry = DirEntry{};
-    byte* handle;
-    bool readMore = true;
-
-    // Find first file
-    handle = findFirstFileA(path, &dirEntry);
-    if handle == cast<unsigned long>(INVALID_HANDLE) {
-        printf("Dir does not exist\n");
-    } else {
-        // Read all files
-        while readMore {
-            printf("Filename: %s\n", dirEntry.fileName);
-            // Check if there is another file
-            readMore = findNextFileA(handle, &dirEntry);
-        }
+public f<Result<Vector<String>>> listDir(string path) {
+    Vector<String> entries;
+    if !collectDirEntries(path, String(), false, entries) {
+        return err<Vector<String>>(Error("Could not open directory"));
     }
-    // Close
-    findClose(handle);
+    return ok(entries);
 }
 
 /**
- * Lists all files/subdirectories at a given path recursively.
+ * Lists all files and subdirectories inside the given directory and, recursively, inside its subdirectories. Each entry
+ * is reported as a path relative to the given directory, with '/' as separator. A directory is listed before its
+ * contents. Symbolic links and junctions to directories are listed, but not descended into. Subdirectories, that cannot
+ * be opened (e.g. due to missing permissions) are listed, but their contents are left out.
+ *
+ * @param path Path to the directory
+ * @return Relative paths of the entries, or an error if the directory could not be opened
  */
-public p listDirRecursive(string path) {
-    DirEntry dirEntry = DirEntry{};
-    byte* handle;
-    bool readMore = true;
-
-    // Find first file
-    handle = findFirstFileA(path, &dirEntry);
-    if handle == cast<unsigned long>(INVALID_HANDLE) {
-        printf("Dir does not exist\n");
-    } else {
-        // Read all files
-        while readMore {
-            printf("Filename: %s\n", dirEntry.fileName);
-            if (dirEntry.fileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 {
-                unsafe {
-                    const String entryName = String(cast<string>(&dirEntry.fileName));
-                    // Skip "." and ".." so recursion does not loop between a directory and itself/its parent
-                    if entryName != "." && entryName != ".." {
-                        const String childPath = path + "\\" + entryName;
-                        listDirRecursive(childPath.getRaw());
-                    }
-                }
-            }
-            // Check if there is another file
-            readMore = findNextFileA(handle, &dirEntry);
-        }
+public f<Result<Vector<String>>> listDirRecursive(string path) {
+    Vector<String> entries;
+    if !collectDirEntries(path, String(), true, entries) {
+        return err<Vector<String>>(Error("Could not open directory"));
     }
-    // Close
+    return ok(entries);
+}
+
+/**
+ * Append the entries of a directory to the given vector
+ *
+ * @param dirPath Path to the directory
+ * @param prefix Relative path of the directory, which is prepended to the entry names
+ * @param recursive Descend into subdirectories or not
+ * @param entries Vector to append the entries to
+ * @return True if the directory could be opened, false if not
+ */
+f<bool> collectDirEntries(string dirPath, const String& prefix, bool recursive, Vector<String>& entries) {
+    // FindFirstFileA expects a search pattern, so match everything inside the directory
+    const String searchPattern = String(dirPath) + "\\*";
+    DirEntry dirEntry = DirEntry{};
+    byte* handle = findFirstFileA(searchPattern.getRaw(), &dirEntry);
+    if handle == cast<unsigned long>(INVALID_HANDLE) { return false; }
+
+    bool readMore = true;
+    while readMore {
+        String name;
+        unsafe {
+            name = String(cast<string>(&dirEntry.fileName));
+        }
+        if name != "." && name != ".." {
+            String relativePath = prefix;
+            if !relativePath.isEmpty() { relativePath += "/"; }
+            relativePath += name;
+            entries.pushBack(relativePath);
+
+            // Links are not followed, so that a link cycle cannot cause endless recursion
+            const bool isDir = (dirEntry.fileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+            const bool isLink = (dirEntry.fileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+            if recursive && isDir && !isLink {
+                const String childPath = String(dirPath) + "\\" + name;
+                collectDirEntries(childPath.getRaw(), relativePath, true, entries);
+            }
+        }
+        // Check if there is another entry
+        readMore = findNextFileA(handle, &dirEntry);
+    }
     findClose(handle);
+    return true;
 }

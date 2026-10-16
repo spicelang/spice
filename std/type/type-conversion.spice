@@ -1,7 +1,6 @@
 // External functions
 ext f<int> snprintf(char*, unsigned long, string, ...);
 ext f<long> strtoll(string, char**, int);
-ext f<int> atoi(string, char**, int);
 ext f<double> strtod(string, char**);
 
 // ----------------------------------------------- Conversions to double -----------------------------------------------
@@ -135,7 +134,7 @@ public f<int> toInt(char input) {
  * @return Int value
  */
 public f<int> toInt(string input, int base = 10) {
-    return atoi(input, nil<char**>, base);
+    return cast<int>(strtoll(input, nil<char**>, base));
 }
 
 /**
@@ -207,7 +206,7 @@ public f<short> toShort(char input) {
  * @return Short value
  */
 public f<short> toShort(string input, int base = 10) {
-    return cast<short>(atoi(input, nil<char**>, base));
+    return cast<short>(strtoll(input, nil<char**>, base));
 }
 
 /**
@@ -341,7 +340,7 @@ public f<byte> toByte(char input) {
  * @return Byte value
  */
 public f<byte> toByte(string input, int base = 10) {
-    return cast<byte>(atoi(input, nil<char**>, base));
+    return cast<byte>(cast<int>(strtoll(input, nil<char**>, base)));
 }
 
 /**

@@ -28,12 +28,14 @@ f<int> main() {
 ### `std/bindings`
 Spice bindings for common external libraries, allowing them to be called from Spice code.
 
-| Module            | Description                                                            |
-|-------------------|------------------------------------------------------------------------|
-| `gtk/gtk4`        | Bindings for the GTK 4 GUI toolkit.                                    |
-| `libcurl/libcurl` | Bindings for libcurl, used for network transfers that need https.      |
-| `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.   |
-| `sqlite/sqlite`   | Bindings for SQLite, an embedded, file-based SQL database.             |
+| Module            | Description                                                             |
+|-------------------|-------------------------------------------------------------------------|
+| `gtk/gtk4`        | Bindings for the GTK 4 GUI toolkit.                                     |
+| `libcurl/libcurl` | Bindings for libcurl, used for network transfers that need https.       |
+| `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.    |
+| `openssl/openssl` | Bindings for the TLS parts of OpenSSL's libssl, used by `std/net/tls`.  |
+| `sqlite/sqlite`   | Bindings for SQLite, an embedded, file-based SQL database.              |
+| `tpde/tpde`       | Bindings for the TPDE compiler back-end (needs `setup-deps.py --tpde`). |
 
 ### `std/crypto`
 Cryptographic hash functions that turn a message of any length into a fixed-size digest.
@@ -70,6 +72,7 @@ Common data structures for organizing and storing data.
 | `bitset`                             | Fixed-size set of bits.                               |
 | `pair` / `triple`                    | Tuples holding two or three values.                   |
 | `optional`                           | Container that may or may not hold a value.           |
+| `algorithm`                          | Filter, map, reduce, find and friends for vectors.    |
 
 ### `std/io`
 Reading and writing files, working with paths and directories, command-line parsing, and logging.
@@ -77,10 +80,11 @@ Reading and writing files, working with paths and directories, command-line pars
 | Module                                         | Description                                                    |
 |------------------------------------------------|----------------------------------------------------------------|
 | `file`                                         | Reading from and writing to files.                             |
-| `dir`                                          | Directory listing and manipulation.                            |
+| `dir`                                          | Directory creation, removal and (recursive) listing.           |
 | `filepath`                                     | Path construction and inspection.                              |
 | `cli-parser` / `cli-option` / `cli-subcommand` | Building command-line interfaces with options and subcommands. |
 | `logging`                                      | Leveled logging utilities.                                     |
+| `progress-bar`                                 | Progress bar for terminal output.                              |
 
 ### `std/iterator`
 The `Iterable` interface and commonly used iterators that integrate with Spice's `foreach` loops.
@@ -111,22 +115,26 @@ Network communication via sockets and HTTP.
 | `http`        | HTTP/1.1 message model (methods, status codes, header fields, URLs) plus its wire transport. |
 | `http-client` | Blocking HTTP/1.1 client, built on `std/net/socket`.                                         |
 | `http-server` | Blocking HTTP/1.1 server with route registration, built on `std/net/socket`.                  |
+| `tls`         | TLS client and server connections on top of `std/net/socket`, built on the OpenSSL bindings.  |
 
-The HTTP modules speak plain http only, since the socket layer carries no TLS. Use the libcurl
-bindings in `std/bindings/libcurl` when a request has to go over https.
+The HTTP client and server speak https via `std/net/tls`, which links OpenSSL's libssl. Server
+certificates are always verified.
 
 ### `std/os`
 Interacting with the underlying operating system: processes, threads, memory, environment, and raw syscalls.
 
 | Module                   | Description                                             |
 |--------------------------|---------------------------------------------------------|
-| `cmd`                    | Running external programs and capturing their output.   |
+| `cmd`                    | Running shell commands.                                 |
+| `process`                | Running external programs and capturing their output.   |
 | `env`                    | Reading and setting environment variables.              |
 | `filesystem`             | Filesystem operations.                                  |
 | `cpu`                    | CPU information.                                        |
 | `system` / `os`          | System and OS information (platform-specific variants). |
 | `thread` / `thread-pool` | Spawning threads and managing pools of workers.         |
-| `mutex` / `atomic`       | Synchronization primitives.                             |
+| `mutex` / `atomic`       | Mutex, lock guard, condition variable and atomics.      |
+| `recursive-mutex`        | Mutex that its owning thread can acquire repeatedly.    |
+| `message-queue`          | Thread-safe, blocking FIFO queue for passing values.    |
 | `offset-allocator`       | Offset-based memory allocator.                          |
 | `syscall`                | Architecture-specific raw system call interfaces.       |
 
@@ -137,6 +145,7 @@ features and is not normally imported directly.
 | Module           | Description                          |
 |------------------|--------------------------------------|
 | `error_rt`       | Error handling runtime support.      |
+| `error_trace_rt` | Error return trace storage.          |
 | `memory_rt`      | Memory management runtime support.   |
 | `result_rt`      | `Result` type runtime support.       |
 | `rtti_rt`        | Runtime type information.            |
@@ -146,24 +155,27 @@ features and is not normally imported directly.
 ### `std/test`
 Basic mechanisms for testing in Spice.
 
-| Module       | Description                       |
-|--------------|-----------------------------------|
-| `assertions` | Assertion helpers for unit tests. |
-| `bench`      | Benchmarking utilities.           |
+| Module            | Description                                                               |
+|-------------------|---------------------------------------------------------------------------|
+| `assertions`      | Assertion helpers for unit tests.                                         |
+| `bench`           | Benchmarking utilities.                                                   |
+| `lifetime-object` | Object that prints its lifetime events, for verifying ctor/dtor behavior. |
 
 ### `std/text`
 Text processing, parsing, and formatted output.
 
-| Module                                                                      | Description                                        |
-|-----------------------------------------------------------------------------|----------------------------------------------------|
-| `print`                                                                     | Formatted printing helpers.                        |
-| `format`                                                                    | String formatting.                                 |
-| `stringstream`                                                              | Stream-style string building.                      |
-| `string-ext`                                                                | Extra string utility functions.                    |
-| `analysis`                                                                  | Text analysis helpers.                             |
-| `csv-parser` / `json-parser` / `toml-parser` / `xml-parser` / `yaml-parser` | Parsers for CSV, JSON, TOML, XML, and YAML.        |
-| `csv-serializer` / `json-serializer` / `toml-serializer` / `xml-serializer` / `yaml-serializer` | Serializers for CSV, JSON, TOML, XML, and YAML. |
-| `json-value` / `toml-value` / `xml-node` / `yaml-value`                     | Data models shared by the parsers and serializers. |
+| Module                                                                                          | Description                                               |
+|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
+| `print`                                                                                         | Formatted printing helpers.                               |
+| `format`                                                                                        | String formatting.                                        |
+| `stringstream`                                                                                  | Stream-style string building.                             |
+| `string-ext`                                                                                    | Extra string utility functions.                           |
+| `analysis`                                                                                      | Text analysis helpers.                                    |
+| `regex`                                                                                         | Regular expression compilation and matching.              |
+| `demangle`                                                                                      | Turns mangled Spice symbol names back into readable ones. |
+| `csv-parser` / `json-parser` / `toml-parser` / `xml-parser` / `yaml-parser`                     | Parsers for CSV, JSON, TOML, XML, and YAML.               |
+| `csv-serializer` / `json-serializer` / `toml-serializer` / `xml-serializer` / `yaml-serializer` | Serializers for CSV, JSON, TOML, XML, and YAML.           |
+| `json-value` / `toml-value` / `xml-node` / `yaml-value`                                         | Data models shared by the parsers and serializers.        |
 
 ### `std/time`
 Accessing system time in different formats and measuring durations.
@@ -178,11 +190,12 @@ Accessing system time in different formats and measuring durations.
 ### `std/type`
 Type-related work such as type conversions and inspection.
 
-| Module                   | Description                    |
-|--------------------------|--------------------------------|
-| `types`                  | Type-related helpers.          |
-| `type-conversion`        | Conversions between types.     |
-| `any`                    | A type-erased `Any` container. |
-| `short` / `int` / `long` | Integer type helpers.          |
+| Module                   | Description                                      |
+|--------------------------|--------------------------------------------------|
+| `types`                  | Type-related helpers.                            |
+| `type-conversion`        | Conversions between types.                       |
+| `any`                    | A type-erased `Any` container.                   |
+| `lambda`                 | Owning wrapper around a lambda and its captures. |
+| `short` / `int` / `long` | Integer type helpers.                            |
 
 © ChilliBits 2021-2026
