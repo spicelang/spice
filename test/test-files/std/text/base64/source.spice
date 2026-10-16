@@ -1,0 +1,81 @@
+import "std/text/base64";
+import "std/iterator/array-iterator";
+
+p printEncoded(string label, const String& encoded) {
+    printf("%s: '%s'\n", label, encoded.getRaw());
+}
+
+p printDecoded(string label, const Result<String>& decoded) {
+    if decoded.isErr() {
+        Error error = decoded.getErr();
+        printf("%s: error '%s'\n", label, error.getMessage());
+    } else {
+        const String& bytes = decoded.unwrap();
+        printf("%s: '%s' (%d bytes)\n", label, bytes.getRaw(), bytes.getLength());
+    }
+}
+
+f<int> main() {
+    // Test vectors from RFC 4648, section 10
+    const string[7] inputs = ["", "f", "fo", "foo", "foob", "fooba", "foobar"];
+    foreach const string input : inputs {
+        const String padded = encodeBase64(input);
+        const String unpadded = encodeBase64(input, false);
+        printf("'%s' -> '%s' / '%s'\n", input, padded.getRaw(), unpadded.getRaw());
+        // Both forms have to decode back to the input
+        Result<String> fromPadded = decodeBase64(padded);
+        Result<String> fromUnpadded = decodeBase64(unpadded);
+        assert fromPadded.unwrap() == input;
+        assert fromUnpadded.unwrap() == input;
+    }
+
+    // The two alphabets only differ in the digits 62 and 63
+    byte[3] highBits = [cast<byte>(0xFB), cast<byte>(0xFF), cast<byte>(0xBF)];
+    printEncoded("Standard", encodeBase64(highBits, 3l));
+    printEncoded("URL-safe", encodeBase64Url(highBits, 3l));
+    printDecoded("URL-safe digits, standard decoder", decodeBase64("-_-_"));
+    printDecoded("Standard digits, URL-safe decoder", decodeBase64Url("+/+/"));
+    Result<String> urlSafeDecoded = decodeBase64Url("-_-_");
+    String urlSafeBytes = urlSafeDecoded.unwrap();
+    assert urlSafeBytes.getLength() == 3l;
+    for unsigned int i = 0u; i < 3u; i++ {
+        assert cast<byte>(urlSafeBytes[i]) == highBits[i];
+    }
+
+    // Null bytes are encoded and decoded like any other byte
+    String withNullBytes;
+    withNullBytes.append('\0');
+    withNullBytes.append('a');
+    withNullBytes.append('\0');
+    const String encodedNullBytes = encodeBase64(withNullBytes);
+    printEncoded("Null bytes", encodedNullBytes);
+    Result<String> decodedNullBytes = decodeBase64(encodedNullBytes);
+    const String& nullBytes = decodedNullBytes.unwrap();
+    assert nullBytes == withNullBytes;
+    assert nullBytes.getLength() == 3l;
+
+    // All byte values survive a round trip
+    byte[256] allBytes;
+    for unsigned int i = 0u; i < 256u; i++ {
+        allBytes[i] = cast<byte>(i);
+    }
+    const String encodedAll = encodeBase64(allBytes, 256l);
+    printEncoded("All bytes", encodedAll);
+    Result<String> decodedAll = decodeBase64(encodedAll);
+    String decodedAllBytes = decodedAll.unwrap();
+    assert decodedAllBytes.getLength() == 256l;
+    for unsigned int i = 0u; i < 256u; i++ {
+        assert cast<byte>(decodedAllBytes[i]) == allBytes[i];
+    }
+
+    // Invalid input
+    printDecoded("Invalid char", decodeBase64("Zm9v!A=="));
+    printDecoded("Whitespace", decodeBase64("Zm9v YmFy"));
+    printDecoded("Line break", decodeBase64("Zm9v\nYmFy"));
+    printDecoded("Single trailing digit", decodeBase64("Zm9vY"));
+    printDecoded("Incomplete padding", decodeBase64("Zg="));
+    printDecoded("Too much padding", decodeBase64("Zg==="));
+    printDecoded("Padding in the middle", decodeBase64("Zg==Zm9v"));
+    printDecoded("Only padding", decodeBase64("===="));
+    printDecoded("Empty", decodeBase64(""));
+}

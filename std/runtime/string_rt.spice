@@ -912,6 +912,9 @@ p String.resize(unsigned long newLength) {
         unsigned long requiredBytes = newLength + 1l; // +1 because of null terminator
         this.contents = realloc(oldAddress, requiredBytes);
         this.checkForOOM();
+        // A string, that had no buffer yet, gets an uninitialized one, so it has to be terminated. resize only grows
+        // the buffer, so the terminator position is always in bounds
+        this.contents[this.length] = '\0';
     }
     // Set new capacity
     this.capacity = newLength;
