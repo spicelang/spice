@@ -1,3 +1,7 @@
+// Std imports
+import "std/data/vector";
+import "std/io/impl/dir_native";
+
 // File permission modes
 public const int MODE_ALL_RWX   = 0o0000777;
 public const int MODE_ALL_RW    = 0o0000666;
@@ -23,26 +27,16 @@ const int X_OK = 1; // Can execute
 const int W_OK = 2; // Can write
 const int R_OK = 4; // Can read
 
-type DirEntry struct {
-    unsigned long dInodeNo
-    long dOffset
-    unsigned short dRecordLen
-    char dType
-    char* dName
-}
-
-type DirStream struct {
-    int fileDescriptor
-
-}
+// Directory entry types, as reported by readdir
+const int DT_UNKNOWN = 0; // The file system does not report the type
+const int DT_DIR = 4;     // Directory
 
 // Link external functions
 ext f<int> mkdir(string, int);
 ext f<int> rmdir(string);
 ext f<int> rename(string, string);
-ext f<DirStream*> opendir(string);
-ext f<int> closedir(DirStream*);
-ext f<DirEntry*> readdir(DirStream*);
+ext f<byte*> opendir(string);
+ext f<int> closedir(byte*);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -85,8 +79,8 @@ public f<int> renameDir(string oldPath, string newPath) {
  */
 public f<bool> dirExists(string path) {
     // Open the path as a directory. Unlike stat, this does not depend on the platform-specific layout of struct stat
-    DirStream* dirStream = opendir(path);
-    if dirStream == nil<DirStream*> {
+    byte* dirStream = opendir(path);
+    if dirStream == nil<byte*> {
         return false;
     }
     closedir(dirStream);
@@ -133,18 +127,69 @@ public f<int> mkDirs(string path, int mode) {
 }
 
 /**
- * Lists all files/subdirectories at a given path.
+ * Lists the names of all files and subdirectories directly inside the given directory. The entries '.' and '..' are left
+ * out. The names are listed in the order, in which the operating system reports them.
+ *
+ * @param path Path to the directory
+ * @return Names of the entries, or an error if the directory could not be opened
  */
-/*public p listDir(string path) {
-    // Open the directory stream
-    DirStream* dirStream = opendir(path);
+public f<Result<Vector<String>>> listDir(string path) {
+    Vector<String> entries;
+    if !collectDirEntries(path, String(), false, entries) {
+        return err<Vector<String>>(Error("Could not open directory"));
+    }
+    return ok(entries);
+}
 
-    // Return empty array if stream result is nil
-    if dirStream == nil<DirStream*> { return; }
+/**
+ * Lists all files and subdirectories inside the given directory and, recursively, inside its subdirectories. Each entry
+ * is reported as a path relative to the given directory, with '/' as separator. A directory is listed before its
+ * contents. Symbolic links to directories are listed, but not descended into. Subdirectories, that cannot be opened
+ * (e.g. due to missing permissions) are listed, but their contents are left out.
+ *
+ * @param path Path to the directory
+ * @return Relative paths of the entries, or an error if the directory could not be opened
+ */
+public f<Result<Vector<String>>> listDirRecursive(string path) {
+    Vector<String> entries;
+    if !collectDirEntries(path, String(), true, entries) {
+        return err<Vector<String>>(Error("Could not open directory"));
+    }
+    return ok(entries);
+}
 
-    dyn dirEntry = &DirEntry{};
-    while (dirEntry = readdir(dirStream)) != nil<DirEntry*> {
-        printf("Filename: %s\n", dirEntry.dName);
+/**
+ * Append the entries of a directory to the given vector
+ *
+ * @param dirPath Path to the directory
+ * @param prefix Relative path of the directory, which is prepended to the entry names
+ * @param recursive Descend into subdirectories or not
+ * @param entries Vector to append the entries to
+ * @return True if the directory could be opened, false if not
+ */
+f<bool> collectDirEntries(string dirPath, const String& prefix, bool recursive, Vector<String>& entries) {
+    byte* dirStream = opendir(dirPath);
+    if dirStream == nil<byte*> { return false; }
+
+    String name;
+    int entryType = DT_UNKNOWN;
+    while readNextDirEntry(dirStream, name, entryType) {
+        if name == "." || name == ".." { continue; }
+        String relativePath = prefix;
+        if !relativePath.isEmpty() { relativePath += "/"; }
+        relativePath += name;
+        entries.pushBack(relativePath);
+
+        if recursive {
+            const String childPath = String(dirPath) + "/" + name;
+            // Symbolic links are reported as such and therefore not followed, so that a link cycle cannot cause endless
+            // recursion. Only if the file system does not report entry types, the entry has to be checked directly
+            const bool isDir = entryType == DT_DIR || (entryType == DT_UNKNOWN && dirExists(childPath.getRaw()));
+            if isDir {
+                collectDirEntries(childPath.getRaw(), relativePath, true, entries);
+            }
+        }
     }
     closedir(dirStream);
-}*/
+    return true;
+}

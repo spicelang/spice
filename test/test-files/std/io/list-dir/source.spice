@@ -1,0 +1,45 @@
+import "std/io/dir" as dir;
+import "std/io/file";
+import "std/data/vector";
+import "std/data/algorithm";
+
+f<int> main() {
+    // Own directory name, because the tests run in parallel in the same working dir
+    assert mkDirs("./test-list-dir/sub/nested", dir::MODE_ALL_RWX) == 0;
+    assert createFile("./test-list-dir/a.txt");
+    assert createFile("./test-list-dir/sub/b.txt");
+    assert createFile("./test-list-dir/sub/nested/c.txt");
+
+    // Only the direct entries are listed, without '.' and '..'. The order is up to the OS
+    Result<Vector<String>> flatResult = listDir("./test-list-dir");
+    assert flatResult.isOk();
+    Vector<String>& flat = flatResult.unwrap();
+    printf("Flat entry count: %ld\n", flat.getSize());
+    assert contains(flat, String("a.txt"));
+    assert contains(flat, String("sub"));
+
+    // All entries are listed, relative to the listed directory
+    Result<Vector<String>> recursiveResult = listDirRecursive("./test-list-dir");
+    assert recursiveResult.isOk();
+    Vector<String>& recursive = recursiveResult.unwrap();
+    printf("Recursive entry count: %ld\n", recursive.getSize());
+    assert contains(recursive, String("a.txt"));
+    assert contains(recursive, String("sub"));
+    assert contains(recursive, String("sub/b.txt"));
+    assert contains(recursive, String("sub/nested"));
+    assert contains(recursive, String("sub/nested/c.txt"));
+
+    // A missing directory is reported as error
+    Result<Vector<String>> missingResult = listDir("./test-list-dir/missing");
+    printf("Missing dir is error: %d\n", missingResult.isErr());
+    Result<Vector<String>> missingRecursiveResult = listDirRecursive("./test-list-dir/missing");
+    printf("Missing dir is error (recursive): %d\n", missingRecursiveResult.isErr());
+
+    // Clean up
+    assert deleteFile("./test-list-dir/sub/nested/c.txt");
+    assert deleteFile("./test-list-dir/sub/b.txt");
+    assert deleteFile("./test-list-dir/a.txt");
+    assert rmDir("./test-list-dir/sub/nested") == 0;
+    assert rmDir("./test-list-dir/sub") == 0;
+    assert rmDir("./test-list-dir") == 0;
+}

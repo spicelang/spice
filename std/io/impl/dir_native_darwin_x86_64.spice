@@ -1,0 +1,30 @@
+// Layout of the legacy 'struct dirent' on macOS x86_64 (32 bit inode numbers). The undecorated opendir/readdir symbols
+// on x86_64 use this layout; only the '$INODE64' variants return the 64 bit layout.
+type DirEntry struct {
+    unsigned int dIno
+    unsigned short dRecordLen
+    byte dType
+    byte dNameLen
+    char[256] dName
+}
+
+// Link external functions
+ext f<DirEntry*> readdir(byte* /*dirStream*/);
+
+/**
+ * Read the next entry of an open directory stream
+ *
+ * @param dirStream Directory stream, as returned by opendir
+ * @param name Receives the name of the entry
+ * @param entryType Receives the type of the entry (DT_* value of 'struct dirent')
+ * @return True if an entry was read, false if the end of the stream was reached
+ */
+public f<bool> readNextDirEntry(byte* dirStream, String& name, int& entryType) {
+    DirEntry* dirEntry = readdir(dirStream);
+    if dirEntry == nil<DirEntry*> { return false; }
+    unsafe {
+        name = String(cast<string>(&dirEntry.dName));
+    }
+    entryType = cast<int>(dirEntry.dType);
+    return true;
+}
