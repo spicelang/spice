@@ -1,0 +1,284 @@
+// Base64 encoding and decoding (RFC 4648), with the standard alphabet (section 4, '+' and '/') and the URL- and
+// filename-safe alphabet (section 5, '-' and '_'). Decoded data is returned as a String, which holds arbitrary bytes,
+// including null bytes, since it keeps track of its length.
+
+// Constants
+const char PADDING_CHAR = '=';
+const unsigned int SEXTET_MASK = 0x3Fu; // Lowest 6 bits, i.e. one base64 digit
+const unsigned int BYTE_MASK = 0xFFu;   // Lowest 8 bits
+
+// ------------------------------------------------------ Encoding -----------------------------------------------------
+
+/**
+ * Encode the given raw string to base64, using the standard alphabet
+ *
+ * @param input String to encode, excluding its null terminator
+ * @param padding Pad the output with '=' to a multiple of 4 chars or not
+ * @return Base64 representation of the input
+ */
+public f<String> encodeBase64(string input, bool padding = true) {
+    return encodeBase64(String(input), padding);
+}
+
+/**
+ * Encode the given string to base64, using the standard alphabet
+ *
+ * @param input String to encode. All of its bytes are encoded, including null bytes
+ * @param padding Pad the output with '=' to a multiple of 4 chars or not
+ * @return Base64 representation of the input
+ */
+public f<String> encodeBase64(const String& input, bool padding = true) {
+    unsafe {
+        return encodeBytes(cast<const char*>(input.getRaw()), input.getLength(), false, padding);
+    }
+}
+
+/**
+ * Encode the given raw bytes to base64, using the standard alphabet
+ *
+ * @param input Bytes to encode
+ * @param length Number of bytes to encode
+ * @param padding Pad the output with '=' to a multiple of 4 chars or not
+ * @return Base64 representation of the input
+ */
+public f<String> encodeBase64(const byte[] input, unsigned long length, bool padding = true) {
+    return encodeBase64(bytesToString(input, length), padding);
+}
+
+/**
+ * Encode the given raw string to base64, using the URL- and filename-safe alphabet
+ *
+ * @param input String to encode, excluding its null terminator
+ * @param padding Pad the output with '=' to a multiple of 4 chars or not
+ * @return Base64 representation of the input
+ */
+public f<String> encodeBase64Url(string input, bool padding = true) {
+    return encodeBase64Url(String(input), padding);
+}
+
+/**
+ * Encode the given string to base64, using the URL- and filename-safe alphabet
+ *
+ * @param input String to encode. All of its bytes are encoded, including null bytes
+ * @param padding Pad the output with '=' to a multiple of 4 chars or not
+ * @return Base64 representation of the input
+ */
+public f<String> encodeBase64Url(const String& input, bool padding = true) {
+    unsafe {
+        return encodeBytes(cast<const char*>(input.getRaw()), input.getLength(), true, padding);
+    }
+}
+
+/**
+ * Encode the given raw bytes to base64, using the URL- and filename-safe alphabet
+ *
+ * @param input Bytes to encode
+ * @param length Number of bytes to encode
+ * @param padding Pad the output with '=' to a multiple of 4 chars or not
+ * @return Base64 representation of the input
+ */
+public f<String> encodeBase64Url(const byte[] input, unsigned long length, bool padding = true) {
+    return encodeBase64Url(bytesToString(input, length), padding);
+}
+
+// ------------------------------------------------------ Decoding -----------------------------------------------------
+
+/**
+ * Decode the given base64 string, that uses the standard alphabet
+ *
+ * @param input Base64 string, with or without padding
+ * @return Decoded bytes, or an error if the input is no valid base64
+ */
+public f<Result<String>> decodeBase64(string input) {
+    return decodeBase64(String(input));
+}
+
+/**
+ * Decode the given base64 string, that uses the standard alphabet. The padding is optional, but if present, it has to
+ * be complete. Chars outside of the alphabet, including whitespace and line breaks, are rejected.
+ *
+ * @param input Base64 string, with or without padding
+ * @return Decoded bytes, or an error if the input is no valid base64
+ */
+public f<Result<String>> decodeBase64(const String& input) {
+    return decodeBytes(input, false);
+}
+
+/**
+ * Decode the given base64 string, that uses the URL- and filename-safe alphabet
+ *
+ * @param input Base64 string, with or without padding
+ * @return Decoded bytes, or an error if the input is no valid base64
+ */
+public f<Result<String>> decodeBase64Url(string input) {
+    return decodeBase64Url(String(input));
+}
+
+/**
+ * Decode the given base64 string, that uses the URL- and filename-safe alphabet. The padding is optional, but if
+ * present, it has to be complete. Chars outside of the alphabet, including whitespace and line breaks, are rejected.
+ *
+ * @param input Base64 string, with or without padding
+ * @return Decoded bytes, or an error if the input is no valid base64
+ */
+public f<Result<String>> decodeBase64Url(const String& input) {
+    return decodeBytes(input, true);
+}
+
+// ------------------------------------------------------ Internals ----------------------------------------------------
+
+/**
+ * Encode the given bytes to base64. Every group of 3 bytes becomes 4 base64 digits. A trailing group of 1 or 2 bytes
+ * becomes 2 or 3 digits, optionally padded with '=' to 4 chars.
+ *
+ * @param data Bytes to encode
+ * @param length Number of bytes to encode
+ * @param urlSafe Use the URL- and filename-safe alphabet instead of the standard one
+ * @param padding Pad the output to a multiple of 4 chars or not
+ * @return Base64 representation of the bytes
+ */
+f<String> encodeBytes(const char* data, unsigned long length, bool urlSafe, bool padding) {
+    String output;
+    output.reserve((length + 2l) / 3l * 4l);
+
+    unsigned long i = 0l;
+    unsafe {
+        // Full groups of 3 bytes
+        while i + 2l < length {
+            const unsigned int group = (toUnsigned(data[i]) << 16) | (toUnsigned(data[i + 1l]) << 8) | toUnsigned(data[i + 2l]);
+            output.append(encodeDigit(group >> 18, urlSafe));
+            output.append(encodeDigit((group >> 12) & SEXTET_MASK, urlSafe));
+            output.append(encodeDigit((group >> 6) & SEXTET_MASK, urlSafe));
+            output.append(encodeDigit(group & SEXTET_MASK, urlSafe));
+            i += 3l;
+        }
+
+        // Trailing group of 1 or 2 bytes
+        const unsigned long remaining = length - i;
+        if remaining == 1l {
+            const unsigned int group = toUnsigned(data[i]) << 16;
+            output.append(encodeDigit(group >> 18, urlSafe));
+            output.append(encodeDigit((group >> 12) & SEXTET_MASK, urlSafe));
+            if padding {
+                output.append(PADDING_CHAR);
+                output.append(PADDING_CHAR);
+            }
+        } else if remaining == 2l {
+            const unsigned int group = (toUnsigned(data[i]) << 16) | (toUnsigned(data[i + 1l]) << 8);
+            output.append(encodeDigit(group >> 18, urlSafe));
+            output.append(encodeDigit((group >> 12) & SEXTET_MASK, urlSafe));
+            output.append(encodeDigit((group >> 6) & SEXTET_MASK, urlSafe));
+            if padding {
+                output.append(PADDING_CHAR);
+            }
+        }
+    }
+    return output;
+}
+
+/**
+ * Decode the given base64 string to bytes
+ *
+ * @param input Base64 string, with or without padding
+ * @param urlSafe Use the URL- and filename-safe alphabet instead of the standard one
+ * @return Decoded bytes, or an error if the input is no valid base64
+ */
+f<Result<String>> decodeBytes(const String& input, bool urlSafe) {
+    const unsigned long length = input.getLength();
+    unsigned long dataLength = length;
+    String output;
+    unsafe {
+        const char* data = cast<const char*>(input.getRaw());
+
+        // Strip the padding. A padded input always consists of complete groups of 4 chars
+        unsigned long paddingLength = 0l;
+        while dataLength > 0l && paddingLength < 2l && data[dataLength - 1l] == PADDING_CHAR {
+            dataLength--;
+            paddingLength++;
+        }
+        if paddingLength > 0l && length % 4l != 0l {
+            return err<String>(Error("Invalid base64 padding"));
+        }
+
+        output.reserve(dataLength / 4l * 3l + 2l);
+        unsigned int buffer = 0u;
+        int bufferedBits = 0;
+        for unsigned long i = 0l; i < dataLength; i++ {
+            const int digit = decodeDigit(data[i], urlSafe);
+            if digit < 0 {
+                return err<String>(Error("Invalid base64 character"));
+            }
+            buffer = (buffer << 6) | cast<unsigned int>(digit);
+            bufferedBits += 6;
+            // Emit a byte, as soon as enough bits are buffered, and keep only the bits, that were not emitted yet
+            if bufferedBits >= 8 {
+                bufferedBits -= 8;
+                output.append(cast<char>(cast<byte>((buffer >> bufferedBits) & BYTE_MASK)));
+                buffer &= (1u << bufferedBits) - 1u;
+            }
+        }
+    }
+    // A single trailing digit carries only 6 bits, which is not enough for another byte. This is checked after the
+    // chars, so that an invalid char is reported as such, even if it also makes the length invalid
+    if dataLength % 4l == 1l {
+        return err<String>(Error("Invalid base64 length"));
+    }
+    return ok(output);
+}
+
+/**
+ * Get the base64 digit for the given 6 bit value
+ *
+ * @param value Value in the range 0..63
+ * @param urlSafe Use the URL- and filename-safe alphabet instead of the standard one
+ * @return Base64 digit
+ */
+f<char> encodeDigit(unsigned int value, bool urlSafe) {
+    if value < 26u { return cast<char>(cast<unsigned int>('A') + value); }
+    if value < 52u { return cast<char>(cast<unsigned int>('a') + value - 26u); }
+    if value < 62u { return cast<char>(cast<unsigned int>('0') + value - 52u); }
+    if value == 62u { return urlSafe ? '-' : '+'; }
+    return urlSafe ? '_' : '/';
+}
+
+/**
+ * Get the 6 bit value of the given base64 digit
+ *
+ * @param c Base64 digit
+ * @param urlSafe Use the URL- and filename-safe alphabet instead of the standard one
+ * @return Value in the range 0..63, or -1 if the char is no digit of the alphabet
+ */
+f<int> decodeDigit(char c, bool urlSafe) {
+    if c >= 'A' && c <= 'Z' { return cast<int>(c) - cast<int>('A'); }
+    if c >= 'a' && c <= 'z' { return cast<int>(c) - cast<int>('a') + 26; }
+    if c >= '0' && c <= '9' { return cast<int>(c) - cast<int>('0') + 52; }
+    if c == (urlSafe ? '-' : '+') { return 62; }
+    if c == (urlSafe ? '_' : '/') { return 63; }
+    return -1;
+}
+
+/**
+ * Copy the given bytes into a string. Arrays cannot be viewed as a pointer, so the bytes are copied
+ *
+ * @param data Bytes to copy
+ * @param length Number of bytes to copy
+ * @return String holding the bytes
+ */
+f<String> bytesToString(const byte[] data, unsigned long length) {
+    String bytes;
+    bytes.reserve(length);
+    for unsigned long i = 0l; i < length; i++ {
+        bytes.append(cast<char>(data[i]));
+    }
+    return bytes;
+}
+
+/**
+ * Get the value of the given char as unsigned byte value, so that chars >= 0x80 are not sign-extended
+ *
+ * @param c Char
+ * @return Value in the range 0..255
+ */
+f<unsigned int> toUnsigned(char c) {
+    return cast<unsigned int>(cast<byte>(c));
+}

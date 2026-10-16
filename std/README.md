@@ -171,6 +171,7 @@ Text processing, parsing, and formatted output.
 | `stringstream`                                                                                  | Stream-style string building.                             |
 | `string-ext`                                                                                    | Extra string utility functions.                           |
 | `analysis`                                                                                      | Text analysis helpers.                                    |
+| `base64`                                                                                        | Base64 encoding and decoding (RFC 4648).                  |
 | `regex`                                                                                         | Regular expression compilation and matching.              |
 | `demangle`                                                                                      | Turns mangled Spice symbol names back into readable ones. |
 | `csv-parser` / `json-parser` / `toml-parser` / `xml-parser` / `yaml-parser`                     | Parsers for CSV, JSON, TOML, XML, and YAML.               |
