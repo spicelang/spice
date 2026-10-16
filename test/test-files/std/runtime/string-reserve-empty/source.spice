@@ -1,0 +1,25 @@
+// Reserving capacity in a String, that has no buffer yet, has to leave it a valid, empty string. Before, reserve()
+// allocated the buffer without writing the null terminator, so getRaw() returned uninitialized memory.
+p checkReserved(unsigned long capacity) {
+    // Free a dirty chunk of the same size first, so that the allocator likely hands it out again
+    {
+        String dirty = String("x") * capacity;
+    }
+    String reserved;
+    reserved.reserve(capacity);
+    assert reserved.getLength() == 0l;
+    assert reserved.isEmpty();
+    assert reserved == "";
+    assert reserved == String();
+    printf("Reserved %d: '%s'\n", capacity, reserved.getRaw());
+
+    // The reserved string keeps working as usual
+    reserved += "abc";
+    printf("After append: '%s'\n", reserved.getRaw());
+}
+
+f<int> main() {
+    checkReserved(8l);
+    checkReserved(64l);
+    checkReserved(1000l);
+}
