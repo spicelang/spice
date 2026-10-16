@@ -37,6 +37,7 @@ ext f<int> rmdir(string);
 ext f<int> rename(string, string);
 ext f<byte*> opendir(string);
 ext f<int> closedir(byte*);
+ext f<long> readlink(string, byte*, unsigned long);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -182,9 +183,11 @@ f<bool> collectDirEntries(string dirPath, const String& prefix, bool recursive, 
 
         if recursive {
             const String childPath = String(dirPath) + "/" + name;
-            // Symbolic links are reported as such and therefore not followed, so that a link cycle cannot cause endless
-            // recursion. Only if the file system does not report entry types, the entry has to be checked directly
-            const bool isDir = entryType == DT_DIR || (entryType == DT_UNKNOWN && dirExists(childPath.getRaw()));
+            // Symbolic links are never followed, so that a link cycle cannot cause endless recursion. They are reported as
+            // such, unless the file system does not report entry types at all. Then the entry has to be checked directly,
+            // but dirExists follows links, so links have to be ruled out first
+            const bool isUnknownDir = entryType == DT_UNKNOWN && !isSymlink(childPath.getRaw()) && dirExists(childPath.getRaw());
+            const bool isDir = entryType == DT_DIR || isUnknownDir;
             if isDir {
                 collectDirEntries(childPath.getRaw(), relativePath, true, entries);
             }
@@ -192,4 +195,16 @@ f<bool> collectDirEntries(string dirPath, const String& prefix, bool recursive, 
     }
     closedir(dirStream);
     return true;
+}
+
+/**
+ * Check if the given path is a symbolic link, without following it
+ *
+ * @param path Path to check
+ * @return Symbolic link or not
+ */
+f<bool> isSymlink(string path) {
+    // readlink only succeeds on symbolic links. One byte of the link target is enough to tell
+    byte targetStart;
+    return readlink(path, &targetStart, 1ul) >= 0l;
 }
