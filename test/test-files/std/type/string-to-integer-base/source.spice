@@ -1,0 +1,17 @@
+import "std/type/type-conversion";
+
+f<int> main() {
+    // The base has to be honored by every string to integer conversion
+    assert toInt("ff", 16) == 255;
+    assert toInt("101", 2) == 5;
+    assert toInt("777", 8) == 511;
+    assert toInt("-42") == -42;
+    assert toInt("0x1A", 16) == 26;
+    assert toShort("7f", 16) == 127s;
+    assert toShort("-1010", 2) == -10s;
+    assert toLong("ffffffff", 16) == 4294967295l;
+    assert toByte("1f", 16) == cast<byte>(31);
+    assert toByte("11", 2) == cast<byte>(3);
+
+    printf("All assertions succeeded");
+}
