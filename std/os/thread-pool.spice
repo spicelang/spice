@@ -1,6 +1,5 @@
 import "std/os/thread";
 import "std/data/vector";
-import "std/os/cpu";
 import "std/os/mutex";
 import "std/os/system";
 import "std/type/lambda";
@@ -17,6 +16,8 @@ public type ThreadPool struct {
     // The state below is shared between the worker threads and the controlling thread. It is guarded by a single mutex, so
     // that a worker decides on the next step (take a job, wait or exit) based on a consistent snapshot of it.
     Mutex mutex
+    // Notified whenever the state changes in a way, that may let a waiting worker take a job or exit
+    ConditionVariable stateChanged
     // The queued jobs are taken in order. The jobs before nextJobIndex were already taken by a worker thread
     Vector<Lambda<p()>> queuedJobs
     unsigned long nextJobIndex = 0ul
@@ -90,6 +91,7 @@ public p ThreadPool.enqueue(const p()& job) {
     // Take ownership of the captures of the job, since it might run after the frame, that created it, was left
     LockGuard _ = LockGuard(this.mutex);
     this.queuedJobs.pushBack(Lambda<p()>(job));
+    this.stateChanged.notifyOne();
 }
 
 /**
@@ -100,6 +102,7 @@ public p ThreadPool.enqueue(const p()& job) {
 public p ThreadPool.enqueue(const Lambda<p()>& job) {
     LockGuard _ = LockGuard(this.mutex);
     this.queuedJobs.pushBack(job);
+    this.stateChanged.notifyOne();
 }
 
 /**
@@ -175,30 +178,28 @@ p ThreadPool.joinWorkerThreads() {
 f<bool> ThreadPool.waitForNextJob(p()& task) {
     bool decided = false;
     bool jobTaken = false;
+    LockGuard _ = LockGuard(this.mutex);
     while !decided {
-        {
-            LockGuard _ = LockGuard(this.mutex);
-            if this.stopRequested {
+        if this.stopRequested {
+            decided = true;
+        } else if !this.pauseRequested {
+            if this.nextJobIndex < this.queuedJobs.getSize() {
+                // The job stays owned by the queue, which keeps its captures alive while it runs. Relocating the queue
+                // keeps the captures in place, so enqueueing more jobs meanwhile is fine.
+                Lambda<p()>& job = this.queuedJobs.get(this.nextJobIndex);
+                task = job.get();
+                this.nextJobIndex++;
+                this.runningJobs++;
                 decided = true;
-            } else if !this.pauseRequested {
-                if this.nextJobIndex < this.queuedJobs.getSize() {
-                    // The job stays owned by the queue, which keeps its captures alive while it runs. Relocating the queue
-                    // keeps the captures in place, so enqueueing more jobs meanwhile is fine.
-                    Lambda<p()>& job = this.queuedJobs.get(this.nextJobIndex);
-                    task = job.get();
-                    this.nextJobIndex++;
-                    this.runningJobs++;
-                    decided = true;
-                    jobTaken = true;
-                } else if this.stopOnEmptyQueueRequested {
-                    // We are supposed to stop when the queue is empty and there are no more jobs
-                    decided = true;
-                }
+                jobTaken = true;
+            } else if this.stopOnEmptyQueueRequested {
+                // We are supposed to stop when the queue is empty and there are no more jobs
+                decided = true;
             }
         }
-        // Yield to other threads while waiting
+        // Sleep until the state of the pool changes. This releases the mutex in the meantime
         if !decided {
-            yield();
+            this.stateChanged.wait(this.mutex);
         }
     }
     return jobTaken;
@@ -218,4 +219,6 @@ p ThreadPool.finishJob() {
 p ThreadPool.setFlag(bool& flag, bool value) {
     LockGuard _ = LockGuard(this.mutex);
     flag = value;
+    // Every flag can change the decision of a waiting worker
+    this.stateChanged.notifyAll();
 }

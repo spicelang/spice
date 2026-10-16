@@ -1,0 +1,40 @@
+import "std/os/mutex";
+import "std/os/thread";
+
+const int ROUNDS = 5;
+
+// Two threads take turns: each one waits on the condition variable until it is its turn, then hands the turn over.
+// Bundling the state into a struct lets the async worker capture a single `this` pointer.
+type PingPong struct {
+    Mutex mutex
+    ConditionVariable turnChanged
+    bool pingsTurn = true
+}
+
+p PingPong.play(bool isPing) {
+    for int i = 1; i <= ROUNDS; i++ {
+        LockGuard _ = LockGuard(this.mutex);
+        // Re-check after every wakeup, since wakeups can be spurious
+        while this.pingsTurn != isPing {
+            this.turnChanged.wait(this.mutex);
+        }
+        printf("%s %d\n", isPing ? "Ping" : "Pong", i);
+        this.pingsTurn = !isPing;
+        this.turnChanged.notifyAll();
+    }
+}
+
+p PingPong.run() {
+    p() pong = p() [[async]] {
+        this.play(false);
+    };
+    Thread pongThread = Thread(pong);
+    pongThread.run();
+    this.play(true);
+    pongThread.join();
+}
+
+f<int> main() {
+    PingPong pingPong;
+    pingPong.run();
+}

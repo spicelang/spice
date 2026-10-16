@@ -218,6 +218,50 @@ p Tree.addNodes(int count) {
 }
 ```
 
+### Condition variables
+
+To let a thread sleep until another thread changes some shared state, `std/os/mutex` also provides a
+`ConditionVariable`. It is always used together with the `Mutex`, that guards the state: the waiting thread checks the
+condition while holding the mutex and calls `wait(mutex)`, which releases the mutex while sleeping and re-acquires it
+before returning. Another thread changes the state under the same mutex and then wakes up one waiting thread with
+`notifyOne()` or all of them with `notifyAll()`.
+
+```spice
+import "std/os/mutex";
+import "std/os/thread";
+
+type Signal struct {
+    Mutex m
+    ConditionVariable changed
+    bool ready = false
+}
+
+p Signal.run() {
+    p() waiter = p() [[async]] {
+        LockGuard _ = LockGuard(this.m);
+        while !this.ready { // re-check after every wakeup, since wakeups can be spurious
+            this.changed.wait(this.m);
+        }
+        printf("Ready!\n");
+    };
+    Thread t = Thread(waiter);
+    t.run();
+    {
+        LockGuard _ = LockGuard(this.m);
+        this.ready = true;
+        this.changed.notifyAll();
+    }
+    t.join();
+}
+
+f<int> main() {
+    Signal s;
+    s.run();
+}
+```
+
+Unlike polling the state in a loop, a waiting thread does not use any CPU time until it is notified.
+
 ## Message queues
 
 The `std/os/message-queue` module provides a `MessageQueue<T>` type for passing values between threads. It is a

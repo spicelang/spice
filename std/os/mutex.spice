@@ -11,11 +11,18 @@ ext f<int> pthread_mutex_destroy(heap byte* /*mutex*/);
 ext f<int> pthread_mutex_lock(heap byte* /*mutex*/);
 ext f<int> pthread_mutex_unlock(heap byte* /*mutex*/);
 ext f<int> pthread_mutex_trylock(heap byte* /*mutex*/);
+ext f<int> pthread_cond_init(heap byte* /*cond*/, byte* /*attr*/);
+ext f<int> pthread_cond_destroy(heap byte* /*cond*/);
+ext f<int> pthread_cond_wait(heap byte* /*cond*/, heap byte* /*mutex*/);
+ext f<int> pthread_cond_signal(heap byte* /*cond*/);
+ext f<int> pthread_cond_broadcast(heap byte* /*cond*/);
 
 // pthread_mutex_t is an opaque, platform-specific struct (40 bytes on glibc/Linux x86_64,
 // 64 bytes on macOS, smaller on FreeBSD). Allocate enough storage for the largest known
 // layout so the same binding works across supported platforms.
 const unsigned long PTHREAD_MUTEX_SIZE = 64ul;
+// pthread_cond_t is opaque as well (48 bytes on glibc/Linux x86_64 and on macOS). Same reasoning as above.
+const unsigned long PTHREAD_COND_SIZE = 64ul;
 
 /**
  * Mutex for reserving a resource for exclusive access between threads.
@@ -126,4 +133,85 @@ public p LockGuard.ctor(Mutex& mutex) {
  */
 public p LockGuard.dtor() {
     this.mutex.release();
+}
+
+/**
+ * Condition variable, which lets threads sleep until another thread signals, that a condition might have changed.
+ *
+ * Backed by a POSIX `pthread_cond_t`. A condition variable is always used together with a `Mutex`, that guards the
+ * condition: the waiting thread checks the condition while holding the mutex and calls `wait`, which releases the mutex
+ * while sleeping and re-acquires it before returning. Since a thread can wake up spuriously, the condition has to be
+ * re-checked in a loop after every `wait`. Like a `Mutex`, a `ConditionVariable` is not safe to share by shallow copy.
+ */
+public type ConditionVariable struct {
+    heap byte* handle
+}
+
+/**
+ * Initialize a fresh condition variable.
+ */
+public p ConditionVariable.ctor() {
+    this.handle = malloc(PTHREAD_COND_SIZE);
+    if this.handle == nil<heap byte*> {
+        panic(Error("ConditionVariable: failed to allocate pthread_cond_t storage"));
+    }
+    if pthread_cond_init(this.handle, nil<byte*>) != 0 {
+        free(this.handle);
+        this.handle = nil<heap byte*>;
+        panic(Error("ConditionVariable: pthread_cond_init failed"));
+    }
+}
+
+/**
+ * Copy-construct a fresh condition variable. The original is not aliased, since pthread_cond_t handles cannot be
+ * safely shared via shallow copy.
+ */
+public p ConditionVariable.ctor(const ConditionVariable& _other) {
+    this.ctor();
+}
+
+/**
+ * Assignment for ConditionVariable. Keeps the receiver's handle in place, for the same reasons as for Mutex.
+ */
+public p operator=(ConditionVariable& this, const ConditionVariable& _other) {
+    if this.handle == nil<heap byte*> {
+        this.ctor();
+    }
+}
+
+/**
+ * Destroy the underlying pthread condition variable and release its storage.
+ */
+public p ConditionVariable.dtor() {
+    if this.handle != nil<heap byte*> {
+        pthread_cond_destroy(this.handle);
+        free(this.handle);
+        this.handle = nil<heap byte*>;
+    }
+}
+
+/**
+ * Release the given mutex and block until the condition variable is notified, then re-acquire the mutex. The calling
+ * thread must hold the mutex.
+ *
+ * @param mutex Mutex, that guards the condition and is held by the calling thread
+ */
+public p ConditionVariable.wait(Mutex& mutex) {
+    if pthread_cond_wait(this.handle, mutex.handle) != 0 {
+        panic(Error("ConditionVariable: pthread_cond_wait failed"));
+    }
+}
+
+/**
+ * Wake up one of the threads, that are waiting on the condition variable, if any.
+ */
+public p ConditionVariable.notifyOne() {
+    pthread_cond_signal(this.handle);
+}
+
+/**
+ * Wake up all threads, that are waiting on the condition variable.
+ */
+public p ConditionVariable.notifyAll() {
+    pthread_cond_broadcast(this.handle);
 }

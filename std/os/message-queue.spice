@@ -1,7 +1,6 @@
 import "std/data/queue";
 import "std/data/optional";
 import "std/os/mutex";
-import "std/os/cpu";
 
 // Generic type definition
 type T dyn;
@@ -11,8 +10,8 @@ type T dyn;
  *
  * MessageQueue wraps a `Queue<T>` with a `Mutex`, so `push()`, `pop()`, `tryPop()` and the other
  * methods may be called concurrently from any number of threads without external synchronization.
- * `pop()` blocks until an item becomes available or the queue is closed, spin-waiting via `yield()`
- * between checks, since the standard library has no condition variable to park on.
+ * `pop()` blocks until an item becomes available or the queue is closed, sleeping on a condition
+ * variable in the meantime.
  *
  * Once `close()` has been called, `push()` panics and `pop()`/`tryPop()` keep draining any items
  * that are still queued, returning an empty `Optional` only once the queue has run dry. This makes
@@ -21,6 +20,7 @@ type T dyn;
 public type MessageQueue<T> struct {
     Queue<T> queue
     Mutex mutex
+    ConditionVariable itemAvailable // Notified on push and on close
     bool closed = false
 }
 
@@ -38,6 +38,7 @@ public p MessageQueue.push(const T& item) {
     LockGuard _ = LockGuard(this.mutex);
     if this.closed { panic(Error("MessageQueue: cannot push to a closed queue")); }
     this.queue.push(item);
+    this.itemAvailable.notifyOne();
 }
 
 /**
@@ -49,22 +50,14 @@ public p MessageQueue.push(const T& item) {
  */
 #[ignoreUnusedReturnValue]
 public f<Optional<T>> MessageQueue.pop() {
-    while true {
-        bool hasItem = false;
-        bool isClosed = false;
-        result = Optional<T>();
-        {
-            LockGuard _ = LockGuard(this.mutex);
-            if !this.queue.isEmpty() {
-                result.set(this.queue.pop());
-                hasItem = true;
-            } else {
-                isClosed = this.closed;
-            }
-        }
-        if hasItem || isClosed { return; }
-        // Give up the CPU while waiting for a producer instead of busy-spinning at full speed
-        yield();
+    LockGuard _ = LockGuard(this.mutex);
+    // Re-check after every wakeup, since a wakeup can be spurious or another consumer could have taken the item
+    while this.queue.isEmpty() && !this.closed {
+        this.itemAvailable.wait(this.mutex);
+    }
+    result = Optional<T>();
+    if !this.queue.isEmpty() {
+        result.set(this.queue.pop());
     }
 }
 
@@ -88,6 +81,8 @@ public f<Optional<T>> MessageQueue.tryPop() {
 public p MessageQueue.close() {
     LockGuard _ = LockGuard(this.mutex);
     this.closed = true;
+    // Wake up all blocked consumers, so that they can observe the close
+    this.itemAvailable.notifyAll();
 }
 
 /**
