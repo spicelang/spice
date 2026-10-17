@@ -7,9 +7,9 @@ description: >
 inputs:
   packages:
     description: >
-      Homebrew packages to install, separated by spaces. If sqlite is among them, its pkg-config dir is added to PKG_CONFIG_PATH.
+      Homebrew packages to install, separated by spaces.
       zstd is needed because the stage0 compiler loads Homebrew's libzstd. ccache is needed for use-ccache. Empty to install none
-    default: ccache graphviz sqlite zstd
+    default: ccache graphviz zstd
   use-mold:
     description: Run rui314/setup-mold. It only acts on Linux, so this has no effect on macOS runners at the moment
     default: "true"
@@ -40,9 +40,6 @@ runs:
       run: |
         brew update
         brew install $PACKAGES
-        case " $PACKAGES " in
-          *" sqlite "*) echo "PKG_CONFIG_PATH=$(brew --prefix sqlite)/lib/pkgconfig:$PKG_CONFIG_PATH" >> "$GITHUB_ENV" ;;
-        esac
 
     - name: Create ccache dir
       if: inputs.use-ccache == 'true'

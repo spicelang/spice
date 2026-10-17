@@ -7,7 +7,7 @@ description: >
 inputs:
   packages:
     description: apt packages to install besides GCC and the ones of extra-packages, separated by spaces
-    default: ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev libssl-dev clang
+    default: ccache ninja-build graphviz uuid-dev libssl-dev clang
   gcc-version:
     description: Major version of GCC to install and make the default
     default: "16"
