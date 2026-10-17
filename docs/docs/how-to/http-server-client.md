@@ -12,7 +12,7 @@ which is how you would run them in practice.
 !!! note "TLS"
     `HttpClient` and `HttpServer` both speak TLS via `std/net/tls`, built on the OpenSSL bindings in
     `std/bindings/openssl` - see [TLS / HTTPS](#tls-https) below. This adds a build-time dependency on OpenSSL
-    (`libssl-dev` on Debian/Ubuntu), the same way the libcurl bindings in `std/bindings/libcurl` depend on libcurl.
+    (`libssl-dev` on Debian/Ubuntu).
 
 ## A minimal server
 

@@ -26,15 +26,13 @@ f<int> main() {
 ## Packages
 
 ### `std/bindings`
-Spice bindings for common external libraries, allowing them to be called from Spice code.
+Spice bindings for the external libraries that the compiler and the std itself build on. Bindings for other libraries,
+like GTK 4, libcurl and SQLite, are available as [official packages](https://github.com/spicelang/packages).
 
 | Module            | Description                                                             |
 |-------------------|-------------------------------------------------------------------------|
-| `gtk/gtk4`        | Bindings for the GTK 4 GUI toolkit.                                     |
-| `libcurl/libcurl` | Bindings for libcurl, used for network transfers that need https.       |
 | `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.    |
 | `openssl/openssl` | Bindings for the TLS parts of OpenSSL's libssl, used by `std/net/tls`.  |
-| `sqlite/sqlite`   | Bindings for SQLite, an embedded, file-based SQL database.              |
 | `tpde/tpde`       | Bindings for the TPDE compiler back-end (needs `setup-deps.py --tpde`). |
 
 ### `std/crypto`
