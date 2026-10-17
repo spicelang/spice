@@ -90,8 +90,8 @@ public f<String> renderCommandForDisplay(const String& program, const Vector<Str
 /**
  * Expand a linker flag that may contain environment-variable references ('$VAR' on Unix, '%VAR%' on Windows) or a
  * backtick-quoted command substitution (e.g. "`pkg-config --cflags --libs libcurl`"), mirroring what a shell would have
- * done for these flags. Std bindings rely on both forms (see e.g. std/bindings/llvm/linker-flags.spice and
- * std/bindings/libcurl/libcurl.spice).
+ * done for these flags. Bindings rely on both forms (see e.g. std/bindings/llvm/linker-flags.spice and
+ * std/bindings/openssl/openssl.spice).
  *
  * Unlike a shell, only these two specific substitutions are recognized, and the backtick-quoted command is executed
  * directly (argv-based, whitespace-split) rather than through a shell - no other shell metacharacters (';', '&&', pipes,
