@@ -28,7 +28,7 @@ sudo apt-get install -y software-properties-common
 sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt-get install -y \
-  ccache ninja-build graphviz uuid-dev libcurl4-openssl-dev libsqlite3-dev \
+  ccache ninja-build graphviz uuid-dev \
   libssl-dev "gcc-${GCC_VERSION}" "g++-${GCC_VERSION}" clang \
   wget gnupg lsb-release
 sudo update-alternatives --install /usr/bin/gcc gcc "/usr/bin/gcc-${GCC_VERSION}" "1${GCC_VERSION}"
