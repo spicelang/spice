@@ -175,7 +175,6 @@ jobs:
         uses: ./.github/actions/setup-windows-toolchain
         with:
           packages: ninja
-          vcpkg-packages: ""
           use-ccache: "false"
 
       - name: Setup LLVM

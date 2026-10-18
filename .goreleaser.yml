@@ -162,40 +162,24 @@ nfpms:
           - clang
           - lld
           - build-base
-          - gtk4-dev
-          - gtkmm4.0-dev
-          - curl-dev
-          - sqlite-dev
           - ca-certificates
       deb:
         dependencies:
           - clang
           - lld
           - build-essential
-          - libgtk-4-dev
-          - libgtkmm-4.0-dev
-          - libcurl4-openssl-dev
-          - libsqlite3-dev
           - ca-certificates
       rpm:
         dependencies:
           - clang
           - lld
           - glibc-devel
-          - gtk4-devel
-          - gtkmm4.0-devel
-          - libcurl-devel
-          - sqlite-devel
           - ca-certificates
       archlinux:
         dependencies:
           - clang
           - lld
           - base-devel
-          - gtk4
-          - gtkmm-4.0
-          - curl
-          - sqlite
           - ca-certificates
 
 homebrew_casks:

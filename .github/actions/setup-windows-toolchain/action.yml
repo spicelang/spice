@@ -1,19 +1,13 @@
 name: Setup Windows toolchain
 description: >
-  Installs the build dependencies on a Windows runner, optionally sqlite via vcpkg, and restores the ccache. The ccache is not
-  saved by this action, because composite actions have no post step. Save it at the end of the job with actions/cache/save,
-  using the ccache-key output. Git for Windows has to be told to check out symlinks (git config --global core.symlinks true)
+  Installs the build dependencies on a Windows runner and restores the ccache. The ccache is not saved by this action,
+  because composite actions have no post step. Save it at the end of the job with actions/cache/save, using the ccache-key output. Git for Windows has to be told to check out symlinks (git config --global core.symlinks true)
   before the checkout step, and MSYS2 (for setup-deps.py) is set up after LLVM was built, so neither is part of this action.
 
 inputs:
   packages:
     description: Chocolatey packages to install, separated by spaces. graphviz is added to the PATH. ccache is needed for use-ccache
     default: graphviz ccache ninja
-  vcpkg-packages:
-    description: >
-      vcpkg packages (x64-windows triplet) to install, separated by spaces. Their libraries and DLLs are added to LIBRARY_PATH and
-      the PATH. Empty to install none
-    default: sqlite3:x64-windows
   use-ccache:
     description: Create the ccache dir and restore the ccache
     default: "true"
@@ -44,19 +38,6 @@ runs:
       if: inputs.use-ccache == 'true'
       shell: pwsh
       run: New-Item -ItemType Directory -Force -Path "$env:LOCALAPPDATA\ccache"
-
-    - name: Install vcpkg packages
-      if: inputs.vcpkg-packages != ''
-      shell: pwsh
-      env:
-        VCPKG_PACKAGES: ${{ inputs.vcpkg-packages }}
-      run: |
-        $packages = @($env:VCPKG_PACKAGES -split ' ' | Where-Object { $_ })
-        & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install @packages
-        # The compiler links via clang's GNU driver (--target=x86_64-w64-windows-gnu, MinGW), which reads
-        # LIBRARY_PATH for '-l' search dirs, not the MSVC-only LIB variable.
-        echo "LIBRARY_PATH=$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\lib;$env:LIBRARY_PATH" >> $env:GITHUB_ENV
-        echo "$env:VCPKG_INSTALLATION_ROOT\installed\x64-windows\bin" >> $env:GITHUB_PATH
 
     - name: Compute ccache key
       id: ccache-key
