@@ -4,7 +4,10 @@
 
 // Imports
 import "std/bindings/openssl/openssl";
+import "std/io/file";
+import "std/iterator/array-iterator";
 import "std/net/socket";
+import "std/os/env";
 
 /**
  * Owns an `SSL_CTX`, i.e. the certificate/trust/verification setup that is shared by every
@@ -45,7 +48,7 @@ public f<Result<TlsContext>> newClientTlsContext(string caFile = "") {
     if ctx == nil<SslCtx> {
         errorMessage = "Could not create TLS client context";
     } else {
-        const bool trusted = caFile == "" ? sslCtxSetDefaultVerifyPaths(ctx) : sslCtxLoadVerifyLocations(ctx, caFile);
+        const bool trusted = caFile == "" ? loadDefaultTrustStore(ctx) : sslCtxLoadVerifyLocations(ctx, caFile);
         if !trusted {
             errorMessage = "Could not load the TLS trust store";
             sslCtxFree(ctx);
@@ -58,6 +61,37 @@ public f<Result<TlsContext>> newClientTlsContext(string caFile = "") {
     const TlsContext context = TlsContext { ctx };
     const Error error = Error(errorMessage);
     return errorMessage == "" ? ok(context) : err<TlsContext>(error);
+}
+
+/**
+ * Points a client context's trust store at the CA certificates of the operating system. OpenSSL looks for them where the
+ * system it was built for keeps them, unless the SSL_CERT_FILE or SSL_CERT_DIR env vars say otherwise. A program that links
+ * OpenSSL statically (like the released Spice Shaker) can run on a Linux distribution that keeps them elsewhere, so if the
+ * default CA bundle is missing, the first CA bundle found at the paths of the common distributions is trusted as well.
+ *
+ * @return true on success
+ */
+f<bool> loadDefaultTrustStore(SslCtx ctx) {
+    if !sslCtxSetDefaultVerifyPaths(ctx) {
+        return false;
+    }
+    const Result<string> certFileEnv = getEnv("SSL_CERT_FILE");
+    const Result<string> certDirEnv = getEnv("SSL_CERT_DIR");
+    if certFileEnv.isOk() || certDirEnv.isOk() || fileExists(sslDefaultCertFile()) {
+        return true;
+    }
+    foreach const string caBundle : [
+        "/etc/ssl/certs/ca-certificates.crt",                // Debian, Ubuntu, Arch, Gentoo
+        "/etc/pki/tls/certs/ca-bundle.crt",                  // Fedora, RHEL
+        "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", // CentOS, RHEL 7
+        "/etc/ssl/ca-bundle.pem",                            // openSUSE
+        "/etc/ssl/cert.pem"                                  // Alpine, macOS
+    ] {
+        if fileExists(caBundle) {
+            return sslCtxLoadVerifyLocations(ctx, caBundle);
+        }
+    }
+    return true;
 }
 
 /**
