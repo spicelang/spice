@@ -121,9 +121,6 @@ nfpms:
       - deb
       - rpm
       - archlinux
-    dependencies:
-      - clang
-      - lld
     suggests:
       - mold
     contents:
@@ -157,10 +154,13 @@ nfpms:
       - src: tools/gdb/spice.gdb
         dst: /etc/gdb/gdbinit.d/spice.gdb
         type: config|noreplace
-    # The dependencies of each format replace the ones above. Spice Shaker verifies https servers against the ca-certificates
+    # The dependencies, per format: GoReleaser replaces a shared dependency list with the one of the format, so each format lists
+    # all of its own. The compiler links with clang and lld, Spice Shaker verifies https servers against the ca-certificates
     overrides:
       apk:
         dependencies:
+          - clang
+          - lld
           - build-base
           - gtk4-dev
           - gtkmm4.0-dev
@@ -169,6 +169,8 @@ nfpms:
           - ca-certificates
       deb:
         dependencies:
+          - clang
+          - lld
           - build-essential
           - libgtk-4-dev
           - libgtkmm-4.0-dev
@@ -177,6 +179,8 @@ nfpms:
           - ca-certificates
       rpm:
         dependencies:
+          - clang
+          - lld
           - glibc-devel
           - gtk4-devel
           - gtkmm4.0-devel
@@ -185,6 +189,8 @@ nfpms:
           - ca-certificates
       archlinux:
         dependencies:
+          - clang
+          - lld
           - base-devel
           - gtk4
           - gtkmm-4.0
