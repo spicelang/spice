@@ -37,8 +37,9 @@ jobs:
         uses: ./.github/actions/setup-linux-toolchain
         with:
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
-          # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm).
-          packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev checksec jq clang
+          # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm), libssl-dev the
+          # OpenSSL archives for linking Spice Shaker (see std/bindings/openssl).
+          packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev libssl-dev pkg-config checksec jq clang
           # Neither the faster linker nor the ccache is used for release builds
           use-mold: "false"
           use-ccache: "false"
@@ -109,14 +110,43 @@ jobs:
           chmod +x spice
           ./spice --version
 
+      - name: Read Spice Shaker revision
+        id: shaker
+        run: echo "ref=$(cat .github/spice-shaker-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Spice Shaker
+        uses: actions/checkout@v7
+        with:
+          repository: spicelang/spice-shaker
+          ref: ${{ steps.shaker.outputs.ref }}
+          path: spice-shaker
+          persist-credentials: false
+
+      - name: Build Spice Shaker
+        # The package manager, released next to the compiler as 'spice-shaker', at the revision pinned in
+        # .github/spice-shaker-version. Built by the released compiler with the std of this checkout. It cannot install its own
+        # dependencies before it is built, so its bootstrap script installs them from its lock file.
+        working-directory: build
+        env:
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+        run: |
+          python3 ../spice-shaker/bootstrap.py
+          # Linked statically like the compiler, OpenSSL included. std/net/tls finds the CA certificates of distributions
+          # that keep them elsewhere than this runner.
+          ./spice build -O3 -lto --static --ignore-cache --output spice-shaker ../spice-shaker/src/main.spice
+          chmod +x spice-shaker
+          ./spice-shaker --version
+
       - name: Run Checksec
         working-directory: build
         run: |
-          checksec --file=./spice --output=json | tee checksec.json | jq
-          # The release must be linked with Full RELRO
-          jq -e 'to_entries[0].value.relro == "full"' checksec.json
-          # ... and as a (static) PIE: ET_DYN instead of ET_EXEC
-          readelf -h ./spice | grep -E 'Type:\s+DYN'
+          for binary in spice spice-shaker; do
+            checksec --file=./$binary --output=json | tee checksec.json | jq
+            # The release must be linked with Full RELRO
+            jq -e 'to_entries[0].value.relro == "full"' checksec.json
+            # ... and as a (static) PIE: ET_DYN instead of ET_EXEC
+            readelf -h ./$binary | grep -E 'Type:\s+DYN'
+          done
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -236,7 +266,8 @@ jobs:
       - name: Setup macOS toolchain
         uses: ./.github/actions/setup-macos-toolchain
         with:
-          packages: ""
+          # OpenSSL and pkg-config for Spice Shaker, that links Homebrew's OpenSSL (see std/bindings/openssl)
+          packages: openssl@3 pkgconf
           use-ccache: "false"
 
       - name: Setup LLVM
@@ -284,6 +315,35 @@ jobs:
           ./spice --version
           # The shared libraries it needs at runtime
           otool -L spice
+
+      - name: Read Spice Shaker revision
+        id: shaker
+        run: echo "ref=$(cat .github/spice-shaker-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Spice Shaker
+        uses: actions/checkout@v7
+        with:
+          repository: spicelang/spice-shaker
+          ref: ${{ steps.shaker.outputs.ref }}
+          path: spice-shaker
+          persist-credentials: false
+
+      - name: Build Spice Shaker
+        # The package manager, released next to the compiler as 'spice-shaker', at the revision pinned in
+        # .github/spice-shaker-version. Built by the released compiler with the std of this checkout. It cannot install its own
+        # dependencies before it is built, so its bootstrap script installs them from its lock file.
+        working-directory: build
+        env:
+          SPICE_STD_DIR: ${{ github.workspace }}/std
+        run: |
+          python3 ../spice-shaker/bootstrap.py
+          # Linked dynamically against Homebrew's OpenSSL, which is keg-only and thus not on the default pkg-config path. The
+          # Homebrew cask depends on it.
+          export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$PKG_CONFIG_PATH"
+          ./spice build -O3 -lto --ignore-cache --output spice-shaker ../spice-shaker/src/main.spice
+          chmod +x spice-shaker
+          ./spice-shaker --version
+          otool -L spice-shaker
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
