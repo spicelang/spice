@@ -2963,7 +2963,7 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
             returnValue = data.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
         }
     } else { // Try to load result variable value
-        const SymbolTableEntry* resultEntry = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
+        const SymbolTableEntry* resultEntry = this.currentScope.lookupResultVar();
         if resultEntry != nil<const SymbolTableEntry*> {
             const llvm::Value returnValueAddr = this.getAddress(resultEntry);
             // The result variable of functions, that return via memory, already lives in the memory of the caller
