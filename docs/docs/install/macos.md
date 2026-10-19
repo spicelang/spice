@@ -32,3 +32,8 @@ This archive file contains all resources that Spice needs to run.
 ```sh
 spice [options] <input>
 ```
+
+Spice ships with its package manager [Spice Shaker](https://github.com/spicelang/spice-shaker):
+```sh
+spice-shaker install <package>
+```

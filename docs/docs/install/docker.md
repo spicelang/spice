@@ -33,6 +33,12 @@ You don't have to pull the image first. You also can skip this step.
     docker run --rm -it -v ${pwd}:/spice/out ghcr.io/spicelang/spice
     ```
 
+The image also contains the package manager [Spice Shaker](https://github.com/spicelang/spice-shaker). To run it instead of
+the compiler, override the entrypoint:
+```sh
+docker run --rm -it -v $(pwd):/spice/out --entrypoint spice-shaker chillibits/spice install <package>
+```
+
 ### Customize
 #### Custom output path
 You can use another output path by replacing `$(pwd)`/`${pwd}` with a custom path.

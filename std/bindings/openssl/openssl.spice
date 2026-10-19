@@ -51,6 +51,7 @@ ext f<X509VerifyParam> SSL_get0_param(Ssl /*ssl*/);
 ext f<long> SSL_get_verify_result(Ssl /*ssl*/);
 ext f<int> X509_VERIFY_PARAM_set1_host(X509VerifyParam /*param*/, string /*name*/, unsigned long /*namelen*/);
 ext f<int> X509_VERIFY_PARAM_set1_ip_asc(X509VerifyParam /*param*/, string /*ipasc*/);
+ext f<string> X509_get_default_cert_file();
 
 // ============================================== Exposed API ==============================================
 // `ext` declarations are never visible outside the file that declares them, so everything below is the
@@ -90,6 +91,16 @@ public p sslCtxFree(SslCtx ctx) {
  */
 public f<bool> sslCtxSetDefaultVerifyPaths(SslCtx ctx) {
     return SSL_CTX_set_default_verify_paths(ctx) == 1;
+}
+
+/**
+ * Path of the CA bundle that the default trust store reads (see `sslCtxSetDefaultVerifyPaths`), as configured when the
+ * linked OpenSSL was built. The SSL_CERT_FILE env var does not change it.
+ *
+ * @return Path of the default CA bundle
+ */
+public f<string> sslDefaultCertFile() {
+    return X509_get_default_cert_file();
 }
 
 /**
