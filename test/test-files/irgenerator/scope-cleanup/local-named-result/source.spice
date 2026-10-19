@@ -1,0 +1,51 @@
+// TEST: --sanitizer=address
+
+// A local variable, that the user named 'result', is no implicit return variable and has to be destructed when it goes out
+// of scope like any other local. Only functions have an implicit 'result' variable, so procedures, lambda procedures and
+// nested scopes may declare one
+type T dyn;
+
+public type Tracked struct {
+    String name
+}
+
+public p Tracked.ctor(string name) {
+    this.name = String(name);
+}
+
+public p Tracked.dtor() {
+    printf("dtor: %s\n", this.name.getRaw());
+}
+
+f<Result<Tracked>> makeResult() {
+    return ok<Tracked>(Tracked("from function"));
+}
+
+p topLevel() {
+    Tracked result = Tracked("procedure");
+    printf("topLevel: %s\n", result.name.getRaw());
+}
+
+p nested() {
+    if true {
+        Tracked result = Tracked("nested");
+        printf("nested: %s\n", result.name.getRaw());
+    }
+    printf("nested: left scope\n");
+}
+
+p generic<T>() {
+    Result<T> result = makeResult();
+    printf("generic: %d\n", result.isOk());
+}
+
+f<int> main() {
+    topLevel();
+    nested();
+    generic<Tracked>();
+    p() lambda = p() {
+        Tracked result = Tracked("lambda");
+        printf("lambda: %s\n", result.name.getRaw());
+    };
+    lambda();
+}
