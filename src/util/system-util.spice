@@ -101,10 +101,15 @@ public f<String> renderCommandForDisplay(const String& program, const Vector<Str
  * "-I<dir1> -I<dir2>" by CMake/CI). Since there is no shell to word-split the expanded text, it is split explicitly, so
  * each flag becomes its own argv entry.
  *
+ * A pkg-config command substitution of a static link queries the static flags ('pkg-config --static'). Only those
+ * include the private dependencies of a library, that its static archive needs (e.g. zlib, zstd and jitterentropy for the
+ * libcrypto of some distributions), whereas a shared library brings them along itself.
+ *
  * @param flag Raw linker flag, as configured via a 'core.[os.]linker.flag' attribute
+ * @param staticLinking Whether the flag is expanded for a static link
  * @return One or more expanded flags (an expansion can result in several whitespace-separated flags)
  */
-public f<Vector<String>> expandLinkerFlag(const String& flag) {
+public f<Vector<String>> expandLinkerFlag(const String& flag, bool staticLinking = false) {
     // Expand environment variable references within the flag ('$VAR' on Unix, '%VAR%' on Windows)
     String expanded;
     unsigned long i = 0l;
@@ -150,10 +155,7 @@ public f<Vector<String>> expandLinkerFlag(const String& flag) {
             return Vector<String>();
         }
         const String program = tokens.front();
-        Vector<String> cmdArgs;
-        for unsigned long k = 1l; k < tokens.getSize(); k++ {
-            cmdArgs.pushBack(tokens.get(k));
-        }
+        const Vector<String> cmdArgs = getLinkerFlagCommandArgs(tokens, staticLinking);
         const ExecResult cmdResult = exec(program, cmdArgs);
         if cmdResult.exitCode != 0 {                                                                // LCOV_EXCL_LINE
             const String message = "Command substitution for linker flag failed: " + innerCommand;  // LCOV_EXCL_LINE
@@ -166,6 +168,25 @@ public f<Vector<String>> expandLinkerFlag(const String& flag) {
     // Word-split the (possibly command-substituted) text on whitespace, so an expansion that contains several flags (e.g. a
     // multi-directory LLVM_INCLUDE_DIRS, or a pkg-config command's output) ends up as separate argv entries.
     return splitAtWhitespace(expanded);
+}
+
+/**
+ * Get the arguments for the command of a backtick-quoted linker flag, without the program itself
+ *
+ * @param tokens Whitespace-split command, starting with the program
+ * @param staticLinking Whether the flag is expanded for a static link
+ * @return Command arguments
+ */
+f<Vector<String>> getLinkerFlagCommandArgs(const Vector<String>& tokens, bool staticLinking) {
+    Vector<String> cmdArgs;
+    // A static link needs the private dependencies of the libraries as well
+    if staticLinking && tokens.front() == "pkg-config" {
+        cmdArgs.pushBack(String("--static"));
+    }
+    for unsigned long k = 1l; k < tokens.getSize(); k++ {
+        cmdArgs.pushBack(tokens.get(k));
+    }
+    return cmdArgs;
 }
 
 /**
@@ -532,6 +553,39 @@ f<bool> testExpandLinkerFlag() {
     assert multi.getSize() == 2l;
     assert multi.get(0l) == "-I/opt/llvm/include";
     assert multi.get(1l) == "-I/opt/llvm/build/include";
+    return true;
+}
+
+#[test]
+f<bool> testGetLinkerFlagCommandArgs() {
+    Vector<String> pkgConfigTokens;
+    pkgConfigTokens.pushBack(String("pkg-config"));
+    pkgConfigTokens.pushBack(String("--cflags"));
+    pkgConfigTokens.pushBack(String("--libs"));
+    pkgConfigTokens.pushBack(String("openssl"));
+
+    // A dynamic link passes the arguments through
+    const Vector<String> dynamicArgs = getLinkerFlagCommandArgs(pkgConfigTokens, false);
+    assert dynamicArgs.getSize() == 3l;
+    assert dynamicArgs.get(0l) == "--cflags";
+    assert dynamicArgs.get(1l) == "--libs";
+    assert dynamicArgs.get(2l) == "openssl";
+
+    // A static link asks pkg-config for the static flags, that include the private dependencies
+    const Vector<String> staticArgs = getLinkerFlagCommandArgs(pkgConfigTokens, true);
+    assert staticArgs.getSize() == 4l;
+    assert staticArgs.get(0l) == "--static";
+    assert staticArgs.get(1l) == "--cflags";
+    assert staticArgs.get(2l) == "--libs";
+    assert staticArgs.get(3l) == "openssl";
+
+    // Other commands are passed through for a static link as well
+    Vector<String> otherTokens;
+    otherTokens.pushBack(String("llvm-config"));
+    otherTokens.pushBack(String("--libs"));
+    const Vector<String> otherArgs = getLinkerFlagCommandArgs(otherTokens, true);
+    assert otherArgs.getSize() == 1l;
+    assert otherArgs.get(0l) == "--libs";
     return true;
 }
 

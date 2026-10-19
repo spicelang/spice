@@ -277,10 +277,10 @@ f<Vector<String>> ExternalLinkerInterface.getTrailingArgs() {
     // Append linker flags, expanding any environment-variable references or backtick command substitutions they may
     // contain (e.g. std bindings using "-L$LLVM_LIB_DIR" or "`pkg-config --cflags --libs libcurl`"); a single flag can
     // expand into several argv entries. They go behind the object files (libraries must follow the objects that reference
-    // them).
+    // them). A static link gets the static flags from pkg-config.
     foreach const String& linkerFlag : this.linkerFlags {
         if !this.expandedLinkerFlags.contains(linkerFlag) {
-            this.expandedLinkerFlags.upsert(linkerFlag, expandLinkerFlag(linkerFlag));
+            this.expandedLinkerFlags.upsert(linkerFlag, expandLinkerFlag(linkerFlag, this.cliOptions.staticLinking));
         }
         const Vector<String>& expandedFlags = this.expandedLinkerFlags.get(linkerFlag);
         foreach const String& expandedFlag : expandedFlags {
