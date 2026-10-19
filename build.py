@@ -62,8 +62,7 @@ if "LLVM_INCLUDE_DIRS" not in os.environ:
 output = args.output.resolve()
 output.parent.mkdir(parents=True, exist_ok=True)
 bootstrap.log(f"Building {output} with {compiler} ...")
-# Bypass the compilation cache, which can go stale when only an imported file changes (see issue #1417)
-cmd = [str(compiler), "build", *BUILD_FLAGS[args.build_type], "--ignore-cache", "--output", str(output),
+cmd = [str(compiler), "build", *BUILD_FLAGS[args.build_type], *bootstrap.cache_bypass_flags(compiler), "--output", str(output),
        str(ROOT_DIR / "src" / "main.spice")]
 if subprocess.run(cmd, cwd=ROOT_DIR).returncode != 0:
     bootstrap.fail(f"Building the compiler failed: {' '.join(cmd)}")

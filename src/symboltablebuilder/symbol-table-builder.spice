@@ -834,16 +834,13 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
     Vector<CompileTimeValue> coreValues = attrs.getAttrValuesByName(String(ATTR_CORE_LINKER_FLAG));
     if wrapInGroup && !coreValues.isEmpty() {
         resourceManager.addLinkerFlag(String("-Wl,--start-group"));
-        this.sourceFile.addSourceLinkerFlag(String("-Wl,--start-group"));
     }
     foreach CompileTimeValue value : coreValues {
         const String& flag = resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         resourceManager.addLinkerFlag(flag);
-        this.sourceFile.addSourceLinkerFlag(flag);
     }
     if wrapInGroup && !coreValues.isEmpty() {
         resourceManager.addLinkerFlag(String("-Wl,--end-group"));
-        this.sourceFile.addSourceLinkerFlag(String("-Wl,--end-group"));
     }
 
     // Platform-specific flags - always come after the (possibly grouped) core flags
@@ -858,7 +855,6 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
     foreach CompileTimeValue value : platformValues {
         const String& flag = resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         resourceManager.addLinkerFlag(flag);
-        this.sourceFile.addSourceLinkerFlag(flag);
     }
 
     // core.linker.additionalSource
@@ -868,7 +864,6 @@ public f<Any> SymbolTableBuilder.visitModAttr(ASTModAttrNode* node) {
         const String& stringValue = resourceManager.getCompileTimeStringValue(additionalSourceValue.getStringValueOffset());
         const FilePath additionalSourcePath = FilePath(ownFilePath.getParentDir()) / stringValue;
         resourceManager.addAdditionalSourcePath(additionalSourcePath);
-        this.sourceFile.addSourceAdditionalSourcePath(additionalSourcePath);
     }
 
     return Any();

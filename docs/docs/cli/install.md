@@ -40,7 +40,6 @@ You can apply following options to the `install` subcommand:
 | `-O<n>`      | -                         | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2` (default), `-O3`, `-Os`, `-Oz` |
 | `-m`         | `--build-mode`            | Controls the build mode. <br> Valid values: `debug` (default) and `release`                    |
 | `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                     |
-| -            | `--ignore-cache`          | Compile always and ignore the compile cache                                                    |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |
 | -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                      |
 | -            | `--native-features`       | Tune the output for the CPU of the compiling machine (output not portable)                     |

@@ -83,7 +83,7 @@ gdb --args $SPICE build <file.spice>
 # then: run, bt, bt full, frame N, print <expr>, list
 
 # A single failing test case: take the invocation from 'run-tests.py -v' and run it from build/test-tmp
-cd build/test-tmp && gdb --args ../spice build --test-mode --ignore-cache ./test-files/<suite>/<case>/source.spice
+cd build/test-tmp && gdb --args ../spice build --test-mode ./test-files/<suite>/<case>/source.spice
 
 # The emitted Spice program — compile with debug info (-g) and a known path
 $SPICE build -g -o /tmp/prog <file.spice>

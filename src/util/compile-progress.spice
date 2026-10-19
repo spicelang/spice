@@ -196,21 +196,6 @@ public p CompileProgress.finishBackEndStage(BackEndStage stage) {
 }
 
 /**
- * Report that the back end of a source file was skipped, because it was restored from the cache
- *
- * @param isMainFile Whether this is the main source file, that runs the stages for the whole program with LTO
- */
-public p CompileProgress.skipBackEnd(bool isMainFile) {
-    if !this.enabled { return; }
-    LockGuard _ = LockGuard(this.mutex);
-    unsigned long steps = this.stepsIrGenerator + this.stepsIrOptimizer + this.stepsObjectEmitter;
-    if isMainFile {
-        steps += (this.stepsLtoIrOptimizer + this.stepsLtoObjectEmitter) * this.sourceFileCount;
-    }
-    this.bar.tick(steps);
-}
-
-/**
  * Switch to the linking phase and keep the bar up to date on a heartbeat thread, until finishLinking is called
  */
 public p CompileProgress.startLinking() {
@@ -501,7 +486,6 @@ f<bool> testDisabledProgressIgnoresReports() {
     progress.finishFrontEnd();
     progress.startBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
     progress.finishBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
-    progress.skipBackEnd(true);
     progress.startLinking();
     progress.finishLinking();
     assert progress.sourceFileCount == 0ul;
@@ -587,32 +571,6 @@ f<bool> testProgressCompletesWithLTO() {
     progress.finishBackEndStage(BackEndStage::LTO_OBJECT_EMITTER);
     assert progress.heartbeatThreads.isEmpty();
     assert progress.bar.getCurrent() == progress.bar.getTotal();
-    return true;
-}
-
-#[test]
-f<bool> testSkipBackEndCompletesCachedSourceFiles() {
-    { // Without LTO, every cached source file completes its own back end steps
-        CompileProgress progress;
-        progress.enable(true, false, false, false, 1ul);
-        progress.addSourceFile();
-        progress.addSourceFile();
-        progress.skipBackEnd(false);
-        assert progress.bar.getCurrent() == STEPS_IR_GENERATOR + STEPS_OBJECT_EMITTER_O0;
-        progress.skipBackEnd(true); // Has no stages for the whole program without LTO
-        assert progress.bar.getCurrent() == 2ul * (STEPS_IR_GENERATOR + STEPS_OBJECT_EMITTER_O0);
-    }
-    { // With LTO, the main source file also completes the stages for the whole program
-        CompileProgress progress;
-        progress.enable(true, false, true, true, 1ul);
-        progress.addSourceFile();
-        progress.addSourceFile();
-        progress.skipBackEnd(true);
-        const unsigned long ltoSteps = 2ul * (STEPS_LTO_IR_OPTIMIZER + STEPS_LTO_OBJECT_EMITTER);
-        assert progress.bar.getCurrent() == STEPS_IR_GENERATOR + STEPS_IR_OPTIMIZER + ltoSteps;
-        progress.skipBackEnd(false);
-        assert progress.bar.getCurrent() == 2ul * (STEPS_IR_GENERATOR + STEPS_IR_OPTIMIZER) + ltoSteps;
-    }
     return true;
 }
 

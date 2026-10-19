@@ -59,7 +59,7 @@ f<bool> compileProject(CliOptions& cliOptions) {
     if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
         resourceManager.compileProgress.startLinking();
         resourceManager.linker.prepare();
-        resourceManager.cacheManager.linkOrRestoreExecutable(resourceManager);
+        resourceManager.linker.run();
         resourceManager.linker.cleanup();
         resourceManager.compileProgress.finishLinking();
     }

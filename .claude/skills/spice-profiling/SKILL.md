@@ -64,7 +64,7 @@ representative input is the compiler itself: `$SPICE build -d -O0 src/main.spice
 ## 2. Sampling-profile the compiler (perf)
 
 ```sh
-perf record -g --call-graph dwarf -- build/spice-prof build -O2 --ignore-cache some-large-input.spice
+perf record -g --call-graph dwarf -- build/spice-prof build -O2 some-large-input.spice
 perf report            # interactive; or: perf report --stdio | head -50
 ```
 
@@ -78,7 +78,7 @@ perf report            # interactive; or: perf report --stdio | head -50
 ### valgrind / callgrind (instruction-exact)
 
 ```sh
-valgrind --tool=callgrind --callgrind-out-file=cg.out $SPICE build --ignore-cache file.spice
+valgrind --tool=callgrind --callgrind-out-file=cg.out $SPICE build file.spice
 callgrind_annotate cg.out | head -60     # or open cg.out in kcachegrind
 ```
 
@@ -113,14 +113,14 @@ For A/B timing of the compiler or an emitted binary, use a statistical benchmark
 ```sh
 # Double quotes so the outer shell expands $SPICE before hyperfine's child shell runs each command
 hyperfine --warmup 3 \
-  "$SPICE build -O2 --ignore-cache file.spice" \
-  "old-spice build -O2 --ignore-cache file.spice"
+  "$SPICE build -O2 file.spice" \
+  "old-spice build -O2 file.spice"
 
 hyperfine --warmup 3 '/tmp/prog <args>'      # emitted binary
 ```
 
-Always `--warmup` (filesystem cache), pass `--ignore-cache` (otherwise the compilation cache skips the work) and benchmark
-an optimized compiler — an `-O0` build's numbers are not comparable to anything shipped.
+Always `--warmup` (filesystem cache), pass `--ignore-cache` to compilers up to 0.29.x (otherwise their compilation cache
+skips the work) and benchmark an optimized compiler — an `-O0` build's numbers are not comparable to anything shipped.
 
 ## 5. Choosing a tool
 
