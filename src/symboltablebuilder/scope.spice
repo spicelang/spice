@@ -433,6 +433,27 @@ public f<Scope*> Scope.getFunctionScope() {
 }
 
 /**
+ * Get the implicit result variable of the function/lambda function, this scope is located in. A local variable, that the
+ * user named 'result', is no result variable, so it is skipped
+ *
+ * @return Result variable entry or nil, if this scope is not located in a function or lambda function
+ */
+public f<SymbolTableEntry*> Scope.lookupResultVar() {
+    Scope* scope = this;
+    while scope != nil<Scope*> {
+        if scope.scopeType == ScopeType::FUNC_PROC_BODY || scope.scopeType == ScopeType::LAMBDA_BODY {
+            SymbolTableEntry* entry = scope.lookupStrict(String(RETURN_VARIABLE_NAME));
+            if entry == nil<SymbolTableEntry*> || entry.declNode.kind == ASTNodeKind::DECL_STMT {
+                return nil<SymbolTableEntry*>;
+            }
+            return entry;
+        }
+        scope = scope.parent;
+    }
+    return nil<SymbolTableEntry*>;
+}
+
+/**
  * Check if this scope is the body scope of a ctor or one of its nested scopes (e.g. the body of an if statement in a ctor)
  *
  * @return In ctor body or not

@@ -2615,7 +2615,7 @@ public f<Any> TypeChecker.visitReturnStmt(ASTReturnStmtNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
     // Retrieve return variable entry
-    SymbolTableEntry* returnVar = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
+    SymbolTableEntry* returnVar = this.currentScope.lookupResultVar();
     const bool isFunction = returnVar != nil<SymbolTableEntry*>;
     QualType returnType = QualType(SuperType::TY_DYN);
     if isFunction {
@@ -4113,7 +4113,7 @@ public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
             }
 
             // Check if the enclosing function/procedure/lambda itself returns Result<U>
-            const SymbolTableEntry* enclosingReturnVar = this.currentScope.lookup(String(RETURN_VARIABLE_NAME));
+            const SymbolTableEntry* enclosingReturnVar = this.currentScope.lookupResultVar();
             QualType enclosingReturnType = QualType(SuperType::TY_DYN);
             if enclosingReturnVar != nil<const SymbolTableEntry*> {
                 enclosingReturnType = enclosingReturnVar.getQualType();

@@ -1,0 +1,13 @@
+f<Result<int>> mightFail() {
+    return err<int>(1, "boom");
+}
+
+p test() {
+    Result<int> result = ok<int>(1);
+    int v = mightFail()!;
+    printf("%d\n", v + result.unwrap());
+}
+
+f<int> main() {
+    test();
+}

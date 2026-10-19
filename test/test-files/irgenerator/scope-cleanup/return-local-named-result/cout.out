@@ -1,0 +1,11 @@
+earlyReturn: 1
+dtor: earlyReturn
+returnOnErr: ok
+returnOnErr: err
+returnWithTrackedResult: returnWithTrackedResult
+dtor: returnWithTrackedResult
+returnFromNestedScope: returnFromNestedScope
+dtor: returnFromNestedScope
+returnFromNestedScope: 1
+lambda: lambda
+dtor: lambda

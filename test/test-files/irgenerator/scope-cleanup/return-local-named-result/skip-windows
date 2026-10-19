@@ -1,0 +1,1 @@
+Linking the ASan-instrumented test program fails: the clang on the GitHub Actions runner ships no ASan runtime for x86_64-w64-windows-gnu (libclang_rt.asan_dynamic.dll.a)

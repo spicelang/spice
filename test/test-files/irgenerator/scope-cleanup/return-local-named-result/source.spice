@@ -1,0 +1,68 @@
+// TEST: --sanitizer=address
+
+// A local variable, that the user named 'result', is no implicit return variable. An explicit return without value has to
+// destruct it like any other local and must not return its value (issue #1637)
+public type Tracked struct {
+    String name
+}
+
+public p Tracked.ctor(string name) {
+    this.name = String(name);
+}
+
+public p Tracked.dtor() {
+    printf("dtor: %s\n", this.name.getRaw());
+}
+
+f<Result<bool>> makeResult(bool fail) {
+    if fail {
+        return err<bool>(1, "failed");
+    }
+    return ok<bool>(true);
+}
+
+p earlyReturn() {
+    Result<bool> result = ok<bool>(true);
+    Tracked tracked = Tracked("earlyReturn");
+    printf("earlyReturn: %d\n", result.isOk());
+    return;
+}
+
+p returnOnErr(bool fail) {
+    Result<bool> result = makeResult(fail);
+    if result.isErr() {
+        printf("returnOnErr: err\n");
+        return;
+    }
+    printf("returnOnErr: ok\n");
+}
+
+p returnWithTrackedResult() {
+    Tracked result = Tracked("returnWithTrackedResult");
+    printf("returnWithTrackedResult: %s\n", result.name.getRaw());
+    return;
+}
+
+f<int> returnFromNestedScope() {
+    result = 1;
+    if true {
+        Tracked result = Tracked("returnFromNestedScope");
+        printf("returnFromNestedScope: %s\n", result.name.getRaw());
+        return;
+    }
+    return 2;
+}
+
+f<int> main() {
+    earlyReturn();
+    returnOnErr(false);
+    returnOnErr(true);
+    returnWithTrackedResult();
+    printf("returnFromNestedScope: %d\n", returnFromNestedScope());
+    p() lambda = p() {
+        Tracked result = Tracked("lambda");
+        printf("lambda: %s\n", result.name.getRaw());
+        return;
+    };
+    lambda();
+}

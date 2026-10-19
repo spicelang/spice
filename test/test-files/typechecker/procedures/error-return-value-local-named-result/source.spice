@@ -1,0 +1,8 @@
+p test() {
+    int result = 1;
+    return result;
+}
+
+f<int> main() {
+    test();
+}
