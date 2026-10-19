@@ -3,6 +3,7 @@
 // Std imports
 import "std/data/vector";
 import "std/text/stringstream";
+import "std/type/types";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
@@ -19,7 +20,7 @@ const string UNION_SCOPE_PREFIX = "union:";
 public type Union struct {
     public compose StructBase structBase
     public QualTypeList fieldTypes
-    public unsigned long defaultFieldIndex = 18446744073709551615ul // No field has a default value (SIZE_MAX)
+    public unsigned long defaultFieldIndex = ULONG_MAX_VALUE
 }
 
 public p Union.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, ASTNode* declNode) {

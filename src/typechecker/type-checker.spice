@@ -7,6 +7,7 @@ import "std/data/unordered-map";
 import "std/data/pair";
 import "std/data/queue";
 import "std/type/type-conversion";
+import "std/type/types";
 import "std/math/hash";
 
 // Own imports
@@ -51,8 +52,6 @@ import "bootstrap/util/compiler-warning";
 
 // Constants
 const string FCT_NAME_DEALLOC = "sDealloc";
-const unsigned long UNION_NO_DEFAULT_FIELD_INDEX = 18446744073709551615ul; // SIZE_MAX
-const unsigned long SIZE_MAX = 18446744073709551615ul;
 
 /**
  * Global switch that tells matchStruct whether a freshly substantiated struct manifestation may still be given its
@@ -1667,7 +1666,7 @@ f<Any> TypeChecker.visitUnionDefPrepare(ASTUnionDefNode* node) {
     // Shared across all fields: the origin (node.unionScope) is constant, so an aggregate already proven not to reach
     // it via one field need not be re-walked for another.
     Vector<const Scope*> visitedScopes;
-    unsigned long defaultFieldIndex = UNION_NO_DEFAULT_FIELD_INDEX;
+    unsigned long defaultFieldIndex = ULONG_MAX_VALUE;
     for unsigned long i = 0l; i < node.fields.getSize(); i++ {
         IVisitable* fieldVisitable = node.fields.get(i);
         ASTFieldNode* field = downcast<ASTFieldNode>(fieldVisitable);
@@ -1700,7 +1699,7 @@ f<Any> TypeChecker.visitUnionDefPrepare(ASTUnionDefNode* node) {
 
         // At most one field may carry a default value
         if field.defaultValue != nil<IVisitable*> {
-            if defaultFieldIndex != UNION_NO_DEFAULT_FIELD_INDEX {
+            if defaultFieldIndex != ULONG_MAX_VALUE {
                 this.softError(fieldBaseNode, SemanticErrorType::DUPLICATE_UNION_DEFAULT_VALUE, String("A union may only have one field with a default value"));
             } else {
                 defaultFieldIndex = i;
@@ -4575,7 +4574,7 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
                 copyCtor = this.matchCopyCtor(actualType, baseNode);
                 // Insert anonymous symbol to track the dtor call of the copy
                 ASTNode* argNode = getASTNode(argLst.args.get(argIdx));
-                this.currentScope.symbolTable.insertAnonymous(actualType, argNode, SIZE_MAX);
+                this.currentScope.symbolTable.insertAnonymous(actualType, argNode, ULONG_MAX_VALUE);
             }
 
             argInfos.pushBack(ArgInfo{copyCtor});

@@ -5,6 +5,7 @@ import "std/data/map";
 import "std/data/vector";
 import "std/data/pair";
 import "std/type/type-conversion";
+import "std/type/types";
 import "std/text/json/json-value";
 
 // Own imports
@@ -81,8 +82,8 @@ public f<unsigned long> SymbolTable.getFieldCount() {
  */
 public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode* declNode, bool isAnonymousSymbol = false) {
     const bool isGlobal = this.parent == nil<SymbolTable*>;
-    // Anonymous symbols do not get an order index (SIZE_MAX)
-    unsigned long orderIndex = 18446744073709551615ul;
+    // Anonymous symbols do not get an order index (ULONG_MAX_VALUE)
+    unsigned long orderIndex = ULONG_MAX_VALUE;
     if !isAnonymousSymbol {
         orderIndex = 0ul;
         foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbols {
