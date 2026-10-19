@@ -1903,8 +1903,8 @@ f<Any> TypeChecker.visitGlobalVarDefPrepare(ASTGlobalVarDefNode* node) {
     }
 
     // Check if we would need to insert instructions in the global scope to initialize the variable
-    if !globalVarType.isPrimitive() {
-        this.softError(cast<ASTNode*>(node.dataType), SemanticErrorType::GLOBAL_OF_INVALID_TYPE, String("Spice does only support global variables of primitive type"));
+    if !globalVarType.isPrimitive() && !globalVarType.isPtr() {
+        this.softError(cast<ASTNode*>(node.dataType), SemanticErrorType::GLOBAL_OF_INVALID_TYPE, String("Spice does only support global variables of primitive or pointer type"));
         return Any();
     }
 

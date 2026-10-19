@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:5:1:
-Global of invalid type: Spice does only support global variables of primitive type
+Global of invalid type: Spice does only support global variables of primitive or pointer type
 
 5  const Struct GLOBAL_STRUCT; // Only
    ^^^^^^^^^^^^

@@ -2221,9 +2221,9 @@ public f<Any> IRGenerator.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
     if node.hasValue { // Set the constant value as variable initializer
         const llvm::Value constantValue = this.visitConst(cast<IVisitable*>(node.constant));
         var.setInitializer(constantValue);
-    } else if this.cliOptions.buildMode != BuildMode::RELEASE || entryType.is(SuperType::TY_UNION) {
-        // Set the default value as variable initializer. For a union this is not just a debug convenience (unlike for a
-        // struct): the tag bits carry real runtime safety meaning, so they must be initialized unconditionally.
+    } else {
+        // Set the default value as variable initializer. This is required in every build mode, because a global without
+        // initializer would only be an external declaration. Zero-initialized globals live in .bss, so this is for free.
         const llvm::Value constantValue = this.getDefaultValueForSymbolType(entryType);
         var.setInitializer(constantValue);
     }
