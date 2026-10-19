@@ -1126,7 +1126,7 @@ public f<bool> QualType.isInline() {
  */
 public f<bool> QualType.isPublic() {
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
-    assert this.isPrimitive() /* Global variables */ || this.isOneOf(options, len(options));
+    assert this.isPrimitive() || this.isPtr() /* Global variables */ || this.isOneOf(options, len(options));
     return this.qualifiers.isPublic;
 }
 
@@ -1176,7 +1176,7 @@ public p QualType.makeUnsigned(bool isUnsigned = true) {
  */
 public p QualType.makePublic(bool isPublic = true) {
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
-    assert this.isPrimitive() /* Global variables */ || this.isOneOf(options, len(options));
+    assert this.isPrimitive() || this.isPtr() /* Global variables */ || this.isOneOf(options, len(options));
     this.qualifiers.isPublic = isPublic;
 }
 

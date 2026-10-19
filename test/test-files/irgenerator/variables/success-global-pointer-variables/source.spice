@@ -1,0 +1,26 @@
+import "source1";
+
+int* INT_PTR;
+string* STRING_PTR;
+
+f<int> main() {
+    // Pointer globals are zero-initialized
+    printf("Registry is nil: %d\n", ACTIVE_REGISTRY == nil<Registry*>);
+    printf("Int ptr is nil: %d\n", INT_PTR == nil<int*>);
+
+    // Set and access a pointer global from another module
+    Registry registry = Registry{42};
+    setActiveRegistry(&registry);
+    printf("Counter: %d\n", ACTIVE_REGISTRY.counter);
+    ACTIVE_REGISTRY.counter++;
+    printf("Counter: %d\n", registry.counter);
+
+    // Write through a pointer global of the current module
+    int value = 7;
+    INT_PTR = &value;
+    *INT_PTR = 8;
+    printf("Value: %d\n", value);
+    string str = "Hello";
+    STRING_PTR = &str;
+    printf("String: %s\n", *STRING_PTR);
+}

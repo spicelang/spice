@@ -1,0 +1,9 @@
+public type Registry struct {
+    public int counter
+}
+
+public Registry* ACTIVE_REGISTRY;
+
+public p setActiveRegistry(Registry* registry) {
+    ACTIVE_REGISTRY = registry;
+}

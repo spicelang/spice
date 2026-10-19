@@ -35,6 +35,25 @@ f<int> main() {
 }
 ```
 
+## Global pointers
+
+Global variables can also be of pointer type. They are initialized with `nil`, e.g. to hold a singleton instance:
+
+```spice
+type Registry struct {
+    int counter
+}
+
+Registry* ACTIVE_REGISTRY;
+
+f<int> main() {
+    Registry registry = Registry{ 0 };
+    ACTIVE_REGISTRY = &registry;
+    ACTIVE_REGISTRY.counter++;
+    printf("Counter: %d", registry.counter);
+}
+```
+
 !!! tip "Multiple pointers"
     Spice also supports the usage of double, triple, ... pointers like `char***` or types like `int*[]*`.
     Please use such types sparingly and only where necessary, due to readability reasons. <br>
