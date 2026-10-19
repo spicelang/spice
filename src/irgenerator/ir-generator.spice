@@ -8,6 +8,7 @@ import "std/data/unordered-map";
 import "std/data/pair";
 import "std/text/stringstream";
 import "std/type/type-conversion";
+import "std/type/types";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
@@ -52,7 +53,6 @@ public const string ANON_GLOBAL_STRING_NAME = "anon.string.";
 public const string ANON_GLOBAL_ARRAY_NAME = "anon.array.";
 public const string CAPTURES_PARAM_NAME = "captures";
 const int EXIT_FAILURE = 1;
-const unsigned long SIZE_MAX = 18446744073709551615ul;
 
 // String placeholders for builtin testing output
 const string TEST_ALL_START_MSG = "[==========] Running %d test(s) from %d source file(s)\n";
@@ -4401,7 +4401,7 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
                     const llvm::Value newValue = this.insertLoad(valueType, valueCopyPtr);
 
                     // Attach address of copy to anonymous symbol
-                    const SymbolTableEntry* anonymousSymbol = this.currentScope.symbolTable.lookupAnonymous(getASTNode(argNode), SIZE_MAX);
+                    const SymbolTableEntry* anonymousSymbol = this.currentScope.symbolTable.lookupAnonymous(getASTNode(argNode), ULONG_MAX_VALUE);
                     this.updateAddress(anonymousSymbol, valueCopyPtr);
 
                     argValues.pushBack(newValue);
@@ -5236,7 +5236,7 @@ p IRGenerator.unpackCapturesToLocalVariables(const CaptureMap& captures, llvm::V
                 if firstCapture.getMode() == CapturePassMode::BY_REFERENCE {
                     addressOps.pushBack(llvm::DW_OP_DEREF);
                 }
-                this.diGenerator.generateLocalVarDebugInfo(firstCapture.getName(), val, SIZE_MAX, addressOps);
+                this.diGenerator.generateLocalVarDebugInfo(firstCapture.getName(), val, ULONG_MAX_VALUE, addressOps);
                 return;
             }
         }
@@ -5261,7 +5261,7 @@ p IRGenerator.unpackCapturesToLocalVariables(const CaptureMap& captures, llvm::V
         if capture.getMode() == CapturePassMode::BY_REFERENCE {
             addressOps.pushBack(llvm::DW_OP_DEREF);
         }
-        this.diGenerator.generateLocalVarDebugInfo(capture.getName(), val, SIZE_MAX, addressOps);
+        this.diGenerator.generateLocalVarDebugInfo(capture.getName(), val, ULONG_MAX_VALUE, addressOps);
         captureIdx++;
     }
 }

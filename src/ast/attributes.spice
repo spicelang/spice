@@ -3,8 +3,6 @@
 // Std imports
 import "std/data/unordered-map";
 
-// Own imports
-
 // Constants
 public const string ATTR_CORE_LINKER_FLAG = "core.linker.flag";
 public const string ATTR_CORE_LINUX_LINKER_FLAG = "core.linux.linker.flag";
