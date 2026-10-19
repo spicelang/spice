@@ -127,13 +127,11 @@ public type CliOptions struct {
     public bool isNativeTarget = true
     public bool useNativeFeatures = false
     public bool execute = false
-    public FilePath cacheDir // Where the cache files go. Should always be a temp directory
     public FilePath outputDir // Where the object files go. Should always be a temp directory. "./" per default, see the constructor
     public FilePath outputPath // Where the output binary goes.
     public BuildMode buildMode = BuildMode::DEBUG // Default build mode is debug
     public OutputContainer outputContainer = OutputContainer::EXECUTABLE // Default output container is executable
     public unsigned int compileJobCount = 0 // 0 for auto
-    public bool ignoreCache = false
     public String llvmArgs
     public bool printDebugOutput = false
     public bool quiet = false
@@ -481,11 +479,7 @@ p Driver.finalizeOptions() {
     // Set output file extension
     this.cliOptions.outputPath.replaceExtension(getOutputFileExtension(this.cliOptions, this.cliOptions.outputContainer));
 
-    // Set cache dir
-    this.cliOptions.cacheDir = FilePath(getTempDir()) / "spice" / "cache";
-
-    // Create directories in case they not exist yet
-    createDirectories(this.cliOptions.cacheDir);
+    // Create the output directory in case it does not exist yet
     createDirectories(this.cliOptions.outputDir);
 }
 
@@ -692,8 +686,6 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     CliOption<string>& buildVarOption = subCmd.addOption("--build-var", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");
     buildVarOption.addAlias("-b");
     buildVarOption.allowMultipleValues();
-    // --ignore-cache
-    subCmd.addFlag("--ignore-cache", this.cliOptions.ignoreCache, "Force re-compilation of all source files");
     // --use-lifetime-markers
     subCmd.addFlag("--use-lifetime-markers", this.cliOptions.useLifetimeMarkers, "Generate lifetime markers to enhance optimizations");
     // --use-tbaa-metadata

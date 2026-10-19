@@ -150,15 +150,10 @@ public type SourceFile struct {
     public bool ignoreWarnings = false
     public bool explicitErrorHandling = false
     public bool errorReturnTracing = false
-    public Vector<String> sourceLinkerFlags
-    public Vector<FilePath> sourceAdditionalSourcePaths
-    public Vector<FilePath> cachedObjectFilePaths
-    public bool restoredFromCache = false
     public bool reVisitRequested = true
     public CompileStageType previousStage = CompileStageType::NONE
     public CompilerOutput compilerOutput
     public SourceFile* parent
-    public String cacheKey
     public ASTEntryNode* ast = nil<ASTEntryNode*>
     public Scope* globalScope = nil<Scope*> // Owned by the scope pool of the resource manager
     public llvm::LLVMContext context
@@ -260,13 +255,6 @@ public p SourceFile.runParser() {
     // Create the global scope
     this.globalScope = this.resourceManager.createScope(nil<Scope*>, this, ScopeType::GLOBAL, &this.ast.node.codeLoc);
 
-    // Compute initial cache key without dep keys — will be refined in runImportCollector once all imports run
-    const Result<String> sourceCodeResult = readFile(this.filePath.toString());
-    if sourceCodeResult.isOk() {
-        Vector<String> emptyDepKeys;
-        this.cacheKey = this.resourceManager.cacheManager.computeCacheKey(sourceCodeResult.unwrap(), emptyDepKeys);
-    }
-
     this.previousStage = CompileStageType::LEXER_AND_PARSER;
     timer.stop();
     this.printStatusMessage("Parser", CompileStageIOType::IO_CODE, CompileStageIOType::IO_AST, this.compilerOutput.times.lexerAndParser);
@@ -274,9 +262,6 @@ public p SourceFile.runParser() {
 
 public p SourceFile.runASTVisualizer() {
     // Only execute if enabled
-    if this.restoredFromCache {
-        return;
-    }
     if !this.cliOptions.dump.dumpAST && !this.cliOptions.testMode {
         return;
     }
@@ -308,8 +293,8 @@ public p SourceFile.runASTVisualizer() {
 }
 
 public p SourceFile.runImportCollector() {
-    // Skip if restored from cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::IMPORT_COLLECTOR {
+    // Skip if this stage has already been done
+    if this.previousStage >= CompileStageType::IMPORT_COLLECTOR {
         return;
     }
 
@@ -329,23 +314,12 @@ public p SourceFile.runImportCollector() {
         sourceFile.runFrontEnd();
     }
 
-    // Refine cache key to include transitive dep keys now that all deps have completed their front end
-    const Result<String> sourceCodeForCache = readFile(this.filePath.toString());
-    if sourceCodeForCache.isOk() {
-        Vector<String> depCacheKeys;
-        foreach dyn depEntry : this.dependencies {
-            depCacheKeys.pushBack(depEntry.getSecond().cacheKey);
-        }
-        this.cacheKey = this.resourceManager.cacheManager.computeCacheKey(sourceCodeForCache.unwrap(), depCacheKeys);
-    }
-
     timer.stop();
     this.printStatusMessage("Import Collector", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.importCollector);
 }
 
 public p SourceFile.runSymbolTableBuilder() {
-    // Note: do NOT skip on restoredFromCache: this is the stage that populates exportedNameRegistry, so non-cache
-    // dependants need it even on a cache hit. Only skip if the stage has already run.
+    // Skip if this stage has already been done
     if this.previousStage >= CompileStageType::SYMBOL_TABLE_BUILDER {
         return;
     }
@@ -409,8 +383,7 @@ p SourceFile.runTypeCheckerPost() {
         return;
     }
 
-    // Skip if not all dependants finished type checking yet. This still has to run for files restored from the cache,
-    // for the same reason as runTypeCheckerPre.
+    // Skip if not all dependants finished type checking yet
     if !this.haveAllDependantsBeenTypeChecked() {
         return;
     }
@@ -484,7 +457,6 @@ p SourceFile.runPostTypeCheckingVerifier() {
 
 public p SourceFile.runDependencyGraphVisualizer() {
     // Only execute if enabled
-    if this.restoredFromCache { return; }
     if !this.cliOptions.dump.dumpDependencyGraph && !this.cliOptions.testMode { return; }
     if this.previousStage >= CompileStageType::DEP_GRAPH_VISUALIZER { return; }
 
@@ -510,8 +482,8 @@ public p SourceFile.runDependencyGraphVisualizer() {
 }
 
 public p SourceFile.runIRGenerator() {
-    // Skip if restored from cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_GENERATOR {
+    // Skip if this stage has already been done
+    if this.previousStage >= CompileStageType::IR_GENERATOR {
         return;
     }
 
@@ -546,8 +518,8 @@ public p SourceFile.runIRGenerator() {
 public p SourceFile.runDefaultIROptimizer() {
     assert !this.cliOptions.useLTO;
 
-    // Skip if restored from cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage > CompileStageType::IR_OPTIMIZER || (this.previousStage == CompileStageType::IR_OPTIMIZER && !this.cliOptions.testMode) {
+    // Skip if this stage has already been done
+    if this.previousStage > CompileStageType::IR_OPTIMIZER || (this.previousStage == CompileStageType::IR_OPTIMIZER && !this.cliOptions.testMode) {
         return;
     }
 
@@ -580,8 +552,8 @@ public p SourceFile.runDefaultIROptimizer() {
 public p SourceFile.runPreLinkIROptimizer() {
     assert this.cliOptions.useLTO;
 
-    // Skip if restored from the cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_OPTIMIZER {
+    // Skip if this stage has already been done
+    if this.previousStage >= CompileStageType::IR_OPTIMIZER {
         return;
     }
 
@@ -616,8 +588,8 @@ public p SourceFile.runBitcodeLinker() {
         return;
     }
 
-    // Skip if restored from the cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_OPTIMIZER {
+    // Skip if this stage has already been done
+    if this.previousStage >= CompileStageType::IR_OPTIMIZER {
         return;
     }
 
@@ -641,8 +613,8 @@ public p SourceFile.runPostLinkIROptimizer() {
         return;
     }
 
-    // Skip if restored from the cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::IR_OPTIMIZER {
+    // Skip if this stage has already been done
+    if this.previousStage >= CompileStageType::IR_OPTIMIZER {
         return;
     }
 
@@ -671,8 +643,8 @@ public p SourceFile.runPostLinkIROptimizer() {
 }
 
 public p SourceFile.runObjectEmitter() {
-    // Skip if restored from cache or this stage has already been done
-    if this.restoredFromCache || this.previousStage >= CompileStageType::OBJECT_EMITTER {
+    // Skip if this stage has already been done
+    if this.previousStage >= CompileStageType::OBJECT_EMITTER {
         return;
     }
 
@@ -730,40 +702,11 @@ public p SourceFile.concludeCompilation() {
         return;
     }
 
-    // For cache-restored files, register the cached object files, linker flags and additional source paths with the linker
-    if this.restoredFromCache {
-        for unsigned long i = 0l; i < this.cachedObjectFilePaths.getSize(); i++ {
-            this.resourceManager.linker.addFileToLinkage(this.cachedObjectFilePaths.get(i));
-        }
-        // Without linking, nothing else writes the output file. So restore the object of the main source file to it
-        if this.isMainFile && this.cliOptions.outputContainer == OutputContainer::OBJECT_FILE {
-            const FilePath& cachedObjectFilePath = this.cachedObjectFilePaths.get(0l);
-            if !copyFile(String(cachedObjectFilePath.toString()), String(this.cliOptions.outputPath.toString())) {
-                const String msg = "Could not restore the object file '" + this.cliOptions.outputPath.toGenericString() + "' from the cache";
-                const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, msg.getRaw());
-                abortWithError(error.getMessage());
-            }
-        }
-        for unsigned long i = 0l; i < this.sourceLinkerFlags.getSize(); i++ {
-            this.resourceManager.linker.addLinkerFlag(this.sourceLinkerFlags.get(i));
-        }
-        for unsigned long i = 0l; i < this.sourceAdditionalSourcePaths.getSize(); i++ {
-            this.resourceManager.linker.addAdditionalSourcePath(this.sourceAdditionalSourcePaths.get(i));
-        }
-        this.previousStage = CompileStageType::FINISHED;
-        return;
-    }
-
     // Add the emitted object file to the linker objects. This happens here and not in runObjectEmitter, because
     // concludeCompilation is always driven serially and in dependency order, while the object emitter may run on a worker
     // thread of the parallel back end.
     if !this.objectFilePath.isEmpty() {
         this.resourceManager.linker.addEmittedObjectFile(this.objectFilePath);
-    }
-
-    // Cache the source file
-    if !this.cliOptions.ignoreCache {
-        this.resourceManager.cacheManager.cacheSourceFile(this);
     }
 
     // Save type registry as string in the compiler output
@@ -896,10 +839,6 @@ p SourceFile.collectBackEndSourceFiles(Vector<SourceFile*>& backEndSourceFiles) 
 }
 
 p SourceFile.runBackEndForThisFile() {
-    // Files restored from the cache skip all back end stages
-    if this.restoredFromCache {
-        this.resourceManager.compileProgress.skipBackEnd(this.isMainFile);
-    }
     this.runIRGenerator();
     if this.resourceManager.abortCompilation { return; }
     if this.cliOptions.useLTO {
@@ -935,16 +874,6 @@ p SourceFile.releaseBackEndResources() {
     this.context.dispose();
 }
 
-p SourceFile.lookupCache() {
-    if this.restoredFromCache { return; }
-    // Finalize the cache key by folding the generic manifestation fingerprint into it
-    StringStream manifestations;
-    this.globalScope.collectManifestationFingerprint(manifestations);
-    this.cacheKey = this.resourceManager.cacheManager.foldManifestations(this.cacheKey, manifestations);
-    // Try to restore from the object file cache
-    this.restoredFromCache = this.resourceManager.cacheManager.lookupSourceFile(this);
-}
-
 public p SourceFile.runBackEnd() {
     if this.isMainFile {
         this.resourceManager.backEndTimer.start();
@@ -958,13 +887,6 @@ public p SourceFile.runBackEnd() {
     // Nothing to do if this file and all of its dependencies already went through the back end
     if backEndSourceFiles.isEmpty() {
         return;
-    }
-
-    // Look up all files before compiling any: a key is only final after its lookup and cache entries of dependants refer to it
-    if !this.cliOptions.ignoreCache {
-        foreach SourceFile* sourceFile : backEndSourceFiles {
-            sourceFile.lookupCache();
-        }
     }
 
     // Unlike the front end and the middle end, the back end has no cross-file data dependencies: every source file owns
@@ -998,8 +920,8 @@ public p SourceFile.runBackEnd() {
     }
     if this.resourceManager.abortCompilation { return; }
 
-    // Conclude the compilation of all source files. This registers the emitted object files with the linker and writes the
-    // compilation cache, both of which have to happen serially and in a fixed order to stay deterministic.
+    // Conclude the compilation of all source files. This registers the emitted object files with the linker, which has to
+    // happen serially and in a fixed order to stay deterministic.
     foreach SourceFile* sourceFile : backEndSourceFiles {
         sourceFile.concludeCompilation();
     }
@@ -1040,14 +962,6 @@ public f<const FilePath&> SourceFile.getFilePath() {
 
 public f<bool> SourceFile.isMainSourceFile() {
     return this.isMainFile;
-}
-
-public p SourceFile.addSourceLinkerFlag(const String& flag) {
-    this.sourceLinkerFlags.pushBack(flag);
-}
-
-public p SourceFile.addSourceAdditionalSourcePath(const FilePath& path) {
-    this.sourceAdditionalSourcePaths.pushBack(path);
 }
 
 // True if the exported name registry already maps the name to the given symbol table entry
@@ -1419,9 +1333,9 @@ public f<FilePath> SourceFile.getObjectFilePath() {
 }
 
 public p SourceFile.collectAndPrintWarnings() {
-    // Skip if restored from cache (no scope tree available), or if already visited. The latter guard keeps circular
-    // imports from recursing infinitely, since the dependency graph may contain cycles.
-    if this.restoredFromCache || this.warningsCollected {
+    // Skip if already visited. This keeps circular imports from recursing infinitely, since the dependency graph may contain
+    // cycles.
+    if this.warningsCollected {
         return;
     }
     this.warningsCollected = true;
@@ -1443,9 +1357,9 @@ public p SourceFile.collectAndPrintWarnings() {
 }
 
 public p SourceFile.collectAndPrintLintFindings() {
-    // Skip if restored from cache (no AST available), or if already visited. The latter guard keeps circular
-    // imports from recursing infinitely, since the dependency graph may contain cycles.
-    if this.restoredFromCache || this.lintFindingsCollected {
+    // Skip if already visited. This keeps circular imports from recursing infinitely, since the dependency graph may contain
+    // cycles.
+    if this.lintFindingsCollected {
         return;
     }
     this.lintFindingsCollected = true;

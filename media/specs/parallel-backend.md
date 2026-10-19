@@ -34,8 +34,7 @@ runBackEnd()                                          [main thread]
  │    ├─ runDefaultIROptimizer()
  │    └─ runObjectEmitter()
  └─ for each source file: concludeCompilation()       [main thread, deterministic order]
-      ├─ linker.addFileToLinkage(objectFilePath)
-      └─ cacheManager.cacheSourceFile()
+      └─ linker.addEmittedObjectFile(objectFilePath)
 ```
 
 `collectBackEndSourceFiles` walks the dependency graph depth-first, dependencies before dependants, and marks every file
@@ -93,7 +92,6 @@ Everything the back end touches outside its own `SourceFile`:
 | `compileTimeStringValues` | parser, type checker |
 | `nextCustomTypeId` | parser |
 | `sourceFiles`, ASTs, symbol tables, scopes | front end, middle end |
-| `sourceLinkerFlags`, `sourceAdditionalSourcePaths` | symbol table builder |
 
 ### Synchronized
 
@@ -115,8 +113,7 @@ the inner locks never acquire the outer one, so there is no cycle.
 
 `ExternalLinkerInterface.linkedFiles` defines the order in which object files are passed to the linker, so appending to
 it from a worker would make the link command depend on the scheduling. The object emitter therefore only records the
-path on the `SourceFile` (`SourceFile.objectFilePath`), and `concludeCompilation` registers it. The same serial pass
-writes the compilation cache.
+path on the `SourceFile` (`SourceFile.objectFilePath`), and `concludeCompilation` registers it.
 
 ## Determinism
 
@@ -124,7 +121,6 @@ A parallel build produces byte-identical output to a serial one:
 
 - The **linker input order** follows the worklist, because object files are registered in `concludeCompilation`, which
   the main thread drives over that list.
-- The **compilation cache** is written from the same serial pass.
 - **Per-file compiler output** (`compilerOutput.irString`, `asmString`, timings, warnings) lives on the `SourceFile`, so
   the scheduling cannot affect it.
 
@@ -138,7 +134,7 @@ complete, front-end-known set of types would remove this residual nondeterminism
 
 Two source files with the same file name in different directories map to the same object file path
 (`outputDir / filePath.filename()`), which makes the emitters race for that file. Deriving the object file name from the
-cache key or the full path would fix it.
+full path would fix it.
 
 ## Testing
 

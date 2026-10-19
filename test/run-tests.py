@@ -576,8 +576,7 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
     test_args = parse_test_args(main_source_path)
 
     def build_args(output_path: Path) -> list[str]:
-        # Bypass the compilation cache: the dumps would be empty for files restored from it
-        args = ["build", "--test-mode", "--ignore-cache", *test_args]
+        args = ["build", "--test-mode", *test_args]
         if os.path.exists(test_case.file(CTL_RUN_BUILTIN_TESTS)):
             args.append("--test-main")
         if OPTS.coverage:
@@ -759,7 +758,8 @@ def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: st
     # The test build mode generates a main function, which runs all builtin tests of the source files
     if builtin_tests:
         cmd += ["--build-mode", "test"]
-    cmd += ["--ignore-cache", "--output", str(executable_path), str(ROOT_DIR / "src" / "main.spice")]
+    cmd += bootstrap.cache_bypass_flags(compiler)
+    cmd += ["--output", str(executable_path), str(ROOT_DIR / "src" / "main.spice")]
     # The coverage instrumentation writes the .gcno files into the working dir of the compiler, so they land next to the executable
     cwd = output_dir if OPTS.instrument == "coverage" else ROOT_DIR
     result = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,

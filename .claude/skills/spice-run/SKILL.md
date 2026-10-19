@@ -52,7 +52,6 @@ $SPICE test path/to/main.spice
 - `--static` — link statically.
 - `--no-entry` — don't generate a `main`.
 - `-d, --debug-output` — verbose compiler debug output.
-- `--ignore-cache` — force full recompilation.
 
 ## Cross-compiling
 

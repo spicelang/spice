@@ -53,6 +53,15 @@ def find_stage0_compiler() -> Path | None:
     return candidate
 
 
+def cache_bypass_flags(compiler: Path) -> list[str]:
+    # Compilers up to 0.29.x, like the stage0 compiler, cache compiled objects, which can go stale when only an imported file
+    # changes (see issue #1417). Newer compilers have no cache anymore and reject the flag, that bypasses it.
+    # ToDo: Remove, once the stage0 compiler has no compilation cache anymore
+    result = subprocess.run([str(compiler), "build", "--help"], stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                            errors="replace")
+    return ["--ignore-cache"] if "--ignore-cache" in result.stdout else []
+
+
 def find_llvm_lib_dir() -> str | None:
     # Derive it from LLVM_DIR (<llvm-build>/lib/cmake/llvm), which the TPDE build in setup-deps.py uses as well
     if llvm_dir := os.environ.get("LLVM_DIR"):
@@ -152,7 +161,7 @@ def build_stage(compiler: Path, stage: int, work_dir: Path, build_flags: list[st
     shutil.rmtree(stage_dir, ignore_errors=True)
     stage_dir.mkdir(parents=True)
     output = stage_dir / EXE_NAME
-    cmd = [str(compiler), "build", *build_flags, "--ignore-cache", "--output", str(output),
+    cmd = [str(compiler), "build", *build_flags, *cache_bypass_flags(compiler), "--output", str(output),
            str(ROOT_DIR / "src" / "main.spice")]
 
     log(f"[Stage {stage}] Building with {compiler} ...")

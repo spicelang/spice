@@ -25,8 +25,8 @@ the LLVM C API bindings of the std (`std/bindings/llvm`).
   `runPreLinkIROptimizer`/`runBitcodeLinker`/`runPostLinkIROptimizer` for LTO) → `runObjectEmitter`
 
 - `src/compiler-pass.spice` — base of the passes (scope tracking, source-file handle).
-- `src/global/global-resource-manager.spice` — central owner of source files, caches, the type registry, and the linker.
-  `cache-manager.spice`, `runtime-module-manager.spice` and `type-registry.spice` also live in `src/global/`.
+- `src/global/global-resource-manager.spice` — central owner of source files, lookup caches, the type registry, and the
+  linker. `runtime-module-manager.spice` and `type-registry.spice` also live in `src/global/`.
 
 ## Stages → where the code is
 

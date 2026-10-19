@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="spice run" type="ShConfigurationType">
-    <option name="SCRIPT_TEXT" value="python3 build.py --build-type Debug &amp;&amp; build/spice run -d -O0 -ir -g --ignore-cache media/test-project/test.spice" />
+    <option name="SCRIPT_TEXT" value="python3 build.py --build-type Debug &amp;&amp; build/spice run -d -O0 -ir -g media/test-project/test.spice" />
     <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
     <option name="SCRIPT_PATH" value="" />
     <option name="SCRIPT_OPTIONS" value="" />

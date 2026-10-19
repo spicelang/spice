@@ -93,7 +93,7 @@ filter, and bootstraps the compiler to a fixed point.
 python test/run-tests.py --compiler build/spice --filter='TypeCheckerTests.foo_bar' -v
 
 # Re-run one of them under gdb, from the work dir (test case paths are relative to it)
-cd build/test-tmp && gdb --args ../spice build --test-mode --ignore-cache ./test-files/typechecker/foo/bar/source.spice
+cd build/test-tmp && gdb --args ../spice build --test-mode ./test-files/typechecker/foo/bar/source.spice
 
 # Memory errors in the compiler: run the case against an ASAN-instrumented compiler
 python test/run-tests.py --instrument asan --filter='TypeCheckerTests.foo_bar'

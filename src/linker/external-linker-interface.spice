@@ -157,8 +157,7 @@ public p ExternalLinkerInterface.run() {
  * Cleanup intermediary object files
  */
 public p ExternalLinkerInterface.cleanup() {
-    // Wait for additional source compilations, that are still running (e.g. because the executable was restored from the
-    // cache and they were not needed)
+    // Wait for additional source compilations, that are still running (e.g. because the linker did not need them)
     this.joinAdditionalSourceCompilationThreads();
 
     // Cleanup intermediary object files
@@ -355,7 +354,7 @@ f<bool> ExternalLinkerInterface.isAdditionalSource(const FilePath& path) {
 /**
  * Start compiling the additional sources to object files in the background, so that this overlaps with the back end. The
  * linker waits for the results and only compiles an additional source again, if its compile arguments changed in the
- * meantime (e.g. because source files, that were restored from the cache, added further linker flags).
+ * meantime.
  */
 public p ExternalLinkerInterface.startAdditionalSourceCompilation() {
     if this.cliOptions.outputContainer != OutputContainer::EXECUTABLE && this.cliOptions.outputContainer != OutputContainer::SHARED_LIBRARY {
@@ -540,7 +539,7 @@ p ExternalLinkerInterface.runTool(const String& toolPath, const Vector<String>& 
  * @param path Path to the object file
  */
 public p ExternalLinkerInterface.addFileToLinkage(const FilePath& path) {
-    // Skip files that are already registered, e.g. cached objects of dependencies that also register themselves
+    // Skip files that are already registered
     foreach const FilePath& linkedFile : this.linkedFiles {
         if linkedFile == path {
             return;

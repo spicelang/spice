@@ -18,7 +18,6 @@ import "std/type/type-conversion";
 
 // Own imports
 import "bootstrap/ast/ast-nodes";
-import "bootstrap/global/cache-manager";
 import "bootstrap/global/runtime-module-manager";
 import "bootstrap/global/type-name-disambiguator";
 import "bootstrap/global/type-registry";
@@ -74,7 +73,6 @@ public type GlobalResourceManager struct {
     public Vector<Pair<Struct*, bool>> pendingStructDefaultMemberDecisions
     public CliOptions& cliOptions
     public ExternalLinkerInterface linker
-    public CacheManager cacheManager
     public RuntimeModuleManager runtimeModuleManager
     public TypeRegistry typeRegistry // Interns all types and hands out stable `const Type*` handles
     public TypeNameDisambiguator typeNameDisambiguator // Hands out disambiguation suffixes for same-named types
@@ -100,7 +98,6 @@ public type GlobalResourceManager struct {
 public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     this.cliOptions = cliOptions;
     this.linker = ExternalLinkerInterface(cliOptions);
-    this.cacheManager = CacheManager(cliOptions);
     this.runtimeModuleManager = RuntimeModuleManager(*this);
     this.astNodeAlloc = BlockAllocator<ASTNode>(this.memoryManager);
     this.scopeAlloc = BlockAllocator<Scope>(this.memoryManager);

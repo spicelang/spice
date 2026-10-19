@@ -94,8 +94,9 @@ jobs:
           # not hardened. The stage1 compiler built from this checkout links with '-z relro -z now' and builds the released
           # compiler. Stage1 lives outside the artifact upload globs.
           build_compiler() {
-            # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner
-            "$1" build -O3 -lto --static --ignore-cache \
+            # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner. The extra args in $3
+            # bypass the compilation cache of the stage0 compiler, which compilers built from this checkout do not have
+            "$1" build -O3 -lto --static $3 \
               --build-var SPICE_VERSION="${{ github.ref_name }}" \
               --build-var SPICE_GIT_HASH="${{ github.sha }}" \
               --build-var SPICE_BUILT_BY="ghactions" \
@@ -105,7 +106,7 @@ jobs:
               ../src/main.spice
           }
           mkdir -p stage1
-          build_compiler ./stage0/spice stage1/spice
+          build_compiler ./stage0/spice stage1/spice --ignore-cache
           build_compiler ./stage1/spice spice
           chmod +x spice
           ./spice --version
@@ -133,7 +134,7 @@ jobs:
           python3 ../spice-shaker/bootstrap.py
           # Linked statically like the compiler, OpenSSL included. std/net/tls finds the CA certificates of distributions
           # that keep them elsewhere than this runner.
-          ./spice build -O3 -lto --static --ignore-cache --output spice-shaker ../spice-shaker/src/main.spice
+          ./spice build -O3 -lto --static --output spice-shaker ../spice-shaker/src/main.spice
           chmod +x spice-shaker
           ./spice-shaker --version
 
@@ -339,7 +340,7 @@ jobs:
           # Linked dynamically against Homebrew's OpenSSL, which is keg-only and thus not on the default pkg-config path. The
           # Homebrew cask depends on it.
           export PKG_CONFIG_PATH="$(brew --prefix openssl@3)/lib/pkgconfig:$PKG_CONFIG_PATH"
-          ./spice build -O3 -lto --ignore-cache --output spice-shaker ../spice-shaker/src/main.spice
+          ./spice build -O3 -lto --output spice-shaker ../spice-shaker/src/main.spice
           chmod +x spice-shaker
           ./spice-shaker --version
           otool -L spice-shaker
