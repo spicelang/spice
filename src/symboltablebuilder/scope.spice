@@ -641,8 +641,8 @@ public f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
     foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbolTable.symbols {
         const String& name = symbol.getFirst();
         SymbolTableEntry& entry = symbol.getSecond();
-        // Skip 'this' and result variables
-        if name == THIS_VARIABLE_NAME || name == RETURN_VARIABLE_NAME {
+        // Skip 'this' and the implicit result variable. A local variable, that the user named 'result', goes out of scope
+        if name == THIS_VARIABLE_NAME || (name == RETURN_VARIABLE_NAME && entry.declNode.kind != ASTNodeKind::DECL_STMT) {
             continue;
         }
         // Skip parameters (ToDo: Remove when copy constructors work for by-value argument passing)
