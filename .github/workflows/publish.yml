@@ -38,8 +38,9 @@ jobs:
         with:
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
           # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm), libssl-dev the
-          # OpenSSL archives for linking Spice Shaker (see std/bindings/openssl).
-          packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev libssl-dev pkg-config checksec jq clang
+          # OpenSSL archives for linking Spice Shaker (see std/bindings/openssl). The static libcrypto of the runner needs zlib,
+          # zstd and jitterentropy as well, that 'pkg-config --static' lists for it.
+          packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev libssl-dev libjitterentropy3-dev pkg-config checksec jq clang
           # Neither the faster linker nor the ccache is used for release builds
           use-mold: "false"
           use-ccache: "false"

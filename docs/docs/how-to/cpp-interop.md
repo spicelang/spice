@@ -148,6 +148,9 @@ evaluates backtick expressions at build time:
 #![core.windows.linker.flag = "-lcurl"]
 ```
 
+When linking statically (`--static`), Spice calls `pkg-config --static`, so the flags also include the private
+dependencies that the static archive of the library needs.
+
 !!! tip "Platform-specific flags"
     Use `core.linux.linker.flag`, `core.darwin.linker.flag`, and `core.windows.linker.flag` instead of the
     generic `core.linker.flag` when a library is linked differently across platforms (different flag syntax,
