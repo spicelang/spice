@@ -1141,9 +1141,12 @@ public f<LLVMExprResult> OpRuleConversionManager.callOperatorOverloadFct(ASTNode
     Vector<llvm::Value> argValues;
     for unsigned long i = 0l; i < n; i++ {
         const QualType& paramType = paramTypes.get(i);
-        const bool passAsAddress = paramType.isRef() || paramType.isDecayedArray();
+        // By-value params of non-trivially copyable types own their argument, so they get a copy of it
+        const bool isOwnedByValue = paramType.isOwnedByValueParam(node);
+        const bool passAsAddress = paramType.isRef() || paramType.isDecayedArray() || isOwnedByValue;
         const Resolver& resolver = opV.resolvers.get(passAsAddress ? 2l * i + 1l : 2l * i);
-        argValues.pushBack(this.irGenerator.resolve(resolver));
+        const llvm::Value argValue = this.irGenerator.resolve(resolver);
+        argValues.pushBack(isOwnedByValue ? this.irGenerator.generateOwnedArgValue(argValue, paramType) : argValue);
     }
     // Decayed array params expect the address of a writable array, which the resolvers above do not guarantee
     for unsigned long i = 0l; i < n; i++ {

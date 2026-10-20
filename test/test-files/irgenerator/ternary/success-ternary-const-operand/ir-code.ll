@@ -92,6 +92,7 @@ cond.exit.L19C23:                                 ; preds = %cond.false.L19C23, 
   %cond.result = phi ptr [ %4, %cond.true.L19C23 ], [ %5, %cond.false.L19C23 ]
   call void @llvm.memcpy.p0.p0.i64(ptr %res, ptr %cond.result, i64 0, i1 false)
   %7 = load %struct.Thing, ptr %res, align 1
+  call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %val)
   store %struct.Thing %7, ptr %0, align 1
   ret void
 }
@@ -113,12 +114,10 @@ define dso_local noundef i32 @main() #3 {
   call void @_ZN5Thing4ctorERK5Thing(ptr noundef nonnull align 1 %arg.copy, ptr %t)
   %1 = load %struct.Thing, ptr %arg.copy, align 1
   call void @_Z7takeVal5Thingb(ptr dead_on_unwind writable sret(%struct.Thing) align 1 %viaVal, %struct.Thing noundef %1, i1 noundef zeroext true)
-  call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %arg.copy)
   call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %viaVal)
   call void @_ZN5Thing4ctorERK5Thing(ptr noundef nonnull align 1 %arg.copy1, ptr %t)
   %2 = load %struct.Thing, ptr %arg.copy1, align 1
   call void @_Z7takeVal5Thingb(ptr dead_on_unwind writable sret(%struct.Thing) align 1 %viaValTemp, %struct.Thing noundef %2, i1 noundef zeroext false)
-  call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %arg.copy1)
   call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %viaValTemp)
   call void @_ZN5Thing4dtorEv(ptr noundef nonnull align 1 %t)
   ret i32 0

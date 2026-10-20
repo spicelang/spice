@@ -20,6 +20,7 @@ define dso_local noundef i32 @main() #0 {
   %3 = alloca %struct.VectorIterator, align 8
   %str = alloca ptr, align 8
   %4 = alloca ptr, align 8
+  %arg.copy = alloca %struct.String, align 8
   call void @_ZN6VectorI6StringE4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %stringVec)
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
   call void @_ZN6VectorI6StringE8pushBackERK6String(ptr noundef nonnull align 8 dereferenceable(32) %stringVec, ptr noundef %1)
@@ -36,7 +37,8 @@ foreach.body.L10:                                 ; preds = %foreach.head.L10
   %6 = call ptr @_ZN14VectorIteratorI6StringE3getEv(ptr %3)
   store ptr %6, ptr %4, align 8
   %7 = load ptr, ptr %4, align 8
-  %8 = load %struct.String, ptr %7, align 8
+  call void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy, ptr %7)
+  %8 = load %struct.String, ptr %arg.copy, align 8
   call void @_Z5printI6StringEv6String(%struct.String noundef %8)
   br label %foreach.tail.L10
 
@@ -62,6 +64,8 @@ declare void @_ZN6VectorI6StringE11getIteratorEv(ptr dead_on_unwind noalias writ
 declare i1 @_ZN14VectorIteratorI6StringE7isValidEv(ptr)
 
 declare ptr @_ZN14VectorIteratorI6StringE3getEv(ptr)
+
+declare void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24), ptr)
 
 declare void @_Z5printI6StringEv6String(%struct.String)
 

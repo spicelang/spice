@@ -1,0 +1,112 @@
+import "std/data/vector";
+
+// Generic type definitions
+type T dyn;
+
+// Logs its lifetime, including the number of edits, so that a destructed stale copy shows up with the wrong edit count
+type Tracked struct {
+    int id
+    int edits = 0
+    Vector<int> data // Grows on edits, so a stale copy would also free a buffer, that the edited value replaced
+}
+
+p Tracked.ctor(int id) {
+    this.id = id;
+    printf("ctor %d\n", this.id);
+}
+
+p Tracked.ctor(const Tracked& other) {
+    this.id = other.id * 10;
+    this.edits = other.edits;
+    this.data = other.data;
+    printf("copy %d -> %d\n", other.id, this.id);
+}
+
+p Tracked.dtor() {
+    printf("dtor %d (edits: %d, data: %d)\n", this.id, this.edits, this.data.getSize());
+}
+
+p Tracked.edit() {
+    this.edits++;
+    for int i = 0; i < 50; i++ { this.data.pushBack(i); }
+}
+
+p consume(Tracked t) {
+    t.edit();
+    printf("consume %d\n", t.id);
+}
+
+f<Tracked> passThrough(Tracked t) {
+    t.edit();
+    return t;
+}
+
+p earlyReturn(Tracked t, bool early) {
+    t.edit();
+    if early {
+        printf("early return\n");
+        return;
+    }
+    printf("late return\n");
+}
+
+p generic<T>(T value) {
+    value.edit();
+    printf("generic\n");
+}
+
+p Tracked.absorb(Tracked other) {
+    other.edit();
+    this.edits += other.edits;
+}
+
+f<int> operator+(Tracked lhs, Tracked rhs) {
+    lhs.edit();
+    rhs.edit();
+    return lhs.edits + rhs.edits;
+}
+
+type Holder struct {
+    Tracked tracked
+}
+
+p Holder.ctor(Tracked tracked) {
+    tracked.edit();
+    this.tracked = tracked;
+}
+
+f<int> main() {
+    Tracked a = Tracked(1);
+    printf("== lvalue\n");
+    consume(a);
+    printf("== reference\n");
+    Tracked& ref = a;
+    consume(ref);
+    printf("== temporary\n");
+    consume(Tracked(2));
+    printf("== return param\n");
+    {
+        Tracked returned = passThrough(Tracked(3));
+        printf("returned %d with %d edits\n", returned.id, returned.edits);
+    }
+    printf("== early return\n");
+    earlyReturn(a, true);
+    earlyReturn(a, false);
+    printf("== generic\n");
+    generic<Tracked>(a);
+    printf("== method\n");
+    Tracked b = Tracked(4);
+    b.absorb(a);
+    printf("== operator\n");
+    printf("sum of edits: %d\n", a + b);
+    printf("== lambda\n");
+    p(Tracked) lambda = p(Tracked t) {
+        t.edit();
+        printf("lambda\n");
+    };
+    lambda(a);
+    printf("== new\n");
+    Holder* holder = __new<Holder>(a);
+    unsafe { sDelete(holder); }
+    printf("== end (a has %d edits, b has %d edits)\n", a.edits, b.edits);
+}

@@ -67,6 +67,7 @@ define internal void @_Z8testRVO34Test(ptr dead_on_unwind noalias writable sret(
   store %struct.Test %1, ptr %old, align 4
   call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %old1, ptr %old)
   %3 = load %struct.Test, ptr %old1, align 4
+  call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %old)
   store %struct.Test %3, ptr %0, align 4
   ret void
 }
@@ -151,10 +152,8 @@ assert.then.L44:                                  ; preds = %assert.exit.L41
 assert.exit.L44:                                  ; preds = %assert.exit.L41
   %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t4)
-  call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %arg.copy2)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t3)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t2)
-  call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %arg.copy)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t1)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t)
   ret i32 0

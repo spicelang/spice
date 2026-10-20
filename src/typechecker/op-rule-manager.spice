@@ -1373,6 +1373,9 @@ public f<ExprResult> OpRuleManager.isOperatorOverloadingFctAvailable(ASTNode* no
     // Check if we need to request a re-visit, because the function body was not type-checked yet
     requestRevisitIfRequired(callee);
 
+    // By-value params of non-trivially copyable types get copies of the operands, which require their copy ctors
+    this.typeChecker.matchCopyCtorsForOwnedParams(callee, node);
+
     // Check if the called function has sufficient visibility
     const bool isImported = calleeParentScope.isImportedBy(this.typeChecker.rootScope);
     const SymbolTableEntry* calleeEntry = callee.entry;

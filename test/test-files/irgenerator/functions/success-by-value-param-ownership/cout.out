@@ -1,0 +1,54 @@
+ctor 1
+== lvalue
+copy 1 -> 10
+consume 10
+dtor 10 (edits: 1, data: 50)
+== reference
+copy 1 -> 10
+consume 10
+dtor 10 (edits: 1, data: 50)
+== temporary
+ctor 2
+copy 2 -> 20
+consume 20
+dtor 20 (edits: 1, data: 50)
+== return param
+ctor 3
+copy 3 -> 30
+returned 30 with 1 edits
+dtor 3 (edits: 0, data: 0)
+dtor 30 (edits: 1, data: 50)
+== early return
+copy 1 -> 10
+early return
+dtor 10 (edits: 1, data: 50)
+copy 1 -> 10
+late return
+dtor 10 (edits: 1, data: 50)
+== generic
+copy 1 -> 10
+generic
+dtor 10 (edits: 1, data: 50)
+== method
+ctor 4
+copy 1 -> 10
+dtor 10 (edits: 1, data: 50)
+== operator
+copy 1 -> 10
+copy 4 -> 40
+dtor 40 (edits: 2, data: 50)
+dtor 10 (edits: 1, data: 50)
+sum of edits: 3
+== lambda
+copy 1 -> 10
+lambda
+dtor 10 (edits: 1, data: 50)
+== new
+copy 1 -> 10
+copy 10 -> 100
+dtor 10 (edits: 1, data: 50)
+dtor 100 (edits: 1, data: 50)
+== end (a has 0 edits, b has 1 edits)
+dtor 4 (edits: 1, data: 0)
+dtor 2 (edits: 0, data: 0)
+dtor 1 (edits: 0, data: 0)
