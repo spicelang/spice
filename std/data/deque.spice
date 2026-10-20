@@ -241,7 +241,7 @@ public f<T&> Deque.back() {
  *
  * @return Current size of the deque
  */
-public f<long> Deque.getSize() {
+public f<unsigned long> Deque.getSize() {
     return this.size;
 }
 
@@ -250,7 +250,7 @@ public f<long> Deque.getSize() {
  *
  * @return Current capacity of the deque
  */
-public f<long> Deque.getCapacity() {
+public f<unsigned long> Deque.getCapacity() {
     return this.capacity;
 }
 
@@ -281,6 +281,13 @@ public p Deque.reserve(unsigned long itemCount) {
     if itemCount > this.capacity {
         this.resize(itemCount);
     }
+}
+
+/**
+ * Reserves `itemCount` items
+ */
+public p Deque.reserve(unsigned int itemCount) {
+    this.reserve(cast<unsigned long>(itemCount));
 }
 
 /**

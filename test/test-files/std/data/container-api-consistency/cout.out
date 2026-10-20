@@ -1,0 +1,11 @@
+Vector: unsigned long, unsigned long
+Deque: unsigned long, unsigned long
+Queue: unsigned long, unsigned long
+Stack: unsigned long, unsigned long
+PriorityQueue: unsigned long, unsigned long
+LinkedList: unsigned long
+DoublyLinkedList: unsigned long
+UnorderedMap: unsigned long
+MessageQueue: unsigned long
+StackTrace: unsigned long
+All assertions passed

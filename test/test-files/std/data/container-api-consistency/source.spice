@@ -1,0 +1,92 @@
+// Checks that the containers share one size type and accept unsigned int as well as unsigned long for every index and
+// count parameter. The plain int literals below bind to the unsigned int overloads.
+import "std/data/vector";
+import "std/data/deque";
+import "std/data/queue";
+import "std/data/stack";
+import "std/data/priority-queue";
+import "std/data/linked-list";
+import "std/data/doubly-linked-list";
+import "std/data/unordered-map";
+import "std/os/message-queue";
+import "std/runtime/stack_trace_rt";
+
+f<int> main() {
+    // Every size and capacity getter returns unsigned long
+    Vector<int> vector;
+    Deque<int> deque;
+    Queue<int> queue;
+    Stack<int> stack;
+    PriorityQueue<int> priorityQueue;
+    LinkedList<int> linkedList;
+    DoublyLinkedList<int> doublyLinkedList;
+    UnorderedMap<int, int> unorderedMap;
+    MessageQueue<int> messageQueue;
+    StackTrace stackTrace;
+    printf("Vector: %s, %s\n", typename(vector.getSize()), typename(vector.getCapacity()));
+    printf("Deque: %s, %s\n", typename(deque.getSize()), typename(deque.getCapacity()));
+    printf("Queue: %s, %s\n", typename(queue.getSize()), typename(queue.getCapacity()));
+    printf("Stack: %s, %s\n", typename(stack.getSize()), typename(stack.getCapacity()));
+    printf("PriorityQueue: %s, %s\n", typename(priorityQueue.getSize()), typename(priorityQueue.getCapacity()));
+    printf("LinkedList: %s\n", typename(linkedList.getSize()));
+    printf("DoublyLinkedList: %s\n", typename(doublyLinkedList.getSize()));
+    printf("UnorderedMap: %s\n", typename(unorderedMap.getSize()));
+    printf("MessageQueue: %s\n", typename(messageQueue.getSize()));
+    printf("StackTrace: %s\n", typename(stackTrace.getSize()));
+
+    // Vector: insertAt, get, removeAt and reserve with both index types
+    vector.reserve(8);
+    assert vector.getCapacity() == 8ul;
+    vector.reserve(16ul);
+    assert vector.getCapacity() == 16ul;
+    vector.insertAt(0, 2);
+    vector.insertAt(0ul, 0);
+    vector.insertAt(1, 1);
+    assert vector.getSize() == 3ul;
+    assert vector.get(0) == 0 && vector.get(1ul) == 1 && vector.get(2) == 2;
+    vector.removeAt(1);
+    vector.removeAt(0ul);
+    assert vector.getSize() == 1ul;
+    assert vector.get(0) == 2;
+
+    // Deque, Queue and PriorityQueue: reserve with both count types
+    deque.reserve(4);
+    assert deque.getCapacity() == 4ul;
+    deque.reserve(8ul);
+    assert deque.getCapacity() == 8ul;
+    queue.reserve(4);
+    assert queue.getCapacity() == 4ul;
+    queue.reserve(8ul);
+    assert queue.getCapacity() == 8ul;
+    priorityQueue.reserve(4);
+    assert priorityQueue.getCapacity() == 4ul;
+    priorityQueue.reserve(8ul);
+    assert priorityQueue.getCapacity() == 8ul;
+
+    // LinkedList: insertAt, get and removeAt with both index types
+    linkedList.pushBack(0);
+    linkedList.pushBack(3);
+    linkedList.insertAt(1, 1);
+    linkedList.insertAt(2ul, 2);
+    assert linkedList.getSize() == 4ul;
+    assert linkedList.get(0) == 0 && linkedList.get(1ul) == 1 && linkedList.get(2) == 2 && linkedList.get(3ul) == 3;
+    linkedList.removeAt(3);
+    linkedList.removeAt(0ul);
+    assert linkedList.getSize() == 2ul;
+    assert linkedList.get(0) == 1 && linkedList.get(1) == 2;
+
+    // DoublyLinkedList: insertAt, get and removeAt with both index types
+    doublyLinkedList.pushBack(0);
+    doublyLinkedList.pushBack(3);
+    doublyLinkedList.insertAt(1, 1);
+    doublyLinkedList.insertAt(2ul, 2);
+    assert doublyLinkedList.getSize() == 4ul;
+    assert doublyLinkedList.get(0) == 0 && doublyLinkedList.get(1ul) == 1;
+    assert doublyLinkedList.get(2) == 2 && doublyLinkedList.get(3ul) == 3;
+    doublyLinkedList.removeAt(3);
+    doublyLinkedList.removeAt(0ul);
+    assert doublyLinkedList.getSize() == 2ul;
+    assert doublyLinkedList.get(0) == 1 && doublyLinkedList.get(1) == 2;
+
+    printf("All assertions passed\n");
+}

@@ -194,7 +194,7 @@ public f<T&> Stack.top() {
  *
  * @return Current size of the stack
  */
-public f<long> Stack.getSize() {
+public f<unsigned long> Stack.getSize() {
     return this.size;
 }
 
@@ -203,9 +203,9 @@ public f<long> Stack.getSize() {
  *
  * @return Current capacity of the stack
  */
- public f<long> Stack.getCapacity() {
-     return this.capacity;
- }
+public f<unsigned long> Stack.getCapacity() {
+    return this.capacity;
+}
 
 /**
  * Checks if the queue contains any items at the moment

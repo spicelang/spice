@@ -110,7 +110,7 @@ public f<bool> MessageQueue.isEmpty() {
  *
  * @return Current size of the queue
  */
-public f<long> MessageQueue.getSize() {
+public f<unsigned long> MessageQueue.getSize() {
     LockGuard _ = LockGuard(this.mutex);
     return this.queue.getSize();
 }

@@ -124,7 +124,7 @@ public type StackTrace struct : IIterable<StackTraceEntry> {
  *
  * @return Number of frames
  */
-public inline f<long> StackTrace.getSize() {
+public inline f<unsigned long> StackTrace.getSize() {
     return this.entries.getSize();
 }
 
