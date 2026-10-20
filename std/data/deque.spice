@@ -1,3 +1,6 @@
+// External functions
+ext f<byte*> memmove(byte*, byte*, unsigned long);
+
 // Constants
 const unsigned long INITIAL_ALLOC_COUNT = 5l;
 const unsigned int RESIZE_FACTOR = 2;
@@ -41,10 +44,11 @@ public p Deque.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Fill in the default values
     for unsigned long index = 0l; index < initAllocItems; index++ {
         unsafe {
-            this.contents[index] = defaultValue;
+            __placement_new<T>(&this.contents[index], defaultValue);
         }
     }
     this.size = initAllocItems;
+    this.idxBack = this.capacity == 0l ? 0l : initAllocItems % this.capacity;
 }
 
 /**
@@ -80,11 +84,12 @@ public p Deque.ctor(unsigned long initAllocItems = 0l) {
  */
 public p Deque.ctor(const Deque<T>& original) {
     this.ctor(original.capacity);
-    // Copy elements in logical order, normalizing the layout so idxFront = 0
+    // Copy-construct elements in logical order, normalizing the layout so idxFront = 0. The slots are uninitialized, so
+    // they must not be assigned to
     unsafe {
         for unsigned long i = 0l; i < original.size; i++ {
             const unsigned long srcIdx = (original.idxFront + i) % original.capacity;
-            this.contents[i] = original.contents[srcIdx];
+            __placement_new<T>(&this.contents[i], original.contents[srcIdx]);
         }
     }
     this.size = original.size;
@@ -101,6 +106,8 @@ public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
     // Self-assignment: leave the deque as is; normalizing in place would
     // overwrite source slots before the wrapped index reads them.
     if &this == &newValue { return; }
+    // Destruct our currently owned elements before their slots get overwritten
+    this.clear();
     const long itemSize = sizeof<T>();
     if newValue.capacity != this.capacity {
         if newValue.capacity == 0l {
@@ -118,16 +125,43 @@ public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
         }
         this.capacity = newValue.capacity;
     }
-    // Copy elements in logical order, normalizing the layout so idxFront = 0
-    for unsigned long i = 0l; i < newValue.size; i++ {
-        const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
-        unsafe {
-            this.contents[i] = newValue.contents[srcIdx];
+    // Copy-construct elements in logical order, normalizing the layout so idxFront = 0
+    unsafe {
+        for unsigned long i = 0l; i < newValue.size; i++ {
+            const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
+            __placement_new<T>(&this.contents[i], newValue.contents[srcIdx]);
         }
     }
     this.size = newValue.size;
     this.idxFront = 0l;
     this.idxBack = this.capacity == 0l ? 0l : newValue.size % this.capacity;
+}
+
+/**
+ * Destructs the deque, destructing all owned elements and freeing the buffer
+ */
+public p Deque.dtor() {
+    this.clear();
+    unsafe {
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        sDealloc(oldAddress);
+    }
+    this.capacity = 0l;
+}
+
+/**
+ * Removes all items from the deque. The allocated capacity is kept.
+ */
+public p Deque.clear() {
+    // Destruct owned elements in logical order before dropping them
+    for unsigned long i = 0l; i < this.size; i++ {
+        unsafe {
+            sDestruct(this.contents[(this.idxFront + i) % this.capacity]);
+        }
+    }
+    this.size = 0l;
+    this.idxFront = 0l;
+    this.idxBack = 0l;
 }
 
 /**
@@ -142,7 +176,7 @@ public p Deque.pushBack(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        this.contents[this.idxBack] = item;
+        __placement_new<T>(&this.contents[this.idxBack], item);
     }
     this.idxBack++;
     this.idxBack %= this.capacity;
@@ -165,7 +199,7 @@ public p Deque.pushFront(const T& item) {
     this.idxFront = this.idxFront + this.capacity - 1;
     this.idxFront %= this.capacity;
     unsafe {
-        this.contents[this.idxFront] = item;
+        __placement_new<T>(&this.contents[this.idxFront], item);
     }
 
     // Increase size
@@ -173,17 +207,21 @@ public p Deque.pushFront(const T& item) {
 }
 
 /**
- * Retrieve the first item and remove it
+ * Retrieve the first item and remove it. The item is returned by value, because its slot in the deque is destructed.
  *
  * @return First item
  */
 #[ignoreUnusedReturnValue]
-public f<T&> Deque.popFront() {
+public f<T> Deque.popFront() {
     if this.isEmpty() { panic(Error("Deque is empty")); }
 
     // Get item value
     unsafe {
-        result = this.contents[this.idxFront];
+        // Copy the item via a reference to its slot. Assigning the subscript expression directly would move it bitwise,
+        // so destructing the slot afterwards would free resources, that the returned item still uses
+        T& item = this.contents[this.idxFront];
+        result = item;
+        sDestruct(item);
     }
 
     // Adjust indices and size
@@ -193,12 +231,12 @@ public f<T&> Deque.popFront() {
 }
 
 /**
- * Retrieve the last item and remove it
+ * Retrieve the last item and remove it. The item is returned by value, because its slot in the deque is destructed.
  *
  * @return Last item
  */
 #[ignoreUnusedReturnValue]
-public f<T&> Deque.popBack() {
+public f<T> Deque.popBack() {
     if this.isEmpty() { panic(Error("Deque is empty")); }
 
     // Adjust indices and size
@@ -207,7 +245,10 @@ public f<T&> Deque.popBack() {
 
     // Get item value
     unsafe {
-        result = this.contents[this.idxBack];
+        // Copy the item via a reference to its slot, for the same reason as in popFront()
+        T& item = this.contents[this.idxBack];
+        result = item;
+        sDestruct(item);
     }
     this.size--;
 }
@@ -349,24 +390,29 @@ p Deque.resize(unsigned long itemCount) {
     }
     // Allocate the new memory
     const unsigned long itemSize = sizeof<T>();
-    // Allocate a new chunk of memory with the requested size
-    unsigned long newSize = itemSize * itemCount;
-    Result<heap byte*> allocResult = sAlloc(newSize);
-    // Take ownership of the old pointer to free it at the end of the scope
-    heap T* oldAddress = this.contents;
     unsafe {
-        this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-    }
-    // Copy data over to new memory chunk
-    for unsigned long newIndex = 0l; newIndex < this.size; newIndex++ {
-        unsigned long oldIndex = this.idxFront + newIndex;
-        oldIndex %= this.capacity;
-        unsafe {
-            this.contents[newIndex] = oldAddress[oldIndex];
+        // Allocate a new chunk of memory with the requested size
+        unsigned long newSize = itemSize * itemCount;
+        Result<heap byte*> allocResult = sAlloc(newSize);
+        heap T* newContents = cast<heap T*>(allocResult.unwrapAndMove());
+        // Relocate the elements bitwise in logical order. They are moved, not copied, so they are neither copy-constructed
+        // in the new slots nor destructed in the old ones. The elements may wrap around the end of the old buffer, so they
+        // are moved in up to two chunks
+        if this.size > 0l {
+            const unsigned long firstChunkSize = this.size < this.capacity - this.idxFront ? this.size : this.capacity - this.idxFront;
+            memmove(cast<byte*>(&newContents[0]), cast<byte*>(&this.contents[this.idxFront]), firstChunkSize * itemSize);
+            if firstChunkSize < this.size {
+                const unsigned long secondChunkSize = this.size - firstChunkSize;
+                memmove(cast<byte*>(&newContents[firstChunkSize]), cast<byte*>(&this.contents[0]), secondChunkSize * itemSize);
+            }
         }
+        // Free the old buffer without destructing the relocated elements
+        heap byte*& oldAddress = cast<heap byte*>(this.contents);
+        sDealloc(oldAddress);
+        this.contents = sMove(newContents);
     }
-    // Set new capacity
+    // Set new capacity and normalize indices
     this.capacity = itemCount;
     this.idxFront = 0l;
-    this.idxBack = this.size;
+    this.idxBack = this.size % itemCount;
 }

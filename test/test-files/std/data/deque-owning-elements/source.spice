@@ -1,0 +1,116 @@
+import "std/data/deque";
+import "std/data/vector";
+import "std/type/type-conversion";
+
+// Counts its live instances, to check that the deque constructs and destructs each element exactly once
+public type Tracked struct {
+    int* liveCount
+    int value
+}
+
+public p Tracked.ctor(int* liveCount, int value) {
+    this.liveCount = liveCount;
+    this.value = value;
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Tracked.ctor(const Tracked& original) {
+    this.liveCount = original.liveCount;
+    this.value = original.value;
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Tracked.dtor() {
+    unsafe { (*this.liveCount)--; }
+}
+
+f<int> main() {
+    // 1. Popped strings stay valid after their slots got reused, also across a resize while the deque is wrapped
+    Deque<String> d1;
+    for int i = 0; i < 5; i++ { d1.pushBack(String("item") + toString(i)); }
+    const String first = d1.popFront();
+    const String last = d1.popBack();
+    d1.pushFront(String("front")); // reuses the slot of the popped front item
+    d1.pushBack(String("back")); // reuses the slot of the popped back item
+    d1.pushFront(String("wrapped")); // wraps around and triggers a resize
+    assert first == String("item0");
+    assert last == String("item4");
+    assert d1.getSize() == 6;
+    assert d1.popFront() == String("wrapped");
+    assert d1.popFront() == String("front");
+    assert d1.popBack() == String("back");
+    for int i = 1; i <= 3; i++ {
+        const String item = d1.popFront();
+        assert item == String("item") + toString(i);
+    }
+    assert d1.isEmpty();
+    printf("Strings across reuse and resize: ok\n");
+
+    // 2. Copy ctor and assignment create independent copies of owning elements
+    Deque<Vector<int>> d2;
+    for int i = 0; i < 4; i++ {
+        Vector<int> v;
+        for int j = 0; j <= i; j++ { v.pushBack(j); }
+        d2.pushBack(v);
+    }
+    d2.popFront(); // wrapped copies need idxFront != 0
+    Deque<Vector<int>> d3 = Deque<Vector<int>>(d2);
+    Deque<Vector<int>> d4;
+    d4.pushBack(Vector<int>(3l, 42));
+    d4 = d2; // replaces the existing element
+    Vector<int>& front2 = d2.front();
+    front2.pushBack(99);
+    for int i = 1; i < 4; i++ {
+        const Vector<int> v3 = d3.popFront();
+        const Vector<int> v4 = d4.popFront();
+        assert v3.getSize() == i + 1;
+        assert v4.getSize() == i + 1;
+        assert v3.get(cast<unsigned long>(i)) == i;
+    }
+    assert front2.getSize() == 3l;
+    printf("Copies of vectors: ok\n");
+
+    // 3. Each element is destructed exactly once (pop, clear, assignment, copy, destruction of the deque)
+    int liveCount = 0;
+    {
+        Deque<Tracked> d5;
+        for int i = 0; i < 12; i++ { d5.pushBack(Tracked(&liveCount, i)); }
+        {
+            // Temporaries live until the end of their scope
+            d5.pushFront(Tracked(&liveCount, -1));
+        }
+        assert liveCount == 13;
+        const Tracked popped = d5.popFront();
+        assert popped.value == -1;
+        for int i = 0; i < 3; i++ {
+            const Tracked t = d5.popFront();
+            assert t.value == i;
+        }
+        for int i = 11; i > 9; i-- {
+            const Tracked t = d5.popBack();
+            assert t.value == i;
+        }
+        assert liveCount == 8; // 7 in the deque, plus 'popped'
+        Deque<Tracked> d6 = Deque<Tracked>(d5);
+        assert liveCount == 15;
+        d6.clear();
+        assert d6.isEmpty();
+        assert liveCount == 8;
+        {
+            // Temporaries live until the end of their scope
+            d6.pushBack(Tracked(&liveCount, 100));
+        }
+        assert liveCount == 9;
+        d6 = d5; // destructs the pushed element
+        assert d6.getSize() == 7;
+        assert liveCount == 15;
+        d5.pack();
+        assert liveCount == 15;
+        Tracked& front5 = d5.front();
+        assert front5.value == 3;
+        Tracked& back5 = d5.back();
+        assert back5.value == 9;
+    }
+    assert liveCount == 0;
+    printf("Element lifetimes: ok\n");
+}
