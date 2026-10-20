@@ -9,15 +9,12 @@ consume 10
 dtor 10 (edits: 1, data: 50)
 == temporary
 ctor 2
-copy 2 -> 20
-consume 20
-dtor 20 (edits: 1, data: 50)
+consume 2
+dtor 2 (edits: 1, data: 50)
 == return param
 ctor 3
-copy 3 -> 30
-returned 30 with 1 edits
-dtor 3 (edits: 0, data: 0)
-dtor 30 (edits: 1, data: 50)
+returned 3 with 1 edits
+dtor 3 (edits: 1, data: 50)
 == early return
 copy 1 -> 10
 early return
@@ -50,5 +47,4 @@ dtor 10 (edits: 1, data: 50)
 dtor 100 (edits: 1, data: 50)
 == end (a has 0 edits, b has 1 edits)
 dtor 4 (edits: 1, data: 0)
-dtor 2 (edits: 0, data: 0)
 dtor 1 (edits: 0, data: 0)

@@ -4393,6 +4393,9 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
 
     // Retrieve arg types
     data.args.clear();
+    // Scopes and names of the anonymous symbols of temporary args. The scope is nil if the arg is no such temporary
+    Vector<Scope*> argTemporaryScopes;
+    Vector<String> argTemporaryNames;
     if node.hasArgs {
         ASTArgLstNode* argLst = node.argLst;
         data.args.reserve(cast<unsigned long>(argLst.args.getSize()));
@@ -4403,6 +4406,9 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             assert !argResult.ty.hasAnyGenericParts();
             // Save arg type to arg types list
             data.args.pushBack(Pair<QualType, bool>(argResult.ty, argResult.isTemporary()));
+            const bool isAnonymous = argResult.entry != nil<SymbolTableEntry*> && argResult.entry.anonymous;
+            argTemporaryScopes.pushBack(isAnonymous ? argResult.entry.scope : nil<Scope*>);
+            argTemporaryNames.pushBack(isAnonymous ? argResult.entry.name : String());
         }
     }
 
@@ -4592,13 +4598,21 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             Function* copyCtor = nil<Function*>;
             const QualType actualValueType = actualType.removeReferenceWrapper();
             if expectedType.isOwnedByValueParam(baseNode) && actualValueType.is(SuperType::TY_STRUCT) {
-                copyCtor = this.matchCopyCtor(actualValueType, baseNode);
                 // The called function destructs its by-value params. External functions do not, so the caller has to destruct
-                // the copy instead. Insert an anonymous symbol to track the dtor call of the copy in this case.
+                // the arg instead.
                 const bool isExtCallee = callee != nil<const Function*> && callee.declNode.kind == ASTNodeKind::EXT_DECL;
-                if isExtCallee {
-                    ASTNode* argNode = getASTNode(argLst.args.get(argIdx));
-                    this.currentScope.symbolTable.insertAnonymous(actualValueType, argNode, ULONG_MAX_VALUE);
+                Scope* argTemporaryScope = argTemporaryScopes.get(argIdx);
+                if !isExtCallee && !actualType.isRef() && argTemporaryScope != nil<Scope*> {
+                    // Move the temporary into the param instead of copying it: the called function takes it over, so the
+                    // caller must not destruct it anymore
+                    argTemporaryScope.symbolTable.deleteAnonymous(argTemporaryNames.get(argIdx));
+                } else {
+                    copyCtor = this.matchCopyCtor(actualValueType, baseNode);
+                    // Insert an anonymous symbol to track the dtor call of the copy for external functions
+                    if isExtCallee {
+                        ASTNode* argNode = getASTNode(argLst.args.get(argIdx));
+                        this.currentScope.symbolTable.insertAnonymous(actualValueType, argNode, ULONG_MAX_VALUE);
+                    }
                 }
             }
 

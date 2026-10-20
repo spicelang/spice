@@ -23,7 +23,6 @@ define dso_local noundef i32 @main() #0 {
   %fat.ptr4 = alloca { ptr, ptr, i64 }, align 8
   %callbackWithArgs2 = alloca { ptr, ptr, i64 }, align 8
   %2 = alloca %struct.String, align 8
-  %arg.copy = alloca %struct.String, align 8
   store ptr @_Z14lambda.L2C39.0v, ptr %fat.ptr, align 8
   %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr null, ptr %3, align 8
@@ -58,8 +57,7 @@ define dso_local noundef i32 @main() #0 {
   %18 = load { ptr, ptr, i64 }, ptr %fat.ptr4, align 8
   store { ptr, ptr, i64 } %18, ptr %callbackWithArgs2, align 8
   call void @_ZN6String4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.3)
-  call void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy, ptr %2)
-  %19 = load %struct.String, ptr %arg.copy, align 8
+  %19 = load %struct.String, ptr %2, align 8
   %20 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %callbackWithArgs2, i32 0, i32 1
   %captures5 = load ptr, ptr %20, align 8
   %fct6 = load ptr, ptr %callbackWithArgs2, align 8
@@ -69,7 +67,6 @@ define dso_local noundef i32 @main() #0 {
   %24 = icmp eq i32 %23, 1
   %25 = select i1 %24, i32 9, i32 12
   %26 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %25)
-  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   ret i32 0
 }
@@ -136,8 +133,6 @@ define internal i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1, ptr 
 }
 
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
-
-declare void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24), ptr)
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { noinline nounwind optnone uwtable }
