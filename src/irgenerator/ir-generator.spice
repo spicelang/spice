@@ -4150,6 +4150,22 @@ public f<Any> IRGenerator.visitAtomicExpr(ASTAtomicExprNode* node) {
     const QualType varSymbolType = entry.getQualType();
     const llvm::Type varType = varSymbolType.toLLVMType(this.sourceFile);
 
+    // If this is a function/procedure reference, return it as value. The fat pointer must point at a thunk that
+    // carries the (ignored) trailing capture-struct pointer, so it can be called through the uniform lambda ABI.
+    if entry.global && (varSymbolType.is(SuperType::TY_FUNCTION) || varSymbolType.is(SuperType::TY_PROCEDURE)) {
+        // The referenced function might be defined later, in another source file or externally, so declare it if required.
+        // The type checker only allows to reference functions with a single manifestation.
+        Vector<model::Function*>* manifestations = entry.declNode.getFctManifestations(entry.name);
+        assert manifestations.getSize() == 1l;
+        const llvm::Function target = this.getOrDeclareFunction(manifestations.front());
+        const llvm::Function thunk = this.getOrCreateFatFctPtrThunk(target);
+        const llvm::Value fatPtr = this.buildFatFctPtr(nil<Scope*>, llvm::Type(), thunk.asValue());
+        LLVMExprResult res;
+        res.ptr = fatPtr;
+        res.entry = entry;
+        return exprResultAny(res);
+    }
+
     // Check if external global variable
     if entry.global && accessScope.isImportedBy(this.rootScope) {
         // External global variables need to be declared and allocated in the current module
@@ -4169,17 +4185,6 @@ public f<Any> IRGenerator.visitAtomicExpr(ASTAtomicExprNode* node) {
 
     const llvm::Value address = this.getAddress(entry);
     assert !address.isNull();
-
-    // If this is a function/procedure reference, return it as value. The fat pointer must point at a thunk that
-    // carries the (ignored) leading capture-struct pointer, so it can be called through the uniform lambda ABI.
-    if entry.global && (varSymbolType.is(SuperType::TY_FUNCTION) || varSymbolType.is(SuperType::TY_PROCEDURE)) {
-        const llvm::Function thunk = this.getOrCreateFatFctPtrThunk(address.asFunction());
-        const llvm::Value fatPtr = this.buildFatFctPtr(nil<Scope*>, llvm::Type(), thunk.asValue());
-        LLVMExprResult res;
-        res.ptr = fatPtr;
-        res.entry = entry;
-        return exprResultAny(res);
-    }
 
     // Load the address of the referenced variable
     LLVMExprResult res;
@@ -7055,6 +7060,36 @@ p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
     llvm::Value global = this.module.getNamedGlobal(mangledName.getRaw());
     assert !global.isNull();
     global.setInitializer(initializer);
+}
+
+/**
+ * Get the LLVM function of a function or procedure, that is not a method, and declare it if required, because it is
+ * defined later, in another source file or externally
+ *
+ * @param fct Function or procedure
+ * @return LLVM function
+ */
+f<llvm::Function> IRGenerator.getOrDeclareFunction(const model::Function* fct) {
+    assert !fct.isMethod();
+    const String mangledName = fct.getMangledName();
+    const llvm::Function existing = this.module.getFunction(mangledName.getRaw());
+    if !existing.isNull() {
+        return existing;
+    }
+
+    Vector<llvm::Type> paramTypes;
+    foreach const QualType& paramType : fct.getParamTypes() {
+        paramTypes.pushBack(paramType.getParamLLVMType(this.sourceFile));
+    }
+    const QualType returnType = fct.isProcedure() ? QualType(SuperType::TY_DYN) : fct.returnType;
+    const llvm::Type fctType = this.getFunctionType(returnType, paramTypes, fct.isVararg);
+    this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
+    llvm::Function llvmFct = this.module.getFunction(mangledName.getRaw());
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
+    if returnABI.isIndirect() {
+        this.addSRetParamAttrs(llvmFct, returnABI.memoryType);
+    }
+    return llvmFct;
 }
 
 f<llvm::Function> IRGenerator.getOrDeclareDefaultMethod(const model::Function* defaultMethod) {
