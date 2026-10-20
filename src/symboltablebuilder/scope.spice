@@ -664,9 +664,13 @@ public f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
         if name == THIS_VARIABLE_NAME || (name == RETURN_VARIABLE_NAME && entry.declNode.kind != ASTNodeKind::DECL_STMT) {
             continue;
         }
-        // Skip parameters (ToDo: Remove when copy constructors work for by-value argument passing)
+        // Params only go out of scope, if they own their argument (see QualType.isOwnedByValueParam). All other params hold
+        // references, pointers or bitwise copies of values, that the caller owns
         if entry.isParam {
-            continue;
+            const QualType paramType = entry.getQualType();
+            if !paramType.isOwnedByValueParam(entry.declNode) {
+                continue;
+            }
         }
         // Found variable, that goes out of scope
         varsGoingOutOfScope.pushBack(&entry);

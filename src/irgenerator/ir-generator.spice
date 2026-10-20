@@ -4384,27 +4384,24 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
             const QualType& expectedSTy = paramSTypes.get(i);
             const QualType actualSTy = this.getEvaluatedType(argNode);
 
-            if matchArgType(expectedSTy, actualSTy) {
+            if copyCtor != nil<const model::Function*> {
+                // By-value params of non-trivially copyable types get a copy of the argument, also if it is a reference
+                const QualType actualValueSTy = actualSTy.removeReferenceWrapper();
+                assert !actualValueSTy.isTriviallyCopyable(cast<ASTNode*>(node));
+                const llvm::Value originalPtr = this.resolveAddress(argNode);
+                const llvm::Value valueCopyPtr = this.generateArgCopy(originalPtr, actualValueSTy, copyCtor);
+
+                // Only external functions leave the copy to the caller. Attach the address of the copy to its anonymous symbol
+                const SymbolTableEntry* anonymousSymbol = this.currentScope.symbolTable.lookupAnonymous(getASTNode(argNode), ULONG_MAX_VALUE);
+                if anonymousSymbol != nil<const SymbolTableEntry*> {
+                    this.updateAddress(anonymousSymbol, valueCopyPtr);
+                }
+
+                argValues.pushBack(this.insertLoad(actualValueSTy.toLLVMType(this.sourceFile), valueCopyPtr));
+            } else if matchArgType(expectedSTy, actualSTy) {
                 // Resolve address if actual type is reference or a decaying array, otherwise value
                 if actualSTy.isRef() || expectedSTy.isDecayedArray() {
                     argValues.pushBack(this.resolveAddress(argNode));
-                } else if copyCtor != nil<const model::Function*> {
-                    assert !actualSTy.isTriviallyCopyable(cast<ASTNode*>(node));
-                    const llvm::Value originalPtr = this.resolveAddress(argNode);
-
-                    // Generate copy ctor call
-                    const llvm::Type valueType = actualSTy.toLLVMType(this.sourceFile);
-                    const llvm::Value valueCopyPtr = this.insertAlloca(valueType, String("arg.copy"));
-                    Vector<llvm::Value> ctorArgs;
-                    ctorArgs.pushBack(originalPtr);
-                    this.generateCtorOrDtorCall(valueCopyPtr, copyCtor, ctorArgs);
-                    const llvm::Value newValue = this.insertLoad(valueType, valueCopyPtr);
-
-                    // Attach address of copy to anonymous symbol
-                    const SymbolTableEntry* anonymousSymbol = this.currentScope.symbolTable.lookupAnonymous(getASTNode(argNode), ULONG_MAX_VALUE);
-                    this.updateAddress(anonymousSymbol, valueCopyPtr);
-
-                    argValues.pushBack(newValue);
                 } else {
                     argValues.pushBack(this.resolveValue(argNode));
                 }
@@ -5518,6 +5515,8 @@ f<Any> IRGenerator.visitBuiltinNewCall(ASTFctCallNode* node) {
                 const QualType& paramType = paramTypes.get(i);
                 if paramType.isRef() {
                     ctorArgValues.pushBack(this.resolveAddress(argNode));
+                } else if paramType.isOwnedByValueParam(cast<ASTNode*>(node)) {
+                    ctorArgValues.pushBack(this.generateOwnedArgValue(this.resolveAddress(argNode), paramType));
                 } else {
                     ctorArgValues.pushBack(this.resolveValue(argNode));
                 }
@@ -5555,6 +5554,8 @@ f<Any> IRGenerator.visitBuiltinPlacementNewCall(ASTFctCallNode* node) {
             const QualType& paramType = paramTypes.get(i - 1l);
             if paramType.isRef() {
                 ctorArgValues.pushBack(this.resolveAddress(argNode));
+            } else if paramType.isOwnedByValueParam(cast<ASTNode*>(node)) {
+                ctorArgValues.pushBack(this.generateOwnedArgValue(this.resolveAddress(argNode), paramType));
             } else {
                 ctorArgValues.pushBack(this.resolveValue(argNode));
             }
@@ -6042,6 +6043,41 @@ p IRGenerator.generateCtorOrDtorCall(llvm::Value structAddr, const model::Functi
 
     // Generate function call
     this.generateProcDeclAndCall(ctorOrDtor, argValues);
+}
+
+/**
+ * Copy an argument for a by-value param, that owns its argument (see QualType.isOwnedByValueParam). The called function
+ * destructs the copy.
+ *
+ * @param originalPtr Address of the argument
+ * @param valueType Type of the argument without reference
+ * @param copyCtor Copy ctor of the argument type
+ * @return Address of the copy
+ */
+public f<llvm::Value> IRGenerator.generateArgCopy(llvm::Value originalPtr, const QualType& valueType, const model::Function* copyCtor) {
+    const llvm::Value copyPtr = this.insertAlloca(valueType.toLLVMType(this.sourceFile), String("arg.copy"));
+    Vector<llvm::Value> ctorArgs;
+    ctorArgs.pushBack(originalPtr);
+    this.generateCtorOrDtorCall(copyPtr, copyCtor, ctorArgs);
+    return copyPtr;
+}
+
+/**
+ * Produce the argument value for a by-value param, that owns its argument (see QualType.isOwnedByValueParam), for calls, that
+ * do not resolve the copy ctor in advance, like calls of operator functions or ctor calls via __new and __placement_new.
+ *
+ * @param originalPtr Address of the argument
+ * @param paramType Type of the param
+ * @return Value of the copy, which the called function destructs
+ */
+public f<llvm::Value> IRGenerator.generateOwnedArgValue(llvm::Value originalPtr, const QualType& paramType) {
+    const QualType valueType = paramType.toNonConst();
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(valueType.toConstRef(nil<ASTNode*>), false));
+    const model::Function* copyCtor = lookupFunction(valueType.getBodyScope(), String(CTOR_FUNCTION_NAME), valueType, args, true);
+    assert copyCtor != nil<const model::Function*>; // Resolved by the type checker
+    const llvm::Value copyPtr = this.generateArgCopy(originalPtr, valueType, copyCtor);
+    return this.insertLoad(valueType.toLLVMType(this.sourceFile), copyPtr);
 }
 
 p IRGenerator.generateDeallocCall(llvm::Value variableAddress) {

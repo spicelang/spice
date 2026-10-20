@@ -563,6 +563,19 @@ public f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
 }
 
 /**
+ * Check if a by-value parameter of the current type owns its argument. In this case, the caller passes a copy, that it does
+ * not destruct, and the called function destructs the parameter when it goes out of scope. Arguments of trivially copyable
+ * types are passed as bitwise copies and stay owned by the caller, so that handle types without copy ctor can be passed by
+ * value without the called function disposing the handle.
+ *
+ * @param node Accessing ASTNode
+ * @return Owned by the callee or not
+ */
+public f<bool> QualType.isOwnedByValueParam(const ASTNode* node) {
+    return this.is(SuperType::TY_STRUCT) && !this.isTriviallyCopyable(node);
+}
+
+/**
  * Check if destructing an instance of the current type would require calling a dtor.
  * If this function return true, the type does not need to be destructed.
  *

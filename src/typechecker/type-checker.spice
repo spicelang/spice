@@ -324,6 +324,22 @@ f<Function*> TypeChecker.matchCopyCtor(const QualType& thisType, const ASTNode* 
 }
 
 /**
+ * Resolve the copy ctors for the by-value params of a function, that own their argument (see QualType.isOwnedByValueParam).
+ * This is required for calls, that do not resolve the copy ctors per argument, like calls of operator functions or ctor calls
+ * via __new and __placement_new. The IR generator looks the copy ctors up again, when it copies the arguments.
+ *
+ * @param callee Called function
+ * @param node Call AST node
+ */
+public p TypeChecker.matchCopyCtorsForOwnedParams(const Function* callee, const ASTNode* node) {
+    foreach const QualType& paramType : callee.getParamTypes() {
+        if paramType.isOwnedByValueParam(node) {
+            this.matchCopyCtor(paramType.toNonConst(), node);
+        }
+    }
+}
+
+/**
  * Match the move ctor of the given struct type
  *
  * @param thisType Struct type
@@ -4576,12 +4592,18 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             const Arg& arg = data.args.get(argIdx);
             const QualType& actualType = arg.getFirst();
 
+            // By-value params of non-trivially copyable types get a copy of the argument, also if it is a reference
             Function* copyCtor = nil<Function*>;
-            if expectedType.is(SuperType::TY_STRUCT) && actualType.is(SuperType::TY_STRUCT) && !actualType.isTriviallyCopyable(baseNode) {
-                copyCtor = this.matchCopyCtor(actualType, baseNode);
-                // Insert anonymous symbol to track the dtor call of the copy
-                ASTNode* argNode = getASTNode(argLst.args.get(argIdx));
-                this.currentScope.symbolTable.insertAnonymous(actualType, argNode, ULONG_MAX_VALUE);
+            const QualType actualValueType = actualType.removeReferenceWrapper();
+            if expectedType.isOwnedByValueParam(baseNode) && actualValueType.is(SuperType::TY_STRUCT) {
+                copyCtor = this.matchCopyCtor(actualValueType, baseNode);
+                // The called function destructs its by-value params. External functions do not, so the caller has to destruct
+                // the copy instead. Insert an anonymous symbol to track the dtor call of the copy in this case.
+                const bool isExtCallee = callee != nil<const Function*> && callee.declNode.kind == ASTNodeKind::EXT_DECL;
+                if isExtCallee {
+                    ASTNode* argNode = getASTNode(argLst.args.get(argIdx));
+                    this.currentScope.symbolTable.insertAnonymous(actualValueType, argNode, ULONG_MAX_VALUE);
+                }
             }
 
             argInfos.pushBack(ArgInfo{copyCtor});
@@ -5857,6 +5879,9 @@ f<bool> TypeChecker.checkBuiltinNewCtor(ASTFctCallNode* node, const QualType& te
             this.softError(baseNode, SemanticErrorType::NO_MATCHING_CTOR_FOUND, "No matching copy constructor found for type '" + templateType.getName(false) + "'");
             return false;
         }
+    }
+    if ctor != nil<Function*> {
+        this.matchCopyCtorsForOwnedParams(ctor, baseNode);
     }
     data.callee = ctor;
     return true;

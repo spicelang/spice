@@ -70,7 +70,6 @@ define dso_local noundef i32 @main() #0 {
   %25 = select i1 %24, i32 9, i32 12
   %26 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %25)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
-  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %arg.copy)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %1)
   ret i32 0
 }
@@ -132,12 +131,13 @@ define internal i16 @_Z15lambda.L13C49.06Strings(%struct.String %0, i16 %1, ptr 
   %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.3, ptr noundef %4, i32 noundef %6)
   %8 = load i16, ptr %b, align 2
   %9 = xor i16 %8, -1
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %str)
   ret i16 %9
 }
 
-declare void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24), ptr)
-
 declare void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24))
+
+declare void @_ZN6String4ctorERK6String(ptr noundef nonnull align 8 dereferenceable(24), ptr)
 
 attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 attributes #1 = { noinline nounwind optnone uwtable }
