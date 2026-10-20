@@ -5,15 +5,15 @@ import "std/type/any";
 import "std/data/vector";
 
 // Own imports
-import "bootstrap/compiler-pass";
-import "bootstrap/ast/abstract-ast-visitor-intf";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/global/global-resource-manager";
-import "bootstrap/source-file";
-import "bootstrap/linter/lint-finding";
-import "bootstrap/linter/rules/naming-convention-rule";
-import "bootstrap/linter/rules/too-many-parameters-rule";
-import "bootstrap/linter/rules/cyclomatic-complexity-rule";
+import "@/compiler-pass";
+import "@/ast/abstract-ast-visitor-intf";
+import "@/ast/ast-nodes";
+import "@/global/global-resource-manager";
+import "@/source-file";
+import "@/linter/lint-finding";
+import "@/linter/rules/naming-convention-rule";
+import "@/linter/rules/too-many-parameters-rule";
+import "@/linter/rules/cyclomatic-complexity-rule";
 
 /**
  * Runs all built-in lint rules over a fully type-checked AST in a single read-only traversal.

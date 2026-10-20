@@ -8,21 +8,21 @@ import "std/data/pair";
 import "std/math/hash";
 
 // Own imports
-import "bootstrap/exception/error-manager";
-import "bootstrap/exception/semantic-error";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/model/interface";
-import "bootstrap/model/function";
-import "bootstrap/model/generic-type";
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/typechecker/type-matcher";
-import "bootstrap/typechecker/function-manager";
-import "bootstrap/util/custom-hash-functions";
-import "bootstrap/util/lookup-cache";
-import "bootstrap/util/concurrency";
+import "@/exception/error-manager";
+import "@/exception/semantic-error";
+import "@/ast/ast-nodes";
+import "@/model/interface";
+import "@/model/function";
+import "@/model/generic-type";
+import "@/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/scope";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/typechecker/type-matcher";
+import "@/typechecker/function-manager";
+import "@/util/custom-hash-functions";
+import "@/util/lookup-cache";
+import "@/util/concurrency";
 
 // Type aliases
 public type InterfaceManifestationList alias UnorderedMap</*mangledName=*/String, Interface>;

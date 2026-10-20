@@ -7,11 +7,11 @@ import "std/text/analysis";
 import "std/io/filepath";
 
 // Own imports
-import "bootstrap/exception/fatal-error";
-import "bootstrap/lexer/token";
-import "bootstrap/reader/reader";
-import "bootstrap/reader/code-loc";
-import "bootstrap/exception/lexer-error";
+import "@/exception/fatal-error";
+import "@/lexer/token";
+import "@/reader/reader";
+import "@/reader/code-loc";
+import "@/exception/lexer-error";
 
 public type Lexer struct {
     Reader reader

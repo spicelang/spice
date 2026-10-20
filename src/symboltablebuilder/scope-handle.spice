@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Own imports
-import "bootstrap/compiler-pass";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/irgenerator/ir-generator";
+import "@/compiler-pass";
+import "@/ast/ast-nodes";
+import "@/symboltablebuilder/scope";
+import "@/irgenerator/ir-generator";
 
 /**
  * This struct is used to change the current scope to a child scope and change it back to the parent scope when the handle

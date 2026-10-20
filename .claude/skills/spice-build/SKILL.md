@@ -37,12 +37,9 @@ python build.py --build-type Debug
 python build.py --output build/spice-dev --compiler build/spice
 ```
 
-The build passes `--ignore-cache` to the stage0 compiler, whose compilation cache can go stale when only an imported file
-changes (issue #1417). Compilers built from `src/` have no compilation cache. An optimized LTO build of the compiler takes
-a few minutes.
+An optimized LTO build of the compiler takes a few minutes.
 
-To build by hand, set `SPICE_STD_DIR=<repo>/std` and `SPICE_BOOTSTRAP_DIR=<repo>/src` and run e.g.
-`build/stage0/spice build -O0 --ignore-cache --output build/spice src/main.spice`.
+To build by hand, set `SPICE_STD_DIR=<repo>/std` and run e.g. `build/stage0/spice build -O0 --output build/spice src/main.spice`.
 
 ## Bootstrap to a fixed point
 

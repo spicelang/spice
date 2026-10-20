@@ -4,7 +4,7 @@
 import "std/os/os";
 
 // Own imports
-import "bootstrap/util/compile-progress";
+import "@/util/compile-progress";
 
 // Link external functions
 ext p exit(int /*status*/);

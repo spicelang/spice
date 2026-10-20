@@ -1,10 +1,10 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Own imports
-import "bootstrap/global/global-resource-manager";
-import "bootstrap/driver";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/source-file";
+import "@/global/global-resource-manager";
+import "@/driver";
+import "@/symboltablebuilder/scope";
+import "@/source-file";
 
 public type CompilerPass struct {
     public GlobalResourceManager& resourceManager

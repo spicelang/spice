@@ -6,10 +6,10 @@ import "std/text/stringstream";
 import "std/type/type-conversion";
 
 // Own imports
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/global/type-name-disambiguator";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/scope";
+import "@/global/type-name-disambiguator";
 
 // Constants
 public const unsigned long ARRAY_SIZE_UNKNOWN = 0ul;

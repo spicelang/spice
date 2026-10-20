@@ -84,31 +84,21 @@ jobs:
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
         run: |
           # Back the TPDE backend of the compiler with the TPDE libraries, that setup-deps.py built. The flags have the layout
           # the compiler derives from a std that ships them (see getStdTPDEFlags).
           # In a static link, an archive only resolves references from objects before it, and the TPDE archives come
           # after the -lstdc++ of the LLVM bindings, so libstdc++ and libm go into the TPDE group as well.
           export TPDE_FLAGS="-I$PWD/tpde/include -Wl,--start-group $(printf '%s ' "$PWD"/tpde/lib/{libtpde_llvm,libtpde,libfadec,libdisarm64,libspdlog}.a)-lstdc++ -lm -Wl,--end-group"
-          # Two-stage build for Full RELRO: the pinned stage0 compiler predates the RELRO linker flags, so what it links is
-          # not hardened. The stage1 compiler built from this checkout links with '-z relro -z now' and builds the released
-          # compiler. Stage1 lives outside the artifact upload globs.
-          build_compiler() {
-            # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner. The extra args in $3
-            # bypass the compilation cache of the stage0 compiler, which compilers built from this checkout do not have
-            "$1" build -O3 -lto --static $3 \
-              --build-var SPICE_VERSION="${{ github.ref_name }}" \
-              --build-var SPICE_GIT_HASH="${{ github.sha }}" \
-              --build-var SPICE_BUILT_BY="ghactions" \
-              --build-var SPICE_TARGET_OS="linux" \
-              --build-var SPICE_TARGET_ARCH="${{ matrix.target-arch }}" \
-              --output "$2" \
-              ../src/main.spice
-          }
-          mkdir -p stage1
-          build_compiler ./stage0/spice stage1/spice --ignore-cache
-          build_compiler ./stage1/spice spice
+          # Linked statically, so it runs without the libstdc++ of the GCC installed on this runner
+          ./stage0/spice build -O3 -lto --static \
+            --build-var SPICE_VERSION="${{ github.ref_name }}" \
+            --build-var SPICE_GIT_HASH="${{ github.sha }}" \
+            --build-var SPICE_BUILT_BY="ghactions" \
+            --build-var SPICE_TARGET_OS="linux" \
+            --build-var SPICE_TARGET_ARCH="${{ matrix.target-arch }}" \
+            --output spice \
+            ../src/main.spice
           chmod +x spice
           ./spice --version
 
@@ -228,9 +218,8 @@ jobs:
           # Forward slashes, like in the paths that the CI workflow hands to the compiler build
           $workspace = "${{ github.workspace }}" -replace '\\', '/'
           $env:SPICE_STD_DIR = "$workspace/std"
-          $env:SPICE_BOOTSTRAP_DIR = "$workspace/src"
           # Linked statically, so it runs without the MinGW runtime DLLs
-          ./stage0/spice.exe build -O3 -lto --static --ignore-cache `
+          ./stage0/spice.exe build -O3 -lto --static `
             --build-var SPICE_VERSION="${{ github.ref_name }}" `
             --build-var SPICE_GIT_HASH="${{ github.sha }}" `
             --build-var SPICE_BUILT_BY="ghactions" `
@@ -301,10 +290,9 @@ jobs:
         working-directory: build
         env:
           SPICE_STD_DIR: ${{ github.workspace }}/std
-          SPICE_BOOTSTRAP_DIR: ${{ github.workspace }}/src
         run: |
           # Linked dynamically, macOS does not support static executables
-          ./stage0/spice build -O3 -lto --ignore-cache \
+          ./stage0/spice build -O3 -lto \
             --build-var SPICE_VERSION="${{ github.ref_name }}" \
             --build-var SPICE_GIT_HASH="${{ github.sha }}" \
             --build-var SPICE_BUILT_BY="ghactions" \

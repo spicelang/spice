@@ -17,30 +17,30 @@ import "std/text/format";
 import "std/type/type-conversion";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/global/runtime-module-manager";
-import "bootstrap/global/type-name-disambiguator";
-import "bootstrap/global/type-registry";
-import "bootstrap/exception/error-manager";
-import "bootstrap/linker/external-linker-interface";
-import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
-import "bootstrap/model/interface";
-import "bootstrap/model/struct";
-import "bootstrap/model/union";
-import "bootstrap/typechecker/function-manager";
-import "bootstrap/typechecker/interface-manager";
-import "bootstrap/typechecker/struct-manager";
-import "bootstrap/typechecker/union-manager";
-import "bootstrap/util/lookup-cache";
-import "bootstrap/util/compile-progress";
-import "bootstrap/reader/code-loc";
-import "bootstrap/util/memory";
-import "bootstrap/util/block-allocator";
-import "bootstrap/util/concurrency";
-import "bootstrap/source-file";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/driver";
-import "bootstrap/util/test-util";
+import "@/ast/ast-nodes";
+import "@/global/runtime-module-manager";
+import "@/global/type-name-disambiguator";
+import "@/global/type-registry";
+import "@/exception/error-manager";
+import "@/linker/external-linker-interface";
+import "@/model/function" as model; // Aliased, because Function clashes with llvm::Function
+import "@/model/interface";
+import "@/model/struct";
+import "@/model/union";
+import "@/typechecker/function-manager";
+import "@/typechecker/interface-manager";
+import "@/typechecker/struct-manager";
+import "@/typechecker/union-manager";
+import "@/util/lookup-cache";
+import "@/util/compile-progress";
+import "@/reader/code-loc";
+import "@/util/memory";
+import "@/util/block-allocator";
+import "@/util/concurrency";
+import "@/source-file";
+import "@/symboltablebuilder/scope";
+import "@/driver";
+import "@/util/test-util";
 
 // Constants
 public const string MAIN_FILE_NAME = "root";

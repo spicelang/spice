@@ -6,8 +6,8 @@ description: Orientation map of the Spice compiler codebase — the compilation 
 # Spice compiler architecture
 
 The compiler is self-hosted: it is written in Spice and lives in `src/`. It is built by a released Spice compiler (the
-stage0 compiler, see the `spice-build` skill). Imports of compiler files use the `bootstrap/` prefix (e.g.
-`import "bootstrap/ast/ast-nodes";`), which resolves via `SPICE_BOOTSTRAP_DIR` to `src/`. The compiler emits LLVM IR through
+stage0 compiler, see the `spice-build` skill). Imports of compiler files use the `@/` prefix (e.g.
+`import "@/ast/ast-nodes";`), which resolves relative to the main source file `src/main.spice`. The compiler emits LLVM IR through
 the LLVM C API bindings of the std (`std/bindings/llvm`).
 
 ## Entry & orchestration

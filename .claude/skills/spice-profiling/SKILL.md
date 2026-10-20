@@ -37,8 +37,7 @@ Building the compiler by hand (from the repo root, with `LLVM_LIB_DIR`/`LLVM_INC
 `spice-build`):
 
 ```sh
-SPICE_STD_DIR=$PWD/std SPICE_BOOTSTRAP_DIR=$PWD/src \
-  build/stage0/spice build -O2 -g --native-features --ignore-cache --output build/spice-prof src/main.spice
+SPICE_STD_DIR=$PWD/std build/stage0/spice build -O2 -g --native-features --output build/spice-prof src/main.spice
 ```
 
 `--native-features` tunes the code for the host CPU (the default is a generic CPU, like the release).
@@ -119,7 +118,7 @@ hyperfine --warmup 3 \
 hyperfine --warmup 3 '/tmp/prog <args>'      # emitted binary
 ```
 
-Always `--warmup` (filesystem cache), pass `--ignore-cache` to compilers up to 0.29.x (otherwise their compilation cache
+Always `--warmup` (filesystem cache), pass `--ignore-cache` to compilers up to 0.29.0 (otherwise their compilation cache
 skips the work) and benchmark an optimized compiler — an `-O0` build's numbers are not comparable to anything shipped.
 
 ## 5. Choosing a tool

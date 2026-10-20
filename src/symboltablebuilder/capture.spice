@@ -4,9 +4,9 @@
 import "std/text/json/json-value";
 
 // Own imports
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/util/common-util";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/util/common-util";
 
 public type CapturePassMode enum {
     BY_VALUE,

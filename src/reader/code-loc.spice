@@ -8,7 +8,7 @@ import "std/text/string-ext";
 import "std/os/os";
 
 // Own imports
-import "bootstrap/util/test-util";
+import "@/util/test-util";
 
 // Path of the root source file of the compilation. A CodeLoc only carries the path of its source file, so the path of the root
 // source file is registered here by the GlobalResourceManager, when it creates the root source file.

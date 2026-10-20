@@ -76,9 +76,8 @@ keep them.
 
 ## Environment
 
-The runner sets `SPICE_STD_DIR` and `SPICE_BOOTSTRAP_DIR` (for the legacy `bootstrap/` import prefix of the compiler
-sources) to the checkout itself and derives `LLVM_LIB_DIR` / `LLVM_INCLUDE_DIRS` (needed to link
-the LLVM bindings) from `LLVM_DIR` or `llvm-config`, unless set. The TPDE test cases
+The runner sets `SPICE_STD_DIR` to the std of the checkout itself and derives `LLVM_LIB_DIR` / `LLVM_INCLUDE_DIRS`
+(needed to link the LLVM bindings) from `LLVM_DIR` or `llvm-config`, unless set. The TPDE test cases
 need the TPDE libraries: `TPDE_FLAGS`, or on Linux the ones `python setup-deps.py --tpde` installs into
 `std/bindings/tpde/`, where the compiler finds them on its own. Without them, the TPDE test cases are skipped
 (`TPDE_FLAGS=` disables them).

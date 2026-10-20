@@ -5,12 +5,12 @@ import "std/io/filepath";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
-import "bootstrap/exception/fatal-error";
-import "bootstrap/compiler-pass";
-import "bootstrap/source-file";
-import "bootstrap/exception/compiler-error";
-import "bootstrap/global/global-resource-manager";
-import "bootstrap/objectemitter/abstract-object-emitter";
+import "@/exception/fatal-error";
+import "@/compiler-pass";
+import "@/source-file";
+import "@/exception/compiler-error";
+import "@/global/global-resource-manager";
+import "@/objectemitter/abstract-object-emitter";
 
 /**
  * Emits the object file or the assembly code of a module with the LLVM codegen backend

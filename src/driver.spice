@@ -20,11 +20,11 @@ import "std/bindings/llvm/llvm" as llvm;
 import "std/bindings/tpde/tpde" as tpde;
 
 // Own imports
-import "bootstrap/exception/fatal-error";
+import "@/exception/fatal-error";
 import "util/common-util";
-import "bootstrap/exception/cli-error";
-import "bootstrap/util/compiler-warning";
-import "bootstrap/util/system-util";
+import "@/exception/cli-error";
+import "@/util/compiler-warning";
+import "@/util/system-util";
 
 // Constants
 public const string TARGET_UNKNOWN = "unknown";

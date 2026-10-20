@@ -5,16 +5,16 @@ import "std/data/unordered-map";
 import "std/data/vector";
 
 // Own imports
-import "bootstrap/exception/error-manager";
-import "bootstrap/model/struct-base";
-import "bootstrap/exception/semantic-error";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/model/generic-type";
-import "bootstrap/model/struct";
-import "bootstrap/model/interface";
-import "bootstrap/model/union";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/qual-type";
+import "@/exception/error-manager";
+import "@/model/struct-base";
+import "@/exception/semantic-error";
+import "@/ast/ast-nodes";
+import "@/model/generic-type";
+import "@/model/struct";
+import "@/model/interface";
+import "@/model/union";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/qual-type";
 
 /**
  * Helper functions for FunctionManager, StructManager, InterfaceManager and UnionManager to match generic types.

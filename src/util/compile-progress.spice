@@ -8,7 +8,7 @@ import "std/data/vector";
 import "std/time/delay";
 
 // Own imports
-import "bootstrap/driver";
+import "@/driver";
 
 // Link external functions
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);

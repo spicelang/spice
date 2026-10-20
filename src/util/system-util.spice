@@ -12,11 +12,11 @@ import "std/io/filepath";
 import "std/iterator/array-iterator";
 
 // Own imports
-import "bootstrap/exception/fatal-error";
-import "bootstrap/driver";
-import "bootstrap/exception/compiler-error";
-import "bootstrap/exception/linker-error";
-import "bootstrap/util/test-util";
+import "@/exception/fatal-error";
+import "@/driver";
+import "@/exception/compiler-error";
+import "@/exception/linker-error";
+import "@/util/test-util";
 
 public type ExecResult struct {
     public String output
@@ -430,24 +430,6 @@ public p exportStdTPDEFlags(const CliOptions& cliOptions) {
         const bool exported = setEnv("TPDE_FLAGS", flags.getRaw());
         assert exported;
     }
-}
-
-/**
- * Retrieve the dir, where the compiler sources live, from the env var SPICE_BOOTSTRAP_DIR.
- * ToDo: Remove, once the stage0 compiler resolves the '@/' import prefix and the compiler sources do not use the legacy
- *       'bootstrap/' prefix anymore.
- *
- * @return Compiler source directory
- */
-public f<FilePath> getCompilerSourceDir() {
-    Result<string> value = getEnv("SPICE_BOOTSTRAP_DIR");
-    if value.isOk() {
-        result = FilePath(value.unwrap());
-        if result.exists() { return; }
-    }
-    const CompilerError error = CompilerError(CompilerErrorType::COMPILER_SOURCES_NOT_FOUND, "Compiler sources could not be found. Check if the env var SPICE_BOOTSTRAP_DIR exists");
-    abortWithError(error.getMessage());
-    return FilePath(); // Unreachable, abortWithError exits the process
 }
 
 /**

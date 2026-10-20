@@ -5,9 +5,9 @@ import "std/data/vector";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
-import "bootstrap/irgenerator/ir-generator";
-import "bootstrap/global/type-registry";
-import "bootstrap/symboltablebuilder/qual-type";
+import "@/irgenerator/ir-generator";
+import "@/global/type-registry";
+import "@/symboltablebuilder/qual-type";
 
 /**
  * Generates the metadata, that is attached to instructions (branch weights, type metadata and TBAA metadata).
