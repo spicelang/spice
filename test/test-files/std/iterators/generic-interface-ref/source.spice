@@ -7,7 +7,9 @@ type T dyn;
 
 // A generic free function taking a container through its IIterable<T> interface reference, rather than through a
 // concrete container type. Exercises IIterable<T>.getIterator<T>() being substantiated for a concrete T on the
-// interface's own (bodyless) scope, and calling it through an interface reference cross-file.
+// interface's own (bodyless) scope, and calling it through an interface reference cross-file. The call is rejected,
+// because getIterator() returns the IIterator<T> interface by value, which a call through an interface cannot return
+// without losing the fields of the iterator struct. The substantiation and the visibility check run before.
 p exerciseGetIterator<T>(IIterable<T>& iterable) {
     const IIterator<T>& _it = iterable.getIterator();
 }

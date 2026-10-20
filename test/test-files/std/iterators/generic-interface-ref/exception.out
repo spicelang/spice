@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:14:31:
+Interface returned by value: The method 'getIterator' returns the interface 'IIterator<int>' by value, so it cannot be called through the interface 'IIterable<int>'. Call it on the struct, that implements the interface, instead
+
+14  IIterator<T>& _it = iterable.getIterator();
+                        ^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,11 @@
+import "std/data/vector";
+import "std/iterator/iterable";
+import "std/iterator/iterator";
+
+f<int> main() {
+    Vector<int> v;
+    v.pushBack(1);
+    IIterable<int>& iterable = v;
+    const IIterator<int>& it = iterable.getIterator();
+    printf("%d\n", it.get());
+}
