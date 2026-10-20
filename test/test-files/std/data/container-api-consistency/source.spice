@@ -1,5 +1,5 @@
-// Checks that the containers share one size type and accept unsigned int as well as unsigned long for every index and
-// count parameter. The plain int literals below bind to the unsigned int overloads.
+// Checks that the containers share one size type and the front()/back() accessor names, and accept unsigned int as well as
+// unsigned long for every index and count parameter. The plain int literals below bind to the unsigned int overloads.
 import "std/data/vector";
 import "std/data/deque";
 import "std/data/queue";
@@ -48,6 +48,7 @@ f<int> main() {
     vector.removeAt(0ul);
     assert vector.getSize() == 1ul;
     assert vector.get(0) == 2;
+    assert vector.front() == 2 && vector.back() == 2;
 
     // Deque, Queue and PriorityQueue: reserve with both count types
     deque.reserve(4);
@@ -74,6 +75,7 @@ f<int> main() {
     linkedList.removeAt(0ul);
     assert linkedList.getSize() == 2ul;
     assert linkedList.get(0) == 1 && linkedList.get(1) == 2;
+    assert linkedList.front() == 1 && linkedList.back() == 2;
 
     // DoublyLinkedList: insertAt, get and removeAt with both index types
     doublyLinkedList.pushBack(0);
@@ -87,6 +89,7 @@ f<int> main() {
     doublyLinkedList.removeAt(0ul);
     assert doublyLinkedList.getSize() == 2ul;
     assert doublyLinkedList.get(0) == 1 && doublyLinkedList.get(1) == 2;
+    assert doublyLinkedList.front() == 1 && doublyLinkedList.back() == 2;
 
     printf("All assertions passed\n");
 }

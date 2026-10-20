@@ -9,8 +9,8 @@ f<int> main() {
     l.pushBack(3);
     l.pushFront(1);
     assert l.getSize() == 3ul;
-    assert l.getFront() == 1;
-    assert l.getBack() == 3;
+    assert l.front() == 1;
+    assert l.back() == 3;
     assert l.get(0ul) == 1;
     assert l.get(1ul) == 2;
     assert l.get(2ul) == 3;
@@ -30,11 +30,11 @@ f<int> main() {
 
     l.remove(99);
     assert l.getSize() == 2ul;
-    assert l.getFront() == 1;
-    assert l.getBack() == 3;
+    assert l.front() == 1;
+    assert l.back() == 3;
 
     l.removeFront();
-    assert l.getFront() == 3;
+    assert l.front() == 3;
     l.removeBack();
     assert l.isEmpty();
 

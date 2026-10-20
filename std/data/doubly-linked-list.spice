@@ -273,7 +273,7 @@ public f<T&> DoublyLinkedList.get(unsigned int idx) {
  *
  * @return Reference to the first item
  */
-public inline f<T&> DoublyLinkedList.getFront() {
+public inline f<T&> DoublyLinkedList.front() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.tail.value;
 }
@@ -283,7 +283,7 @@ public inline f<T&> DoublyLinkedList.getFront() {
  *
  * @return Reference to the last item
  */
-public inline f<T&> DoublyLinkedList.getBack() {
+public inline f<T&> DoublyLinkedList.back() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.head.value;
 }
