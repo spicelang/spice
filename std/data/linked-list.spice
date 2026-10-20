@@ -297,7 +297,7 @@ public inline f<T&> LinkedList.get(unsigned int idx) {
  *
  * @return Reference to the first item
  */
-public inline f<T&> LinkedList.getFront() {
+public inline f<T&> LinkedList.front() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.tail.value;
 }
@@ -307,7 +307,7 @@ public inline f<T&> LinkedList.getFront() {
  *
  * @return Reference to the last item
  */
-public inline f<T&> LinkedList.getBack() {
+public inline f<T&> LinkedList.back() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
     return this.head.value;
 }

@@ -5,8 +5,8 @@ f<int> main() {
     LinkedList<int> l1;
     for int i = 0; i < 500; i++ { l1.pushBack(i); }
     assert l1.getSize() == 500ul;
-    assert l1.getFront() == 0;
-    assert l1.getBack() == 499;
+    assert l1.front() == 0;
+    assert l1.back() == 499;
     for unsigned long i = 0ul; i < 500ul; i++ {
         assert l1.get(i) == cast<int>(i);
     }
@@ -15,8 +15,8 @@ f<int> main() {
     LinkedList<int> l2;
     for int i = 0; i < 200; i++ { l2.pushFront(i); }
     assert l2.getSize() == 200ul;
-    assert l2.getFront() == 199;
-    assert l2.getBack() == 0;
+    assert l2.front() == 199;
+    assert l2.back() == 0;
     for unsigned long i = 0ul; i < 200ul; i++ {
         assert l2.get(i) == 199 - cast<int>(i);
     }
@@ -74,8 +74,8 @@ f<int> main() {
     assert l6.isEmpty();
     for int i = 100; i < 150; i++ { l6.pushBack(i); }
     assert l6.getSize() == 50ul;
-    assert l6.getFront() == 100;
-    assert l6.getBack() == 149;
+    assert l6.front() == 100;
+    assert l6.back() == 149;
 
     // 8. Iteration via foreach
     LinkedList<int> l7;
