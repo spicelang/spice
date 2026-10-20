@@ -556,11 +556,13 @@ jobs:
         run: bash .github/scripts/install-komac.sh
 
       # Komac downloads the installer to fill in its hash, product code and so on, and opens the PR against
-      # microsoft/winget-pkgs from a fork of the token owner. It needs a classic token with the 'public_repo' scope,
-      # fine-grained tokens cannot open the PR.
+      # microsoft/winget-pkgs from the spicelang/winget-pkgs fork (KOMAC_FORK_OWNER, the token owner's fork otherwise).
+      # It needs a classic token with the 'public_repo' scope whose owner can push to that fork, fine-grained tokens
+      # cannot open the PR.
       - name: Submit manifest to winget-pkgs
         env:
           GITHUB_TOKEN: ${{ secrets.CR_PAT }}
+          KOMAC_FORK_OWNER: spicelang
           VERSION: ${{ github.ref_name }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
