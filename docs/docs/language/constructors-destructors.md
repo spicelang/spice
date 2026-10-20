@@ -125,7 +125,9 @@ p ExampleStruct.dtor() {
 
 A function, that takes a struct with a copy constructor by value, gets its own copy of the argument, even if the argument is a
 reference. The function owns this copy: it is destructed when the parameter goes out of scope at the end of the function,
-not when the caller's scope ends. Changes to the parameter therefore never affect the caller's value.
+not when the caller's scope ends. Changes to the parameter therefore never affect the caller's value. A temporary, like the
+result of a constructor or function call, is moved into the parameter instead of copied, since the caller has no further use
+for it.
 
 ```spice
 p consume(Buffer buffer) {

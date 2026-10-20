@@ -1,0 +1,95 @@
+import "std/data/vector";
+
+// Generic type definitions
+type T dyn;
+
+// Temporaries, that are passed to by-value params of non-trivially copyable types, are moved into the param instead of copied.
+// The called function destructs them, so the caller must not destruct them anymore.
+type Tracked struct {
+    int id
+    Vector<int> data
+}
+
+p Tracked.ctor(int id) {
+    this.id = id;
+    this.data.pushBack(id);
+    printf("ctor %d\n", this.id);
+}
+
+p Tracked.ctor(const Tracked& other) {
+    this.id = other.id * 10;
+    this.data = other.data;
+    printf("copy %d -> %d\n", other.id, this.id);
+}
+
+p Tracked.dtor() {
+    printf("dtor %d (data: %d)\n", this.id, this.data.getSize());
+}
+
+p Tracked.absorb(Tracked other) {
+    printf("absorb %d\n", other.id);
+}
+
+f<Tracked> make(int id) {
+    return Tracked(id);
+}
+
+f<Tracked> operator+(const Tracked& a, const Tracked& b) {
+    return Tracked(a.id + b.id);
+}
+
+p consume(Tracked t) {
+    for int i = 0; i < 30; i++ { t.data.pushBack(i); } // Grows the moved temporary
+    printf("consume %d\n", t.id);
+}
+
+p consumeTwo(Tracked a, Tracked b) {
+    printf("consumeTwo %d %d\n", a.id, b.id);
+}
+
+f<bool> consumeAndCheck(Tracked t) {
+    printf("consumeAndCheck %d\n", t.id);
+    return t.id > 0;
+}
+
+p generic<T>(T value) {
+    printf("generic %d\n", value.id);
+}
+
+f<int> main() {
+    Tracked a = Tracked(1);
+    Tracked b = Tracked(2);
+    printf("== ctor call\n");
+    consume(Tracked(3));
+    printf("== function result\n");
+    consume(make(4));
+    printf("== operator result\n");
+    consume(a + b);
+    printf("== ternary of temporaries\n");
+    const bool cond = true;
+    consume(cond ? Tracked(5) : Tracked(6));
+    printf("== ternary of lvalues (copied)\n");
+    consume(cond ? a : b);
+    printf("== lvalue (copied)\n");
+    consume(a);
+    printf("== two temporaries\n");
+    consumeTwo(Tracked(7), Tracked(8));
+    printf("== in condition\n");
+    if consumeAndCheck(Tracked(9)) {
+        printf("condition true\n");
+    }
+    printf("== method\n");
+    a.absorb(Tracked(10));
+    printf("== generic\n");
+    generic<Tracked>(Tracked(11));
+    printf("== lambda\n");
+    p(Tracked) lambda = p(Tracked t) {
+        printf("lambda %d\n", t.id);
+    };
+    lambda(Tracked(12));
+    printf("== loop\n");
+    for int i = 13; i < 15; i++ {
+        consume(Tracked(i));
+    }
+    printf("== end\n");
+}

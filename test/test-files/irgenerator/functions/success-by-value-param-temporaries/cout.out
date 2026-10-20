@@ -1,0 +1,59 @@
+ctor 1
+ctor 2
+== ctor call
+ctor 3
+consume 3
+dtor 3 (data: 31)
+== function result
+ctor 4
+consume 4
+dtor 4 (data: 31)
+== operator result
+ctor 3
+consume 3
+dtor 3 (data: 31)
+== ternary of temporaries
+ctor 5
+consume 5
+dtor 5 (data: 31)
+== ternary of lvalues (copied)
+copy 1 -> 10
+consume 10
+dtor 10 (data: 31)
+== lvalue (copied)
+copy 1 -> 10
+consume 10
+dtor 10 (data: 31)
+== two temporaries
+ctor 7
+ctor 8
+consumeTwo 7 8
+dtor 8 (data: 1)
+dtor 7 (data: 1)
+== in condition
+ctor 9
+consumeAndCheck 9
+dtor 9 (data: 1)
+condition true
+== method
+ctor 10
+absorb 10
+dtor 10 (data: 1)
+== generic
+ctor 11
+generic 11
+dtor 11 (data: 1)
+== lambda
+ctor 12
+lambda 12
+dtor 12 (data: 1)
+== loop
+ctor 13
+consume 13
+dtor 13 (data: 31)
+ctor 14
+consume 14
+dtor 14 (data: 31)
+== end
+dtor 2 (data: 1)
+dtor 1 (data: 1)
