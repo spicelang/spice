@@ -93,7 +93,7 @@ f<LookupCache<Union>*> getActiveUnionLookupCache() {
 
 /**
  * Check if there is a union in this scope, fulfilling all given requirements and if found, return it.
- * If more than one union matches the requirement, this is reported (see ToDo below).
+ * If more than one union matches the requirement, this is reported as an ambiguity error.
  *
  * @param matchScope Scope to match against
  * @param qt Union name requirement

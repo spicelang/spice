@@ -7044,10 +7044,9 @@ p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
         // Methods, that are inherited from an interface default method, are implemented by the default method
         llvm::Function llvmFunc = virtualMethod.isInheritedDefaultMethod() ? this.getOrDeclareDefaultMethod(virtualMethod.defaultMethod) : this.getLLVMFunction(virtualMethod);
         assert spiceStruct.scope.scopeType == ScopeType::INTERFACE || !llvmFunc.isNull();
-        // Virtual calls expect the return type of the interface method, so methods with another return type need a thunk
-        if !llvmFunc.isNull() && !virtualMethod.virtualReturnType.is(SuperType::TY_DYN) {
-            llvmFunc = this.getOrCreateCovariantReturnThunk(virtualMethod, llvmFunc);
-        }
+        // A method may return a struct, where the interface method returns an interface, which the struct implements. Its
+        // return type does not match the one of the interface method, but it is never called through the VTable: the type
+        // checker rejects calls through an interface, that return an interface by value (INTERFACE_RETURNED_BY_VALUE)
         arrayValues.pushBack(!llvmFunc.isNull() ? llvmFunc.asValue() : llvm::getNullValue(ptrTy));
     }
 
@@ -7147,77 +7146,6 @@ public f<bool> isExportedFunction(const model::Function* function) {
     }
     const CompileTimeValue testAttrValue = attrs.attrLst.getAttrValueByName(testAttrName);
     return testAttrValue.getBoolValue();
-}
-
-f<llvm::Function> IRGenerator.getOrCreateCovariantReturnThunk(const model::Function* method, llvm::Function target) {
-    // A struct method may implement an interface method, that returns an interface, by returning a struct, which implements
-    // this interface. Virtual calls expect the interface to be returned, which might be returned in another way than the
-    // struct. Therefore, the VTable points to a thunk, that calls the method and returns the interface part of the struct.
-    const String thunkName = target.getName() + ".covthunk";
-    const llvm::Function existing = this.module.getFunction(thunkName.getRaw());
-    if !existing.isNull() {
-        return existing;
-    }
-
-    // Build the thunk signature: the target's params with the return type of the interface method
-    const QualType& returnType = method.returnType;
-    const QualType& virtualReturnType = method.virtualReturnType;
-    const unsigned int targetArgOffset = this.getArgOffset(returnType);
-    const llvm::Type targetType = target.getFunctionType();
-    const Vector<llvm::Type> targetParamTypes = targetType.getParamTypes();
-    Vector<llvm::Type> paramTypes;
-    for unsigned long i = cast<unsigned long>(targetArgOffset); i < targetParamTypes.getSize(); i++ {
-        paramTypes.pushBack(targetParamTypes.get(i));
-    }
-    const llvm::Type thunkType = this.getFunctionType(virtualReturnType, paramTypes);
-    const llvm::Function thunk = this.module.createFunction(thunkType, llvm::LLVMLinkage::PrivateLinkage, thunkName.getRaw());
-    this.addCommonFctAttrs(thunk);
-    const ReturnABIInfo returnABI = this.getReturnABIInfo(virtualReturnType);
-    if returnABI.isIndirect() {
-        this.addSRetParamAttrs(thunk, returnABI.memoryType);
-    }
-
-    // Save insert markers, because the thunk body might be emitted in the middle of generating another function
-    const llvm::BasicBlock bOrig = this.builder.getInsertBlock();
-    const llvm::BasicBlock allocaInsertBlockOrig = this.allocaInsertBlock;
-    const llvm::Value allocaInsertInstOrig = this.allocaInsertInst;
-    const bool blockAlreadyTerminatedOrig = this.blockAlreadyTerminated;
-    const llvm::Metadata debugLocOrig = this.builder.getCurrentDebugLocation();
-    this.builder.setCurrentDebugLocation(llvm::Metadata{});
-
-    const llvm::BasicBlock bEntry = this.createBlock(String("entry"));
-    this.switchToBlock(bEntry, thunk);
-    this.allocaInsertBlock = bEntry;
-    this.allocaInsertInst = llvm::Value();
-
-    // Forward all arguments except the sret pointer of the thunk
-    const unsigned int thunkArgOffset = this.getArgOffset(virtualReturnType);
-    Vector<llvm::Value> fwdArgs;
-    fwdArgs.reserve(paramTypes.getSize());
-    for unsigned int i = 0; i < cast<unsigned int>(paramTypes.getSize()); i++ {
-        fwdArgs.pushBack(thunk.getArg(thunkArgOffset + i));
-    }
-    llvm::Value resultAddr;
-    const llvm::Value call = this.insertCall(target, fwdArgs, returnType, resultAddr);
-    if resultAddr.isNull() {
-        resultAddr = this.insertAlloca(call.getType());
-        this.insertStore(call, resultAddr);
-    }
-
-    // Return the interface part of the returned struct
-    const llvm::Value interfacePtr = this.getUpcastedStructPtr(resultAddr, virtualReturnType, returnType);
-    this.insertReturn(this.insertLoad(virtualReturnType.toLLVMType(this.sourceFile), interfacePtr));
-
-    // Restore insert markers
-    if !bOrig.isNull() {
-        this.builder.setInsertPoint(bOrig);
-    }
-    this.builder.setCurrentDebugLocation(debugLocOrig);
-    this.blockAlreadyTerminated = blockAlreadyTerminatedOrig;
-    this.allocaInsertBlock = allocaInsertBlockOrig;
-    this.allocaInsertInst = allocaInsertInstOrig;
-
-    return thunk;
 }
 
 f<llvm::Type> IRGenerator.getVTableType(const StructBase* spiceStruct) {
