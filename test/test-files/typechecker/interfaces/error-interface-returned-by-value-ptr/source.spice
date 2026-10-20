@@ -1,0 +1,23 @@
+type Shape interface {
+    f<Shape> copy();
+}
+
+type Square struct : Shape {
+    int side
+}
+
+p Square.ctor(int side) {
+    this.side = side;
+}
+
+f<Square> Square.copy() {
+    return Square(this.side);
+}
+
+f<int> main() {
+    Square square = Square(4);
+    Square copied = square.copy(); // Allowed, since the call is not dispatched through the interface
+    Shape* shape = &square;
+    shape.copy();
+    printf("%d\n", copied.side);
+}

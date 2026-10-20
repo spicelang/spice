@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:21:5:
+Interface returned by value: The method 'copy' returns the interface 'Shape' by value, so it cannot be called through the interface 'Shape'. Call it on the struct, that implements the interface, instead
+
+21  shape.copy();
+    ^^^^^^^^^^^^

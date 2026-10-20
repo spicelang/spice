@@ -4537,6 +4537,13 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             }
         }
 
+        // A virtual call can only return the interface part of the struct, that the implementation of the method returns.
+        // All other fields of the struct would be lost, so calls through an interface must not return an interface by value
+        if data.thisType.is(SuperType::TY_INTERFACE) && callee.returnType.is(SuperType::TY_INTERFACE) {
+            const String message = String("The method '") + callee.name + "' returns the interface '" + callee.returnType.getName(false, true) + "' by value, so it cannot be called through the interface '" + data.thisType.getName(false, true) + "'. Call it on the struct, that implements the interface, instead";
+            return this.softErrorER(baseNode, SemanticErrorType::INTERFACE_RETURNED_BY_VALUE, message);
+        }
+
         // Mark direct calls to err<T>(...) as an error-return-trace origin site when tracing is enabled for this file.
         // err<T>'s own internal delegation to Result<T>'s error ctor is a distinct ctor call and is never matched here,
         // so this only ever fires for the user's own call site, not for that nested one.
