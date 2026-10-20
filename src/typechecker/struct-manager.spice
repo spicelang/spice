@@ -96,7 +96,7 @@ f<LookupCache<Struct>*> getActiveStructLookupCache() {
 
 /**
  * Check if there is a struct in this scope, fulfilling all given requirements and if found, return it.
- * If more than one struct matches the requirement, this is reported (see ToDo below).
+ * If more than one struct matches the requirement, this is reported as an ambiguity error.
  *
  * @param matchScope Scope to match against
  * @param qt Struct name requirement

@@ -97,7 +97,7 @@ f<LookupCache<Interface>*> getActiveInterfaceLookupCache() {
 
 /**
  * Check if there is an interface in this scope, fulfilling all given requirements and if found, return it.
- * If more than one interface matches the requirement, this is reported (see ToDo below).
+ * If more than one interface matches the requirement, this is reported as an ambiguity error.
  *
  * @param matchScope Scope to match against
  * @param reqName Interface name requirement

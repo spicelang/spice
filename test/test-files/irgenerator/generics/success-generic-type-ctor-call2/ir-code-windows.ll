@@ -13,7 +13,7 @@ source_filename = "source.spice"
 @_ZTV8TypeInfo = external global ptr
 @_ZTI9IIterableI20ExampleContainedTypeE = external global ptr
 @_ZTI19ExampleIterableType = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleIterableType, ptr @_ZTI9IIterableI20ExampleContainedTypeE }, align 8
-@_ZTV19ExampleIterableType = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI19ExampleIterableType, ptr @_ZN19ExampleIterableType11getIteratorEv.covthunk] }, align 8
+@_ZTV19ExampleIterableType = private unnamed_addr constant { [3 x ptr] } { [3 x ptr] [ptr null, ptr @_ZTI19ExampleIterableType, ptr @_ZN19ExampleIterableType11getIteratorEv] }, align 8
 @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE = private constant [22 x i8] c"19ExampleTypeIterator\00", align 4
 @_ZTI9IIteratorI20ExampleContainedTypeE = external global ptr
 @_ZTI19ExampleTypeIteratorI20ExampleContainedTypeE = private constant { ptr, ptr, ptr } { ptr getelementptr inbounds (ptr, ptr @_ZTV8TypeInfo, i64 2), ptr @_ZTS19ExampleTypeIteratorI20ExampleContainedTypeE, ptr @_ZTI9IIteratorI20ExampleContainedTypeE }, align 8
@@ -128,18 +128,6 @@ define dso_local noundef i32 @main() #3 {
   %eit = alloca %struct.ExampleIterableType, align 8
   call void @_ZN19ExampleIterableType4ctorEv(ptr noundef nonnull align 8 dereferenceable(8) %eit)
   ret i32 0
-}
-
-; Function Attrs: noinline nounwind optnone uwtable
-define private i64 @_ZN19ExampleIterableType11getIteratorEv.covthunk(ptr %0) #0 {
-entry:
-  %1 = alloca %struct.ExampleTypeIterator, align 8
-  %2 = alloca %interface.IIterator, align 8
-  call void @_ZN19ExampleIterableType11getIteratorEv(ptr dead_on_unwind writable sret(%struct.ExampleTypeIterator) align 8 %1, ptr %0)
-  %3 = load %interface.IIterator, ptr %1, align 8
-  store %interface.IIterator %3, ptr %2, align 8
-  %4 = load i64, ptr %2, align 8
-  ret i64 %4
 }
 
 attributes #0 = { noinline nounwind optnone uwtable }
