@@ -129,6 +129,16 @@ public p DoublyLinkedList.insertAt(unsigned long idx, const T& value) {
 }
 
 /**
+ * Inserts a new item at the given index
+ *
+ * @param idx Index to insert the new item
+ * @param value Value to insert
+ */
+public p DoublyLinkedList.insertAt(unsigned int idx, const T& value) {
+    this.insertAt(cast<unsigned long>(idx), value);
+}
+
+/**
  * Removes the first occurrence of the given value
  *
  * @param valueToRemove Value to remove

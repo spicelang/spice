@@ -261,6 +261,16 @@ public p Vector.insertAt(unsigned long index, const T& item) {
 }
 
 /**
+ * Insert an item at a certain index
+ *
+ * @param index Index to insert the item at
+ * @param item Item to insert
+ */
+public p Vector.insertAt(unsigned int index, const T& item) {
+    this.insertAt(cast<unsigned long>(index), item);
+}
+
+/**
  * Remove an item at a certain index
  *
  * @param index Index of the item to remove
@@ -352,7 +362,7 @@ public p Vector.reserve(unsigned int itemCount) {
  *
  * @return Current size of the vector
  */
-public f<long> Vector.getSize() {
+public f<unsigned long> Vector.getSize() {
     return this.size;
 }
 
@@ -361,7 +371,7 @@ public f<long> Vector.getSize() {
  *
  * @return Current capacity of the vector
  */
-public f<long> Vector.getCapacity() {
+public f<unsigned long> Vector.getCapacity() {
     return this.capacity;
 }
 
