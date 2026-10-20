@@ -4,8 +4,8 @@
 import "std/data/unordered-map";
 
 // Own imports
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/qual-type";
 
 // Type aliases
 public type TypeMapping alias UnorderedMap</*typeName=*/String, /*concreteType=*/QualType>;

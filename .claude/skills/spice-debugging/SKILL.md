@@ -145,8 +145,7 @@ python test/run-tests.py --instrument asan --filter='*<Case>*'
 Or build it by hand with the stage0 compiler, e.g. with the thread sanitizer for races in the parallel back end:
 
 ```bash
-SPICE_STD_DIR=$PWD/std SPICE_BOOTSTRAP_DIR=$PWD/src \
-  build/stage0/spice build -O1 -g --sanitizer thread --ignore-cache --output build/spice-tsan src/main.spice
+SPICE_STD_DIR=$PWD/std build/stage0/spice build -O1 -g --sanitizer thread --output build/spice-tsan src/main.spice
 ```
 
 ## 6. Valgrind

@@ -4,9 +4,9 @@
 import "std/data/vector";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/exception/semantic-error";
-import "bootstrap/reader/code-loc";
+import "@/ast/ast-nodes";
+import "@/exception/semantic-error";
+import "@/reader/code-loc";
 
 public type SoftError struct {
     CodeLoc codeLoc

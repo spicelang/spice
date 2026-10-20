@@ -13,23 +13,23 @@ import "std/io/file";
 type ConcreteNode dyn;
 
 // Own imports
-import "bootstrap/ast/abstract-ast-visitor-intf";
-import "bootstrap/reader/code-loc";
-import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/capture";
-import "bootstrap/ast/attributes";
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/exception/semantic-error";
-import "bootstrap/typechecker/builtin-functions";
-import "bootstrap/typechecker/function-manager";
-import "bootstrap/model/function";
-import "bootstrap/model/generic-type";
-import "bootstrap/model/struct";
-import "bootstrap/model/interface";
-import "bootstrap/model/union";
+import "@/ast/abstract-ast-visitor-intf";
+import "@/reader/code-loc";
+import "@/symboltablebuilder/type-qualifiers";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/symboltablebuilder/scope";
+import "@/symboltablebuilder/capture";
+import "@/ast/attributes";
+import "@/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/super-type";
+import "@/exception/semantic-error";
+import "@/typechecker/builtin-functions";
+import "@/typechecker/function-manager";
+import "@/model/function";
+import "@/model/generic-type";
+import "@/model/struct";
+import "@/model/interface";
+import "@/model/union";
 
 // Access tokens used when building type/function/scope signatures
 public const string MEMBER_ACCESS_TOKEN = ".";

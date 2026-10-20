@@ -4,7 +4,7 @@
 import "std/text/stringstream";
 
 // Own imports
-import "bootstrap/reader/code-loc";
+import "@/reader/code-loc";
 
 public type ParserErrorType enum {
     PARSING_FAILED,

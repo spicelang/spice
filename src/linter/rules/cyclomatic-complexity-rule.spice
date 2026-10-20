@@ -5,8 +5,8 @@ import "std/type/type-conversion";
 import "std/data/vector";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/linter/lint-finding";
+import "@/ast/ast-nodes";
+import "@/linter/lint-finding";
 
 // Flags functions/procedures whose body has grown too many independent branches to review or test with
 // confidence in one piece. McCabe cyclomatic complexity: starts at 1 for the single straight-line path through

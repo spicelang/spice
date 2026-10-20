@@ -8,24 +8,24 @@ import "std/data/pair";
 import "std/text/json/json-value";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/reader/code-loc";
-import "bootstrap/exception/semantic-error";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/symbol-table";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/symbol-table-builder";
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/model/function";
-import "bootstrap/model/generic-type";
-import "bootstrap/model/struct";
-import "bootstrap/typechecker/function-manager";
-import "bootstrap/typechecker/struct-manager";
-import "bootstrap/typechecker/interface-manager";
-import "bootstrap/typechecker/union-manager";
-import "bootstrap/source-file";
-import "bootstrap/util/common-util";
-import "bootstrap/util/compiler-warning";
+import "@/ast/ast-nodes";
+import "@/reader/code-loc";
+import "@/exception/semantic-error";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/symbol-table";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/symboltablebuilder/symbol-table-builder";
+import "@/symboltablebuilder/qual-type";
+import "@/model/function";
+import "@/model/generic-type";
+import "@/model/struct";
+import "@/typechecker/function-manager";
+import "@/typechecker/struct-manager";
+import "@/typechecker/interface-manager";
+import "@/typechecker/union-manager";
+import "@/source-file";
+import "@/util/common-util";
+import "@/util/compiler-warning";
 
 public type ScopeType enum {
     GLOBAL,

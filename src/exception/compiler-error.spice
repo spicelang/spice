@@ -4,7 +4,7 @@
 import "std/text/stringstream";
 
 // Own imports
-import "bootstrap/reader/code-loc";
+import "@/reader/code-loc";
 
 public type CompilerErrorType enum {
     UNRESOLVED_SOFT_ERRORS,
@@ -14,7 +14,6 @@ public type CompilerErrorType enum {
     INTERNAL_ERROR,
     IO_ERROR,
     STD_NOT_FOUND,
-    COMPILER_SOURCES_NOT_FOUND,
     TARGET_NOT_AVAILABLE,
     OOM,
     INVALID_FUNCTION,
@@ -75,7 +74,6 @@ f<string> CompilerError.getMessagePrefix(const CompilerErrorType errorType) {
         case CompilerErrorType::INTERNAL_ERROR: { return "Internal compiler error"; }
         case CompilerErrorType::IO_ERROR: { return "I/O Error"; }
         case CompilerErrorType::STD_NOT_FOUND: { return "Std lib not found"; }
-        case CompilerErrorType::COMPILER_SOURCES_NOT_FOUND: { return "Compiler sources not found"; }
         case CompilerErrorType::TARGET_NOT_AVAILABLE: { return "Selected target not available"; }
         case CompilerErrorType::OOM: { return "An out of memory error occurred"; }
         case CompilerErrorType::INVALID_FUNCTION: { return "Invalid function"; }

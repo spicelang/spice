@@ -4,7 +4,7 @@
 import "std/type/any";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
+import "@/ast/ast-nodes";
 
 /**
  * Full visitor interface. Declared in a separate file so that ast-nodes.spice can import

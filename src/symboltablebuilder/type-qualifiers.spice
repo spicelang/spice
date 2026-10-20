@@ -1,7 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Own imports
-import "bootstrap/symboltablebuilder/super-type";
+import "@/symboltablebuilder/super-type";
 
 // Constants
 const unsigned short BIT_INDEX_COMPOSITION = 0s;

@@ -4,10 +4,10 @@
 import "std/data/unordered-map";
 
 // Own imports
-import "bootstrap/source-file";
-import "bootstrap/util/system-util";
-import "bootstrap/global/global-resource-manager";
-import "bootstrap/symboltablebuilder/qual-type";
+import "@/source-file";
+import "@/util/system-util";
+import "@/global/global-resource-manager";
+import "@/symboltablebuilder/qual-type";
 
 // Constants
 const string STRING_RT_IMPORT_NAME = "__rt_string";

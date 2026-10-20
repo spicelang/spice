@@ -5,10 +5,10 @@ import "std/io/filepath";
 import "std/io/file";
 
 // Own imports
-import "bootstrap/exception/compiler-error";
-import "bootstrap/exception/fatal-error";
-import "bootstrap/reader/code-loc";
-import "bootstrap/util/test-util";
+import "@/exception/compiler-error";
+import "@/exception/fatal-error";
+import "@/reader/code-loc";
+import "@/util/test-util";
 
 public type Reader struct {
     File file

@@ -4,8 +4,8 @@
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
+import "@/ast/ast-nodes";
+import "@/symboltablebuilder/symbol-table-entry";
 
 /**
  * For routing through multiple LLVM values at once

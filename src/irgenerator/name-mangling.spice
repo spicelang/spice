@@ -6,18 +6,18 @@ import "std/text/stringstream";
 import "std/type/type-conversion";
 
 // Own imports
-import "bootstrap/global/type-name-disambiguator";
-import "bootstrap/model/function";
-import "bootstrap/model/generic-type";
-import "bootstrap/model/interface";
-import "bootstrap/model/struct";
-import "bootstrap/model/struct-base";
-import "bootstrap/model/union";
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/type";
-import "bootstrap/symboltablebuilder/type-chain";
+import "@/global/type-name-disambiguator";
+import "@/model/function";
+import "@/model/generic-type";
+import "@/model/interface";
+import "@/model/struct";
+import "@/model/struct-base";
+import "@/model/union";
+import "@/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/type-qualifiers";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/type";
+import "@/symboltablebuilder/type-chain";
 
 /**
  * Helper for name mangling.

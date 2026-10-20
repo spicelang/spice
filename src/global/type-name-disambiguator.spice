@@ -7,7 +7,7 @@ import "std/type/type-conversion";
 import "std/os/recursive-mutex";
 
 // Own imports
-import "bootstrap/util/concurrency";
+import "@/util/concurrency";
 
 /**
  * Two structs or interfaces that share a simple name but stem from independent declarations (e.g. a package-private

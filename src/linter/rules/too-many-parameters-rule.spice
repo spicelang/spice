@@ -5,8 +5,8 @@ import "std/type/type-conversion";
 import "std/data/vector";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/linter/lint-finding";
+import "@/ast/ast-nodes";
+import "@/linter/lint-finding";
 
 // Flags functions/procedures with more parameters than a caller can reasonably keep straight at a call site.
 // A style/maintainability check (grouping related parameters into a struct is usually the fix), not a

@@ -4,8 +4,8 @@
 import "std/math/hash";
 
 // Own imports
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/type-qualifiers";
+import "@/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/type-qualifiers";
 
 // Generic type defs
 type T dyn;

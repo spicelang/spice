@@ -6,10 +6,10 @@ import "std/data/vector";
 import "std/io/filepath";
 
 // Own imports
-import "bootstrap/global/global-resource-manager";
-import "bootstrap/compiler-pass";
-import "bootstrap/source-file";
-import "bootstrap/reader/code-loc";
+import "@/global/global-resource-manager";
+import "@/compiler-pass";
+import "@/source-file";
+import "@/reader/code-loc";
 
 /**
  * Visualizer for the import dependency graph.

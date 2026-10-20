@@ -6,16 +6,16 @@ import "std/data/vector";
 import "std/io/filepath";
 
 // Own imports
-import "bootstrap/compiler-pass";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/ast/attributes";
-import "bootstrap/ast/abstract-ast-visitor-intf";
-import "bootstrap/exception/error-manager";
-import "bootstrap/exception/semantic-error";
-import "bootstrap/global/global-resource-manager";
-import "bootstrap/source-file";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/util/system-util";
+import "@/compiler-pass";
+import "@/ast/ast-nodes";
+import "@/ast/attributes";
+import "@/ast/abstract-ast-visitor-intf";
+import "@/exception/error-manager";
+import "@/exception/semantic-error";
+import "@/global/global-resource-manager";
+import "@/source-file";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/util/system-util";
 
 /**
  * Jobs:
@@ -46,7 +46,7 @@ public f<Any> ImportCollector.visitEntry(ASTEntryNode* node) {
 public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     // Validate the import path before resolving it against any base directory. Import paths must be relative and
     // must not contain parent-directory ('..') components. Otherwise a malicious source file could escape the
-    // std/compiler/project roots (e.g. 'import "../../../etc/x"' or 'import "std/../../../etc/x"') and read
+    // std/project roots (e.g. 'import "../../../etc/x"' or 'import "std/../../../etc/x"') and read
     // arbitrary files, or worse, smuggle shell metacharacters into a filename that later ends up in a linker
     // invocation.
     ASTNode* baseNode = cast<ASTNode*>(node);
@@ -66,10 +66,6 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     // Imports with the '@/' prefix are resolved against the dir of the main source file, independent of the dir of the
     // importing source file
     const bool isMainRelative = node.importPath.startsWith("@/");
-    // Imports of compiler source files. The legacy 'bootstrap/' prefix is still used by the compiler sources, since the
-    // stage0 compiler does not know the '@/' prefix yet.
-    // ToDo: Remove the 'bootstrap/' prefix, once the stage0 compiler resolves the '@/' prefix
-    const bool isCompilerSource = node.importPath.startsWith("bootstrap/");
 
     // Determine the root dir, that the import is resolved against, and the path of the imported file within it
     const String ownFileDir = ownFilePath.getParentDir();
@@ -81,9 +77,6 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     } else if isMainRelative { // Include own source file, relative to the main source file
         rootDir = FilePath(this.cliOptions.mainSourceFile.getParentDir());
         pathInRootDir = node.importPath.getSubstring(2ul);
-    } else if isCompilerSource { // Include source file of the compiler
-        rootDir = getCompilerSourceDir();
-        pathInRootDir = node.importPath.getSubstring(10ul);
     } else { // Include own source file, relative to the importing source file
         rootDir = FilePath(ownFileDir);
     }
@@ -132,13 +125,13 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     }
 
     // The lexical '..'-component check above only rejects traversal spelled out in the import path itself. A
-    // same-looking relative import can still resolve outside the intended std/compiler/project root if a
+    // same-looking relative import can still resolve outside the intended std/project root if a
     // directory along the way is a symlink. Canonicalize the resolved file and its intended base directory
     // (this also resolves symlinks) and reject the import unless the former stays contained in the latter.
     // A source file given as a bare filename (e.g. 'spice build main.spice') has an empty parent dir; treat that
     // as the current directory, since that is what the empty path already means to every other join above.
     FilePath intendedRoot = rootDir;
-    if !isStd && !isCompilerSource && rootDir.isEmpty() {
+    if !isStd && rootDir.isEmpty() {
         intendedRoot = FilePath(String("."));
     }
     const FilePath allowedRoot = intendedRoot.canonical();

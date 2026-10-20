@@ -9,20 +9,20 @@ import "std/math/hash";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/driver";
-import "bootstrap/irgenerator/ir-generator";
-import "bootstrap/irgenerator/name-mangling";
-import "bootstrap/model/function" as model; // Aliased, because Function clashes with llvm::Function
-import "bootstrap/model/struct";
-import "bootstrap/model/interface";
-import "bootstrap/model/union";
-import "bootstrap/reader/code-loc";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/capture";
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
+import "@/ast/ast-nodes";
+import "@/driver";
+import "@/irgenerator/ir-generator";
+import "@/irgenerator/name-mangling";
+import "@/model/function" as model; // Aliased, because Function clashes with llvm::Function
+import "@/model/struct";
+import "@/model/interface";
+import "@/model/union";
+import "@/reader/code-loc";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/symboltablebuilder/capture";
+import "@/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
 
 /**
  * Generates the debug info of a source file.

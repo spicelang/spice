@@ -4,7 +4,7 @@
 import "std/data/vector";
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
+import "@/ast/ast-nodes";
 
 public type LifecycleState enum {
     DEAD,         // The symbol is not alive yet (e.g. not declared yet)

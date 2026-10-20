@@ -6,14 +6,14 @@ import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/reader/code-loc";
-import "bootstrap/model/generic-type";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/qual-type";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/util/common-util";
+import "@/ast/ast-nodes";
+import "@/reader/code-loc";
+import "@/model/generic-type";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/qual-type";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/symboltablebuilder/scope";
+import "@/util/common-util";
 
 // IR generator data of a struct or interface. The LLVM entities are wrappers around the respective LLVM C API refs, which are
 // nil as long as they were not generated yet

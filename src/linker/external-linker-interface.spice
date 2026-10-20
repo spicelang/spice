@@ -10,12 +10,12 @@ import "std/os/thread";
 import "std/type/type-conversion";
 
 // Own imports
-import "bootstrap/exception/fatal-error";
-import "bootstrap/driver";
-import "bootstrap/util/system-util";
-import "bootstrap/util/compile-progress";
-import "bootstrap/exception/compiler-error";
-import "bootstrap/exception/linker-error";
+import "@/exception/fatal-error";
+import "@/driver";
+import "@/util/system-util";
+import "@/util/compile-progress";
+import "@/exception/compiler-error";
+import "@/exception/linker-error";
 
 /**
  * Compilation of an additional source to an object file

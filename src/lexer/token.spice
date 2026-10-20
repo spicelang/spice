@@ -1,7 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Imports
-import "bootstrap/reader/code-loc";
+import "@/reader/code-loc";
 
 // Enums
 public type TokenType enum {

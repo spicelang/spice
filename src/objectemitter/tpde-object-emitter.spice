@@ -8,9 +8,9 @@ import "std/bindings/llvm/llvm" as llvm;
 import "std/bindings/tpde/tpde" as tpde;
 
 // Own imports
-import "bootstrap/exception/fatal-error";
-import "bootstrap/exception/compiler-error";
-import "bootstrap/objectemitter/abstract-object-emitter";
+import "@/exception/fatal-error";
+import "@/exception/compiler-error";
+import "@/objectemitter/abstract-object-emitter";
 
 /**
  * Object emitter backed by the experimental TPDE compiler back-end framework.

@@ -758,7 +758,6 @@ def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: st
     # The test build mode generates a main function, which runs all builtin tests of the source files
     if builtin_tests:
         cmd += ["--build-mode", "test"]
-    cmd += bootstrap.cache_bypass_flags(compiler)
     cmd += ["--output", str(executable_path), str(ROOT_DIR / "src" / "main.spice")]
     # The coverage instrumentation writes the .gcno files into the working dir of the compiler, so they land next to the executable
     cwd = output_dir if OPTS.instrument == "coverage" else ROOT_DIR
@@ -850,8 +849,6 @@ def setup_environment() -> None:
     """Set up the environment, that the compilers need to build the compiler sources and the test cases"""
     # Always test the std and compiler sources of this checkout
     os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")
-    # ToDo: Remove, once the compiler sources use the '@/' import prefix instead of 'bootstrap/'
-    os.environ["SPICE_BOOTSTRAP_DIR"] = str(ROOT_DIR / "src")
     if "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = bootstrap.find_llvm_lib_dir()
         if llvm_lib_dir is None:

@@ -6,23 +6,23 @@ import "std/text/stringstream";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
-import "bootstrap/source-file";
-import "bootstrap/ast/ast-nodes";
-import "bootstrap/symboltablebuilder/super-type";
-import "bootstrap/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
-import "bootstrap/symboltablebuilder/type-chain";
-import "bootstrap/global/type-registry";
-import "bootstrap/symboltablebuilder/type-qualifiers";
-import "bootstrap/symboltablebuilder/scope";
-import "bootstrap/symboltablebuilder/symbol-table-entry";
-import "bootstrap/model/struct";
-import "bootstrap/model/interface";
-import "bootstrap/model/union";
-import "bootstrap/model/generic-type";
-import "bootstrap/typechecker/function-manager";
-import "bootstrap/typechecker/interface-manager";
-import "bootstrap/typechecker/struct-manager";
-import "bootstrap/typechecker/union-manager";
+import "@/source-file";
+import "@/ast/ast-nodes";
+import "@/symboltablebuilder/super-type";
+import "@/symboltablebuilder/type" as symboltable; // Aliased, because Type clashes with llvm::Type
+import "@/symboltablebuilder/type-chain";
+import "@/global/type-registry";
+import "@/symboltablebuilder/type-qualifiers";
+import "@/symboltablebuilder/scope";
+import "@/symboltablebuilder/symbol-table-entry";
+import "@/model/struct";
+import "@/model/interface";
+import "@/model/union";
+import "@/model/generic-type";
+import "@/typechecker/function-manager";
+import "@/typechecker/interface-manager";
+import "@/typechecker/struct-manager";
+import "@/typechecker/union-manager";
 
 // Constants
 public const string STROBJ_NAME = "String";
