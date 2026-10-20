@@ -1,0 +1,7 @@
+abs: 42
+abs via apply: 7
+snprintf: formatted
+toupper: A
+twice: 42
+square: 16
+printValue: 5

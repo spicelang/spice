@@ -1,0 +1,42 @@
+import "source1";
+
+// Function pointers to functions, that have no definition in the source file before the reference
+ext f<int> abs(int);
+ext f<int> snprintf(char*, unsigned long, string, ...);
+
+f<int> apply(f<int>(int) fct, int value) {
+    return fct(value);
+}
+
+f<int> main() {
+    // External function
+    f<int>(int) absFct = abs;
+    printf("abs: %d\n", absFct(-42));
+    printf("abs via apply: %d\n", apply(abs, -7));
+    // Variadic external function
+    f<int>(char*, unsigned long, string) formatFct = snprintf;
+    char[16] buffer;
+    formatFct(&buffer[0], 16l, "formatted");
+    printf("snprintf: %s\n", &buffer[0]);
+    // External function, that is declared after its first use
+    f<int>(int) toUpperFct = toupper;
+    printf("toupper: %c\n", cast<char>(toUpperFct(cast<int>('a'))));
+    // Function of another source file
+    f<int>(int) twiceFct = twice;
+    printf("twice: %d\n", twiceFct(21));
+    // Function and procedure, that are defined after their first use
+    f<int>(int) squareFct = square;
+    printf("square: %d\n", squareFct(4));
+    p(int) printFct = printValue;
+    printFct(5);
+}
+
+ext f<int> toupper(int);
+
+f<int> square(int x) {
+    return x * x;
+}
+
+p printValue(int x) {
+    printf("printValue: %d\n", x);
+}
