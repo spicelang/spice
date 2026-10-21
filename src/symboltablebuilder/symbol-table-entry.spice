@@ -76,7 +76,7 @@ public p SymbolTableEntry.updateType(const QualType& newType, bool overwriteExis
  * @param newState New state of the current symbol
  * @param node AST node where the update takes place
  */
-public p SymbolTableEntry.updateState(const LifecycleState& newState, ASTNode* node) {
+public p SymbolTableEntry.updateState(const LifecycleState& newState, const ASTNode* node) {
     const LifecycleState oldState = this.lifecycle.getCurrentState();
     if newState == LifecycleState::DEAD && oldState == LifecycleState::DECLARED {
         const String message = "Cannot destroy uninitialized variable '" + this.name + "'";

@@ -1,0 +1,51 @@
+import "std/data/vector";
+
+p takeConstPtr(const int* ptr) {
+    printf("Const ptr: %d\n", *ptr);
+}
+
+p takeConstRef(const int& r) {
+    printf("Const ref: %d\n", r);
+}
+
+p takeVal(int v) {
+    printf("Value: %d\n", v);
+}
+
+p takePtr(int* ptr) {
+    *ptr = 3;
+}
+
+p takeRef(int& r) {
+    r = 4;
+}
+
+p printVector(const Vector<int>& v) {
+    const int first = v[0];
+    printf("Vector: %d\n", first);
+}
+
+f<int> main() {
+    int a = 1;
+    const int c = 2;
+    const int* cip = &c;
+    // Const values can be passed to const pointer/reference params and by value
+    takeConstPtr(cip);
+    takeConstRef(c);
+    takeVal(c);
+    // Non-const values can be passed to any of them
+    takeConstPtr(&a);
+    takeConstRef(a);
+    takePtr(&a);
+    printf("After ptr: %d\n", a);
+    takeRef(a);
+    printf("After ref: %d\n", a);
+    // A const string can be indexed
+    const String s = String("abc");
+    const char second = s[1];
+    printf("Char: %c\n", second);
+    // A const vector can be indexed
+    Vector<int> v = Vector<int>();
+    v.pushBack(5);
+    printVector(v);
+}
