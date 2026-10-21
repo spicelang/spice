@@ -3332,7 +3332,10 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         const bool isDecl = lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isField() && !lhs.entry.isInitialized();
         // Save this before checking the assignment, because stealing a temporary deletes its anonymous symbol table entry
         const bool isRhsTemporary = rhs.isTemporary();
-        Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhs, rhs, isDecl);
+        // A reference field can only be bound in a ctor body. Elsewhere, the assignment writes through the reference (like the
+        // IR generator does), so it gets checked as such
+        const bool isDeclAssign = isDecl && (!lhs.ty.isRef() || this.currentScope.isInCtorBody());
+        Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhs, rhs, isDeclAssign);
         rhsType = assignResult.getFirst();
         const Function* copyCtor = assignResult.getSecond();
         // If the assignment overwrites an already initialized struct, the old value of the lhs must be destructed first.

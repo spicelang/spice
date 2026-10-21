@@ -1,0 +1,44 @@
+type Holder struct {
+    int& ref
+}
+
+p assignThrough(int& target, const int& value) {
+    target = value;
+}
+
+f<int> main() {
+    int a = 1;
+    const int b = 2;
+    const int& cb = b;
+
+    // Assigning through a reference assigns the referenced value, which may come from a const source
+    int& ra = a;
+    ra = cb;
+    printf("Const ref: %d\n", a);
+    ra = 3;
+    ra = b;
+    printf("Const value: %d\n", a);
+
+    // The same holds for reference params
+    int c = 4;
+    assignThrough(c, b);
+    printf("Param: %d\n", c);
+
+    // and for reference fields outside of a ctor
+    int d = 5;
+    Holder h = Holder{d};
+    h.ref = cb;
+    printf("Field: %d\n", d);
+    h.ref = 6;
+    printf("Field literal: %d\n", d);
+    Holder* hp = &h;
+    hp.ref = b;
+    printf("Field via ptr: %d\n", d);
+
+    // Pointer references can be reassigned
+    int e = 7;
+    int* pa = &a;
+    int*& rp = pa;
+    rp = &e;
+    printf("Pointer ref: %d\n", *pa);
+}

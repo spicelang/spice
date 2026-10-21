@@ -698,6 +698,18 @@ public f<Pair<QualType, Function*>> OpRuleManager.getAssignResultType(ASTNode* n
         return assignResult(resultType);
     }
 
+    // An assignment through an already-bound reference assigns the referenced value, so it follows the rules for assigning to
+    // the referenced type. E.g. the value of a const source can be copied into a non-const referent.
+    if !isDecl && !isReturn && lhsType.isRef() {
+        const ExprResult referencedLhs = ExprResult{lhsType.getContained(), lhs.entry};
+        const Pair<QualType, Function*> referencedResult = this.getAssignResultType(node, referencedLhs, rhs, false, false, errMsgPrefix);
+        const QualType referencedResultType = referencedResult.getFirst();
+        if referencedResultType.is(SuperType::TY_UNRESOLVED) {
+            return referencedResult;
+        }
+        return assignResult(lhsType, referencedResult.getSecond());
+    }
+
     // Check primitive type combinations
     const QualType binOpType = this.validateBinaryOperation(node, this.assignOpRules, "=", lhsType, rhsType, true, errMsgPrefix);
     return assignResult(binOpType);
