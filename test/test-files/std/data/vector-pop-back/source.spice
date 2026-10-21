@@ -1,0 +1,52 @@
+import "std/data/vector";
+
+// Vector.popBack() returns the removed item. It moves the item out of the vector, so it is neither copied nor destructed by
+// the vector, and the caller owns it.
+public type Tracked struct {
+    int id
+    Vector<int> data
+}
+
+public p Tracked.ctor(int id) {
+    this.id = id;
+    for int i = 0; i < 20; i++ { this.data.pushBack(i); }
+    printf("ctor %d\n", this.id);
+}
+
+public p Tracked.ctor(const Tracked& other) {
+    this.id = other.id * 10;
+    this.data = other.data;
+    printf("copy %d -> %d\n", other.id, this.id);
+}
+
+public p Tracked.dtor() {
+    printf("dtor %d (data: %d)\n", this.id, this.data.getSize());
+}
+
+f<int> main() {
+    Vector<Tracked> v;
+    v.reserve(3);
+    v.pushBack(Tracked(1));
+    v.pushBack(Tracked(2));
+    v.pushBack(Tracked(3));
+    printf("== pop and use\n");
+    {
+        Tracked popped = v.popBack();
+        printf("popped %d with %d items, size now %d\n", popped.id, popped.data.getSize(), v.getSize());
+    }
+    printf("== pop and ignore\n");
+    v.popBack();
+    printf("size now %d\n", v.getSize());
+    printf("== primitives\n");
+    Vector<int> ints;
+    ints.pushBack(4);
+    ints.pushBack(5);
+    const int last = ints.popBack();
+    printf("popped %d, size now %d\n", last, ints.getSize());
+    printf("== strings\n");
+    Vector<String> strings;
+    strings.pushBack(String("a string, that is long enough to be on the heap"));
+    const String str = strings.popBack();
+    printf("popped '%s', size now %d\n", str.getRaw(), strings.getSize());
+    printf("== end\n");
+}

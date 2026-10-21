@@ -1,0 +1,21 @@
+ctor 1
+copy 1 -> 10
+ctor 2
+copy 2 -> 20
+ctor 3
+copy 3 -> 30
+== pop and use
+popped 30 with 20 items, size now 2
+dtor 30 (data: 20)
+== pop and ignore
+size now 1
+== primitives
+popped 5, size now 1
+== strings
+popped 'a string, that is long enough to be on the heap', size now 0
+== end
+dtor 20 (data: 20)
+dtor 3 (data: 20)
+dtor 2 (data: 20)
+dtor 1 (data: 20)
+dtor 10 (data: 20)
