@@ -185,13 +185,17 @@ public p Vector.pushBack<T>(const T& item) {
 }
 
 /**
- * Remove the last item of the vector, destructing it. Use back() beforehand to read its value.
+ * Retrieve the last item and remove it
+ *
+ * @return Last item
  */
-public p Vector.popBack() {
+#[ignoreUnusedReturnValue]
+public f<T> Vector.popBack() {
     if this.isEmpty() { panic(Error("Access index out of bounds")); }
-    // Destroy the last element and decrement the size
+    // Move the last item out of the vector. Assigning the subscript expression moves it bitwise, so it is neither copied nor
+    // destructed: its slot is not part of the vector anymore and the returned item takes over its resources.
     unsafe {
-        sDestruct(this.contents[--this.size]);
+        result = this.contents[--this.size];
     }
 }
 
