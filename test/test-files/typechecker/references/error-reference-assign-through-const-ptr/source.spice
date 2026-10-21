@@ -1,0 +1,9 @@
+f<int> main() {
+    int a = 1;
+    const int c = 2;
+    int* pa = &a;
+    int*& rp = pa;
+    const int* cip = &c;
+    // Assigning through the reference must not drop the const of the pointee
+    rp = cip;
+}
