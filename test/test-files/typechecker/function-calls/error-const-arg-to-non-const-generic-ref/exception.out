@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:13:5:
+Referenced undefined function: Function/procedure 'setBox(const Box<int>&,int)' could not be found
+
+13  setBox(cb, 5);
+    ^^^^^^^^^^^^^

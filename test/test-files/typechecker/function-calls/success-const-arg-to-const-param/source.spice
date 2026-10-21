@@ -1,3 +1,5 @@
+import "std/data/vector";
+
 p takeConstPtr(const int* ptr) {
     printf("Const ptr: %d\n", *ptr);
 }
@@ -16,6 +18,11 @@ p takePtr(int* ptr) {
 
 p takeRef(int& r) {
     r = 4;
+}
+
+p printVector(const Vector<int>& v) {
+    const int first = v[0];
+    printf("Vector: %d\n", first);
 }
 
 f<int> main() {
@@ -37,4 +44,8 @@ f<int> main() {
     const String s = String("abc");
     const char second = s[1];
     printf("Char: %c\n", second);
+    // A const vector can be indexed
+    Vector<int> v = Vector<int>();
+    v.pushBack(5);
+    printVector(v);
 }

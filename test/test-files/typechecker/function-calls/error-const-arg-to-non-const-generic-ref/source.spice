@@ -1,0 +1,19 @@
+type T dyn;
+
+type Box<T> struct {
+    T value
+}
+
+p setBox<T>(Box<T>& b, T v) {
+    b.value = v;
+}
+
+p use(const Box<int>& cb) {
+    // A const value must not be bound to a generic reference param that allows writing it
+    setBox(cb, 5);
+}
+
+f<int> main() {
+    Box<int> b = Box<int>{1};
+    use(b);
+}

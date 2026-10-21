@@ -234,6 +234,17 @@ public f<T&> operator[]<T, UIntOrULong>(Vector<T>& v, UIntOrULong index) {
 }
 
 /**
+ * Get an item of a const vector at a certain index
+ *
+ * @return item at index
+ */
+public f<const T&> operator[]<T, UIntOrULong>(const Vector<T>& v, UIntOrULong index) {
+    unsafe {
+        return v.contents[index];
+    }
+}
+
+/**
  * Insert an item at a certain index
  *
  * @param index Index to insert the item at
