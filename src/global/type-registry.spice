@@ -119,7 +119,7 @@ public f<String> TypeRegistry.dump() {
             if typeStrings.contains(typeString) {
                 typeStrings.get(typeString)++;
             } else {
-                typeStrings.insert(typeString, 1ul);
+                typeStrings.upsert(typeString, 1ul);
             }
         }
     }

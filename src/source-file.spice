@@ -944,7 +944,7 @@ public p SourceFile.addDependency(SourceFile* sourceFile, const String& dependen
         sourceFile.isMainFile = false;
     }
     if !this.dependencies.contains(dependencyName) {
-        this.dependencies.insert(dependencyName, sourceFile);
+        this.dependencies.upsert(dependencyName, sourceFile);
     }
 
     // Add the dependant
@@ -1004,14 +1004,14 @@ public p SourceFile.addNameRegistryEntry(const String& symbolName, unsigned long
             this.untrackNameRegistryTargetEntry(oldTargetEntry);
             this.exportedNameRegistry.remove(symbolName);
         }
-        this.exportedNameRegistry.insert(symbolName, NameRegistryEntry{symbolName, typeId, entry, scope, importEntry});
+        this.exportedNameRegistry.upsert(symbolName, NameRegistryEntry{symbolName, typeId, entry, scope, importEntry});
         this.trackNameRegistryTargetEntry(entry);
         if keepNewOnCollision && this.ambiguousNameRegistry.contains(symbolName) {
             this.ambiguousNameRegistry.remove(symbolName);
         }
     } else { // Name collision => we must remove the existing entry. Remember the colliding imports to report the ambiguity later
         if !this.ambiguousNameRegistry.contains(symbolName) {
-            this.ambiguousNameRegistry.insert(symbolName, Vector<const SymbolTableEntry*>());
+            this.ambiguousNameRegistry.upsert(symbolName, Vector<const SymbolTableEntry*>());
         }
         Vector<const SymbolTableEntry*>& collidingImports = this.ambiguousNameRegistry.get(symbolName);
         collidingImports.pushBack(this.exportedNameRegistry.get(symbolName).importEntry);
@@ -1470,7 +1470,7 @@ public p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, co
         newName += SCOPE_ACCESS_TOKEN;
         newName += originalName;
         if !this.exportedNameRegistry.contains(newName) {
-            this.exportedNameRegistry.insert(newName, NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
+            this.exportedNameRegistry.upsert(newName, NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
             this.trackNameRegistryTargetEntry(entry.targetEntry);
         }
         // Add the shortened name, considering the name collision. A symbol defined in the importing file itself always

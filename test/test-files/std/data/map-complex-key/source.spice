@@ -15,11 +15,11 @@ f<int> main() {
     Map<String, int> map;
     assert map.getSize() == 0;
     assert map.isEmpty();
-    map.insert(String("banana"), 2);
-    map.insert(String("apple"), 1);
-    map.insert(String("cherry"), 3);
-    map.insert(String("apricot"), 4);
-    map.insert(String("app"), 5);
+    map.upsert(String("banana"), 2);
+    map.upsert(String("apple"), 1);
+    map.upsert(String("cherry"), 3);
+    map.upsert(String("apricot"), 4);
+    map.upsert(String("app"), 5);
     assert map.getSize() == 5;
     assert !map.isEmpty();
     assert map.contains(String("banana"));
@@ -61,11 +61,11 @@ f<int> main() {
     const String prefix = String("a");
     assert prefix != keyWithNull('b');
     Map<String, int> nullMap;
-    nullMap.insert(prefix, 0);
-    nullMap.insert(keyWithNull('b'), 1);
-    nullMap.insert(keyWithNull('c'), 2);
-    nullMap.insert(keyWithNull('d'), 3);
-    nullMap.insert(keyWithNull('e'), 4);
+    nullMap.upsert(prefix, 0);
+    nullMap.upsert(keyWithNull('b'), 1);
+    nullMap.upsert(keyWithNull('c'), 2);
+    nullMap.upsert(keyWithNull('d'), 3);
+    nullMap.upsert(keyWithNull('e'), 4);
     assert nullMap.getSize() == 5;
     assert nullMap.get(prefix) == 0;
     assert nullMap.get(keyWithNull('b')) == 1;
@@ -76,9 +76,9 @@ f<int> main() {
 
     // The ordering of primitive keys did not change
     Map<int, int> intMap;
-    intMap.insert(3, 30);
-    intMap.insert(1, 10);
-    intMap.insert(2, 20);
+    intMap.upsert(3, 30);
+    intMap.upsert(1, 10);
+    intMap.upsert(2, 20);
     long digits = 0l;
     foreach dyn entry : intMap {
         digits = digits * 10l + entry.getSecond() / 10;
@@ -90,7 +90,7 @@ f<int> main() {
     Map<String, String> strMap;
     string[15] strKeys = ["m", "f", "t", "c", "h", "p", "w", "a", "d", "g", "k", "n", "r", "u", "z"];
     foreach string strKey : strKeys {
-        strMap.insert(String(strKey), String("value-") + strKey);
+        strMap.upsert(String(strKey), String("value-") + strKey);
     }
     assert strMap.getSize() == 15;
     strMap.remove(String("a")); // Leaf

@@ -44,7 +44,7 @@ public f<Interface*> insertInterface(Scope* insertScope, Interface& spiceInterfa
     const String interfaceId = spiceInterface.name + ":" + spiceInterface.declNode.codeLoc.toString();
     // Keep an existing manifestation list
     if !insertScope.interfaces.contains(interfaceId) {
-        insertScope.interfaces.insert(interfaceId, InterfaceManifestationList());
+        insertScope.interfaces.upsert(interfaceId, InterfaceManifestationList());
     }
 
     // Save substantiation in declaration node

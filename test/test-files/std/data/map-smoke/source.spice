@@ -5,9 +5,9 @@ f<int> main() {
     assert m.isEmpty();
     assert m.getSize() == 0ul;
 
-    m.insert(3, 30);
-    m.insert(1, 10);
-    m.insert(2, 20);
+    m.upsert(3, 30);
+    m.upsert(1, 10);
+    m.upsert(2, 20);
     assert m.getSize() == 3ul;
     assert m[1] == 10;
     assert m[2] == 20;

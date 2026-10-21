@@ -79,9 +79,9 @@ f<int> main() {
 
     // Red-black tree: move construction and indexed iteration
     RedBlackTree<int, int> tree;
-    tree.insert(2, 20);
-    tree.insert(1, 10);
-    tree.insert(3, 30);
+    tree.upsert(2, 20);
+    tree.upsert(1, 10);
+    tree.upsert(3, 30);
     RedBlackTree<int, int> moved = RedBlackTree<int, int>(tree);
     assert moved.getSize() == 3ul;
     assert moved.find(2) == 20;

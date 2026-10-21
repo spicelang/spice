@@ -43,7 +43,7 @@ public f<Struct*> insertStruct(Scope* insertScope, Struct& spiceStruct, Vector<S
     const String structId = spiceStruct.name + ":" + spiceStruct.declNode.codeLoc.toString();
     // Keep an existing manifestation list
     if !insertScope.structs.contains(structId) {
-        insertScope.structs.insert(structId, StructManifestationList());
+        insertScope.structs.upsert(structId, StructManifestationList());
     }
 
     // Save substantiation in declaration node
