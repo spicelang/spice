@@ -85,6 +85,15 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
     QualType candidateType = candidateTypeIn;
     QualType requestedType = requestedTypeIn;
 
+    // A reference or pointer candidate gives access to the requested value or pointee. If that is const, the candidate has to
+    // be const as well, even if the qualifiers are not matched strictly. Unwrapping below loses this information.
+    // Generic candidates are excluded, because a generic type might be substantiated with a const type.
+    const QualType requestedNonRefType = requestedTypeIn.removeReferenceWrapper();
+    const bool sharesValue = candidateTypeIn.isRef() || (candidateTypeIn.isPtr() && requestedNonRefType.isPtr());
+    if sharesValue && !candidateTypeIn.hasAnyGenericParts() && requestedTypeIn.qualifiers.isConst && !candidateTypeIn.qualifiers.isConst {
+        return false;
+    }
+
     // Unwrap as far as possible and remove reference wrappers if possible
     unwrapBothWithRefWrappers(candidateType, requestedType);
 

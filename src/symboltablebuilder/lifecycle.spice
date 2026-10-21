@@ -19,7 +19,7 @@ public type LifecycleState enum {
  */
 public type LifecycleEvent struct {
     public LifecycleState state
-    public ASTNode* issuer
+    public const ASTNode* issuer
 }
 
 /**

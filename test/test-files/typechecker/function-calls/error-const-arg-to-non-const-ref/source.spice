@@ -1,0 +1,9 @@
+p takeRef(int& r) {
+    r = 98;
+}
+
+f<int> main() {
+    const int c = 7;
+    // A const value must not be bound to a reference param that allows writing it
+    takeRef(c);
+}

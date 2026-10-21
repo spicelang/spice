@@ -1,0 +1,8 @@
+Const ptr: 2
+Const ref: 2
+Value: 2
+Const ptr: 1
+Const ref: 1
+After ptr: 3
+After ref: 4
+Char: b

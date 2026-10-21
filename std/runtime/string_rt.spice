@@ -473,6 +473,33 @@ public f<char&> operator[](String& str, unsigned int idx) {
 }
 
 /**
+ * Extract the char at the given index of a const string and return it
+ *
+ * @param str Input string
+ * @param idx Index of the char
+ * @return Character at the given index
+ */
+public f<char> operator[](const String& str, unsigned long idx) {
+    if idx >= str.length {
+        panic(Error("Access index out of bounds"));
+    }
+    unsafe {
+        return str.contents[idx];
+    }
+}
+
+/**
+ * Extract the char at the given index of a const string and return it
+ *
+ * @param str Input string
+ * @param idx Index of the char
+ * @return Character at the given index
+ */
+public f<char> operator[](const String& str, unsigned int idx) {
+    return str[cast<unsigned long>(idx)];
+}
+
+/**
  * Get the raw and immutable string from this container instance
  *
  * @return Raw immutable string

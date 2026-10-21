@@ -75,7 +75,7 @@ public type Scope struct {
     // never has to copy a Scope (which is not trivially copyable and must never be deep-copied implicitly).
     public Map<String, Scope*> children // Ordered, since the order shows in the warnings
     public SymbolTable symbolTable
-    public CodeLoc* codeLoc = nil<CodeLoc*>
+    public const CodeLoc* codeLoc = nil<const CodeLoc*>
     public ScopeType scopeType
     public bool isGenericScope = false
     public bool isAsyncScope = false
@@ -91,7 +91,7 @@ public type Scope struct {
     UnorderedMap<String, GenericType> genericTypes
 }
 
-public p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, CodeLoc *codeLoc) {
+public p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, const CodeLoc* codeLoc) {
     this.parent = parent;
     this.sourceFile = sourceFile;
     this.scopeId = sourceFile.resourceManager.getNextScopeId();

@@ -1,0 +1,10 @@
+p takePtr(int* ptr) {
+    *ptr = 99;
+}
+
+f<int> main() {
+    const int c = 7;
+    const int* cip = &c;
+    // A pointer to a const value must not be passed to a pointer param that allows writing it
+    takePtr(cip);
+}
