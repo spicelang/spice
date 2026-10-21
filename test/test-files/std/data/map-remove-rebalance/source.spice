@@ -16,7 +16,7 @@ f<int> main() {
             present[key] = false;
             size--;
         } else {
-            map.insert(key, key * 10);
+            map.upsert(key, key * 10);
             present[key] = true;
             size++;
         }

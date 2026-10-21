@@ -80,7 +80,7 @@ public f<Function*> insertFunction(Scope* insertScope, const Function& baseFunct
     const String fctId = baseFunction.name + ":" + baseFunction.declNode.codeLoc.toString();
     // Keep an existing list (e.g. of the implicit ctor and copy ctor, which share a decl node)
     if !insertScope.functions.contains(fctId) {
-        insertScope.functions.insert(fctId, FunctionManifestationList());
+        insertScope.functions.upsert(fctId, FunctionManifestationList());
     }
     getActiveFunctionLookupCache().registryVersion++; // A new function might match requests that did not match anything before
 

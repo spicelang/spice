@@ -6,8 +6,8 @@ f<int> main() {
     Map<int, int> sorted;
     Map<int, int> reverse;
     for int i = 0; i < 200; i++ {
-        sorted.insert(i, i * 7);
-        reverse.insert(199 - i, (199 - i) * 7);
+        sorted.upsert(i, i * 7);
+        reverse.upsert(199 - i, (199 - i) * 7);
     }
     assert sorted.getSize() == 200ul;
     assert reverse.getSize() == 200ul;
@@ -19,7 +19,7 @@ f<int> main() {
     // Non-monotonic insertion exercise (distinct keys)
     Map<int, int> mixed;
     int[10] mixedOrder = [97, 13, 199, 0, 156, 42, 88, 71, 105, 24];
-    for int j = 0; j < 10; j++ { mixed.insert(mixedOrder[j], mixedOrder[j] * 7); }
+    for int j = 0; j < 10; j++ { mixed.upsert(mixedOrder[j], mixedOrder[j] * 7); }
     assert mixed.getSize() == 10ul;
     for int j = 0; j < 10; j++ {
         assert mixed[mixedOrder[j]] == mixedOrder[j] * 7;
@@ -46,7 +46,7 @@ f<int> main() {
 
     // 3. Removals across positions; remaining keys retain order
     Map<int, int> m4;
-    for int i = 0; i < 100; i++ { m4.insert(i, i); }
+    for int i = 0; i < 100; i++ { m4.upsert(i, i); }
     for int i = 0; i < 100; i += 3 { m4.remove(i); }
     previousKey = -1;
     int remainingCount = 0;
@@ -63,7 +63,7 @@ f<int> main() {
     // 4. Re-insert after clear
     m4.clear();
     assert m4.isEmpty();
-    m4.insert(42, 42);
+    m4.upsert(42, 42);
     assert m4[42] == 42;
 
     printf("Map stress tests passed!\n");

@@ -42,10 +42,10 @@ f<int> main() {
 
     {
         RedBlackTree<int, String> tree = RedBlackTree<int, String>();
-        tree.insert(3, String("first heap-allocated rbt value"));
-        tree.insert(1, String("second heap-allocated rbt value"));
-        tree.insert(4, String("third heap-allocated rbt value"));
-        tree.insert(2, String("fourth heap-allocated rbt value"));
+        tree.upsert(3, String("first heap-allocated rbt value"));
+        tree.upsert(1, String("second heap-allocated rbt value"));
+        tree.upsert(4, String("third heap-allocated rbt value"));
+        tree.upsert(2, String("fourth heap-allocated rbt value"));
     }
     printf("red-black tree ok\n");
 

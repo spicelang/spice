@@ -62,9 +62,9 @@ f<int> main() {
     table.upsert(String("two"), 2);
 
     RedBlackTree<int, String> tree = RedBlackTree<int, String>();
-    tree.insert(2, String("two"));
-    tree.insert(1, String("one"));
-    tree.insert(3, String("three"));
+    tree.upsert(2, String("two"));
+    tree.upsert(1, String("one"));
+    tree.upsert(3, String("three"));
 
     BinaryTree<int> bTree = BinaryTree<int>();
     bTree.insert(5);
@@ -72,8 +72,8 @@ f<int> main() {
     bTree.insert(7);
 
     Map<int, String> map = Map<int, String>();
-    map.insert(1, String("alpha"));
-    map.insert(2, String("beta"));
+    map.upsert(1, String("alpha"));
+    map.upsert(2, String("beta"));
 
     Set<int> set = Set<int>();
     set.insert(3);

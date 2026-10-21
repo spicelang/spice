@@ -29,7 +29,7 @@ f<int> main() {
     Map<int, Person> map;
     assert map.isEmpty();
     for int i = 0; i < 20; i++ {
-        map.insert(i, Person(String("Person ") + toString(i), 20 + i));
+        map.upsert(i, Person(String("Person ") + toString(i), 20 + i));
     }
     assert map.getSize() == 20;
     assert map.get(7).name == "Person 7";
@@ -50,8 +50,8 @@ f<int> main() {
 
     // Copy-assign the map from a const reference
     Registry registry1;
-    registry1.persons.insert(1, Person(String("Alice"), 30));
-    registry1.persons.insert(2, Person(String("Bob"), 40));
+    registry1.persons.upsert(1, Person(String("Alice"), 30));
+    registry1.persons.upsert(2, Person(String("Bob"), 40));
     Registry registry2;
     const Registry& source = registry1;
     registry2.persons = source.persons;

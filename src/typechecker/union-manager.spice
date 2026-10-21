@@ -40,7 +40,7 @@ public f<Union*> insertUnion(Scope* insertScope, Union& spiceUnion, Vector<Union
     const String unionId = spiceUnion.name + ":" + spiceUnion.declNode.codeLoc.toString();
     // Keep an existing manifestation list
     if !insertScope.unions.contains(unionId) {
-        insertScope.unions.insert(unionId, UnionManifestationList());
+        insertScope.unions.upsert(unionId, UnionManifestationList());
     }
 
     // Save substantiation in declaration node

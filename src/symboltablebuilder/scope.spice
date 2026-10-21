@@ -543,7 +543,7 @@ public f<JsonValue*> Scope.getSymbolTableJSON() {
     // Collect all children, sorted by name
     Map<String, Scope*> sortedChildren;
     foreach Pair<const String&, Scope*&> childEntry : this.children {
-        sortedChildren.insert(childEntry.getFirst(), childEntry.getSecond());
+        sortedChildren.upsert(childEntry.getFirst(), childEntry.getSecond());
     }
     JsonValue* jsonChildren = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
     foreach Pair<const String&, Scope*&> childEntry : sortedChildren {
@@ -567,7 +567,7 @@ public f<JsonValue*> Scope.getSymbolTableJSON() {
 public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
     assert !this.children.contains(scopeName);
     Scope* child = this.sourceFile.resourceManager.createScope(this, this.sourceFile, scopeType, declCodeLoc);
-    this.children.insert(scopeName, child);
+    this.children.upsert(scopeName, child);
     return child;
 }
 
@@ -582,7 +582,7 @@ public p Scope.renameChildScope(const String& oldName, const String& newName) {
     assert this.children.contains(oldName) && !this.children.contains(newName);
     // Re-key the owning pointer; the pooled Scope itself is not moved or copied.
     Scope* child = this.children.get(oldName);
-    this.children.insert(newName, child);
+    this.children.upsert(newName, child);
     this.children.remove(oldName);
 }
 
@@ -601,7 +601,7 @@ public f<Scope*> Scope.copyChildScope(const String& oldName, const String& newNa
     Scope* newScope = this.sourceFile.resourceManager.createScope(this, oldScope.sourceFile, oldScope.scopeType, oldScope.codeLoc);
     oldScope.deepCopyScope(newScope);
     // Save copy under new name
-    this.children.insert(newName, newScope);
+    this.children.upsert(newName, newScope);
     return newScope;
 }
 
@@ -630,7 +630,7 @@ public p Scope.deepCopyScope(Scope* newScope) {
         Scope* oldChild = childEntry.getSecond();
         Scope* newChild = this.sourceFile.resourceManager.createScope(newScope, oldChild.sourceFile, oldChild.scopeType, oldChild.codeLoc);
         oldChild.deepCopyScope(newChild);
-        newScope.children.insert(childEntry.getFirst(), newChild);
+        newScope.children.upsert(childEntry.getFirst(), newChild);
     }
 }
 

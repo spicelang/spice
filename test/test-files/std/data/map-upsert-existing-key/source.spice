@@ -1,0 +1,57 @@
+import "std/data/map";
+import "std/data/red-black-tree";
+import "std/data/pair";
+import "std/data/unordered-map";
+
+f<int> main() {
+    // Upserting an existing key updates its value instead of adding a second entry
+    Map<int, int> m;
+    m.upsert(1, 10);
+    m.upsert(2, 20);
+    m.upsert(1, 11);
+    assert m.getSize() == 2ul;
+    assert m[1] == 11;
+    assert m[2] == 20;
+
+    // Iteration visits the key once
+    int keySum = 0;
+    foreach Pair<int&, int&> entry : m {
+        keySum += entry.getFirst();
+    }
+    assert keySum == 3;
+
+    // Removing the key removes it completely
+    m.remove(1);
+    assert m.getSize() == 1ul;
+    assert !m.contains(1);
+
+    // The same holds for owning values
+    Map<int, String> names;
+    names.upsert(1, String("first"));
+    names.upsert(1, String("second"));
+    assert names.getSize() == 1ul;
+    assert names[1] == String("second");
+    // Upserting the stored value itself keeps it intact
+    names.upsert(1, names.get(1));
+    assert names[1] == String("second");
+
+    // The same holds for unordered maps
+    UnorderedMap<int, String> unorderedNames;
+    unorderedNames.upsert(1, String("first"));
+    unorderedNames.upsert(1, String("second"));
+    assert unorderedNames.getSize() == 1ul;
+    assert unorderedNames.get(1) == String("second");
+    unorderedNames.upsert(1, unorderedNames.get(1));
+    assert unorderedNames.get(1) == String("second");
+
+    // And for the underlying tree
+    RedBlackTree<int, int> tree;
+    tree.upsert(5, 50);
+    tree.upsert(5, 55);
+    assert tree.getSize() == 1ul;
+    assert tree.find(5) == 55;
+    tree.remove(5);
+    assert tree.isEmpty();
+
+    printf("Map upsert tests passed!\n");
+}

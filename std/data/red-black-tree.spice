@@ -122,12 +122,13 @@ public p RedBlackTree.ctor(RedBlackTree<K, V>& other) {
 }
 
 /**
- * Insert a new key-value pair into the tree.
+ * Insert a new node for a key-value pair into the tree. The key must not exist in the tree yet, otherwise the tree would
+ * contain it twice. Use upsert() to insert or update a key-value pair.
  *
  * @param key The key of the new element
  * @param value The value of the new element
  */
-public p RedBlackTree.insert(const K& key, const V& value) {
+p RedBlackTree.insertNode(const K& key, const V& value) {
     // Create the new node
     heap Node<K, V>* newNode = this.createNode(key, value, NodeColor::RED, nil<Node<K, V>*>);
 
@@ -170,11 +171,18 @@ public p RedBlackTree.insert(const K& key, const V& value) {
 public p RedBlackTree.upsert(const K& key, const V& value) {
     Node<K, V>* node = this.search(key);
     if node != nil<Node<K, V>*> {
-        // Key already exists, update value
-        node.value = value;
+        // Key already exists, update value. Assignments in unsafe blocks do not destruct the old value, so destruct it
+        // before copying the new one in. Upserting the stored value itself is a no-op, destructing it first would destroy
+        // the value to copy from.
+        unsafe {
+            if &node.value != &value {
+                sDestruct(node.value);
+                node.value = value;
+            }
+        }
     } else {
         // Key not found, insert new node
-        this.insert(key, value);
+        this.insertNode(key, value);
     }
 }
 

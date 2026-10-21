@@ -172,10 +172,7 @@ public p CliOptions.ctor() {
  * @param value New value of the build variable
  */
 public p CliOptions.setBuildVar(const String& key, const String& value) {
-    if this.buildVars.contains(key) {
-        this.buildVars.remove(key);
-    }
-    this.buildVars.insert(key, value);
+    this.buildVars.upsert(key, value);
 }
 
 /**

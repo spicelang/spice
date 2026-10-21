@@ -124,7 +124,13 @@ public p HashTable.upsert(const K& key, const V& value) {
         // The key is already present. Overwriting the value in place keeps the entry where it is,
         // which is what keeps references handed out for this key valid.
         unsafe {
-            this.slots[existingIdx].entry.value = value;
+            Entry<K, V>* entry = this.slots[existingIdx].entry;
+            // Assignments in unsafe blocks do not destruct the old value, so destruct it before copying the new one in.
+            // Upserting the stored value itself is a no-op, destructing it first would destroy the value to copy from.
+            if &entry.value != &value {
+                sDestruct(entry.value);
+                entry.value = value;
+            }
         }
         return;
     }

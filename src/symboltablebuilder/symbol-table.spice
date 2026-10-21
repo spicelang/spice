@@ -97,7 +97,7 @@ public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode
     assert !this.symbols.contains(name);
     const QualType qualType = QualType(SuperType::TY_INVALID);
     ASTNode* mutableDeclNode = cast<ASTNode*>(declNode);
-    this.symbols.insert(name, SymbolTableEntry(name, qualType, this.scope, mutableDeclNode, orderIndex, isGlobal));
+    this.symbols.upsert(name, SymbolTableEntry(name, qualType, this.scope, mutableDeclNode, orderIndex, isGlobal));
     // Set entry to declared
     SymbolTableEntry* entry = &this.symbols.get(name);
     entry.updateState(LifecycleState::DECLARED, mutableDeclNode);
@@ -168,7 +168,7 @@ public f<SymbolTableEntry*> SymbolTable.copySymbol(const String& originalName, c
     SymbolTableEntry* entryToCopy = this.lookupStrict(originalName);
     assert entryToCopy != nil<SymbolTableEntry*>;
     assert !this.symbols.contains(newName);
-    this.symbols.insert(newName, *entryToCopy);
+    this.symbols.upsert(newName, *entryToCopy);
     return &this.symbols.get(newName);
 }
 
@@ -204,7 +204,7 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
             // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
             entry.isVolatile = this.scope.isInAsyncScope() && !entry.scope.isInAsyncScope();
             // Add the capture to the current scope
-            this.captures.insert(name, Capture(entry));
+            this.captures.upsert(name, Capture(entry));
         }
     }
     return entry;
@@ -364,7 +364,7 @@ public f<JsonValue*> SymbolTable.toJSON() {
     // Collect all symbols, sorted by name
     Map<String, SymbolTableEntry*> sortedSymbols;
     foreach Pair<const String&, SymbolTableEntry&> symbol : this.symbols {
-        sortedSymbols.insert(symbol.getFirst(), &symbol.getSecond());
+        sortedSymbols.upsert(symbol.getFirst(), &symbol.getSecond());
     }
     JsonValue* jsonSymbols = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
     foreach Pair<const String&, SymbolTableEntry*&> symbol : sortedSymbols {
@@ -375,7 +375,7 @@ public f<JsonValue*> SymbolTable.toJSON() {
     // Collect all captures, sorted by name
     Map<String, Capture*> sortedCaptures;
     foreach Pair<const String&, Capture&> capture : this.captures {
-        sortedCaptures.insert(capture.getFirst(), &capture.getSecond());
+        sortedCaptures.upsert(capture.getFirst(), &capture.getSecond());
     }
     JsonValue* jsonCaptures = __new<JsonValue>(JsonValueKind::JSON_ARRAY);
     foreach Pair<const String&, Capture*&> capture : sortedCaptures {

@@ -20,13 +20,14 @@ public type Map<K, V> struct : IIterable<Pair<K, V>> {
 }
 
 /**
- * Inserts a key value pair into the map.
+ * Insert a key-value pair into the map.
+ * If the key already exists, the value is updated.
  *
- * @param key The key to insert.
- * @param value The value to insert.
+ * @param key The key to insert
+ * @param value The value to insert
  */
-public p Map.insert(const K& key, const V& value) {
-    this.tree.insert(key, value);
+public p Map.upsert(const K& key, const V& value) {
+    this.tree.upsert(key, value);
 }
 
 /**
