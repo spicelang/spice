@@ -334,7 +334,8 @@ f<Function*> TypeChecker.matchCopyCtor(const QualType& thisType, const ASTNode* 
 public p TypeChecker.matchCopyCtorsForOwnedParams(const Function* callee, const ASTNode* node) {
     foreach const QualType& paramType : callee.getParamTypes() {
         if paramType.isOwnedByValueParam(node) {
-            this.matchCopyCtor(paramType.toNonConst(), node);
+            // Only resolve the copy ctor here. The IR generator looks it up again
+            Function* _ = this.matchCopyCtor(paramType.toNonConst(), node);
         }
     }
 }
