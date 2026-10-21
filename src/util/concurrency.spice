@@ -132,9 +132,16 @@ f<bool> testConditionalLockOnlyLocksInParallelSection() {
     return true;
 }
 
+// Shared map and the mutex that guards it. Bundled, so that the async lambdas below only have to capture a single pointer
+type GuardedSharedMap struct {
+    UnorderedMap<unsigned long, unsigned long>* sharedMap
+    RecursiveMutex* mutex
+}
+
 // Increment the counter of the given key, guarded by a ConditionalLock
-p incrementGuarded(UnorderedMap<unsigned long, unsigned long>* sharedMap, RecursiveMutex* mutex, unsigned long key) {
-    ConditionalLock _ = ConditionalLock(mutex);
+p incrementGuarded(GuardedSharedMap* guardedMap, unsigned long key) {
+    ConditionalLock _ = ConditionalLock(guardedMap.mutex);
+    UnorderedMap<unsigned long, unsigned long>* sharedMap = guardedMap.sharedMap;
     if sharedMap.contains(key) {
         sharedMap.upsert(key, sharedMap.get(key) + 1l);
     } else {
@@ -144,12 +151,12 @@ p incrementGuarded(UnorderedMap<unsigned long, unsigned long>* sharedMap, Recurs
 
 // Increment the counters of the given map from multiple threads. The lock is taken in a separate function, because a ctor call
 // within a lambda body captures the struct symbol, which crashes the IR generator
-p incrementConcurrently(UnorderedMap<unsigned long, unsigned long>* sharedMap, RecursiveMutex* mutex) {
+p incrementConcurrently(GuardedSharedMap* guardedMap) {
     ThreadPool pool = ThreadPool(4s);
     for unsigned int i = 0; i < 4; i++ {
         pool.enqueue(p() [[async]] {
             for unsigned long key = 0l; key < 10000l; key++ {
-                incrementGuarded(sharedMap, mutex, key % 500l);
+                incrementGuarded(guardedMap, key % 500l);
             }
         });
     }
@@ -163,7 +170,8 @@ f<bool> testConditionalLockGuardsSharedMapUnderContention() {
     RecursiveMutex mutex;
     {
         ParallelSection _;
-        incrementConcurrently(&sharedMap, &mutex);
+        GuardedSharedMap guardedMap = GuardedSharedMap{&sharedMap, &mutex};
+        incrementConcurrently(&guardedMap);
     }
     assert !areConcurrentPassesRunning();
 

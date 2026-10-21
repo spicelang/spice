@@ -341,25 +341,6 @@ public p TypeChecker.matchCopyCtorsForOwnedParams(const Function* callee, const 
 }
 
 /**
- * Match the move ctor of the given struct type
- *
- * @param thisType Struct type
- * @param node Current AST node
- * @return Move ctor, or nil if there is none
- */
-f<Function*> TypeChecker.matchMoveCtor(const QualType& thisType, const ASTNode* node) {
-    Scope* matchScope = thisType.getBodyScope();
-    assert matchScope != nil<Scope*>;
-    const QualType nonConstThisType = thisType.toNonConst();
-    const QualType argType = nonConstThisType.toRef(node);
-    ArgList args;
-    args.pushBack(Pair<QualType, bool>(argType, false));
-    // The new instance being constructed is never const, regardless of whether the move source (thisType) is const
-    const QualTypeList noTemplateTypeHints;
-    return matchFunction(matchScope, String(CTOR_FUNCTION_NAME), nonConstThisType, args, noTemplateTypeHints, true, node);
-}
-
-/**
  * Map a local type to the type in an imported scope. If the target file does not know about the struct, it is shown how to
  * find the struct.
  *
@@ -778,7 +759,7 @@ f<Any> TypeChecker.visitProcDefCheck(ASTProcDefNode* node) {
  * @param isCtor Whether the definition is a constructor
  */
 f<Any> TypeChecker.checkFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* baseNode, bool isFunction, bool isCtor) {
-    baseNode.resizeToNumberOfManifestations(cast<unsigned long>(fctDefBase.manifestations.getSize()));
+    baseNode.resizeToNumberOfManifestations(fctDefBase.manifestations.getSize());
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this function/procedure definition
@@ -923,7 +904,7 @@ p TypeChecker.checkDefaultMethodImplementsInterfaceMethod(const Function* defaul
 
 f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
-    baseNode.resizeToNumberOfManifestations(cast<unsigned long>(node.structManifestations.getSize()));
+    baseNode.resizeToNumberOfManifestations(node.structManifestations.getSize());
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this procedure definition
@@ -959,7 +940,7 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
                 this.visit(field.defaultValue);
                 SymbolTableEntry* fieldEntry = manifestation.structBase.scope.lookupStrict(field.fieldName);
                 assert fieldEntry != nil<SymbolTableEntry*>;
-                fieldEntry.updateState(LifecycleState::INITIALIZED, cast<ASTNode*>(field));
+                fieldEntry.updateState(LifecycleState::INITIALIZED);
             }
         }
 
@@ -1052,7 +1033,7 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
         }
 
         // Reset field symbols to declared state for the next manifestation
-        manifestation.resetFieldSymbolsToDeclared(baseNode);
+        manifestation.resetFieldSymbolsToDeclared();
 
         // Clear type mapping
         this.typeMapping.clear();
@@ -1070,7 +1051,7 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
 
 f<Any> TypeChecker.visitUnionDefCheck(ASTUnionDefNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
-    baseNode.resizeToNumberOfManifestations(cast<unsigned long>(node.unionManifestations.getSize()));
+    baseNode.resizeToNumberOfManifestations(node.unionManifestations.getSize());
     this.manIdx = 0l; // Reset the manifestation index
 
     // Get all manifestations for this union definition
@@ -1100,7 +1081,7 @@ f<Any> TypeChecker.visitUnionDefCheck(ASTUnionDefNode* node) {
                 this.visit(field.defaultValue);
                 SymbolTableEntry* fieldEntry = manifestation.structBase.scope.lookupStrict(field.fieldName);
                 assert fieldEntry != nil<SymbolTableEntry*>;
-                fieldEntry.updateState(LifecycleState::INITIALIZED, cast<ASTNode*>(field));
+                fieldEntry.updateState(LifecycleState::INITIALIZED);
             }
         }
 
@@ -1142,9 +1123,9 @@ f<Any> TypeChecker.visitMainFctDefPrepare(ASTMainFctDefNode* node) {
     QualTypeList paramTypes;
     if node.takesArgs {
         Any paramLstResult = this.visit(node.paramLst);
-        NamedParamList namedParamList = paramLstResult.get<NamedParamList>();
-        foreach const NamedParam& namedParam : namedParamList {
-            paramTypes.pushBack(namedParam.qualType);
+        const ParamList visitedParams = paramLstResult.get<ParamList>();
+        foreach const Param& visitedParam : visitedParams {
+            paramTypes.pushBack(visitedParam.qualType);
         }
     }
 
@@ -1244,16 +1225,16 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
     QualTypeList paramTypes;
     ParamList paramList;
     if fctDefBase.hasParams {
-        // Visit param list to retrieve the param names
+        // Visit param list to retrieve the params
         Any paramLstResult = this.visit(fctDefBase.paramLst);
-        NamedParamList namedParamList = paramLstResult.get<NamedParamList>();
-        foreach const NamedParam& namedParam : namedParamList {
-            const QualType qualType = namedParam.qualType;
+        const ParamList visitedParams = paramLstResult.get<ParamList>();
+        foreach const Param& visitedParam : visitedParams {
+            const QualType qualType = visitedParam.qualType;
             if qualType.is(SuperType::TY_UNRESOLVED) {
                 return Any();
             }
             paramTypes.pushBack(qualType);
-            paramList.pushBack(Param{qualType, namedParam.isOptional});
+            paramList.pushBack(Param{qualType, visitedParam.isOptional});
             // Check if the type is present in the template for generic types
             if !qualType.isCoveredByGenericTypeList(usedGenericTypes) {
                 const String message = String("Generic param type not included in the template type list of the ") + kind;
@@ -2025,7 +2006,7 @@ f<Any> TypeChecker.visitImportDefPrepare(ASTImportDefNode* node) {
 // ============================================================ Meta =============================================================
 
 public f<Any> TypeChecker.visitParamLst(ASTParamLstNode* node) {
-    NamedParamList namedParams;
+    ParamList params;
     bool metOptional = false;
 
     foreach ASTDeclStmtNode* param : node.params {
@@ -2055,11 +2036,11 @@ public f<Any> TypeChecker.visitParamLst(ASTParamLstNode* node) {
             this.addWarning(param.codeLoc, CompilerWarningType::NON_TRIVIAL_TYPE_PASSED_BY_VALUE, message);
         }
 
-        // Add parameter to named param list
-        namedParams.pushBack(NamedParam{param.varName.getRaw(), paramType, metOptional});
+        // Add parameter to param list
+        params.pushBack(Param{paramType, metOptional});
     }
 
-    return Any(namedParams);
+    return Any(params);
 }
 
 public f<Any> TypeChecker.visitField(ASTFieldNode* node) {
@@ -2618,7 +2599,7 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
     entrySlot = localVarEntry;
 
     // Update the state of the variable
-    localVarEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+    localVarEntry.updateState(LifecycleState::INITIALIZED);
 
     return Any(localVarType);
 }
@@ -3111,12 +3092,13 @@ public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
     // Check if a local or global variable can be found by searching for the name
+    SymbolTableEntry* entry = nil<SymbolTableEntry*>;
     if node.identifierFragments.getSize() == 1l {
-        node.entry = this.currentScope.lookup(node.identifierFragments.back());
+        entry = this.currentScope.lookup(node.identifierFragments.back());
     }
 
     // If no local or global was found, search in the name registry
-    if node.entry == nil<const SymbolTableEntry*> {
+    if entry == nil<SymbolTableEntry*> {
         const NameRegistryEntry* registryEntry = this.sourceFile.getNameRegistryEntry(node.fqIdentifier);
         if registryEntry == nil<const NameRegistryEntry*> {
             if this.sourceFile.isAmbiguousName(node.fqIdentifier) {
@@ -3125,12 +3107,14 @@ public f<Any> TypeChecker.visitCaseConstant(ASTCaseConstantNode* node) {
             const String message = String("The variable '") + node.fqIdentifier + "' could not be found";
             return this.softErrorER(baseNode, SemanticErrorType::REFERENCED_UNDEFINED_VARIABLE, message);
         }
-        node.entry = registryEntry.targetEntry;
+        entry = registryEntry.targetEntry;
     }
-    assert node.entry != nil<const SymbolTableEntry*>;
+    assert entry != nil<SymbolTableEntry*>;
+    entry.used = true;
+    node.entry = entry;
 
     // Check for the correct type
-    const QualType qualType = node.entry.getQualType();
+    const QualType qualType = entry.getQualType();
     const dyn caseConstantOptions = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BOOL];
     if !qualType.isOneOf(caseConstantOptions, len(caseConstantOptions)) {
         return this.softErrorER(baseNode, SemanticErrorType::CASE_CONSTANT_INVALID_TYPE, String("Case constants must be of type int, short, long, byte, char, bool or enum"));
@@ -3402,7 +3386,7 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         }
 
         // Update the state of the variable
-        lhsVar.updateState(LifecycleState::INITIALIZED, baseNode);
+        lhsVar.updateState(LifecycleState::INITIALIZED);
     }
 
     return Any(ExprResult{node.node.setEvaluatedSymbolType(rhsType, this.manIdx), nil<SymbolTableEntry*>});
@@ -3853,8 +3837,9 @@ public f<Any> TypeChecker.visitCastExpr(ASTCastExprNode* node) {
     const ExprResult src = this.visitExpr(node.assignExpr);
     if src.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
 
-    // Check for identity cast (casts that only change the signedness are not considered identity casts)
-    if src.ty == dstType && src.ty.qualifiers == dstType.qualifiers {
+    // Check for identity cast (casts that only change the signedness are not considered identity casts). Within a generic
+    // manifestation, the cast may only be an identity cast for this particular substitution of the template types, so skip it
+    if src.ty == dstType && src.ty.qualifiers == dstType.qualifiers && this.typeMapping.isEmpty() {
         this.addWarning(baseNode.codeLoc, CompilerWarningType::IDENTITY_CAST, String("You cast from a type to itself. Thus, this can be simplified."));
     }
 
@@ -3895,7 +3880,7 @@ public f<Any> TypeChecker.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) {
                 }
 
                 // Update the state of the variable
-                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+                operandEntry.updateState(LifecycleState::INITIALIZED);
             }
         }
         case PrefixUnaryOp::OP_MINUS_MINUS: {
@@ -3909,7 +3894,7 @@ public f<Any> TypeChecker.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) {
                 }
 
                 // Update the state of the variable
-                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+                operandEntry.updateState(LifecycleState::INITIALIZED);
             }
         }
         case PrefixUnaryOp::OP_NOT: {
@@ -4101,7 +4086,7 @@ public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
                 }
 
                 // Update the state of the variable
-                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+                operandEntry.updateState(LifecycleState::INITIALIZED);
             }
         }
         case PostfixUnaryOp::OP_MINUS_MINUS: {
@@ -4116,7 +4101,7 @@ public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
                 }
 
                 // Update the state of the variable
-                operandEntry.updateState(LifecycleState::INITIALIZED, baseNode);
+                operandEntry.updateState(LifecycleState::INITIALIZED);
             }
         }
         case PostfixUnaryOp::OP_ERR_PROPAGATION: {
@@ -4402,7 +4387,7 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     Vector<String> argTemporaryNames;
     if node.hasArgs {
         ASTArgLstNode* argLst = node.argLst;
-        data.args.reserve(cast<unsigned long>(argLst.args.getSize()));
+        data.args.reserve(argLst.args.getSize());
         foreach IVisitable* arg : argLst.args {
             // Visit argument
             const ExprResult argResult = this.visitExpr(arg);
@@ -4528,7 +4513,7 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
                 functionName = String(CTOR_FUNCTION_NAME);
             }
             ParamList errArgTypes;
-            errArgTypes.reserve(cast<unsigned long>(data.args.getSize()));
+            errArgTypes.reserve(data.args.getSize());
             foreach const Arg& arg : data.args {
                 // Copy the arg type into a local first, instead of initializing a struct literal field with a reference to
                 // a type with an overloaded assign operator
@@ -4880,7 +4865,7 @@ public f<Any> TypeChecker.visitArrayInitialization(ASTArrayInitializationNode* n
     if node.itemLst == nil<ASTArgLstNode*> || node.itemLst.args.isEmpty() {
         return this.softErrorER(baseNode, SemanticErrorType::ARRAY_SIZE_INVALID, String("Array initializers must at least contain one value"));
     }
-    node.actualSize = cast<unsigned long>(node.itemLst.args.getSize());
+    node.actualSize = node.itemLst.args.getSize();
 
     QualType actualItemType = QualType(SuperType::TY_DYN);
     // Check if all values have the same type
@@ -4956,7 +4941,7 @@ public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* n
     }
 
     if node.templateTypeLst != nil<ASTTypeLstNode*> {
-        concreteTemplateTypes.reserve(cast<unsigned long>(node.templateTypeLst.dataTypes.getSize()));
+        concreteTemplateTypes.reserve(node.templateTypeLst.dataTypes.getSize());
         foreach ASTDataTypeNode* dataType : node.templateTypeLst.dataTypes {
             const QualType concreteType = this.getDataType(dataType);
             if concreteType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
@@ -4991,7 +4976,7 @@ public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* n
         }
 
         // Check if the field types are matching
-        const unsigned long fieldCount = cast<unsigned long>(spiceStruct.fieldTypes.getSize());
+        const unsigned long fieldCount = spiceStruct.fieldTypes.getSize();
         Scope* structScope = spiceStruct.scope;
         const unsigned long explicitFieldsStartIdx = structScope.getFieldCount() - fieldCount;
         // Per-manifestation: a struct literal inside a generic function is re-type-checked once per manifestation of
@@ -5201,10 +5186,10 @@ public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) {
  * @param paramList Params
  */
 p TypeChecker.visitLambdaParams(ASTNode* node, IVisitable* paramLst, QualTypeList& paramTypes, ParamList& paramList) {
-    // Visit param list to retrieve the param names
+    // Visit param list to retrieve the params
     Any paramLstResult = this.visit(paramLst);
-    const NamedParamList namedParamList = paramLstResult.get<NamedParamList>();
-    foreach const NamedParam& param : namedParamList {
+    const ParamList visitedParams = paramLstResult.get<ParamList>();
+    foreach const Param& param : visitedParams {
         if param.isOptional {
             this.softError(node, SemanticErrorType::LAMBDA_WITH_OPTIONAL_PARAMS, String("Lambdas cannot have optional parameters"));
         }
@@ -6777,7 +6762,7 @@ p TypeChecker.createCtorBodyPreamble(const Scope* bodyScope) {
             }
         }
 
-        fieldSymbol.updateState(LifecycleState::INITIALIZED, fieldSymbol.declNode);
+        fieldSymbol.updateState(LifecycleState::INITIALIZED);
     }
 }
 
@@ -6820,7 +6805,7 @@ p TypeChecker.createCopyCtorBodyPreamble(const Scope* bodyScope) {
             }
         }
 
-        fieldSymbol.updateState(LifecycleState::INITIALIZED, fieldSymbol.declNode);
+        fieldSymbol.updateState(LifecycleState::INITIALIZED);
     }
 }
 
@@ -6862,7 +6847,7 @@ p TypeChecker.createMoveCtorBodyPreamble(const Scope* bodyScope) {
             }
         }
 
-        fieldSymbol.updateState(LifecycleState::INITIALIZED, fieldSymbol.declNode);
+        fieldSymbol.updateState(LifecycleState::INITIALIZED);
     }
 }
 
@@ -6972,57 +6957,12 @@ public f<Function*> TypeChecker.implicitlyCallStructMethod(const QualType& origT
 /**
  * Prepare the generation of a call to the copy ctor of a given struct
  *
- * @param entry Symbol entry to use as 'this' pointer for the copy ctor call
- * @param node Current AST node
- */
-public f<Function*> TypeChecker.implicitlyCallStructCopyCtor(const SymbolTableEntry* entry, const ASTNode* node) {
-    assert entry != nil<const SymbolTableEntry*>;
-    const QualType entryType = entry.getQualType();
-    const QualType unwrappedType = entryType.removeReferenceWrapper();
-    const QualType thisType = unwrappedType.toNonConst();
-    assert thisType.is(SuperType::TY_STRUCT);
-    return this.implicitlyCallStructCopyCtor(thisType, node);
-}
-
-/**
- * Prepare the generation of a call to the copy ctor of a given struct
- *
  * @param thisType Struct type to call the copy ctor on
  * @param node Current AST node
  */
 public f<Function*> TypeChecker.implicitlyCallStructCopyCtor(const QualType& thisType, const ASTNode* node) {
     const QualType unwrappedType = thisType.removeReferenceWrapper();
     const QualType argType = unwrappedType.toConstRef(node);
-    ArgList args;
-    args.pushBack(Pair<QualType, bool>(argType, false /* we always have an entry here */));
-    return this.implicitlyCallStructMethod(thisType, String(CTOR_FUNCTION_NAME), args, node);
-}
-
-/**
- * Prepare the generation of a call to the move ctor of a given struct
- *
- * @param entry Symbol entry to use as 'this' pointer for the move ctor call
- * @param node Current AST node
- */
-public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const SymbolTableEntry* entry, const ASTNode* node) {
-    assert entry != nil<const SymbolTableEntry*>;
-    const QualType entryType = entry.getQualType();
-    const QualType unwrappedType = entryType.removeReferenceWrapper();
-    const QualType thisType = unwrappedType.toNonConst();
-    assert thisType.is(SuperType::TY_STRUCT);
-    return this.implicitlyCallStructMoveCtor(thisType, node);
-}
-
-/**
- * Prepare the generation of a call to the move ctor of a given struct
- *
- * @param thisType Struct type to call the move ctor on
- * @param node Current AST node
- */
-public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const QualType& thisType, const ASTNode* node) {
-    const QualType unwrappedType = thisType.removeReferenceWrapper();
-    const QualType nonConstType = unwrappedType.toNonConst();
-    const QualType argType = nonConstType.toRef(node);
     ArgList args;
     args.pushBack(Pair<QualType, bool>(argType, false /* we always have an entry here */));
     return this.implicitlyCallStructMethod(thisType, String(CTOR_FUNCTION_NAME), args, node);

@@ -192,7 +192,7 @@ p ExternalLinkerInterface.link() {
     if !isClangInvoker && (sanitizer == Sanitizer::MEMORY || sanitizer == Sanitizer::TYPE) {
         const string msg = "Memory and type sanitizers require clang as the linker invoker, but 'gcc' was selected";
         const LinkerError error = LinkerError(LinkerErrorType::SANITIZER_NOT_SUPPORTED_BY_LINKER_INVOKER, msg);
-        abortWithError(error.errorMessage);
+        abortWithError(error.getMessage());
     }
 
     // Build the linker argument vector. Each entry is passed verbatim to the linker invoker (no shell), so file paths can
@@ -436,7 +436,7 @@ f<FilePath> ExternalLinkerInterface.compileAdditionalSource(const FilePath& addi
         const String command = renderCommandForDisplay(compilation.linkerInvokerPath, compilation.args);
         const String msg = "Compiling the additional source '" + additionalSource.toString() + "' failed\nCompile command: " + command + "\n" + compilation.result.output;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
-        abortWithError(error.errorMessage);
+        abortWithError(error.getMessage());
     }
     return objectFilePath;
 }
@@ -519,7 +519,7 @@ p ExternalLinkerInterface.runTool(const String& toolPath, const Vector<String>& 
         const String command = renderCommandForDisplay(toolPath, args);
         const String msg = String(toolName) + " exited with non-zero exit code\n" + toolName + " command: " + command;
         const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, msg.getRaw());
-        abortWithError(error.errorMessage);
+        abortWithError(error.getMessage());
     }
 
     // The captured output of a successful run (e.g. linker warnings) would be lost otherwise

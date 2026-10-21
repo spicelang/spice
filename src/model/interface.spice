@@ -39,18 +39,6 @@ public f<String> Interface.getScopeName() {
 }
 
 /**
- * Retrieve the name of the scope, where signatures are placed. This is used to navigate to the scope of the interface
- * from the parent scope.
- *
- * @param name Interface name
- * @param concreteTemplateTypes Concrete template types
- * @return Name of the interface scope
- */
-public f<String> Interface.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
-    return String(INTERFACE_SCOPE_PREFIX) + getStructSignature(name, concreteTemplateTypes);
-}
-
-/**
  * Retrieve the name of the scope, where signatures are placed, from just a name and concrete template
  * types — usable without a live Interface instance. See getStructScopeName (struct.spice) for the same
  * pattern; mirrors StructBase.getSignature's 2-arg overload, which does not read 'this'.

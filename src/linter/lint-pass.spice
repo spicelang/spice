@@ -45,7 +45,7 @@ public p LintPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourc
  * @return Collected lint findings
  */
 public f<Vector<LintFinding>> LintPass.lint(ASTEntryNode* ast) {
-    this.visitEntry(ast);
+    this.visit(ast);
     return this.findings;
 }
 

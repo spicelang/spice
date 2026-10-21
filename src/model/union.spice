@@ -40,18 +40,6 @@ public f<String> Union.getScopeName() {
 }
 
 /**
- * Retrieve the name of the scope, where the union's fields are placed. This is used to navigate to the scope of the
- * union from the parent scope.
- *
- * @param name Union name
- * @param concreteTemplateTypes Concrete template types
- * @return Name of the union scope
- */
-public f<String> Union.getScopeName(const String& name, const QualTypeList& concreteTemplateTypes) {
-    return String(UNION_SCOPE_PREFIX) + getStructSignature(name, concreteTemplateTypes);
-}
-
-/**
  * Retrieve the name of the scope, where the union's fields are placed, from just a name and concrete
  * template types — usable without a live Union instance. See getStructScopeName (struct.spice) for the
  * same pattern; mirrors StructBase.getSignature's 2-arg overload, which does not read 'this'.

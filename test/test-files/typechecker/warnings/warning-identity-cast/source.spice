@@ -1,3 +1,10 @@
+type T int|long;
+
+// Only an identity cast for some substitutions of T, so no warning is expected
+f<long> toLong<T>(T value) {
+    return cast<long>(value);
+}
+
 f<int> main() {
     char* s = "abc";
     printf("%s\n", cast<char*>(s));
@@ -6,4 +13,6 @@ f<int> main() {
     printf("%d\n", cast<int>(u));
     int i = 6;
     printf("%d\n", cast<unsigned int>(i));
+    printf("%ld\n", toLong(7));
+    printf("%ld\n", toLong(8l));
 }

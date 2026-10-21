@@ -287,11 +287,6 @@ public p ASTNode.ctor(const CodeLoc& codeLoc) {
 // destruction free the vector storage.
 public p ASTNode.dtor() {}
 
-public f<Any> ASTNode.accept(IAbstractAstVisitor* _) { // LCOV_EXCL_LINE
-    assert false;                                      // LCOV_EXCL_LINE - Concrete node types must override accept()
-    return Any();                                      // LCOV_EXCL_LINE
-}                                                      // LCOV_EXCL_LINE
-
 // Register a child node and set its parent to this node.
 public p ASTNode.addChild(ASTNode* child) {
     assert child != nil<ASTNode*>;
@@ -521,11 +516,6 @@ public f<const QualType&> ASTExprNode.getEvaluatedSymbolType(unsigned long idx) 
     }
     ASTExprNode* expr = asExprNode(this.children.front());
     return expr.getEvaluatedSymbolType(idx);
-}
-
-// Id of the expression scope, that holds the temporaries of this expression. Only some expressions have such a scope.
-public f<String> ASTExprNode.getExprScopeId() {
-    return String("expr:") + this.codeLoc.toString();
 }
 
 /**
@@ -1593,7 +1583,6 @@ public type ASTEnumItemNode struct : IVisitable {
     public String itemName
     public bool hasValue = false
     public unsigned int itemValue
-    public SymbolTableEntry* entry = nil<SymbolTableEntry*>
     public ASTEnumDefNode* enumDef = nil<ASTEnumDefNode*>
 }
 
@@ -2063,7 +2052,6 @@ public f<Any> ASTRelationalExprNode.accept(IAbstractAstVisitor* visitor) {
 // ========================================================= ShiftExprNode =======================================================
 
 public type ShiftOp enum {
-    OP_NONE,
     OP_SHIFT_LEFT,
     OP_SHIFT_RIGHT
 }
@@ -3288,7 +3276,7 @@ public f<bool> ASTNode.hasCompileTimeValue(unsigned long manIdx) {
                 return false;
             }
             const FctCallData& fctCallData = fctCallNode.data.get(manIdx);
-            return fctCallData.compileTimeValueSet;
+            return fctCallData.hasCompileTimeValue();
         }
         case ASTNodeKind::LAMBDA_FUNC, ASTNodeKind::LAMBDA_PROC, ASTNodeKind::LAMBDA_EXPR: {
             return false;

@@ -202,7 +202,7 @@ public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeL
 
             // Replace symbol types of field entries with concrete types
             assert substantiatedUnion.scope != nil<Scope*>;
-            const unsigned long fieldCount = cast<unsigned long>(substantiatedUnion.fieldTypes.getSize());
+            const unsigned long fieldCount = substantiatedUnion.fieldTypes.getSize();
             const unsigned long explicitFieldsStartIdx = substantiatedUnion.scope.getFieldCount() - fieldCount;
             unsigned long i = 0ul;
             while i < fieldCount {

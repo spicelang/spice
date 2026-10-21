@@ -208,7 +208,7 @@ public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTyp
 
             // Replace symbol types of field entries with concrete types
             assert substantiatedStruct.scope != nil<Scope*>;
-            const unsigned long fieldCount = cast<unsigned long>(substantiatedStruct.fieldTypes.getSize());
+            const unsigned long fieldCount = substantiatedStruct.fieldTypes.getSize();
             const unsigned long explicitFieldsStartIdx = substantiatedStruct.scope.getFieldCount() - fieldCount;
             unsigned long i = 0ul;
             while i < fieldCount {
@@ -333,7 +333,7 @@ f<bool> matchTemplateTypes(Struct& candidate, const QualTypeList& reqTemplateTyp
  */
 p substantiateFieldTypes(Struct& candidate, const TypeMapping& typeMapping, const ASTNode* node) {
     // Loop over all implicit fields and substantiate the generic ones
-    const unsigned long implicitFieldCount = candidate.scope.getFieldCount() - cast<unsigned long>(candidate.fieldTypes.getSize());
+    const unsigned long implicitFieldCount = candidate.scope.getFieldCount() - candidate.fieldTypes.getSize();
     unsigned long i = 0ul;
     while i < implicitFieldCount {
         SymbolTableEntry* fieldEntry = candidate.scope.lookupField(cast<unsigned int>(i));

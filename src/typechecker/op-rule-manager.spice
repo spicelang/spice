@@ -30,19 +30,17 @@ public const string ERROR_MSG_RETURN = "Passed wrong data type to return stateme
 public const string ERROR_FOREACH_ITEM = "Passed wrong data type to foreach item";
 public const string ERROR_FIELD_ASSIGN = "Given type of the field value does not match declaration";
 
-// Unary operator rule: lhs type, result type, unsafe
+// Unary operator rule: lhs type, result type
 public type UnaryOpRule struct {
     public SuperType lhsType
     public SuperType resultType
-    public bool isUnsafe
 }
 
-// Binary operator rule: lhs type, rhs type, result type, unsafe
+// Binary operator rule: lhs type, rhs type, result type
 public type BinaryOpRule struct {
     public SuperType lhsType
     public SuperType rhsType
     public SuperType resultType
-    public bool isUnsafe
 }
 
 public type UnaryOpRules alias Vector<UnaryOpRule>;
@@ -111,498 +109,498 @@ public p OpRuleManager.ctor(TypeChecker* typeChecker) {
 // Fill the operator rule tables
 p OpRuleManager.initRules() {
     // Assign op rules
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double = double -> double
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int = int -> int
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short = short -> short
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long = long -> long
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte = byte -> byte
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_CHAR, false}); // char = char -> char
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_STRING, false}); // string = string -> string
-    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool = bool -> bool
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double = double -> double
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int = int -> int
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short = short -> short
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long = long -> long
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte = byte -> byte
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_CHAR}); // char = char -> char
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_STRING}); // string = string -> string
+    this.assignOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool = bool -> bool
 
     // Plus equal op rules
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double += double -> double
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int += int -> int
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int += short -> int
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // int += long -> int
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short += int -> short
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short += short -> short
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // short += long -> short
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long += int -> long
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long += short -> long
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long += long -> long
-    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_CHAR, false}); // char += int -> char
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double += double -> double
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int += int -> int
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int += short -> int
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // int += long -> int
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short += int -> short
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short += short -> short
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // short += long -> short
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long += int -> long
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long += short -> long
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long += long -> long
+    this.plusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_CHAR}); // char += int -> char
 
     // Minus equal op rules
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double -= double -> double
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int -= int -> int
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int -= short -> int
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // int -= long -> int
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short -= int -> short
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short -= short -> short
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // short -= long -> short
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long -= int -> long
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long -= short -> long
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long -= long -> long
-    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_CHAR, false}); // char -= int -> char
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double -= double -> double
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int -= int -> int
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int -= short -> int
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // int -= long -> int
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short -= int -> short
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short -= short -> short
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // short -= long -> short
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long -= int -> long
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long -= short -> long
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long -= long -> long
+    this.minusEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_CHAR}); // char -= int -> char
 
     // Mul equal op rules
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double *= double -> double
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int *= int -> int
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int *= short -> int
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // int *= long -> int
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short *= int -> short
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short *= short -> short
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // short *= long -> short
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long *= int -> long
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long *= short -> long
-    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long *= long -> long
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double *= double -> double
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int *= int -> int
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int *= short -> int
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // int *= long -> int
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short *= int -> short
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short *= short -> short
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // short *= long -> short
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long *= int -> long
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long *= short -> long
+    this.mulEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long *= long -> long
 
     // Div equal op rules
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double /= double -> double
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int /= int -> int
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int /= short -> int
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // int /= long -> int
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short /= int -> short
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short /= short -> short
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // short /= long -> short
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long /= int -> long
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long /= short -> long
-    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long /= long -> long
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double /= double -> double
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int /= int -> int
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int /= short -> int
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // int /= long -> int
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short /= int -> short
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short /= short -> short
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // short /= long -> short
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long /= int -> long
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long /= short -> long
+    this.divEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long /= long -> long
 
     // Rem equal op rules
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double %= double -> double
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int %= int -> int
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int %= short -> int
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // int %= long -> int
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short %= int -> short
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short %= short -> short
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // short %= long -> short
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long %= int -> long
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long %= short -> long
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long %= long -> long
-    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte %= byte -> byte
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double %= double -> double
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int %= int -> int
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int %= short -> int
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // int %= long -> int
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short %= int -> short
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short %= short -> short
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // short %= long -> short
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long %= int -> long
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long %= short -> long
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long %= long -> long
+    this.remEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte %= byte -> byte
 
     // Shl equal op rules
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int <<= int -> int
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int <<= short -> int
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int <<= long -> int
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short <<= int -> short
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short <<= short -> short
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short <<= long -> short
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long <<= int -> long
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long <<= short -> long
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long <<= long -> long
-    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte <<= byte -> byte
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int <<= int -> int
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int <<= short -> int
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int <<= long -> int
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short <<= int -> short
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short <<= short -> short
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short <<= long -> short
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long <<= int -> long
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long <<= short -> long
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long <<= long -> long
+    this.shlEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte <<= byte -> byte
 
     // Shr equal op rules
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int >>= int -> int
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int >>= short -> int
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int >>= long -> int
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short >>= int -> short
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short >>= short -> short
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short >>= long -> short
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long >>= int -> long
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long >>= short -> long
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long >>= long -> long
-    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte >>= byte -> byte
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int >>= int -> int
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int >>= short -> int
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int >>= long -> int
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short >>= int -> short
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short >>= short -> short
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short >>= long -> short
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long >>= int -> long
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long >>= short -> long
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long >>= long -> long
+    this.shrEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte >>= byte -> byte
 
     // And equal op rules
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int &= int -> int
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int &= short -> int
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int &= long -> int
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short &= int -> short
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short &= short -> short
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short &= long -> short
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long &= int -> long
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long &= short -> long
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long &= long -> long
-    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte &= byte -> byte
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int &= int -> int
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int &= short -> int
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int &= long -> int
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short &= int -> short
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short &= short -> short
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short &= long -> short
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long &= int -> long
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long &= short -> long
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long &= long -> long
+    this.andEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte &= byte -> byte
 
     // Or equal op rules
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int |= int -> int
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int |= short -> int
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int |= long -> int
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short |= int -> short
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short |= short -> short
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short |= long -> short
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long |= int -> long
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long |= short -> long
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long |= long -> long
-    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte |= byte -> byte
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int |= int -> int
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int |= short -> int
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int |= long -> int
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short |= int -> short
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short |= short -> short
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short |= long -> short
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long |= int -> long
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long |= short -> long
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long |= long -> long
+    this.orEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte |= byte -> byte
 
     // Xor equal op rules
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int ^= int -> int
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int ^= short -> int
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int ^= long -> int
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short ^= int -> short
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short ^= short -> short
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short ^= long -> short
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long ^= int -> long
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long ^= short -> long
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long ^= long -> long
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte ^= byte -> byte
-    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_CHAR, false}); // char ^= char -> char
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int ^= int -> int
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int ^= short -> int
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int ^= long -> int
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short ^= int -> short
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short ^= short -> short
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short ^= long -> short
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long ^= int -> long
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long ^= short -> long
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long ^= long -> long
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte ^= byte -> byte
+    this.xorEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_CHAR}); // char ^= char -> char
 
     // Logical and op rules
-    this.logicalAndOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool && bool -> bool
+    this.logicalAndOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool && bool -> bool
 
     // Logical or op rules
-    this.logicalOrOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool || bool -> bool
+    this.logicalOrOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool || bool -> bool
 
     // Bitwise or op rules
-    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int | int -> int
-    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short | short -> short
-    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long | long -> long
-    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte | byte -> byte
-    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool | bool -> bool
+    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int | int -> int
+    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short | short -> short
+    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long | long -> long
+    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte | byte -> byte
+    this.bitwiseOrOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool | bool -> bool
 
     // Bitwise xor op rules
-    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int ^ int -> int
-    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short ^ short -> short
-    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long ^ long -> long
-    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte ^ byte -> byte
-    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool ^ bool -> bool
+    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int ^ int -> int
+    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short ^ short -> short
+    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long ^ long -> long
+    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte ^ byte -> byte
+    this.bitwiseXorOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool ^ bool -> bool
 
     // Bitwise and op rules
-    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int & int -> int
-    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short & short -> short
-    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long & long -> long
-    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte & byte -> byte
-    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool & bool -> bool
+    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int & int -> int
+    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short & short -> short
+    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long & long -> long
+    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte & byte -> byte
+    this.bitwiseAndOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool & bool -> bool
 
     // Equal op rules
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // double == double -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL, false}); // double == int -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // double == short -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // double == long -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // int == double -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // int == int -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // int == short -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // int == long -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // int == char -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // short == double -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // short == int -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // short == short -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // short == long -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // short == char -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // long == double -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL, false}); // long == int -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // long == short -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // long == long -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // long == char -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL, false}); // byte == byte -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_BOOL, false}); // char == int -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // char == short -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // char == long -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // char == char -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_BOOL, false}); // string == string -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool == bool -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_FUNCTION, SuperType::TY_FUNCTION, SuperType::TY_BOOL, false}); // function == function -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_PROCEDURE, SuperType::TY_PROCEDURE, SuperType::TY_BOOL, false}); // procedure == procedure -> bool
-    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL, false}); // any* == any* -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // double == double -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL}); // double == int -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL}); // double == short -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL}); // double == long -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // int == double -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL}); // int == int -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // int == short -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL}); // int == long -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_CHAR, SuperType::TY_BOOL}); // int == char -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // short == double -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL}); // short == int -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // short == short -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL}); // short == long -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_CHAR, SuperType::TY_BOOL}); // short == char -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // long == double -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL}); // long == int -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL}); // long == short -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL}); // long == long -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_CHAR, SuperType::TY_BOOL}); // long == char -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL}); // byte == byte -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_BOOL}); // char == int -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_SHORT, SuperType::TY_BOOL}); // char == short -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_LONG, SuperType::TY_BOOL}); // char == long -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL}); // char == char -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_BOOL}); // string == string -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool == bool -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_FUNCTION, SuperType::TY_FUNCTION, SuperType::TY_BOOL}); // function == function -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_PROCEDURE, SuperType::TY_PROCEDURE, SuperType::TY_BOOL}); // procedure == procedure -> bool
+    this.equalOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL}); // any* == any* -> bool
 
     // Not equal op rules
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // double != double -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL, false}); // double != int -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // double != short -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // double != long -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // int != double -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // int != int -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // int != short -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // int != long -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // int != char -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // short != double -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // short != int -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // short != short -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // short != long -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // short != char -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // long != double -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL, false}); // long != int -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // long != short -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // long != long -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // long != char -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL, false}); // byte != byte -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_BOOL, false}); // char != int -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // char != short -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // char != long -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // char != char -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_BOOL, false}); // string != string -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // bool != bool -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_FUNCTION, SuperType::TY_FUNCTION, SuperType::TY_BOOL, false}); // function != function -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PROCEDURE, SuperType::TY_PROCEDURE, SuperType::TY_BOOL, false}); // procedure != procedure -> bool
-    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL, false}); // any* != any* -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // double != double -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL}); // double != int -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL}); // double != short -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL}); // double != long -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // int != double -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL}); // int != int -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // int != short -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL}); // int != long -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_CHAR, SuperType::TY_BOOL}); // int != char -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // short != double -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL}); // short != int -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // short != short -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL}); // short != long -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_CHAR, SuperType::TY_BOOL}); // short != char -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // long != double -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL}); // long != int -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL}); // long != short -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL}); // long != long -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_CHAR, SuperType::TY_BOOL}); // long != char -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL}); // byte != byte -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_BOOL}); // char != int -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_SHORT, SuperType::TY_BOOL}); // char != short -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_LONG, SuperType::TY_BOOL}); // char != long -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL}); // char != char -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_BOOL}); // string != string -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // bool != bool -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_FUNCTION, SuperType::TY_FUNCTION, SuperType::TY_BOOL}); // function != function -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PROCEDURE, SuperType::TY_PROCEDURE, SuperType::TY_BOOL}); // procedure != procedure -> bool
+    this.notEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL}); // any* != any* -> bool
 
     // Less op rules
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // double < double -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL, false}); // double < int -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // double < short -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // double < long -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // int < double -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // int < int -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // int < short -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // int < long -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // short < double -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // short < int -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // short < short -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // short < long -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // long < double -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL, false}); // long < int -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // long < short -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // long < long -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL, false}); // byte < byte -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // char < char -> bool
-    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL, false}); // any* < any* -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // double < double -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL}); // double < int -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL}); // double < short -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL}); // double < long -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // int < double -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL}); // int < int -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // int < short -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL}); // int < long -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // short < double -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL}); // short < int -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // short < short -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL}); // short < long -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // long < double -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL}); // long < int -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL}); // long < short -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL}); // long < long -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL}); // byte < byte -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL}); // char < char -> bool
+    this.lessOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL}); // any* < any* -> bool
 
     // Greater op rules
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // double > double -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL, false}); // double > int -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // double > short -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // double > long -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // int > double -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // int > int -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // int > short -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // int > long -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // short > double -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // short > int -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // short > short -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // short > long -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // long > double -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL, false}); // long > int -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // long > short -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // long > long -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL, false}); // byte > byte -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // char > char -> bool
-    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL, false}); // any* > any* -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // double > double -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL}); // double > int -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL}); // double > short -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL}); // double > long -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // int > double -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL}); // int > int -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // int > short -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL}); // int > long -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // short > double -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL}); // short > int -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // short > short -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL}); // short > long -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // long > double -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL}); // long > int -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL}); // long > short -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL}); // long > long -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL}); // byte > byte -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL}); // char > char -> bool
+    this.greaterOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL}); // any* > any* -> bool
 
     // Less equal op rules
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // double <= double -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL, false}); // double <= int -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // double <= short -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // double <= long -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // int <= double -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // int <= int -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // int <= short -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // int <= long -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // short <= double -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // short <= int -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // short <= short -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // short <= long -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // long <= double -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL, false}); // long <= int -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // long <= short -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // long <= long -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL, false}); // byte <= byte -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // char <= char -> bool
-    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL, false}); // any* <= any* -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // double <= double -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL}); // double <= int -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL}); // double <= short -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL}); // double <= long -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // int <= double -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL}); // int <= int -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // int <= short -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL}); // int <= long -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // short <= double -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL}); // short <= int -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // short <= short -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL}); // short <= long -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // long <= double -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL}); // long <= int -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL}); // long <= short -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL}); // long <= long -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL}); // byte <= byte -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL}); // char <= char -> bool
+    this.lessEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL}); // any* <= any* -> bool
 
     // Greater equal op rules
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // double >= double -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL, false}); // double >= int -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // double >= short -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // double >= long -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // int >= double -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // int >= int -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // int >= short -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // int >= long -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // short >= double -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL, false}); // short >= int -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // short >= short -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // short >= long -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL, false}); // long >= double -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL, false}); // long >= int -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL, false}); // long >= short -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL, false}); // long >= long -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL, false}); // byte >= byte -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL, false}); // char >= char -> bool
-    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL, false}); // any* >= any* -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // double >= double -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_BOOL}); // double >= int -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_BOOL}); // double >= short -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_BOOL}); // double >= long -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // int >= double -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_BOOL}); // int >= int -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // int >= short -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_BOOL}); // int >= long -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // short >= double -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_BOOL}); // short >= int -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_BOOL}); // short >= short -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BOOL}); // short >= long -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_BOOL}); // long >= double -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_BOOL}); // long >= int -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_BOOL}); // long >= short -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_BOOL}); // long >= long -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BOOL}); // byte >= byte -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_BOOL}); // char >= char -> bool
+    this.greaterEqualOpRules.pushBack(BinaryOpRule{SuperType::TY_PTR, SuperType::TY_PTR, SuperType::TY_BOOL}); // any* >= any* -> bool
 
     // Shift left op rules
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int << int -> int
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int << short -> int
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // int << long -> int
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short << int -> short
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short << short -> short
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // short << long -> short
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long << int -> long
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long << short -> long
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long << long -> long
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_INT, SuperType::TY_BYTE, false}); // byte << int -> byte
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_SHORT, SuperType::TY_BYTE, false}); // byte << short -> byte
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_LONG, SuperType::TY_BYTE, false}); // byte << long -> byte
-    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte << byte -> byte
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int << int -> int
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int << short -> int
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // int << long -> int
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short << int -> short
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short << short -> short
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // short << long -> short
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long << int -> long
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long << short -> long
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long << long -> long
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_INT, SuperType::TY_BYTE}); // byte << int -> byte
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_SHORT, SuperType::TY_BYTE}); // byte << short -> byte
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_LONG, SuperType::TY_BYTE}); // byte << long -> byte
+    this.shiftLeftOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte << byte -> byte
 
     // Shift right op rules
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int >> int -> int
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int >> short -> int
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // int >> long -> int
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // short >> int -> short
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short >> short -> short
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // short >> long -> short
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long >> int -> long
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long >> short -> long
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long >> long -> long
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_INT, SuperType::TY_BYTE, false}); // byte >> int -> byte
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_SHORT, SuperType::TY_BYTE, false}); // byte >> short -> byte
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_LONG, SuperType::TY_BYTE, false}); // byte >> long -> byte
-    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte >> byte -> byte
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int >> int -> int
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int >> short -> int
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // int >> long -> int
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // short >> int -> short
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short >> short -> short
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // short >> long -> short
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long >> int -> long
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long >> short -> long
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long >> long -> long
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_INT, SuperType::TY_BYTE}); // byte >> int -> byte
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_SHORT, SuperType::TY_BYTE}); // byte >> short -> byte
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_LONG, SuperType::TY_BYTE}); // byte >> long -> byte
+    this.shiftRightOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte >> byte -> byte
 
     // Plus op rules
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double + double -> double
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE, false}); // double + int -> double
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE, false}); // double + short -> double
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE, false}); // double + long -> double
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // int + double -> double
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int + int -> int
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int + short -> int
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int + long -> long
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // short + double -> double
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT, false}); // short + int -> int
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short + short -> short
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short + long -> long
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // long + double -> double
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long + int -> long
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long + short -> long
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long + long -> long
-    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte + byte -> byte
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double + double -> double
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE}); // double + int -> double
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE}); // double + short -> double
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE}); // double + long -> double
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // int + double -> double
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int + int -> int
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int + short -> int
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int + long -> long
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // short + double -> double
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT}); // short + int -> int
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short + short -> short
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short + long -> long
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // long + double -> double
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long + int -> long
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long + short -> long
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long + long -> long
+    this.plusOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte + byte -> byte
 
     // Minus op rules
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double - double -> double
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE, false}); // double - int -> double
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE, false}); // double - short -> double
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE, false}); // double - long -> double
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // int - double -> double
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int - int -> int
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int - short -> int
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int - long -> long
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // short - double -> double
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT, false}); // short - int -> int
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short - short -> short
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short - long -> long
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // long - double -> double
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long - int -> long
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long - short -> long
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long - long -> long
-    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte - byte -> byte
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double - double -> double
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE}); // double - int -> double
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE}); // double - short -> double
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE}); // double - long -> double
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // int - double -> double
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int - int -> int
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int - short -> int
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int - long -> long
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // short - double -> double
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT}); // short - int -> int
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short - short -> short
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short - long -> long
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // long - double -> double
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long - int -> long
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long - short -> long
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long - long -> long
+    this.minusOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte - byte -> byte
 
     // Mul op rules
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double * double -> double
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE, false}); // double * int -> double
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE, false}); // double * short -> double
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE, false}); // double * long -> double
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // int * double -> double
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int * int -> int
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int * short -> int
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int * long -> long
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // short * double -> double
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT, false}); // short * int -> int
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short * short -> short
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short * long -> long
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // long * double -> double
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long * int -> long
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long * short -> long
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long * long -> long
-    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte * byte -> byte
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double * double -> double
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE}); // double * int -> double
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE}); // double * short -> double
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE}); // double * long -> double
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // int * double -> double
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int * int -> int
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int * short -> int
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int * long -> long
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // short * double -> double
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT}); // short * int -> int
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short * short -> short
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short * long -> long
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // long * double -> double
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long * int -> long
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long * short -> long
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long * long -> long
+    this.mulOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte * byte -> byte
 
     // Div op rules
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double / double -> double
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE, false}); // double / int -> double
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE, false}); // double / short -> double
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE, false}); // double / long -> double
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // int / double -> double
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int / int -> int
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int / short -> int
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int / long -> long
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // short / double -> double
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT, false}); // short / int -> int
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short / short -> short
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short / long -> long
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // long / double -> double
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long / int -> long
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long / short -> long
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long / long -> long
-    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // byte / byte -> byte
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double / double -> double
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE}); // double / int -> double
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE}); // double / short -> double
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE}); // double / long -> double
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // int / double -> double
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int / int -> int
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int / short -> int
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int / long -> long
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // short / double -> double
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT}); // short / int -> int
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short / short -> short
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short / long -> long
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // long / double -> double
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long / int -> long
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long / short -> long
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long / long -> long
+    this.divOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // byte / byte -> byte
 
     // Rem op rules
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // double % double -> double
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // int % int -> int
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // int % short -> int
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // int % long -> long
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT, false}); // short % int -> int
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short % short -> short
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG, false}); // short % long -> long
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // long % int -> long
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // long % short -> long
-    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // long % long -> long
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // double % double -> double
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // int % int -> int
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // int % short -> int
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_LONG}); // int % long -> long
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_INT}); // short % int -> int
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // short % short -> short
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_LONG}); // short % long -> long
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // long % int -> long
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // long % short -> long
+    this.remOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // long % long -> long
 
     // Prefix Minus op rules
-    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // -double -> double
-    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT, false}); // -int -> int
-    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // -short -> short
-    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, false}); // -long -> long
+    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // -double -> double
+    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT}); // -int -> int
+    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT}); // -short -> short
+    this.prefixMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG}); // -long -> long
 
     // Prefix Plus-Plus op rules
-    this.prefixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT, false}); // int++ -> int
-    this.prefixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short++ -> short
-    this.prefixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, false}); // long++ -> long
+    this.prefixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT}); // int++ -> int
+    this.prefixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT}); // short++ -> short
+    this.prefixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG}); // long++ -> long
 
     // Prefix Minus-Minus op rules
-    this.prefixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT, false}); // in-- -> int
-    this.prefixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short-- -> short
-    this.prefixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, false}); // long-- -> long
+    this.prefixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT}); // in-- -> int
+    this.prefixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT}); // short-- -> short
+    this.prefixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG}); // long-- -> long
 
     // Prefix not op rules
-    this.prefixNotOpRules.pushBack(UnaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // !bool -> bool
+    this.prefixNotOpRules.pushBack(UnaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL}); // !bool -> bool
 
     // Prefix bitwise not op rules
-    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT, false}); // ~int -> int
-    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // ~short -> short
-    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, false}); // ~long -> long
-    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // ~byte -> byte
+    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT}); // ~int -> int
+    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT}); // ~short -> short
+    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG}); // ~long -> long
+    this.prefixBitwiseNotOpRules.pushBack(UnaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE}); // ~byte -> byte
 
     // Postfix Plus-Plus op rules
-    this.postfixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT, false}); // int++ -> int
-    this.postfixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short++ -> short
-    this.postfixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, false}); // long++ -> long
+    this.postfixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT}); // int++ -> int
+    this.postfixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT}); // short++ -> short
+    this.postfixPlusPlusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG}); // long++ -> long
 
     // Postfix Minus-Minus op rules
-    this.postfixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT, false}); // int++ -> int
-    this.postfixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // short++ -> short
-    this.postfixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, false}); // long++ -> long
+    this.postfixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_INT, SuperType::TY_INT}); // int++ -> int
+    this.postfixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT}); // short++ -> short
+    this.postfixMinusMinusOpRules.pushBack(UnaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG}); // long++ -> long
 
     // Cast op rules
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, false}); // cast<double>(double) -> double
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE, false}); // cast<double>(int) -> double
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE, false}); // cast<double>(short) -> double
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE, false}); // cast<double>(long) -> double
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_INT, false}); // cast<int>(double) -> int
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT, false}); // cast<int>(int) -> int
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT, false}); // cast<int>(short) -> int
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT, false}); // cast<int>(long) -> int
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_BYTE, SuperType::TY_INT, false}); // cast<int>(byte) -> int
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_CHAR, SuperType::TY_INT, false}); // cast<int>(char) -> int
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_BOOL, SuperType::TY_INT, false}); // cast<int>(bool) -> int
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_SHORT, false}); // cast<short>(double) -> short
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT, false}); // cast<short>(int) -> short
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT, false}); // cast<short>(short) -> short
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT, false}); // cast<short>(long) -> short
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_BOOL, SuperType::TY_SHORT, false}); // cast<short>(bool) -> short
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_LONG, false}); // cast<long>(double) -> long
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG, false}); // cast<long>(int) -> long
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG, false}); // cast<long>(short) -> long
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG, false}); // cast<long>(long) -> long
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_BOOL, SuperType::TY_LONG, false}); // cast<long>(bool) -> long
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_INT, SuperType::TY_BYTE, false}); // cast<byte>(int) -> byte
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE, false}); // cast<byte>(byte) -> byte
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BYTE, false}); // cast<byte>(char) -> byte
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BOOL, SuperType::TY_BYTE, false}); // cast<byte>(bool) -> byte
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_CHAR, false}); // cast<char>(int) -> char
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_SHORT, SuperType::TY_CHAR, false}); // cast<char>(short) -> char
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_LONG, SuperType::TY_CHAR, false}); // cast<char>(long) -> char
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_BYTE, SuperType::TY_CHAR, false}); // cast<char>(byte) -> char
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_CHAR, false}); // cast<char>(char) -> char
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_STRING, false}); // cast<string>(string) -> string
-    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL, false}); // cast<bool>(bool) -> bool
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_DOUBLE, SuperType::TY_DOUBLE}); // cast<double>(double) -> double
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_DOUBLE}); // cast<double>(int) -> double
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_SHORT, SuperType::TY_DOUBLE}); // cast<double>(short) -> double
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_DOUBLE, SuperType::TY_LONG, SuperType::TY_DOUBLE}); // cast<double>(long) -> double
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_DOUBLE, SuperType::TY_INT}); // cast<int>(double) -> int
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_INT, SuperType::TY_INT}); // cast<int>(int) -> int
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_INT}); // cast<int>(short) -> int
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_LONG, SuperType::TY_INT}); // cast<int>(long) -> int
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_BYTE, SuperType::TY_INT}); // cast<int>(byte) -> int
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_CHAR, SuperType::TY_INT}); // cast<int>(char) -> int
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_INT, SuperType::TY_BOOL, SuperType::TY_INT}); // cast<int>(bool) -> int
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_DOUBLE, SuperType::TY_SHORT}); // cast<short>(double) -> short
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_INT, SuperType::TY_SHORT}); // cast<short>(int) -> short
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_SHORT, SuperType::TY_SHORT}); // cast<short>(short) -> short
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_SHORT}); // cast<short>(long) -> short
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_SHORT, SuperType::TY_BOOL, SuperType::TY_SHORT}); // cast<short>(bool) -> short
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_DOUBLE, SuperType::TY_LONG}); // cast<long>(double) -> long
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_LONG}); // cast<long>(int) -> long
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_SHORT, SuperType::TY_LONG}); // cast<long>(short) -> long
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_LONG, SuperType::TY_LONG}); // cast<long>(long) -> long
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_LONG, SuperType::TY_BOOL, SuperType::TY_LONG}); // cast<long>(bool) -> long
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_INT, SuperType::TY_BYTE}); // cast<byte>(int) -> byte
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BYTE, SuperType::TY_BYTE}); // cast<byte>(byte) -> byte
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_BYTE}); // cast<byte>(char) -> byte
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BYTE, SuperType::TY_BOOL, SuperType::TY_BYTE}); // cast<byte>(bool) -> byte
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_INT, SuperType::TY_CHAR}); // cast<char>(int) -> char
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_SHORT, SuperType::TY_CHAR}); // cast<char>(short) -> char
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_LONG, SuperType::TY_CHAR}); // cast<char>(long) -> char
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_BYTE, SuperType::TY_CHAR}); // cast<char>(byte) -> char
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_CHAR, SuperType::TY_CHAR, SuperType::TY_CHAR}); // cast<char>(char) -> char
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_STRING, SuperType::TY_STRING, SuperType::TY_STRING}); // cast<string>(string) -> string
+    this.castOpRules.pushBack(BinaryOpRule{SuperType::TY_BOOL, SuperType::TY_BOOL, SuperType::TY_BOOL}); // cast<bool>(bool) -> bool
 }
 
 // Build an expression result without symbol table entry
@@ -655,7 +653,7 @@ public f<Pair<QualType, Function*>> OpRuleManager.getAssignResultType(ASTNode* n
         // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
         const QualType rhsUnwrappedType = rhsType.removeReferenceWrapper();
         if rhs.entry != nil<SymbolTableEntry*> && lhsType.isPtr() && lhsType.isHeap() && rhsUnwrappedType.isPtr() && rhsType.isHeap() {
-            rhs.entry.updateState(LifecycleState::MOVED, node);
+            rhs.entry.updateState(LifecycleState::MOVED);
         }
         return assignResult(rhsType);
     }
@@ -730,7 +728,7 @@ public f<Pair<QualType, Function*>> OpRuleManager.getFieldAssignResultType(ASTNo
         // If we perform a heap x* = heap x* assignment, we need set the right hand side to MOVED
         const QualType rhsUnwrappedType = rhsType.removeReferenceWrapper();
         if rhs.entry != nil<SymbolTableEntry*> && lhsType.isPtr() && lhsType.isHeap() && rhsUnwrappedType.isPtr() && rhsType.isHeap() {
-            rhs.entry.updateState(LifecycleState::MOVED, node);
+            rhs.entry.updateState(LifecycleState::MOVED);
         }
         return assignResult(rhsType);
     }

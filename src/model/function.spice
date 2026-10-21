@@ -20,15 +20,8 @@ public type Param struct {
     public bool isOptional = false
 }
 
-public type NamedParam struct {
-    public string name = nil<string>
-    public QualType qualType
-    public bool isOptional = false
-}
-
 // Type aliases
 public type ParamList alias Vector<Param>;
-public type NamedParamList alias Vector<NamedParam>;
 
 public type Function struct {
     public String name
@@ -209,17 +202,6 @@ public f<String> Function.getMangledName() {
     }
     // Use normal name mangling
     return mangleFunction(*this);
-}
-
-/**
- * Get the name of the symbol table entry of the function
- *
- * @param functionName Function name
- * @param codeLoc Code location
- * @return Symbol table entry name
- */
-public f<String> Function.getSymbolTableEntryName(const String& functionName, const CodeLoc& codeLoc) {
-    return functionName + ":" + codeLoc.toString();
 }
 
 /**
