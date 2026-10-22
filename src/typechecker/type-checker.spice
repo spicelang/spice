@@ -1321,7 +1321,10 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
                 }
                 // Add to test function list
                 firstManifestation.entry.used = true; // Avoid printing unused warnings
-                firstManifestation.used = true;       // Always keep test functions, because they are called implicitly by the test main
+                // Only keep test functions, when the test main calls them implicitly. Otherwise, they are not emitted at all
+                if this.cliOptions.generateTestMain {
+                    firstManifestation.used = true;
+                }
                 const Function* testFunction = firstManifestation;
                 this.sourceFile.testFunctions.pushBack(testFunction);
             }

@@ -1272,7 +1272,7 @@ p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSym
             }
             // Each emitted manifestation of an exported function is exported under its mangled name
             foreach const model::Function* manifestation : fctDef.manifestations {
-                if manifestation.isFullySubstantiated() && isExportedFunction(manifestation) {
+                if manifestation.isFullySubstantiated() && isExportedFunction(manifestation, this.cliOptions.generateTestMain) {
                     this.registerExportedSymbol(exportedSymbols, manifestation.getMangledName(), manifestation.getSignature(), node);
                 }
             }
