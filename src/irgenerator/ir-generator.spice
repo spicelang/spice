@@ -1730,7 +1730,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
 
         // Check if the manifestation is substantiated or not public and not used by anybody
         const QualType& entryType = manifestation.entry.getQualType();
-        const bool isPublic = isExportedFunction(manifestation);
+        const bool isPublic = isExportedFunction(manifestation, this.cliOptions.generateTestMain);
         if !manifestation.isFullySubstantiated() || (!isPublic && !manifestation.used) {
             this.manIdx++; // Increment symbolTypeIndex
             continue;
@@ -7127,17 +7127,22 @@ f<bool> isPublicDefaultMethod(const model::Function* function) {
 /**
  * Check if the given function is emitted with external linkage and therefore visible to the linker under its mangled name.
  * Default methods of public interfaces are public, because structs in other source files can inherit them. Test functions
- * are public, because the test main calls them
+ * are public, if there is a test main, because it calls them
  *
  * @param function Function or procedure
+ * @param hasTestMain Whether a test main is generated
  * @return Exported or not
  */
-public f<bool> isExportedFunction(const model::Function* function) {
+public f<bool> isExportedFunction(const model::Function* function, bool hasTestMain) {
     const QualType& entryType = function.entry.getQualType();
     if entryType.isPublic() || isPublicDefaultMethod(function) {
         return true;
     }
     if function.declNode.kind != ASTNodeKind::FCT_DEF {
+        return false;
+    }
+    // Test functions are only exported, if the test main calls them
+    if !hasTestMain {
         return false;
     }
     const ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(function.declNode);
