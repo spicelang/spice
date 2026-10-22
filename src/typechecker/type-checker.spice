@@ -1875,6 +1875,9 @@ f<Any> TypeChecker.visitGlobalVarDefPrepare(ASTGlobalVarDefNode* node) {
     if globalVarType.is(SuperType::TY_UNRESOLVED) {
         return Any();
     }
+    const bool isInferred = globalVarType.is(SuperType::TY_DYN);
+    const bool isDeclaredConst = globalVarType.qualifiers.isConst;
+    const bool isDeclaredPublic = globalVarType.qualifiers.isPublic;
 
     if node.constant != nil<ASTConstantNode*> { // Variable is initialized here
         const ExprResult constantResult = this.visitExpr(cast<IVisitable*>(node.constant));
@@ -1900,6 +1903,12 @@ f<Any> TypeChecker.visitGlobalVarDefPrepare(ASTGlobalVarDefNode* node) {
     if !globalVarType.isPrimitive() && !globalVarType.isPtr() {
         this.softError(cast<ASTNode*>(node.dataType), SemanticErrorType::GLOBAL_OF_INVALID_TYPE, String("Spice does only support global variables of primitive or pointer type"));
         return Any();
+    }
+
+    // The inferred type comes from the value, so it does not carry the declared qualifiers yet
+    if isInferred {
+        globalVarType.makeConst(isDeclaredConst);
+        globalVarType.makePublic(isDeclaredPublic);
     }
 
     // Update type of global var entry

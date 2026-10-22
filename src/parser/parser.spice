@@ -2310,7 +2310,8 @@ f<ASTConstantNode*> Parser.parseConstant() {
         constantNode.compileTimeValue.setBoolValue(false);
         this.expect(TokenType::FALSE);
     } else {
-        panic(Error("Unknown constant type"));
+        const String message = "Unexpected token '" + token.text + "'";
+        this.throwParserError(token.codeLoc, ParserErrorType::PARSING_FAILED, message.getRaw());
     }
 
     return this.concludeNode(constantNode);

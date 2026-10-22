@@ -1,0 +1,5 @@
+const dyn INFERRED_CONST_INT = 5;
+
+f<int> main() {
+    INFERRED_CONST_INT = 6;
+}

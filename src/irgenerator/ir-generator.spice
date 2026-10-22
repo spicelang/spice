@@ -2211,8 +2211,8 @@ public f<Any> IRGenerator.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
     const bool isPublic = entryType.isPublic();
     const bool isConst = entryType.isConst();
 
-    // Get correct type and linkage type
-    const llvm::Type varType = this.visitType(cast<IVisitable*>(node.dataType));
+    // Get correct type and linkage type. Use the type of the entry, because the data type might be dyn
+    const llvm::Type varType = entryType.toLLVMType(this.sourceFile);
 
     // Create global var
     const llvm::Value varAddress = this.module.getOrInsertGlobal(node.varName.getRaw(), varType);
