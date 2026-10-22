@@ -292,8 +292,9 @@ f<Vector<String>> ExternalLinkerInterface.getTrailingArgs() {
 }
 
 /**
- * Get the arguments for the linker invoker to compile an additional source to an object file. These are the same arguments,
- * that the linker invoker would use to compile the additional source as part of the link command.
+ * Get the arguments for the linker invoker to compile an additional source to an object file. These are the arguments, that
+ * the linker invoker would use to compile the additional source as part of the link command, without the ones that only
+ * affect linking.
  *
  * @param additionalSource Additional source file
  * @param objectFilePath Path of the object file to emit
@@ -303,7 +304,8 @@ f<Vector<String>> ExternalLinkerInterface.getAdditionalSourceCompileArgs(const F
     const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
     const ExternalBinaryFinderResult linker = findLinker(this.cliOptions);
     const bool isGccInvoker = linkerInvoker.name == "gcc";
-    Vector<String> args = this.getInvokerArgs(linker, isGccInvoker);
+    Vector<String> args;
+    appendCompileArgs(args, this.getInvokerArgs(linker, isGccInvoker));
     // Position independent code on Linux, because the object file is linked into a PIE or a shared library
     if this.isTargetLinux() {
         args.pushBack(String("-fPIC"));
@@ -312,11 +314,58 @@ f<Vector<String>> ExternalLinkerInterface.getAdditionalSourceCompileArgs(const F
     args.pushBack(String("-o"));
     args.pushBack(String(objectFilePath.toString()));
     args.pushBack(String(additionalSource.toString()));
-    const Vector<String> trailingArgs = this.getTrailingArgs();
-    foreach const String& trailingArg : trailingArgs {
-        args.pushBack(trailingArg);
-    }
+    appendCompileArgs(args, this.getTrailingArgs());
     return args;
+}
+
+/**
+ * Append the given linker invoker arguments to the compile arguments of an additional source, except the ones that only
+ * affect linking. The linker invoker ignores those when compiling with '-c', but warns about each of them. Arguments, that
+ * affect compiling as well (e.g. '-I', '-D', '-pthread', '-fsanitize=...' or '--coverage'), are kept.
+ *
+ * @param compileArgs Compile arguments to append to
+ * @param invokerArgs Linker invoker arguments
+ */
+p appendCompileArgs(Vector<String>& compileArgs, const Vector<String>& invokerArgs) {
+    bool skipNext = false;
+    foreach const String& arg : invokerArgs {
+        if skipNext {
+            skipNext = false;
+            continue;
+        }
+        // '-Xlinker' passes the next argument on to the linker
+        if arg == "-Xlinker" {
+            skipNext = true;
+            continue;
+        }
+        if !isLinkOnlyArg(arg) {
+            compileArgs.pushBack(arg);
+        }
+    }
+}
+
+/**
+ * Check if the given linker invoker argument only affects linking
+ *
+ * @param arg Linker invoker argument
+ * @return Link only or not
+ */
+f<bool> isLinkOnlyArg(const String& arg) {
+    // Linker inputs, like archives, shared libraries or object files
+    if !arg.startsWith("-") {
+        return true;
+    }
+    // Libraries, library search paths, linker options and the linker selection
+    if arg.startsWith("-l") || arg.startsWith("-L") || arg.startsWith("-Wl,") || arg.startsWith("-fuse-ld=") {
+        return true;
+    }
+    const string[7] linkOnlyFlags = ["-shared", "-static", "-static-pie", "-pie", "-no-pie", "-rdynamic", "-nostdlib"];
+    for unsigned int i = 0; i < len(linkOnlyFlags); i++ {
+        if arg == linkOnlyFlags[i] {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -655,4 +704,40 @@ f<bool> ExternalLinkerInterface.isTargetDarwin() {    // LCOV_EXCL_LINE - covera
  */
 f<bool> ExternalLinkerInterface.isTargetWindows() {
     return this.cliOptions.targetTriple.isOSWindows();
+}
+
+#[test]
+f<bool> testAppendCompileArgs() {
+    Vector<String> invokerArgs;
+    // Kept, because they affect compiling
+    invokerArgs.pushBack(String("--target=x86_64-unknown-linux-gnu"));
+    invokerArgs.pushBack(String("-I/opt/llvm/include"));
+    invokerArgs.pushBack(String("-DNDEBUG"));
+    invokerArgs.pushBack(String("-pthread"));
+    invokerArgs.pushBack(String("-fsanitize=address"));
+    invokerArgs.pushBack(String("--coverage"));
+    // Left out, because they only affect linking
+    invokerArgs.pushBack(String("-fuse-ld=/usr/bin/ld.lld"));
+    invokerArgs.pushBack(String("-L/opt/llvm/lib"));
+    invokerArgs.pushBack(String("-lLLVMCore"));
+    invokerArgs.pushBack(String("-Wl,--start-group"));
+    invokerArgs.pushBack(String("/opt/tpde/lib/libtpde.a"));
+    invokerArgs.pushBack(String("-Xlinker"));
+    invokerArgs.pushBack(String("--no-undefined"));
+    invokerArgs.pushBack(String("-pie"));
+    invokerArgs.pushBack(String("-static-pie"));
+    invokerArgs.pushBack(String("-shared"));
+
+    Vector<String> compileArgs;
+    compileArgs.pushBack(String("-c"));
+    appendCompileArgs(compileArgs, invokerArgs);
+    assert compileArgs.getSize() == 7l;
+    assert compileArgs.get(0l) == "-c";
+    assert compileArgs.get(1l) == "--target=x86_64-unknown-linux-gnu";
+    assert compileArgs.get(2l) == "-I/opt/llvm/include";
+    assert compileArgs.get(3l) == "-DNDEBUG";
+    assert compileArgs.get(4l) == "-pthread";
+    assert compileArgs.get(5l) == "-fsanitize=address";
+    assert compileArgs.get(6l) == "--coverage";
+    return true;
 }
