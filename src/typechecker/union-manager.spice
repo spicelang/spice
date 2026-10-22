@@ -64,9 +64,8 @@ f<Union*> insertSubstantiation(Scope* insertScope, Union& newManifestation, cons
     return &manifestationList.get(signature);
 }
 
-// Address of the active union lookup cache. Spice only supports globals of primitive type, so the cache is owned by the
-// global resource manager and its address is stored here.
-long ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = 0l;
+// Active union lookup cache. It is owned by the global resource manager.
+LookupCache<Union>* ACTIVE_UNION_LOOKUP_CACHE;
 
 /**
  * Make the given lookup cache the active one. The union lookup operates on it.
@@ -74,9 +73,7 @@ long ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = 0l;
  * @param cache Lookup cache
  */
 public p setActiveUnionLookupCache(LookupCache<Union>* cache) {
-    unsafe {
-        ACTIVE_UNION_LOOKUP_CACHE_ADDRESS = cast<long>(cache);
-    }
+    ACTIVE_UNION_LOOKUP_CACHE = cache;
 }
 
 /**
@@ -85,10 +82,8 @@ public p setActiveUnionLookupCache(LookupCache<Union>* cache) {
  * @return Active lookup cache
  */
 f<LookupCache<Union>*> getActiveUnionLookupCache() {
-    unsafe {
-        result = cast<LookupCache<Union>*>(ACTIVE_UNION_LOOKUP_CACHE_ADDRESS);
-    }
-    assert result != nil<LookupCache<Union>*>;
+    assert ACTIVE_UNION_LOOKUP_CACHE != nil<LookupCache<Union>*>;
+    return ACTIVE_UNION_LOOKUP_CACHE;
 }
 
 /**

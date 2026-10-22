@@ -38,11 +38,6 @@ const unsigned long MAX_BACK_END_SPEEDUP = 6ul;
 // Interval, in which the heartbeat thread refreshes the bar while a long-running stage reports no progress
 const int HEARTBEAT_INTERVAL_MILLIS = 50;
 
-// Address of the active compile progress. Compile errors abort the compilation from places that have no access to the
-// resource manager (e.g. the lexer and the parser), and they have to remove the bar from the console first. Spice only
-// supports globals of primitive type, so the address is stored as a long.
-unsigned long ACTIVE_COMPILE_PROGRESS_ADDRESS = 0ul;
-
 /**
  * Back end stages, that report their progress
  */
@@ -81,6 +76,10 @@ public type CompileProgress struct {
     Vector<Thread> heartbeatThreads // Holds the heartbeat thread while it runs
 }
 
+// Active compile progress. Compile errors abort the compilation from places that have no access to the resource manager
+// (e.g. the lexer and the parser), and they have to remove the bar from the console first.
+CompileProgress* ACTIVE_COMPILE_PROGRESS;
+
 public p CompileProgress.ctor() {
     this.bar = ProgressBar(0ul, COMPILE_PHASE_FRONT_END);
     this.bar.setShowCounter(false); // The steps are no meaningful unit for the user
@@ -89,10 +88,8 @@ public p CompileProgress.ctor() {
 public p CompileProgress.dtor() {
     this.stopHeartbeat();
     this.clear();
-    unsafe {
-        if ACTIVE_COMPILE_PROGRESS_ADDRESS == cast<unsigned long>(this) {
-            ACTIVE_COMPILE_PROGRESS_ADDRESS = 0ul;
-        }
+    if ACTIVE_COMPILE_PROGRESS == this {
+        ACTIVE_COMPILE_PROGRESS = nil<CompileProgress*>;
     }
 }
 
@@ -126,9 +123,7 @@ public p CompileProgress.enable(bool runBackEnd, bool link, bool optimized, bool
     }
 
     this.enabled = true;
-    unsafe {
-        ACTIVE_COMPILE_PROGRESS_ADDRESS = cast<unsigned long>(this);
-    }
+    ACTIVE_COMPILE_PROGRESS = this;
     // The bar is drawn for the first time with the first source file, because a bar without any steps counts as complete
 }
 
@@ -372,11 +367,8 @@ public f<bool> shouldShowCompileProgress(const CliOptions& cliOptions) {
  * @return Shown or not
  */
 public f<bool> isCompileProgressActive() {
-    unsafe {
-        if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return false; }
-        CompileProgress* compileProgress = cast<CompileProgress*>(ACTIVE_COMPILE_PROGRESS_ADDRESS);
-        return compileProgress.enabled;
-    }
+    if ACTIVE_COMPILE_PROGRESS == nil<CompileProgress*> { return false; }
+    return ACTIVE_COMPILE_PROGRESS.enabled;
 }
 
 /**
@@ -386,11 +378,9 @@ public f<bool> isCompileProgressActive() {
  * @param output Output to print
  */
 public p printAboveActiveCompileProgress(const String& output) {
-    unsafe {
-        if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return; }
-        CompileProgress* compileProgress = cast<CompileProgress*>(ACTIVE_COMPILE_PROGRESS_ADDRESS);
-        compileProgress.printAboveBar(output);
-    }
+    CompileProgress* compileProgress = ACTIVE_COMPILE_PROGRESS;
+    if compileProgress == nil<CompileProgress*> { return; }
+    compileProgress.printAboveBar(output);
 }
 
 /**
@@ -398,11 +388,9 @@ public p printAboveActiveCompileProgress(const String& output) {
  * the compilation, so that the error message does not end up behind the bar.
  */
 public p clearActiveCompileProgress() {
-    unsafe {
-        if ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul { return; }
-        CompileProgress* compileProgress = cast<CompileProgress*>(ACTIVE_COMPILE_PROGRESS_ADDRESS);
-        compileProgress.clear();
-    }
+    CompileProgress* compileProgress = ACTIVE_COMPILE_PROGRESS;
+    if compileProgress == nil<CompileProgress*> { return; }
+    compileProgress.clear();
 }
 
 // ─── tests ────────────────────────────────────────────────────────────────────
@@ -593,9 +581,7 @@ f<bool> testActiveCompileProgress() {
         assert progress.bar.getCurrent() == 0ul;
     }
     // The destructor unregisters the progress
-    unsafe {
-        assert ACTIVE_COMPILE_PROGRESS_ADDRESS == 0ul;
-    }
+    assert ACTIVE_COMPILE_PROGRESS == nil<CompileProgress*>;
     assert !isCompileProgressActive();
     clearActiveCompileProgress(); // No-op without an active progress
     printAboveActiveCompileProgress(String());

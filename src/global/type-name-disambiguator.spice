@@ -27,9 +27,8 @@ public type TypeNameDisambiguator struct {
     RecursiveMutex claimedTypeIdsMutex
 }
 
-// Address of the active type name disambiguator. Spice only supports globals of primitive type, so the address is stored
-// as a long.
-long ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = 0l;
+// Active type name disambiguator. It is owned by the global resource manager.
+TypeNameDisambiguator* ACTIVE_TYPE_NAME_DISAMBIGUATOR;
 
 /**
  * Make the given type name disambiguator the active one. getDisambiguationSuffix() operates on it.
@@ -37,9 +36,7 @@ long ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = 0l;
  * @param disambiguator Type name disambiguator
  */
 public p setActiveTypeNameDisambiguator(TypeNameDisambiguator* disambiguator) {
-    unsafe {
-        ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS = cast<long>(disambiguator);
-    }
+    ACTIVE_TYPE_NAME_DISAMBIGUATOR = disambiguator;
 }
 
 /**
@@ -48,10 +45,8 @@ public p setActiveTypeNameDisambiguator(TypeNameDisambiguator* disambiguator) {
  * @return Active type name disambiguator
  */
 f<TypeNameDisambiguator*> getActiveTypeNameDisambiguator() {
-    unsafe {
-        result = cast<TypeNameDisambiguator*>(ACTIVE_TYPE_NAME_DISAMBIGUATOR_ADDRESS);
-    }
-    assert result != nil<TypeNameDisambiguator*>;
+    assert ACTIVE_TYPE_NAME_DISAMBIGUATOR != nil<TypeNameDisambiguator*>;
+    return ACTIVE_TYPE_NAME_DISAMBIGUATOR;
 }
 
 /**

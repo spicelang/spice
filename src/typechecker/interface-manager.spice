@@ -68,9 +68,8 @@ f<Interface*> insertSubstantiation(Scope* insertScope, Interface& newManifestati
     return &manifestationList.get(signature);
 }
 
-// Address of the active interface lookup cache. Spice only supports globals of primitive type, so the cache is owned by the
-// global resource manager and its address is stored here.
-long ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = 0l;
+// Active interface lookup cache. It is owned by the global resource manager.
+LookupCache<Interface>* ACTIVE_INTERFACE_LOOKUP_CACHE;
 
 /**
  * Make the given lookup cache the active one. The interface lookup operates on it.
@@ -78,9 +77,7 @@ long ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = 0l;
  * @param cache Lookup cache
  */
 public p setActiveInterfaceLookupCache(LookupCache<Interface>* cache) {
-    unsafe {
-        ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS = cast<long>(cache);
-    }
+    ACTIVE_INTERFACE_LOOKUP_CACHE = cache;
 }
 
 /**
@@ -89,10 +86,8 @@ public p setActiveInterfaceLookupCache(LookupCache<Interface>* cache) {
  * @return Active lookup cache
  */
 f<LookupCache<Interface>*> getActiveInterfaceLookupCache() {
-    unsafe {
-        result = cast<LookupCache<Interface>*>(ACTIVE_INTERFACE_LOOKUP_CACHE_ADDRESS);
-    }
-    assert result != nil<LookupCache<Interface>*>;
+    assert ACTIVE_INTERFACE_LOOKUP_CACHE != nil<LookupCache<Interface>*>;
+    return ACTIVE_INTERFACE_LOOKUP_CACHE;
 }
 
 /**

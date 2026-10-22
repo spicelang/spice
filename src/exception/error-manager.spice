@@ -32,10 +32,9 @@ public type ErrorManager struct {
     public String hardErrorMessage
 }
 
-// Address of the active error manager. Hard errors are raised from anywhere in the compiler, including places that have no
-// access to the resource manager (e.g. the FunctionManager). Spice only supports globals of primitive type, so the address
-// is stored as a long.
-unsigned long ACTIVE_ERROR_MANAGER_ADDRESS = 0ul;
+// Active error manager. Hard errors are raised from anywhere in the compiler, including places that have no access to the
+// resource manager (e.g. the FunctionManager).
+ErrorManager* ACTIVE_ERROR_MANAGER;
 
 /**
  * Make the given error manager the active one. throwSemanticError() records hard errors in it.
@@ -43,9 +42,7 @@ unsigned long ACTIVE_ERROR_MANAGER_ADDRESS = 0ul;
  * @param errorManager Error manager
  */
 public p setActiveErrorManager(ErrorManager* errorManager) {
-    unsafe {
-        ACTIVE_ERROR_MANAGER_ADDRESS = cast<unsigned long>(errorManager);
-    }
+    ACTIVE_ERROR_MANAGER = errorManager;
 }
 
 /**
@@ -54,10 +51,8 @@ public p setActiveErrorManager(ErrorManager* errorManager) {
  * @return Active error manager
  */
 public f<ErrorManager*> getActiveErrorManager() {
-    unsafe {
-        result = cast<ErrorManager*>(ACTIVE_ERROR_MANAGER_ADDRESS);
-    }
-    assert result != nil<ErrorManager*>;
+    assert ACTIVE_ERROR_MANAGER != nil<ErrorManager*>;
+    return ACTIVE_ERROR_MANAGER;
 }
 
 /**
