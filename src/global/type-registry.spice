@@ -36,9 +36,9 @@ public type TypeRegistry struct {
     RecursiveMutex typesMutex
 }
 
-// Address of the active type registry, which context-free type creation like QualType(TY_INT) relies on. Spice only
-// supports globals of primitive type, so the address is stored as a long.
-long ACTIVE_TYPE_REGISTRY_ADDRESS = 0l;
+// Active type registry, which context-free type creation like QualType(TY_INT) relies on. It is owned by the global
+// resource manager.
+TypeRegistry* ACTIVE_TYPE_REGISTRY;
 
 /**
  * Make the given type registry the active one. Context-free type creation, e.g. QualType(TY_INT), interns into it.
@@ -46,9 +46,7 @@ long ACTIVE_TYPE_REGISTRY_ADDRESS = 0l;
  * @param registry Type registry, which must outlive all types created through it
  */
 public p setActiveTypeRegistry(TypeRegistry* registry) {
-    unsafe {
-        ACTIVE_TYPE_REGISTRY_ADDRESS = cast<long>(registry);
-    }
+    ACTIVE_TYPE_REGISTRY = registry;
 }
 
 /**
@@ -57,9 +55,7 @@ public p setActiveTypeRegistry(TypeRegistry* registry) {
  * @return Active type registry or nil if no type registry is active
  */
 public f<TypeRegistry*> getActiveTypeRegistry() {
-    unsafe {
-        return cast<TypeRegistry*>(ACTIVE_TYPE_REGISTRY_ADDRESS);
-    }
+    return ACTIVE_TYPE_REGISTRY;
 }
 
 public p TypeRegistry.ctor() {

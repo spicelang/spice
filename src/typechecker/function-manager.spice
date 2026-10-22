@@ -38,9 +38,8 @@ type MatchResult enum {
 
 public const string MAIN_FUNCTION_NAME = "main";
 
-// Address of the active function lookup cache. Spice only supports globals of primitive type, so the cache is owned by the
-// global resource manager and its address is stored here.
-long ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = 0l;
+// Active function lookup cache. It is owned by the global resource manager.
+LookupCache<Function>* ACTIVE_FUNCTION_LOOKUP_CACHE;
 
 /**
  * Make the given lookup cache the active one. The function lookup operates on it.
@@ -48,9 +47,7 @@ long ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = 0l;
  * @param cache Lookup cache
  */
 public p setActiveFunctionLookupCache(LookupCache<Function>* cache) {
-    unsafe {
-        ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS = cast<long>(cache);
-    }
+    ACTIVE_FUNCTION_LOOKUP_CACHE = cache;
 }
 
 /**
@@ -59,10 +56,8 @@ public p setActiveFunctionLookupCache(LookupCache<Function>* cache) {
  * @return Active lookup cache
  */
 f<LookupCache<Function>*> getActiveFunctionLookupCache() {
-    unsafe {
-        result = cast<LookupCache<Function>*>(ACTIVE_FUNCTION_LOOKUP_CACHE_ADDRESS);
-    }
-    assert result != nil<LookupCache<Function>*>;
+    assert ACTIVE_FUNCTION_LOOKUP_CACHE != nil<LookupCache<Function>*>;
+    return ACTIVE_FUNCTION_LOOKUP_CACHE;
 }
 
 /**

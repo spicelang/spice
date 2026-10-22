@@ -74,11 +74,10 @@ public p ConditionalLock.dtor() {
     }
 }
 
-// Address of the symbol registry mutex. It guards the process-wide symbol lookup machinery: the lookup caches of the
+// Active symbol registry mutex. It guards the process-wide symbol lookup machinery: the lookup caches of the
 // FunctionManager, StructManager, InterfaceManager and UnionManager, plus the manifestation lists and symbol table entries
-// those matchers touch. Spice only supports globals of primitive type, so it is owned by the GlobalResourceManager, which
-// registers it here.
-long ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = 0l;
+// those matchers touch. It is owned by the GlobalResourceManager, which registers it here.
+RecursiveMutex* ACTIVE_SYMBOL_REGISTRY_MUTEX;
 
 /**
  * Make the given mutex the active symbol registry mutex
@@ -86,9 +85,7 @@ long ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = 0l;
  * @param mutex Symbol registry mutex
  */
 public p setActiveSymbolRegistryMutex(RecursiveMutex* mutex) {
-    unsafe {
-        ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS = cast<long>(mutex);
-    }
+    ACTIVE_SYMBOL_REGISTRY_MUTEX = mutex;
 }
 
 /**
@@ -103,10 +100,8 @@ public p setActiveSymbolRegistryMutex(RecursiveMutex* mutex) {
  * @return Active symbol registry mutex
  */
 public f<RecursiveMutex*> getSymbolRegistryMutex() {
-    unsafe {
-        result = cast<RecursiveMutex*>(ACTIVE_SYMBOL_REGISTRY_MUTEX_ADDRESS);
-    }
-    assert result != nil<RecursiveMutex*>;
+    assert ACTIVE_SYMBOL_REGISTRY_MUTEX != nil<RecursiveMutex*>;
+    return ACTIVE_SYMBOL_REGISTRY_MUTEX;
 }
 
 // ─── tests ────────────────────────────────────────────────────────────────────
