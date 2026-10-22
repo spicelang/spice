@@ -177,7 +177,7 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     // the control flow analysis of functions and procedures in the prepare stage relies on it
     if isPrepare {
         foreach IVisitable* switchStmt : node.switchStmts {
-            ASTSwitchStmtNode* switchStmtNode = downcast<ASTSwitchStmtNode>(getASTNode(switchStmt));
+            ASTSwitchStmtNode* switchStmtNode = downcastMut<ASTSwitchStmtNode>(getASTNode(switchStmt));
             switchStmtNode.coversAllEnumItems = this.coversAllEnumItems(switchStmtNode);
         }
     }
@@ -212,9 +212,9 @@ f<bool> TypeChecker.coversAllEnumItems(ASTSwitchStmtNode* node) {
     ASTEnumDefNode* enumDef = nil<ASTEnumDefNode*>;
     Vector<ASTEnumItemNode*> coveredItems;
     foreach IVisitable* caseBranch : node.caseBranches {
-        ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(caseBranch);
+        const ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(caseBranch);
         foreach IVisitable* constant : caseBranchNode.caseConstants {
-            ASTCaseConstantNode* constantNode = downcast<ASTCaseConstantNode>(constant);
+            const ASTCaseConstantNode* constantNode = downcast<ASTCaseConstantNode>(constant);
             // Literal constants can never be enum items
             if constantNode.constant != nil<ASTConstantNode*> {
                 return false;
@@ -229,7 +229,7 @@ f<bool> TypeChecker.coversAllEnumItems(ASTSwitchStmtNode* node) {
             if declNode == nil<ASTNode*> || declNode.kind != ASTNodeKind::ENUM_ITEM {
                 return false;
             }
-            ASTEnumItemNode* enumItemNode = downcast<ASTEnumItemNode>(declNode);
+            const ASTEnumItemNode* enumItemNode = downcast<ASTEnumItemNode>(declNode);
 
             // All case constants have to be items of the same enum
             if enumDef != nil<ASTEnumDefNode*> && enumItemNode.enumDef != enumDef {
@@ -250,7 +250,7 @@ f<bool> TypeChecker.coversAllEnumItems(ASTSwitchStmtNode* node) {
     if enumDef == nil<ASTEnumDefNode*> {
         return false;
     }
-    ASTEnumItemLstNode* itemLst = downcast<ASTEnumItemLstNode>(enumDef.itemLst);
+    const ASTEnumItemLstNode* itemLst = downcast<ASTEnumItemLstNode>(enumDef.itemLst);
     return coveredItems.getSize() == itemLst.items.getSize();
 }
 
@@ -633,7 +633,7 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
     TypeChainElementData data;
     switch declNode.kind {
         case ASTNodeKind::STRUCT_DEF: {
-            ASTStructDefNode* structDef = downcast<ASTStructDefNode>(declNode);
+            const ASTStructDefNode* structDef = downcast<ASTStructDefNode>(declNode);
             if structDef.hasTemplateTypes {
                 return;
             }
@@ -642,7 +642,7 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
             entry.updateType(QualType(rawType, structDef.qualifiers), false);
         }
         case ASTNodeKind::INTERFACE_DEF: {
-            ASTInterfaceDefNode* interfaceDef = downcast<ASTInterfaceDefNode>(declNode);
+            const ASTInterfaceDefNode* interfaceDef = downcast<ASTInterfaceDefNode>(declNode);
             if interfaceDef.hasTemplateTypes {
                 return;
             }
@@ -651,7 +651,7 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
             entry.updateType(QualType(rawType, interfaceDef.qualifiers), false);
         }
         case ASTNodeKind::UNION_DEF: {
-            ASTUnionDefNode* unionDef = downcast<ASTUnionDefNode>(declNode);
+            const ASTUnionDefNode* unionDef = downcast<ASTUnionDefNode>(declNode);
             if unionDef.hasTemplateTypes {
                 return;
             }
@@ -660,7 +660,7 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
             entry.updateType(QualType(rawType, unionDef.qualifiers), false);
         }
         case ASTNodeKind::ENUM_DEF: {
-            ASTEnumDefNode* enumDef = downcast<ASTEnumDefNode>(declNode);
+            const ASTEnumDefNode* enumDef = downcast<ASTEnumDefNode>(declNode);
             data.bodyScope = enumDef.enumScope;
             const Type* rawType = typeRegistry.getOrInsert(SuperType::TY_ENUM, enumDef.enumName, enumDef.typeId, data, noTemplateTypes);
             entry.updateType(QualType(rawType, enumDef.qualifiers), false);
@@ -671,7 +671,7 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
             // The aliased type has to be resolved in the context of the file declaring the alias, not the referencing one,
             // because the referencing file does not necessarily import the types the alias refers to.
             TypeChecker declTypeChecker = TypeChecker(this.resourceManager, entry.scope.sourceFile, TypeCheckerMode::TC_MODE_PRE);
-            declTypeChecker.visitAliasDefPrepare(downcast<ASTAliasDefNode>(declNode));
+            declTypeChecker.visitAliasDefPrepare(downcastMut<ASTAliasDefNode>(declNode));
         }
         default: {}
     }
@@ -840,7 +840,7 @@ f<Any> TypeChecker.checkFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* bas
  * @param manifestation Manifestation, whose params to annotate
  */
 p TypeChecker.annotateLambdaCaptureParams(ASTFctDefBaseNode* fctDefBase, const Function* manifestation) {
-    ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(getASTNode(fctDefBase.paramLst));
+    const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(getASTNode(fctDefBase.paramLst));
     const QualTypeList paramTypes = manifestation.getParamTypes();
     const dyn fctOptions = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     for unsigned long i = 0l; i < manifestation.paramList.getSize(); i++ {
@@ -935,7 +935,7 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
 
         // Re-visit all default values. This is required, since the type of the default value might vary for different manifestations
         foreach IVisitable* fieldVisitable : node.fields {
-            ASTFieldNode* field = downcast<ASTFieldNode>(getASTNode(fieldVisitable));
+            const ASTFieldNode* field = downcast<ASTFieldNode>(getASTNode(fieldVisitable));
             if field.defaultValue != nil<IVisitable*> {
                 this.visit(field.defaultValue);
                 SymbolTableEntry* fieldEntry = manifestation.structBase.scope.lookupStrict(field.fieldName);
@@ -1076,7 +1076,7 @@ f<Any> TypeChecker.visitUnionDefCheck(ASTUnionDefNode* node) {
         // Re-visit the default value (at most one field may have one). This is required, since the type of the default
         // value might vary for different manifestations
         foreach IVisitable* fieldVisitable : node.fields {
-            ASTFieldNode* field = downcast<ASTFieldNode>(getASTNode(fieldVisitable));
+            const ASTFieldNode* field = downcast<ASTFieldNode>(getASTNode(fieldVisitable));
             if field.defaultValue != nil<IVisitable*> {
                 this.visit(field.defaultValue);
                 SymbolTableEntry* fieldEntry = manifestation.structBase.scope.lookupStrict(field.fieldName);
@@ -1296,7 +1296,7 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
 
     // Check function/procedure attributes
     if fctDefBase.attrs != nil<IVisitable*> {
-        ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDefBase.attrs);
+        const ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDefBase.attrs);
         ASTAttrLstNode* attrLst = attrs.attrLst;
         Function* firstManifestation = fctDefBase.manifestations.front();
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLE)) {
@@ -1473,7 +1473,7 @@ f<Any> TypeChecker.visitStructDefPrepare(ASTStructDefNode* node) {
     // via one field need not be re-walked for another.
     Vector<const Scope*> visitedScopes;
     foreach IVisitable* fieldVisitable : node.fields {
-        ASTFieldNode* field = downcast<ASTFieldNode>(fieldVisitable);
+        const ASTFieldNode* field = downcast<ASTFieldNode>(fieldVisitable);
         ASTNode* fieldBaseNode = cast<ASTNode*>(field);
 
         // Visit field type
@@ -1517,7 +1517,7 @@ f<Any> TypeChecker.visitStructDefPrepare(ASTStructDefNode* node) {
     // Request RTTI runtime if the struct is polymorphic
     node.emitVTable = node.emitVTable || node.hasInterfaces;
     if node.attrs != nil<IVisitable*> {
-        ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(node.attrs);
+        const ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(node.attrs);
         ASTAttrLstNode* attrLst = attrs.attrLst;
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_EMIT_VTABLE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_EMIT_VTABLE));
@@ -1663,7 +1663,7 @@ f<Any> TypeChecker.visitUnionDefPrepare(ASTUnionDefNode* node) {
     unsigned long defaultFieldIndex = ULONG_MAX_VALUE;
     for unsigned long i = 0l; i < node.fields.getSize(); i++ {
         IVisitable* fieldVisitable = node.fields.get(i);
-        ASTFieldNode* field = downcast<ASTFieldNode>(fieldVisitable);
+        const ASTFieldNode* field = downcast<ASTFieldNode>(fieldVisitable);
         ASTNode* fieldBaseNode = cast<ASTNode*>(field);
 
         // Visit field type
@@ -1745,7 +1745,7 @@ f<Any> TypeChecker.visitEnumDefPrepare(ASTEnumDefNode* node) {
     assert this.currentScope.scopeType == ScopeType::ENUM;
 
     // Loop through all items with values
-    ASTEnumItemLstNode* itemLst = downcast<ASTEnumItemLstNode>(node.itemLst);
+    const ASTEnumItemLstNode* itemLst = downcast<ASTEnumItemLstNode>(node.itemLst);
     Vector<String> names;
     Vector<unsigned int> values;
     foreach ASTEnumItemNode* enumItem : itemLst.items {
@@ -1798,7 +1798,7 @@ f<bool> containsValue(const Vector<unsigned int>& values, unsigned int value) {
 
 f<Any> TypeChecker.visitGenericTypeDefPrepare(ASTGenericTypeDefNode* node) {
     // Retrieve type conditions
-    ASTTypeAltsLstNode* typeAltsLst = downcast<ASTTypeAltsLstNode>(node.typeAltsLst);
+    const ASTTypeAltsLstNode* typeAltsLst = downcast<ASTTypeAltsLstNode>(node.typeAltsLst);
     QualTypeList typeConditions;
     foreach ASTDataTypeNode* typeAlt : typeAltsLst.dataTypes {
         const QualType typeCondition = this.getDataType(typeAlt);
@@ -1968,7 +1968,7 @@ f<Any> TypeChecker.visitExtDeclPrepare(ASTExtDeclNode* node) {
 
     // Check procedure attributes
     if node.attrs != nil<IVisitable*> {
-        ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(node.attrs);
+        const ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(node.attrs);
         ASTAttrLstNode* attrLst = attrs.attrLst;
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLE));
@@ -2369,7 +2369,7 @@ public f<Any> TypeChecker.visitCustomDataType(ASTCustomDataTypeNode* node) {
             assert defScope != nil<Scope*>;
             isImported = defScope.isImportedBy(this.rootScope);
 
-            ASTTypeLstNode* templateTypeLst = downcast<ASTTypeLstNode>(node.templateTypeLst);
+            const ASTTypeLstNode* templateTypeLst = downcast<ASTTypeLstNode>(node.templateTypeLst);
             foreach ASTDataTypeNode* dataType : templateTypeLst.dataTypes {
                 const QualType templateType = this.getDataType(dataType);
                 if templateType.is(SuperType::TY_UNRESOLVED) {
@@ -2914,7 +2914,7 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
     ScopeHandle bodyScopeHandle = ScopeHandle(&this.compilerPass, node.getBodyScopeId(), ScopeType::FOREACH_BODY);
 
     // Retrieve item variable entry
-    ASTDeclStmtNode* itemVarDecl = downcast<ASTDeclStmtNode>(node.itemVarDecl);
+    const ASTDeclStmtNode* itemVarDecl = downcast<ASTDeclStmtNode>(node.itemVarDecl);
     SymbolTableEntry* itemVarSymbol = this.currentScope.lookupStrict(itemVarDecl.varName);
     assert itemVarSymbol != nil<SymbolTableEntry*>;
 
@@ -3001,7 +3001,7 @@ public f<Any> TypeChecker.visitIfStmt(ASTIfStmtNode* node) {
 
     // Warning for bool assignment
     if conditionNode.kind == ASTNodeKind::ASSIGN_EXPR {
-        ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(conditionNode);
+        const ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(conditionNode);
         if assignExprNode.op == AssignOp::OP_ASSIGN {
             this.addWarning(conditionNode.codeLoc, CompilerWarningType::BOOL_ASSIGN_AS_CONDITION, String("If you want to compare the values, use '=='"));
         }
@@ -3069,7 +3069,7 @@ public f<Any> TypeChecker.visitSwitchStmt(ASTSwitchStmtNode* node) {
 
     // Check if case constant types match switch expression type
     foreach IVisitable* caseBranch : node.caseBranches {
-        ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(caseBranch);
+        const ASTCaseBranchNode* caseBranchNode = downcast<ASTCaseBranchNode>(caseBranch);
         foreach IVisitable* constantNode : caseBranchNode.caseConstants {
             const ExprResult constantResult = this.visitExpr(constantNode);
             const QualType constantType = constantResult.ty;
@@ -3198,7 +3198,7 @@ f<bool> TypeChecker.isAlwaysConstructedLvalue(ASTNode* node) {
     const QualType lvalueType = exprNode.getEvaluatedSymbolType(this.manIdx);
     ASTAtomicExprNode* atomicExpr = nil<ASTAtomicExprNode*>;
     if node.kind == ASTNodeKind::ATOMIC_EXPR {
-        atomicExpr = downcast<ASTAtomicExprNode>(node);
+        atomicExpr = downcastMut<ASTAtomicExprNode>(node);
     }
     const bool isThis = atomicExpr != nil<ASTAtomicExprNode*> && atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
     if !isThis && !lvalueType.isRef() {
@@ -3222,7 +3222,7 @@ f<bool> TypeChecker.isAlwaysConstructedLvalue(ASTNode* node) {
     if node.kind != ASTNodeKind::POSTFIX_UNARY_EXPR {
         return false;
     }
-    ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(node);
+    const ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(node);
     if postfixUnaryExpr.op != PostfixUnaryOp::OP_MEMBER_ACCESS {
         return false;
     }
@@ -4665,9 +4665,9 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             assert callee != nil<const Function*>;
             ASTNode* calleeDeclNode = callee.declNode;
             if calleeDeclNode.kind == ASTNodeKind::FCT_DEF {
-                ASTFctDefNode* fctDef = downcast<ASTFctDefNode>(calleeDeclNode);
+                const ASTFctDefNode* fctDef = downcast<ASTFctDefNode>(calleeDeclNode);
                 if fctDef.node.attrs != nil<IVisitable*> {
-                    ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDef.node.attrs);
+                    const ASTTopLevelDefAttrNode* attrs = downcast<ASTTopLevelDefAttrNode>(fctDef.node.attrs);
                     ASTAttrLstNode* attrLst = attrs.attrLst;
                     ignoreUnusedReturnValue = attrLst.hasAttr(String(ATTR_IGNORE_UNUSED_RETURN_VALUE));
                 }
@@ -5499,7 +5499,7 @@ f<Any> TypeChecker.visitBuiltinOffsetOfCall(ASTFctCallNode* node) {
     ASTNode* cur = memberArg;
     while cur != nil<ASTNode*> {
         if cur.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
-            leafAccess = downcast<ASTPostfixUnaryExprNode>(cur);
+            leafAccess = downcastMut<ASTPostfixUnaryExprNode>(cur);
             break;
         }
         const Vector<ASTNode*>& children = cur.getChildren();
@@ -6365,7 +6365,7 @@ p createDefaultStructMethod(const Struct& spiceStruct, const String& entryName, 
  * @param structScope Scope of the struct
  */
 p createDefaultCtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
-    ASTStructDefNode* node = downcast<ASTStructDefNode>(spiceStruct.structBase.declNode);
+    const ASTStructDefNode* node = downcast<ASTStructDefNode>(spiceStruct.structBase.declNode);
     ASTNode* baseNode = cast<ASTNode*>(node);
     assert structScope != nil<Scope*> && structScope.scopeType == ScopeType::STRUCT;
     SourceFile* sourceFile = structScope.sourceFile;
@@ -6414,7 +6414,7 @@ p createDefaultCtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
 
         ASTNode* fieldDeclNode = fieldSymbol.declNode;
         if fieldDeclNode.kind == ASTNodeKind::FIELD {
-            ASTFieldNode* fieldNode = downcast<ASTFieldNode>(fieldDeclNode);
+            const ASTFieldNode* fieldNode = downcast<ASTFieldNode>(fieldDeclNode);
             hasFieldsWithDefaultValue = hasFieldsWithDefaultValue || (fieldNode.defaultValue != nil<IVisitable*>);
         } else {
             assert fieldDeclNode.kind == ASTNodeKind::DATA_TYPE;
@@ -6472,7 +6472,7 @@ p createDefaultCtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
  * @param structScope Scope of the struct
  */
 p createDefaultCopyCtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
-    ASTStructDefNode* node = downcast<ASTStructDefNode>(spiceStruct.structBase.declNode);
+    const ASTStructDefNode* node = downcast<ASTStructDefNode>(spiceStruct.structBase.declNode);
     ASTNode* baseNode = cast<ASTNode*>(node);
     assert structScope != nil<Scope*> && structScope.scopeType == ScopeType::STRUCT;
 
