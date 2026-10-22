@@ -1,0 +1,14 @@
+type T dyn;
+
+p assign<T>(T value, T* target) {
+    unsafe {
+        *target = value;
+    }
+}
+
+f<int> main() {
+    const int c = 2;
+    const int* constPtr = &c;
+    // T is deduced as int from the first arg, so a pointer to const must not be passed to the non-const T* param
+    assign(5, constPtr);
+}

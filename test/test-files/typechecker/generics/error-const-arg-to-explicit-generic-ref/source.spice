@@ -1,0 +1,11 @@
+type T dyn;
+
+p increment<T>(T& value) {
+    value++;
+}
+
+f<int> main() {
+    const int c = 2;
+    // T is given as int, so the const value must not be bound to the non-const T& param
+    increment<int>(c);
+}

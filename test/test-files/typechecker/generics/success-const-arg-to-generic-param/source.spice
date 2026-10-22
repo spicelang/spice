@@ -1,0 +1,31 @@
+type T dyn;
+
+p assign<T>(T value, T& target) {
+    target = value;
+}
+
+p increment<T>(T& value) {
+    value++;
+}
+
+p print<T>(T value, const T& other) {
+    printf("Values: %d %d\n", value, other);
+}
+
+p printPtr<T>(T value, const T* other) {
+    printf("Pointee: %d %d\n", value, *other);
+}
+
+f<int> main() {
+    int a = 1;
+    const int c = 2;
+    // Non-const args can be passed to non-const generic params
+    assign(5, a);
+    printf("After assign: %d\n", a);
+    increment<int>(a);
+    printf("After increment: %d\n", a);
+    // Const args can be passed to const generic params, also if T is already known
+    print(3, c);
+    print<int>(4, c);
+    printPtr(5, &c);
+}

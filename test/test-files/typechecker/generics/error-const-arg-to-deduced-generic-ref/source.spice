@@ -1,0 +1,11 @@
+type T dyn;
+
+p assign<T>(T value, T& target) {
+    target = value;
+}
+
+f<int> main() {
+    const int c = 2;
+    // T is deduced as int from the first arg, so the const value must not be bound to the non-const T& param
+    assign(5, c);
+}

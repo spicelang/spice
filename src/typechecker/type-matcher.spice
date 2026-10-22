@@ -119,6 +119,12 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
             // Merge qualifiers of candidate type and known concrete type together
             knownConcreteType.qualifiers = knownConcreteType.qualifiers.merge(candidateType.qualifiers);
 
+            // With the generic type known, a reference or pointer candidate (e.g. T&) can be checked like a non-generic one: it
+            // gives access to the requested value or pointee, so it has to be const for a const requested type
+            if sharesValue && requestedTypeIn.qualifiers.isConst && !knownConcreteType.qualifiers.isConst {
+                return false;
+            }
+
             // Remove reference wrapper of candidate type if required
             if !requestedType.isRef() {
                 knownConcreteType = knownConcreteType.removeReferenceWrapper();
