@@ -175,7 +175,7 @@ public f<Union*> matchUnion(Scope* matchScope, const String& qt, const QualTypeL
             UnionManifestationList& presetManifestations = matchScope.unions.get(unionId);
             Union& presetManifestation = presetManifestations.get(mangledName);
             substantiatedUnion.genericPreset = &presetManifestation.structBase;
-            ASTUnionDefNode* unionDefNode = downcast<ASTUnionDefNode>(substantiatedUnion.structBase.declNode);
+            const ASTUnionDefNode* unionDefNode = downcast<ASTUnionDefNode>(substantiatedUnion.structBase.declNode);
             unionDefNode.unionManifestations.pushBack(substantiatedUnion);
             substantiatedUnion.isNewlyInserted = true; // To not iterate over it in the same matching
 

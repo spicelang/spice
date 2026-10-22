@@ -26,7 +26,7 @@ const long MAX_PARAM_COUNT = 6l;
 p checkParamCount(ASTFctDefBaseNode& fctDefBase, const string kindLabel, Vector<LintFinding>& findings) {
     long paramCount = 0l;
     if fctDefBase.hasParams {
-        ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(fctDefBase.paramLst);
+        const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(fctDefBase.paramLst);
         paramCount = paramLst.params.getSize();
     }
     if paramCount > MAX_PARAM_COUNT {

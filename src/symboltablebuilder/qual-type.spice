@@ -516,12 +516,12 @@ public f<bool> QualType.isTriviallyConstructible(const ASTNode* node) {
     if hasAnyNonCopyCtor(spiceStruct.scope) { return false; }
 
     // If the struct emits a vtable, it is non-trivially constructible, because the vtable needs to be initialized in the ctor
-    ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(spiceStruct.declNode);
+    const ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(spiceStruct.declNode);
     if structDefNode.emitVTable { return false; }
 
     // If any field has a default value, the struct is non-trivially constructible
     foreach IVisitable* field : structDefNode.fields {
-        ASTFieldNode* fieldNode = downcast<ASTFieldNode>(field);
+        const ASTFieldNode* fieldNode = downcast<ASTFieldNode>(field);
         if fieldNode.defaultValue != nil<IVisitable*> { return false; }
     }
 

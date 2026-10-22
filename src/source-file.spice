@@ -1071,7 +1071,7 @@ public f<bool> SourceFile.isStructKnownByNameRegistry(Scope* bodyScope, const St
     if declNode.kind != ASTNodeKind::STRUCT_DEF {
         return false;
     }
-    ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(declNode);
+    const ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(declNode);
     foreach Struct* manifestation : structDefNode.structManifestations {
         if manifestation.scope == bodyScope {
             return true;
@@ -1146,7 +1146,7 @@ public f<String> SourceFile.getAmbiguousNameMessage(const String& symbolName) {
         if importEntry == nil<const SymbolTableEntry*> {
             continue;
         }
-        ASTImportDefNode* importNode = downcast<ASTImportDefNode>(importEntry.declNode);
+        const ASTImportDefNode* importNode = downcast<ASTImportDefNode>(importEntry.declNode);
         bool alreadyCollected = false;
         for unsigned long j = 0l; j < importNodes.getSize(); j++ {
             if importNodes.get(j) == importNode {
@@ -1264,10 +1264,10 @@ p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSym
         } else if node.kind == ASTNodeKind::FCT_DEF || node.kind == ASTNodeKind::PROC_DEF {
             ASTFctDefBaseNode* fctDef = nil<ASTFctDefBaseNode*>;
             if node.kind == ASTNodeKind::FCT_DEF {
-                ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(node);
+                ASTFctDefNode* fctDefNode = downcastMut<ASTFctDefNode>(node);
                 fctDef = &fctDefNode.node;
             } else {
-                ASTProcDefNode* procDefNode = downcast<ASTProcDefNode>(node);
+                ASTProcDefNode* procDefNode = downcastMut<ASTProcDefNode>(node);
                 fctDef = &procDefNode.node;
             }
             // Each emitted manifestation of an exported function is exported under its mangled name

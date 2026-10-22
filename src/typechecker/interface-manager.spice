@@ -179,7 +179,7 @@ public f<Interface*> matchInterface(Scope* matchScope, const String& reqName, co
             InterfaceManifestationList& presetManifestations = matchScope.interfaces.get(interfaceId);
             Interface& presetManifestation = presetManifestations.get(mangledName);
             substantiatedInterface.genericPreset = &presetManifestation.structBase;
-            ASTInterfaceDefNode* interfaceDefNode = downcast<ASTInterfaceDefNode>(substantiatedInterface.structBase.declNode);
+            const ASTInterfaceDefNode* interfaceDefNode = downcast<ASTInterfaceDefNode>(substantiatedInterface.structBase.declNode);
             interfaceDefNode.interfaceManifestations.pushBack(substantiatedInterface);
             substantiatedInterface.isNewlyInserted = true; // To not iterate over it in the same matching
 

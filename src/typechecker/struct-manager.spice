@@ -178,7 +178,7 @@ public f<Struct*> matchStruct(Scope* matchScope, const String& qt, const QualTyp
             StructManifestationList& presetManifestations = matchScope.structs.get(structId);
             Struct& presetManifestation = presetManifestations.get(mangledName);
             substantiatedStruct.genericPreset = &presetManifestation.structBase;
-            ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(substantiatedStruct.structBase.declNode);
+            const ASTStructDefNode* structDefNode = downcast<ASTStructDefNode>(substantiatedStruct.structBase.declNode);
             structDefNode.structManifestations.pushBack(substantiatedStruct);
             substantiatedStruct.isNewlyInserted = true; // To not iterate over it in the same matching
             // The generic preset was already decided on, but this manifestation carries concrete field types and therefore

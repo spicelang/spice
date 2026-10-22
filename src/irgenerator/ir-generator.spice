@@ -1137,7 +1137,7 @@ f<const model::Function*> IRGenerator.getLhsDtorFct(ASTNode* node) {
     if node.kind != ASTNodeKind::ASSIGN_EXPR {
         return nil<const model::Function*>;
     }
-    ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
+    const ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
     return assignNode.lhsDtorFct.get(this.manIdx);
 }
 
@@ -1598,7 +1598,7 @@ public f<Any> IRGenerator.visitMainFctDef(ASTMainFctDefNode* node) {
     QualTypeList paramSymbolTypes;
     Vector<llvm::Type> paramTypes;
     if node.takesArgs {
-        ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(node.paramLst);
+        const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(node.paramLst);
         const unsigned long numOfParams = paramLst.params.getSize();
         paramInfoList.reserve(numOfParams);
         paramSymbolTypes.reserve(numOfParams);
@@ -1765,7 +1765,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
         // Visit parameters
         unsigned long argIdx = 0l;
         if node.hasParams {
-            ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(node.paramLst);
+            const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(node.paramLst);
             const unsigned long numOfParams = manifestation.paramList.getSize();
             const QualTypeList manifestationParamTypes = manifestation.getParamTypes();
             paramInfoList.reserve(numOfParams);
@@ -1869,7 +1869,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
 
         // Store the default values for optional function args
         if node.paramLst != nil<IVisitable*> {
-            ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(node.paramLst);
+            const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(node.paramLst);
             while argIdx < paramLst.params.getSize() {
                 ASTDeclStmtNode* param = paramLst.params.get(argIdx);
                 this.visit(cast<IVisitable*>(param));
@@ -4857,7 +4857,7 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
     // Visit parameters
     unsigned long argIdx = 0l;
     if lambdaBase.hasParams {
-        ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(lambdaBase.paramLst);
+        const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(lambdaBase.paramLst);
         const unsigned long numOfParams = spiceFunc.paramList.getSize();
         const QualTypeList spiceFuncParamTypes = spiceFunc.getParamTypes();
         paramInfoList.reserve(numOfParams + 1l);
@@ -4982,7 +4982,7 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
 
     // Store the default values for optional function args
     if lambdaBase.paramLst != nil<IVisitable*> {
-        ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(lambdaBase.paramLst);
+        const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(lambdaBase.paramLst);
         while argIdx < paramLst.params.getSize() {
             this.visit(cast<IVisitable*>(paramLst.params.get(argIdx)));
             argIdx++;
@@ -5831,13 +5831,13 @@ p IRGenerator.generateScopeCleanup(const ResourcesForManifestationToCleanup& res
 p IRGenerator.generateLoopHeadCleanup(ASTNode* loopNode, Scope* headScope, SymbolTableEntry* returnedLocal = nil<SymbolTableEntry*>) {
     assert headScope.scopeType == ScopeType::LOOP_HEAD;
     if loopNode.kind == ASTNodeKind::FOR_LOOP {
-        ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(loopNode);
+        const ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(loopNode);
         const ASTStmtLstNode* body = downcast<ASTStmtLstNode>(getASTNode(forLoopNode.body));
         const ResourcesForManifestationToCleanup& resources = forLoopNode.headResourcesToCleanup.get(this.manIdx);
         this.generateScopeCleanup(resources, headScope, body.closingBraceCodeLoc, returnedLocal);
     } else {
         assert loopNode.kind == ASTNodeKind::FOREACH_LOOP;
-        ASTForeachLoopNode* foreachLoopNode = downcast<ASTForeachLoopNode>(loopNode);
+        const ASTForeachLoopNode* foreachLoopNode = downcast<ASTForeachLoopNode>(loopNode);
         const ASTStmtLstNode* body = downcast<ASTStmtLstNode>(getASTNode(foreachLoopNode.body));
         const ResourcesForManifestationToCleanup& resources = foreachLoopNode.headResourcesToCleanup.get(this.manIdx);
         this.generateScopeCleanup(resources, headScope, body.closingBraceCodeLoc, returnedLocal);
