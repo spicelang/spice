@@ -2545,9 +2545,9 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
             Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhsResult, rhs, true);
             localVarType = assignResult.getFirst();
             data.calledCopyCtor = assignResult.getSecond();
-            // Some assignment rules (e.g. for structs, pointers and references) derive the type from the rhs, so the variable would
-            // get the constness of the rhs instead of the declared one. A declared const always holds. Otherwise, a copy is not
-            // const. Only pointers and references keep the const of the rhs, because it belongs to the pointee or referent
+            // Some assignment rules (e.g. for structs, pointers and references) derive the type from the rhs, so the variable
+            // would get the constness of the rhs instead of the declared one. A declared const always holds. Otherwise, a copy is
+            // not const. Only pointers and references keep the const of the rhs, because it belongs to the pointee or referent
             if !localVarType.is(SuperType::TY_UNRESOLVED) {
                 if isDeclaredConst {
                     localVarType.makeConst();
