@@ -2533,7 +2533,7 @@ public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
  * @param node AST node, which must be of the given concrete node type
  * @return Concrete node
  */
-public f<ConcreteNode*> downcast<ConcreteNode>(ASTNode* node) {
+public f<ConcreteNode*> downcast<ConcreteNode>(const ASTNode* node) {
     unsafe {
         return cast<ConcreteNode*>(node.visitable);
     }

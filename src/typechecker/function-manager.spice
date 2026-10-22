@@ -779,8 +779,9 @@ f<int> scoreSpecificity(const Function& fct, const ArgList& reqArgs, int constif
         const QualType& argType = arg.getFirst();
         const QualType unwrappedParamType = paramType.removeReferenceWrapper();
         const QualType unwrappedArgType = argType.removeReferenceWrapper();
-        const bool paramIsConst = unwrappedParamType.isConst();
-        const bool argIsConst = unwrappedArgType.isConst();
+        // Compare the qualifier instead of isConst(), so that the const of a pointee counts as well
+        const bool paramIsConst = unwrappedParamType.qualifiers.isConst;
+        const bool argIsConst = unwrappedArgType.qualifiers.isConst;
         if paramIsConst && !argIsConst {
             penalty += constifyPenalty;
         } else if !paramIsConst && argIsConst {

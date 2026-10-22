@@ -94,7 +94,7 @@ f<bool> isSpiceFrame(const String& symbolName, const String& demangledName, cons
  *                       between runs under ASLR/PIE.
  */
 public p StackTraceEntry.dump(unsigned long frameIndex, bool includeAddress = true) {
-    const byte* stream = __stderr();
+    byte* stream = __stderr();
 
     // Left-aligned in a field of three, so the columns behind it line up for every index a trace can reach
     fprintf(stream, "  #%-3lu", frameIndex);

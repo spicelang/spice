@@ -244,7 +244,7 @@ p String.prepareInsert<IntLong>(unsigned IntLong position, unsigned long strLeng
     this.ensureCapacity(this.length + strLength);
     unsafe {
         // Shift the whole tail, including the null terminator, to the right in one move
-        const heap char* insertAddr = this.contents + position;
+        heap char* insertAddr = this.contents + position;
         memmove(insertAddr + strLength, insertAddr, this.length - position + 1l); // +1 because of null terminator
     }
     this.length += strLength;
@@ -770,11 +770,11 @@ public f<bool> String.replace(
 
     unsafe {
         // Move the suffix to the left or right. Source and destination overlap, so this needs memmove.
-        const heap char* stringAddr = this.contents;
-        const heap char* startAddr = stringAddr + startIdx;
+        heap char* stringAddr = this.contents;
+        heap char* startAddr = stringAddr + startIdx;
         if needleLength != replacementLength {
-            const heap char* oldSuffixAddr = startAddr + needleLength;
-            const heap char* newSuffixAddr = startAddr + replacementLength;
+            heap char* oldSuffixAddr = startAddr + needleLength;
+            heap char* newSuffixAddr = startAddr + replacementLength;
             memmove(newSuffixAddr, oldSuffixAddr, suffixLength + 1l); // +1 because of null terminator
         }
 

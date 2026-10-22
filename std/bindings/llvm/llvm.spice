@@ -827,7 +827,7 @@ public f<Type> getStructType(const LLVMContext& context, const Vector<Type>& ele
 
 // Equivalent to llvm::StructType::create: Create a named struct type with the given body
 public f<Type> createStructType(const LLVMContext& context, const Vector<Type>& elementTypes, string name, bool packed = false) {
-    const LLVMTypeRef structTy = LLVMStructCreateNamed(context.self, name);
+    LLVMTypeRef structTy = LLVMStructCreateNamed(context.self, name);
     LLVMStructSetBody(structTy, &elementTypes.getDataPtr().self, cast<unsigned int>(elementTypes.getSize()), cast<LLVMBool>(packed));
     return Type{ structTy };
 }
@@ -1728,7 +1728,7 @@ public p PassBuilder.buildPerModuleDefaultPipeline(OptimizationLevel optLevel) {
 }
 
 public f<LLVMError> PassBuilder.run(const Module& module, const TargetMachine& targetMachine) {
-    const LLVMErrorRef error = LLVMRunPasses(module.self, this.pipelineDescription.getRaw(), targetMachine.self, this.internalOptions);
+    LLVMErrorRef error = LLVMRunPasses(module.self, this.pipelineDescription.getRaw(), targetMachine.self, this.internalOptions);
     return LLVMError(error);
 }
 
@@ -2402,7 +2402,7 @@ public p Value.setNSW(bool hasNSW) {
 }
 
 public p Value.addCallParamAttr(unsigned int argNo, string kindName, unsigned long value = 0l) {
-    const LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
+    LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
     LLVMAddCallSiteAttribute(this.self, argNo + 1, createEnumAttr(ctx, kindName, value));
 }
 
@@ -2414,12 +2414,12 @@ public p Value.addCallDereferenceableParamAttr(unsigned int argNo, unsigned long
 }
 
 public p Value.addCallParamTypeAttr(unsigned int argNo, string kindName, Type ty) {
-    const LLVMContextRef ctx = LLVMGetTypeContext(ty.self);
+    LLVMContextRef ctx = LLVMGetTypeContext(ty.self);
     LLVMAddCallSiteAttribute(this.self, argNo + 1, LLVMCreateTypeAttribute(ctx, getAttrKind(kindName), ty.self));
 }
 
 public p Value.addCallRetAttr(string kindName) {
-    const LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
+    LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
     LLVMAddCallSiteAttribute(this.self, ATTRIBUTE_RETURN_INDEX, createEnumAttr(ctx, kindName));
 }
 
@@ -2436,7 +2436,7 @@ public p Value.addIncoming(Value value, BasicBlock block) {
 
 // Like llvm::Instruction::setMetadata with the kind given by its name (e.g. 'prof' for LLVMContext::MD_prof)
 public p Value.setMetadata(string kindName, Metadata node) {
-    const LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
+    LLVMContextRef ctx = LLVMGetTypeContext(LLVMTypeOf(this.self));
     const unsigned int kindId = LLVMGetMDKindIDInContext(ctx, kindName, cast<unsigned int>(len(kindName)));
     LLVMSetMetadata(this.self, kindId, LLVMMetadataAsValue(ctx, node.self));
 }
@@ -2526,7 +2526,7 @@ public f<bool> BasicBlock.hasParent() {
 }
 
 public f<Function> BasicBlock.getParent() {
-    const LLVMValueRef fctRef = LLVMGetBasicBlockParent(this.self);
+    LLVMValueRef fctRef = LLVMGetBasicBlockParent(this.self);
     return Function{ fctRef, Type{ LLVMGlobalGetValueType(fctRef) } };
 }
 
@@ -2614,7 +2614,7 @@ public f<bool> Function.hasParamAttr(unsigned int argNo, string kindName) {
 
 // Get the type of a type attribute (e.g. sret) of the given parameter
 public f<Type> Function.getParamTypeAttr(unsigned int argNo, string kindName) {
-    const LLVMAttributeRef attr = LLVMGetEnumAttributeAtIndex(this.self, argNo + 1, getAttrKind(kindName));
+    LLVMAttributeRef attr = LLVMGetEnumAttributeAtIndex(this.self, argNo + 1, getAttrKind(kindName));
     assert attr != nil<LLVMAttributeRef>;
     return Type{ LLVMGetTypeAttributeValue(attr) };
 }
@@ -2625,7 +2625,7 @@ public p Function.addRetAttr(string kindName) {
 
 // ----- Module -----
 public f<Function> Module.getFunction(string name) {
-    const LLVMValueRef fctRef = LLVMGetNamedFunction(this.self, name);
+    LLVMValueRef fctRef = LLVMGetNamedFunction(this.self, name);
     if fctRef == nil<LLVMValueRef> {
         return Function{ nil<LLVMValueRef>, Type{ nil<LLVMTypeRef> } };
     }
@@ -2634,7 +2634,7 @@ public f<Function> Module.getFunction(string name) {
 
 // Like llvm::Function::Create
 public f<Function> Module.createFunction(Type fctType, LLVMLinkage linkage, string name) {
-    const LLVMValueRef fctRef = LLVMAddFunction(this.self, name, fctType.self);
+    LLVMValueRef fctRef = LLVMAddFunction(this.self, name, fctType.self);
     LLVMSetLinkage(fctRef, linkage);
     return Function{ fctRef, fctType };
 }
@@ -2665,9 +2665,9 @@ public f<Comdat> Module.getOrInsertComdat(string name) {
  * builder to have an insert point.
  */
 public f<Value> Module.createGlobalString(const String& value, string name) {
-    const LLVMContextRef ctx = LLVMGetModuleContext(this.self);
-    const LLVMValueRef stringConstant = LLVMConstStringInContext2(ctx, value.getRaw(), value.getLength(), 0);
-    const LLVMValueRef global = LLVMAddGlobal(this.self, LLVMTypeOf(stringConstant), name);
+    LLVMContextRef ctx = LLVMGetModuleContext(this.self);
+    LLVMValueRef stringConstant = LLVMConstStringInContext2(ctx, value.getRaw(), value.getLength(), 0);
+    LLVMValueRef global = LLVMAddGlobal(this.self, LLVMTypeOf(stringConstant), name);
     LLVMSetInitializer(global, stringConstant);
     LLVMSetGlobalConstant(global, 1);
     LLVMSetLinkage(global, LLVMLinkage::PrivateLinkage);
@@ -2682,29 +2682,29 @@ public f<Function> Module.getIntrinsicDeclaration(string name, const Vector<Type
     assert id != 0; // Unknown intrinsic
     unsafe {
         LLVMTypeRef* typesRef = cast<LLVMTypeRef*>(overloadTypes.getDataPtr());
-        const LLVMValueRef fctRef = LLVMGetIntrinsicDeclaration(this.self, id, typesRef, cast<unsigned long>(overloadTypes.getSize()));
+        LLVMValueRef fctRef = LLVMGetIntrinsicDeclaration(this.self, id, typesRef, cast<unsigned long>(overloadTypes.getSize()));
         return Function{ fctRef, Type{ LLVMGlobalGetValueType(fctRef) } };
     }
 }
 
 // Like llvm::Module::addModuleFlag with an integer value
 public p Module.addModuleFlag(int behavior, string key, unsigned int value) {
-    const LLVMContextRef ctx = LLVMGetModuleContext(this.self);
-    const LLVMTypeRef int32Ty = LLVMInt32TypeInContext(ctx);
+    LLVMContextRef ctx = LLVMGetModuleContext(this.self);
+    LLVMTypeRef int32Ty = LLVMInt32TypeInContext(ctx);
     LLVMMetadataRef[3] ops = [
         LLVMValueAsMetadata(LLVMConstInt(int32Ty, cast<unsigned long>(behavior), 0)),
         LLVMMDStringInContext2(ctx, key, cast<unsigned long>(len(key))),
         LLVMValueAsMetadata(LLVMConstInt(int32Ty, cast<unsigned long>(value), 0))
     ];
-    const LLVMMetadataRef node = LLVMMDNodeInContext2(ctx, &ops[0], 3l);
+    LLVMMetadataRef node = LLVMMDNodeInContext2(ctx, &ops[0], 3l);
     LLVMAddNamedMetadataOperand(this.self, "llvm.module.flags", LLVMMetadataAsValue(ctx, node));
 }
 
 // Add a node with a single string operand to the given named metadata, e.g. llvm.ident
 public p Module.addNamedStringMetadata(string name, const String& value) {
-    const LLVMContextRef ctx = LLVMGetModuleContext(this.self);
+    LLVMContextRef ctx = LLVMGetModuleContext(this.self);
     LLVMMetadataRef op = LLVMMDStringInContext2(ctx, value.getRaw(), value.getLength());
-    const LLVMMetadataRef node = LLVMMDNodeInContext2(ctx, &op, 1l);
+    LLVMMetadataRef node = LLVMMDNodeInContext2(ctx, &op, 1l);
     LLVMAddNamedMetadataOperand(this.self, name, LLVMMetadataAsValue(ctx, node));
 }
 

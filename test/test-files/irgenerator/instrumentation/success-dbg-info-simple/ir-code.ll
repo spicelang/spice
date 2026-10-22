@@ -50,21 +50,21 @@ declare void @_ZN6String4ctorEPKc(ptr, ptr)
 define noundef i32 @main() #2 !dbg !57 {
   %test = alloca i32, align 4
   %res = alloca %struct.TestStruct, align 8
-    #dbg_declare(ptr %test, !61, !DIExpression(), !63)
-  store i32 987654, ptr %test, align 4, !dbg !63
-  call void @_Z3fctRi(ptr dead_on_unwind writable sret(%struct.TestStruct) align 8 %res, ptr noundef %test), !dbg !64
-    #dbg_declare(ptr %res, !62, !DIExpression(), !64)
-  %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !65
-  %1 = load i64, ptr %lng.addr, align 8, !dbg !65
-  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %1), !dbg !65
-  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !66
-  %4 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %3), !dbg !66
-  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %4), !dbg !66
-  %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !67
-  %6 = load i32, ptr %i.addr, align 4, !dbg !67
-  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6), !dbg !67
-  call void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %res), !dbg !68
-  ret i32 0, !dbg !68
+    #dbg_declare(ptr %test, !61, !DIExpression(), !64)
+  store i32 987654, ptr %test, align 4, !dbg !64
+  call void @_Z3fctRi(ptr dead_on_unwind writable sret(%struct.TestStruct) align 8 %res, ptr noundef %test), !dbg !65
+    #dbg_declare(ptr %res, !62, !DIExpression(), !65)
+  %lng.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 0, !dbg !66
+  %1 = load i64, ptr %lng.addr, align 8, !dbg !66
+  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %1), !dbg !66
+  %3 = getelementptr inbounds nuw %struct.TestStruct, ptr %res, i32 0, i32 1, !dbg !67
+  %4 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %3), !dbg !67
+  %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, ptr noundef %4), !dbg !67
+  %i.addr = getelementptr inbounds %struct.TestStruct, ptr %res, i64 0, i32 2, !dbg !68
+  %6 = load i32, ptr %i.addr, align 4, !dbg !68
+  %7 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %6), !dbg !68
+  call void @_ZN10TestStruct4dtorEv(ptr noundef nonnull align 8 dereferenceable(40) %res), !dbg !69
+  ret i32 0, !dbg !69
 }
 
 ; Function Attrs: nofree nounwind
@@ -143,10 +143,11 @@ attributes #3 = { nofree nounwind }
 !59 = !{!40}
 !60 = !{!61, !62}
 !61 = !DILocalVariable(name: "test", scope: !57, file: !3, line: 15, type: !40)
-!62 = !DILocalVariable(name: "res", scope: !57, file: !3, line: 16, type: !27)
-!63 = !DILocation(line: 15, column: 16, scope: !57)
-!64 = !DILocation(line: 16, column: 32, scope: !57)
-!65 = !DILocation(line: 17, column: 26, scope: !57)
-!66 = !DILocation(line: 18, column: 28, scope: !57)
-!67 = !DILocation(line: 19, column: 25, scope: !57)
-!68 = !DILocation(line: 20, column: 1, scope: !57)
+!62 = !DILocalVariable(name: "res", scope: !57, file: !3, line: 16, type: !63)
+!63 = !DIDerivedType(tag: DW_TAG_const_type, baseType: !27)
+!64 = !DILocation(line: 15, column: 16, scope: !57)
+!65 = !DILocation(line: 16, column: 32, scope: !57)
+!66 = !DILocation(line: 17, column: 26, scope: !57)
+!67 = !DILocation(line: 18, column: 28, scope: !57)
+!68 = !DILocation(line: 19, column: 25, scope: !57)
+!69 = !DILocation(line: 20, column: 1, scope: !57)

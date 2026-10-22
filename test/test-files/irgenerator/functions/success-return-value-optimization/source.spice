@@ -5,7 +5,11 @@ type Test struct {
 p Test.ctor() {}
 
 p Test.ctor(const Test& old) {
-    old.copies++;
+    // Count the copies on the copy source. It is const, so this deliberately casts the constness away
+    unsafe {
+        Test* source = cast<Test*>(&old);
+        source.copies++;
+    }
 }
 
 p Test.dtor() {}

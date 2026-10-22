@@ -2540,10 +2540,21 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
 
         // Check if type has to be inferred or both types are fixed
         if !localVarType.is(SuperType::TY_UNRESOLVED) && !rhsTy.is(SuperType::TY_UNRESOLVED) {
+            const bool isDeclaredConst = localVarType.qualifiers.isConst;
             const ExprResult lhsResult = ExprResult{localVarType, localVarEntry};
             Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhsResult, rhs, true);
             localVarType = assignResult.getFirst();
             data.calledCopyCtor = assignResult.getSecond();
+            // Some assignment rules (e.g. for structs and pointers) derive the type from the rhs, so the variable would get the
+            // constness of the rhs instead of the declared one. The variable holds a copy, so only its declaration decides. Only
+            // pointers keep the const of the rhs, because it belongs to the pointee, that the copy still points to
+            if !localVarType.is(SuperType::TY_UNRESOLVED) && !localVarType.isRef() {
+                if isDeclaredConst {
+                    localVarType.makeConst();
+                } else if !localVarType.isPtr() {
+                    localVarType.makeConst(false);
+                }
+            }
 
             // If this is a struct type, check if the type is known. If not, error out. A type that already carries a
             // body scope is genuinely resolved (e.g. it reached here through a generic substantiation or a deep
@@ -2836,7 +2847,9 @@ public f<Any> TypeChecker.visitForeachLoop(ASTForeachLoopNode* node) {
             data.getIteratorFct = matchFunction(matchScope, String("iterate"), thisType, argTypes, noTemplateTypeHints, true, iteratorBaseNode);
         } else { // Struct, implementing Iterator interface
             Scope* matchScope = iterableType.getBodyScope();
-            data.getIteratorFct = matchFunction(matchScope, String("getIterator"), iterableType, noArgs, noTemplateTypeHints, true, iteratorBaseNode);
+            // Methods have no constness, so a const iterable is iterated like any other method is called on a const struct
+            const QualType iterableThisType = iterableType.toNonConst();
+            data.getIteratorFct = matchFunction(matchScope, String("getIterator"), iterableThisType, noArgs, noTemplateTypeHints, true, iteratorBaseNode);
         }
         if data.getIteratorFct == nil<Function*> {
             throwSemanticError(iteratorBaseNode, SemanticErrorType::INVALID_ITERATOR, String("No getIterator() function found for the given iterable type"));
@@ -3316,9 +3329,12 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         const bool isDecl = lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isField() && !lhs.entry.isInitialized();
         // Save this before checking the assignment, because stealing a temporary deletes its anonymous symbol table entry
         const bool isRhsTemporary = rhs.isTemporary();
-        // A reference field can only be bound in a ctor body. Elsewhere, the assignment writes through the reference (like the
-        // IR generator does), so it gets checked as such
-        const bool isDeclAssign = isDecl && (!lhs.ty.isRef() || this.currentScope.isInCtorBody());
+        // A field is only initialized by an assignment in a ctor body: to a direct field of 'this', or to a reference field,
+        // which the IR generator binds there. Elsewhere, the assignment writes the field (or through the reference), so it gets
+        // checked as such, e.g. for constness
+        const bool isCtorBody = this.currentScope.isInCtorBody();
+        const bool isFieldInitAssign = isCtorBody && (lhs.ty.isRef() || isDirectFieldOfThis(getASTNode(node.lhs)));
+        const bool isDeclAssign = isDecl && isFieldInitAssign;
         Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhs, rhs, isDeclAssign);
         rhsType = assignResult.getFirst();
         const Function* copyCtor = assignResult.getSecond();
@@ -4072,6 +4088,12 @@ public f<Any> TypeChecker.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
                 // Overwrite type and entry of left side with member type and entry
                 operandType = memberType;
                 operandEntry = memberEntry;
+
+                // A field of a const struct cannot be modified either. This does not apply to pointer and reference fields,
+                // because their const would belong to the pointee or referent instead of the field itself
+                if lhsBaseTy.isConst() && !memberType.isPtr() && !memberType.isRef() {
+                    operandType.makeConst();
+                }
             }
         }
         case PostfixUnaryOp::OP_PLUS_PLUS: {
@@ -5495,7 +5517,7 @@ f<Any> TypeChecker.visitBuiltinOffsetOfCall(ASTFctCallNode* node) {
     }
 
     // The second argument must be a (possibly chained) member access, denoting the field to compute the offset of
-    const ASTNode* memberArg = getASTNode(node.argLst.args.get(1l));
+    ASTNode* memberArg = getASTNode(node.argLst.args.get(1l));
     ASTPostfixUnaryExprNode* leafAccess = nil<ASTPostfixUnaryExprNode*>;
     ASTNode* cur = memberArg;
     while cur != nil<ASTNode*> {
@@ -6965,7 +6987,9 @@ public f<Function*> TypeChecker.implicitlyCallStructCopyCtor(const QualType& thi
     const QualType argType = unwrappedType.toConstRef(node);
     ArgList args;
     args.pushBack(Pair<QualType, bool>(argType, false /* we always have an entry here */));
-    return this.implicitlyCallStructMethod(thisType, String(CTOR_FUNCTION_NAME), args, node);
+    // The new instance being constructed is never const, regardless of whether the copy source is const
+    const QualType nonConstThisType = thisType.toNonConst();
+    return this.implicitlyCallStructMethod(nonConstThisType, String(CTOR_FUNCTION_NAME), args, node);
 }
 
 /**

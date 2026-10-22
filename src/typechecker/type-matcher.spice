@@ -141,6 +141,11 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
             if !genericCandidateBaseType.checkConditionsOf(requestedType, newBaseType, true, !strictQualifierMatching) {
                 return false;
             }
+            // The generic type does not take over the constness, that the candidate adds itself (e.g. T = int for a const T&
+            // candidate and a const int)
+            if candidateType.qualifiers.isConst {
+                newBaseType.makeConst(false);
+            }
 
             QualType substantiatedCandidateType = candidateType.replaceBaseType(newBaseType);
 

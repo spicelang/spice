@@ -1,0 +1,17 @@
+type Inner struct {
+    int n
+}
+
+type Outer struct {
+    Inner inner
+}
+
+p modify(const Outer& outer) {
+    // A nested field must not be modified through a const reference either
+    outer.inner.n = 3;
+}
+
+f<int> main() {
+    Outer outer = Outer{Inner{1}};
+    modify(outer);
+}

@@ -184,7 +184,7 @@ public p sslSetFd(Ssl ssl, int fd) {
  * @param host Host the connection is made to, as given by the caller (IP literal or DNS name)
  */
 public p sslSetExpectedHost(Ssl ssl, string host) {
-    const X509VerifyParam param = SSL_get0_param(ssl);
+    X509VerifyParam param = SSL_get0_param(ssl);
     const int ipResult = X509_VERIFY_PARAM_set1_ip_asc(param, host);
     if ipResult != 1 {
         X509_VERIFY_PARAM_set1_host(param, host, 0ul);
