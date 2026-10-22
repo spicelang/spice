@@ -1,0 +1,2 @@
+After ctor: a=2 b=2
+After write: a=9 b=2 value=2

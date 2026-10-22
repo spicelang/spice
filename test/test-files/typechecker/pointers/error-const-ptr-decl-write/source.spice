@@ -1,0 +1,8 @@
+f<int> main() {
+    int a = 1;
+    // The pointee of a pointer to const must not be modified, also if the pointer was initialized with a non-const pointer
+    const int* ptr = &a;
+    unsafe {
+        *ptr = 5;
+    }
+}

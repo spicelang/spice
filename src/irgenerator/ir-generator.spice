@@ -925,8 +925,10 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         }
 
         // Reference to reference assignment (only for struct fields that are not initialized yet)
-        // These are only allowed inside a ctor body. In other cases, the value of the reference gets assigned, not the ref itself.
-        const bool isInitialFieldRefAssign = this.isInCtorBody && rhsSType.isRef() && rhs.entry != nil<const SymbolTableEntry*> && lhsEntry.isField();
+        // These are only allowed inside a ctor body, for direct fields of 'this'. In other cases, the value of the reference gets
+        // assigned, not the ref itself.
+        const bool isFieldOfThis = isAssignToDirectFieldOfThis(node);
+        const bool isInitialFieldRefAssign = this.isInCtorBody && isFieldOfThis && rhsSType.isRef() && rhs.entry != nil<const SymbolTableEntry*> && lhsEntry.isField();
         // Assigning the result variable
         const bool isReturnValAssign = lhsEntry.name == RETURN_VARIABLE_NAME;
         if isInitialFieldRefAssign || isReturnValAssign {
@@ -1107,6 +1109,15 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
     res.ptr = lhsAddress;
     res.entry = lhsEntry;
     return res;
+}
+
+// Check if the given node is an assignment to a direct field of 'this'
+f<bool> isAssignToDirectFieldOfThis(const ASTNode* node) {
+    if node.kind != ASTNodeKind::ASSIGN_EXPR {
+        return false;
+    }
+    const ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
+    return isDirectFieldOfThis(getASTNode(assignNode.lhs));
 }
 
 // Check if the type of the given entry is a reference

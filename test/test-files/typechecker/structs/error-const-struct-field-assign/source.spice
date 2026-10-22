@@ -1,0 +1,9 @@
+type IntBox struct {
+    int value
+}
+
+f<int> main() {
+    const IntBox box = IntBox{1};
+    // A field of a const struct must not be modified
+    box.value = 3;
+}

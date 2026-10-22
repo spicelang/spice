@@ -1,0 +1,10 @@
+type IntBox struct {
+    int value
+}
+
+f<int> main() {
+    IntBox other = IntBox{2};
+    const IntBox box = IntBox{1};
+    // A const struct variable must not be re-assigned, also if it was initialized with a struct literal
+    box = other;
+}

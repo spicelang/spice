@@ -1,0 +1,53 @@
+import "std/data/vector";
+
+type Inner struct {
+    int n
+}
+
+type Box struct {
+    int value
+    Inner inner
+    int* ptr
+    String name
+}
+
+p Box.rename(const String& newName) {
+    this.name = newName;
+}
+
+p printBox(const Box& box) {
+    printf("Box: %d %d %s\n", box.value, box.inner.n, box.name.getRaw());
+}
+
+f<int> main() {
+    int counter = 1;
+    const Box box = Box{2, Inner{3}, &counter, String("box")};
+    // Fields of a const struct can be read
+    printf("Value: %d\n", box.value + box.inner.n);
+    printBox(box);
+    // A copy of a const struct is not const
+    Box copy = box;
+    copy.value = 4;
+    copy.inner.n = 5;
+    copy.name = String("copy");
+    printBox(copy);
+    printBox(box);
+    // The pointee of a pointer field is not const
+    unsafe {
+        *box.ptr = 6;
+    }
+    printf("Counter: %d\n", counter);
+    // A const vector can be iterated
+    Vector<int> numbers = Vector<int>();
+    numbers.pushBack(7);
+    numbers.pushBack(8);
+    const Vector<int> constNumbers = numbers;
+    foreach const int number : constNumbers {
+        printf("Number: %d\n", number);
+    }
+    // A const value can initialize a non-const variable
+    const String name = String("name");
+    String mutableName = name;
+    mutableName += "!";
+    printf("Name: %s\n", mutableName.getRaw());
+}

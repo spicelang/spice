@@ -1,0 +1,7 @@
+f<int> main() {
+    int a = 1;
+    int& ra = a;
+    // A const reference stays const, also if it is bound to a value through a mutable reference
+    const int& target = ra;
+    target = 2;
+}

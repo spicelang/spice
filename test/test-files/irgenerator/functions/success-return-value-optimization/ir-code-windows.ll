@@ -22,15 +22,18 @@ define internal void @_ZN4Test4ctorEv(ptr noundef nonnull align 4 dereferenceabl
 define internal void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %0, ptr noundef %1) #0 {
   %this = alloca ptr, align 8
   %old = alloca ptr, align 8
+  %source = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   store ptr %1, ptr %old, align 8
   %3 = load ptr, ptr %this, align 8
   store i32 0, ptr %3, align 4
   %4 = load ptr, ptr %old, align 8
-  %copies.addr = getelementptr inbounds %struct.Test, ptr %4, i64 0, i32 0
-  %5 = load i32, ptr %copies.addr, align 4
-  %6 = add nsw i32 %5, 1
-  store i32 %6, ptr %copies.addr, align 4
+  store ptr %4, ptr %source, align 8
+  %5 = load ptr, ptr %source, align 8
+  %copies.addr = getelementptr inbounds %struct.Test, ptr %5, i64 0, i32 0
+  %6 = load i32, ptr %copies.addr, align 4
+  %7 = add nsw i32 %6, 1
+  store i32 %7, ptr %copies.addr, align 4
   ret void
 }
 
@@ -99,56 +102,56 @@ define dso_local noundef i32 @main() #1 {
   %copies.addr = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %2 = load i32, ptr %copies.addr, align 4
   %3 = icmp eq i32 %2, 1
-  br i1 %3, label %assert.exit.L35, label %assert.then.L35, !prof !5
+  br i1 %3, label %assert.exit.L39, label %assert.then.L39, !prof !5
 
-assert.then.L35:                                  ; preds = %0
+assert.then.L39:                                  ; preds = %0
   %4 = call ptr @__acrt_iob_func(i32 2)
   %5 = call i32 (ptr, ptr, ...) @fprintf(ptr %4, ptr @anon.string.0)
   call void @exit(i32 1)
   unreachable
 
-assert.exit.L35:                                  ; preds = %0
+assert.exit.L39:                                  ; preds = %0
   call void @_Z8testRVO2RK4Test(ptr dead_on_unwind writable sret(%struct.Test) align 4 %t2, ptr noundef %t)
   %copies.addr1 = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %6 = load i32, ptr %copies.addr1, align 4
   %7 = icmp eq i32 %6, 2
-  br i1 %7, label %assert.exit.L38, label %assert.then.L38, !prof !5
+  br i1 %7, label %assert.exit.L42, label %assert.then.L42, !prof !5
 
-assert.then.L38:                                  ; preds = %assert.exit.L35
+assert.then.L42:                                  ; preds = %assert.exit.L39
   %8 = call ptr @__acrt_iob_func(i32 2)
   %9 = call i32 (ptr, ptr, ...) @fprintf(ptr %8, ptr @anon.string.1)
   call void @exit(i32 1)
   unreachable
 
-assert.exit.L38:                                  ; preds = %assert.exit.L35
+assert.exit.L42:                                  ; preds = %assert.exit.L39
   call void @_ZN4Test4ctorERK4Test(ptr noundef nonnull align 4 dereferenceable(4) %arg.copy2, ptr %t)
   %10 = load %struct.Test, ptr %arg.copy2, align 4
   call void @_Z8testRVO34Test(ptr dead_on_unwind writable sret(%struct.Test) align 4 %t3, %struct.Test noundef %10)
   %copies.addr3 = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %11 = load i32, ptr %copies.addr3, align 4
   %12 = icmp eq i32 %11, 3
-  br i1 %12, label %assert.exit.L41, label %assert.then.L41, !prof !5
+  br i1 %12, label %assert.exit.L45, label %assert.then.L45, !prof !5
 
-assert.then.L41:                                  ; preds = %assert.exit.L38
+assert.then.L45:                                  ; preds = %assert.exit.L42
   %13 = call ptr @__acrt_iob_func(i32 2)
   %14 = call i32 (ptr, ptr, ...) @fprintf(ptr %13, ptr @anon.string.2)
   call void @exit(i32 1)
   unreachable
 
-assert.exit.L41:                                  ; preds = %assert.exit.L38
+assert.exit.L45:                                  ; preds = %assert.exit.L42
   call void @_Z8testRVO4RK4Test(ptr dead_on_unwind writable sret(%struct.Test) align 4 %t4, ptr noundef %t)
   %copies.addr4 = getelementptr inbounds %struct.Test, ptr %t, i64 0, i32 0
   %15 = load i32, ptr %copies.addr4, align 4
   %16 = icmp eq i32 %15, 4
-  br i1 %16, label %assert.exit.L44, label %assert.then.L44, !prof !5
+  br i1 %16, label %assert.exit.L48, label %assert.then.L48, !prof !5
 
-assert.then.L44:                                  ; preds = %assert.exit.L41
+assert.then.L48:                                  ; preds = %assert.exit.L45
   %17 = call ptr @__acrt_iob_func(i32 2)
   %18 = call i32 (ptr, ptr, ...) @fprintf(ptr %17, ptr @anon.string.3)
   call void @exit(i32 1)
   unreachable
 
-assert.exit.L44:                                  ; preds = %assert.exit.L41
+assert.exit.L48:                                  ; preds = %assert.exit.L45
   %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t4)
   call void @_ZN4Test4dtorEv(ptr noundef nonnull align 4 dereferenceable(4) %t3)

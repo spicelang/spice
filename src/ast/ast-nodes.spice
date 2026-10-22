@@ -2528,12 +2528,34 @@ public f<Any> ASTFunctionDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 // concrete node.
 
 /**
+ * Check if an lvalue expression denotes a direct field of 'this' (e.g. 'this.field', but not 'this.field.nestedField')
+ *
+ * @param node Lvalue expression
+ * @return Direct field of 'this' or not
+ */
+public f<bool> isDirectFieldOfThis(const ASTNode* node) {
+    if node.kind != ASTNodeKind::POSTFIX_UNARY_EXPR {
+        return false;
+    }
+    ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(node);
+    if postfixUnaryExpr.op != PostfixUnaryOp::OP_MEMBER_ACCESS {
+        return false;
+    }
+    ASTNode* operandNode = getASTNode(postfixUnaryExpr.postfixUnaryExpr);
+    if operandNode.kind != ASTNodeKind::ATOMIC_EXPR {
+        return false;
+    }
+    ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(operandNode);
+    return atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
+}
+
+/**
  * Get the concrete node of an AST node
  *
  * @param node AST node, which must be of the given concrete node type
  * @return Concrete node
  */
-public f<ConcreteNode*> downcast<ConcreteNode>(ASTNode* node) {
+public f<ConcreteNode*> downcast<ConcreteNode>(const ASTNode* node) {
     unsafe {
         return cast<ConcreteNode*>(node.visitable);
     }

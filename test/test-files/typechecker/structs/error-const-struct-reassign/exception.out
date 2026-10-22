@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:9:5:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type IntBox
+
+9  box = other;
+   ^^^^^^^^^^^
