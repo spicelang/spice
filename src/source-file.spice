@@ -56,6 +56,7 @@ import "@/objectemitter/tpde-object-emitter";
 import "@/typechecker/function-manager";
 import "@/typechecker/struct-manager";
 import "@/typechecker/interface-manager";
+import "@/typechecker/union-manager";
 import "@/visualizer/ast-visualizer";
 import "@/visualizer/dependency-graph-visualizer";
 import "@/util/test-util";
@@ -113,7 +114,6 @@ public type CompilerOutput struct {
 }
 
 public type NameRegistryEntry struct {
-    public String name
     public unsigned long typeId // Set for structs, interfaces and enums
     public SymbolTableEntry* targetEntry
     public Scope* targetScope
@@ -1004,7 +1004,7 @@ public p SourceFile.addNameRegistryEntry(const String& symbolName, unsigned long
             this.untrackNameRegistryTargetEntry(oldTargetEntry);
             this.exportedNameRegistry.remove(symbolName);
         }
-        this.exportedNameRegistry.upsert(symbolName, NameRegistryEntry{symbolName, typeId, entry, scope, importEntry});
+        this.exportedNameRegistry.upsert(symbolName, NameRegistryEntry{typeId, entry, scope, importEntry});
         this.trackNameRegistryTargetEntry(entry);
         if keepNewOnCollision && this.ambiguousNameRegistry.contains(symbolName) {
             this.ambiguousNameRegistry.remove(symbolName);
@@ -1240,11 +1240,11 @@ p SourceFile.checkForExportedSymbolCollisions() {
  */
 p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSymbols, UnorderedSet<String>& visitedSourceFiles) {
     // Guard against circular imports
-    const String filePath = String(this.filePath.toString());
-    if visitedSourceFiles.contains(filePath) {
+    const String filePathStr = String(this.filePath.toString());
+    if visitedSourceFiles.contains(filePathStr) {
         return;
     }
-    visitedSourceFiles.insert(filePath);
+    visitedSourceFiles.insert(filePathStr);
 
     // Register the symbols of all dependencies first, so that a collision is reported at the definition in the importing file
     foreach dyn dependency : this.dependencies {
@@ -1350,9 +1350,14 @@ public p SourceFile.collectAndPrintWarnings() {
     if !this.ignoreWarnings {
         this.globalScope.collectWarnings(this.compilerOutput.warnings);
     }
-    // Print warnings for this file
+    // Print warnings for this file. Generic code is checked once per manifestation, so the same warning may have been added
+    // multiple times. Print each of them only once
+    UnorderedSet<String> printedWarnings;
     foreach dyn warning : this.compilerOutput.warnings {
-        warning.print();
+        if !printedWarnings.contains(warning.warningMessage) {
+            printedWarnings.insert(warning.warningMessage);
+            warning.print();
+        }
     }
 }
 
@@ -1470,7 +1475,7 @@ public p SourceFile.mergeNameRegistries(const SourceFile& importedSourceFile, co
         newName += SCOPE_ACCESS_TOKEN;
         newName += originalName;
         if !this.exportedNameRegistry.contains(newName) {
-            this.exportedNameRegistry.upsert(newName, NameRegistryEntry{newName, entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
+            this.exportedNameRegistry.upsert(newName, NameRegistryEntry{entry.typeId, entry.targetEntry, entry.targetScope, importEntry});
             this.trackNameRegistryTargetEntry(entry.targetEntry);
         }
         // Add the shortened name, considering the name collision. A symbol defined in the importing file itself always
@@ -1549,6 +1554,7 @@ p SourceFile.dumpCacheStats() {
     cacheStats << dumpFunctionLookupCacheStatistics() << "\n";
     cacheStats << dumpStructLookupCacheStatistics() << "\n";
     cacheStats << dumpInterfaceLookupCacheStatistics() << "\n";
+    cacheStats << dumpUnionLookupCacheStatistics() << "\n";
     this.compilerOutput.cacheStats = cacheStats.str();
 }
 

@@ -160,7 +160,7 @@ public f<Vector<String>> expandLinkerFlag(const String& flag, bool staticLinking
         if cmdResult.exitCode != 0 {                                                                // LCOV_EXCL_LINE
             const String message = "Command substitution for linker flag failed: " + innerCommand;  // LCOV_EXCL_LINE
             const LinkerError error = LinkerError(LinkerErrorType::LINKER_ERROR, message.getRaw()); // LCOV_EXCL_LINE
-            abortWithError(error.errorMessage);                                                     // LCOV_EXCL_LINE
+            abortWithError(error.getMessage());                                                     // LCOV_EXCL_LINE
         }                                                                                           // LCOV_EXCL_LINE
         expanded = cmdResult.output;
     }
@@ -260,7 +260,7 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
         }                                                                                // LCOV_EXCL_LINE
     }
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_INVOKER_NOT_FOUND, "No supported linker invoker was found on the system. Supported are: clang and gcc");
-    abortWithError(error.errorMessage);
+    abortWithError(error.getMessage());
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
 }
 
@@ -295,7 +295,7 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions) {
         panic(Error("Unsupported platform"));                                      // LCOV_EXCL_LINE
     }                                                                              // LCOV_EXCL_LINE
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: mold, lld, gold and ld");
-    abortWithError(error.errorMessage);
+    abortWithError(error.getMessage());
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
 }
 
@@ -325,7 +325,7 @@ public f<ExternalBinaryFinderResult> findArchiver() {
         panic(Error("Unsupported platform"));                                          // LCOV_EXCL_LINE
     }                                                                                  // LCOV_EXCL_LINE
     const LinkerError error = LinkerError(LinkerErrorType::ARCHIVER_NOT_FOUND, "No supported archiver was found on the system. Supported are: llvm-ar and ar");
-    abortWithError(error.errorMessage);
+    abortWithError(error.getMessage());
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
 }
 

@@ -3,9 +3,6 @@
 // Std imports
 import "std/data/vector";
 
-// Own imports
-import "@/ast/ast-nodes";
-
 public type LifecycleState enum {
     DEAD,         // The symbol is not alive yet (e.g. not declared yet)
     DECLARED,     // The symbol is declared but hasn't got a value yet (in debug mode declaration comes with default initialization)
@@ -15,11 +12,10 @@ public type LifecycleState enum {
 
 /**
  * A lifecycle event represents one change of a symbol in time.
- * It keeps track of the state of the symbol at that point of time and the event issuer AST node.
+ * It keeps track of the state of the symbol at that point of time.
  */
 public type LifecycleEvent struct {
     public LifecycleState state
-    public const ASTNode* issuer
 }
 
 /**

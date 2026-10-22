@@ -55,8 +55,7 @@ p SymbolTableBuilder.reportError(const ASTNode* node, SemanticErrorType errorTyp
     errorManager.addHardError(node, errorType, message, printErrorMessage);
 }
 
-// Entry name of a function/procedure in its symbol table. Function.getSymbolTableEntryName cannot be called here, because it is
-// an instance method.
+// Entry name of a function/procedure in its symbol table
 f<String> getFctSymbolTableEntryName(const String& name, const CodeLoc& codeLoc) {
     return name + ":" + codeLoc.toString();
 }

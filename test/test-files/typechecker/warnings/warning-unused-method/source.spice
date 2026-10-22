@@ -1,3 +1,5 @@
+type T int|double;
+
 type TestStruct struct {
     int a
 }
@@ -11,6 +13,23 @@ f<string> TestStruct.unusedFunction() {
     return "Hello World";
 }
 
+type GenericStruct<T> struct {
+    T value
+}
+
+// No warning: used for one of the manifestations
+f<T> GenericStruct.get() {
+    return this.value;
+}
+
+// Warning, but only once for all manifestations
+p GenericStruct.unusedProcedure() {
+    printf("Hello World\n");
+}
+
 f<int> main() {
     TestStruct _ts;
+    GenericStruct<int> intStruct = GenericStruct<int>{1};
+    GenericStruct<double> doubleStruct = GenericStruct<double>{2.0};
+    printf("%d %f", intStruct.get(), doubleStruct.value);
 }

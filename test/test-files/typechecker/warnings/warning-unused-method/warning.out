@@ -1,2 +1,3 @@
-[Warning] ./source.spice:9:1: Unused method: The method 'f<string> TestStruct.unusedFunction()' is unused
-[Warning] ./source.spice:5:1: Unused method: The method 'p TestStruct.unusedProcedure()' is unused
+[Warning] ./source.spice:26:1: Unused method: The method 'p GenericStruct<T>.unusedProcedure<T>()' is unused
+[Warning] ./source.spice:11:1: Unused method: The method 'f<string> TestStruct.unusedFunction()' is unused
+[Warning] ./source.spice:7:1: Unused method: The method 'p TestStruct.unusedProcedure()' is unused

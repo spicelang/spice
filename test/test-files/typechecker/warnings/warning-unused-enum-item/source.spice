@@ -1,8 +1,14 @@
 type Fruit enum {
     BANANA,
-    ORANGE
+    ORANGE,
+    APPLE // No warning: only used as case constant
 }
 
 f<int> main() {
     printf("Test: %d", Fruit::ORANGE);
+    const Fruit fruit = Fruit::ORANGE;
+    switch fruit {
+        case Fruit::APPLE: { printf("Apple"); }
+        default: {}
+    }
 }

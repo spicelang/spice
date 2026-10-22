@@ -1215,12 +1215,6 @@ p materializeConstant(LLVMExprResult& exprResult) {
     exprResult.value = exprResult.constant;
 }
 
-f<bool> IRGenerator.isSymbolDSOLocal(bool isPublic) {
-    // If we are compiling a shared library and export the global symbol, we need to drop dso_local
-    // because it may be interposed by other shared objects by the dynamic linker.
-    return !(isPublic && this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY);
-}
-
 f<llvm::LLVMLinkage> IRGenerator.getSymbolLinkageType(bool isPublic) {
     return isPublic ? llvm::LLVMLinkage::ExternalLinkage : llvm::LLVMLinkage::InternalLinkage;
 }
@@ -1798,7 +1792,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
         assert func.isEmpty();
 
         // Set attributes to function
-        // ToDo: Set dso_local as soon as the LLVM C API allows it (isSymbolDSOLocal(isPublic))
+        // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
         func.setLinkage(this.getSymbolLinkageType(isPublic));
         this.addCommonFctAttrs(func, entryType.isInline());
         this.enableFunctionInstrumentation(func);
@@ -2215,7 +2209,7 @@ public f<Any> IRGenerator.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
     // Set some attributes, based on the given information
     var.setConstant(isConst);
     var.setLinkage(this.getSymbolLinkageType(isPublic));
-    // ToDo: Set dso_local as soon as the LLVM C API allows it (isSymbolDSOLocal(isPublic))
+    // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
 
     // Set initializer
     if node.hasValue { // Set the constant value as variable initializer
@@ -6923,7 +6917,7 @@ f<llvm::Value> IRGenerator.generateTypeInfoName(StructBase* spiceStruct) {
     global.setConstant(true);
     global.setUnnamedAddr(llvm::LLVMUnnamedAddr::NoUnnamedAddr);
     global.setLinkage(this.getVTableLinkageType(isPublic));
-    // ToDo: Set dso_local as soon as the LLVM C API allows it (isSymbolDSOLocal(isPublic))
+    // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
     this.attachComdatToSymbol(global, globalName, isPublic);
 
     spiceStruct.vTableData.typeInfoName = global;
@@ -6992,7 +6986,7 @@ f<llvm::Value> IRGenerator.generateTypeInfo(StructBase* spiceStruct) {
     global.setConstant(true);
     global.setUnnamedAddr(llvm::LLVMUnnamedAddr::NoUnnamedAddr);
     global.setLinkage(this.getVTableLinkageType(isPublic));
-    // ToDo: Set dso_local as soon as the LLVM C API allows it (isSymbolDSOLocal(isPublic))
+    // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
     global.setAlignment(8);
     this.attachComdatToSymbol(global, mangledName, isPublic);
 
@@ -7019,7 +7013,7 @@ f<llvm::Value> IRGenerator.generateVTable(StructBase* spiceStruct) {
     global.setConstant(true);
     global.setUnnamedAddr(llvm::LLVMUnnamedAddr::GlobalUnnamedAddr);
     global.setLinkage(this.getVTableLinkageType(isPublic));
-    // ToDo: Set dso_local as soon as the LLVM C API allows it (isSymbolDSOLocal(isPublic))
+    // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
     global.setAlignment(8);
     this.attachComdatToSymbol(global, mangledName, isPublic);
 

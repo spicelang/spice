@@ -43,7 +43,7 @@ public p PostTypeCheckingVerifier.ctor(GlobalResourceManager& resourceManager, S
  * @param ast Root node of the AST to verify
  */
 public p PostTypeCheckingVerifier.verify(ASTEntryNode* ast) {
-    this.visitEntry(ast);
+    this.visit(ast);
 }
 
 // ======================================================== Verification ========================================================

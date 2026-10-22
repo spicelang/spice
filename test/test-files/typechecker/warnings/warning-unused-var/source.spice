@@ -1,3 +1,5 @@
+const int RESET_COUNT = 1; // No warning: only used as case constant
+
 type Counter struct {
     int count
 }
@@ -11,6 +13,9 @@ f<int> main() {
     int unusedVar = 12; // warning
     double _ = 13.34;   // no warning
     Counter counter = Counter{0};
-    counter.reset();
+    switch counter.count {
+        case RESET_COUNT: { counter.reset(); }
+        default: {}
+    }
     printf("%d", counter.count);
 }

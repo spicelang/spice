@@ -100,7 +100,7 @@ public f<SymbolTableEntry*> SymbolTable.insert(const String& name, const ASTNode
     this.symbols.upsert(name, SymbolTableEntry(name, qualType, this.scope, mutableDeclNode, orderIndex, isGlobal));
     // Set entry to declared
     SymbolTableEntry* entry = &this.symbols.get(name);
-    entry.updateState(LifecycleState::DECLARED, mutableDeclNode);
+    entry.updateState(LifecycleState::DECLARED);
 
     // Check if shadowed
     if this.parent != nil<SymbolTable*> && this.parent.lookup(name) != nil<SymbolTableEntry*> && !mutableDeclNode.isParam() && name != RETURN_VARIABLE_NAME {
@@ -131,8 +131,8 @@ public f<SymbolTableEntry*> SymbolTable.insertAnonymous(const QualType& qualType
     const String name = this.getAnonymousSymbolName(declNode, numericSuffix);
     SymbolTableEntry* anonSymbol = this.insert(name, declNode, true);
     anonSymbol.updateType(qualType, false);
-    anonSymbol.updateState(LifecycleState::DECLARED, declNode);
-    anonSymbol.updateState(LifecycleState::INITIALIZED, declNode);
+    anonSymbol.updateState(LifecycleState::DECLARED);
+    anonSymbol.updateState(LifecycleState::INITIALIZED);
     anonSymbol.anonymous = true;
     anonSymbol.used = true;
     return anonSymbol;

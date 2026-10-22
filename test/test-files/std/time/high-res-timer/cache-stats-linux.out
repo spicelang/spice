@@ -13,3 +13,8 @@ InterfaceManager lookup cache statistics:
   lookup cache hits: 0
   lookup cache misses: 0
 
+UnionManager lookup cache statistics:
+  lookup cache entries: 0
+  lookup cache hits: 0
+  lookup cache misses: 0
+

@@ -203,6 +203,18 @@ public p Scope.collectWarnings(Vector<CompilerWarning>& warnings) {
                     if firstManifestation.implicitDefault {
                         continue;
                     }
+                    // The manifestations of a generic struct share the method declarations. So the method is used, if it
+                    // is used for any of them
+                    bool isAnyManifestationUsed = false;
+                    foreach const Function* manifestation : *fctManifestations {
+                        if manifestation.used {
+                            isAnyManifestationUsed = true;
+                            break;
+                        }
+                    }
+                    if isAnyManifestationUsed {
+                        continue;
+                    }
 
                     warningType = CompilerWarningType::UNUSED_METHOD;
                     warningMessage = "The method '" + firstManifestation.getSignature() + "' is unused";
