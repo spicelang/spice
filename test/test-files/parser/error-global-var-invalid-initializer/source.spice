@@ -1,0 +1,4 @@
+int OTHER = 1;
+int TEST = OTHER;
+
+f<int> main() {}

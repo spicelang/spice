@@ -1,0 +1,4 @@
+// Pointer globals are always initialized with nil, so an explicit nil initializer is rejected
+int* INT_PTR = nil<int*>;
+
+f<int> main() {}

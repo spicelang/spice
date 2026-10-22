@@ -37,7 +37,8 @@ f<int> main() {
 
 ## Global pointers
 
-Global variables can also be of pointer type. They are initialized with `nil`, e.g. to hold a singleton instance:
+Global variables can also be of pointer type, e.g. to hold a singleton instance. They are implicitly initialized with
+`nil`, so they can not have an initializer:
 
 ```spice
 type Registry struct {

@@ -1,0 +1,13 @@
+import "source1";
+
+dyn INFERRED_INT = 5;
+dyn INFERRED_DOUBLE = 2.5;
+dyn INFERRED_STRING = "Hello";
+const dyn INFERRED_CONST_BOOL = true;
+
+f<int> main() {
+    INFERRED_INT++;
+    printf("Values: %d, %f, %s, %d\n", INFERRED_INT, INFERRED_DOUBLE, INFERRED_STRING, INFERRED_CONST_BOOL);
+    // Public globals with inferred type are exported
+    printf("Exported: %d", EXPORTED_INFERRED_INT);
+}
