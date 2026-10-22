@@ -95,7 +95,7 @@ type HostEnt struct {
 
 // External functions
 ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
-ext f<int> bind(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
+ext f<int> bind(int /*sockfd*/, const SockAddrIn* /*address*/, SockLenT /*address_len*/);
 ext f<int> listen(int /*sockfd*/, int /*backlog*/);
 ext f<int> accept(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT* /*address_len*/);
 ext f<int> setsockopt(int /*sockfd*/, int /*level*/, int /*optname*/, byte* /*optval*/, SockLenT /*optlen*/);
@@ -106,7 +106,7 @@ ext f<unsigned int> htonl(unsigned int /*hostlong*/);      // Fairly simple to r
 ext f<unsigned short> htons(unsigned short /*hostshort*/); // Fairly simple to re-implement in Spice
 ext f<InAddrT> inet_addr(string /*cp*/);
 ext f<HostEnt*> gethostbyname(string /*name*/);
-ext f<int> connect(int /*sockfd*/, SockAddrIn* /*address*/, SockLenT /*address_len*/);
+ext f<int> connect(int /*sockfd*/, const SockAddrIn* /*address*/, SockLenT /*address_len*/);
 
 /**
  * A network socket, wrapping the listening socket file descriptor and the current connection

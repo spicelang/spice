@@ -158,7 +158,7 @@ public f<int> spawnProcessAndWait(const String& program, const Vector<String>& a
     ProcessInformation processInformation;
     bool spawned = false;
     unsafe {
-        const unsigned long* inheritedHandlesPtr = cast<unsigned long*>(&inheritedHandles);
+        unsigned long* inheritedHandlesPtr = cast<unsigned long*>(&inheritedHandles);
         spawned = spawnWithInheritedHandles(quotedArgs, stdInput, writeHandle, stdError, inheritedHandlesPtr, inheritedHandleCount, processInformation);
     }
 
