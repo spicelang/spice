@@ -2545,13 +2545,13 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
             Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhsResult, rhs, true);
             localVarType = assignResult.getFirst();
             data.calledCopyCtor = assignResult.getSecond();
-            // Some assignment rules (e.g. for structs and pointers) derive the type from the rhs, so the variable would get the
-            // constness of the rhs instead of the declared one. The variable holds a copy, so only its declaration decides. Only
-            // pointers keep the const of the rhs, because it belongs to the pointee, that the copy still points to
-            if !localVarType.is(SuperType::TY_UNRESOLVED) && !localVarType.isRef() {
+            // Some assignment rules (e.g. for structs, pointers and references) derive the type from the rhs, so the variable would
+            // get the constness of the rhs instead of the declared one. A declared const always holds. Otherwise, a copy is not
+            // const. Only pointers and references keep the const of the rhs, because it belongs to the pointee or referent
+            if !localVarType.is(SuperType::TY_UNRESOLVED) {
                 if isDeclaredConst {
                     localVarType.makeConst();
-                } else if !localVarType.isPtr() {
+                } else if !localVarType.isPtr() && !localVarType.isRef() {
                     localVarType.makeConst(false);
                 }
             }
@@ -3230,28 +3230,6 @@ f<bool> TypeChecker.isAlwaysConstructedLvalue(ASTNode* node) {
 }
 
 /**
- * Check if an lvalue expression denotes a direct field of 'this' (e.g. 'this.field', but not 'this.field.nestedField')
- *
- * @param node Lvalue expression
- * @return Direct field of 'this' or not
- */
-f<bool> isDirectFieldOfThis(ASTNode* node) {
-    if node.kind != ASTNodeKind::POSTFIX_UNARY_EXPR {
-        return false;
-    }
-    ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(node);
-    if postfixUnaryExpr.op != PostfixUnaryOp::OP_MEMBER_ACCESS {
-        return false;
-    }
-    ASTNode* operandNode = getASTNode(postfixUnaryExpr.postfixUnaryExpr);
-    if operandNode.kind != ASTNodeKind::ATOMIC_EXPR {
-        return false;
-    }
-    ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(operandNode);
-    return atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
-}
-
-/**
  * Check if the value of a return statement can be returned without copying it (RVO). This is only the case for local
  * variables of the current function/procedure/lambda, because their dtor call can be omitted and the caller takes over
  * the ownership. Fields, globals, captured variables and values that are reached through a variable (e.g. by
@@ -3329,11 +3307,10 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         const bool isDecl = lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isField() && !lhs.entry.isInitialized();
         // Save this before checking the assignment, because stealing a temporary deletes its anonymous symbol table entry
         const bool isRhsTemporary = rhs.isTemporary();
-        // A field is only initialized by an assignment in a ctor body: to a direct field of 'this', or to a reference field,
-        // which the IR generator binds there. Elsewhere, the assignment writes the field (or through the reference), so it gets
+        // A field is only initialized by an assignment to a direct field of 'this' in a ctor body, which also binds a reference
+        // field (like the IR generator does). Elsewhere, the assignment writes the field (or through the reference), so it gets
         // checked as such, e.g. for constness
-        const bool isCtorBody = this.currentScope.isInCtorBody();
-        const bool isFieldInitAssign = isCtorBody && (lhs.ty.isRef() || isDirectFieldOfThis(getASTNode(node.lhs)));
+        const bool isFieldInitAssign = this.currentScope.isInCtorBody() && isDirectFieldOfThis(getASTNode(node.lhs));
         const bool isDeclAssign = isDecl && isFieldInitAssign;
         Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhs, rhs, isDeclAssign);
         rhsType = assignResult.getFirst();

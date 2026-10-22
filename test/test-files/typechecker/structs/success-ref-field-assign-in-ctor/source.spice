@@ -1,0 +1,28 @@
+type Holder struct {
+    int& ref
+}
+
+p Holder.ctor(int& target) {
+    // Binds the reference field of the new instance
+    this.ref = target;
+}
+
+type Other struct {
+    int value
+}
+
+p Other.ctor(Holder& holder, int& x) {
+    this.value = x;
+    // Writes through the reference field of another instance instead of binding it
+    holder.ref = x;
+}
+
+f<int> main() {
+    int a = 1;
+    int b = 2;
+    Holder holder = Holder(a);
+    Other other = Other(holder, b);
+    printf("After ctor: a=%d b=%d\n", a, b);
+    holder.ref = 9;
+    printf("After write: a=%d b=%d value=%d\n", a, b, other.value);
+}
