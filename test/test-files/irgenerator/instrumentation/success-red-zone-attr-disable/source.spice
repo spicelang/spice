@@ -1,0 +1,14 @@
+// Without --no-red-zone, only the function annotated with 'core.compiler.redZone = false' gets "noredzone". The other
+// leaf function may still keep its locals below the stack pointer.
+#[core.compiler.redZone = false]
+f<int> addUpWithoutRedZone(int a, int b) {
+    return a + b;
+}
+
+f<int> addUpWithRedZone(int a, int b) {
+    return a + b;
+}
+
+f<int> main() {
+    printf("Sum: %d\n", addUpWithoutRedZone(2, 3) + addUpWithRedZone(4, 5));
+}
