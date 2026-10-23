@@ -1,0 +1,30 @@
+// Regression test for https://github.com/spicelang/spice/issues/1670
+// Prefix unary operators applied directly to a cast expression must parse without
+// requiring extra parentheses: *cast<T*>(x), -cast<int>(x), !cast<bool>(x), ~cast<int>(x)
+f<int> main() {
+    // Dereference cast: *cast<long*>(address)
+    long value = 42l;
+    long result = 0l;
+    unsafe {
+        long address = cast<long>(&value);
+        result = *cast<long*>(address);
+    }
+    assert result == 42l;
+
+    // Negation cast: -cast<int>(x)
+    long src = 7l;
+    int neg = -cast<int>(src);
+    assert neg == -7;
+
+    // Logical not cast: !cast<bool>(x)
+    int nonzero = 1;
+    bool flipped = !cast<bool>(nonzero);
+    assert flipped == false;
+
+    // Bitwise not cast: ~cast<int>(x)
+    long raw = 0l;
+    int inverted = ~cast<int>(raw);
+    assert inverted == -1;
+
+    printf("All assertions passed!\n");
+}

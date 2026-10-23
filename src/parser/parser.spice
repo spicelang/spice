@@ -2138,7 +2138,7 @@ f<IVisitable*> Parser.parseCastExpr() {
     return this.concludeExprNode(castExprNode);
 }
 
-// prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr;
+// prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) castExpr;
 f<IVisitable*> Parser.parsePrefixUnaryExpr() {
     // Pass-through if there is no prefix operator. A minus sign directly in front of a numeric literal belongs to the
     // constant, because the grammar prefers the postfixUnaryExpr alternative in that case.
@@ -2163,7 +2163,7 @@ f<IVisitable*> Parser.parsePrefixUnaryExpr() {
     }
 
     // Parse operand
-    prefixUnaryExprNode.prefixUnaryExpr = this.parsePrefixUnaryExpr();
+    prefixUnaryExprNode.prefixUnaryExpr = this.parseCastExpr();
 
     return this.concludeExprNode(prefixUnaryExprNode);
 }
