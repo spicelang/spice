@@ -87,12 +87,14 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
 
     // basePath never has a '.spice' extension yet at this point (import paths are given without one), so
     // getFileName() (not getBaseName(), which assumes an extension is present) is the right way to get the
-    // bare stem to build the three candidate filenames from.
+    // bare stem to build the four candidate filenames from.
     const String stem = basePath.getFileName();
     const String parentDir = basePath.getParentDir();
 
     // Format: /dir/to/path/file.spice
     const FilePath defaultPath = FilePath(parentDir) / (stem + ".spice");
+    // Format: /dir/to/path/file_x86_64.spice
+    const FilePath archPath = FilePath(parentDir) / (stem + "_" + archName + ".spice");
     // Format: /dir/to/path/file_linux.spice
     const FilePath osPath = FilePath(parentDir) / (stem + "_" + osName + ".spice");
     // Format: /dir/to/path/file_linux_x86_64.spice
@@ -106,19 +108,24 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     } else if osPath.exists() && !ownFilePath.equivalent(osPath) {
         // file_os.spice is second choice
         importPath = osPath;
+    } else if archPath.exists() && !ownFilePath.equivalent(archPath) {
+        // file_arch.spice is third choice
+        importPath = archPath;
     } else if defaultPath.exists() {
-        // file.spice is third choice
+        // file.spice is fourth choice
         importPath = defaultPath;
     } else {
         const bool obfuscate = this.cliOptions.comparableOutput;
         const String osArchPathObfuscated = obfuscate ? osArchPath.getFileName() : String(osArchPath.toGenericString());
         const String osPathObfuscated = obfuscate ? osPath.getFileName() : String(osPath.toGenericString());
+        const String archPathObfuscated = obfuscate ? archPath.getFileName() : String(archPath.toGenericString());
         const String defaultPathObfuscated = obfuscate ? defaultPath.getFileName() : String(defaultPath.toGenericString());
 
         String errorMessage = "The source file '" + stem + ".spice' was not found\n\n";
         errorMessage += "The following paths were checked with descending priority:\n";
         errorMessage += "- " + osArchPathObfuscated + "\n";
         errorMessage += "- " + osPathObfuscated + "\n";
+        errorMessage += "- " + archPathObfuscated + "\n";
         errorMessage += "- " + defaultPathObfuscated;
         errorManager.addHardError(baseNode, SemanticErrorType::IMPORTED_FILE_NOT_EXISTING, errorMessage);
         return Any();

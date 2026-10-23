@@ -4,6 +4,7 @@ Imported source file not existing: The source file 'other.spice' was not found
 The following paths were checked with descending priority:
 - other_darwin_aarch64.spice
 - other_darwin.spice
+- other_aarch64.spice
 - other.spice
 
 2  import "@/other" as other;
