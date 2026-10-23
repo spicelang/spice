@@ -1,0 +1,13 @@
+// TEST: --no-red-zone
+
+// The red zone is off with --no-red-zone; it puts "noredzone" on every function we emit. On x86_64, addUp is a leaf
+// function, whose locals would otherwise live below the stack pointer without adjusting it. With the attribute, it
+// allocates its stack frame like any other function, so an interrupt that pushes onto the current stack cannot
+// overwrite them.
+f<int> addUp(int a, int b) {
+    return a + b;
+}
+
+f<int> main() {
+    printf("Sum: %d\n", addUp(2, 3));
+}

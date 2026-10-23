@@ -1,0 +1,3 @@
+// TEST: --backend=tpde --no-red-zone --target=x86_64-unknown-linux-gnu
+
+f<int> main() {}

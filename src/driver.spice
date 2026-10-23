@@ -152,6 +152,7 @@ public type CliOptions struct {
     public Map<String, String> buildVars
     public bool lintOnly = false
     public bool keepFramePointers = false
+    public bool noRedZone = false
     public bool stripSymbols = false
 }
 
@@ -378,6 +379,10 @@ public p Driver.enrich() {
         const String archName = this.cliOptions.targetTriple.getArchTypeName();
         if archName != "x86_64" && archName != "aarch64" {
             raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports x86_64 and aarch64");
+        }
+        // TPDE always uses the red zone in x86_64 leaf functions, regardless of the 'noredzone' function attribute
+        if this.cliOptions.noRedZone && archName == "x86_64" {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend does not support --no-red-zone on x86_64");
         }
         if this.cliOptions.optLevel != OptLevel::O0 {
             print("\033[33mWarning: the TPDE backend does not optimize; -O flag will be ignored\033[0m\n");
@@ -689,6 +694,8 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--use-tbaa-metadata", this.cliOptions.useTBAAMetadata, "Generate metadata for type-based alias analysis to enhance optimizations");
     // --keep-frame-pointers
     subCmd.addFlag("--keep-frame-pointers", this.cliOptions.keepFramePointers, "Set up a frame pointer in every function, so external profilers and debuggers can walk the stack (costs a register and a bit of performance)");
+    // --no-red-zone
+    subCmd.addFlag("--no-red-zone", this.cliOptions.noRedZone, "Do not use the red zone below the stack pointer (x86_64). Required for code that runs in kernel mode, where interrupts push onto the current stack");
     // --native-features
     subCmd.addFlag("--native-features", this.cliOptions.useNativeFeatures, "Tune the output for the CPU of the compiling machine and use all of its features. The output might not run on other machines of the same architecture");
     // --test-mode
@@ -875,6 +882,7 @@ f<bool> testBuildAndRunSubcommands() {
     assert !buildMinimal.cliOptions.noEntryFct;
     assert !buildMinimal.cliOptions.lintOnly;
     assert !buildMinimal.cliOptions.keepFramePointers;
+    assert !buildMinimal.cliOptions.noRedZone;
     assert !buildMinimal.cliOptions.stripSymbols;
     assert !buildMinimal.cliOptions.instrumentation.emitsDebugInfo();
     // The executable lands in the current dir and is named like the source file, with the extension of the target
@@ -903,10 +911,11 @@ f<bool> testBuildAndRunSubcommands() {
 
     // Build: option values, which need the parser to consume the following argument
     Driver buildOptions;
-    string[17] buildOptionsWithFile = ["spice", "build", "--strip-symbols", "--keep-frame-pointers", "--no-entry", "--static", "--backend", "llvm", "-b", "key=value", "--build-var", "flag", "-j", "8", "--output-container", "lib", "main-file.spice"];
-    assert parseAndEnrich(buildOptions, 17, buildOptionsWithFile);
+    string[18] buildOptionsWithFile = ["spice", "build", "--strip-symbols", "--keep-frame-pointers", "--no-red-zone", "--no-entry", "--static", "--backend", "llvm", "-b", "key=value", "--build-var", "flag", "-j", "8", "--output-container", "lib", "main-file.spice"];
+    assert parseAndEnrich(buildOptions, 18, buildOptionsWithFile);
     assert buildOptions.cliOptions.stripSymbols;
     assert buildOptions.cliOptions.keepFramePointers;
+    assert buildOptions.cliOptions.noRedZone;
     assert buildOptions.cliOptions.noEntryFct;
     assert buildOptions.cliOptions.staticLinking;
     assert buildOptions.cliOptions.compileJobCount == 8;

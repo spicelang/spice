@@ -17,14 +17,15 @@ other builds, it is opt-in at build time as well.
 
 ## Supported configurations
 
-| Property                | Value                                      |
-|-------------------------|--------------------------------------------|
-| Host operating systems  | Linux (ELF only)                           |
-| Target architectures    | `x86_64`, `aarch64`                        |
-| Code model              | small only                                 |
-| Relocation model        | PIC only                                   |
-| Optimization            | none — `-O` flags are accepted but ignored |
-| Link-time optimization  | not supported (`-lto` is rejected)         |
+| Property                | Value                                       |
+|-------------------------|---------------------------------------------|
+| Host operating systems  | Linux (ELF only)                            |
+| Target architectures    | `x86_64`, `aarch64`                         |
+| Code model              | small only                                  |
+| Relocation model        | PIC only                                    |
+| Optimization            | none — `-O` flags are accepted but ignored  |
+| Link-time optimization  | not supported (`-lto` is rejected)          |
+| No red zone (x86_64)    | not supported (`--no-red-zone` is rejected) |
 
 ## Building Spice with TPDE support
 

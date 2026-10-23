@@ -42,4 +42,5 @@ You can apply following options to the `install` subcommand:
 | `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                     |
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |
 | -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                      |
+| -            | `--no-red-zone`           | Do not use the red zone below the stack pointer (x86_64), e.g. for kernel code                 |
 | -            | `--native-features`       | Tune the output for the CPU of the compiling machine (output not portable)                     |
