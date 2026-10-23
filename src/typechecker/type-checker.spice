@@ -1307,6 +1307,14 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
             firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         }
+        // The TPDE backend always uses the red zone in x86_64 leaf functions (see the --no-red-zone check in the driver)
+        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_RED_ZONE)) {
+            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_RED_ZONE));
+            if !value.getBoolValue() && this.cliOptions.backend == Backend::TPDE && this.cliOptions.targetArch == "x86_64" {
+                throwSemanticError(getASTNode(attrLst), SemanticErrorType::UNSUPPORTED_ATTR_VALUE, String("The TPDE backend does not support disabling the red zone on x86_64"));
+                return Any();
+            }
+        }
         if isFunction && attrLst.hasAttr(String(ATTR_TEST)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_TEST));
             if value.getBoolValue() {

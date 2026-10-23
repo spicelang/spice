@@ -63,6 +63,7 @@ public type SemanticErrorType enum {
     UNKNOWN_ATTR,
     INVALID_ATTR_TARGET,
     MISSING_ATTR_VALUE,
+    UNSUPPORTED_ATTR_VALUE,
     NUMBER_OF_FIELDS_NOT_MATCHING,
     FIELD_TYPE_NOT_MATCHING,
     ARRAY_SIZE_INVALID,
@@ -223,6 +224,7 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::UNKNOWN_ATTR: { return "Unknown attribute"; }
         case SemanticErrorType::INVALID_ATTR_TARGET: { return "Invalid attribute target"; }
         case SemanticErrorType::MISSING_ATTR_VALUE: { return "Missing attribute value"; }
+        case SemanticErrorType::UNSUPPORTED_ATTR_VALUE: { return "Unsupported attribute value"; }
         case SemanticErrorType::NUMBER_OF_FIELDS_NOT_MATCHING: { return "Number of struct fields not matching declaration"; }
         case SemanticErrorType::FIELD_TYPE_NOT_MATCHING: { return "The type of a field value does not match the declaration"; }
         case SemanticErrorType::ARRAY_SIZE_INVALID: { return "Array size invalid"; }

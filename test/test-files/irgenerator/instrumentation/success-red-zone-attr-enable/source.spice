@@ -1,0 +1,16 @@
+// TEST: --no-red-zone
+
+// With --no-red-zone, every function gets "noredzone", except for the one that allows the red zone again with the
+// 'core.compiler.redZone' attribute, e.g. because it never runs where an interrupt could push onto its stack.
+#[core.compiler.redZone]
+p printWithRedZone(int value) {
+    printf("Value: %d\n", value);
+}
+
+f<int> addUpWithoutRedZone(int a, int b) {
+    return a + b;
+}
+
+f<int> main() {
+    printWithRedZone(addUpWithoutRedZone(2, 3));
+}

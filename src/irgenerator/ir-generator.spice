@@ -1265,7 +1265,8 @@ p IRGenerator.attachComdatToSymbol(llvm::Value global, const String& comdatName,
  * '--no-red-zone' adds 'noredzone' to every function, like Clang's '-mno-red-zone'. Leaf functions then allocate their
  * stack frame instead of using the area below the stack pointer, which the x86_64 SysV ABI reserves for them. Kernel
  * code needs this, because an interrupt without a stack switch pushes its frame onto the current stack. Targets without
- * a red zone, like AArch64, are not affected.
+ * a red zone, like AArch64, are not affected. Functions and procedures can override the option with the
+ * 'core.compiler.redZone' attribute.
  *
  * The size levels are not communicated to LLVM by the pass pipeline alone - since Os and Oz both select the O2
  * pipeline, 'optsize' and 'minsize' on the individual function are what actually distinguishes them. Without 'minsize',
@@ -1273,14 +1274,15 @@ p IRGenerator.attachComdatToSymbol(llvm::Value global, const String& comdatName,
  *
  * @param fct Function to attach the attributes to
  * @param isAlwaysInline Whether the function was declared as inline
+ * @param attrs Attributes of the function or procedure definition, if any
  */
-p IRGenerator.addCommonFctAttrs(llvm::Function fct, bool isAlwaysInline = false) {
+p IRGenerator.addCommonFctAttrs(llvm::Function fct, bool isAlwaysInline = false, IVisitable* attrs = nil<IVisitable*>) {
     fct.addFnAttr("nounwind");
     fct.addFnAttr("uwtable", 2l); // llvm::UWTableKind::Default
     if this.cliOptions.keepFramePointers {
         fct.addFnStringAttr("frame-pointer", "all");
     }
-    if this.cliOptions.noRedZone {
+    if this.isRedZoneDisabled(attrs) {
         fct.addFnAttr("noredzone");
     }
 
@@ -1299,6 +1301,25 @@ p IRGenerator.addCommonFctAttrs(llvm::Function fct, bool isAlwaysInline = false)
             fct.addFnAttr("minsize");
         }
     }
+}
+
+/**
+ * Check whether a function must not use the red zone: with '--no-red-zone', unless the function allows it with the
+ * 'core.compiler.redZone' attribute, or without the option, if the attribute forbids it
+ *
+ * @param attrs Attributes of the function or procedure definition, if any
+ * @return Whether the function gets the 'noredzone' attribute
+ */
+f<bool> IRGenerator.isRedZoneDisabled(IVisitable* attrs) {
+    if attrs != nil<IVisitable*> {
+        const ASTTopLevelDefAttrNode* topLevelDefAttrs = downcast<ASTTopLevelDefAttrNode>(attrs);
+        const String redZoneAttrName = String(ATTR_CORE_COMPILER_RED_ZONE);
+        if topLevelDefAttrs.attrLst.hasAttr(redZoneAttrName) {
+            const CompileTimeValue redZoneAttrValue = topLevelDefAttrs.attrLst.getAttrValueByName(redZoneAttrName);
+            return !redZoneAttrValue.getBoolValue();
+        }
+    }
+    return this.cliOptions.noRedZone;
 }
 
 public f<llvm::Value> IRGenerator.getAddress(const SymbolTableEntry* entry) {
@@ -1813,7 +1834,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
         // Set attributes to function
         // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
         func.setLinkage(this.getSymbolLinkageType(isPublic));
-        this.addCommonFctAttrs(func, entryType.isInline());
+        this.addCommonFctAttrs(func, entryType.isInline(), node.attrs);
         this.enableFunctionInstrumentation(func);
         // Set attributes to function parameters and return value
         this.setParamAttrs(func, paramInfoList, argOffset);
