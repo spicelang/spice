@@ -4,6 +4,7 @@ Imported source file not existing: The source file 'other.spice' was not found
 The following paths were checked with descending priority:
 - other_linux_x86_64.spice
 - other_linux.spice
+- other_x86_64.spice
 - other.spice
 
 2  import "@/other" as other;
