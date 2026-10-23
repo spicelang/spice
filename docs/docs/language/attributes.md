@@ -39,7 +39,8 @@ f<int> test(long input) {
 - `core.compiler.mangledName: string`: Set the mangled name for the annotated function
 - `core.compiler.redZone: bool`: Allow or forbid the use of the red zone below the stack pointer in the annotated
   function. Overrides `--no-red-zone`, which sets the default for all other functions. Only x86_64 has a red zone. Code
-  that runs while interrupts can push onto its stack, like a kernel, must not use it
+  that runs while interrupts can push onto its stack, like a kernel, must not use it. The experimental TPDE backend
+  always uses the red zone on x86_64, so it rejects `false` there (on AArch64, the value is accepted and has no effect)
 - `test: bool`: Mark the annotated function as test
 - `test.name: string`: Set the name of the test (only functions or procedures with the `test` attribute are considered as tests)
 - `test.skip: bool`: Skip the annotated function (only functions or procedures with the `test` attribute are considered as tests)
