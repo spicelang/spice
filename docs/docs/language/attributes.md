@@ -38,8 +38,8 @@ f<int> test(long input) {
 - `core.compiler.mangle: bool (default: true)`: Enable/disable name mangling for the annotated function
 - `core.compiler.mangledName: string`: Set the mangled name for the annotated function
 - `test: bool`: Mark the annotated function as test
-- `test.name: string`: Set the name of the test (only procedures with the `test` attribute are considered as tests)
-- `test.skip: bool`: Skip the annotated function (only procedures with the `test` attribute are considered as tests)
+- `test.name: string`: Set the name of the test (only functions or procedures with the `test` attribute are considered as tests)
+- `test.skip: bool`: Skip the annotated function (only functions or procedures with the `test` attribute are considered as tests)
 
 
 ## External declaration attributes
@@ -47,8 +47,8 @@ External declarations are not name-mangled by default, so they link against C sy
 without any attribute.
 
 ```spice
-#[core.compiler.mangledName = "pthread_self"]
-ext f<byte*> pthreadSelf();
+#[core.compiler.mangledName = "strlen"]
+ext f<unsigned long> cStringLength(string);
 
 // ...
 ```
