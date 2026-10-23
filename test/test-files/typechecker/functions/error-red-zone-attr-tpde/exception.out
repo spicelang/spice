@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:3:
+Unsupported attribute value: The TPDE backend does not support disabling the red zone on x86_64
+
+3  #[core.compiler.redZone = false]
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
