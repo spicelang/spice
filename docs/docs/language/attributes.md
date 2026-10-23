@@ -37,23 +37,27 @@ f<int> test(long input) {
 ### Available attributes
 - `core.compiler.mangle: bool (default: true)`: Enable/disable name mangling for the annotated function
 - `core.compiler.mangledName: string`: Set the mangled name for the annotated function
+- `test: bool`: Mark the annotated function as test
+- `test.name: string`: Set the name of the test (only functions or procedures with the `test` attribute are considered as tests)
+- `test.skip: bool`: Skip the annotated function (only functions or procedures with the `test` attribute are considered as tests)
 
 
 ## External declaration attributes
+External declarations are not name-mangled by default, so they link against C symbols (and `extern "C"` C++ symbols)
+without any attribute.
+
 ```spice
-#[core.compiler.mangle = false]
-ext f<heap byte*> malloc(unsigned long);
+#[core.compiler.mangledName = "strlen"]
+ext f<unsigned long> cStringLength(string);
 
 // ...
 ```
 
 ### Available attributes
-- `core.compiler.mangle: bool (default: true)`: Enable/disable name mangling for the annotated function
-- `core.compiler.mangledName: string`: Set the mangled name for the annotated function
+- `core.compiler.mangle: bool (default: false)`: Enable/disable name mangling for the annotated declaration, e.g. to
+  link against a Spice function from another compilation unit
+- `core.compiler.mangledName: string`: Set the linker symbol for the annotated declaration
 - `core.linker.dll: bool`: Enable linkage as dll (only relevant for Windows)
-- `test: bool`: Mark the annotated function as test
-- `test.name: string`: Set the name of the test (only procedures with the `test` attribute are considered as tests)
-- `test.skip: bool`: Skip the annotated function (only procedures with the `test` attribute are considered as tests)
 
 
 ## Struct attributes
