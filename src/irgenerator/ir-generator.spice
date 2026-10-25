@@ -47,6 +47,7 @@ import "@/symboltablebuilder/type-chain";
 import "@/symboltablebuilder/type-qualifiers";
 import "@/typechecker/builtin-functions";
 import "@/typechecker/function-manager";
+import "@/typechecker/inline-asm";
 
 // Constants
 public const string ANON_GLOBAL_STRING_NAME = "anon.string.";
@@ -5361,6 +5362,7 @@ f<Any> IRGenerator.visitBuiltinCall(ASTFctCallNode* node) {
     if name == BUILTIN_FCT_NAME_LEN { return this.visitBuiltinLenCall(node); }
     if name == BUILTIN_FCT_NAME_PANIC { return this.visitBuiltinPanicCall(node); }
     if name == BUILTIN_FCT_NAME_SYSCALL { return this.visitBuiltinSyscallCall(node); }
+    if name == BUILTIN_FCT_NAME_ASM { return this.visitBuiltinAsmCall(node); }
     if name == BUILTIN_FCT_NAME_NEW { return this.visitBuiltinNewCall(node); }
     if name == BUILTIN_FCT_NAME_PLACEMENT_NEW { return this.visitBuiltinPlacementNewCall(node); }
     if name == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER { return this.visitBuiltinErrTraceBufferCall(node); }
@@ -5570,6 +5572,98 @@ f<Any> IRGenerator.visitBuiltinSyscallCall(ASTFctCallNode* node) {
     const llvm::Value res = this.builder.createSExtOrTrunc(call, int64Ty);
 
     return exprResultAny(exprResultWithValue(res));
+}
+
+// Get a compile time string argument of a builtin call
+f<const String&> IRGenerator.getCompileTimeStringArg(ASTFctCallNode* node, unsigned long argIdx) {
+    IVisitable* argNode = node.argLst.args.get(argIdx);
+    assert this.hasCompileTimeValue(argNode);
+    const CompileTimeValue value = this.getCompileTimeValue(argNode);
+    return this.resourceManager.compileTimeStringValues.get(value.getStringValueOffset());
+}
+
+// LLVM type of a direct inline asm operand. Bools are passed as i8 like clang does, since the backends cannot allocate
+// registers for i1 values
+f<llvm::Type> IRGenerator.getAsmOperandType(const QualType& qualType) {
+    if qualType.is(SuperType::TY_BOOL) {
+        return this.builder.getInt8Ty();
+    }
+    return qualType.toLLVMType(this.sourceFile);
+}
+
+f<Any> IRGenerator.visitBuiltinAsmCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_ASM;
+
+    // The type checker already verified the template and the constraints
+    const String& asmString = this.getCompileTimeStringArg(node, 0l);
+    const String& constraintString = this.getCompileTimeStringArg(node, 1l);
+    Vector<AsmConstraint> constraints;
+    String errorMessage;
+    const bool validConstraints = parseAsmConstraints(constraintString, constraints, errorMessage);
+    assert validConstraints;
+
+    // The direct output is the result of the asm call
+    const QualType resultType = this.getEvaluatedType(cast<IVisitable*>(node));
+    const bool hasResult = !resultType.is(SuperType::TY_DYN);
+    const llvm::Type resultLLVMType = hasResult ? this.getAsmOperandType(resultType) : this.builder.getVoidTy();
+
+    // The indirect outputs and inputs are the arguments of the asm call. Indirect operands are passed as pointers
+    Vector<llvm::Type> argTypes;
+    Vector<llvm::Value> argValues;
+    Vector<llvm::Type> elementTypes; // Pointee type of each indirect operand, null for direct operands
+    unsigned long argIdx = 2l;
+    foreach const AsmConstraint& constraint : constraints {
+        if !constraint.hasArg() { continue; }
+        IVisitable* argNode = node.argLst.args.get(argIdx);
+        argIdx++;
+        QualType argType = this.getEvaluatedType(argNode);
+        argType = argType.removeReferenceWrapper();
+        llvm::Value argValue = this.resolveValue(argNode);
+        if constraint.isIndirect {
+            const QualType pointeeType = argType.getContained();
+            argTypes.pushBack(this.builder.getPtrTy());
+            elementTypes.pushBack(pointeeType.toLLVMType(this.sourceFile));
+        } else {
+            const llvm::Type operandType = this.getAsmOperandType(argType);
+            if argType.is(SuperType::TY_BOOL) {
+                argValue = this.builder.createZExt(argValue, operandType);
+            }
+            argTypes.pushBack(operandType);
+            elementTypes.pushBack(llvm::Type());
+        }
+        argValues.pushBack(argValue);
+    }
+
+    // Like GCC and clang, assume that asm on x86 always clobbers the flags. Otherwise, LLVM would keep flags alive across it
+    String llvmConstraintString = constraintString;
+    if this.cliOptions.targetTriple.isX86() || this.cliOptions.targetTriple.isX86_64() {
+        const string[3] implicitClobbers = ["~{dirflag}", "~{fpsr}", "~{flags}"];
+        for unsigned long i = 0l; i < len(implicitClobbers); i++ {
+            const string clobber = implicitClobbers[i];
+            if llvmConstraintString.find(clobber) == -1l {
+                llvmConstraintString += llvmConstraintString.isEmpty() ? String(clobber) : "," + String(clobber);
+            }
+        }
+    }
+
+    // Asm is always treated as having side effects, so that the optimizer does not move or remove it
+    const llvm::Type fctType = llvm::getFunctionType(resultLLVMType, argTypes, false);
+    const llvm::Value inlineAsm = llvm::getInlineAsm(fctType, asmString, llvmConstraintString, true);
+    llvm::Value call = this.builder.createCall(fctType, inlineAsm, argValues);
+    for unsigned int i = 0; i < cast<unsigned int>(elementTypes.getSize()); i++ {
+        const llvm::Type& elementType = elementTypes.get(i);
+        if !elementType.isNull() {
+            call.addCallParamTypeAttr(i, "elementtype", elementType);
+        }
+    }
+
+    if !hasResult {
+        return exprResultAny(LLVMExprResult());
+    }
+    if resultType.is(SuperType::TY_BOOL) {
+        return exprResultAny(exprResultWithValue(this.builder.createTrunc(call, this.builder.getInt1Ty())));
+    }
+    return exprResultAny(exprResultWithValue(call));
 }
 
 f<Any> IRGenerator.visitBuiltinNewCall(ASTFctCallNode* node) {

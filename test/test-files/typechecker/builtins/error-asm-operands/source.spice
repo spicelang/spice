@@ -1,0 +1,19 @@
+type Pair struct {
+    int first
+    int second
+}
+
+f<int> main() {
+    int a = 1;
+    long b = 2l;
+    const int c = 3;
+    Pair pair = Pair{1, 2};
+    unsafe {
+        asm("nop", "r,r", a); // Too few operands
+        asm("nop", "r", a, a); // Too many operands
+        asm("nop", "=*m", a); // Indirect operand without pointer
+        asm("nop", "=*m", &c); // Indirect output through a pointer to const
+        asm("nop", "r", pair); // Struct operand
+        const int x = asm<int>("nop", "=r,0", b); // Tied input with another type
+    }
+}

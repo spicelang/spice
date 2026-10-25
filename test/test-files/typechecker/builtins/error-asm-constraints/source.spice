@@ -1,0 +1,15 @@
+f<int> main() {
+    int a = 1;
+    unsafe {
+        asm("nop", "r,,r"); // Empty constraint
+        asm("nop", "r,"); // Trailing comma
+        asm("nop", "~memory"); // Clobber without braces
+        asm("nop", "!i"); // Label constraint
+        asm("nop", "&r", a); // Early clobber on input
+        asm("nop", "={rax"); // Unterminated register name
+        asm("nop", "=r,1", a); // Tied to an operand, that is no output
+        asm("nop", "r,=r", a); // Output after input
+        asm("nop", "~{memory},r", a); // Input after clobber
+        const int x = asm<int>("nop", "=r,=r"); // Multiple direct outputs
+    }
+}

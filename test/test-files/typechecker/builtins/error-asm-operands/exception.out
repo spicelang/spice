@@ -1,0 +1,38 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:12:9:
+Builtin function argument count mismatch: The constraints require 2 operand(s), but got 1
+
+12  asm("nop", "r,r", a); // Too few operands
+    ^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:13:9:
+Builtin function argument count mismatch: The constraints require 1 operand(s), but got 2
+
+13  asm("nop", "r", a, a); // Too many operands
+    ^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:14:27:
+Builtin function argument type mismatch: Indirect operands ('*') expect a pointer to the memory, but got 'int'
+
+14  asm("nop", "=*m", a); // Indirect operand
+                      ^
+
+[Error|Semantic] ./source.spice:15:27:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+15  asm("nop", "=*m", &c); // Indirect output
+                      ^^
+
+[Error|Semantic] ./source.spice:16:25:
+Builtin function argument type mismatch: Operands of inline assembly must be of a primitive, pointer or enum type, but got 'Pair'
+
+16  asm("nop", "r", pair); // Struct operand
+                    ^^^^
+
+[Error|Semantic] ./source.spice:17:47:
+Builtin function argument type mismatch: The input tied to the output has to be of the result type 'int', but got 'long'
+
+17  int>("nop", "=r,0", b); // Tied input with
+                        ^

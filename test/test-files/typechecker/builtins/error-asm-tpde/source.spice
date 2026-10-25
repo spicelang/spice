@@ -1,0 +1,7 @@
+// TEST: --backend=tpde --target=x86_64-unknown-linux-gnu
+
+f<int> main() {
+    unsafe {
+        asm("nop", "");
+    }
+}

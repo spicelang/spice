@@ -1,0 +1,23 @@
+// TEST: --target=aarch64-unknown-linux-gnu
+
+f<int> main() {
+    long a = 40l;
+    long b = 2l;
+    unsafe {
+        // Direct output
+        const long sum = asm<long>("add $0, $1, $2", "=r,r,r", a, b);
+        printf("Sum: %d\n", sum);
+
+        // ${N:w} selects the 32 bit register
+        const int product = asm<int>("mul ${0:w}, ${1:w}, ${2:w}", "=r,r,r", 6, 7);
+        printf("Product: %d\n", product);
+
+        // No operands, clobbers only
+        asm("dmb ish", "~{memory}");
+
+        // Indirect output
+        long value = 0l;
+        asm("mov x9, #42\n\tstr x9, $0", "=*m,~{x9}", &value);
+        printf("Indirect output: %d\n", value);
+    }
+}

@@ -31,6 +31,7 @@ type LLVMComdatRef alias VoidPtr;
 type LLVMMemoryBufferRef alias VoidPtr;
 type LLVMDIBuilderRef alias VoidPtr;
 type LLVMDbgRecordRef alias VoidPtr;
+type LLVMDiagnosticInfoRef alias VoidPtr;
 
 // ===== Generic helper definitions =====
 type ShortIntLong unsigned short|unsigned int|unsigned long;
@@ -554,6 +555,9 @@ ext p LLVMShutdown();
 // Extended API, used by the IR generator of the bootstrap compiler
 ext f<LLVMContextRef> LLVMGetTypeContext(LLVMTypeRef /*Ty*/);
 ext p LLVMContextSetDiscardValueNames(LLVMContextRef /*C*/, LLVMBool /*Discard*/);
+ext p LLVMContextSetDiagnosticHandler(LLVMContextRef /*C*/, byte* /*Handler*/, byte* /*DiagnosticContext*/);
+ext f<string> LLVMGetDiagInfoDescription(LLVMDiagnosticInfoRef /*DI*/);
+ext f<LLVMDiagnosticSeverity> LLVMGetDiagInfoSeverity(LLVMDiagnosticInfoRef /*DI*/);
 ext f<LLVMTypeRef> LLVMVoidTypeInContext(LLVMContextRef /*C*/);
 ext f<LLVMTypeKind> LLVMGetTypeKind(LLVMTypeRef /*Ty*/);
 ext f<unsigned int> LLVMGetIntTypeWidth(LLVMTypeRef /*IntegerTy*/);
@@ -742,6 +746,36 @@ public f<Message> LLVMError.getMessage() {
     return Message(message);
 }
 
+// ===== DiagnosticCollector =====
+/**
+ * Collects the diagnostics of an LLVM context, see LLVMContext.setDiagnosticCollector
+ */
+public type DiagnosticCollector struct {
+    public Vector<String> errors
+    public Vector<String> warnings // Warnings and notes. Remarks are dropped
+}
+
+public p DiagnosticCollector.ctor() {}
+
+// Receives a diagnostic from LLVM
+p collectDiagnostic(LLVMDiagnosticInfoRef diagInfo, byte* context) {
+    DiagnosticCollector* collector;
+    unsafe {
+        collector = cast<DiagnosticCollector*>(context);
+    }
+    const LLVMDiagnosticSeverity severity = LLVMGetDiagInfoSeverity(diagInfo);
+    if severity == LLVMDiagnosticSeverity::Remark {
+        return;
+    }
+    const string description = LLVMGetDiagInfoDescription(diagInfo);
+    if severity == LLVMDiagnosticSeverity::Error {
+        collector.errors.pushBack(String(description));
+    } else {
+        collector.warnings.pushBack(String(description));
+    }
+    LLVMDisposeMessage(description);
+}
+
 // ===== LLVMContext =====
 public type LLVMContext struct {
     LLVMContextRef self
@@ -754,6 +788,25 @@ public p LLVMContext.ctor() {
 // Like llvm::LLVMContext::setDiscardValueNames
 public p LLVMContext.setDiscardValueNames(bool discard) {
     LLVMContextSetDiscardValueNames(this.self, cast<LLVMBool>(discard));
+}
+
+/**
+ * Let the given collector receive the diagnostics of this context, instead of the default diagnostic handler of LLVM,
+ * which prints them and exits the process on errors. The collector has to outlive its use, so reset the handler with
+ * resetDiagnosticHandler before it goes out of scope.
+ *
+ * @param collector Collector for the diagnostics
+ */
+public p LLVMContext.setDiagnosticCollector(DiagnosticCollector* collector) {
+    // The handler is passed as 'byte*' (its fat thunk), since LLVM calls it like a C function
+    unsafe {
+        LLVMContextSetDiagnosticHandler(this.self, cast<byte*>(collectDiagnostic), cast<byte*>(collector));
+    }
+}
+
+// Restore the default diagnostic handler of LLVM
+public p LLVMContext.resetDiagnosticHandler() {
+    LLVMContextSetDiagnosticHandler(this.self, nil<byte*>, nil<byte*>);
 }
 
 public p LLVMContext.dtor() {

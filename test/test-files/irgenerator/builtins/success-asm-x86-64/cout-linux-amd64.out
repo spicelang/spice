@@ -1,0 +1,8 @@
+Sum: 42
+Indirect output: 42
+Indirect input: 7
+Bool: 1
+Enum: 1
+Pointer: 1
+Double: 3.750000
+Reference: 42

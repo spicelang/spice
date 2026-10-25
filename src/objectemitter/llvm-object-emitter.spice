@@ -11,6 +11,7 @@ import "@/source-file";
 import "@/exception/compiler-error";
 import "@/global/global-resource-manager";
 import "@/objectemitter/abstract-object-emitter";
+import "@/util/compiler-warning";
 
 /**
  * Emits the object file or the assembly code of a module with the LLVM codegen backend
@@ -28,13 +29,47 @@ public p LLVMObjectEmitter.ctor(GlobalResourceManager& resourceManager, SourceFi
 public p LLVMObjectEmitter.emit(const FilePath& objectPath) {
     const string objectPathString = objectPath.toString();
 
+    // Collect the diagnostics of the backend (e.g. for invalid inline assembly), since the default diagnostic handler of LLVM
+    // would exit the process on errors
+    llvm::LLVMContext& context = this.sourceFile.getLLVMContext();
+    llvm::DiagnosticCollector diagnostics;
+    context.setDiagnosticCollector(&diagnostics);
+
     // Emit object file
     String errorMessage;
-    if this.sourceFile.targetMachine.emitToFileWithError(*this.module, objectPathString, llvm::LLVMCodeGenFileType::ObjectFile, errorMessage) {
+    const bool emitFailed = this.sourceFile.targetMachine.emitToFileWithError(*this.module, objectPathString, llvm::LLVMCodeGenFileType::ObjectFile, errorMessage);
+    context.resetDiagnosticHandler();
+    this.reportDiagnostics(diagnostics);
+    if emitFailed {
         const String messageSuffix = "File '" + String(objectPathString) + "' could not be opened";                 // LCOV_EXCL_LINE
         const CompilerError error = CompilerError(CompilerErrorType::CANT_OPEN_OUTPUT_FILE, messageSuffix.getRaw()); // LCOV_EXCL_LINE
         abortWithError(error.getMessage());                                                                        // LCOV_EXCL_LINE
     } // LCOV_EXCL_LINE
+}
+
+/**
+ * Print the warnings of the backend and abort the compilation on errors
+ *
+ * @param diagnostics Diagnostics of the backend
+ */
+p LLVMObjectEmitter.reportDiagnostics(const llvm::DiagnosticCollector& diagnostics) {
+    if !this.sourceFile.ignoreWarnings {
+        foreach const String& warningMessage : diagnostics.warnings {
+            CompilerWarning warning = CompilerWarning(CompilerWarningType::BACKEND_WARNING, warningMessage.getRaw());
+            warning.print();
+        }
+    }
+    if !diagnostics.errors.isEmpty() {
+        String message;
+        foreach const String& diagnosticMessage : diagnostics.errors {
+            if !message.isEmpty() {
+                message += "\n";
+            }
+            message += diagnosticMessage;
+        }
+        const CompilerError error = CompilerError(CompilerErrorType::BACKEND_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
 }
 
 public p LLVMObjectEmitter.getASMString(String& output) {

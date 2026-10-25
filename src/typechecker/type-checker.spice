@@ -43,6 +43,7 @@ import "@/symboltablebuilder/type-qualifiers";
 import "@/typechecker/builtin-functions";
 import "@/typechecker/expr-result";
 import "@/typechecker/function-manager";
+import "@/typechecker/inline-asm";
 import "@/typechecker/interface-manager";
 import "@/typechecker/op-rule-manager";
 import "@/typechecker/struct-manager";
@@ -5313,6 +5314,7 @@ f<Any> TypeChecker.visitBuiltinCall(ASTFctCallNode* node) {
     if name == BUILTIN_FCT_NAME_LEN { return this.visitBuiltinLenCall(node); }
     if name == BUILTIN_FCT_NAME_PANIC { return this.visitBuiltinPanicCall(node); }
     if name == BUILTIN_FCT_NAME_SYSCALL { return this.visitBuiltinSyscallCall(node); }
+    if name == BUILTIN_FCT_NAME_ASM { return this.visitBuiltinAsmCall(node); }
     if name == BUILTIN_FCT_NAME_IS_SAME { return this.visitBuiltinIsSameCall(node); }
     if name == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE { return this.visitBuiltinImplementsInterfaceCall(node); }
     if name == BUILTIN_FCT_NAME_GET_BUILD_VAR { return this.visitBuiltinGetBuildVarCall(node); }
@@ -5708,6 +5710,137 @@ f<Any> TypeChecker.visitBuiltinSyscallCall(ASTFctCallNode* node) {
     }
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+// Whether a value of the given type can be an operand or the result of inline assembly
+f<bool> isValidAsmOperandType(const QualType& qualType) {
+    return qualType.isPrimitive() || qualType.isPtr() || qualType.is(SuperType::TY_ENUM);
+}
+
+/**
+ * Read a string argument of a builtin call, that has to be known at compile time. Reports a soft error otherwise.
+ *
+ * @param node Builtin call
+ * @param argIdx Index of the argument
+ * @param description Description of the argument for the error message
+ * @param value Receives the string value
+ * @return Success or not
+ */
+f<bool> TypeChecker.getCompileTimeStringArg(ASTFctCallNode* node, unsigned long argIdx, string description, String& value) {
+    ASTNode* argNode = getASTNode(node.argLst.args.get(argIdx));
+    const QualType argType = this.getArgType(node, argIdx);
+    if !argType.is(SuperType::TY_STRING) {
+        this.softError(argNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String(description) + " must be a string");
+        return false;
+    }
+    if !argNode.hasCompileTimeValue(this.manIdx) {
+        this.softError(argNode, SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE, String(description) + " must be known at compile time");
+        return false;
+    }
+    const CompileTimeValue compileTimeValue = argNode.getCompileTimeValue(this.manIdx);
+    value = this.resourceManager.getCompileTimeStringValue(compileTimeValue.getStringValueOffset());
+    return true;
+}
+
+/**
+ * Inline assembly in the LLVM syntax. The template type is the type of the direct output, the arguments after the template
+ * and the constraint string are the operands of the indirect outputs and the inputs, in the order of their constraints.
+ */
+f<Any> TypeChecker.visitBuiltinAsmCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_ASM;
+    ASTNode* baseNode = cast<ASTNode*>(node);
+
+    if !this.currentScope.doesAllowUnsafeOperations() {
+        return this.softErrorER(baseNode, SemanticErrorType::UNSAFE_OPERATION_IN_SAFE_CONTEXT, String("Inline assembly is an unsafe operation. Use unsafe blocks if you know what you are doing."));
+    }
+
+    // The template and the constraints are passed to LLVM verbatim, so they have to be known at compile time
+    String asmString;
+    String constraintString;
+    if !this.getCompileTimeStringArg(node, 0l, "Asm template", asmString) || !this.getCompileTimeStringArg(node, 1l, "Asm constraints", constraintString) {
+        return unresolvedER();
+    }
+
+    // Verify the constraints and the template, since LLVM would crash or abort on invalid ones
+    Vector<AsmConstraint> constraints;
+    String errorMessage;
+    if !parseAsmConstraints(constraintString, constraints, errorMessage) {
+        return this.softErrorER(getASTNode(node.argLst.args.get(1l)), SemanticErrorType::INVALID_ASM_CONSTRAINTS, errorMessage);
+    }
+    unsigned long numOperands = 0l;
+    unsigned long numOperandArgs = 0l;
+    bool hasDirectOutput = false;
+    foreach const AsmConstraint& constraint : constraints {
+        if constraint.kind != AsmConstraintKind::CLOBBER { numOperands++; }
+        if constraint.hasArg() { numOperandArgs++; }
+        if constraint.isDirectOutput() { hasDirectOutput = true; }
+    }
+    if !verifyAsmTemplate(asmString, numOperands, errorMessage) {
+        return this.softErrorER(getASTNode(node.argLst.args.front()), SemanticErrorType::INVALID_ASM_TEMPLATE, errorMessage);
+    }
+
+    // Check the result type against the direct output
+    QualType resultType = QualType(SuperType::TY_DYN);
+    if node.hasTemplateTypes {
+        resultType = this.getTemplateType(node, 0l);
+        if !isValidAsmOperandType(resultType) {
+            const String msg = "The result type of inline assembly must be a primitive, pointer or enum type, but got '" + resultType.getName() + "'";
+            return this.softErrorER(cast<ASTNode*>(node.templateTypeLst.dataTypes.front()), SemanticErrorType::BUILTIN_SIGNATURE_MISMATCH, msg);
+        }
+    }
+    if hasDirectOutput && !node.hasTemplateTypes {
+        return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_SIGNATURE_MISMATCH, String("The constraints contain a direct output, so the result type has to be given as template type, like asm<int>(...)"));
+    }
+    if !hasDirectOutput && node.hasTemplateTypes {
+        return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_SIGNATURE_MISMATCH, String("A result type is given, but the constraints contain no direct output like '=r'"));
+    }
+
+    // Check the operands against their constraints
+    const unsigned long numArgs = node.argLst.args.getSize() - 2l;
+    if numArgs != numOperandArgs {
+        const String msg = "The constraints require " + toString(cast<long>(numOperandArgs)) + " operand(s), but got " + toString(cast<long>(numArgs));
+        return this.softErrorER(baseNode, SemanticErrorType::BUILTIN_ARG_COUNT_MISMATCH, msg);
+    }
+    unsigned long argIdx = 2l;
+    foreach const AsmConstraint& constraint : constraints {
+        if !constraint.hasArg() { continue; }
+        ASTNode* argNode = getASTNode(node.argLst.args.get(argIdx));
+        QualType argType = this.getArgType(node, argIdx);
+        argType = argType.removeReferenceWrapper();
+        argIdx++;
+        if constraint.isIndirect {
+            if !argType.isPtr() {
+                const String msg = "Indirect operands ('*') expect a pointer to the memory, but got '" + argType.getName() + "'";
+                return this.softErrorER(argNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+            }
+            // Writing through a pointer to a const value is rejected the same way as an assignment to it
+            const QualType pointeeType = argType.getContained();
+            if constraint.kind == AsmConstraintKind::OUTPUT && pointeeType.isConst() {
+                const String msg = "Trying to assign value to an immutable variable of type " + pointeeType.getName(true);
+                return this.softErrorER(argNode, SemanticErrorType::REASSIGN_CONST_VARIABLE, msg);
+            }
+            continue;
+        }
+        if !isValidAsmOperandType(argType) {
+            const String msg = "Operands of inline assembly must be of a primitive, pointer or enum type, but got '" + argType.getName() + "'";
+            return this.softErrorER(argNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+        }
+        // A tied input shares the register with its output, so both need the same type
+        if constraint.tiedOutputIdx != -1l {
+            const QualType nonConstArgType = argType.toNonConst();
+            if !nonConstArgType.matches(resultType, false, true, true) {
+                const String msg = "The input tied to the output has to be of the result type '" + resultType.getName() + "', but got '" + argType.getName() + "'";
+                return this.softErrorER(argNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+            }
+        }
+    }
+
+    // TPDE cannot compile inline assembly
+    if this.cliOptions.backend == Backend::TPDE {
+        return this.softErrorER(baseNode, SemanticErrorType::UNSUPPORTED_BY_BACKEND, String("The TPDE backend does not support inline assembly"));
+    }
+
+    return this.builtinResult(node, resultType);
 }
 
 f<Any> TypeChecker.visitBuiltinIsSameCall(ASTFctCallNode* node) {
