@@ -11,6 +11,7 @@ public const string BUILTIN_FCT_NAME_TYPENAME = "typename";
 public const string BUILTIN_FCT_NAME_LEN = "len";
 public const string BUILTIN_FCT_NAME_PANIC = "panic";
 public const string BUILTIN_FCT_NAME_SYSCALL = "syscall";
+public const string BUILTIN_FCT_NAME_ASM = "asm";
 // Undocumented builtins (intended to be primarily used via std wrapper functions)
 public const string BUILTIN_FCT_NAME_OFFSETOF = "__offsetof";
 public const string BUILTIN_FCT_NAME_IS_SAME = "__is_same";
@@ -76,6 +77,9 @@ public f<bool> lookupBuiltinFunction(const String& name, BuiltinFunctionInfo& in
     } else if name == BUILTIN_FCT_NAME_SYSCALL {
         // The syscall number plus up to 6 args
         info = BuiltinFunctionInfo(0u, 0u, 1u, 7u);
+    } else if name == BUILTIN_FCT_NAME_ASM {
+        // The optional result type, the template string, the constraint string and the operands
+        info = BuiltinFunctionInfo(0u, 1u, 2u, unlimited);
     } else if name == BUILTIN_FCT_NAME_IS_SAME {
         info = BuiltinFunctionInfo(2u, unlimited, 0u, 0u);
     } else if name == BUILTIN_FCT_NAME_IMPLEMENTS_INTERFACE {

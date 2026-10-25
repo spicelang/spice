@@ -1,0 +1,396 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/type/type-conversion";
+
+/**
+ * Kind of an inline assembly constraint
+ */
+public type AsmConstraintKind enum {
+    OUTPUT,
+    INPUT,
+    CLOBBER
+}
+
+/**
+ * One comma-separated entry of an inline assembly constraint string in the LLVM syntax
+ */
+public type AsmConstraint struct {
+    public AsmConstraintKind kind = AsmConstraintKind::INPUT
+    public bool isIndirect = false // Operand is passed as pointer to the memory, the asm reads or writes ('*')
+    public long tiedOutputIdx = -1l // Index of the output constraint, this input is tied to, or -1
+    public bool hasTiedInput = false // Output constraint, that an input is tied to
+}
+
+public p AsmConstraint.ctor() {}
+
+// Whether this is an output, that is the result of the asm call
+public f<bool> AsmConstraint.isDirectOutput() {
+    return this.kind == AsmConstraintKind::OUTPUT && !this.isIndirect;
+}
+
+// Whether the operand of this constraint is an argument of the asm call (indirect outputs and inputs)
+public f<bool> AsmConstraint.hasArg() {
+    return this.kind != AsmConstraintKind::CLOBBER && !this.isDirectOutput();
+}
+
+// Whether the given char is a decimal digit
+f<bool> isAsmDigit(char c) {
+    return c >= '0' && c <= '9';
+}
+
+// Numeric value of the given decimal digit
+f<unsigned long> getAsmDigitValue(char c) {
+    return cast<unsigned long>(cast<int>(c) - cast<int>('0'));
+}
+
+/**
+ * Parse a single entry of a constraint string, mirroring llvm::InlineAsm::ConstraintInfo::Parse
+ *
+ * @param str Constraint string
+ * @param start Start index of the entry
+ * @param end End index of the entry (exclusive)
+ * @param constraints Constraints parsed so far, receives the new constraint
+ * @param errorMessage Receives the error message, if the entry is invalid
+ * @return Valid or not
+ */
+f<bool> parseAsmConstraint(const String& str, unsigned long start, unsigned long end, Vector<AsmConstraint>& constraints, String& errorMessage) {
+    const String entry = str.getSubstring(start, cast<long>(end - start));
+    if start == end {
+        errorMessage = String("Empty constraint");
+        return false;
+    }
+
+    // Parse the prefixes
+    AsmConstraint constraint;
+    unsigned long i = start;
+    if str[i] == '~' {
+        constraint.kind = AsmConstraintKind::CLOBBER;
+        i++;
+        if i == end || str[i] != '{' {
+            errorMessage = "Clobber constraint '" + entry + "' must name the clobbered register or memory in braces, like '~{memory}'";
+            return false;
+        }
+    } else if str[i] == '=' {
+        constraint.kind = AsmConstraintKind::OUTPUT;
+        i++;
+    } else if str[i] == '!' {
+        errorMessage = "Label constraint '" + entry + "' is not supported";
+        return false;
+    }
+    if i < end && str[i] == '*' {
+        constraint.isIndirect = true;
+        i++;
+    }
+
+    // Parse the modifiers
+    bool isEarlyClobber = false;
+    bool isCommutative = false;
+    while i < end {
+        const char c = str[i];
+        if c == '&' {
+            if constraint.kind != AsmConstraintKind::OUTPUT || isEarlyClobber {
+                errorMessage = "Constraint '" + entry + "' uses the early clobber modifier '&', which is only allowed once on outputs";
+                return false;
+            }
+            isEarlyClobber = true;
+        } else if c == '%' {
+            if constraint.kind == AsmConstraintKind::CLOBBER || isCommutative {
+                errorMessage = "Constraint '" + entry + "' uses the commutative modifier '%', which is only allowed once on inputs and outputs";
+                return false;
+            }
+            isCommutative = true;
+        } else if c == '#' || c == '*' {
+            errorMessage = "Constraint '" + entry + "' uses the unsupported modifier '" + c + "'";
+            return false;
+        } else {
+            break;
+        }
+        i++;
+    }
+    if i == end {
+        errorMessage = "Constraint '" + entry + "' does not contain a constraint code";
+        return false;
+    }
+
+    // Parse the constraint codes
+    while i < end {
+        const char c = str[i];
+        if c == '{' { // Physical register
+            const long closeIdx = str.find('}', i);
+            if closeIdx == -1l || cast<unsigned long>(closeIdx) >= end {
+                errorMessage = "Constraint '" + entry + "' contains an unterminated register name";
+                return false;
+            }
+            i = cast<unsigned long>(closeIdx) + 1l;
+        } else if isAsmDigit(c) { // Tied operand
+            long outputIdx = 0l;
+            while i < end && isAsmDigit(str[i]) {
+                outputIdx = outputIdx * 10l + cast<long>(getAsmDigitValue(str[i]));
+                i++;
+            }
+            if constraint.kind != AsmConstraintKind::INPUT {
+                errorMessage = "Constraint '" + entry + "' ties an operand, which is only allowed on inputs";
+                return false;
+            }
+            if outputIdx >= cast<long>(constraints.getSize()) || constraints.get(outputIdx).kind != AsmConstraintKind::OUTPUT {
+                errorMessage = "Constraint '" + entry + "' ties the input to operand " + toString(outputIdx) + ", which is no output";
+                return false;
+            }
+            AsmConstraint& output = constraints.get(outputIdx);
+            if output.isIndirect {
+                errorMessage = "Constraint '" + entry + "' ties the input to an indirect output, which is not supported";
+                return false;
+            }
+            if output.hasTiedInput {
+                errorMessage = "Constraint '" + entry + "' ties the input to output " + toString(outputIdx) + ", which already has a tied input";
+                return false;
+            }
+            output.hasTiedInput = true;
+            constraint.tiedOutputIdx = outputIdx;
+        } else if c == '|' {
+            errorMessage = "Constraint '" + entry + "' uses multiple alternatives, which are not supported";
+            return false;
+        } else if c == '^' { // Two-letter constraint code
+            if i + 3l > end {
+                errorMessage = "Constraint '" + entry + "' contains an incomplete '^' constraint code";
+                return false;
+            }
+            i += 3l;
+        } else if c == '@' { // Constraint code with the given number of letters
+            if i + 1l >= end || !isAsmDigit(str[i + 1l]) || str[i + 1l] == '0' || i + 2l + getAsmDigitValue(str[i + 1l]) > end {
+                errorMessage = "Constraint '" + entry + "' contains an invalid '@' constraint code";
+                return false;
+            }
+            i += 2l + getAsmDigitValue(str[i + 1l]);
+        } else { // Single-letter constraint code
+            i++;
+        }
+    }
+
+    constraints.pushBack(constraint);
+    return true;
+}
+
+/**
+ * Parse an inline assembly constraint string in the LLVM syntax and verify its structure, mirroring
+ * llvm::InlineAsm::ParseConstraints and llvm::InlineAsm::verify. LLVM itself does not verify the constraints, when building
+ * the inline asm, so invalid constraints would only surface as an assertion or crash in the backend.
+ *
+ * @param str Constraint string
+ * @param constraints Receives the parsed constraints
+ * @param errorMessage Receives the error message, if the constraint string is invalid
+ * @return Valid or not
+ */
+public f<bool> parseAsmConstraints(const String& str, Vector<AsmConstraint>& constraints, String& errorMessage) {
+    // Split the constraint string at the commas and parse each entry
+    const unsigned long length = str.getLength();
+    unsigned long start = 0l;
+    while start < length {
+        long end = str.find(',', start);
+        if end == -1l {
+            end = cast<long>(length);
+        }
+        if !parseAsmConstraint(str, start, cast<unsigned long>(end), constraints, errorMessage) {
+            return false;
+        }
+        start = cast<unsigned long>(end) + 1l;
+        if start == length {
+            errorMessage = String("The constraint string must not end with a comma");
+            return false;
+        }
+    }
+
+    // Verify the order of outputs, inputs and clobbers
+    unsigned long numDirectOutputs = 0l;
+    unsigned long numInputs = 0l;
+    unsigned long numClobbers = 0l;
+    foreach const AsmConstraint& constraint : constraints {
+        if constraint.kind == AsmConstraintKind::OUTPUT {
+            if numInputs > 0l || numClobbers > 0l {
+                errorMessage = String("Output constraints must come before input and clobber constraints");
+                return false;
+            }
+            if !constraint.isIndirect {
+                numDirectOutputs++;
+            }
+        } else if constraint.kind == AsmConstraintKind::INPUT {
+            if numClobbers > 0l {
+                errorMessage = String("Input constraints must come before clobber constraints");
+                return false;
+            }
+            numInputs++;
+        } else {
+            numClobbers++;
+        }
+    }
+    if numDirectOutputs > 1l {
+        errorMessage = String("Only one direct output is supported. Use indirect outputs ('=*m') for further results");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Verify the operand references of an inline assembly template string in the LLVM syntax, mirroring the operand handling
+ * of llvm::AsmPrinter::emitInlineAsm. LLVM aborts the whole compilation with a fatal error on an invalid reference.
+ *
+ * @param str Template string
+ * @param numOperands Number of operands (all constraints except for clobbers)
+ * @param errorMessage Receives the error message, if the template string is invalid
+ * @return Valid or not
+ */
+public f<bool> verifyAsmTemplate(const String& str, unsigned long numOperands, String& errorMessage) {
+    const unsigned long length = str.getLength();
+    bool inVariant = false;
+    unsigned long i = 0l;
+    while i < length {
+        if str[i] != '$' {
+            i++;
+            continue;
+        }
+        i++; // Consume '$'
+
+        // Escapes and dialect variants
+        if i < length && str[i] == '$' {
+            i++;
+            continue;
+        }
+        if i < length && str[i] == '(' {
+            if inVariant {
+                errorMessage = String("Nested variants '$(' are not allowed");
+                return false;
+            }
+            inVariant = true;
+            i++;
+            continue;
+        }
+        if i < length && (str[i] == '|' || str[i] == ')') {
+            if str[i] == ')' {
+                inVariant = false;
+            }
+            i++;
+            continue;
+        }
+
+        // Special strings like '${:uid}'
+        const bool hasBraces = i < length && str[i] == '{';
+        if hasBraces {
+            i++;
+            if i < length && str[i] == ':' {
+                const long closeIdx = str.find('}', i);
+                if closeIdx == -1l {
+                    errorMessage = String("Unterminated '${:' expression");
+                    return false;
+                }
+                const String special = str.getSubstring(i + 1l, closeIdx - cast<long>(i) - 1l);
+                if special != "uid" && special != "comment" && special != "private" {
+                    errorMessage = "Unknown special string '${:" + special + "}'. Valid ones are '${:uid}', '${:comment}' and '${:private}'";
+                    return false;
+                }
+                i = cast<unsigned long>(closeIdx) + 1l;
+                continue;
+            }
+        }
+
+        // Operand reference
+        if i == length || !isAsmDigit(str[i]) {
+            errorMessage = String("'$' must be followed by an operand number. Use '$$' for a literal '$'");
+            return false;
+        }
+        unsigned long operandIdx = 0l;
+        while i < length && isAsmDigit(str[i]) {
+            operandIdx = operandIdx * 10l + getAsmDigitValue(str[i]);
+            i++;
+        }
+        if operandIdx >= numOperands {
+            errorMessage = "Operand $" + toString(cast<long>(operandIdx)) + " does not exist, the asm has " + toString(cast<long>(numOperands)) + " operand(s). Use '$$' for a literal '$'";
+            return false;
+        }
+        if hasBraces {
+            if i < length && str[i] == ':' { // Operand modifier like '${0:w}'
+                i++;
+                if i == length {
+                    errorMessage = String("Missing operand modifier after ':'");
+                    return false;
+                }
+                i++;
+            }
+            if i == length || str[i] != '}' {
+                errorMessage = String("Unterminated '${' expression");
+                return false;
+            }
+            i++;
+        }
+    }
+    if inVariant {
+        errorMessage = String("Unterminated variant '$('");
+        return false;
+    }
+    return true;
+}
+
+#[test]
+f<bool> testParseAsmConstraints() {
+    Vector<AsmConstraint> constraints;
+    String errorMessage;
+    assert parseAsmConstraints(String(""), constraints, errorMessage);
+    assert constraints.isEmpty();
+
+    assert parseAsmConstraints(String("=r,0,r,~{memory},~{cc}"), constraints, errorMessage);
+    assert constraints.getSize() == 5l;
+    const AsmConstraint& output = constraints.get(0l);
+    assert output.isDirectOutput();
+    assert output.hasTiedInput;
+    const AsmConstraint& tiedInput = constraints.get(1l);
+    assert tiedInput.tiedOutputIdx == 0l;
+    assert tiedInput.hasArg();
+    const AsmConstraint& clobber = constraints.get(3l);
+    assert clobber.kind == AsmConstraintKind::CLOBBER;
+    assert !clobber.hasArg();
+
+    Vector<AsmConstraint> indirect;
+    assert parseAsmConstraints(String("=*m,=&{rax},*m,@3Upa,^Rg"), indirect, errorMessage);
+    const AsmConstraint& indirectOutput = indirect.get(0l);
+    assert indirectOutput.isIndirect;
+    assert indirectOutput.hasArg();
+    const AsmConstraint& registerOutput = indirect.get(1l);
+    assert registerOutput.isDirectOutput();
+    const AsmConstraint& indirectInput = indirect.get(2l);
+    assert indirectInput.isIndirect;
+    return true;
+}
+
+#[test]
+f<bool> testParseAsmConstraintsErrors() {
+    const string[14] invalid = ["r,,r", "r,", "~memory", "!i", "=", "=&&r", "&r", "#r", "=r,1", "r,0", "=*m,0", "=r,0,0", "r,=r", "~{memory},r"];
+    for unsigned long i = 0l; i < len(invalid); i++ {
+        Vector<AsmConstraint> constraints;
+        String errorMessage;
+        assert !parseAsmConstraints(String(invalid[i]), constraints, errorMessage);
+        assert !errorMessage.isEmpty();
+    }
+    Vector<AsmConstraint> constraints;
+    String errorMessage;
+    assert !parseAsmConstraints(String("=r,=r"), constraints, errorMessage);
+    assert errorMessage == "Only one direct output is supported. Use indirect outputs ('=*m') for further results";
+    return true;
+}
+
+#[test]
+f<bool> testVerifyAsmTemplate() {
+    String errorMessage;
+    assert verifyAsmTemplate(String("addl $2, $0"), 3l, errorMessage);
+    assert verifyAsmTemplate(String("movq $$42, ${0:q} # ${:comment} ${:uid}"), 1l, errorMessage);
+    assert verifyAsmTemplate(String("$(movl$|mov$) $0"), 1l, errorMessage);
+    assert verifyAsmTemplate(String("nop"), 0l, errorMessage);
+
+    const string[8] invalid = ["movq $42, $0", "mov $1", "mov $", "${0", "${0:}", "${:foo}", "$($(", "$(mov"];
+    for unsigned long i = 0l; i < len(invalid); i++ {
+        String message;
+        assert !verifyAsmTemplate(String(invalid[i]), 1l, message);
+        assert !message.isEmpty();
+    }
+    return true;
+}

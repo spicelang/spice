@@ -1,0 +1,7 @@
+// TEST: --target=x86_64-unknown-linux-gnu
+
+f<int> main() {
+    unsafe {
+        asm("foobar %eax", ""); // Invalid instruction, only the assembler detects
+    }
+}

@@ -1,0 +1,4 @@
+[Error|Compiler]:
+Backend error: <inline asm>:1:2: invalid instruction mnemonic 'foobar'
+        foobar %eax
+        ^~~~~~

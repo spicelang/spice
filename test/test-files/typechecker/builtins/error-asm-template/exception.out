@@ -1,0 +1,32 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:13:
+Invalid inline assembly template: Operand $42 does not exist, the asm has 0 operand(s). Use '$$' for a literal '$'
+
+3  asm("movq $42, %rax", ""); // Missing '$
+       ^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:4:32:
+Invalid inline assembly template: Operand $1 does not exist, the asm has 1 operand(s). Use '$$' for a literal '$'
+
+4  const int x = asm<int>("movl $1, $0", "=r"); // Operand
+                          ^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:5:32:
+Invalid inline assembly template: Unterminated '${' expression
+
+5  const int y = asm<int>("movl $$1, ${0", "=r"); // Unterminated
+                          ^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:6:13:
+Invalid inline assembly template: Unknown special string '${:foo}'. Valid ones are '${:uid}', '${:comment}' and '${:private}'
+
+6  asm("${:foo}", ""); // Unknown special
+       ^^^^^^^^^
+
+[Error|Semantic] ./source.spice:7:13:
+Invalid inline assembly template: Unterminated variant '$('
+
+7  asm("$(movl", ""); // Unterminated
+       ^^^^^^^^

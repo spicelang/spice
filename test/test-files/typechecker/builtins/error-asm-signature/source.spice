@@ -1,0 +1,12 @@
+type Pair struct {
+    int first
+    int second
+}
+
+f<int> main() {
+    unsafe {
+        asm("movl $$1, $0", "=r"); // Direct output without result type
+        const int x = asm<int>("nop", ""); // Result type without direct output
+        const Pair pair = asm<Pair>("nop", "=r"); // Struct result type
+    }
+}

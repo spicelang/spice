@@ -1,0 +1,9 @@
+f<int> main() {
+    string asmTemplate = "nop";
+    string constraints = "";
+    unsafe {
+        asm(asmTemplate, ""); // Template not known at compile time
+        asm("nop", constraints); // Constraints not known at compile time
+        asm(1, ""); // Template no string
+    }
+}

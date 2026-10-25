@@ -1,0 +1,20 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:9:
+Builtin function signature mismatch: The constraints contain a direct output, so the result type has to be given as template type, like asm<int>(...)
+
+8  asm("movl $$1, $0", "=r"); // Direct output without
+   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:9:23:
+Builtin function signature mismatch: A result type is given, but the constraints contain no direct output like '=r'
+
+9  const int x = asm<int>("nop", ""); // Result type without
+                 ^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:10:31:
+Builtin function signature mismatch: The result type of inline assembly must be a primitive, pointer or enum type, but got 'Pair'
+
+10  const Pair pair = asm<Pair>("nop", "=r"); // Struct
+                          ^^^^

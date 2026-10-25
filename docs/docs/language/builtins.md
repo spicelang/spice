@@ -2,7 +2,7 @@
 title: Builtin Functions
 ---
 
-Spice offers eight builtin functions out of the box. Those can be used anywhere without having to be imported manually and
+Spice offers nine builtin functions out of the box. Those can be used anywhere without having to be imported manually and
 can be used to establish a minimal setup for testing or the like.
 
 ## The `printf` builtin
@@ -174,3 +174,49 @@ syscall(/* syscall no = write */ 1s, /*fd = stdout*/ 1, /* buffer */ str, len(st
 !!! note
     The syscall builtin is lowered to inline assembly, which the experimental TPDE backend does not support. Using it
     in combination with `--backend=tpde` results in a compile error.
+
+## The `asm` builtin
+Asm embeds inline assembly into the code. Since the compiler cannot verify what the assembly does, it may only be used
+within `unsafe` blocks. The template and the constraints use the syntax of
+[LLVM inline assembly](https://llvm.org/docs/LangRef.html#inline-assembler-expressions) and are passed to LLVM verbatim.
+
+### Signature
+`ResultType asm<ResultType>(string template, string constraints, ...operands)` <br>
+`asm(string template, string constraints, ...operands)`
+
+`ResultType`: Type of the direct output. Required if the constraints contain a direct output, otherwise omitted. <br>
+`template`: Assembly code. Operands are referenced with `$0`, `$1`, ... in the order of the constraints, modifiers can be
+applied like `${0:w}`. A literal `$` is written as `$$`. <br>
+`constraints`: Comma-separated constraint list: outputs (`=r`, `=*m`), then inputs (`r`, `*m`, `0` to tie the input to
+output 0), then clobbers (`~{memory}`). <br>
+`operands`: The operands of the indirect outputs and inputs, in the order of their constraints. Indirect operands (`*`)
+are pointers to the memory, the assembly reads or writes.
+
+Operands and the result type can be primitive, pointer or enum types. Both strings must be known at compile time.
+
+### Usage example
+```spice
+int a = 40;
+int b = 2;
+unsafe {
+    // Direct output, the first input is tied to it
+    const int sum = asm<int>("addl $2, $0", "=r,0,r", a, b);
+
+    // Indirect output
+    long value = 0l;
+    asm("movq $$42, $0", "=*m", &value);
+
+    // No operands, memory clobber (compiler barrier)
+    asm("mfence", "~{memory}");
+}
+```
+
+The compiler treats every inline assembly as having side effects, so it is never removed or moved by the optimizer. On
+x86, the flags are always considered clobbered, like with GCC and clang. Errors in the assembly code itself, like an unknown
+instruction, are reported by the assembler of the backend without the location in the Spice source.
+
+Spice supports a single direct output. Further results can be passed out via indirect outputs (`=*m`).
+
+!!! note
+    The experimental TPDE backend does not support inline assembly. Using `asm` in combination with `--backend=tpde`
+    results in a compile error.

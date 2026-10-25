@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:2:5:
+Unsafe operation in safe context: Inline assembly is an unsafe operation. Use unsafe blocks if you know what you are doing.
+
+2  asm("nop", ""); // Not in an unsafe
+   ^^^^^^^^^^^^^^

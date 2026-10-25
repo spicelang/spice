@@ -1,0 +1,9 @@
+f<int> main() {
+    unsafe {
+        asm("movq $42, %rax", ""); // Missing '$$' escape
+        const int x = asm<int>("movl $1, $0", "=r"); // Operand does not exist
+        const int y = asm<int>("movl $$1, ${0", "=r"); // Unterminated braces
+        asm("${:foo}", ""); // Unknown special string
+        asm("$(movl", ""); // Unterminated variant
+    }
+}

@@ -1,0 +1,62 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:4:20:
+Invalid inline assembly constraints: Empty constraint
+
+4  asm("nop", "r,,r"); // Empty constraint
+              ^^^^^^
+
+[Error|Semantic] ./source.spice:5:20:
+Invalid inline assembly constraints: The constraint string must not end with a comma
+
+5  asm("nop", "r,"); // Trailing comma
+              ^^^^
+
+[Error|Semantic] ./source.spice:6:20:
+Invalid inline assembly constraints: Clobber constraint '~memory' must name the clobbered register or memory in braces, like '~{memory}'
+
+6  asm("nop", "~memory"); // Clobber without
+              ^^^^^^^^^
+
+[Error|Semantic] ./source.spice:7:20:
+Invalid inline assembly constraints: Label constraint '!i' is not supported
+
+7  asm("nop", "!i"); // Label constraint
+              ^^^^
+
+[Error|Semantic] ./source.spice:8:20:
+Invalid inline assembly constraints: Constraint '&r' uses the early clobber modifier '&', which is only allowed once on outputs
+
+8  asm("nop", "&r", a); // Early clobber
+              ^^^^
+
+[Error|Semantic] ./source.spice:9:20:
+Invalid inline assembly constraints: Constraint '={rax' contains an unterminated register name
+
+9  asm("nop", "={rax"); // Unterminated register
+              ^^^^^^^
+
+[Error|Semantic] ./source.spice:10:20:
+Invalid inline assembly constraints: Constraint '1' ties the input to operand 1, which is no output
+
+10  asm("nop", "=r,1", a); // Tied to an
+               ^^^^^^
+
+[Error|Semantic] ./source.spice:11:20:
+Invalid inline assembly constraints: Output constraints must come before input and clobber constraints
+
+11  asm("nop", "r,=r", a); // Output after
+               ^^^^^^
+
+[Error|Semantic] ./source.spice:12:20:
+Invalid inline assembly constraints: Input constraints must come before clobber constraints
+
+12  asm("nop", "~{memory},r", a); // Input after
+               ^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:13:39:
+Invalid inline assembly constraints: Only one direct output is supported. Use indirect outputs ('=*m') for further results
+
+13  x = asm<int>("nop", "=r,=r"); // Multiple direct
+                        ^^^^^^^

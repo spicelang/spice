@@ -1,0 +1,54 @@
+// TEST: --target=x86_64-unknown-linux-gnu
+
+type Color enum { RED, GREEN, BLUE }
+
+f<int> addViaAsm(const int& a, int b) {
+    unsafe {
+        return asm<int>("addl $2, $0", "=r,0,r", a, b);
+    }
+}
+
+f<int> main() {
+    int a = 40;
+    int b = 2;
+    unsafe {
+        // Direct output with a tied input
+        const int sum = asm<int>("addl $2, $0", "=r,0,r", a, b);
+        printf("Sum: %d\n", sum);
+
+        // No operands, clobbers only
+        asm("mfence", "~{memory}");
+        asm("nop\n\tnop", "");
+
+        // Indirect output
+        long value = 0l;
+        asm("movq $$42, $0", "=*m", &value);
+        printf("Indirect output: %d\n", value);
+
+        // Indirect input
+        long source = 7l;
+        const long loaded = asm<long>("movq $1, $0", "=r,*m", &source);
+        printf("Indirect input: %d\n", loaded);
+
+        // Bool and enum operands
+        const bool flag = asm<bool>("movb $1, $0", "=r,r", true);
+        printf("Bool: %d\n", flag);
+        const Color color = asm<Color>("movl $1, $0", "=r,r", Color::BLUE);
+        printf("Enum: %d\n", color == Color::BLUE && color != Color::RED && color != Color::GREEN);
+
+        // Pointer operand in an explicit register, early clobber output
+        const int* ptr = &a;
+        const int* ptrCopy = asm<int*>("movq $1, $0", "=&r,{rdi}", ptr);
+        printf("Pointer: %d\n", ptr == ptrCopy);
+
+        // Double operands in SSE registers
+        const double d = asm<double>("addsd $2, $0", "=x,0,x", 1.5, 2.25);
+        printf("Double: %f\n", d);
+
+        // Reference operand
+        printf("Reference: %d\n", addViaAsm(a, b));
+
+        // Special strings
+        asm("# ${:comment} ${:uid}", "");
+    }
+}
