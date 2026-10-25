@@ -30,3 +30,15 @@ Builtin function argument count mismatch: This builtin expects 2 argument(s), bu
 
 12  __volatile_store(&i); // Should error: too
     ^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:15:22:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+15  __volatile_store(&c, 2); // Should error
+                     ^^
+
+[Error|Semantic] ./source.spice:16:22:
+Cannot re-assign constant variable: Trying to assign value to an immutable variable of type int
+
+16  __volatile_store(cPtr, 2); // Should error
+                     ^^^^

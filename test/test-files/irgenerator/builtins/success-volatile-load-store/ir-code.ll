@@ -6,6 +6,7 @@ source_filename = "source.spice"
 @printf.str.2 = private unnamed_addr constant [4 x i8] c"%f\0A\00", align 4
 @printf.str.3 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 @printf.str.4 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
+@printf.str.5 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 4
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
 define noundef i32 @main() #0 {
@@ -16,6 +17,8 @@ define noundef i32 @main() #0 {
   %color = alloca i32, align 4
   %iPtrRef = alloca ptr, align 8
   %iPtrPtr = alloca ptr, align 8
+  %c = alloca i32, align 4
+  %cPtr = alloca ptr, align 8
   store i32 1, ptr %i, align 4
   store ptr %i, ptr %iPtr, align 8
   %1 = load ptr, ptr %iPtr, align 8
@@ -48,6 +51,11 @@ define noundef i32 @main() #0 {
   %17 = load volatile ptr, ptr %16, align 8
   %18 = load i32, ptr %17, align 4
   %19 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %18)
+  store i32 3, ptr %c, align 4
+  store ptr %c, ptr %cPtr, align 8
+  %20 = load ptr, ptr %cPtr, align 8
+  %21 = load volatile i32, ptr %20, align 4
+  %22 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.5, i32 noundef %21)
   ret i32 0
 }
 
