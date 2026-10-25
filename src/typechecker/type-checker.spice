@@ -5312,6 +5312,8 @@ f<Any> TypeChecker.visitBuiltinCall(ASTFctCallNode* node) {
     if name == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER { return this.visitBuiltinErrTraceBufferCall(node); }
     if name == BUILTIN_FCT_NAME_STDERR { return this.visitBuiltinStdErrCall(node); }
     if name == BUILTIN_FCT_NAME_FRAME_ADDRESS { return this.visitBuiltinFrameAddressCall(node); }
+    if name == BUILTIN_FCT_NAME_VOLATILE_LOAD { return this.visitBuiltinVolatileLoadCall(node); }
+    if name == BUILTIN_FCT_NAME_VOLATILE_STORE { return this.visitBuiltinVolatileStoreCall(node); }
     return Any();
 }
 
@@ -6042,6 +6044,61 @@ f<Any> TypeChecker.visitBuiltinFrameAddressCall(ASTFctCallNode* node) {
 
     const QualType byteType = QualType(SuperType::TY_BYTE);
     return this.builtinResult(node, byteType.toPtr(cast<ASTNode*>(node)));
+}
+
+/**
+ * Check the pointer argument of __volatile_load and __volatile_store. Only pointers to primitive, enum or pointer types
+ * are accepted, since a volatile access of a whole struct would bypass its copy/move semantics.
+ *
+ * @param node Builtin call node
+ * @return Type the pointer points to or unresolved, if the check failed. In that case, a soft error was recorded
+ */
+f<QualType> TypeChecker.checkBuiltinVolatilePtrArg(ASTFctCallNode* node) {
+    QualType ptrArgType = this.getArgType(node, 0l);
+    ptrArgType = ptrArgType.removeReferenceWrapper();
+    if ptrArgType.isPtr() {
+        const QualType pointeeType = ptrArgType.getContained();
+        if pointeeType.isPrimitive() || pointeeType.isPtr() || pointeeType.is(SuperType::TY_ENUM) {
+            return pointeeType.toNonConst();
+        }
+    }
+    const String msg = node.fqFunctionName + " expects a pointer to a primitive, enum or pointer type as its first argument, but got '" + ptrArgType.getName() + "'";
+    this.softError(getASTNode(node.argLst.args.front()), SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+    return QualType(SuperType::TY_UNRESOLVED);
+}
+
+/**
+ * Resolves to the value behind the given pointer, read with a volatile load. The load is never elided, duplicated or
+ * reordered against other volatile accesses by the optimizer, e.g. for reading memory-mapped I/O registers.
+ */
+f<Any> TypeChecker.visitBuiltinVolatileLoadCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_VOLATILE_LOAD;
+
+    const QualType pointeeType = this.checkBuiltinVolatilePtrArg(node);
+    if pointeeType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    return this.builtinResult(node, pointeeType);
+}
+
+/**
+ * Writes the given value to the given pointer with a volatile store. The store is never elided, duplicated or reordered
+ * against other volatile accesses by the optimizer, e.g. for writing memory-mapped I/O registers.
+ */
+f<Any> TypeChecker.visitBuiltinVolatileStoreCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_VOLATILE_STORE;
+
+    QualType pointeeType = this.checkBuiltinVolatilePtrArg(node);
+    if pointeeType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    QualType valueType = this.getArgType(node, 1l);
+    valueType = valueType.removeReferenceWrapper();
+    valueType = valueType.toNonConst();
+    if !pointeeType.matches(valueType, false, false, true) {
+        const String msg = "Value type '" + valueType.getName() + "' does not match the pointee type '" + pointeeType.getName() + "'";
+        return this.softErrorER(getASTNode(node.argLst.args.get(1l)), SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, msg);
+    }
+
+    return this.builtinResult(node, QualType(SuperType::TY_DYN));
 }
 
 // ===================================================== Implicit functions ======================================================

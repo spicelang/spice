@@ -1,0 +1,30 @@
+type Color enum {
+    RED,
+    GREEN
+}
+
+f<int> main() {
+    int i = 1;
+    int* iPtr = &i;
+    __volatile_store(iPtr, 42);
+    printf("%d\n", __volatile_load(iPtr));
+
+    // Volatile accesses must survive optimization, even if redundant
+    __volatile_store(&i, 1);
+    __volatile_store(&i, 2);
+    const int loaded = __volatile_load(&i);
+    printf("%d\n", loaded);
+
+    double d = 1.5;
+    __volatile_store(&d, 2.5);
+    printf("%f\n", __volatile_load(&d));
+
+    Color color = Color::RED;
+    __volatile_store(&color, Color::GREEN);
+    printf("%d\n", __volatile_load(&color) == Color::GREEN);
+
+    int*& iPtrRef = iPtr;
+    int** iPtrPtr = &iPtr;
+    __volatile_store(iPtrRef, 7);
+    printf("%d\n", *__volatile_load(iPtrPtr));
+}

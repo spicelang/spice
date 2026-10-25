@@ -134,6 +134,7 @@ Interacting with the underlying operating system: processes, threads, memory, en
 | `recursive-mutex`        | Mutex that its owning thread can acquire repeatedly.    |
 | `message-queue`          | Thread-safe, blocking FIFO queue for passing values.    |
 | `offset-allocator`       | Offset-based memory allocator.                          |
+| `volatile`               | Volatile loads and stores, e.g. for memory-mapped I/O.  |
 | `syscall`                | Architecture-specific raw system call interfaces.       |
 
 ### `std/runtime`

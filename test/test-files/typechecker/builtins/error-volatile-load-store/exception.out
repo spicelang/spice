@@ -1,0 +1,32 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:21:
+Builtin function argument type mismatch: __volatile_load expects a pointer to a primitive, enum or pointer type as its first argument, but got 'int'
+
+8  __volatile_load(i); // Should error:
+                   ^
+
+[Error|Semantic] ./source.spice:9:21:
+Builtin function argument type mismatch: __volatile_load expects a pointer to a primitive, enum or pointer type as its first argument, but got 'MyStruct*'
+
+9  __volatile_load(&s); // Should error:
+                   ^^
+
+[Error|Semantic] ./source.spice:10:26:
+Builtin function argument type mismatch: Value type 'long' does not match the pointee type 'int'
+
+10  __volatile_store(&i, 1l); // Should error:
+                         ^^
+
+[Error|Semantic] ./source.spice:11:22:
+Builtin function argument type mismatch: __volatile_store expects a pointer to a primitive, enum or pointer type as its first argument, but got 'MyStruct*'
+
+11  __volatile_store(&s, s); // Should error
+                     ^^
+
+[Error|Semantic] ./source.spice:12:5:
+Builtin function argument count mismatch: This builtin expects 2 argument(s), but got 1
+
+12  __volatile_store(&i); // Should error: too
+    ^^^^^^^^^^^^^^^^^^^^

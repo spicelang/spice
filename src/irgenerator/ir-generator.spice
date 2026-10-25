@@ -5346,6 +5346,8 @@ f<Any> IRGenerator.visitBuiltinCall(ASTFctCallNode* node) {
     if name == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER { return this.visitBuiltinErrTraceBufferCall(node); }
     if name == BUILTIN_FCT_NAME_STDERR { return this.visitBuiltinStdErrCall(node); }
     if name == BUILTIN_FCT_NAME_FRAME_ADDRESS { return this.visitBuiltinFrameAddressCall(node); }
+    if name == BUILTIN_FCT_NAME_VOLATILE_LOAD { return this.visitBuiltinVolatileLoadCall(node); }
+    if name == BUILTIN_FCT_NAME_VOLATILE_STORE { return this.visitBuiltinVolatileStoreCall(node); }
     panic(Error("Builtin function not implemented!")); // LCOV_EXCL_LINE
 }
 
@@ -5689,6 +5691,29 @@ f<Any> IRGenerator.visitBuiltinFrameAddressCall(ASTFctCallNode* node) {
     const llvm::Value frameAddress = this.builder.createCall(frameAddressFct, args);
 
     return exprResultAny(exprResultWithValue(frameAddress));
+}
+
+f<Any> IRGenerator.visitBuiltinVolatileLoadCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_VOLATILE_LOAD;
+
+    const llvm::Value ptr = this.resolveValue(node.argLst.args.front());
+    const QualType valueType = this.getEvaluatedType(cast<IVisitable*>(node));
+    const llvm::Value value = this.insertLoad(valueType, ptr, true);
+
+    return exprResultAny(exprResultWithValue(value));
+}
+
+f<Any> IRGenerator.visitBuiltinVolatileStoreCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_VOLATILE_STORE;
+
+    IVisitable* ptrArg = node.argLst.args.front();
+    const llvm::Value ptr = this.resolveValue(ptrArg);
+    const llvm::Value value = this.resolveValue(node.argLst.args.get(1l));
+    QualType ptrType = this.getEvaluatedType(ptrArg);
+    ptrType = ptrType.removeReferenceWrapper();
+    this.insertStore(value, ptr, ptrType.getContained(), true);
+
+    return exprResultAny(LLVMExprResult());
 }
 
 /**
