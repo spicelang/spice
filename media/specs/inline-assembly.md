@@ -9,7 +9,7 @@
     - [ ] Extend the `getInlineAsm` LLVM binding (alignStack, canThrow) - deferred, nothing needs it yet
     - [x] Turn LLVM inline asm diagnostics into Spice compiler errors
     - [x] Tests and docs
-- [ ] Phase 2: extensions (pure asm, multiple direct outputs, syscall on top of `asm`)
+- [x] Phase 2: emit `syscall` via the same inline asm helper as `asm`
 
 ## Syntax
 
@@ -125,12 +125,14 @@ handling. Therefore:
 
 ## Phase 2: Extensions
 
-- Pure asm without the side effect flag, so that the optimizer may move or eliminate it.
-- Multiple direct outputs: LLVM returns them as a struct, which needs a way to destructure them in Spice. Until then,
-  indirect outputs cover this case.
-- Rebuild `syscall` on top of `asm`: either on a shared helper in the IR generator, or as a std function, that selects
-  the asm per target via compile-time ifs on build vars. This proves the feature on real code and removes the
-  hand-written per-target asm string generation from `IRGenerator.visitBuiltinSyscallCall`.
+- Emit `syscall` via the same inline asm helper as `asm` (`IRGenerator.emitInlineAsm`), so both share the call
+  emission, the `elementtype` attributes of indirect operands and the implicit x86 clobbers. `syscall` keeps its builtin
+  API and still builds its per-target template and constraints itself.
+
+Moving `syscall` into the std was rejected: it would change the user API (an import would be needed), and importing the
+std module would fail with the TPDE backend, even without calling it.
+
+Not planned: pure asm without the side effect flag, and multiple direct outputs (indirect outputs cover this case).
 
 ## Further notes
 
