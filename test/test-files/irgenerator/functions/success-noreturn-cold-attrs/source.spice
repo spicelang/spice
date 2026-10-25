@@ -1,0 +1,27 @@
+import "source2" as s2;
+
+// The C library function never returns, so calls to it can be treated as the end of the control flow
+#[core.compiler.noReturn, core.compiler.cold]
+ext p exit(int);
+
+// Rarely called, so the optimizer moves calls to it out of the hot path
+#[core.compiler.cold]
+p reportError(string message) {
+    printf("Error: %s\n", message);
+}
+
+// Explicitly disabled attributes have no effect
+#[core.compiler.noReturn = false, core.compiler.cold = false]
+f<int> getValue() {
+    return 21;
+}
+
+f<int> main() {
+    const int value = getValue() * 2;
+    if value != 42 {
+        reportError("Unexpected value");
+        s2::reportFailure(value);
+    }
+    printf("Value: %d\n", value);
+    s2::terminate(0);
+}

@@ -1,0 +1,13 @@
+ext p exit(int);
+
+// Declarations of these in source.spice carry 'noreturn' and 'cold' as well, so the optimizer can use them without LTO
+#[core.compiler.noReturn]
+public p terminate(int exitCode) {
+    printf("Terminating with exit code %d\n", exitCode);
+    exit(exitCode);
+}
+
+#[core.compiler.cold]
+public p reportFailure(int value) {
+    printf("Failure with value %d\n", value);
+}

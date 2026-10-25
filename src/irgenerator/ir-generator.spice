@@ -1325,6 +1325,23 @@ p IRGenerator.addCommonFctAttrs(llvm::Function fct, bool isAlwaysInline = false,
 }
 
 /**
+ * Attach the function attributes, that the user requested with the 'core.compiler.noReturn' and 'core.compiler.cold'
+ * attributes. They describe the function itself and not only its body, so they are attached to declarations as well.
+ * Otherwise, call sites in other source files would not benefit from them without LTO.
+ *
+ * @param fct Function to attach the attributes to
+ * @param spiceFunc Spice function, that carries the requested attributes
+ */
+p IRGenerator.addUserFctAttrs(llvm::Function fct, const model::Function* spiceFunc) {
+    if spiceFunc.isNoReturn {
+        fct.addFnAttr("noreturn");
+    }
+    if spiceFunc.isCold {
+        fct.addFnAttr("cold");
+    }
+}
+
+/**
  * Check whether a function must not use the red zone: with '--no-red-zone', unless the function allows it with the
  * 'core.compiler.redZone' attribute, or without the option, if the attribute forbids it
  *
@@ -1856,6 +1873,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
         // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
         func.setLinkage(this.getSymbolLinkageType(isPublic));
         this.addCommonFctAttrs(func, entryType.isInline(), node.attrs);
+        this.addUserFctAttrs(func, manifestation);
         this.enableFunctionInstrumentation(func);
         // Set attributes to function parameters and return value
         this.setParamAttrs(func, paramInfoList, argOffset);
@@ -2317,6 +2335,7 @@ public f<Any> IRGenerator.visitExtDecl(ASTExtDeclNode* node) {
 
     // The external function is assumed not to unwind into Spice code
     fct.addFnAttr("nounwind");
+    this.addUserFctAttrs(fct, spiceFunc);
 
     // Add noundef attribute to all parameters and, for sub-32-bit integers, the ABI-required sext/zext attribute
     for unsigned int i = 0; i < cast<unsigned int>(paramTypes.getSize()); i++ {
@@ -4534,6 +4553,7 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
         fctType = this.getFunctionType(returnSType, argTypes);
         if !data.isFctPtrCall() && !data.isVirtualMethodCall() {
             this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
+            this.addUserFctAttrs(this.module.getFunction(mangledName.getRaw()), spiceFunc);
             const ReturnABIInfo returnABI = this.getReturnABIInfo(returnSType);
             if returnABI.isIndirect() {
                 this.addSRetParamAttrs(this.module.getFunction(mangledName.getRaw()), returnABI.memoryType);
@@ -7164,6 +7184,7 @@ f<llvm::Function> IRGenerator.getOrDeclareFunction(const model::Function* fct) {
     const llvm::Type fctType = this.getFunctionType(returnType, paramTypes, fct.isVararg);
     this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
     llvm::Function llvmFct = this.module.getFunction(mangledName.getRaw());
+    this.addUserFctAttrs(llvmFct, fct);
     const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
     if returnABI.isIndirect() {
         this.addSRetParamAttrs(llvmFct, returnABI.memoryType);
