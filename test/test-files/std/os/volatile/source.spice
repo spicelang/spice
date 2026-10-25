@@ -1,0 +1,26 @@
+import "std/os/volatile";
+
+type Color enum {
+    RED,
+    GREEN
+}
+
+f<int> main() {
+    int i = 1;
+    volatileStore(&i, 42);
+    assert volatileLoad(&i) == 42;
+
+    double d = 1.5;
+    volatileStore(&d, 2.5);
+    assert volatileLoad(&d) == 2.5;
+
+    Color color = Color::RED;
+    volatileStore(&color, Color::GREEN);
+    assert volatileLoad(&color) == Color::GREEN;
+
+    int* iPtr = nil<int*>;
+    volatileStore(&iPtr, &i);
+    assert *volatileLoad(&iPtr) == 42;
+
+    printf("All assertions passed!\n");
+}

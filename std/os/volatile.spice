@@ -1,0 +1,26 @@
+// Generic type defs
+type T dyn;
+
+/**
+ * Read the value behind the given pointer with a volatile load. The optimizer never elides, duplicates or reorders it
+ * against other volatile accesses, e.g. for reading memory-mapped I/O registers.
+ * Note: This is no synchronization primitive. Use std/os/atomic or std/os/mutex for sharing data between threads.
+ *
+ * @param ptr Pointer to a value of primitive, enum or pointer type
+ * @return Loaded value
+ */
+public inline f<T> volatileLoad<T>(const T* ptr) {
+    return __volatile_load(ptr);
+}
+
+/**
+ * Write the given value to the given pointer with a volatile store. The optimizer never elides, duplicates or reorders
+ * it against other volatile accesses, e.g. for writing memory-mapped I/O registers.
+ * Note: This is no synchronization primitive. Use std/os/atomic or std/os/mutex for sharing data between threads.
+ *
+ * @param ptr Pointer to a value of primitive, enum or pointer type
+ * @param value Value to store
+ */
+public inline p volatileStore<T>(T* ptr, T value) {
+    __volatile_store(ptr, value);
+}

@@ -1,0 +1,13 @@
+type MyStruct struct {
+    int x
+}
+
+f<int> main() {
+    int i = 1;
+    MyStruct s;
+    __volatile_load(i); // Should error: not a pointer
+    __volatile_load(&s); // Should error: pointer to a struct
+    __volatile_store(&i, 1l); // Should error: value type does not match pointee type
+    __volatile_store(&s, s); // Should error: pointer to a struct
+    __volatile_store(&i); // Should error: too few arguments
+}

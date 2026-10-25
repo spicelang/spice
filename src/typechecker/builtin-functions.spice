@@ -28,6 +28,8 @@ public const string BUILTIN_FCT_NAME_SOURCE_COLUMN = "__source_column";
 public const string BUILTIN_FCT_NAME_ERR_TRACE_BUFFER = "__err_trace_buffer";
 public const string BUILTIN_FCT_NAME_STDERR = "__stderr";
 public const string BUILTIN_FCT_NAME_FRAME_ADDRESS = "__frame_address";
+public const string BUILTIN_FCT_NAME_VOLATILE_LOAD = "__volatile_load";
+public const string BUILTIN_FCT_NAME_VOLATILE_STORE = "__volatile_store";
 
 /**
  * Metadata about a builtin function (argument/template counts and flags only, no method pointers)
@@ -88,6 +90,10 @@ public f<bool> lookupBuiltinFunction(const String& name, BuiltinFunctionInfo& in
         info = BuiltinFunctionInfo(1u, 1u, 1u, unlimited);
     } else if name == BUILTIN_FCT_NAME_SOURCE_FILE || name == BUILTIN_FCT_NAME_SOURCE_LINE || name == BUILTIN_FCT_NAME_SOURCE_COLUMN || name == BUILTIN_FCT_NAME_ERR_TRACE_BUFFER || name == BUILTIN_FCT_NAME_STDERR || name == BUILTIN_FCT_NAME_FRAME_ADDRESS {
         info = BuiltinFunctionInfo(0u, 0u, 0u, 0u);
+    } else if name == BUILTIN_FCT_NAME_VOLATILE_LOAD {
+        info = BuiltinFunctionInfo(0u, 0u, 1u, 1u);
+    } else if name == BUILTIN_FCT_NAME_VOLATILE_STORE {
+        info = BuiltinFunctionInfo(0u, 0u, 2u, 2u);
     } else {
         return false;
     }
