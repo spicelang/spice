@@ -1,0 +1,10 @@
+// TEST: --code-model=medium
+
+// In the medium code model, data may be placed anywhere in the address space. It is stored in the large data sections
+// (e.g. ".ldata") and addressed with 64-bit immediates. The code model reaches LTO through the "Code Model" module flag.
+int COUNTER = 1;
+
+f<int> main() {
+    COUNTER++;
+    printf("Counter: %d\n", COUNTER);
+}

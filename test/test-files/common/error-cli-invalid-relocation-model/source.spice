@@ -1,0 +1,3 @@
+// TEST: --relocation-model=unknown
+
+f<int> main() {}

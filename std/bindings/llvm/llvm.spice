@@ -1879,6 +1879,7 @@ public const unsigned int ATTRIBUTE_RETURN_INDEX = 0;
 public const unsigned int ATTRIBUTE_FUNCTION_INDEX = 4294967295u;
 
 // Module flag behaviors (llvm::Module::ModFlagBehavior)
+public const int MOD_FLAG_BEHAVIOR_ERROR = 1;
 public const int MOD_FLAG_BEHAVIOR_WARNING = 2;
 public const int MOD_FLAG_BEHAVIOR_MAX = 7;
 public const int MOD_FLAG_BEHAVIOR_MIN = 8;

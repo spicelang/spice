@@ -1,0 +1,9 @@
+// TEST: --code-model=tiny --target=aarch64-unknown-linux-gnu
+
+// In the tiny code model, code and data have to fit into 1 MiB. Globals are addressed with a single "adr" instruction.
+int COUNTER = 1;
+
+f<int> main() {
+    COUNTER++;
+    printf("Counter: %d\n", COUNTER);
+}

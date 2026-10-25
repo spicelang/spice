@@ -152,12 +152,17 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     // Attach information to the module
     this.module.setTargetTriple(this.cliOptions.targetTriple);
     this.module.setDataLayout(sourceFile.targetMachine.createDataLayout());
-    if this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
+    // Static code (incl. dynamic-no-pic) gets no PIC/PIE levels, like Clang emits it with '-fno-pic'
+    if this.cliOptions.relocModel == RelocModel::PIC {
         this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MIN, "PIC Level", 1); // llvm::PICLevel::SmallPIC
         this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "PIE Level", 0); // llvm::PIELevel::Default
-    } else {
+    } else if this.cliOptions.relocModel == RelocModel::PIE {
         this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MIN, "PIC Level", 2); // llvm::PICLevel::BigPIC
         this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "PIE Level", 2); // llvm::PIELevel::Large
+    }
+    // The code model of the target machine does not reach the code generation of LTO, but this module flag does
+    if this.cliOptions.codeModel != CodeModel::DEFAULT {
+        this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_ERROR, "Code Model", getLLVMCodeModelFlagValue(this.cliOptions.codeModel));
     }
     this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "uwtable", 2); // llvm::UWTableKind::Default
     // llvm::FramePointerKind::All or llvm::FramePointerKind::None
@@ -176,6 +181,22 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     // Initialize debug info generator
     if this.cliOptions.instrumentation.emitsDebugInfo() {
         this.diGenerator.initialize(sourceFile.fileName, sourceFile.fileDir);
+    }
+}
+
+/**
+ * Get the value of the 'Code Model' module flag for the given code model, like llvm::Module::setCodeModel stores it
+ *
+ * @param codeModel Code model, other than the default one
+ * @return Value of llvm::CodeModel::Model
+ */
+f<unsigned int> getLLVMCodeModelFlagValue(CodeModel codeModel) {
+    switch codeModel {
+        case CodeModel::TINY: { return 0u; }
+        case CodeModel::SMALL: { return 1u; }
+        case CodeModel::KERNEL: { return 2u; }
+        case CodeModel::MEDIUM: { return 3u; }
+        default: { return 4u; } // LARGE
     }
 }
 

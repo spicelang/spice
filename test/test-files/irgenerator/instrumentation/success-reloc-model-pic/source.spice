@@ -1,0 +1,9 @@
+// TEST: --relocation-model=pic
+
+// Position independent code, like it is emitted for shared libraries. Executables with PIC code are linked as PIE as well.
+int COUNTER = 1;
+
+f<int> main() {
+    COUNTER++;
+    printf("Counter: %d\n", COUNTER);
+}
