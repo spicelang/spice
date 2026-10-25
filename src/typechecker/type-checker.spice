@@ -178,7 +178,7 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
     // the control flow analysis of functions and procedures in the prepare stage relies on it
     if isPrepare {
         foreach IVisitable* switchStmt : node.switchStmts {
-            ASTSwitchStmtNode* switchStmtNode = downcastMut<ASTSwitchStmtNode>(getASTNode(switchStmt));
+            ASTSwitchStmtNode* switchStmtNode = downcast<ASTSwitchStmtNode>(getASTNode(switchStmt));
             switchStmtNode.coversAllEnumItems = this.coversAllEnumItems(switchStmtNode);
         }
     }
@@ -672,7 +672,7 @@ p TypeChecker.assignDeferredOpaqueType(SymbolTableEntry* entry) {
             // The aliased type has to be resolved in the context of the file declaring the alias, not the referencing one,
             // because the referencing file does not necessarily import the types the alias refers to.
             TypeChecker declTypeChecker = TypeChecker(this.resourceManager, entry.scope.sourceFile, TypeCheckerMode::TC_MODE_PRE);
-            declTypeChecker.visitAliasDefPrepare(downcastMut<ASTAliasDefNode>(declNode));
+            declTypeChecker.visitAliasDefPrepare(downcast<ASTAliasDefNode>(declNode));
         }
         default: {}
     }
@@ -3235,7 +3235,7 @@ f<bool> TypeChecker.isAlwaysConstructedLvalue(ASTNode* node) {
     const QualType lvalueType = exprNode.getEvaluatedSymbolType(this.manIdx);
     ASTAtomicExprNode* atomicExpr = nil<ASTAtomicExprNode*>;
     if node.kind == ASTNodeKind::ATOMIC_EXPR {
-        atomicExpr = downcastMut<ASTAtomicExprNode>(node);
+        atomicExpr = downcast<ASTAtomicExprNode>(node);
     }
     const bool isThis = atomicExpr != nil<ASTAtomicExprNode*> && atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
     if !isThis && !lvalueType.isRef() {
@@ -5539,7 +5539,7 @@ f<Any> TypeChecker.visitBuiltinOffsetOfCall(ASTFctCallNode* node) {
     ASTNode* cur = memberArg;
     while cur != nil<ASTNode*> {
         if cur.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
-            leafAccess = downcastMut<ASTPostfixUnaryExprNode>(cur);
+            leafAccess = downcast<ASTPostfixUnaryExprNode>(cur);
             break;
         }
         const Vector<ASTNode*>& children = cur.getChildren();

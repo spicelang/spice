@@ -1297,10 +1297,10 @@ p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSym
         } else if node.kind == ASTNodeKind::FCT_DEF || node.kind == ASTNodeKind::PROC_DEF {
             ASTFctDefBaseNode* fctDef = nil<ASTFctDefBaseNode*>;
             if node.kind == ASTNodeKind::FCT_DEF {
-                ASTFctDefNode* fctDefNode = downcastMut<ASTFctDefNode>(node);
+                ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(node);
                 fctDef = &fctDefNode.node;
             } else {
-                ASTProcDefNode* procDefNode = downcastMut<ASTProcDefNode>(node);
+                ASTProcDefNode* procDefNode = downcast<ASTProcDefNode>(node);
                 fctDef = &procDefNode.node;
             }
             // Each emitted manifestation of an exported function is exported under its mangled name
