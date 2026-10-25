@@ -10,4 +10,8 @@ f<int> main() {
     __volatile_store(&i, 1l); // Should error: value type does not match pointee type
     __volatile_store(&s, s); // Should error: pointer to a struct
     __volatile_store(&i); // Should error: too few arguments
+    const int c = 1;
+    const int* cPtr = &i;
+    __volatile_store(&c, 2); // Should error: pointer to a const value
+    __volatile_store(cPtr, 2); // Should error: pointer to a const value
 }

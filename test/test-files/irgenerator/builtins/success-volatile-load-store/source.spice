@@ -27,4 +27,9 @@ f<int> main() {
     int** iPtrPtr = &iPtr;
     __volatile_store(iPtrRef, 7);
     printf("%d\n", *__volatile_load(iPtrPtr));
+
+    // Loads through pointers to const values are allowed
+    const int c = 3;
+    const int* cPtr = &c;
+    printf("%d\n", __volatile_load(cPtr));
 }
