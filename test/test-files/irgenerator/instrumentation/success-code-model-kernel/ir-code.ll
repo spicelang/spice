@@ -5,15 +5,15 @@ target triple = "x86_64-unknown-linux-gnu"
 
 @COUNTER = internal global i32 1
 
-; Function Attrs: noinline nounwind optnone uwtable
-define void @_Z9incrementv() #0 {
+; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
+define noundef i32 @main() #0 {
   %1 = load i32, ptr @COUNTER, align 4
   %2 = add nsw i32 %1, 1
   store i32 %2, ptr @COUNTER, align 4
-  ret void
+  ret i32 0
 }
 
-attributes #0 = { noinline nounwind optnone uwtable }
+attributes #0 = { mustprogress noinline norecurse nounwind optnone uwtable }
 
 !llvm.module.flags = !{!0, !1, !2}
 !llvm.ident = !{!3}
