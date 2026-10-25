@@ -170,3 +170,7 @@ syscall(/* syscall no = write */ 1s, /*fd = stdout*/ 1, /* buffer */ str, len(st
 !!! warning
     It is not recommended to use the syscall builtin directly. There is a std package for interacting with the OS via
     system calls. Please use `import "std/os/syscall";` instead.
+
+!!! note
+    The syscall builtin is lowered to inline assembly, which the experimental TPDE backend does not support. Using it
+    in combination with `--backend=tpde` results in a compile error.

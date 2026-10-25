@@ -1,0 +1,6 @@
+// TEST: --backend=tpde --target=x86_64-unknown-linux-gnu
+
+f<int> main() {
+    const string str = "Hello syscall!";
+    syscall(/* write */ 1s, /* stdout */ 1, str, len(str));
+}

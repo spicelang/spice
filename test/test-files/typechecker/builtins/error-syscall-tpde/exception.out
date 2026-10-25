@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:5:5:
+Unsupported by backend: The TPDE backend does not support inline assembly, which the syscall builtin uses
+
+5  syscall(/* write */ 1s, /* stdout */ 1, str, len(str));
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

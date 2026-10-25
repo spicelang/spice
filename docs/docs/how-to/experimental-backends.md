@@ -72,6 +72,8 @@ If the compiler was built without the TPDE libraries, passing `--backend=tpde` p
 - Any Spice code that requires wide vectors, exception handling, or non-`small` code model will fail to
   compile.
 - Debug info emission (`-g`) works but produces `-O0`-quality info regardless of the `--build-mode`.
+- TPDE does not support inline assembly, so the [`syscall` builtin](../language/builtins.md#the-syscall-builtin) is
+  rejected with a compile error.
 
 ## Using TPDE from Spice code
 

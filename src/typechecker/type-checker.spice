@@ -5702,6 +5702,11 @@ f<Any> TypeChecker.visitBuiltinSyscallCall(ASTFctCallNode* node) {
         }
     }
 
+    // The syscall builtin is lowered to inline assembly, which the TPDE backend cannot compile
+    if this.cliOptions.backend == Backend::TPDE {
+        return this.softErrorER(baseNode, SemanticErrorType::UNSUPPORTED_BY_BACKEND, String("The TPDE backend does not support inline assembly, which the syscall builtin uses"));
+    }
+
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
 }
 
