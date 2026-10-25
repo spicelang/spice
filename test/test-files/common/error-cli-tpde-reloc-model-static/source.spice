@@ -1,0 +1,4 @@
+// TEST: --backend=tpde --relocation-model=static --target=x86_64-unknown-linux-gnu
+
+f<int> main() {}
+

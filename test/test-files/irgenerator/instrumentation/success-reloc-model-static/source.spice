@@ -1,0 +1,10 @@
+// TEST: --relocation-model=static
+
+// With the static relocation model, the code addresses globals absolutely instead of relative to the instruction pointer,
+// so it gets no "PIC Level" and "PIE Level" module flags. The executable is linked as non-PIE ("-no-pie") then.
+int COUNTER = 1;
+
+f<int> main() {
+    COUNTER++;
+    printf("Counter: %d\n", COUNTER);
+}

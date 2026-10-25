@@ -67,7 +67,8 @@ public p ExternalLinkerInterface.prepare() {
     } else if this.cliOptions.staticLinking {
         // A static PIE on Linux, so that static executables get ASLR for their image as well. This needs all linked archives
         // to be position independent (see setup-deps.py and the release workflow for the archives of the compiler itself)
-        const bool staticPie = this.isTargetLinux() && this.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+        const bool isExecutable = this.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+        const bool staticPie = this.isTargetLinux() && isExecutable && this.cliOptions.isPositionIndependent();
         this.addLinkerFlag(staticPie ? "-static-pie" : "-static");
     }
 
@@ -89,11 +90,11 @@ public p ExternalLinkerInterface.prepare() {
         return;
     }
 
-    // Position independent executable on Linux: the code is always generated position independent (see the 'PIE Level' module
-    // flag), so request a PIE explicitly, instead of relying on the default of the linker invoker (e.g. distributions, whose
-    // toolchain defaults to non-PIE). Static executables are linked with '-static-pie' above.
+    // Position independent executable on Linux, if the code is generated position independent (see the 'PIE Level' module
+    // flag). Request it explicitly either way, instead of relying on the default of the linker invoker, which differs between
+    // distributions. Static executables are linked with '-static-pie' or '-static' above.
     if this.isTargetLinux() && !this.cliOptions.staticLinking {
-        this.addLinkerFlag("-pie");
+        this.addLinkerFlag(this.cliOptions.isPositionIndependent() ? "-pie" : "-no-pie");
     }
 
     // Stripping symbols, on request only: the symbol table is what a run-time symbolizer such as the stack trace runtime

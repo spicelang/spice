@@ -43,4 +43,6 @@ You can apply following options to the `install` subcommand:
 | -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |
 | -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                      |
 | -            | `--no-red-zone`           | Do not use the red zone below the stack pointer (x86_64), e.g. for kernel code                 |
+| -            | `--relocation-model`      | Relocation model: `default`, `static`, `pic`, `pie`                                            |
+| -            | `--code-model`            | Code model: `default`, `tiny`, `small`, `kernel`, `medium`, `large`                            |
 | -            | `--native-features`       | Tune the output for the CPU of the compiling machine (output not portable)                     |

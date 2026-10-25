@@ -1,0 +1,4 @@
+// TEST: --output-container=dylib --relocation-model=static
+
+f<int> main() {}
+

@@ -1,0 +1,10 @@
+// TEST: --code-model=large --target=x86_64-unknown-linux-gnu
+
+// In the large code model, code and data may be placed anywhere in the address space. Position independent code (the
+// default) addresses them relative to the GOT then.
+int COUNTER = 1;
+
+f<int> main() {
+    COUNTER++;
+    printf("Counter: %d\n", COUNTER);
+}

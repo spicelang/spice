@@ -1,0 +1,3 @@
+// TEST: --code-model=unknown
+
+f<int> main() {}

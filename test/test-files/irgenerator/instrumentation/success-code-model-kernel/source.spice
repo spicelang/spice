@@ -1,0 +1,9 @@
+// TEST: --code-model=kernel --relocation-model=static --target=x86_64-unknown-linux-gnu
+
+// Kernel code is linked into the top 2 GiB of the address space, so it can address its symbols with sign-extended 32-bit
+// immediates. It is not position independent.
+int COUNTER = 1;
+
+f<int> main() {
+    COUNTER++;
+}

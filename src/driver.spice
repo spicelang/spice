@@ -88,6 +88,32 @@ public type Backend enum {
 const string BACKEND_LLVM = "llvm";
 const string BACKEND_TPDE = "tpde";
 
+public type RelocModel enum {
+    DEFAULT = 0,       // PIE, or PIC for shared libraries. Resolved to one of the two in Driver.enrich
+    STATIC = 1,        // Absolute addresses, the output must be loaded at a fixed address
+    PIC = 2,           // Position independent code, e.g. for shared libraries
+    PIE = 3            // Position independent code, that is only linked into an executable
+}
+const string RELOC_MODEL_DEFAULT = "default";
+const string RELOC_MODEL_STATIC = "static";
+const string RELOC_MODEL_PIC = "pic";
+const string RELOC_MODEL_PIE = "pie";
+
+public type CodeModel enum {
+    DEFAULT = 0, // Let LLVM pick the code model of the target (small in most cases)
+    TINY = 1,    // Code and data within 1 MiB (AArch64 ELF only)
+    SMALL = 2,   // Code and data within 2 GiB (4 GiB on AArch64)
+    KERNEL = 3,  // Like small, but in the top 2 GiB of the address space (x86_64 only)
+    MEDIUM = 4,  // Code within 2 GiB, data anywhere (x86_64 only)
+    LARGE = 5    // Code and data anywhere
+}
+const string CODE_MODEL_DEFAULT = "default";
+const string CODE_MODEL_TINY = "tiny";
+const string CODE_MODEL_SMALL = "small";
+const string CODE_MODEL_KERNEL = "kernel";
+const string CODE_MODEL_MEDIUM = "medium";
+const string CODE_MODEL_LARGE = "large";
+
 public type DumpSettings struct {
     public bool dumpAST = false
     public bool dumpSymbolTable = false
@@ -153,6 +179,8 @@ public type CliOptions struct {
     public bool lintOnly = false
     public bool keepFramePointers = false
     public bool noRedZone = false
+    public RelocModel relocModel = RelocModel::DEFAULT
+    public CodeModel codeModel = CodeModel::DEFAULT
     public bool stripSymbols = false
 }
 
@@ -185,6 +213,16 @@ public p CliOptions.setBuildVar(const String& key, const String& value) {
  */
 public const f<bool> CliOptions.printsStackTraceOnAbort() {
     return this.isNativeTarget && !this.comparableOutput;
+}
+
+/**
+ * Whether the code is generated position independent. The default relocation model is resolved by the driver, so this is
+ * only meaningful after Driver.enrich
+ *
+ * @return Position independent code or not
+ */
+public const f<bool> CliOptions.isPositionIndependent() {
+    return this.relocModel == RelocModel::PIC || this.relocModel == RelocModel::PIE;
 }
 
 /**
@@ -364,6 +402,7 @@ public p Driver.enrich() {
     if this.cliOptions.staticLinking && this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
         raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library");
     }
+    this.resolveRelocAndCodeModel();
 
     // Guards for the experimental TPDE backend - ELF only, x86_64/aarch64 only, no LTO
     if this.cliOptions.backend == Backend::TPDE {
@@ -384,9 +423,84 @@ public p Driver.enrich() {
         if this.cliOptions.noRedZone && archName == "x86_64" {
             raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend does not support --no-red-zone on x86_64");
         }
+        // TPDE ignores the target machine and always emits position independent code in the small code model
+        if !this.cliOptions.isPositionIndependent() {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend only supports the relocation models pic and pie");
+        }
+        if this.cliOptions.codeModel != CodeModel::DEFAULT && this.cliOptions.codeModel != CodeModel::SMALL {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend only supports the small code model");
+        }
         if this.cliOptions.optLevel != OptLevel::O0 {
             print("\033[33mWarning: the TPDE backend does not optimize; -O flag will be ignored\033[0m\n");
         }
+    }
+}
+
+/**
+ * Resolve the default relocation model and reject the relocation and code models, that do not fit the output container or
+ * the target. LLVM aborts with a fatal error on code models, that the target does not support, so they are rejected here,
+ * like Clang does.
+ */
+p Driver.resolveRelocAndCodeModel() {
+    // Position independent executables by default, so that the executable image gets ASLR as well
+    const bool isSharedLibrary = this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
+    if this.cliOptions.relocModel == RelocModel::DEFAULT {
+        this.cliOptions.relocModel = isSharedLibrary ? RelocModel::PIC : RelocModel::PIE;
+    }
+    // PIE code assumes, that all symbols it defines resolve locally, which does not hold in a shared library
+    if isSharedLibrary && this.cliOptions.relocModel != RelocModel::PIC {
+        raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Shared libraries require the relocation model pic");
+    }
+    // Windows and Darwin are always position independent: LLVM generates PIC code for Darwin anyway, and 64-bit Windows loads
+    // images above 4 GiB, where absolute 32-bit addresses do not reach (Clang forces PIC on both)
+    const llvm::Triple& triple = this.cliOptions.targetTriple;
+    if this.cliOptions.relocModel == RelocModel::STATIC && (triple.isOSWindows() || triple.isOSDarwin()) {
+        const String message = String("The relocation model static is not supported for ") + triple.value;
+        raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, message.getRaw());
+    }
+
+    const CodeModel codeModel = this.cliOptions.codeModel;
+    if codeModel == CodeModel::DEFAULT || codeModel == CodeModel::SMALL {
+        return;
+    }
+    const String archName = triple.getArchTypeName();
+    const bool isELF = !triple.isMachO() && !triple.isOSWindows();
+    bool isSupported = false;
+    if archName == "x86_64" {
+        isSupported = codeModel != CodeModel::TINY;
+    } else if archName == "aarch64" {
+        isSupported = codeModel == CodeModel::LARGE || (codeModel == CodeModel::TINY && isELF);
+    }
+    if !isSupported {
+        const String message = String("The code model ") + getCodeModelName(codeModel) + " is not supported for " + triple.value;
+        raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, message.getRaw());
+    }
+
+    // The kernel code model places the code at a fixed address in the top 2 GiB of the address space (like GCC)
+    if codeModel == CodeModel::KERNEL && this.cliOptions.isPositionIndependent() {
+        raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The code model kernel requires the relocation model static");
+    }
+    // In the large code model, LLVM loads the addresses of position independent code on AArch64 from the GOT, as in the small one.
+    // So like Clang, only static code is accepted, except on Darwin, which is always position independent.
+    if codeModel == CodeModel::LARGE && archName == "aarch64" && !triple.isMachO() && this.cliOptions.isPositionIndependent() {
+        raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The code model large requires the relocation model static on AArch64");
+    }
+}
+
+/**
+ * Get the name of the given code model, as it is passed to --code-model
+ *
+ * @param codeModel Code model
+ * @return Name of the code model
+ */
+f<string> getCodeModelName(const CodeModel codeModel) {
+    switch codeModel {
+        case CodeModel::TINY: { return CODE_MODEL_TINY; }
+        case CodeModel::SMALL: { return CODE_MODEL_SMALL; }
+        case CodeModel::KERNEL: { return CODE_MODEL_KERNEL; }
+        case CodeModel::MEDIUM: { return CODE_MODEL_MEDIUM; }
+        case CodeModel::LARGE: { return CODE_MODEL_LARGE; }
+        default: { return CODE_MODEL_DEFAULT; }
     }
 }
 
@@ -696,6 +810,42 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--keep-frame-pointers", this.cliOptions.keepFramePointers, "Set up a frame pointer in every function, so external profilers and debuggers can walk the stack (costs a register and a bit of performance)");
     // --no-red-zone
     subCmd.addFlag("--no-red-zone", this.cliOptions.noRedZone, "Do not use the red zone below the stack pointer (x86_64). Required for code that runs in kernel mode, where interrupts push onto the current stack");
+    // --relocation-model
+    const p(const string&) relocModelCallback = p(const string& relocModel) {
+        const String inputString = toLower(String(relocModel));
+        if inputString == RELOC_MODEL_DEFAULT {
+            this.cliOptions.relocModel = RelocModel::DEFAULT;
+        } else if inputString == RELOC_MODEL_STATIC {
+            this.cliOptions.relocModel = RelocModel::STATIC;
+        } else if inputString == RELOC_MODEL_PIC {
+            this.cliOptions.relocModel = RelocModel::PIC;
+        } else if inputString == RELOC_MODEL_PIE {
+            this.cliOptions.relocModel = RelocModel::PIE;
+        } else {
+            raiseCliError(CliErrorType::INVALID_RELOCATION_MODEL, inputString.getRaw());
+        }
+    };
+    subCmd.addOption("--relocation-model", relocModelCallback, "Relocation model: default (pie, pic for shared libraries), static, pic, pie");
+    // --code-model
+    const p(const string&) codeModelCallback = p(const string& codeModel) {
+        const String inputString = toLower(String(codeModel));
+        if inputString == CODE_MODEL_DEFAULT {
+            this.cliOptions.codeModel = CodeModel::DEFAULT;
+        } else if inputString == CODE_MODEL_TINY {
+            this.cliOptions.codeModel = CodeModel::TINY;
+        } else if inputString == CODE_MODEL_SMALL {
+            this.cliOptions.codeModel = CodeModel::SMALL;
+        } else if inputString == CODE_MODEL_KERNEL {
+            this.cliOptions.codeModel = CodeModel::KERNEL;
+        } else if inputString == CODE_MODEL_MEDIUM {
+            this.cliOptions.codeModel = CodeModel::MEDIUM;
+        } else if inputString == CODE_MODEL_LARGE {
+            this.cliOptions.codeModel = CodeModel::LARGE;
+        } else {
+            raiseCliError(CliErrorType::INVALID_CODE_MODEL, inputString.getRaw());
+        }
+    };
+    subCmd.addOption("--code-model", codeModelCallback, "Code model, i.e. how far code and data may be apart: default (small), tiny, small, kernel, medium, large");
     // --native-features
     subCmd.addFlag("--native-features", this.cliOptions.useNativeFeatures, "Tune the output for the CPU of the compiling machine and use all of its features. The output might not run on other machines of the same architecture");
     // --test-mode
@@ -883,6 +1033,8 @@ f<bool> testBuildAndRunSubcommands() {
     assert !buildMinimal.cliOptions.lintOnly;
     assert !buildMinimal.cliOptions.keepFramePointers;
     assert !buildMinimal.cliOptions.noRedZone;
+    assert buildMinimal.cliOptions.relocModel == RelocModel::PIE;
+    assert buildMinimal.cliOptions.codeModel == CodeModel::DEFAULT;
     assert !buildMinimal.cliOptions.stripSymbols;
     assert !buildMinimal.cliOptions.instrumentation.emitsDebugInfo();
     // The executable lands in the current dir and is named like the source file, with the extension of the target
@@ -1216,5 +1368,67 @@ f<bool> testEqualsSyntaxOptionValues() {
     assert parseAndEnrich(debugInfoWithoutValue, 4, debugInfoWithoutValueArgs);
     assert debugInfoWithoutValue.cliOptions.instrumentation.debugInfoLevel == DebugInfoLevel::FULL;
     assert debugInfoWithoutValue.cliOptions.mainSourceFile.toGenericString() == "main-file.spice";
+    return true;
+}
+
+#[test]
+f<bool> testRelocAndCodeModels() {
+    // The default relocation model is PIE, except for shared libraries
+    Driver objectFile;
+    string[5] objectFileArgs = ["spice", "build", "--output-container", "obj", "main-file.spice"];
+    assert parseAndEnrich(objectFile, 5, objectFileArgs);
+    assert objectFile.cliOptions.relocModel == RelocModel::PIE;
+    assert objectFile.cliOptions.isPositionIndependent();
+    Driver sharedLibrary;
+    string[5] sharedLibraryArgs = ["spice", "build", "--output-container", "dylib", "main-file.spice"];
+    assert parseAndEnrich(sharedLibrary, 5, sharedLibraryArgs);
+    assert sharedLibrary.cliOptions.relocModel == RelocModel::PIC;
+    assert sharedLibrary.cliOptions.isPositionIndependent();
+    Driver explicitDefault;
+    string[5] explicitDefaultArgs = ["spice", "build", "--relocation-model=default", "--code-model=default", "main-file.spice"];
+    assert parseAndEnrich(explicitDefault, 5, explicitDefaultArgs);
+    assert explicitDefault.cliOptions.relocModel == RelocModel::PIE;
+    assert explicitDefault.cliOptions.codeModel == CodeModel::DEFAULT;
+
+    // Kernel code on x86_64
+    Driver kernel;
+    string[8] kernelArgs = ["spice", "build", "--relocation-model", "static", "--code-model", "kernel", "--target=x86_64-unknown-linux-gnu", "main-file.spice"];
+    assert parseAndEnrich(kernel, 8, kernelArgs);
+    assert kernel.cliOptions.relocModel == RelocModel::STATIC;
+    assert !kernel.cliOptions.isPositionIndependent();
+    assert kernel.cliOptions.codeModel == CodeModel::KERNEL;
+
+    // Position independent code in the medium and large code models on x86_64. The values are case-insensitive
+    Driver medium;
+    string[6] mediumArgs = ["spice", "build", "--relocation-model=PIC", "--code-model=Medium", "--target=x86_64-unknown-linux-gnu", "main-file.spice"];
+    assert parseAndEnrich(medium, 6, mediumArgs);
+    assert medium.cliOptions.relocModel == RelocModel::PIC;
+    assert medium.cliOptions.codeModel == CodeModel::MEDIUM;
+    Driver large;
+    string[5] largeArgs = ["spice", "build", "--code-model=large", "--target=x86_64-unknown-linux-gnu", "main-file.spice"];
+    assert parseAndEnrich(large, 5, largeArgs);
+    assert large.cliOptions.relocModel == RelocModel::PIE;
+    assert large.cliOptions.codeModel == CodeModel::LARGE;
+
+    // The tiny and the large code model on AArch64
+    Driver tiny;
+    string[5] tinyArgs = ["spice", "build", "--code-model=tiny", "--target=aarch64-unknown-linux-gnu", "main-file.spice"];
+    assert parseAndEnrich(tiny, 5, tinyArgs);
+    assert tiny.cliOptions.codeModel == CodeModel::TINY;
+    Driver aarch64Large;
+    string[6] aarch64LargeArgs = ["spice", "build", "--code-model=large", "--relocation-model=static", "--target=aarch64-unknown-linux-gnu", "main-file.spice"];
+    assert parseAndEnrich(aarch64Large, 6, aarch64LargeArgs);
+    assert aarch64Large.cliOptions.codeModel == CodeModel::LARGE;
+    Driver darwinLarge;
+    string[5] darwinLargeArgs = ["spice", "build", "--code-model=large", "--target=arm64-apple-darwin", "main-file.spice"];
+    assert parseAndEnrich(darwinLarge, 5, darwinLargeArgs);
+    assert darwinLarge.cliOptions.codeModel == CodeModel::LARGE;
+
+    // The small code model is supported everywhere
+    Driver small;
+    string[6] smallArgs = ["spice", "build", "--code-model=small", "--relocation-model=pie", "--target=x86_64-w64-windows-gnu", "main-file.spice"];
+    assert parseAndEnrich(small, 6, smallArgs);
+    assert small.cliOptions.codeModel == CodeModel::SMALL;
+    assert small.cliOptions.relocModel == RelocModel::PIE;
     return true;
 }

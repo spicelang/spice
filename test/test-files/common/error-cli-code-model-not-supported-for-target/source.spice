@@ -1,0 +1,3 @@
+// TEST: --code-model=tiny --target=x86_64-unknown-linux-gnu
+
+f<int> main() {}

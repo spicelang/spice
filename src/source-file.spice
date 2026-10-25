@@ -136,6 +136,37 @@ f<llvm::LLVMCodeGenOptLevel> getCodeGenOptLevel(OptLevel optLevel) {
 }
 
 /**
+ * Get the LLVM relocation model for the given relocation model. PIE code is PIC for LLVM, the difference is the 'PIE Level'
+ * module flag (see the IRGenerator)
+ *
+ * @param relocModel Relocation model, already resolved by the driver
+ * @return LLVM relocation model
+ */
+f<llvm::LLVMRelocMode> getLLVMRelocMode(RelocModel relocModel) {
+    switch relocModel {
+        case RelocModel::STATIC: { return llvm::LLVMRelocMode::Static; }
+        default: { return llvm::LLVMRelocMode::PIC; } // PIC, PIE
+    }
+}
+
+/**
+ * Get the LLVM code model for the given code model
+ *
+ * @param codeModel Code model
+ * @return LLVM code model
+ */
+f<llvm::LLVMCodeModel> getLLVMCodeModel(CodeModel codeModel) {
+    switch codeModel {
+        case CodeModel::TINY: { return llvm::LLVMCodeModel::Tiny; }
+        case CodeModel::SMALL: { return llvm::LLVMCodeModel::Small; }
+        case CodeModel::KERNEL: { return llvm::LLVMCodeModel::Kernel; }
+        case CodeModel::MEDIUM: { return llvm::LLVMCodeModel::Medium; }
+        case CodeModel::LARGE: { return llvm::LLVMCodeModel::Large; }
+        default: { return llvm::LLVMCodeModel::Default; }
+    }
+}
+
+/**
  * Represents a single source file
  */
 public type SourceFile struct {
@@ -219,10 +250,11 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
     const string cpuName = resourceManager.cpuName;
     const string features = resourceManager.cpuFeatures;
     const llvm::Triple& targetTriple = this.cliOptions.targetTriple;
-    const llvm::LLVMRelocMode relocMode = llvm::LLVMRelocMode::PIC;
+    const llvm::LLVMRelocMode relocMode = getLLVMRelocMode(this.cliOptions.relocModel);
+    const llvm::LLVMCodeModel codeModel = getLLVMCodeModel(this.cliOptions.codeModel);
     // The LLVM C API cannot change the codegen opt level of a target machine, so it is set right away here.
     const llvm::LLVMCodeGenOptLevel codeGenOptLevel = getCodeGenOptLevel(this.cliOptions.optLevel);
-    this.targetMachine = target.createTargetMachine(targetTriple, cpuName, features, codeGenOptLevel, relocMode, llvm::LLVMCodeModel::Default);
+    this.targetMachine = target.createTargetMachine(targetTriple, cpuName, features, codeGenOptLevel, relocMode, codeModel);
     // Emit the assembly code with comments. This only affects the assembly code, not the object files
     this.targetMachine.setAsmVerbosity(true);
 }
