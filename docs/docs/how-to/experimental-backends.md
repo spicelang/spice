@@ -21,7 +21,7 @@ other builds, it is opt-in at build time as well.
 |-------------------------|-------------------------------------------------------|
 | Host operating systems  | Linux (ELF only)                                      |
 | Target architectures    | `x86_64`, `aarch64`                                   |
-| Code model              | small only (other `--code-model` values are rejected) |
+| Code model              | small only (`--code-model` `default` or `small`)      |
 | Relocation model        | PIC only (`--relocation-model` `pic` or `pie`)        |
 | Optimization            | none — `-O` flags are accepted but ignored            |
 | Link-time optimization  | not supported (`-lto` is rejected)                    |
