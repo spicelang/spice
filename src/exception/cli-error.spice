@@ -14,7 +14,8 @@ public type CliErrorType enum {
     INVALID_BACKEND,
     INVALID_DEBUG_INFO_LEVEL,
     INVALID_RELOCATION_MODEL,
-    INVALID_CODE_MODEL
+    INVALID_CODE_MODEL,
+    INVALID_CPU_FEATURE
 }
 
 /**
@@ -62,6 +63,7 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
         case CliErrorType::INVALID_DEBUG_INFO_LEVEL: { return "Invalid debug info level"; }
         case CliErrorType::INVALID_RELOCATION_MODEL: { return "Invalid relocation model"; }
         case CliErrorType::INVALID_CODE_MODEL: { return "Invalid code model"; }
+        case CliErrorType::INVALID_CPU_FEATURE: { return "Invalid CPU feature"; }
         default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }
@@ -85,6 +87,7 @@ f<bool> testCliErrorMessages() {
     assert hasMessage(CliErrorType::INVALID_DEBUG_INFO_LEVEL, "unknown", "[Error|CLI] Invalid debug info level: unknown");
     assert hasMessage(CliErrorType::INVALID_RELOCATION_MODEL, "unknown", "[Error|CLI] Invalid relocation model: unknown");
     assert hasMessage(CliErrorType::INVALID_CODE_MODEL, "unknown", "[Error|CLI] Invalid code model: unknown");
+    assert hasMessage(CliErrorType::INVALID_CPU_FEATURE, "'avx2'", "[Error|CLI] Invalid CPU feature: 'avx2'");
 
     // Incompatible options and unsupported features
     assert hasMessage(CliErrorType::INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library", "[Error|CLI] Incompatible options: Cannot link statically if compiling shared library");

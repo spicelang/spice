@@ -1,0 +1,16 @@
+// TEST: --cpu-features=+popcnt,+avx2 --cpu-features=-avx2 --target=x86_64-unknown-linux-gnu
+
+// The CPU features are passed to the target machine. They do not show up in the IR, but they must be accepted, also when
+// the option is passed multiple times
+f<int> countBits(unsigned long value) {
+    int count = 0;
+    while value != 0ul {
+        value = value & (value - 1ul);
+        count++;
+    }
+    return count;
+}
+
+f<int> main() {
+    printf("Bits: %d\n", countBits(255ul));
+}

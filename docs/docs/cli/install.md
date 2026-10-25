@@ -46,3 +46,4 @@ You can apply following options to the `install` subcommand:
 | -            | `--relocation-model`      | Relocation model: `default`, `static`, `pic`, `pie`                                            |
 | -            | `--code-model`            | Code model: `default`, `tiny`, `small`, `kernel`, `medium`, `large`                            |
 | -            | `--native-features`       | Tune the output for the CPU of the compiling machine (output not portable)                     |
+| -            | `--cpu-features`          | CPU features to enable (`+`) or disable (`-`), e.g. `+avx2,-sse4.1`                            |
