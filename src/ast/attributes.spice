@@ -20,6 +20,8 @@ public const string ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings
 public const string ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING = "core.compiler.explicitErrorHandling";
 public const string ATTR_CORE_COMPILER_ERROR_RETURN_TRACING = "core.compiler.errorReturnTracing";
 public const string ATTR_CORE_COMPILER_RED_ZONE = "core.compiler.redZone";
+public const string ATTR_CORE_COMPILER_NO_RETURN = "core.compiler.noReturn";
+public const string ATTR_CORE_COMPILER_COLD = "core.compiler.cold";
 public const string ATTR_TEST = "test";
 public const string ATTR_TEST_NAME = "test.name";
 public const string ATTR_TEST_SKIP = "test.skip";
@@ -81,7 +83,7 @@ public f<bool> getAttrConfig(const String& key, AttrConfigValue& config) {
     } else if key == ATTR_CORE_LINKER_DLL {
         config.target = targetExtDecl;
         config.attrType = AttrType::TYPE_BOOL;
-    } else if key == ATTR_CORE_COMPILER_MANGLE {
+    } else if key == ATTR_CORE_COMPILER_MANGLE || key == ATTR_CORE_COMPILER_NO_RETURN || key == ATTR_CORE_COMPILER_COLD {
         config.target = targetFctProc | targetExtDecl;
         config.attrType = AttrType::TYPE_BOOL;
     } else if key == ATTR_CORE_COMPILER_RED_ZONE {

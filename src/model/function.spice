@@ -39,6 +39,8 @@ public type Function struct {
     // Interface default method, that implements this struct method, if the struct does not implement it itself
     public Function* defaultMethod = nil<Function*>
     public bool isVararg = false
+    public bool isNoReturn = false // Set via the 'core.compiler.noReturn' attribute
+    public bool isCold = false // Set via the 'core.compiler.cold' attribute
     public bool mangleFunctionName = true
     public bool alreadyTypeChecked = false
     public bool used = false

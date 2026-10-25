@@ -1307,6 +1307,14 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
             firstManifestation.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
         }
+        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_NO_RETURN)) {
+            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_NO_RETURN));
+            firstManifestation.isNoReturn = value.getBoolValue();
+        }
+        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_COLD)) {
+            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_COLD));
+            firstManifestation.isCold = value.getBoolValue();
+        }
         // The TPDE backend always uses the red zone in x86_64 leaf functions (see the --no-red-zone check in the driver)
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_RED_ZONE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_RED_ZONE));
@@ -1997,6 +2005,14 @@ f<Any> TypeChecker.visitExtDeclPrepare(ASTExtDeclNode* node) {
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_MANGLED_NAME)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_MANGLED_NAME));
             node.extFunction.predefinedMangledName = this.resourceManager.getCompileTimeStringValue(value.getStringValueOffset());
+        }
+        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_NO_RETURN)) {
+            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_NO_RETURN));
+            node.extFunction.isNoReturn = value.getBoolValue();
+        }
+        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_COLD)) {
+            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_COLD));
+            node.extFunction.isCold = value.getBoolValue();
         }
     }
 
