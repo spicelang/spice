@@ -1,0 +1,8 @@
+Const box: 1
+Box: 3
+Const item: a
+Const item: b
+Item: c
+Item: d
+Const deref: 1
+Deref: 4

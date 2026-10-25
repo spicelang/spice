@@ -176,7 +176,7 @@ public p TypeChainElement.getName(StringStream& name, bool withSize, bool ignore
                 name << "<";
                 foreach unsigned long i, const QualType& templateType : this.templateTypes {
                     if i > 0 {  name << ","; }
-                    templateType.getName(name, withSize, ignorePublic);
+                    templateType.getTemplateArgName(name, withSize, ignorePublic);
                 }
                 name << ">";
             }

@@ -1,0 +1,53 @@
+import "std/iterator/array-iterator";
+
+type T dyn;
+
+// Regression test: the signature and the mangled name of a manifestation used to drop the const qualifier of non-pointer
+// template types, so e.g. Box<const int> and Box<int> shared one manifestation. The second one was then type-checked
+// with the field types of the first one.
+type Box<T> struct {
+    T* ptr
+}
+
+p Box.ctor(T* ptr) {
+    this.ptr = ptr;
+}
+
+f<T&> Box.get() {
+    unsafe {
+        return *this.ptr;
+    }
+}
+
+f<T&> deref<T>(T* ptr) {
+    unsafe {
+        return *ptr;
+    }
+}
+
+f<int> main() {
+    // Generic struct with a const and a non-const template type
+    const int a = 1;
+    Box<const int> constBox = Box<const int>(&a);
+    printf("Const box: %d\n", constBox.get());
+    int b = 2;
+    Box<int> box = Box<int>(&b);
+    int& boxValue = box.get();
+    boxValue = 3;
+    printf("Box: %d\n", b);
+
+    // ArrayIterator<const string> and ArrayIterator<string>
+    const string[2] constItems = ["a", "b"];
+    foreach const string item : constItems {
+        printf("Const item: %s\n", item);
+    }
+    foreach const string item : ["c", "d"] {
+        printf("Item: %s\n", item);
+    }
+
+    // Generic function with a const and a non-const template type
+    printf("Const deref: %d\n", deref(&a));
+    int& derefValue = deref(&b);
+    derefValue = 4;
+    printf("Deref: %d\n", b);
+}

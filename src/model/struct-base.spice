@@ -88,7 +88,7 @@ public f<String> getStructSignature(const String& name, const QualTypeList& conc
         templateTyStr << "<";
         foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
             if i > 0ul { templateTyStr << ","; }
-            templateType.getName(templateTyStr, false, true);
+            templateType.getTemplateArgName(templateTyStr, false, true);
         }
         templateTyStr << ">";
     }

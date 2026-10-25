@@ -94,7 +94,7 @@ public f<String> mangleFunction(const Function& spiceFunc) {
             const String subType = genericTemplateType.qualType.getSubType();
             assert spiceFunc.typeMapping.contains(subType);
             const QualType& actualType = spiceFunc.typeMapping.get(subType);
-            mangleType(mangledName, actualType);
+            mangleType(mangledName, actualType, true);
         }
         mangledName << "E";
 
@@ -219,8 +219,9 @@ f<Vector<String>> splitLikeGetline(const String& input, char delimiter) {
  *
  * @param out Output string stream
  * @param qualType Input symbol qualType
+ * @param isTemplateArg Keep the const qualifier of non-pointer types, since it distinguishes template arguments
  */
-p mangleType(StringStream& out, const QualType& qualType) {
+p mangleType(StringStream& out, const QualType& qualType, bool isTemplateArg = false) {
     const Type* rawType = qualType.getType();
     assert !qualType.hasAnyGenericParts();
 
@@ -241,7 +242,7 @@ p mangleType(StringStream& out, const QualType& qualType) {
     if qualifiers.isHeap {
         out << "V";
     }
-    if qualifiers.isConst && rawType.typeChain.getSize() > 1l {
+    if qualifiers.isConst && (rawType.typeChain.getSize() > 1l || isTemplateArg) {
         out << "K";
     }
 
@@ -307,7 +308,7 @@ p mangleTypeChainElement(StringStream& out, const TypeChainElement& chainElement
             if !chainElement.templateTypes.isEmpty() {
                 out << "I";
                 foreach const QualType& templateType : chainElement.templateTypes {
-                    mangleType(out, templateType);
+                    mangleType(out, templateType, true);
                 }
                 out << "E";
             }
