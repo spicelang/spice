@@ -152,7 +152,7 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     // Attach information to the module
     this.module.setTargetTriple(this.cliOptions.targetTriple);
     this.module.setDataLayout(sourceFile.targetMachine.createDataLayout());
-    // Static code (incl. dynamic-no-pic) gets no PIC/PIE levels, like Clang emits it with '-fno-pic'
+    // Static code gets no PIC/PIE levels, like Clang emits it with '-fno-pic'
     if this.cliOptions.relocModel == RelocModel::PIC {
         this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MIN, "PIC Level", 1); // llvm::PICLevel::SmallPIC
         this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "PIE Level", 0); // llvm::PIELevel::Default

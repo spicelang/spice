@@ -145,7 +145,6 @@ f<llvm::LLVMCodeGenOptLevel> getCodeGenOptLevel(OptLevel optLevel) {
 f<llvm::LLVMRelocMode> getLLVMRelocMode(RelocModel relocModel) {
     switch relocModel {
         case RelocModel::STATIC: { return llvm::LLVMRelocMode::Static; }
-        case RelocModel::DYNAMIC_NO_PIC: { return llvm::LLVMRelocMode::DynamicNoPic; }
         default: { return llvm::LLVMRelocMode::PIC; } // PIC, PIE
     }
 }

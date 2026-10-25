@@ -1,0 +1,3 @@
+// TEST: --relocation-model=static --target=x86_64-w64-windows-gnu
+
+f<int> main() {}

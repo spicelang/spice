@@ -1,7 +1,8 @@
-// TEST: --code-model=medium
+// TEST: --code-model=medium --target=x86_64-unknown-linux-gnu
 
 // In the medium code model, data may be placed anywhere in the address space. It is stored in the large data sections
 // (e.g. ".ldata") and addressed with 64-bit immediates. The code model reaches LTO through the "Code Model" module flag.
+// The code models other than small are x86_64-only (large needs static code on AArch64), so the target is explicit.
 int COUNTER = 1;
 
 f<int> main() {

@@ -92,14 +92,12 @@ public type RelocModel enum {
     DEFAULT = 0,       // PIE, or PIC for shared libraries. Resolved to one of the two in Driver.enrich
     STATIC = 1,        // Absolute addresses, the output must be loaded at a fixed address
     PIC = 2,           // Position independent code, e.g. for shared libraries
-    PIE = 3,           // Position independent code, that is only linked into an executable
-    DYNAMIC_NO_PIC = 4 // Absolute addresses for own code, but references to external symbols through the GOT (Darwin)
+    PIE = 3            // Position independent code, that is only linked into an executable
 }
 const string RELOC_MODEL_DEFAULT = "default";
 const string RELOC_MODEL_STATIC = "static";
 const string RELOC_MODEL_PIC = "pic";
 const string RELOC_MODEL_PIE = "pie";
-const string RELOC_MODEL_DYNAMIC_NO_PIC = "dynamic-no-pic";
 
 public type CodeModel enum {
     DEFAULT = 0, // Let LLVM pick the code model of the target (small in most cases)
@@ -453,12 +451,18 @@ p Driver.resolveRelocAndCodeModel() {
     if isSharedLibrary && this.cliOptions.relocModel != RelocModel::PIC {
         raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Shared libraries require the relocation model pic");
     }
+    // Windows and Darwin are always position independent: LLVM generates PIC code for Darwin anyway, and 64-bit Windows loads
+    // images above 4 GiB, where absolute 32-bit addresses do not reach (Clang forces PIC on both)
+    const llvm::Triple& triple = this.cliOptions.targetTriple;
+    if this.cliOptions.relocModel == RelocModel::STATIC && (triple.isOSWindows() || triple.isOSDarwin()) {
+        const String message = String("The relocation model static is not supported for ") + triple.value;
+        raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, message.getRaw());
+    }
 
     const CodeModel codeModel = this.cliOptions.codeModel;
     if codeModel == CodeModel::DEFAULT || codeModel == CodeModel::SMALL {
         return;
     }
-    const llvm::Triple& triple = this.cliOptions.targetTriple;
     const String archName = triple.getArchTypeName();
     const bool isELF = !triple.isMachO() && !triple.isOSWindows();
     bool isSupported = false;
@@ -817,13 +821,11 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
             this.cliOptions.relocModel = RelocModel::PIC;
         } else if inputString == RELOC_MODEL_PIE {
             this.cliOptions.relocModel = RelocModel::PIE;
-        } else if inputString == RELOC_MODEL_DYNAMIC_NO_PIC {
-            this.cliOptions.relocModel = RelocModel::DYNAMIC_NO_PIC;
         } else {
             raiseCliError(CliErrorType::INVALID_RELOCATION_MODEL, inputString.getRaw());
         }
     };
-    subCmd.addOption("--relocation-model", relocModelCallback, "Relocation model: default (pie, pic for shared libraries), static, pic, pie, dynamic-no-pic");
+    subCmd.addOption("--relocation-model", relocModelCallback, "Relocation model: default (pie, pic for shared libraries), static, pic, pie");
     // --code-model
     const p(const string&) codeModelCallback = p(const string& codeModel) {
         const String inputString = toLower(String(codeModel));
@@ -1424,9 +1426,9 @@ f<bool> testRelocAndCodeModels() {
 
     // The small code model is supported everywhere
     Driver small;
-    string[6] smallArgs = ["spice", "build", "--code-model=small", "--relocation-model=dynamic-no-pic", "--target=x86_64-apple-darwin", "main-file.spice"];
+    string[6] smallArgs = ["spice", "build", "--code-model=small", "--relocation-model=pie", "--target=x86_64-w64-windows-gnu", "main-file.spice"];
     assert parseAndEnrich(small, 6, smallArgs);
     assert small.cliOptions.codeModel == CodeModel::SMALL;
-    assert small.cliOptions.relocModel == RelocModel::DYNAMIC_NO_PIC;
+    assert small.cliOptions.relocModel == RelocModel::PIE;
     return true;
 }
