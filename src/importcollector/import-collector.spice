@@ -17,6 +17,10 @@ import "@/source-file";
 import "@/symboltablebuilder/symbol-table-entry";
 import "@/util/system-util";
 
+// Dir, that Spice Shaker installs the external packages to
+const string PACKAGES_DIR_PREFIX = "spice_packages/";
+const string PACKAGES_DIR_INFIX = "/spice_packages/";
+
 /**
  * Jobs:
  * - Visit the import statements of a source file and register the imported files as dependencies to the current one
@@ -162,6 +166,13 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
 
     // Create the imported source file
     SourceFile* importedSourceFile = this.resourceManager.createSourceFile(this.sourceFile, node.importName, importPath, isStd);
+    // Files of external packages, installed by Spice Shaker to the spice_packages dir, are no concern of the user. A file
+    // belongs to a package if the import path goes through a spice_packages dir or if a package file imports it relatively.
+    // '@/' imports of package files resolve against the main source file dir, so they reach code of the user
+    const bool importsIntoPackagesDir = pathInRootDir.startsWith(PACKAGES_DIR_PREFIX) || pathInRootDir.contains(PACKAGES_DIR_INFIX);
+    if !isStd && (importsIntoPackagesDir || (!isMainRelative && this.sourceFile.isPackageFile)) {
+        importedSourceFile.isPackageFile = true;
+    }
     // Register it as a dependency to the current source file
     this.sourceFile.addDependency(importedSourceFile, node.importName);
 

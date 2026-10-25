@@ -176,6 +176,7 @@ public type SourceFile struct {
     public FilePath filePath
     public String fileDir
     public bool isStdFile = false
+    public bool isPackageFile = false // File of an external package in the spice_packages dir. Warnings are suppressed
     public bool isMainFile = true
     public bool alwaysKeepSymbolsOnNameCollision = false
     public bool ignoreWarnings = false
@@ -1378,6 +1379,10 @@ public p SourceFile.collectAndPrintWarnings() {
             sourceFile.collectAndPrintWarnings();
         }
     }
+    // Warnings of external packages are no concern of the user
+    if this.isPackageFile {
+        return;
+    }
     // Collect warnings for this file
     if !this.ignoreWarnings {
         this.globalScope.collectWarnings(this.compilerOutput.warnings);
@@ -1406,6 +1411,10 @@ public p SourceFile.collectAndPrintLintFindings() {
         if !sourceFile.isStdFile {
             sourceFile.collectAndPrintLintFindings();
         }
+    }
+    // Lint findings of external packages are no concern of the user
+    if this.isPackageFile {
+        return;
     }
     // Collect lint findings for this file
     if !this.ignoreWarnings {
@@ -1753,5 +1762,50 @@ f<bool> testGetObjectFilePath() {
     assert execUtilsObjectPath == expectedUtilsObjectPath;
     assert objMainObjectPath == testDir / "custom-name.o";
     assert objUtilsObjectPath == expectedUtilsObjectPath;
+    return true;
+}
+
+#[test]
+f<bool> testPackageFilesAreMarked() {
+    const FilePath testDir = makeUniqueTestDir("spice-package-file-test");
+    const FilePath packageDir = testDir / "spice_packages" / "pkg";
+    createTestDirs(packageDir);
+    const FilePath mainPath = testDir / "main.spice";
+    writeTestFile(mainPath, "import \"spice_packages/pkg/entry\" as entry;\nimport \"own\" as own;\n\nf<int> main() {}\n");
+    writeTestFile(testDir / "own.spice", "");
+    writeTestFile(testDir / "shared.spice", "");
+    // Relative imports of package files stay in the package, '@/' imports reach the code of the user
+    writeTestFile(packageDir / "entry.spice", "import \"helper\" as helper;\nimport \"@/shared\" as shared;\n");
+    writeTestFile(packageDir / "helper.spice", "");
+
+    bool mainIsPackageFile;
+    bool ownIsPackageFile;
+    bool entryIsPackageFile;
+    bool helperIsPackageFile;
+    bool sharedIsPackageFile;
+    {
+        // Source files look up an LLVM target, so use the native one
+        CliOptions cliOptions;
+        cliOptions.targetTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+        cliOptions.isNativeTarget = true;
+        cliOptions.mainSourceFile = mainPath;
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        SourceFile* mainFile = resourceManager.createSourceFile(nil<SourceFile*>, String("main"), mainPath, false);
+        mainFile.runFrontEnd();
+        SourceFile* entry = mainFile.dependencies.get(String("entry"));
+        mainIsPackageFile = mainFile.isPackageFile;
+        ownIsPackageFile = mainFile.dependencies.get(String("own")).isPackageFile;
+        entryIsPackageFile = entry.isPackageFile;
+        helperIsPackageFile = entry.dependencies.get(String("helper")).isPackageFile;
+        sharedIsPackageFile = entry.dependencies.get(String("shared")).isPackageFile;
+    }
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert !mainIsPackageFile;
+    assert !ownIsPackageFile;
+    assert entryIsPackageFile;
+    assert helperIsPackageFile;
+    assert !sharedIsPackageFile;
     return true;
 }

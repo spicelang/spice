@@ -102,6 +102,19 @@ f<int> main() {
 }
 ```
 
+## Importing external packages
+[Spice Shaker](https://github.com/spicelang/spice-shaker) installs external packages to the `spice_packages` directory of your
+project. Import their source files like your own ones, relative to the importing source file:
+
+```spice
+import "spice_packages/json-parser/src/main" as json;
+```
+
+The compiler does not print warnings or lint findings for the source files of external packages. A source file belongs to an
+external package if its import path leads through a `spice_packages` directory, or if a source file of an external package
+imports it with a relative import path. Source files that a package imports with the `@/` prefix belong to your project, so
+the compiler still prints their warnings.
+
 ## Circular imports
 
 Source files may import each other, directly or transitively. Spice resolves such circular imports automatically — you
