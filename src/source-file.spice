@@ -248,7 +248,7 @@ public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* par
 
     // Create target machine
     const string cpuName = resourceManager.cpuName;
-    const string features = resourceManager.cpuFeatures;
+    const string features = resourceManager.cpuFeatures.getRaw();
     const llvm::Triple& targetTriple = this.cliOptions.targetTriple;
     const llvm::LLVMRelocMode relocMode = getLLVMRelocMode(this.cliOptions.relocModel);
     const llvm::LLVMCodeModel codeModel = getLLVMCodeModel(this.cliOptions.codeModel);

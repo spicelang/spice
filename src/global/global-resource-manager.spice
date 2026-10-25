@@ -53,7 +53,7 @@ public const string LTO_FILE_NAME = "lto-module";
  */
 public type GlobalResourceManager struct {
     public string cpuName = "generic"
-    public string cpuFeatures = ""
+    public String cpuFeatures
     public llvm::LLVMContext ltoContext
     public llvm::Module ltoModule
     public DefaultMemoryManager memoryManager
@@ -133,7 +133,15 @@ public p GlobalResourceManager.ctor(CliOptions& cliOptions) {
     if cliOptions.isNativeTarget & cliOptions.useNativeFeatures {
         // Retrieve native CPU name and the supported CPU features
         this.cpuName = llvm::getHostCPUName();
-        this.cpuFeatures = llvm::getHostCPUFeatures();
+        this.cpuFeatures = String(llvm::getHostCPUFeatures());
+    }
+    // Enable or disable the CPU features, that were requested explicitly. LLVM applies the features in order, so they
+    // override the native ones
+    if !cliOptions.cpuFeatures.isEmpty() {
+        if !this.cpuFeatures.isEmpty() {
+            this.cpuFeatures += ',';
+        }
+        this.cpuFeatures += cliOptions.cpuFeatures;
     }
 
     // Create lto module

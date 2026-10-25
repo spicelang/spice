@@ -152,6 +152,7 @@ public type CliOptions struct {
     public String targetOs // TARGET_UNKNOWN per default, see the constructor
     public bool isNativeTarget = true
     public bool useNativeFeatures = false
+    public String cpuFeatures // Comma-separated list of CPU features to enable (+) or disable (-), e.g. "+avx2,-sse4.1"
     public bool execute = false
     public FilePath outputDir // Where the object files go. Should always be a temp directory. "./" per default, see the constructor
     public FilePath outputPath // Where the output binary goes.
@@ -429,6 +430,10 @@ public p Driver.enrich() {
         }
         if this.cliOptions.codeModel != CodeModel::DEFAULT && this.cliOptions.codeModel != CodeModel::SMALL {
             raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend only supports the small code model");
+        }
+        // TPDE selects the instructions on its own, so it would silently ignore the CPU features
+        if !this.cliOptions.cpuFeatures.isEmpty() {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend does not support --cpu-features");
         }
         if this.cliOptions.optLevel != OptLevel::O0 {
             print("\033[33mWarning: the TPDE backend does not optimize; -O flag will be ignored\033[0m\n");
@@ -848,6 +853,23 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addOption("--code-model", codeModelCallback, "Code model, i.e. how far code and data may be apart: default (small), tiny, small, kernel, medium, large");
     // --native-features
     subCmd.addFlag("--native-features", this.cliOptions.useNativeFeatures, "Tune the output for the CPU of the compiling machine and use all of its features. The output might not run on other machines of the same architecture");
+    // --cpu-features
+    const p(const string&) cpuFeaturesCallback = p(const string& cpuFeatures) {
+        // LLVM disables every feature, that is not prefixed with '+'. So require an explicit prefix to avoid surprises
+        Vector<String> features = split(String(cpuFeatures), ',');
+        foreach String& feature : features {
+            if feature.getLength() < 2ul || (!feature.startsWith("+") && !feature.startsWith("-")) {
+                const String message = String("'") + feature + "'. Prefix the feature with + to enable or - to disable it";
+                raiseCliError(CliErrorType::INVALID_CPU_FEATURE, message.getRaw());
+            }
+        }
+        // The option can be passed multiple times. LLVM applies the features in order, so a later one wins
+        if !this.cliOptions.cpuFeatures.isEmpty() {
+            this.cliOptions.cpuFeatures += ',';
+        }
+        this.cliOptions.cpuFeatures += cpuFeatures;
+    };
+    subCmd.addOption("--cpu-features", cpuFeaturesCallback, "Comma-separated list of CPU features to enable (+) or disable (-) for the target, e.g. +avx2,-sse4.1. Overrides the features of --native-features");
     // --test-mode
     // The test runner drives the compiler as separate process, so it needs an option to compile in the test mode.
     const p(const bool&) testModeCallback = p(const bool& _v) {

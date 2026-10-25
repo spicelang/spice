@@ -1,0 +1,3 @@
+// TEST: --cpu-features=+avx2,sse4.1
+
+f<int> main() {}
