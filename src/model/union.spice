@@ -54,7 +54,7 @@ public f<String> getUnionScopeName(const String& name, const QualTypeList& concr
         templateTyStr << "<";
         foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
             if i > 0ul { templateTyStr << ","; }
-            templateType.getName(templateTyStr, false, true);
+            templateType.getTemplateArgName(templateTyStr, false, true);
         }
         templateTyStr << ">";
     }

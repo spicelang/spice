@@ -141,7 +141,7 @@ public f<String> getFunctionSignature(const String& name, const QualType& thisTy
             signature << "<";
             foreach unsigned long i, const QualType& templateType : thisTemplateTypes {
                 if i > 0ul { signature << ","; }
-                templateType.getName(signature, withSize, ignorePublic, withTypeAliases);
+                templateType.getTemplateArgName(signature, withSize, ignorePublic, withTypeAliases);
             }
             signature << ">";
         }
@@ -156,7 +156,7 @@ public f<String> getFunctionSignature(const String& name, const QualType& thisTy
         signature << "<";
         foreach unsigned long i, const QualType& templateType : concreteTemplateTypes {
             if i > 0ul { signature << ","; }
-            templateType.getName(signature, withSize, ignorePublic, withTypeAliases);
+            templateType.getTemplateArgName(signature, withSize, ignorePublic, withTypeAliases);
         }
         signature << ">";
     }

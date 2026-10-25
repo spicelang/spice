@@ -830,6 +830,25 @@ public p QualType.getName(StringStream& name, bool withSize = false, bool ignore
 }
 
 /**
+ * Get the name of the symbol type as template argument. Unlike getName, this keeps the const qualifier of non-pointer types
+ * (e.g. 'const int'): it does not matter for a value itself, but for a template argument, that is used behind pointers or
+ * references. Box<const int> is a different type than Box<int>, so it needs a different signature.
+ *
+ * @param name Name stream
+ * @param withSize Include the array size for sized types
+ * @param ignorePublic Ignore any potential public qualifier
+ * @param withAliases Print aliases as is and not decompose them
+ */
+public p QualType.getTemplateArgName(StringStream& name, bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
+    const QualType baseType = this.getBase();
+    const TypeQualifiers defaultForSuperType = getTypeQualifiersOf(baseType.getSuperType());
+    if this.qualifiers.isConst && !defaultForSuperType.isConst && this.rawType.getTypeChainDepth() == 1 {
+        name << "const ";
+    }
+    this.getName(name, withSize, ignorePublic, withAliases);
+}
+
+/**
  * Get the name of the symbol type as a string
  *
  * @param withSize Include the array size for sized types
