@@ -2564,14 +2564,10 @@ public f<const ConcreteNode*> downcast<ConcreteNode>(const ASTNode* node) {
 /**
  * Get the concrete node of a mutable AST node
  *
- * This is not an overload of downcast(), because the stage0 compiler 0.29.1 cannot tell a const from a non-const pointer
- * param in overload resolution, and reports every call of the overload pair as ambiguous. Turn it into a downcast() overload,
- * as soon as the stage0 compiler contains the fix for that (spicelang/spice#1663).
- *
  * @param node AST node, which must be of the given concrete node type
  * @return Concrete node
  */
-public f<ConcreteNode*> downcastMut<ConcreteNode>(ASTNode* node) {
+public f<ConcreteNode*> downcast<ConcreteNode>(ASTNode* node) {
     unsafe {
         return cast<ConcreteNode*>(node.visitable);
     }
@@ -2595,7 +2591,7 @@ public f<ConcreteNode*> downcast<ConcreteNode>(IVisitable* node) {
  * @param node AST node, which must be of the given concrete node type
  */
 p destructAs<ConcreteNode>(ASTNode* node) {
-    ConcreteNode* concreteNode = downcastMut<ConcreteNode>(node);
+    ConcreteNode* concreteNode = downcast<ConcreteNode>(node);
     sDestruct(*concreteNode);
 }
 
@@ -2712,15 +2708,15 @@ public f<Vector<Function*>*> ASTNode.getFctManifestations(const String& fctName)
     Vector<Function*>* manifestations = nil<Vector<Function*>*>;
     switch this.kind {
         case ASTNodeKind::FCT_DEF: {
-            ASTFctDefNode* concreteNode = downcastMut<ASTFctDefNode>(this);
+            ASTFctDefNode* concreteNode = downcast<ASTFctDefNode>(this);
             manifestations = &concreteNode.node.manifestations;
         }
         case ASTNodeKind::PROC_DEF: {
-            ASTProcDefNode* concreteNode = downcastMut<ASTProcDefNode>(this);
+            ASTProcDefNode* concreteNode = downcast<ASTProcDefNode>(this);
             manifestations = &concreteNode.node.manifestations;
         }
         case ASTNodeKind::EXT_DECL: {
-            ASTExtDeclNode* concreteNode = downcastMut<ASTExtDeclNode>(this);
+            ASTExtDeclNode* concreteNode = downcast<ASTExtDeclNode>(this);
             manifestations = &concreteNode.extFunctionManifestations;
         }
         case ASTNodeKind::STRUCT_DEF: {
@@ -2731,7 +2727,7 @@ public f<Vector<Function*>*> ASTNode.getFctManifestations(const String& fctName)
             manifestations = &concreteNode.defaultFctManifestations.get(fctName);
         }
         case ASTNodeKind::SIGNATURE: {
-            ASTSignatureNode* concreteNode = downcastMut<ASTSignatureNode>(this);
+            ASTSignatureNode* concreteNode = downcast<ASTSignatureNode>(this);
             manifestations = &concreteNode.signatureManifestations;
         }
         default: {
@@ -2750,47 +2746,47 @@ public f<Vector<Vector<const Function*>>*> ASTNode.getOpFctPointers() {
     Vector<Vector<const Function*>>* opFctPointers = nil<Vector<Vector<const Function*>>*>;
     switch this.kind {
         case ASTNodeKind::ASSIGN_EXPR: {
-            ASTAssignExprNode* concreteNode = downcastMut<ASTAssignExprNode>(this);
+            ASTAssignExprNode* concreteNode = downcast<ASTAssignExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::BITWISE_OR_EXPR: {
-            ASTBitwiseOrExprNode* concreteNode = downcastMut<ASTBitwiseOrExprNode>(this);
+            ASTBitwiseOrExprNode* concreteNode = downcast<ASTBitwiseOrExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::BITWISE_XOR_EXPR: {
-            ASTBitwiseXorExprNode* concreteNode = downcastMut<ASTBitwiseXorExprNode>(this);
+            ASTBitwiseXorExprNode* concreteNode = downcast<ASTBitwiseXorExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::BITWISE_AND_EXPR: {
-            ASTBitwiseAndExprNode* concreteNode = downcastMut<ASTBitwiseAndExprNode>(this);
+            ASTBitwiseAndExprNode* concreteNode = downcast<ASTBitwiseAndExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::EQUALITY_EXPR: {
-            ASTEqualityExprNode* concreteNode = downcastMut<ASTEqualityExprNode>(this);
+            ASTEqualityExprNode* concreteNode = downcast<ASTEqualityExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::RELATIONAL_EXPR: {
-            ASTRelationalExprNode* concreteNode = downcastMut<ASTRelationalExprNode>(this);
+            ASTRelationalExprNode* concreteNode = downcast<ASTRelationalExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::SHIFT_EXPR: {
-            ASTShiftExprNode* concreteNode = downcastMut<ASTShiftExprNode>(this);
+            ASTShiftExprNode* concreteNode = downcast<ASTShiftExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::ADDITIVE_EXPR: {
-            ASTAdditiveExprNode* concreteNode = downcastMut<ASTAdditiveExprNode>(this);
+            ASTAdditiveExprNode* concreteNode = downcast<ASTAdditiveExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::MULTIPLICATIVE_EXPR: {
-            ASTMultiplicativeExprNode* concreteNode = downcastMut<ASTMultiplicativeExprNode>(this);
+            ASTMultiplicativeExprNode* concreteNode = downcast<ASTMultiplicativeExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::PREFIX_UNARY_EXPR: {
-            ASTPrefixUnaryExprNode* concreteNode = downcastMut<ASTPrefixUnaryExprNode>(this);
+            ASTPrefixUnaryExprNode* concreteNode = downcast<ASTPrefixUnaryExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         case ASTNodeKind::POSTFIX_UNARY_EXPR: {
-            ASTPostfixUnaryExprNode* concreteNode = downcastMut<ASTPostfixUnaryExprNode>(this);
+            ASTPostfixUnaryExprNode* concreteNode = downcast<ASTPostfixUnaryExprNode>(this);
             opFctPointers = &concreteNode.opFct;
         }
         default: {
@@ -3184,10 +3180,10 @@ public f<String> ASTNode.getFunctionSignature(unsigned long manIdx) {
     }
     ASTFctDefBaseNode* fctDefBaseNode = nil<ASTFctDefBaseNode*>;
     if this.kind == ASTNodeKind::FCT_DEF {
-        ASTFctDefNode* fctDefNode = downcastMut<ASTFctDefNode>(this);
+        ASTFctDefNode* fctDefNode = downcast<ASTFctDefNode>(this);
         fctDefBaseNode = &fctDefNode.node;
     } else {
-        ASTProcDefNode* procDefNode = downcastMut<ASTProcDefNode>(this);
+        ASTProcDefNode* procDefNode = downcast<ASTProcDefNode>(this);
         fctDefBaseNode = &procDefNode.node;
     }
     assert manIdx < fctDefBaseNode.manifestations.getSize();
@@ -3203,7 +3199,7 @@ public f<String> ASTNode.getFunctionSignature(unsigned long manIdx) {
 public f<ASTStmtLstNode*> ASTNode.getNextOuterStmtLst() {
     assert this.parent != nil<ASTNode*>;
     if this.kind == ASTNodeKind::STMT_LST {
-        return downcastMut<ASTStmtLstNode>(this);
+        return downcast<ASTStmtLstNode>(this);
     }
     return this.parent.getNextOuterStmtLst();
 }
@@ -3617,15 +3613,15 @@ f<CompileTimeValue> getCompileTimeValue(IVisitable* node, unsigned long manIdx) 
 public f<ASTAtomicExprNode*> ASTAssignExprNode.getLhsAtomicNode() {
     ASTNode* lhsNode = getASTNode(this.lhs);
     if lhsNode.kind == ASTNodeKind::ATOMIC_EXPR {
-        return downcastMut<ASTAtomicExprNode>(lhsNode);
+        return downcast<ASTAtomicExprNode>(lhsNode);
     }
     ASTNode* lastChild = lhsNode.children.back();
     if lastChild.kind == ASTNodeKind::ATOMIC_EXPR {
-        return downcastMut<ASTAtomicExprNode>(lastChild);
+        return downcast<ASTAtomicExprNode>(lastChild);
     }
     ASTNode* firstGrandChild = lastChild.children.front();
     if firstGrandChild.kind == ASTNodeKind::ATOMIC_EXPR {
-        return downcastMut<ASTAtomicExprNode>(firstGrandChild);
+        return downcast<ASTAtomicExprNode>(firstGrandChild);
     }
     return nil<ASTAtomicExprNode*>;
 }
