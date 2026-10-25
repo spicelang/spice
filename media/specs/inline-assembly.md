@@ -6,11 +6,10 @@
     - [x] Register the builtin
     - [x] Type checking incl. structural constraint string and template verification
     - [x] IR generation
-    - [ ] Extend the `getInlineAsm` LLVM binding (alignStack, dialect, canThrow) - deferred to phase 2, nothing needs it yet
+    - [ ] Extend the `getInlineAsm` LLVM binding (alignStack, canThrow) - deferred, nothing needs it yet
     - [x] Turn LLVM inline asm diagnostics into Spice compiler errors
     - [x] Tests and docs
-- [ ] Phase 2: extensions (Intel dialect, pure asm, multiple direct outputs, module-level asm, syscall on top of `asm`)
-- [ ] Phase 3 (optional): dedicated syntax with named operands
+- [ ] Phase 2: extensions (pure asm, multiple direct outputs, syscall on top of `asm`)
 
 ## Syntax
 
@@ -38,8 +37,7 @@ unsafe {
 
 Using the LLVM syntax as-is avoids a translation layer, is documented by LLVM, and is already what the `syscall` builtin
 emits internally. A builtin needs no lexer, parser, AST or visitor changes, since builtins go through
-`lookupBuiltinFunction` and the `visitBuiltin…Call` methods of the type checker and the IR generator. A friendlier syntax
-can be layered on top later and lower to the same form (see phase 3).
+`lookupBuiltinFunction` and the `visitBuiltin…Call` methods of the type checker and the IR generator.
 
 ## Phase 1: `asm` builtin
 
@@ -79,8 +77,8 @@ can be layered on top later and lower to the same form (see phase 3).
 
 ### LLVM bindings
 
-`std/bindings/llvm/llvm.spice`: extend `getInlineAsm` with optional `alignStack`, `dialect` and `canThrow` parameters, so
-that existing callers (`syscall`) stay unchanged.
+`std/bindings/llvm/llvm.spice`: extend `getInlineAsm` with optional `alignStack` and `canThrow` parameters, so that
+existing callers (`syscall`) stay unchanged.
 
 ### Assembler errors
 
@@ -127,29 +125,12 @@ handling. Therefore:
 
 ## Phase 2: Extensions
 
-- Intel dialect: `asm` uses AT&T on x86 by default. Offer Intel via a separate builtin (`__asm_intel`) or a flag
-  argument, using the new `dialect` parameter of the binding.
 - Pure asm without the side effect flag, so that the optimizer may move or eliminate it.
 - Multiple direct outputs: LLVM returns them as a struct, which needs a way to destructure them in Spice. Until then,
   indirect outputs cover this case.
-- Module-level asm via `LLVMAppendModuleInlineAsm` at file scope (e.g. for `.section` directives or naked trampolines).
 - Rebuild `syscall` on top of `asm`: either on a shared helper in the IR generator, or as a std function, that selects
   the asm per target via compile-time ifs on build vars. This proves the feature on real code and removes the
   hand-written per-target asm string generation from `IRGenerator.visitBuiltinSyscallCall`.
-
-## Phase 3 (optional): Dedicated syntax
-
-A Rust-like `asm("mov {dst}, {src}", dst = out(reg) x, src = in(reg) y)` would follow the `spice-language-feature`
-recipe (lexer → parser → AST node → visitors), but lower to the same LLVM template and constraint strings. So it only
-replaces the front end of phase 1.
-
-## Open decisions
-
-1. Name: `asm` (recommended) is a documented builtin, but takes the name away from user functions called `asm`. `__asm`
-   is safer, but reads like an internal builtin, which does not fit a user-facing feature.
-2. Constraint syntax: keep the LLVM syntax for good (recommended), or translate from the GCC syntax. Both are nearly
-   identical, but GCC writes `"a"` where LLVM writes `{rax}`.
-3. The compiler sources in `src/` can only use `asm` after a release and a stage0 bump.
 
 ## Further notes
 

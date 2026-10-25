@@ -1,5 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @printf.str.0 = private unnamed_addr constant [9 x i8] c"Sum: %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [21 x i8] c"Indirect output: %d\0A\00", align 4
@@ -12,7 +14,7 @@ source_filename = "source.spice"
 
 ; Function Attrs: noinline norecurse nounwind uwtable
 define noundef i32 @main() local_unnamed_addr #0 {
-land.exit.L35C30:
+land.exit.L37C30:
   %a = alloca i32, align 4
   %value = alloca i64, align 8
   %source = alloca i64, align 8

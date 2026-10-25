@@ -1,5 +1,7 @@
 ; ModuleID = 'source.spice'
 source_filename = "source.spice"
+target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-i128:128-f80:128-n8:16:32:64-S128"
+target triple = "x86_64-unknown-linux-gnu"
 
 @printf.str.0 = private unnamed_addr constant [9 x i8] c"Sum: %d\0A\00", align 4
 @printf.str.1 = private unnamed_addr constant [21 x i8] c"Indirect output: %d\0A\00", align 4
@@ -65,20 +67,20 @@ define noundef i32 @main() #1 {
   store i32 %16, ptr %color, align 4
   %17 = load i32, ptr %color, align 4
   %18 = icmp eq i32 %17, 2
-  br i1 %18, label %land.1.L35C30, label %land.exit.L35C30
+  br i1 %18, label %land.1.L37C30, label %land.exit.L37C30
 
-land.1.L35C30:                                    ; preds = %0
+land.1.L37C30:                                    ; preds = %0
   %19 = load i32, ptr %color, align 4
   %20 = icmp ne i32 %19, 0
-  br i1 %20, label %land.2.L35C30, label %land.exit.L35C30
+  br i1 %20, label %land.2.L37C30, label %land.exit.L37C30
 
-land.2.L35C30:                                    ; preds = %land.1.L35C30
+land.2.L37C30:                                    ; preds = %land.1.L37C30
   %21 = load i32, ptr %color, align 4
   %22 = icmp ne i32 %21, 1
-  br label %land.exit.L35C30
+  br label %land.exit.L37C30
 
-land.exit.L35C30:                                 ; preds = %land.2.L35C30, %land.1.L35C30, %0
-  %land_phi = phi i1 [ %18, %0 ], [ %20, %land.1.L35C30 ], [ %22, %land.2.L35C30 ]
+land.exit.L37C30:                                 ; preds = %land.2.L37C30, %land.1.L37C30, %0
+  %land_phi = phi i1 [ %18, %0 ], [ %20, %land.1.L37C30 ], [ %22, %land.2.L37C30 ]
   %23 = zext i1 %land_phi to i32
   %24 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.4, i32 noundef %23)
   store ptr %a, ptr %ptr, align 8
