@@ -5733,11 +5733,11 @@ f<bool> TypeChecker.getCompileTimeStringArg(ASTFctCallNode* node, unsigned long 
         this.softError(argNode, SemanticErrorType::BUILTIN_ARG_TYPE_MISMATCH, String(description) + " must be a string");
         return false;
     }
-    if !argNode.hasCompileTimeValue(this.manIdx) {
-        this.softError(argNode, SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE, String(description) + " must be known at compile time");
+    CompileTimeValue compileTimeValue;
+    if !argNode.getCompileTimeValueOrConstRef(this.manIdx, compileTimeValue) {
+        this.softError(argNode, SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE, String(description) + " must be known at compile time, like a string literal or a const global variable");
         return false;
     }
-    const CompileTimeValue compileTimeValue = argNode.getCompileTimeValue(this.manIdx);
     value = this.resourceManager.getCompileTimeStringValue(compileTimeValue.getStringValueOffset());
     return true;
 }

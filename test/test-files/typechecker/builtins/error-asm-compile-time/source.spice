@@ -1,9 +1,14 @@
+string MUTABLE_CONSTRAINTS = "";
+
 f<int> main() {
     string asmTemplate = "nop";
     string constraints = "";
+    const string localConstraints = "";
     unsafe {
         asm(asmTemplate, ""); // Template not known at compile time
         asm("nop", constraints); // Constraints not known at compile time
         asm(1, ""); // Template no string
+        asm("nop", MUTABLE_CONSTRAINTS); // Global, but not const
+        asm("nop", localConstraints); // Const, but no global
     }
 }
