@@ -1,20 +1,32 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./source.spice:5:13:
-Expected compile time value: Asm template must be known at compile time
+[Error|Semantic] ./source.spice:8:13:
+Expected compile time value: Asm template must be a string literal or a const global variable
 
-5  asm(asmTemplate, ""); // Template not
+8  asm(asmTemplate, ""); // Template not
        ^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:6:20:
-Expected compile time value: Asm constraints must be known at compile time
+[Error|Semantic] ./source.spice:9:20:
+Expected compile time value: Asm constraints must be a string literal or a const global variable
 
-6  asm("nop", constraints); // Constraints not
+9  asm("nop", constraints); // Constraints not
               ^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:7:13:
+[Error|Semantic] ./source.spice:10:13:
 Builtin function argument type mismatch: Asm template must be a string
 
-7  asm(1, ""); // Template no
-       ^
+10  asm(1, ""); // Template no
+        ^
+
+[Error|Semantic] ./source.spice:11:20:
+Expected compile time value: Asm constraints must be a string literal or a const global variable
+
+11  asm("nop", MUTABLE_CONSTRAINTS); // Global, but not
+               ^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:12:20:
+Expected compile time value: Asm constraints must be a string literal or a const global variable
+
+12  asm("nop", localConstraints); // Const, but no
+               ^^^^^^^^^^^^^^^^

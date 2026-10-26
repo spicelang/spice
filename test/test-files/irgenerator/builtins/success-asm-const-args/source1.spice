@@ -1,0 +1,4 @@
+public const string MOV_TEMPLATE = "movq $1, $0";
+public const string MOV_CONSTRAINTS = "=r,r";
+public const string FENCE_TEMPLATE = "mfence";
+public const string FENCE_CONSTRAINTS = "~{memory}";

@@ -5613,9 +5613,10 @@ f<Any> IRGenerator.visitBuiltinSyscallCall(ASTFctCallNode* node) {
 
 // Get a compile time string argument of a builtin call
 f<const String&> IRGenerator.getCompileTimeStringArg(ASTFctCallNode* node, unsigned long argIdx) {
-    IVisitable* argNode = node.argLst.args.get(argIdx);
-    assert this.hasCompileTimeValue(argNode);
-    const CompileTimeValue value = this.getCompileTimeValue(argNode);
+    ASTNode* argNode = getASTNode(node.argLst.args.get(argIdx));
+    CompileTimeValue value;
+    const bool isKnownAtCompileTime = argNode.getCompileTimeValueOrConstRef(this.manIdx, value);
+    assert isKnownAtCompileTime;
     return this.resourceManager.compileTimeStringValues.get(value.getStringValueOffset());
 }
 

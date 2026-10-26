@@ -1,0 +1,27 @@
+// TEST: --target=x86_64-unknown-linux-gnu
+
+import "source1" as consts;
+
+const string ADD_TEMPLATE = "addl $2, $0";
+const string ADD_CONSTRAINTS = "=r,0,r";
+
+f<int> main() {
+    int a = 40;
+    int b = 2;
+    unsafe {
+        // Template and constraints from const globals of this file, shared between two calls
+        const int sum = asm<int>(ADD_TEMPLATE, ADD_CONSTRAINTS, a, b);
+        printf("Sum: %d\n", sum);
+        const int doubled = asm<int>(ADD_TEMPLATE, ADD_CONSTRAINTS, sum, sum);
+        printf("Doubled: %d\n", doubled);
+
+        // Parenthesized reference
+        const int parenthesized = asm<int>((ADD_TEMPLATE), (ADD_CONSTRAINTS), a, b);
+        printf("Parenthesized: %d\n", parenthesized);
+
+        // Imported const globals
+        const long loaded = asm<long>(consts::MOV_TEMPLATE, consts::MOV_CONSTRAINTS, 42l);
+        printf("Imported: %d\n", loaded);
+        asm(consts::FENCE_TEMPLATE, consts::FENCE_CONSTRAINTS);
+    }
+}

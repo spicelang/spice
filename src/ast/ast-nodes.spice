@@ -3606,6 +3606,59 @@ f<CompileTimeValue> getCompileTimeValue(IVisitable* node, unsigned long manIdx) 
 }
 
 /**
+ * Get the definition of the const global variable, that the given node references directly, like 'NAME', 'ns::NAME' or
+ * '(NAME)'. The value of such a variable is known at compile time. Requires the node to be type-checked.
+ *
+ * @param manIdx Manifestation index
+ * @return Global variable definition or nil, if the node is no reference to a const global variable
+ */
+public f<ASTNode*> ASTNode.getReferencedConstGlobalVar(unsigned long manIdx) {
+    if this.kind != ASTNodeKind::ATOMIC_EXPR {
+        return nil<ASTNode*>;
+    }
+    const ASTAtomicExprNode* atomicExprNode = downcast<ASTAtomicExprNode>(this);
+    if atomicExprNode.assignExpr != nil<IVisitable*> {
+        ASTNode* innerNode = getASTNode(atomicExprNode.assignExpr);
+        return innerNode.getReferencedConstGlobalVar(manIdx);
+    }
+    if atomicExprNode.fqIdentifier.isEmpty() || manIdx >= atomicExprNode.data.getSize() {
+        return nil<ASTNode*>;
+    }
+    const VarAccessData& accessData = atomicExprNode.data.get(manIdx);
+    const SymbolTableEntry* entry = accessData.entry;
+    if entry == nil<const SymbolTableEntry*> || entry.declNode == nil<ASTNode*> || entry.declNode.kind != ASTNodeKind::GLOBAL_VAR_DEF {
+        return nil<ASTNode*>;
+    }
+    const QualType entryType = entry.getQualType();
+    const ASTGlobalVarDefNode* globalVarDefNode = downcast<ASTGlobalVarDefNode>(entry.declNode);
+    if !entryType.isConst() || globalVarDefNode.constant == nil<ASTConstantNode*> {
+        return nil<ASTNode*>;
+    }
+    return entry.declNode;
+}
+
+/**
+ * Get the value of the given node, if it is known at compile time. In addition to the nodes, that have a compile time value
+ * on their own, this accepts direct references to const global variables.
+ *
+ * @param manIdx Manifestation index
+ * @param value Receives the compile time value
+ * @return Known at compile time or not
+ */
+public f<bool> ASTNode.getCompileTimeValueOrConstRef(unsigned long manIdx, CompileTimeValue& value) {
+    if this.hasCompileTimeValue(manIdx) {
+        value = this.getCompileTimeValue(manIdx);
+        return true;
+    }
+    ASTNode* globalVarDefNode = this.getReferencedConstGlobalVar(manIdx);
+    if globalVarDefNode == nil<ASTNode*> {
+        return false;
+    }
+    value = globalVarDefNode.getCompileTimeValue(manIdx);
+    return true;
+}
+
+/**
  * Get the atomic expression on the left hand side of an assignment, if there is one
  *
  * @return Atomic expression node or nil
