@@ -5735,7 +5735,7 @@ f<bool> TypeChecker.getCompileTimeStringArg(ASTFctCallNode* node, unsigned long 
     }
     CompileTimeValue compileTimeValue;
     if !argNode.getCompileTimeValueOrConstRef(this.manIdx, compileTimeValue) {
-        this.softError(argNode, SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE, String(description) + " must be a string literal or a const global variable");
+        this.softError(argNode, SemanticErrorType::EXPECTED_COMPILE_TIME_VALUE, String(description) + " must be known at compile time, like a string literal or a const global variable");
         return false;
     }
     value = this.resourceManager.getCompileTimeStringValue(compileTimeValue.getStringValueOffset());

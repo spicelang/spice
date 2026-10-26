@@ -192,9 +192,9 @@ output 0), then clobbers (`~{memory}`). <br>
 `operands`: The operands of the indirect outputs and inputs, in the order of their constraints. Indirect operands (`*`)
 are pointers to the memory, the assembly reads or writes.
 
-Operands and the result type can be primitive, pointer or enum types. Both strings must be known at compile time, so they
-have to be string literals or references to `const string` global variables. The latter allows to share a constraint list
-between several `asm` calls or to keep long clobber lists readable.
+Operands and the result type can be primitive, pointer or enum types. Both strings must be known at compile time, like
+string literals or references to `const string` global variables. The latter allows to share a constraint list between
+several `asm` calls or to keep long clobber lists readable.
 
 ### Usage example
 ```spice
