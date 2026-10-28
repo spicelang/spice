@@ -1,6 +1,6 @@
 name: Setup Linux toolchain
 description: >
-  Installs the build dependencies and the GCC toolchain on an Ubuntu runner, sets up mold and restores the ccache.
+  Installs the build dependencies and the GCC toolchain on an Ubuntu runner, sets up the wild linker and restores the ccache.
   The ccache is not saved by this action, because composite actions have no post step. Save it at the end of the job with
   actions/cache/save, using the ccache-key output.
 
@@ -14,9 +14,12 @@ inputs:
   extra-packages:
     description: Additional apt packages, separated by spaces
     default: ""
-  use-mold:
-    description: Make mold the default linker
+  use-wild:
+    description: Install the wild linker and make it the default linker
     default: "true"
+  wild-version:
+    description: Version of the wild linker to install
+    default: "0.11.0"
   use-ccache:
     description: Create the ccache dir and restore the ccache. The packages have to contain ccache
     default: "true"
@@ -50,9 +53,20 @@ runs:
           mkdir -p ~/.cache/ccache
         fi
 
-    - name: Setup Mold
-      if: inputs.use-mold == 'true'
-      uses: rui314/setup-mold@v1
+    - name: Setup Wild
+      if: inputs.use-wild == 'true'
+      shell: bash
+      env:
+        WILD_VERSION: ${{ inputs.wild-version }}
+      run: |
+        WILD_DIST="wild-linker-$WILD_VERSION-$(uname -m)-unknown-linux-gnu"
+        curl -fsSL "https://github.com/wild-linker/wild/releases/download/$WILD_VERSION/$WILD_DIST.tar.gz" | tar -xz -C "$RUNNER_TEMP"
+        # The Spice compiler looks for wild in /usr/local/bin, clang and GCC look for 'ld.wild' on '-fuse-ld=wild'
+        sudo install -m 755 "$RUNNER_TEMP/$WILD_DIST/wild" /usr/local/bin/wild
+        sudo ln -sf /usr/local/bin/wild /usr/local/bin/ld.wild
+        # Make wild the default linker for everything else, e.g. the LLVM build
+        sudo ln -sf /usr/local/bin/wild "$(realpath /usr/bin/ld)"
+        wild --version
 
     - name: Compute ccache key
       id: ccache-key

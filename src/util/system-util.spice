@@ -10,6 +10,7 @@ import "std/os/env";
 import "std/io/file";
 import "std/io/filepath";
 import "std/iterator/array-iterator";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "@/exception/fatal-error";
@@ -268,12 +269,19 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
  * Search for a supported linker on the system and return the executable name or path.
  * This function may throw a LinkerError if no linker is found.
  *
+ * @param cliOptions Cli options
+ * @param isGccInvoker Whether the linker invoker is GCC
  * @return Name of path to the linker executable
  */
-public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions) {
+public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bool isGccInvoker) {
     if isUnixBased() {
         // Use the flavor-specific lld driver, since the generic 'lld' driver refuses to be invoked directly
-        foreach const string linkerName : ["mold", "ld.lld", "ld64.lld", "gold", "ld"] {
+        foreach const string linkerName : ["wild", "mold", "ld.lld", "ld64.lld", "gold", "ld"] {
+            // wild does only support linking for a subset of the Linux targets. GCC does not accept the path of the linker in
+            // '-fuse-ld=', so wild is only used with clang as linker invoker
+            if linkerName == "wild" && (isGccInvoker || !isWildSupportedTarget(cliOptions.targetTriple)) {
+                continue;
+            }
             // mold does only support linking for unix and darwin
             if linkerName == "mold" && cliOptions.targetTriple.isOSWindows() {
                 continue;
@@ -294,9 +302,23 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions) {
     } else {                                                                       // LCOV_EXCL_LINE
         panic(Error("Unsupported platform"));                                      // LCOV_EXCL_LINE
     }                                                                              // LCOV_EXCL_LINE
-    const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: mold, lld, gold and ld");
+    const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: wild, mold, lld, gold and ld");
     abortWithError(error.getMessage());
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
+}
+
+/**
+ * Check if the wild linker supports linking for the given target. wild only links ELF files for Linux on a few architectures.
+ *
+ * @param triple Target triple
+ * @return Supported by wild or not
+ */
+f<bool> isWildSupportedTarget(const llvm::Triple& triple) {
+    if !triple.isOSLinux() {
+        return false;
+    }
+    const String archTypeName = triple.getArchTypeName();
+    return archTypeName == "x86_64" || archTypeName == "aarch64" || archTypeName == "riscv64" || archTypeName == "loongarch64";
 }
 
 /**
@@ -509,6 +531,19 @@ f<bool> testIsCommandAvailable() {
     assert isCommandAvailable(isWindows() ? "cmd" : "sh");
     assert isGraphvizInstalled() == isCommandAvailable("dot");
     assert !isCommandAvailable("non-existing-command");
+    return true;
+}
+
+#[test]
+f<bool> testIsWildSupportedTarget() {
+    assert isWildSupportedTarget(llvm::Triple("x86_64-unknown-linux-gnu"));
+    assert isWildSupportedTarget(llvm::Triple("aarch64-unknown-linux-gnu"));
+    assert isWildSupportedTarget(llvm::Triple("riscv64-unknown-linux-gnu"));
+    assert !isWildSupportedTarget(llvm::Triple("i686-unknown-linux-gnu"));
+    assert !isWildSupportedTarget(llvm::Triple("armv7-unknown-linux-gnueabihf"));
+    assert !isWildSupportedTarget(llvm::Triple("arm64-apple-darwin"));
+    assert !isWildSupportedTarget(llvm::Triple("x86_64-pc-windows-msvc"));
+    assert !isWildSupportedTarget(llvm::Triple("wasm32-unknown-unknown"));
     return true;
 }
 

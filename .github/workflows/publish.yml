@@ -42,7 +42,7 @@ jobs:
           # zstd and jitterentropy as well, that 'pkg-config --static' lists for it.
           packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev libssl-dev libjitterentropy3-dev pkg-config checksec jq clang
           # Neither the faster linker nor the ccache is used for release builds
-          use-mold: "false"
+          use-wild: "false"
           use-ccache: "false"
 
       - name: Setup LLVM
