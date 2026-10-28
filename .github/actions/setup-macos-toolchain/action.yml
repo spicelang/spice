@@ -1,6 +1,6 @@
 name: Setup macOS toolchain
 description: >
-  Sets up mold, installs the build dependencies with Homebrew and restores the ccache on a macOS runner. The ccache is not saved
+  Installs the build dependencies with Homebrew and restores the ccache on a macOS runner. The ccache is not saved
   by this action, because composite actions have no post step. Save it at the end of the job with actions/cache/save, using the
   ccache-key output.
 
@@ -10,9 +10,6 @@ inputs:
       Homebrew packages to install, separated by spaces.
       zstd is needed because the stage0 compiler loads Homebrew's libzstd. ccache is needed for use-ccache. Empty to install none
     default: ccache graphviz zstd
-  use-mold:
-    description: Run rui314/setup-mold. It only acts on Linux, so this has no effect on macOS runners at the moment
-    default: "true"
   use-ccache:
     description: Create the ccache dir and restore the ccache
     default: "true"
@@ -28,10 +25,6 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Setup Mold
-      if: inputs.use-mold == 'true'
-      uses: rui314/setup-mold@v1
-
     - name: Setup Dependencies
       if: inputs.packages != ''
       shell: bash
