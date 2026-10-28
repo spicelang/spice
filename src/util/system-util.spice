@@ -269,14 +269,17 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
  * Search for a supported linker on the system and return the executable name or path.
  * This function may throw a LinkerError if no linker is found.
  *
+ * @param cliOptions Cli options
+ * @param isGccInvoker Whether the linker invoker is GCC
  * @return Name of path to the linker executable
  */
-public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions) {
+public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bool isGccInvoker) {
     if isUnixBased() {
         // Use the flavor-specific lld driver, since the generic 'lld' driver refuses to be invoked directly
         foreach const string linkerName : ["wild", "mold", "ld.lld", "ld64.lld", "gold", "ld"] {
-            // wild does only support linking for a subset of the Linux targets
-            if linkerName == "wild" && !isWildSupportedTarget(cliOptions.targetTriple) {
+            // wild does only support linking for a subset of the Linux targets. GCC does not accept the path of the linker in
+            // '-fuse-ld=', so wild is only used with clang as linker invoker
+            if linkerName == "wild" && (isGccInvoker || !isWildSupportedTarget(cliOptions.targetTriple)) {
                 continue;
             }
             // mold does only support linking for unix and darwin

@@ -185,8 +185,8 @@ p ExternalLinkerInterface.link() {
 
     // Find the linker invoker and linker
     const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
-    const ExternalBinaryFinderResult linker = findLinker(this.cliOptions);
     const bool isGccInvoker = linkerInvoker.name == "gcc";
+    const ExternalBinaryFinderResult linker = findLinker(this.cliOptions, isGccInvoker);
     const bool isClangInvoker = linkerInvoker.name == "clang";
     // GCC does not implement MemorySanitizer or TypeSanitizer
     const Sanitizer sanitizer = this.cliOptions.instrumentation.sanitizer;
@@ -303,8 +303,8 @@ f<Vector<String>> ExternalLinkerInterface.getTrailingArgs() {
  */
 f<Vector<String>> ExternalLinkerInterface.getAdditionalSourceCompileArgs(const FilePath& additionalSource, const FilePath& objectFilePath) {
     const ExternalBinaryFinderResult linkerInvoker = findLinkerInvoker();
-    const ExternalBinaryFinderResult linker = findLinker(this.cliOptions);
     const bool isGccInvoker = linkerInvoker.name == "gcc";
+    const ExternalBinaryFinderResult linker = findLinker(this.cliOptions, isGccInvoker);
     Vector<String> args;
     appendCompileArgs(args, this.getInvokerArgs(linker, isGccInvoker));
     // Position independent code on Linux, because the object file is linked into a PIE or a shared library
