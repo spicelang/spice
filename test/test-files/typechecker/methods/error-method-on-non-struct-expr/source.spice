@@ -1,0 +1,7 @@
+f<int> getNumber() {
+    return 1;
+}
+
+f<int> main() {
+    printf("%d\n", getNumber().abs());
+}

@@ -1,0 +1,68 @@
+// Chained method calls on receivers, that are pointers, references, subscripts or parenthesized expressions
+
+type Shape interface {
+    f<int> area();
+}
+
+type Square struct : Shape {
+    int side
+}
+
+p Square.ctor(int side) {
+    this.side = side;
+}
+
+f<int> Square.area() {
+    return this.side * this.side;
+}
+
+type Counter struct {
+    int count
+    Square square
+}
+
+p Counter.ctor() {
+    this.count = 0;
+    this.square = Square(3);
+}
+
+f<Counter&> Counter.inc() {
+    this.count++;
+    return *this;
+}
+
+f<Counter*> Counter.add(int value) {
+    this.count += value;
+    return this;
+}
+
+f<int> Counter.get() {
+    return this.count;
+}
+
+f<Shape*> Counter.getShape() {
+    return &this.square;
+}
+
+f<Counter*> identity(Counter* counter) {
+    return counter;
+}
+
+f<int> main() {
+    Counter counter = Counter();
+    // Method calls on returned references and pointers
+    printf("%d\n", counter.inc().inc().get());
+    printf("%d\n", counter.add(5).inc().add(10).get());
+    printf("%d\n", identity(&counter).inc().get());
+    // Virtual method call on a returned interface pointer
+    printf("%d\n", identity(&counter).getShape().area());
+    // Method calls on subscripts and parenthesized expressions
+    Counter[2] counters = [Counter(), Counter()];
+    printf("%d\n", counters[1].inc().get());
+    Counter* counterPtr = &counter;
+    printf("%d\n", (*counterPtr).inc().get());
+    printf("%d\n", (counterPtr).get());
+    // Member access and comparison after a call, that are no method calls
+    printf("%d\n", counter.inc().count < 30);
+    printf("%d\n", counter.get());
+}

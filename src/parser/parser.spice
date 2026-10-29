@@ -447,6 +447,18 @@ f<bool> Parser.isFctCallAhead() {
     return after >= 0l && this.tokenAt(cast<unsigned long>(after)) == TokenType::LPAREN;
 }
 
+// A member access on an expression, that is followed by an optional template type list and an argument list, is a method
+// call on the result of the expression, e.g. 'getObj().method<int>()': DOT IDENTIFIER (< typeLst >)? LPAREN
+f<bool> Parser.isMethodCallOnExprAhead() {
+    if this.tokenAt(0ul) != TokenType::DOT || this.tokenAt(1ul) != TokenType::IDENTIFIER { return false; }
+    long offset = 2l;
+    if this.tokenAt(cast<unsigned long>(offset)) == TokenType::LESS {
+        offset = this.matchAngleGroup(offset);
+        if offset < 0l { return false; }
+    }
+    return this.tokenAt(cast<unsigned long>(offset)) == TokenType::LPAREN;
+}
+
 // A struct path followed by a brace group is a struct instantiation, unless the brace group is a statement list. This is
 // the case for e.g. 'if i == MAX_COUNT { return; }', where the brace group belongs to the if statement.
 f<bool> Parser.isStructInstantiationAhead() {
@@ -2168,13 +2180,19 @@ f<IVisitable*> Parser.parsePrefixUnaryExpr() {
     return this.concludeExprNode(prefixUnaryExprNode);
 }
 
-// postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER | PLUS_PLUS | MINUS_MINUS | NOT);
+// postfixUnaryExpr: atomicExpr | postfixUnaryExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER (LESS typeLst GREATER)? LPAREN argLst? RPAREN | DOT IDENTIFIER | LPAREN argLst? RPAREN | PLUS_PLUS | MINUS_MINUS | NOT);
 // The rule is left-recursive, so each postfix operator wraps the expression parsed so far into a new node.
 f<IVisitable*> Parser.parsePostfixUnaryExpr() {
     IVisitable* expr = cast<IVisitable*>(this.parseAtomicExpr());
 
-    const dyn options = [TokenType::LBRACKET, TokenType::DOT, TokenType::PLUS_PLUS, TokenType::MINUS_MINUS, TokenType::NOT];
+    const dyn options = [TokenType::LBRACKET, TokenType::DOT, TokenType::LPAREN, TokenType::PLUS_PLUS, TokenType::MINUS_MINUS, TokenType::NOT];
     while this.currentTokenIsOneOf(options, len(options)) {
+        // Calls on the result of the expression parsed so far, e.g. 'getObj().method()' or 'getFct()()'
+        if this.currentTokenIs(TokenType::LPAREN) || this.isMethodCallOnExprAhead() {
+            expr = this.parseExprBasedFctCall(expr);
+            continue;
+        }
+
         dyn postfixUnaryExprNode = this.createNodeWrappingLastChild<ASTPostfixUnaryExprNode>();
         postfixUnaryExprNode.postfixUnaryExpr = expr;
 
@@ -2200,6 +2218,27 @@ f<IVisitable*> Parser.parsePostfixUnaryExpr() {
     }
 
     return expr;
+}
+
+// Call on the result of the given expression, which is either a method call 'expr.method<T>(args)' or a call of the
+// expression itself 'expr(args)'. The call node wraps the expression parsed so far.
+f<IVisitable*> Parser.parseExprBasedFctCall(IVisitable* expr) {
+    dyn fctCallNode = this.createNodeWrappingLastChild<ASTFctCallNode>();
+
+    if this.consumeIf(TokenType::DOT) {
+        // Method call on the result of the expression
+        fctCallNode.receiverExpr = expr;
+        const String methodName = this.getIdentifier(false);
+        this.expect(TokenType::IDENTIFIER);
+        fctCallNode.functionNameFragments.pushBack(methodName);
+        fctCallNode.fqFunctionName = methodName;
+    } else {
+        // Call of the result of the expression, which is a function pointer
+        fctCallNode.calleeExpr = expr;
+    }
+    this.parseFctCallTemplateTypesAndArgs(fctCallNode);
+
+    return this.concludeExprNode(fctCallNode);
 }
 
 // atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | LPAREN assignExpr RPAREN;
@@ -2334,7 +2373,13 @@ f<ASTFctCallNode*> Parser.parseFctCall() {
         this.expect(TokenType::IDENTIFIER);
     }
     fctCallNode.fqFunctionName = fqFunctionName;
+    this.parseFctCallTemplateTypesAndArgs(fctCallNode);
 
+    return this.concludeNode(fctCallNode);
+}
+
+// Template type list and argument list of a function call: (LESS typeLst GREATER)? LPAREN argLst? RPAREN
+p Parser.parseFctCallTemplateTypesAndArgs(ASTFctCallNode* fctCallNode) {
     // Template type list
     if this.consumeIf(TokenType::LESS) {
         fctCallNode.hasTemplateTypes = true;
@@ -2348,8 +2393,6 @@ f<ASTFctCallNode*> Parser.parseFctCall() {
         fctCallNode.argLst = this.parseArgLst();
     }
     this.expect(TokenType::RPAREN);
-
-    return this.concludeNode(fctCallNode);
 }
 
 // arrayInitialization: LBRACKET argLst? RBRACKET;

@@ -1,0 +1,36 @@
+// With explicitErrorHandling enabled, a Result<T>, that is the receiver of a chained method call, counts as handled
+
+#![core.compiler.explicitErrorHandling = true]
+
+type Counter struct {
+    int count
+}
+
+f<Counter*> Counter.inc() {
+    this.count++;
+    return this;
+}
+
+f<Result<int>> mightFail(bool fail) {
+    if fail {
+        return err<int>(Error("Failed"));
+    }
+    return ok<int>(1);
+}
+
+f<Result<Counter*>> getCounter(Counter* counter) {
+    return ok(counter);
+}
+
+f<Result<int>> incrementTwice(Counter* counter) {
+    int count = getCounter(counter)!.inc().inc().count;
+    return ok<int>(count);
+}
+
+f<int> main() {
+    printf("%d\n", mightFail(false).unwrapOr(-1));
+    printf("%d\n", mightFail(true).unwrapOr(-1));
+    printf("%d\n", mightFail(true).isErr());
+    Counter counter;
+    printf("%d\n", incrementTwice(&counter).unwrap());
+}

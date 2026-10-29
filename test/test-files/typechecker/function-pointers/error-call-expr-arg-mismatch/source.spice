@@ -1,0 +1,11 @@
+f<int> identity(int x) {
+    return x;
+}
+
+f<f<int>(int)> getIdentity() {
+    return identity;
+}
+
+f<int> main() {
+    printf("%d\n", getIdentity()(true));
+}
