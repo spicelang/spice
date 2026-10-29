@@ -1,7 +1,9 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Std imports
+import "std/data/unordered-set";
 import "std/type/any";
+import "std/type/type-conversion";
 import "std/text/stringstream";
 
 // Own imports
@@ -20,6 +22,7 @@ type T dyn;
  */
 public type ASTVisualizer struct : IAbstractAstVisitor {
     String parentNodeId
+    UnorderedSet<String> usedNodeIds
 }
 
 // ─── private helpers ──────────────────────────────────────────────────────────
@@ -31,7 +34,15 @@ f<Any> ASTVisualizer.buildNode<T>(const T* node) {
     const dyn typeName = String(typename<T>());
     String codeLocStr = node.codeLoc.toString();
     const String nodeName = typeName.getSubstring(typeName.find("AST") + 3l);
-    const String nodeId = codeLocStr + "_" + nodeName;
+    const String baseNodeId = codeLocStr + "_" + nodeName;
+
+    // Nodes of the same kind can start at the same code location, e.g. the calls in 'getObj().method()' or the subscripts
+    // in 'matrix[1][2]'. Make their ids unique
+    String nodeId = baseNodeId;
+    for long suffix = 2l; this.usedNodeIds.contains(nodeId); suffix++ {
+        nodeId = baseNodeId + "_" + toString(suffix);
+    }
+    this.usedNodeIds.insert(nodeId);
 
     // Build result
     output << nodeId << " [color=\"lightgreen\",label=\"" << nodeName << "\"];\n";
