@@ -1,0 +1,19 @@
+#![core.compiler.explicitErrorHandling = true]
+
+type Connection struct {
+    int id
+}
+
+f<Result<int>> Connection.send() {
+    return ok<int>(this.id);
+}
+
+f<Connection*> getConnection(Connection* connection) {
+    return connection;
+}
+
+f<int> main() {
+    Connection connection = Connection{ 1 };
+    getConnection(&connection).send();
+    return 0;
+}

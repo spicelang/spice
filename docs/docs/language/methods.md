@@ -54,6 +54,64 @@ public f<int> Counter.get() {
 
 A method that is not marked `public` can only be called from within the same source file.
 
+## Chaining method calls
+
+Methods can be called on the result of any expression, not only on variables. This allows chaining calls:
+
+```spice
+type Counter struct {
+    int value
+}
+
+f<Counter&> Counter.increment() {
+    this.value++;
+    return *this;
+}
+
+f<int> Counter.get() {
+    return this.value;
+}
+
+f<Counter> makeCounter() {
+    return Counter{ 10 };
+}
+
+f<int> main() {
+    Counter counter;
+    printf("%d\n", counter.increment().increment().get()); // 2
+    printf("%d\n", makeCounter().increment().get()); // 11
+}
+```
+
+The receiver of a method call can be the result of a call, a subscript (`counters[1].get()`), a parenthesized expression
+(`(*counterPtr).get()`) or an error propagation (`getCounter()!.get()`). Pointers and references are dereferenced
+automatically. A temporary receiver, like the `Counter` that `makeCounter()` returns, is destructed like any other
+temporary value.
+
+In the same way, a function or procedure, that an expression evaluates to, can be called directly. To call a function
+or procedure, that is stored in a struct field, wrap the field access in parentheses:
+
+```spice
+f<int> twice(int x) {
+    return x * 2;
+}
+
+f<f<int>(int)> getOperation() {
+    return twice;
+}
+
+type Button struct {
+    p() onClick
+}
+
+f<int> main() {
+    printf("%d\n", getOperation()(21)); // 42
+    Button button;
+    button.onClick = p() { printf("Clicked!\n"); };
+    (button.onClick)(); // Clicked!
+}
+```
+
 ## Methods on generic structs
 
 Methods on a generic struct automatically inherit the struct's type parameters — you do not repeat the parameter list

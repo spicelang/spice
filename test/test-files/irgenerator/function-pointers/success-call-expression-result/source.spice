@@ -1,0 +1,48 @@
+// Calls of functions and procedures, that an expression evaluates to
+
+f<int> twice(int x) {
+    return x * 2;
+}
+
+f<int> square(int x) {
+    return x * x;
+}
+
+f<f<int>(int)> getOperation(bool doubleIt) {
+    if doubleIt {
+        return twice;
+    }
+    return square;
+}
+
+f<p(int)> getPrinter() {
+    return p(int x) { printf("Printed: %d\n", x); };
+}
+
+type Button struct {
+    p() onClick
+    f<int>(int) transform
+}
+
+f<Button*> identity(Button* button) {
+    return button;
+}
+
+f<int> main() {
+    printf("%d\n", getOperation(true)(21));
+    printf("%d\n", getOperation(false)(7));
+    getPrinter()(5);
+    // Nested calls of call results
+    printf("%d\n", getOperation(true)(getOperation(false)(3)));
+    // Function pointers in struct fields, arrays and behind pointers
+    Button button;
+    button.onClick = p() { printf("Clicked!\n"); };
+    button.transform = twice;
+    (button.onClick)();
+    printf("%d\n", (button.transform)(4));
+    printf("%d\n", (identity(&button).transform)(8));
+    f<int>(int)[2] operations = [twice, square];
+    printf("%d\n", operations[1](9));
+    f<int>(int)* operationPtr = &operations[0];
+    printf("%d\n", (*operationPtr)(10));
+}

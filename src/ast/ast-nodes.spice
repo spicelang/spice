@@ -2283,12 +2283,14 @@ public type FctCallData struct {
     public ArgList args
     public const Function* callee = nil<const Function*> // Stays nil if function pointer call
     public Scope* calleeParentScope = nil<Scope*>
+    public QualType fctPtrType // Is filled if function pointer call
     public CompileTimeValue compileTimeValue
     public bool compileTimeValueSet = false
 }
 
 public p FctCallData.ctor() {
     this.thisType = QualType(SuperType::TY_DYN);
+    this.fctPtrType = QualType(SuperType::TY_DYN);
 }
 
 public f<bool> FctCallData.isOrdinaryCall() { return this.callType == FctCallType::TYPE_ORDINARY; }
@@ -2307,6 +2309,8 @@ public f<bool> FctCallData.hasCompileTimeValue() { return this.compileTimeValueS
 public type ASTFctCallNode struct : IVisitable {
     compose public ASTExprNode node
 
+    public IVisitable* receiverExpr = nil<IVisitable*> // Only set for a method call on an expression, e.g. 'getObj().method()'
+    public IVisitable* calleeExpr = nil<IVisitable*> // Only set for a call of an expression, e.g. 'getFct()()'
     public ASTTypeLstNode* templateTypeLst = nil<ASTTypeLstNode*>
     public ASTArgLstNode* argLst = nil<ASTArgLstNode*>
     public bool hasArgs = false
@@ -2326,6 +2330,17 @@ public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
 }
 
 /**
+ * Check if the call is applied to the result of an expression, instead of being identified by a name path. This is the
+ * case for method calls on an expression (e.g. 'getObj().method()') and for calls of an expression (e.g. 'getFct()()').
+ * Such calls are never calls of builtin functions.
+ *
+ * @return Expression-based call or not
+ */
+public f<bool> ASTFctCallNode.isExprBasedCall() {
+    return this.receiverExpr != nil<IVisitable*> || this.calleeExpr != nil<IVisitable*>;
+}
+
+/**
  * Check if right above the closest assign expression ancestor is a statement node
  *
  * @return Has return value receiver or not
@@ -2338,6 +2353,10 @@ public f<bool> ASTFctCallNode.hasReturnValueReceiver() {
         }
         // The call is (part of) an argument of another call, so the return value is used
         if current.kind == ASTNodeKind::ARG_LST {
+            return true;
+        }
+        // The call is (part of) the receiver or the callee of another call, e.g. 'getObj().method()'
+        if current.kind == ASTNodeKind::FCT_CALL {
             return true;
         }
         // Incrementing or decrementing the returned value counts as a use
@@ -3122,6 +3141,9 @@ public f<bool> ASTNode.returnsOnAllControlPaths(bool* doSetPredecessorsUnreachab
         case ASTNodeKind::FCT_CALL: {
             // Some builtin functions terminate the control flow, e.g. panic
             const ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(this);
+            if fctCallNode.isExprBasedCall() {
+                return false;
+            }
             BuiltinFunctionInfo builtinFunctionInfo;
             return lookupBuiltinFunction(fctCallNode.fqFunctionName, builtinFunctionInfo) && builtinFunctionInfo.isFunctionTerminator;
         }
@@ -3306,7 +3328,7 @@ public f<bool> ASTNode.hasCompileTimeValue(unsigned long manIdx) {
         case ASTNodeKind::FCT_CALL: {
             const ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(this);
             BuiltinFunctionInfo builtinFunctionInfo;
-            if !lookupBuiltinFunction(fctCallNode.fqFunctionName, builtinFunctionInfo) {
+            if fctCallNode.isExprBasedCall() || !lookupBuiltinFunction(fctCallNode.fqFunctionName, builtinFunctionInfo) {
                 return false;
             }
             const FctCallData& fctCallData = fctCallNode.data.get(manIdx);

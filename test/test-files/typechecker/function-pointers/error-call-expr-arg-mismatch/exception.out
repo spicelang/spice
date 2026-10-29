@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:10:34:
+Referenced undefined function: Expected int but got bool
+
+10  d/n", getIdentity()(true));
+                        ^^^^

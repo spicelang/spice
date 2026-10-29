@@ -1,0 +1,87 @@
+// Chained method calls on temporaries, that are returned by value. Each temporary has to be destructed exactly once
+
+type Tracked struct {
+    int id
+}
+
+p Tracked.ctor(int id) {
+    this.id = id;
+    printf("ctor %d\n", id);
+}
+
+p Tracked.dtor() {
+    printf("dtor %d\n", this.id);
+}
+
+f<int> Tracked.getId() {
+    return this.id;
+}
+
+f<Tracked&> Tracked.self() {
+    return *this;
+}
+
+f<Tracked> Tracked.next() {
+    return Tracked(this.id + 1);
+}
+
+// Methods, that are named like builtin functions
+f<int> Tracked.len() {
+    return this.id * 10;
+}
+
+f<int> Tracked.panic() {
+    return this.id * 100;
+}
+
+f<Tracked> makeTracked(int id) {
+    return Tracked(id);
+}
+
+// Large struct, that is returned via memory
+type Big struct {
+    long a
+    long b
+    long c
+    long d
+    long e
+}
+
+f<long> Big.sum() {
+    return this.a + this.b + this.c + this.d + this.e;
+}
+
+f<Big> makeBig() {
+    return Big{ 1l, 2l, 3l, 4l, 5l };
+}
+
+type T dyn;
+type U dyn;
+
+type Box<T> struct {
+    T value
+}
+
+f<T> Box.get() {
+    return this.value;
+}
+
+f<U> Box.convert<U>() {
+    return cast<U>(this.value);
+}
+
+f<Box<T>> makeBox<T>(T value) {
+    return Box<T>{ value };
+}
+
+f<int> main() {
+    printf("%d\n", makeTracked(1).getId());
+    printf("%d\n", makeTracked(2).next().next().getId());
+    printf("%d\n", makeTracked(5).self().self().getId());
+    printf("%d %d\n", makeTracked(6).len(), makeTracked(7).panic());
+    printf("%d\n", makeBig().sum());
+    printf("%d\n", makeBox(42).get());
+    printf("%f\n", makeBox(42).convert<double>());
+    printf("%d\n", makeBox<Box<int>>(makeBox(9)).get().get());
+    printf("end\n");
+}

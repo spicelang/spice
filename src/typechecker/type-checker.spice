@@ -4416,6 +4416,15 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
     FctCallData& data = node.data.get(this.manIdx);
 
+    // Visit the receiver of a method call on an expression or the callee of a call of an expression. It is evaluated
+    // before the args
+    QualType exprType = QualType(SuperType::TY_INVALID);
+    if node.isExprBasedCall() {
+        const ExprResult exprResult = this.visitExpr(node.receiverExpr != nil<IVisitable*> ? node.receiverExpr : node.calleeExpr);
+        if exprResult.ty.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+        exprType = exprResult.ty;
+    }
+
     // Retrieve arg types
     data.args.clear();
     // Scopes and names of the anonymous symbols of temporary args. The scope is nil if the arg is no such temporary
@@ -4458,16 +4467,23 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
 
     // Check if this is a builtin call
     BuiltinFunctionInfo builtinFunctionInfo;
-    if lookupBuiltinFunction(node.fqFunctionName, builtinFunctionInfo) {
+    if !node.isExprBasedCall() && lookupBuiltinFunction(node.fqFunctionName, builtinFunctionInfo) {
         return this.visitBuiltinCall(node);
     }
 
-    // Retrieve entry of the first fragment
+    // Retrieve entry of the first fragment. Expression-based calls have no name path to look up
     const dyn structOrInterface = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE];
     const dyn fctOrProc = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
-    const String& firstFrag = node.functionNameFragments.front();
-    SymbolTableEntry* firstFragEntry = this.currentScope.lookup(firstFrag);
+    SymbolTableEntry* firstFragEntry = nil<SymbolTableEntry*>;
+    if node.receiverExpr != nil<IVisitable*> {
+        data.callType = FctCallType::TYPE_METHOD;
+    } else if node.calleeExpr != nil<IVisitable*> {
+        data.callType = FctCallType::TYPE_FCT_PTR;
+    } else {
+        firstFragEntry = this.currentScope.lookup(node.functionNameFragments.front());
+    }
     if firstFragEntry != nil<SymbolTableEntry*> {
+        const String& firstFrag = node.functionNameFragments.front();
         // Check if we have seen a 'this.' prefix, because the generator needs that
         if firstFragEntry.scope.scopeType == ScopeType::STRUCT && firstFrag != THIS_VARIABLE_NAME {
             const String message = String("The symbol '") + firstFrag + "' could not be found. Missing 'this.' prefix?";
@@ -4493,7 +4509,7 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     // Get struct name. Retrieve it from alias if required
     Pair<SymbolTableEntry*, bool> aliasResolution = this.rootScope.symbolTable.lookupWithAliasResolution(node.fqFunctionName);
     SymbolTableEntry* structEntry = aliasResolution.getFirst();
-    const bool isAlias = aliasResolution.getSecond();
+    const bool isAlias = !node.isExprBasedCall() && aliasResolution.getSecond();
     String fqFunctionName = node.fqFunctionName;
 
     // Get the concrete template types
@@ -4511,7 +4527,17 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     // Check if this is a method call or a normal function call
     if data.isMethodCall() {
         // This is a method call
-        data.thisType = firstFragEntry.getQualType();
+        if node.receiverExpr != nil<IVisitable*> {
+            // The method is called on the result of an expression, which has to be a struct or interface
+            const QualType receiverType = exprType.autoDereference();
+            if !receiverType.isOneOf(structOrInterface, len(structOrInterface)) {
+                const String message = String("Cannot call a method on a value of type '") + exprType.getName(false) + "', since it is no struct or interface";
+                return this.softErrorER(baseNode, SemanticErrorType::INVALID_MEMBER_ACCESS, message);
+            }
+            data.thisType = exprType;
+        } else {
+            data.thisType = firstFragEntry.getQualType();
+        }
         const QualType thisBaseType = data.thisType.getBase();
         Scope* structBodyScope = thisBaseType.getBodyScope();
         assert structBodyScope != nil<Scope*>;
@@ -4521,8 +4547,18 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
         assert data.calleeParentScope != nil<Scope*>;
     } else if data.isFctPtrCall() {
         // This is a function pointer call
-        const QualType firstFragType = firstFragEntry.getQualType();
-        const QualType functionType = firstFragType.getBase();
+        if node.calleeExpr != nil<IVisitable*> {
+            // The result of an expression is called, which has to be a function or procedure
+            data.fctPtrType = exprType.autoDereference();
+            if !data.fctPtrType.isOneOf(fctOrProc, len(fctOrProc)) {
+                const String message = String("Cannot call a value of type '") + exprType.getName(false) + "', since it is no function or procedure";
+                return this.softErrorER(baseNode, SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, message);
+            }
+        } else {
+            const QualType firstFragType = firstFragEntry.getQualType();
+            data.fctPtrType = firstFragType.getBase();
+        }
+        const QualType& functionType = data.fctPtrType;
         assert functionType.isOneOf(fctOrProc, len(fctOrProc));
         if !this.visitFctPtrCall(node, functionType) { // Check if soft errors occurred
             return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(SuperType::TY_UNRESOLVED), this.manIdx), nil<SymbolTableEntry*>});
@@ -4603,9 +4639,7 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     if node.hasArgs {
         QualTypeList paramTypes;
         if data.isFctPtrCall() {
-            const QualType firstFragType = firstFragEntry.getQualType();
-            const QualType functionType = firstFragType.getBase();
-            paramTypes = functionType.getFunctionParamTypes();
+            paramTypes = data.fctPtrType.getFunctionParamTypes();
         } else {
             assert callee != nil<const Function*>;
             paramTypes = callee.getParamTypes();
@@ -4650,8 +4684,7 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     bool isFct = false;
     QualType returnType = QualType(SuperType::TY_DYN);
     if data.isFctPtrCall() {
-        const QualType firstFragType = firstFragEntry.getQualType();
-        const QualType functionType = firstFragType.getBase();
+        const QualType& functionType = data.fctPtrType;
         isFct = functionType.is(SuperType::TY_FUNCTION);
         if isFct {
             returnType = functionType.getFunctionReturnType();
