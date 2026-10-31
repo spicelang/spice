@@ -1,0 +1,55 @@
+// TEST: --freestanding -O2
+
+#![core.compiler.errorReturnTracing = true]
+
+// The heap types of the std work in freestanding mode with the allocator functions of the program. Optimized, so that the
+// optimizer would find calls to C functions, that it creates itself (e.g. bcmp). Error return tracing is disabled in
+// freestanding mode, since it needs thread-local storage and stderr
+
+import "std/data/vector";
+import "io";
+import "allocator";
+
+f<Result<int>> divide(int dividend, int divisor) {
+    if divisor == 0 {
+        return err<int>("Division by zero");
+    }
+    return ok(dividend / divisor);
+}
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    // String
+    String greeting = String("Hello");
+    greeting += " from the freestanding heap";
+    greeting += '!';
+    writeToStdout(greeting.getRaw());
+    writeToStdout("\n");
+    if greeting == "Hello from the freestanding heap!" {
+        writeToStdout("Strings are equal\n");
+    }
+
+    // Vector
+    Vector<int> numbers;
+    for int i = 1; i <= 100; i++ {
+        numbers.pushBack(i);
+    }
+    long sum = 0l;
+    foreach int number : numbers {
+        sum += number;
+    }
+    if sum == 5050l {
+        writeToStdout("Sum is correct\n");
+    }
+
+    // Result
+    const Result<int> quotient = divide(84, 2);
+    const Result<int> failure = divide(1, 0);
+    if quotient.isOk() && failure.isErr() {
+        const Error& error = failure.getErr();
+        writeToStdout(error.getMessage());
+        writeToStdout("\n");
+    }
+
+    exitProcess(cast<int>(quotient.unwrap()));
+}

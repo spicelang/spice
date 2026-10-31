@@ -18,6 +18,7 @@ const string ERROR_TRACE_RT_IMPORT_NAME = "__rt_error_trace";
 const string MEMORY_RT_IMPORT_NAME = "__rt_memory";
 const string RTTI_RT_IMPORT_NAME = "__rt_rtti";
 const string STACK_TRACE_RT_IMPORT_NAME = "__rt_stack_trace";
+const string LIBC_RT_IMPORT_NAME = "__rt_libc";
 
 public type RuntimeModule enum {
     STRING_RT = 1,
@@ -26,7 +27,8 @@ public type RuntimeModule enum {
     ERROR_TRACE_RT = 8,
     MEMORY_RT = 16,
     RTTI_RT = 32,
-    STACK_TRACE_RT = 64
+    STACK_TRACE_RT = 64,
+    LIBC_RT = 128 // Freestanding mode only: the C functions, that the other runtime modules and the LLVM back end call
 }
 
 /**
@@ -89,6 +91,7 @@ public f<string> getIdentifyingTopLevelName(RuntimeModule runtimeModule) {
         case RuntimeModule::MEMORY_RT: { return "sAlloc"; } // sAlloc function
         case RuntimeModule::RTTI_RT: { return TIOBJ_NAME; } // TypeInfo struct
         case RuntimeModule::STACK_TRACE_RT: { return "sDumpStacktrace"; } // sDumpStacktrace function
+        case RuntimeModule::LIBC_RT: { return "memcpy"; } // memcpy function
         default: { panic(Error("Requested unknown runtime module")); } // LCOV_EXCL_LINE
     }
 }
@@ -137,6 +140,18 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
     return this.modules.contains(requestedModule);
 }
 
+/**
+ * Check if the given source file is the given runtime module. Unlike SourceFile.isRT, this does not depend on the names,
+ * that the source file defines
+ *
+ * @param sourceFile Source file
+ * @param runtimeModule Runtime module
+ * @return Is the runtime module or not
+ */
+public f<bool> RuntimeModuleManager.isModule(const SourceFile* sourceFile, RuntimeModule runtimeModule) {
+    return this.modules.contains(runtimeModule) && this.modules.get(runtimeModule) == sourceFile;
+}
+
 public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const ModuleNamePair namePair = this.resolveNamePair(requestedModule);
     // Runtime modules are resolved like imports, so the platform specific variants (e.g. error_rt_freestanding.spice) win
@@ -181,6 +196,9 @@ public f<ModuleNamePair> RuntimeModuleManager.resolveNamePair(RuntimeModule requ
         }
         case RuntimeModule::STACK_TRACE_RT: {
             return ModuleNamePair{STACK_TRACE_RT_IMPORT_NAME, "stack_trace_rt"};
+        }
+        case RuntimeModule::LIBC_RT: {
+            return ModuleNamePair{LIBC_RT_IMPORT_NAME, "libc_rt"};
         }
         default: {                                            // LCOV_EXCL_LINE
             panic(Error("Requested unknown runtime module")); // LCOV_EXCL_LINE

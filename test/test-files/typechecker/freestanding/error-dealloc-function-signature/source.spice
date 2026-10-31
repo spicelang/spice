@@ -1,0 +1,10 @@
+// TEST: --freestanding
+
+#[core.compiler.deallocFunction]
+f<bool> arenaDealloc(heap byte* _ptr) {
+    return true;
+}
+
+f<int> main() {
+    return 0;
+}

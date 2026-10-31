@@ -93,6 +93,11 @@ public type GlobalResourceManager struct {
     // User-defined panic handler of the program, set via the 'core.compiler.panicHandler' attribute (freestanding mode only).
     // Without one, panics lower to a trap in freestanding mode
     public model::Function* panicHandler = nil<model::Function*>
+    // User-defined allocator functions of the program (freestanding mode only), set via the 'core.compiler.allocFunction',
+    // 'core.compiler.reallocFunction' and 'core.compiler.deallocFunction' attributes. The heap types need all of them
+    public model::Function* allocFunction = nil<model::Function*>
+    public model::Function* reallocFunction = nil<model::Function*>
+    public model::Function* deallocFunction = nil<model::Function*>
     public bool abortCompilation = false
     unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1l // Start at 256 because all primitive types come first
     unsigned long nextScopeId = 0l

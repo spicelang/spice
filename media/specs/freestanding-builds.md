@@ -20,11 +20,11 @@ dependencies, that the compiler, the runtime modules and the linker add implicit
     - [x] Optional `main` function, user-defined entry point
     - [x] Linker: `-nostdlib -static`, no PIE/RELRO, `--linker-script`
     - [x] Tests and docs
-- [ ] Phase 2: heap types
-    - [ ] Allocator hook
-    - [ ] `memory_rt_freestanding.spice` and `string_rt_freestanding.spice`
-    - [ ] `mem*` implementations in std, `core.compiler.noBuiltins` attribute
-    - [ ] Tests and docs
+- [x] Phase 2: heap types
+    - [x] Allocator hook
+    - [x] ~~`memory_rt_freestanding.spice` and `string_rt_freestanding.spice`~~ libc shim `libc_rt_freestanding.spice`
+    - [x] `mem*` implementations in std, `core.compiler.noBuiltins` attribute
+    - [x] Tests and docs
 - [ ] Phase 3: std tiering and embedded targets
     - [ ] `#![core.compiler.requiresOs]` module attribute and a matching semantic error
     - [ ] Link compiler-rt builtins for embedded triples
@@ -185,6 +185,34 @@ public p sPanic(string message, string file, unsigned int line)
 
 ## Phase 2: heap types
 
+> **Implementation note:** Phase 2 deviates from the plan below in two points:
+>
+> - **Allocator hook:** a struct with `#[core.compiler.globalAllocator]` does not work, since Spice globals can only be
+>   primitives or pointers, so there is no instance for the runtime to call. Instead, the program marks three functions
+>   with `#[core.compiler.allocFunction]`, `#[core.compiler.reallocFunction]` and `#[core.compiler.deallocFunction]`.
+>   The type checker checks their signatures (`f<heap byte*>(unsigned long)`, `f<heap byte*>(heap byte*, unsigned long)`,
+>   `p(heap byte*)`), allows at most one of each kind per program and only in freestanding mode
+>   (`TypeChecker.registerAllocatorFunction`). They are exported as `malloc`, `realloc` and `free`. A program, that loads
+>   the memory or string runtime without all three, gets the semantic error `MISSING_ALLOCATOR_FUNCTIONS` after the type
+>   checking (`SourceFile.checkForAllocatorFunctions`), instead of a link error.
+> - **Runtime modules:** instead of `_freestanding` copies of `memory_rt` (161 lines) and `string_rt` (991 lines), the
+>   runtime modules stay unchanged and get the few C functions, that they call, from a libc shim:
+>   `std/runtime/libc_rt_freestanding.spice` (runtime module `LIBC_RT`), which every freestanding program loads. It
+>   defines `memcpy`, `memmove`, `memset`, `memcmp`, `bcmp`, `strlen` and `strcmp` in Spice with `core.compiler.noBuiltins`
+>   (LLVM `"no-builtins"`). `bcmp` is needed, since LLVM turns `memcmp(...) == 0` into `bcmp` calls. The functions get weak
+>   linkage, so the program can bring its own, and the exported symbol collision check skips them. The IR generator keeps
+>   calling `free` for the heap locals of the string runtime, which now is the program's dealloc function. `calloc` is not
+>   provided, since its definition would need `malloc` in every freestanding program, also in ones without heap types.
+>
+> Error return tracing is disabled in freestanding mode (the `errorReturnTracing` module attribute is ignored), since the
+> trace is stored thread-local and printed to stderr. `error_rt_freestanding.spice` gets a no-op `Error.dumpTrace()`, so
+> that `result_rt` compiles unchanged.
+>
+> The heap test, which allocates via `mmap` at `-O2`, uncovered a bug of the `syscall` builtin: the constraints did not
+> declare `rcx` and `r11` as clobbered, which the x86_64 `syscall` instruction overwrites, nor the memory, that the kernel
+> reads and writes. The operands are now bound to the registers of the syscall ABI via constraints, instead of `r` operands
+> plus `mov` instructions, which also leaves enough registers for six args.
+
 ### Allocator hook
 
 `memory_rt_freestanding.spice` implements `sAlloc`, `sAllocUnsafe`, `sRealloc`, `sReallocUnsafe` and `sDealloc`
@@ -248,7 +276,7 @@ part of the freestanding linker setup, keeping `--no-entry` and `--export-all` a
 ## Open questions
 
 - Panic handler: user-defined with a trap fallback (recommended), or always trap.
-- Allocator hook: symbol convention, pointer global registration, or a type-checked `globalAllocator` attribute
-  (recommended).
+- ~~Allocator hook: symbol convention, pointer global registration, or a type-checked `globalAllocator` attribute
+  (recommended).~~ Type-checked function attributes, see the implementation note of phase 2.
 - Activation: only the explicit `--freestanding` option, or also implied by an unknown target OS (recommended).
 - Should `spice test` support freestanding mode at all, or only for the native target with a hosted test runner?

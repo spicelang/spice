@@ -1,0 +1,4 @@
+#[core.compiler.reallocFunction]
+public f<heap byte*> otherRealloc(heap byte* _ptr, unsigned long size) {
+    return nil<heap byte*>;
+}

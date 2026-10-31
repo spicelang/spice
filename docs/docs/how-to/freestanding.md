@@ -79,6 +79,54 @@ p onPanic(string message, string file, unsigned int line) {
 The handler must have exactly this signature and must not return. There is at most one panic handler per program, but
 it can live in any source file. Without a panic handler, panics lower to a trap instruction (`llvm.trap`).
 
+## Heap allocations
+
+The heap types of the standard library, e.g. `String`, `Vector` or `Result`, allocate their memory on the heap. In
+freestanding mode, there is no libc, that could allocate it. So the program provides the allocator itself, as three
+functions with these attributes and signatures:
+
+```spice
+#[core.compiler.allocFunction]
+f<heap byte*> arenaAlloc(unsigned long size) {
+    // Return a block of at least size bytes, or nil if out of memory
+}
+
+#[core.compiler.reallocFunction]
+f<heap byte*> arenaRealloc(heap byte* ptr, unsigned long size) {
+    // Resize the block (ptr may be nil), copying its contents, or return nil if out of memory
+}
+
+#[core.compiler.deallocFunction]
+p arenaDealloc(heap byte* ptr) {
+    // Give the block back (ptr may be nil)
+}
+```
+
+They can be defined in any source file, but there is at most one of each kind per program. The compiler exports them
+under the names of the C functions `malloc`, `realloc` and `free`, which the runtime of the standard library calls. If
+the program uses a heap type without defining all three, the compiler reports an error. How the allocator gets its memory
+depends on the platform, e.g. from a static region, that the linker script reserves, or from a host kernel via `mmap`.
+
+## C functions
+
+The code, that LLVM generates, may call `memcpy`, `memmove`, `memset`, `memcmp` and `bcmp`, even if the program never
+calls them, e.g. for copying a struct. The runtime of the standard library also calls `strlen` and `strcmp`. In
+freestanding mode, the compiler links implementations of these functions into the program. They are weak symbols, so the
+program can bring its own implementations instead, e.g. optimized ones:
+
+```spice
+#[core.compiler.mangle = false, core.compiler.noBuiltins]
+public f<byte*> memcpy(byte* dest, const byte* src, unsigned long size) {
+    // ...
+}
+```
+
+The `core.compiler.noBuiltins` attribute keeps LLVM from turning the loop of such an implementation into a call to the
+function itself.
+
+Error return tracing (`#![core.compiler.errorReturnTracing]`) is disabled in freestanding mode, since the trace is stored
+thread-local and printed to stderr. `Error.dumpTrace()` and `Result.dumpTrace()` do nothing in freestanding mode.
+
 ## Platform specific source files
 
 The compiler picks platform specific source files by their suffix, e.g. `foo_linux.spice` or `foo_linux_x86_64.spice`.
@@ -92,7 +140,5 @@ these files, that exists:
 
 ## Limitations
 
-The freestanding mode is in an early stage. Heap allocations need an allocator, which a freestanding program does not
-have yet. So the types of the standard library, that allocate memory (e.g. `String`, `Vector` or `Result`), and the
-modules, that need an operating system (e.g. `std/io` or `std/os`), cannot be used in freestanding mode yet. Note that
-LLVM may emit calls to `memcpy`, `memmove` and `memset` in any code, which the program then has to provide, like in C.
+The modules of the standard library, that need an operating system (e.g. `std/io` or `std/os`), cannot be used in
+freestanding mode. Math functions like `sin` are lowered to calls into the C math library, which is not available either.

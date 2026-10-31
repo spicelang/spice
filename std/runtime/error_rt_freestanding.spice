@@ -1,7 +1,7 @@
 #![core.compiler.alwaysKeepOnNameCollision = true]
 
-// Freestanding variant of error_rt.spice. There is no stderr in freestanding mode, so the methods, that print the error and
-// the error return trace, are left out. The panic builtin hands the message over to the panic handler instead.
+// Freestanding variant of error_rt.spice. There is no stderr in freestanding mode, so Error.print() is left out and
+// Error.dumpTrace() does nothing. The panic builtin hands the message over to the panic handler instead.
 
 // Well-known error codes
 public type ErrorCode enum {
@@ -72,6 +72,12 @@ public inline f<string> Error.getMessage() {
 public inline f<bool> Error.isOk() {
     return this.code == ErrorCode::Ok;
 }
+
+/**
+ * Prints the error message and the recorded error return trace. There is no stderr in freestanding mode and error return
+ * tracing is disabled, so this does nothing. It exists, so that code calling it compiles in both modes.
+ */
+public inline p Error.dumpTrace() {}
 
 /**
  * Panic with this error

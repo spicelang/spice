@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:10:1:
+Multiple allocator functions: The program already has this kind of allocator function, defined at ../source2.spice:1:1
+
+10  #[core.compiler.reallocFunction]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

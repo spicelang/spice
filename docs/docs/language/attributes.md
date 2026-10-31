@@ -51,6 +51,13 @@ f<int> test(long input) {
   signature `p(string message, string file, unsigned int line)` and the `core.compiler.noReturn` attribute. There is at
   most one per program, and it is only supported in freestanding mode (see the
   [freestanding how-to](../how-to/freestanding.md))
+- `core.compiler.allocFunction: bool`, `core.compiler.reallocFunction: bool`, `core.compiler.deallocFunction: bool`: Make
+  the annotated function the allocator of a freestanding program, that the heap types use. The signatures are
+  `f<heap byte*>(unsigned long size)`, `f<heap byte*>(heap byte* ptr, unsigned long size)` and `p(heap byte* ptr)`. There
+  is at most one of each kind per program, and they are only supported in freestanding mode (see the
+  [freestanding how-to](../how-to/freestanding.md#heap-allocations))
+- `core.compiler.noBuiltins: bool`: Keep the optimizer from replacing code of the annotated function with calls to C
+  functions, e.g. a copy loop with a call to `memcpy`. Needed for implementations of these functions themselves
 - `test: bool`: Mark the annotated function as test
 - `test.name: string`: Set the name of the test (only functions or procedures with the `test` attribute are considered as tests)
 - `test.skip: bool`: Skip the annotated function (only functions or procedures with the `test` attribute are considered as tests)

@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:1:1:
+Invalid allocator function: Allocator functions are only supported in freestanding mode
+
+1  #[core.compiler.allocFunction]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

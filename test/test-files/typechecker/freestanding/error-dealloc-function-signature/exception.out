@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:1:
+Invalid allocator function: This allocator function must have the signature p dealloc(heap byte* ptr)
+
+3  #[core.compiler.deallocFunction]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

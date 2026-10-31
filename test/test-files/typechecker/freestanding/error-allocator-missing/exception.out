@@ -1,0 +1,2 @@
+[Error|Semantic] ./source.spice:5:1:
+Missing allocator functions: The program uses heap allocations, which need allocator functions in freestanding mode. Missing: core.compiler.reallocFunction, core.compiler.deallocFunction
