@@ -26,9 +26,13 @@ In freestanding mode, the compiler:
   kernel. The `syscall` builtin is only available for targets with an operating system.
 - routes panics, failed assertions to the panic handler (see below).
 - prints no stack traces and emits no unwind tables (no `.eh_frame` section).
-- generates static code by default (`--relocation-model=static`). An explicitly given relocation model still wins.
+- generates static code by default (`--relocation-model=static`). Shared libraries stay `pic`, and the TPDE backend as
+  well as Windows and Darwin targets stay `pie`, since they only support position independent code. An explicitly given
+  relocation model wins, as long as it is supported for the output container and the target.
 - links with `-nostdlib -static` and without the PIE and RELRO handling. For other targets than the host, it links with
-  `ld.lld`, since the linkers of the host cannot link for bare-metal targets.
+  `ld.lld`, since the linkers of the host cannot link for bare-metal targets. WebAssembly is the exception: it keeps its
+  own linker setup (`-nostdlib -Wl,--no-entry -Wl,--export-all`, without `-static`) and the linker search of hosted
+  builds, see [Compile for WebAssembly](web-assembly.md).
 
 Sanitizers (`--sanitizer`), code coverage instrumentation (`--coverage`) and the `test` subcommand are not supported in
 freestanding mode, since their runtimes need a hosted libc. `--output-container=obj` emits an object file, if you want to

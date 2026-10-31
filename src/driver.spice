@@ -864,7 +864,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
             raiseCliError(CliErrorType::INVALID_RELOCATION_MODEL, inputString.getRaw());
         }
     };
-    subCmd.addOption("--relocation-model", relocModelCallback, "Relocation model: default (pie, pic for shared libraries, static in freestanding mode), static, pic, pie");
+    subCmd.addOption("--relocation-model", relocModelCallback, "Relocation model: default (pie, pic for shared libraries, static in freestanding mode except for TPDE, Windows and Darwin), static, pic, pie");
     // --code-model
     const p(const string&) codeModelCallback = p(const string& codeModel) {
         const String inputString = toLower(String(codeModel));
