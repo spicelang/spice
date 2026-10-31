@@ -1,0 +1,9 @@
+// TEST: --target=x86_64-unknown-none
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    unsafe {
+        syscall(/* exit */ 60s, 0l);
+    }
+    while true {}
+}

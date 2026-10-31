@@ -3,10 +3,8 @@ source_filename = "source.spice"
 target datalayout = "e-m:e-p:32:32-p10:8:8-p20:8:8-i64:64-i128:128-n32:64-S128-ni:1:10:20"
 target triple = "wasm32-unknown-unknown"
 
-@printf.str.0 = private unnamed_addr constant [20 x i8] c"Fibonacci of %d: %d\00", align 4
-
-; Function Attrs: noinline nounwind optnone uwtable
-define dso_local noundef i32 @fibo(i32 noundef %0) #0 {
+; Function Attrs: noinline nounwind optnone
+define noundef i32 @fibo(i32 noundef %0) #0 {
   %n = alloca i32, align 4
   store i32 %0, ptr %n, align 4
   %2 = load i32, ptr %n, align 4
@@ -28,29 +26,17 @@ if.exit.L5:                                       ; preds = %1
   ret i32 %11
 }
 
-; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #1 {
-  %fiboBase = alloca i32, align 4
-  store i32 45, ptr %fiboBase, align 4
-  %1 = load i32, ptr %fiboBase, align 4
-  %2 = load i32, ptr %fiboBase, align 4
-  %3 = call noundef i32 @fibo(i32 noundef %2)
-  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %1, i32 noundef %3)
-  ret i32 0
+; Function Attrs: mustprogress noinline norecurse nounwind optnone
+define noundef i32 @main() #1 {
+  %1 = call noundef i32 @fibo(i32 noundef 45)
+  ret i32 %1
 }
 
-; Function Attrs: nofree nounwind
-declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+attributes #0 = { noinline nounwind optnone }
+attributes #1 = { mustprogress noinline norecurse nounwind optnone }
 
-attributes #0 = { noinline nounwind optnone uwtable }
-attributes #1 = { mustprogress noinline norecurse nounwind optnone uwtable }
-attributes #2 = { nofree nounwind }
+!llvm.module.flags = !{!0}
+!llvm.ident = !{!1}
 
-!llvm.module.flags = !{!0, !1, !2, !3}
-!llvm.ident = !{!4}
-
-!0 = !{i32 8, !"PIC Level", i32 2}
-!1 = !{i32 7, !"PIE Level", i32 2}
-!2 = !{i32 7, !"uwtable", i32 2}
-!3 = !{i32 7, !"frame-pointer", i32 0}
-!4 = !{!"spice version dev (https://github.com/spicelang/spice)"}
+!0 = !{i32 7, !"frame-pointer", i32 0}
+!1 = !{!"spice version dev (https://github.com/spicelang/spice)"}

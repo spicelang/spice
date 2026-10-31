@@ -1,0 +1,8 @@
+#[core.compiler.panicHandler, core.compiler.noReturn]
+p onPanic(string message, string file, unsigned int line) {
+    while true {}
+}
+
+f<int> main() {
+    panic(Error("Panic in hosted mode"));
+}

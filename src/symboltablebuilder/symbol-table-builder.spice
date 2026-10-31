@@ -204,8 +204,9 @@ public f<Any> SymbolTableBuilder.visitEntry(ASTEntryNode* node) {
         this.visit(topLevelDef);
     }
 
-    // Check if the main function exists
-    const bool mainFctRequired = this.cliOptions.outputContainer == OutputContainer::EXECUTABLE && !this.cliOptions.noEntryFct;
+    // Check if the main function exists. It is optional in freestanding mode, where the user defines the entry point
+    const bool isExecutable = this.cliOptions.outputContainer == OutputContainer::EXECUTABLE;
+    const bool mainFctRequired = isExecutable && !this.cliOptions.noEntryFct && !this.cliOptions.freestanding;
     if this.sourceFile.isMainSourceFile() && mainFctRequired && !this.hasMainFunction {
         this.reportError(cast<ASTNode*>(node), SemanticErrorType::MISSING_MAIN_FUNCTION, String("No main function found"), false);
     }

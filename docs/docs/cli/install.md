@@ -45,5 +45,6 @@ You can apply following options to the `install` subcommand:
 | -            | `--no-red-zone`           | Do not use the red zone below the stack pointer (x86_64), e.g. for kernel code                 |
 | -            | `--relocation-model`      | Relocation model: `default`, `static`, `pic`, `pie`                                            |
 | -            | `--code-model`            | Code model: `default`, `tiny`, `small`, `kernel`, `medium`, `large`                            |
+| -            | `--freestanding`          | Compile without hosted libc, crt0 and OS                                                       |
 | -            | `--native-features`       | Tune the output for the CPU of the compiling machine (output not portable)                     |
 | -            | `--cpu-features`          | CPU features to enable (`+`) or disable (`-`), e.g. `+avx2,-sse4.1`                            |

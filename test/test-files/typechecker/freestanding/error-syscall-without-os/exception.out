@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:6:9:
+Unsupported in freestanding mode: The syscall builtin needs an OS kernel, but the target x86_64-unknown-none has none
+
+6  syscall(/* exit */ 60s, 0l);
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^

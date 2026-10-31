@@ -1,0 +1,21 @@
+// TEST: --target=x86_64-unknown-none
+
+// Without a panic handler, panics, failed assertions and accesses to inactive union fields lower to a trap. No libc function
+// is declared and the functions get no unwind tables
+
+type Value union {
+    int number
+    bool flag
+}
+
+f<int> getNumber(const Value& value) {
+    return value.number; // Traps, if the flag is active
+}
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    Value value;
+    value.flag = true;
+    assert getNumber(value) != 3;
+    panic(Error("Boom!"));
+}

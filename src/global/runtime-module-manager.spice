@@ -2,6 +2,7 @@
 
 // Std imports
 import "std/data/unordered-map";
+import "std/data/vector";
 
 // Own imports
 import "@/source-file";
@@ -138,7 +139,11 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
 
 public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const ModuleNamePair namePair = this.resolveNamePair(requestedModule);
-    const FilePath filePath = getStdDir() / "runtime" / (String(namePair.fileName) + ".spice");
+    // Runtime modules are resolved like imports, so the platform specific variants (e.g. error_rt_freestanding.spice) win
+    const FilePath basePath = getStdDir() / "runtime" / String(namePair.fileName);
+    Vector<FilePath> candidatePaths;
+    const FilePath filePath = resolvePlatformSpecificSourceFile(this.resourceManager.cliOptions, basePath, parentSourceFile.filePath, candidatePaths);
+    assert !filePath.isEmpty();
     assert filePath != parentSourceFile.filePath;
 
     // Instruct the global resource manager to create a new source file

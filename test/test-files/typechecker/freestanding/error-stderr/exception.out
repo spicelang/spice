@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:4:20:
+Unsupported in freestanding mode: The stderr builtin needs a hosted libc
+
+4  byte* stream = __stderr();
+                  ^^^^^^^^^^

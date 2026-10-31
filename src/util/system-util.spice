@@ -19,6 +19,9 @@ import "@/exception/compiler-error";
 import "@/exception/linker-error";
 import "@/util/test-util";
 
+// OS part of the platform specific file suffix in freestanding mode, e.g. memory_rt_freestanding.spice
+public const string OS_SUFFIX_FREESTANDING = "freestanding";
+
 public type ExecResult struct {
     public String output
     public int exitCode
@@ -274,9 +277,14 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
  * @return Name of path to the linker executable
  */
 public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bool isGccInvoker) {
+    // The host linkers cannot link for arbitrary bare-metal targets, so freestanding cross builds use lld. Wasm keeps its setup
+    const bool requiresLLD = cliOptions.freestanding && !cliOptions.isNativeTarget && !cliOptions.targetTriple.isWasm();
     if isUnixBased() {
         // Use the flavor-specific lld driver, since the generic 'lld' driver refuses to be invoked directly
         foreach const string linkerName : ["wild", "mold", "ld.lld", "ld64.lld", "gold", "ld"] {
+            if requiresLLD && linkerName != "ld.lld" {
+                continue;
+            }
             // wild does only support linking for a subset of the Linux targets. GCC does not accept the path of the linker in
             // '-fuse-ld=', so wild is only used with clang as linker invoker
             if linkerName == "wild" && (isGccInvoker || !isWildSupportedTarget(cliOptions.targetTriple)) {
@@ -302,6 +310,10 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bo
     } else {                                                                       // LCOV_EXCL_LINE
         panic(Error("Unsupported platform"));                                      // LCOV_EXCL_LINE
     }                                                                              // LCOV_EXCL_LINE
+    if requiresLLD {
+        const LinkerError lldError = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "Freestanding builds for other targets than the host require the lld linker, but it was not found on the system");
+        abortWithError(lldError.getMessage());
+    }
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: wild, mold, lld, gold and ld");
     abortWithError(error.getMessage());
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
@@ -366,6 +378,45 @@ public f<FilePath> findStdDir() {
     if value.isOk() {
         const FilePath envStdPath = FilePath(value.unwrap());
         if envStdPath.exists() { return envStdPath; }
+    }
+    return FilePath();
+}
+
+/**
+ * Resolve the platform specific variant of a source file. The candidates are checked in this order:
+ * 1. file_<os>_<arch>.spice, e.g. file_linux_x86_64.spice
+ * 2. file_<os>.spice, e.g. file_linux.spice
+ * 3. file_<arch>.spice, e.g. file_x86_64.spice
+ * 4. file.spice
+ * In freestanding mode, the OS part of the suffix is 'freestanding', so that freestanding variants of files can be shipped
+ * (e.g. file_freestanding.spice). Without an OS, it would be 'unknown' otherwise.
+ *
+ * @param cliOptions Cli options, that determine the target
+ * @param basePath Path of the source file without the '.spice' extension
+ * @param requestingFilePath Path of the requesting source file. A platform specific variant is never resolved to it, so
+ *                           that a variant can import the default file of the same name
+ * @param candidatePaths Receives all checked candidate paths, with descending priority
+ * @return Resolved source file path, or an empty path, if none of the candidates exists
+ */
+public f<FilePath> resolvePlatformSpecificSourceFile(const CliOptions& cliOptions, const FilePath& basePath, const FilePath& requestingFilePath, Vector<FilePath>& candidatePaths) {
+    const String osName = cliOptions.freestanding ? String(OS_SUFFIX_FREESTANDING) : cliOptions.targetTriple.getOSTypeName();
+    const String archName = cliOptions.targetTriple.getArchTypeName();
+
+    // basePath never has a '.spice' extension, so getFileName() (not getBaseName(), which assumes an extension) is the
+    // bare stem to build the candidate file names from
+    const String stem = basePath.getFileName();
+    const FilePath parentDir = FilePath(basePath.getParentDir());
+    candidatePaths.pushBack(parentDir / (stem + "_" + osName + "_" + archName + ".spice"));
+    candidatePaths.pushBack(parentDir / (stem + "_" + osName + ".spice"));
+    candidatePaths.pushBack(parentDir / (stem + "_" + archName + ".spice"));
+    candidatePaths.pushBack(parentDir / (stem + ".spice"));
+
+    const unsigned long defaultPathIdx = candidatePaths.getSize() - 1l;
+    for unsigned long i = 0l; i < candidatePaths.getSize(); i++ {
+        const FilePath& candidatePath = candidatePaths.get(i);
+        if candidatePath.exists() && (i == defaultPathIdx || !requestingFilePath.equivalent(candidatePath)) {
+            return candidatePath;
+        }
     }
     return FilePath();
 }
@@ -639,5 +690,50 @@ f<bool> testGetStdTPDEFlags() {
     assert flagsWithoutTpde.isEmpty();
     assert flags == expected;
     assert flagsWithoutTpdeLlvm.isEmpty();
+    return true;
+}
+
+// Resolve the platform specific variant of the given source file for the given target
+f<String> resolveTestSourceFile(const FilePath& basePath, const string target, bool freestanding, const FilePath& requestingFilePath) {
+    CliOptions cliOptions;
+    cliOptions.targetTriple = llvm::Triple(target);
+    cliOptions.freestanding = freestanding;
+    Vector<FilePath> candidatePaths;
+    const FilePath resolvedPath = resolvePlatformSpecificSourceFile(cliOptions, basePath, requestingFilePath, candidatePaths);
+    assert candidatePaths.getSize() == 4l;
+    return resolvedPath.isEmpty() ? String() : resolvedPath.getFileName();
+}
+
+#[test]
+f<bool> testResolvePlatformSpecificSourceFile() {
+    const FilePath dir = makeUniqueTestDir("spice-test-platform-specific-source");
+    const FilePath basePath = dir / "foo";
+    const FilePath noRequestingFile;
+    const String missing = resolveTestSourceFile(dir / "bar", "x86_64-unknown-linux-gnu", false, noRequestingFile);
+    writeTestFile(dir / "foo.spice", "\n");
+    writeTestFile(dir / "foo_x86_64.spice", "\n");
+    writeTestFile(dir / "foo_linux_x86_64.spice", "\n");
+    writeTestFile(dir / "foo_freestanding.spice", "\n");
+    // The most specific variant wins
+    const String linuxX86_64 = resolveTestSourceFile(basePath, "x86_64-unknown-linux-gnu", false, noRequestingFile);
+    const String linuxAArch64 = resolveTestSourceFile(basePath, "aarch64-unknown-linux-gnu", false, noRequestingFile);
+    const String windowsX86_64 = resolveTestSourceFile(basePath, "x86_64-w64-windows-gnu", false, noRequestingFile);
+    // In freestanding mode, the OS part of the suffix is 'freestanding', also for a target with an OS
+    const String freestandingLinux = resolveTestSourceFile(basePath, "x86_64-unknown-linux-gnu", true, noRequestingFile);
+    const String freestandingNone = resolveTestSourceFile(basePath, "aarch64-none-elf", true, noRequestingFile);
+    // A variant never resolves to the requesting file, but the default file does
+    const String fromVariant = resolveTestSourceFile(basePath, "x86_64-unknown-linux-gnu", false, dir / "foo_linux_x86_64.spice");
+    const String fromDefault = resolveTestSourceFile(basePath, "aarch64-unknown-linux-gnu", false, dir / "foo.spice");
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(dir);
+    assert missing.isEmpty();
+    assert linuxX86_64 == "foo_linux_x86_64.spice";
+    assert linuxAArch64 == "foo.spice";
+    assert windowsX86_64 == "foo_x86_64.spice";
+    assert freestandingLinux == "foo_freestanding.spice";
+    assert freestandingNone == "foo_freestanding.spice";
+    assert fromVariant == "foo_x86_64.spice";
+    assert fromDefault == "foo.spice";
     return true;
 }

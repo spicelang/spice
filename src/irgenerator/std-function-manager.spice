@@ -267,6 +267,29 @@ public f<llvm::Function> StdFunctionManager.getDumpStacktraceFct() {
     return this.getProcedure(mangledName.getRaw(), paramTypes);
 }
 
+public f<llvm::Function> StdFunctionManager.getTrapIntrinsic() {
+    const Vector<llvm::Type> noOverloadTypes;
+    return this.module.getIntrinsicDeclaration("llvm.trap", noOverloadTypes);
+}
+
+/**
+ * Get the user-defined panic handler of a freestanding program: p(string message, string file, unsigned int line)
+ *
+ * @param mangledName Mangled name of the panic handler
+ * @return Panic handler declaration, or the definition, if it is in the current module
+ */
+public f<llvm::Function> StdFunctionManager.getPanicHandlerFct(const String& mangledName) {
+    Vector<llvm::Type> paramTypes;
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getPtrTy());
+    paramTypes.pushBack(this.builder.getInt32Ty());
+    llvm::Function panicHandlerFct = this.getProcedure(mangledName.getRaw(), paramTypes);
+    // Set attributes
+    panicHandlerFct.addFnAttr("noreturn");
+    panicHandlerFct.addFnAttr("nounwind");
+    return panicHandlerFct;
+}
+
 public f<llvm::Function> StdFunctionManager.getAcrtIOFuncFct() {
     Vector<llvm::Type> paramTypes;
     paramTypes.pushBack(this.builder.getInt32Ty());

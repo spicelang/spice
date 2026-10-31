@@ -8,6 +8,8 @@ import "std/data/unordered-map";
 import "std/os/mutex";
 import "std/os/thread";
 import "std/type/type-conversion";
+import "std/text/string-ext";
+import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
 import "@/exception/fatal-error";
@@ -61,9 +63,18 @@ public p ExternalLinkerInterface.dtor() {
  * Prepare the linker for the linking process by assembling the required linker flags
  */
 public p ExternalLinkerInterface.prepare() {
+    // Freestanding mode: no host crt files and no libc. Executables are linked statically, because there is no dynamic loader.
+    // Wasm keeps its own setup below.
+    const bool isFreestanding = this.cliOptions.freestanding && !this.isTargetWasm();
+    if isFreestanding {
+        this.addLinkerFlag("-nostdlib");
+    }
+
     // Static or shared linking
     if this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
         this.addLinkerFlag("-shared");
+    } else if isFreestanding {
+        this.addLinkerFlag("-static");
     } else if this.cliOptions.staticLinking {
         // A static PIE on Linux, so that static executables get ASLR for their image as well. This needs all linked archives
         // to be position independent (see setup-deps.py and the release workflow for the archives of the compiler itself)
@@ -79,8 +90,9 @@ public p ExternalLinkerInterface.prepare() {
     }
 
     // Full RELRO on Linux: resolve all symbols at load time ('now') and remap the relocation sections, including the GOT, as
-    // read-only afterwards ('relro'). This takes away the GOT overwrite primitive of memory corruption exploits.
-    if this.isTargetLinux() && (this.cliOptions.outputContainer == OutputContainer::EXECUTABLE || this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY) {
+    // read-only afterwards ('relro'). This takes away the GOT overwrite primitive of memory corruption exploits. There is no
+    // dynamic loader in freestanding mode, that could do this.
+    if this.isTargetLinux() && !isFreestanding && (this.cliOptions.outputContainer == OutputContainer::EXECUTABLE || this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY) {
         this.addLinkerFlag("-Wl,-z,relro");
         this.addLinkerFlag("-Wl,-z,now");
     }
@@ -93,7 +105,7 @@ public p ExternalLinkerInterface.prepare() {
     // Position independent executable on Linux, if the code is generated position independent (see the 'PIE Level' module
     // flag). Request it explicitly either way, instead of relying on the default of the linker invoker, which differs between
     // distributions. Static executables are linked with '-static-pie' or '-static' above.
-    if this.isTargetLinux() && !this.cliOptions.staticLinking {
+    if this.isTargetLinux() && !this.cliOptions.staticLinking && !isFreestanding {
         this.addLinkerFlag(this.cliOptions.isPositionIndependent() ? "-pie" : "-no-pie");
     }
 
@@ -223,6 +235,11 @@ p ExternalLinkerInterface.link() {
     if this.linkLibMath {
         args.pushBack(String("-lm"));
     }
+    // The linker script is passed verbatim, not as linker flag, so that its path is not expanded like the flags of the attributes
+    if !this.cliOptions.linkerScript.isEmpty() {
+        args.pushBack(String("-T"));
+        args.pushBack(String(this.cliOptions.linkerScript.toString()));
+    }
 
     // Print status message
     if this.cliOptions.printDebugOutput {
@@ -251,9 +268,30 @@ f<Vector<String>> ExternalLinkerInterface.getInvokerArgs(const ExternalBinaryFin
     }
     // '--target=' is clang-only; GCC uses target-specific toolchain prefixes instead
     if !isGccInvoker {
-        args.pushBack(String("--target=") + this.cliOptions.targetTriple.value);
+        args.pushBack(String("--target=") + this.getInvokerTargetTriple());
     }
     return args;
+}
+
+/**
+ * Get the target triple for the linker invoker. Clang only links for a target without OS itself, if the triple names an
+ * environment (e.g. aarch64-none-elf or thumbv7em-none-eabihf). Otherwise, it hands the linking over to GCC, which cannot
+ * link for other targets than the host. So ELF is requested explicitly for triples like x86_64-unknown-none. The emitted
+ * code does not depend on it.
+ *
+ * @return Target triple for the linker invoker
+ */
+f<String> ExternalLinkerInterface.getInvokerTargetTriple() {
+    const llvm::Triple& triple = this.cliOptions.targetTriple;
+    if this.cliOptions.targetHasOs || this.isTargetWasm() {
+        return String(triple.value);
+    }
+    const llvm::Triple normalizedTriple = triple.normalize();
+    const Vector<String> fragments = split(String(normalizedTriple.value), '-');
+    if fragments.getSize() != 3l {
+        return String(triple.value);
+    }
+    return String(normalizedTriple.value) + "-elf";
 }
 
 /**
@@ -740,5 +778,60 @@ f<bool> testAppendCompileArgs() {
     assert compileArgs.get(4l) == "-pthread";
     assert compileArgs.get(5l) == "-fsanitize=address";
     assert compileArgs.get(6l) == "--coverage";
+    return true;
+}
+
+// Whether the linker flags of the given linker contain the given flag
+f<bool> hasLinkerFlag(const ExternalLinkerInterface& linker, string flag) {
+    foreach const String& linkerFlag : linker.linkerFlags {
+        if linkerFlag == flag {
+            return true;
+        }
+    }
+    return false;
+}
+
+#[test]
+f<bool> testFreestandingLinkerSetup() {
+    // A hosted Linux executable is a PIE with full RELRO
+    CliOptions hostedOptions;
+    hostedOptions.targetTriple = llvm::Triple("x86_64-unknown-linux-gnu");
+    hostedOptions.relocModel = RelocModel::PIE;
+    ExternalLinkerInterface hostedLinker = ExternalLinkerInterface(hostedOptions);
+    hostedLinker.prepare();
+    assert !hasLinkerFlag(hostedLinker, "-nostdlib");
+    assert hasLinkerFlag(hostedLinker, "-pie");
+    assert hasLinkerFlag(hostedLinker, "-Wl,-z,relro");
+    assert hostedLinker.getInvokerTargetTriple() == "x86_64-unknown-linux-gnu";
+
+    // A freestanding executable has neither libc, nor a dynamic loader
+    CliOptions freestandingOptions;
+    freestandingOptions.targetTriple = llvm::Triple("x86_64-unknown-linux-gnu");
+    freestandingOptions.freestanding = true;
+    freestandingOptions.relocModel = RelocModel::STATIC;
+    ExternalLinkerInterface freestandingLinker = ExternalLinkerInterface(freestandingOptions);
+    freestandingLinker.prepare();
+    assert hasLinkerFlag(freestandingLinker, "-nostdlib");
+    assert hasLinkerFlag(freestandingLinker, "-static");
+    assert !hasLinkerFlag(freestandingLinker, "-pie");
+    assert !hasLinkerFlag(freestandingLinker, "-no-pie");
+    assert !hasLinkerFlag(freestandingLinker, "-Wl,-z,relro");
+    assert !hasLinkerFlag(freestandingLinker, "-Wl,-z,now");
+    assert freestandingLinker.getInvokerTargetTriple() == "x86_64-unknown-linux-gnu";
+
+    // Clang only links for a target without OS itself, if the triple names an environment
+    CliOptions bareMetalOptions;
+    bareMetalOptions.freestanding = true;
+    bareMetalOptions.targetHasOs = false;
+    bareMetalOptions.targetTriple = llvm::Triple("x86_64-unknown-none");
+    ExternalLinkerInterface bareMetalLinker = ExternalLinkerInterface(bareMetalOptions);
+    assert bareMetalLinker.getInvokerTargetTriple() == "x86_64-unknown-none-elf";
+    bareMetalOptions.targetTriple = llvm::Triple("aarch64-none-elf");
+    assert bareMetalLinker.getInvokerTargetTriple() == "aarch64-none-elf";
+    bareMetalOptions.targetTriple = llvm::Triple("thumbv7em-none-eabihf");
+    assert bareMetalLinker.getInvokerTargetTriple() == "thumbv7em-none-eabihf";
+    // Wasm keeps its own setup
+    bareMetalOptions.targetTriple = llvm::Triple("wasm32-unknown-unknown");
+    assert bareMetalLinker.getInvokerTargetTriple() == "wasm32-unknown-unknown";
     return true;
 }

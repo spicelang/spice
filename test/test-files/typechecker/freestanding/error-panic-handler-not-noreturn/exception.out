@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:1:
+Invalid panic handler: A panic handler must not return. Mark it with #[core.compiler.noReturn]
+
+3  #[core.compiler.panicHandler]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

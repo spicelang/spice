@@ -1,0 +1,5 @@
+// TEST: --freestanding
+
+f<int> main() {
+    printf("Hello World!");
+}

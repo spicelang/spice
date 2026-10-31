@@ -1,0 +1,3 @@
+// Linux syscall numbers for x86_64. Freestanding mode picks this file via its '_freestanding_x86_64' suffix
+public const unsigned short SYSCALL_WRITE = 1us;
+public const unsigned short SYSCALL_EXIT = 60us;

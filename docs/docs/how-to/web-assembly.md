@@ -22,21 +22,13 @@ public f<int> fibo(int n) {
     if n <= 1 { return n; }
     return fibo(n - 1) + fibo(n - 2);
 }
-
-// Main function can be deleted, when compiling with --no-entry
-f<int> main() {
-   int fiboBase = 45;
-   printf("Fibonacci of %d: %d", fiboBase, fibo(fiboBase));
-}
 ```
 
-You can test, if the code works by compiling and running it, using the following command: <br>
-`$ spice run main.spice`
-
-Spice will not emit the `main` function when compiling to WebAssembly, so you may delete it now. The important part is to mark all
-functions as public, which should be accessible from JavaScript later on. Please also note, that you cannot link any external
-functions from the C standard library into your WebAssembly program, because it is required to be portable to any system. The
-`wasm-link` linker will complain if you try to use any external function when trying to compile to `wasm32` or `wasm64`.
+The important part is to mark all functions as public, which should be accessible from JavaScript later on. Please also note,
+that you cannot link any external functions from the C standard library into your WebAssembly program, because it is required
+to be portable to any system. `wasm32-unknown-unknown` is a target without operating system, so Spice compiles for it in
+[freestanding mode](freestanding.md), which rejects builtins like `printf`, that need the C standard library. Also, no `main`
+function is required.
 
 ## Cross-compile to wasm32
 
@@ -44,7 +36,7 @@ Now execute the following command to compile the code to an output `.wasm` file:
 `$ spice build -O3 --no-entry --target-arch=wasm32 main.spice`
 
 - `-O3` enables the highest possible optimization. You might also want to use `-Oz` instead to optimize for binary size.
-- `--no-entry` makes Spice not generate code for the `main` function. This also lifts the requirement for `main`
+- `--no-entry` makes Spice not generate code for the `main` function, in case your program has one
 - `--target-arch=wasm32` sets the cross-compilation target to WebAssembly. Another valid option is `wasm64`, which is currently not
    fully supported by browser engines as well as LLVM
 

@@ -1,0 +1,25 @@
+import "syscalls";
+
+/**
+ * Write the given string to stdout. There is no strlen in freestanding mode, so the length is determined here
+ */
+public p writeToStdout(string text) {
+    long length = 0l;
+    while text[length] != '\0' {
+        length++;
+    }
+    unsafe {
+        syscall(SYSCALL_WRITE, /* stdout */ 1l, cast<long>(cast<byte*>(text)), length);
+    }
+}
+
+/**
+ * Exit the process with the given exit code
+ */
+#[core.compiler.noReturn]
+public p exitProcess(int exitCode) {
+    unsafe {
+        syscall(SYSCALL_EXIT, cast<long>(exitCode));
+    }
+    while true {}
+}

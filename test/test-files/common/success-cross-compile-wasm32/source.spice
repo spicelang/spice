@@ -6,7 +6,7 @@ public f<int> fibo(int n) {
     return fibo(n - 1) + fibo(n - 2);
 }
 
+// wasm32-unknown-unknown is a freestanding target, so there is no printf
 f<int> main() {
-   int fiboBase = 45;
-   printf("Fibonacci of %d: %d", fiboBase, fibo(fiboBase));
+   return fibo(45);
 }

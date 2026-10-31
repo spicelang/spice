@@ -165,7 +165,11 @@ public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* so
     if this.cliOptions.codeModel != CodeModel::DEFAULT {
         this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_ERROR, "Code Model", getLLVMCodeModelFlagValue(this.cliOptions.codeModel));
     }
-    this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "uwtable", 2); // llvm::UWTableKind::Default
+    // Spice has no exceptions, so the unwind tables are only needed for stack traces and debuggers. A freestanding build prints
+    // no stack traces, so it gets no '.eh_frame' section, which bare-metal linker scripts would have to place
+    if !this.cliOptions.freestanding {
+        this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "uwtable", 2); // llvm::UWTableKind::Default
+    }
     // llvm::FramePointerKind::All or llvm::FramePointerKind::None
     this.module.addModuleFlag(llvm::MOD_FLAG_BEHAVIOR_MAX, "frame-pointer", this.cliOptions.keepFramePointers ? 2 : 0);
 
@@ -1300,7 +1304,9 @@ p IRGenerator.attachComdatToSymbol(llvm::Value global, const String& comdatName,
  */
 p IRGenerator.addCommonFctAttrs(llvm::Function fct, bool isAlwaysInline = false, IVisitable* attrs = nil<IVisitable*>) {
     fct.addFnAttr("nounwind");
-    fct.addFnAttr("uwtable", 2l); // llvm::UWTableKind::Default
+    if !this.cliOptions.freestanding {
+        fct.addFnAttr("uwtable", 2l); // llvm::UWTableKind::Default
+    }
     if this.cliOptions.keepFramePointers {
         fct.addFnStringAttr("frame-pointer", "all");
     }
@@ -3105,6 +3111,15 @@ public f<Any> IRGenerator.visitFallthroughStmt(ASTFallthroughStmtNode* node) {
 
 // Generate the body of a failed assertion
 p IRGenerator.generateAssertBody(ASTAssertStmtNode* node) {
+    // Without stderr and exit(), the panic handler takes over in freestanding mode
+    if this.cliOptions.freestanding {
+        const String message = "Assertion failed: Condition '" + node.expressionString + "' evaluated to false";
+        const llvm::Value messageString = this.createGlobalStringConst(String("assert.msg."), message, node.codeLoc);
+        this.generateFreestandingPanic(messageString, cast<ASTNode*>(node));
+        this.blockAlreadyTerminated = true;
+        return;
+    }
+
     // Create constant for error message. It is the format string of the fprintf call below, so the condition's source text
     // must not be mistaken for conversion specifiers
     String expressionString = node.expressionString;
@@ -4078,27 +4093,34 @@ p IRGenerator.generateUnionFieldAccess(ASTPostfixUnaryExprNode* node, LLVMExprRe
         this.insertCondJump(tagMatches, bOk, bPanic, Likelihood::LIKELY);
 
         this.switchToBlock(bPanic);
-        const llvm::Value stdErrValue = this.getStdErrValue();
-        const String errorMsg = "Program panicked at " + node.codeLoc.toPrettyString() + ": active field mismatch on union field access '" + fieldName + "'\n";
-        const String globalName = this.getUnusedGlobalName(String(ANON_GLOBAL_STRING_NAME));
-        llvm::Value globalString = this.module.createGlobalString(errorMsg, globalName.getRaw());
-        if this.cliOptions.comparableOutput {
-            globalString.setAlignment(4);
+        if this.cliOptions.freestanding {
+            // Without stderr and exit(), the panic handler takes over in freestanding mode
+            const String message = "Active field mismatch on union field access '" + fieldName + "'";
+            const llvm::Value messageString = this.createGlobalStringConst(String("union.tag.msg."), message, node.codeLoc);
+            this.generateFreestandingPanic(messageString, cast<ASTNode*>(node));
+        } else {
+            const llvm::Value stdErrValue = this.getStdErrValue();
+            const String errorMsg = "Program panicked at " + node.codeLoc.toPrettyString() + ": active field mismatch on union field access '" + fieldName + "'\n";
+            const String globalName = this.getUnusedGlobalName(String(ANON_GLOBAL_STRING_NAME));
+            llvm::Value globalString = this.module.createGlobalString(errorMsg, globalName.getRaw());
+            if this.cliOptions.comparableOutput {
+                globalString.setAlignment(4);
+            }
+            Vector<llvm::Value> fprintfArgs;
+            fprintfArgs.pushBack(stdErrValue);
+            fprintfArgs.pushBack(globalString);
+            this.builder.createCall(this.stdFunctionManager.getFPrintfFct(), fprintfArgs);
+            if this.cliOptions.printsStackTraceOnAbort() {
+                Vector<llvm::Value> dumpArgs;
+                dumpArgs.pushBack(this.builder.getTrue());
+                dumpArgs.pushBack(this.builder.getFalse());
+                this.builder.createCall(this.stdFunctionManager.getDumpStacktraceFct(), dumpArgs);
+            }
+            Vector<llvm::Value> exitArgs;
+            exitArgs.pushBack(this.getInt32(cast<long>(EXIT_FAILURE)));
+            this.builder.createCall(this.stdFunctionManager.getExitFct(), exitArgs);
+            this.builder.createUnreachable();
         }
-        Vector<llvm::Value> fprintfArgs;
-        fprintfArgs.pushBack(stdErrValue);
-        fprintfArgs.pushBack(globalString);
-        this.builder.createCall(this.stdFunctionManager.getFPrintfFct(), fprintfArgs);
-        if this.cliOptions.printsStackTraceOnAbort() {
-            Vector<llvm::Value> dumpArgs;
-            dumpArgs.pushBack(this.builder.getTrue());
-            dumpArgs.pushBack(this.builder.getFalse());
-            this.builder.createCall(this.stdFunctionManager.getDumpStacktraceFct(), dumpArgs);
-        }
-        Vector<llvm::Value> exitArgs;
-        exitArgs.pushBack(this.getInt32(cast<long>(EXIT_FAILURE)));
-        this.builder.createCall(this.stdFunctionManager.getExitFct(), exitArgs);
-        this.builder.createUnreachable();
 
         this.switchToBlock(bOk);
     }
@@ -5437,6 +5459,48 @@ f<Any> IRGenerator.visitBuiltinPrintfCall(ASTFctCallNode* node) {
     return exprResultAny(exprResultWithValue(callInst));
 }
 
+/**
+ * Load the message of the error, that is passed to the panic builtin
+ *
+ * @param node Call of the panic builtin
+ * @return Error message (a C string)
+ */
+f<llvm::Value> IRGenerator.getPanicErrorMessage(ASTFctCallNode* node) {
+    assert node.hasArgs;
+    IVisitable* assignExpr = node.argLst.args.front();
+    const llvm::Value errorObjPtr = this.resolveAddress(assignExpr);
+    const QualType errorObjType = this.getEvaluatedType(assignExpr);
+    const llvm::Type errorObjTy = errorObjType.toLLVMType(this.sourceFile);
+    const llvm::Value errorMessagePtr = this.insertStructGEP(errorObjTy, errorObjPtr, 1);
+    return this.insertLoad(this.builder.getPtrTy(), errorMessagePtr);
+}
+
+/**
+ * Generate the abort of a panic, a failed assertion or an access to an inactive union field in freestanding mode, where there
+ * is neither stderr nor exit(). It calls the panic handler of the program, if there is one, and traps otherwise. This is the
+ * single panic entry point of a freestanding program.
+ *
+ * @param message Panic message (a C string)
+ * @param node AST node, whose code location is passed to the panic handler
+ */
+p IRGenerator.generateFreestandingPanic(llvm::Value message, const ASTNode* node) {
+    model::Function* panicHandler = this.resourceManager.panicHandler;
+    if panicHandler != nil<model::Function*> {
+        const String mangledName = panicHandler.getMangledName();
+        const llvm::Function panicHandlerFct = this.stdFunctionManager.getPanicHandlerFct(mangledName);
+        const llvm::Value fileName = this.createGlobalStringConst(String("panic.file."), node.codeLoc.toPrettyFilePath(), node.codeLoc);
+        Vector<llvm::Value> args;
+        args.pushBack(message);
+        args.pushBack(fileName);
+        args.pushBack(this.getInt32(cast<long>(node.codeLoc.line)));
+        this.builder.createCall(panicHandlerFct, args);
+    } else {
+        const Vector<llvm::Value> noArgs;
+        this.builder.createCall(this.stdFunctionManager.getTrapIntrinsic(), noArgs);
+    }
+    this.builder.createUnreachable();
+}
+
 f<Any> IRGenerator.visitBuiltinLenCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_LEN;
 
@@ -5455,14 +5519,21 @@ f<Any> IRGenerator.visitBuiltinLenCall(ASTFctCallNode* node) {
 
 f<Any> IRGenerator.visitBuiltinPanicCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_PANIC;
+    ASTNode* baseNode = cast<ASTNode*>(node);
 
-    const llvm::Type ptrTy = this.builder.getPtrTy();
+    // Without stderr and exit(), the panic handler takes over in freestanding mode. It does not return, so the scope is not
+    // cleaned up, and the message of the error stays valid until the handler is done with it
+    if this.cliOptions.freestanding {
+        const llvm::Value errorMessage = this.getPanicErrorMessage(node);
+        this.generateFreestandingPanic(errorMessage, baseNode);
+        this.blockAlreadyTerminated = true;
+        return Any();
+    }
 
     // Get value for stderr
     const llvm::Value stdErr = this.getStdErrValue();
 
     // Create constant for error message
-    ASTNode* baseNode = cast<ASTNode*>(node);
     const String codeLoc = node.codeLoc.toPrettyString();
     const String templateStr = "Program panicked at " + codeLoc + ": %s\n" + baseNode.getErrorMessage() + "\n";
     const String globalName = this.getUnusedGlobalName(String(ANON_GLOBAL_STRING_NAME));
@@ -5474,13 +5545,7 @@ f<Any> IRGenerator.visitBuiltinPanicCall(ASTFctCallNode* node) {
     }
 
     // Get actual error message
-    assert node.hasArgs;
-    IVisitable* assignExpr = node.argLst.args.front();
-    const llvm::Value errorObjPtr = this.resolveAddress(assignExpr);
-    const QualType errorObjType = this.getEvaluatedType(assignExpr);
-    const llvm::Type errorObjTy = errorObjType.toLLVMType(this.sourceFile);
-    const llvm::Value errorMessagePtr = this.insertStructGEP(errorObjTy, errorObjPtr, 1);
-    const llvm::Value errorMessage = this.insertLoad(ptrTy, errorMessagePtr);
+    const llvm::Value errorMessage = this.getPanicErrorMessage(node);
 
     // Print the error message to stderr
     const llvm::Function fprintfFct = this.stdFunctionManager.getFPrintfFct();
@@ -7341,7 +7406,8 @@ f<bool> isPublicDefaultMethod(const model::Function* function) {
  */
 public f<bool> isExportedFunction(const model::Function* function, bool hasTestMain) {
     const QualType& entryType = function.entry.getQualType();
-    if entryType.isPublic() || isPublicDefaultMethod(function) {
+    // The panic handler is called by the panics of all source files
+    if entryType.isPublic() || isPublicDefaultMethod(function) || function.isPanicHandler {
         return true;
     }
     if function.declNode.kind != ASTNodeKind::FCT_DEF {

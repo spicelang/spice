@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:5:1:
+Multiple panic handlers: The program already has a panic handler, defined at ../source2.spice:1:1
+
+5  #[core.compiler.panicHandler, core.compiler.noReturn]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

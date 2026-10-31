@@ -11,15 +11,15 @@ dependencies, that the compiler, the runtime modules and the linker add implicit
 
 ## Implementation steps:
 
-- [ ] Phase 1: freestanding mode without heap types
-    - [ ] `--freestanding` CLI option, implied by a target OS of `none`/`unknown`
-    - [ ] `_freestanding` file suffix in the import collector
-    - [ ] Single panic entry point, user-defined panic handler with a trap fallback
-    - [ ] Reject the `printf` and `stderr` builtins
-    - [ ] No stack traces, no `uwtable`, static relocation model per default
-    - [ ] Optional `main` function, user-defined entry point
-    - [ ] Linker: `-nostdlib -static`, no PIE/RELRO, `--linker-script`
-    - [ ] Tests and docs
+- [x] Phase 1: freestanding mode without heap types
+    - [x] `--freestanding` CLI option, implied by a target OS of `none`/`unknown`
+    - [x] `_freestanding` file suffix in the import collector
+    - [x] Single panic entry point, user-defined panic handler with a trap fallback
+    - [x] Reject the `printf` and `stderr` builtins
+    - [x] No stack traces, no `uwtable`, static relocation model per default
+    - [x] Optional `main` function, user-defined entry point
+    - [x] Linker: `-nostdlib -static`, no PIE/RELRO, `--linker-script`
+    - [x] Tests and docs
 - [ ] Phase 2: heap types
     - [ ] Allocator hook
     - [ ] `memory_rt_freestanding.spice` and `string_rt_freestanding.spice`
@@ -72,7 +72,9 @@ avoided and is also part of the C freestanding contract (see "mem* functions").
   `x86_64-unknown-none`, `aarch64-none-elf`, `thumbv7em-none-eabihf`, `riscv32-unknown-none-elf`,
   `wasm32-unknown-unknown`. Kernel code for a Linux triple passes `--freestanding` explicitly.
 - `run` and `test` with `--freestanding` are only allowed for the native target, since the resulting executable has to
-  run on the host (e.g. a Linux `_start` that exits via `syscall`).
+  run on the host (e.g. a Linux `_start` that exits via `syscall`). Both subcommands have no target options anyway.
+  `test` (and `--test-main`) is rejected in freestanding mode in phase 1, see "Code generation".
+- The `syscall` builtin is rejected for targets without OS, since there is no kernel to call.
 - Rejected with `--sanitizer` and `--coverage`, since their runtimes need a hosted libc.
 - Defaults that change in freestanding mode: `--relocation-model=static`. Explicit options still win.
 
@@ -85,6 +87,16 @@ freestanding variants of its files (`memory_rt_freestanding.spice`) with the exi
 the combined suffix (`foo_freestanding_aarch64.spice`).
 
 ### Panic entry point
+
+> **Implementation note:** Phase 1 implements the single entry point for freestanding mode only, in
+> `IRGenerator.generateFreestandingPanic`. Hosted panics keep their inlined `fprintf` + `exit` sequences, so the hosted IR
+> refs did not change. The hosted `sPanic` runtime function below is left for later: with the signature
+> `(message, file, line)`, it could not reproduce today's output (the panic output contains the code snippet, the assert
+> output has no code location at all). The message, that the panic handler receives, is the message of the error for
+> `panic`, `Assertion failed: Condition '<condition>' evaluated to false` for a failed assertion and
+> `Active field mismatch on union field access '<field>'` for an inactive union field. In freestanding mode, the panic does
+> not clean up the scope, since the handler never returns. The runtime modules get a `_freestanding` variant via the same
+> suffix mechanism as imports, which is used for `error_rt_freestanding.spice` (`Error` without the printing methods).
 
 The `panic` builtin, `assert` and the union tag check each emit their own `fprintf` + `exit`
 sequence today. They are routed through a single `noReturn` runtime function:
@@ -146,8 +158,11 @@ public p sPanic(string message, string file, unsigned int line)
 
 - In freestanding mode, link with `-nostdlib -static` and skip the PIE, RELRO and `-static-pie` handling.
 - Prefer `ld.lld` (via clang with `--target=<triple> -fuse-ld=lld`), since the host gcc driver cannot link for
-  arbitrary bare-metal triples.
-- New option `--linker-script <path>`, passed as `-Wl,-T,<path>`. `core.linker.flag` already covers other ad-hoc
+  arbitrary bare-metal triples. Implemented for cross targets: freestanding builds for the host keep the usual linker.
+  Clang only uses its bare-metal toolchain, if the triple has an environment, and hands the link to gcc otherwise. So
+  `-elf` is appended for the linker invoker to triples like `x86_64-unknown-none`.
+- New option `--linker-script <path>`, passed as `-T <path>` to the linker invoker, verbatim, without the expansion of the
+  linker flags. `core.linker.flag` already covers other ad-hoc
   flags.
 - `--output-container=object` already works for users, that want to link themselves.
 - Raw binary output (`llvm-objcopy -O binary`) is a possible follow-up.
