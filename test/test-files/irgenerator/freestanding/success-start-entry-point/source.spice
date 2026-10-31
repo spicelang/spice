@@ -1,0 +1,11 @@
+// TEST: --freestanding
+
+// A Linux program without libc and crt0: the user-defined entry point talks to the kernel via syscalls
+
+import "io";
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    writeToStdout("Hello from freestanding Spice!\n");
+    exitProcess(42);
+}

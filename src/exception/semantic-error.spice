@@ -120,7 +120,10 @@ public type SemanticErrorType enum {
     INTERFACE_RETURNED_BY_VALUE,
     UNSUPPORTED_BY_BACKEND,
     INVALID_ASM_CONSTRAINTS,
-    INVALID_ASM_TEMPLATE
+    INVALID_ASM_TEMPLATE,
+    UNSUPPORTED_IN_FREESTANDING_MODE,
+    INVALID_PANIC_HANDLER,
+    MULTIPLE_PANIC_HANDLERS
 }
 
 public type SemanticError struct {
@@ -285,6 +288,9 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::UNSUPPORTED_BY_BACKEND: { return "Unsupported by backend"; }
         case SemanticErrorType::INVALID_ASM_CONSTRAINTS: { return "Invalid inline assembly constraints"; }
         case SemanticErrorType::INVALID_ASM_TEMPLATE: { return "Invalid inline assembly template"; }
+        case SemanticErrorType::UNSUPPORTED_IN_FREESTANDING_MODE: { return "Unsupported in freestanding mode"; }
+        case SemanticErrorType::INVALID_PANIC_HANDLER: { return "Invalid panic handler"; }
+        case SemanticErrorType::MULTIPLE_PANIC_HANDLERS: { return "Multiple panic handlers"; }
         default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

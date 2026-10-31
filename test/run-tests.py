@@ -238,6 +238,18 @@ def emits_debug_info(args: list[str]) -> bool:
     return debug_info
 
 
+def is_freestanding_build(args: list[str]) -> bool:
+    """Check if the given compiler args request a freestanding build, explicitly or with a target without OS"""
+    for arg in args:
+        if arg == "--freestanding":
+            return True
+        if arg.startswith("--target="):
+            target_fragments = arg.split("=", 1)[1].split("-")
+            if "none" in target_fragments[1:] or target_fragments[1:] == ["unknown", "unknown"]:
+                return True
+    return False
+
+
 def get_output_container(args: list[str]) -> str | None:
     """Get the output container, the given compiler args request. Like for the compiler, the last one wins"""
     output_container = None
@@ -574,14 +586,16 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
                         does_ref_exist(test_case.file(REF_NAME_EXIT_CODE)) or
                         does_ref_exist(test_case.file(REF_NAME_GDB_OUTPUT)))
     test_args = parse_test_args(main_source_path)
+    # The runtimes of the instrumentation need a hosted libc, so freestanding test cases are not instrumented
+    is_freestanding = is_freestanding_build(test_args)
 
     def build_args(output_path: Path) -> list[str]:
         args = ["build", "--test-mode", *test_args]
         if os.path.exists(test_case.file(CTL_RUN_BUILTIN_TESTS)):
             args.append("--test-main")
-        if OPTS.coverage:
+        if OPTS.coverage and not is_freestanding:
             args.append("--coverage")
-        if OPTS.asan:
+        if OPTS.asan and not is_freestanding:
             args += ["--sanitizer", "address"]
         return args + ["--output", str(output_path)]
 

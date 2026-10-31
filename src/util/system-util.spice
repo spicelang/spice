@@ -19,6 +19,9 @@ import "@/exception/compiler-error";
 import "@/exception/linker-error";
 import "@/util/test-util";
 
+// OS part of the platform specific file suffix in freestanding mode, e.g. memory_rt_freestanding.spice
+public const string OS_SUFFIX_FREESTANDING = "freestanding";
+
 public type ExecResult struct {
     public String output
     public int exitCode
@@ -274,9 +277,14 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
  * @return Name of path to the linker executable
  */
 public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bool isGccInvoker) {
+    // The host linkers cannot link for arbitrary bare-metal targets, so freestanding cross builds use lld. Wasm keeps its setup
+    const bool requiresLLD = cliOptions.freestanding && !cliOptions.isNativeTarget && !cliOptions.targetTriple.isWasm();
     if isUnixBased() {
         // Use the flavor-specific lld driver, since the generic 'lld' driver refuses to be invoked directly
         foreach const string linkerName : ["wild", "mold", "ld.lld", "ld64.lld", "gold", "ld"] {
+            if requiresLLD && linkerName != "ld.lld" {
+                continue;
+            }
             // wild does only support linking for a subset of the Linux targets. GCC does not accept the path of the linker in
             // '-fuse-ld=', so wild is only used with clang as linker invoker
             if linkerName == "wild" && (isGccInvoker || !isWildSupportedTarget(cliOptions.targetTriple)) {
@@ -302,6 +310,10 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bo
     } else {                                                                       // LCOV_EXCL_LINE
         panic(Error("Unsupported platform"));                                      // LCOV_EXCL_LINE
     }                                                                              // LCOV_EXCL_LINE
+    if requiresLLD {
+        const LinkerError lldError = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "Freestanding builds for other targets than the host require the lld linker, but it was not found on the system");
+        abortWithError(lldError.getMessage());
+    }
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: wild, mold, lld, gold and ld");
     abortWithError(error.getMessage());
     return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process

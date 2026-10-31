@@ -1,0 +1,21 @@
+// TEST: --freestanding
+
+// The panic handler prints the message and exits with the line of the panic as exit code
+
+import "io";
+
+#[core.compiler.panicHandler, core.compiler.noReturn]
+p onPanic(string message, string file, unsigned int line) {
+    writeToStdout("Panic in ");
+    writeToStdout(file);
+    writeToStdout(": ");
+    writeToStdout(message);
+    writeToStdout("\n");
+    exitProcess(cast<int>(line));
+}
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    writeToStdout("Before the panic\n");
+    panic(Error("Something went wrong"));
+}

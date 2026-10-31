@@ -183,6 +183,9 @@ public type CliOptions struct {
     public RelocModel relocModel = RelocModel::DEFAULT
     public CodeModel codeModel = CodeModel::DEFAULT
     public bool stripSymbols = false
+    public bool freestanding = false // No hosted libc, crt0 or OS. Implied by a target triple without OS
+    public bool targetHasOs = true // False for targets like x86_64-unknown-none, see Driver.enrich
+    public FilePath linkerScript // Passed to the linker with '-T', if set
 }
 
 /**
@@ -208,12 +211,12 @@ public p CliOptions.setBuildVar(const String& key, const String& value) {
 /**
  * Whether a panic or failed assertion prints the stack trace of the failing call. It needs the std's libbacktrace, which is
  * built for the host machine only, so cross-compiling leaves it out rather than fail to link. Comparable output leaves it out too,
- * as the frames and their offsets differ between platforms and compilers.
+ * as the frames and their offsets differ between platforms and compilers. A freestanding build has no libc to print it with.
  *
  * @return Prints a stack trace or not
  */
 public const f<bool> CliOptions.printsStackTraceOnAbort() {
-    return this.isNativeTarget && !this.comparableOutput;
+    return this.isNativeTarget && !this.comparableOutput && !this.freestanding;
 }
 
 /**
@@ -390,6 +393,27 @@ public p Driver.enrich() {
         }
     }
 
+    // Freestanding mode: no hosted libc, crt0 or OS. Implied by targets without an OS, e.g. x86_64-unknown-none, aarch64-none-elf
+    // or wasm32-unknown-unknown. The triple is normalized first, so that short forms like x86_64-linux-gnu keep their OS
+    const llvm::Triple normalizedTriple = this.cliOptions.targetTriple.normalize();
+    this.cliOptions.targetHasOs = normalizedTriple.getOSTypeName() != TARGET_UNKNOWN;
+    if !this.cliOptions.targetHasOs {
+        this.cliOptions.freestanding = true;
+    }
+    if this.cliOptions.freestanding {
+        // The runtimes of the sanitizers and the coverage instrumentation need a hosted libc
+        if sanitizer != Sanitizer::NONE {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Sanitizers are not supported in freestanding mode");
+        }
+        if this.cliOptions.instrumentation.codeCoverage {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Code coverage instrumentation is not supported in freestanding mode");
+        }
+        // The test main prints the test results with printf
+        if this.cliOptions.generateTestMain {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "Running tests is not supported in freestanding mode");
+        }
+    }
+
     // Infer build vars from other options
     this.cliOptions.setBuildVar(String("spice.is_debug"), String(toString(this.cliOptions.buildMode == BuildMode::DEBUG)));
     this.cliOptions.setBuildVar(String("spice.is_release"), String(toString(this.cliOptions.buildMode == BuildMode::RELEASE)));
@@ -398,6 +422,7 @@ public p Driver.enrich() {
     this.cliOptions.setBuildVar(String("spice.is_native_target"), String(toString(this.cliOptions.isNativeTarget)));
     this.cliOptions.setBuildVar(String("spice.target_triple"), String(this.cliOptions.targetTriple.value));
     this.cliOptions.setBuildVar(String("spice.backend"), String(this.cliOptions.backend == Backend::TPDE ? BACKEND_TPDE : BACKEND_LLVM));
+    this.cliOptions.setBuildVar(String("spice.is_freestanding"), String(toString(this.cliOptions.freestanding)));
 
     // Prevent incompatible option combinations
     if this.cliOptions.staticLinking && this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
@@ -447,10 +472,18 @@ public p Driver.enrich() {
  * like Clang does.
  */
 p Driver.resolveRelocAndCodeModel() {
-    // Position independent executables by default, so that the executable image gets ASLR as well
+    // Position independent executables by default, so that the executable image gets ASLR as well. Freestanding code has no
+    // dynamic loader, that could relocate it, so it is static by default. Except for the TPDE backend, which always emits
+    // position independent code, and for Windows and Darwin, which are always position independent (see below)
     const bool isSharedLibrary = this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY;
+    const llvm::Triple& triple = this.cliOptions.targetTriple;
     if this.cliOptions.relocModel == RelocModel::DEFAULT {
-        this.cliOptions.relocModel = isSharedLibrary ? RelocModel::PIC : RelocModel::PIE;
+        const bool staticByDefault = this.cliOptions.freestanding && this.cliOptions.backend != Backend::TPDE && !triple.isOSWindows() && !triple.isOSDarwin();
+        if isSharedLibrary {
+            this.cliOptions.relocModel = RelocModel::PIC;
+        } else {
+            this.cliOptions.relocModel = staticByDefault ? RelocModel::STATIC : RelocModel::PIE;
+        }
     }
     // PIE code assumes, that all symbols it defines resolve locally, which does not hold in a shared library
     if isSharedLibrary && this.cliOptions.relocModel != RelocModel::PIC {
@@ -458,7 +491,6 @@ p Driver.resolveRelocAndCodeModel() {
     }
     // Windows and Darwin are always position independent: LLVM generates PIC code for Darwin anyway, and 64-bit Windows loads
     // images above 4 GiB, where absolute 32-bit addresses do not reach (Clang forces PIC on both)
-    const llvm::Triple& triple = this.cliOptions.targetTriple;
     if this.cliOptions.relocModel == RelocModel::STATIC && (triple.isOSWindows() || triple.isOSDarwin()) {
         const String message = String("The relocation model static is not supported for ") + triple.value;
         raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, message.getRaw());
@@ -666,6 +698,8 @@ p Driver.addBuildSubcommand() {
     subCmd.addFlag("--test-main", testMainCallback, "Generate a main function, that runs all enclosed tests, instead of the normal one. For internal use");
     // --static
     subCmd.addFlag("--static", this.cliOptions.staticLinking, "Link statically");
+    // --linker-script
+    subCmd.addOption("--linker-script", this.cliOptions.linkerScript, "Linker script, that controls the memory layout of the executable, e.g. for freestanding builds");
     // --strip-symbols
     subCmd.addFlag("--strip-symbols", this.cliOptions.stripSymbols, "Strip the symbol table from the executable, making it smaller at the price of unreadable stack traces and, together with --debug-info, no debug info either");
     // --dump-to-files
@@ -830,7 +864,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
             raiseCliError(CliErrorType::INVALID_RELOCATION_MODEL, inputString.getRaw());
         }
     };
-    subCmd.addOption("--relocation-model", relocModelCallback, "Relocation model: default (pie, pic for shared libraries), static, pic, pie");
+    subCmd.addOption("--relocation-model", relocModelCallback, "Relocation model: default (pie, pic for shared libraries, static in freestanding mode), static, pic, pie");
     // --code-model
     const p(const string&) codeModelCallback = p(const string& codeModel) {
         const String inputString = toLower(String(codeModel));
@@ -851,6 +885,8 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         }
     };
     subCmd.addOption("--code-model", codeModelCallback, "Code model, i.e. how far code and data may be apart: default (small), tiny, small, kernel, medium, large");
+    // --freestanding
+    subCmd.addFlag("--freestanding", this.cliOptions.freestanding, "Compile for an environment without hosted libc, crt0 and OS, e.g. a kernel or firmware. Implied by a target without OS");
     // --native-features
     subCmd.addFlag("--native-features", this.cliOptions.useNativeFeatures, "Tune the output for the CPU of the compiling machine and use all of its features. The output might not run on other machines of the same architecture");
     // --cpu-features
@@ -1452,5 +1488,73 @@ f<bool> testRelocAndCodeModels() {
     assert parseAndEnrich(small, 6, smallArgs);
     assert small.cliOptions.codeModel == CodeModel::SMALL;
     assert small.cliOptions.relocModel == RelocModel::PIE;
+    return true;
+}
+
+// Whether building for the given target enables the freestanding mode implicitly
+f<bool> isImpliedFreestanding(const string target) {
+    Driver driver;
+    string[5] args = ["spice", "build", "--target", target, "main-file.spice"];
+    assert parseAndEnrich(driver, 5, args);
+    return driver.cliOptions.freestanding;
+}
+
+#[test]
+f<bool> testFreestanding() {
+    // Hosted by default
+    Driver hosted;
+    string[3] hostedArgs = ["spice", "build", "main-file.spice"];
+    assert parseAndEnrich(hosted, 3, hostedArgs);
+    assert !hosted.cliOptions.freestanding;
+    assert hosted.cliOptions.linkerScript.isEmpty();
+    assert hosted.cliOptions.buildVars.get(String("spice.is_freestanding")) == "false";
+
+    // Explicitly requested, e.g. for kernel code on a Linux target. The code is static by default then
+    Driver kernel;
+    string[6] kernelArgs = ["spice", "build", "--freestanding", "--target=x86_64-unknown-linux-gnu", "--linker-script=kernel.ld", "main-file.spice"];
+    assert parseAndEnrich(kernel, 6, kernelArgs);
+    assert kernel.cliOptions.freestanding;
+    assert kernel.cliOptions.targetHasOs;
+    assert kernel.cliOptions.relocModel == RelocModel::STATIC;
+    assert !kernel.cliOptions.printsStackTraceOnAbort(); // There is no libc to print it with
+    assert kernel.cliOptions.linkerScript.toGenericString() == "kernel.ld";
+    assert kernel.cliOptions.buildVars.get(String("spice.is_freestanding")) == "true";
+
+    // An explicit relocation model still wins, and shared libraries stay position independent
+    Driver explicitPie;
+    string[5] explicitPieArgs = ["spice", "build", "--freestanding", "--relocation-model=pie", "main-file.spice"];
+    assert parseAndEnrich(explicitPie, 5, explicitPieArgs);
+    assert explicitPie.cliOptions.relocModel == RelocModel::PIE;
+    Driver sharedLibrary;
+    string[5] sharedLibraryArgs = ["spice", "build", "--freestanding", "--output-container=dylib", "main-file.spice"];
+    assert parseAndEnrich(sharedLibrary, 5, sharedLibraryArgs);
+    assert sharedLibrary.cliOptions.relocModel == RelocModel::PIC;
+
+    // Implied by targets without an OS
+    Driver bareMetal;
+    string[5] bareMetalArgs = ["spice", "build", "--target", "aarch64-none-elf", "main-file.spice"];
+    assert parseAndEnrich(bareMetal, 5, bareMetalArgs);
+    assert bareMetal.cliOptions.freestanding;
+    assert !bareMetal.cliOptions.targetHasOs;
+    assert bareMetal.cliOptions.relocModel == RelocModel::STATIC;
+    assert isImpliedFreestanding("x86_64-unknown-none");
+    assert isImpliedFreestanding("x86_64-unknown-none-elf");
+    assert isImpliedFreestanding("aarch64-none-elf");
+    assert isImpliedFreestanding("thumbv7em-none-eabihf");
+    assert isImpliedFreestanding("riscv32-unknown-none-elf");
+    assert isImpliedFreestanding("wasm32-unknown-unknown");
+    // But not by targets with an OS, also if the triple is given in a short form
+    assert !isImpliedFreestanding("x86_64-unknown-linux-gnu");
+    assert !isImpliedFreestanding("x86_64-linux-gnu");
+    assert !isImpliedFreestanding("aarch64-unknown-linux-gnu");
+    assert !isImpliedFreestanding("x86_64-w64-windows-gnu");
+    assert !isImpliedFreestanding("arm64-apple-darwin");
+    assert !isImpliedFreestanding("wasm32-unknown-wasi");
+
+    // The run subcommand accepts the option as well
+    Driver run;
+    string[4] runArgs = ["spice", "run", "--freestanding", "main-file.spice"];
+    assert parseAndEnrich(run, 4, runArgs);
+    assert run.cliOptions.freestanding;
     return true;
 }

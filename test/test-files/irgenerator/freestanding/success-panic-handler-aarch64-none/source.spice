@@ -1,0 +1,26 @@
+// TEST: --target=aarch64-none-elf
+
+// The panic handler gets the message and the code location of panics, failed assertions and accesses to inactive union fields
+
+type Value union {
+    int number
+    bool flag
+}
+
+#[core.compiler.panicHandler, core.compiler.noReturn]
+p onPanic(string message, string file, unsigned int line) {
+    // Halt the CPU
+    while true {}
+}
+
+f<int> getNumber(const Value& value) {
+    return value.number; // Panics, if the flag is active
+}
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    Value value;
+    value.flag = true;
+    assert getNumber(value) != 3;
+    panic(Error("Boom!"));
+}

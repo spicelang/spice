@@ -46,6 +46,11 @@ f<int> test(long input) {
   function anyway is undefined behavior
 - `core.compiler.cold: bool`: Mark the annotated function as rarely called, e.g. for error handling. The optimizer
   treats paths that call it as unlikely and lays them out away from the hot paths
+- `core.compiler.panicHandler: bool`: Make the annotated procedure the panic handler of a freestanding program. Panics,
+  failed assertions and accesses to inactive union fields call it with their message and code location. It must have the
+  signature `p(string message, string file, unsigned int line)` and the `core.compiler.noReturn` attribute. There is at
+  most one per program, and it is only supported in freestanding mode (see the
+  [freestanding how-to](../how-to/freestanding.md))
 - `test: bool`: Mark the annotated function as test
 - `test.name: string`: Set the name of the test (only functions or procedures with the `test` attribute are considered as tests)
 - `test.skip: bool`: Skip the annotated function (only functions or procedures with the `test` attribute are considered as tests)

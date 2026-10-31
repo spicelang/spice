@@ -1,0 +1,8 @@
+// TEST: --target=x86_64-unknown-none
+
+import "boot";
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    while true {}
+}

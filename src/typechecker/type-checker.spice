@@ -1316,6 +1316,12 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_COLD));
             firstManifestation.isCold = value.getBoolValue();
         }
+        if attrLst.hasAttr(String(ATTR_CORE_COMPILER_PANIC_HANDLER)) {
+            const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_PANIC_HANDLER));
+            if value.getBoolValue() {
+                this.registerPanicHandler(fctDefBase, baseNode, isFunction, firstManifestation);
+            }
+        }
         // The TPDE backend always uses the red zone in x86_64 leaf functions (see the --no-red-zone check in the driver)
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_RED_ZONE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_RED_ZONE));
@@ -1361,6 +1367,57 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
     assert this.currentScope.scopeType == ScopeType::GLOBAL;
 
     return Any();
+}
+
+/**
+ * Check the signature of a panic handler, that is declared with the 'core.compiler.panicHandler' attribute, and register it as
+ * the panic handler of the program. The panics of all source files call it, so there is at most one per program.
+ *
+ * @param fctDefBase Function or procedure definition node
+ * @param baseNode AST node of the definition
+ * @param isFunction Function or procedure
+ * @param panicHandler Function object of the definition
+ */
+p TypeChecker.registerPanicHandler(ASTFctDefBaseNode* fctDefBase, ASTNode* baseNode, bool isFunction, Function* panicHandler) {
+    // In hosted mode, panics print to stderr and exit
+    if !this.cliOptions.freestanding {
+        this.softError(baseNode, SemanticErrorType::INVALID_PANIC_HANDLER, String("Panic handlers are only supported in freestanding mode"));
+        return;
+    }
+
+    // The panics call the handler with the signature p(string message, string file, unsigned int line). It does not return
+    const ParamList& params = panicHandler.paramList;
+    bool signatureMatches = !isFunction && !fctDefBase.isMethod && !fctDefBase.hasTemplateTypes && params.getSize() == 3l;
+    if signatureMatches {
+        const Param& messageParam = params.get(0l);
+        const Param& fileParam = params.get(1l);
+        const Param& lineParam = params.get(2l);
+        signatureMatches = messageParam.qualType.is(SuperType::TY_STRING) && fileParam.qualType.is(SuperType::TY_STRING);
+        signatureMatches = signatureMatches && lineParam.qualType.is(SuperType::TY_INT) && !lineParam.qualType.isSigned();
+        signatureMatches = signatureMatches && !messageParam.isOptional && !fileParam.isOptional && !lineParam.isOptional;
+    }
+    if !signatureMatches {
+        this.softError(baseNode, SemanticErrorType::INVALID_PANIC_HANDLER, String("A panic handler must be a procedure with the signature p(string message, string file, unsigned int line)"));
+        return;
+    }
+    if !panicHandler.isNoReturn {
+        this.softError(baseNode, SemanticErrorType::INVALID_PANIC_HANDLER, String("A panic handler must not return. Mark it with #[core.compiler.noReturn]"));
+        return;
+    }
+
+    // Only one panic handler per program
+    const Function* existingPanicHandler = this.resourceManager.panicHandler;
+    if existingPanicHandler != nil<const Function*> && existingPanicHandler.declNode != baseNode {
+        const String message = "The program already has a panic handler, defined at " + existingPanicHandler.declNode.codeLoc.toPrettyString();
+        this.softError(baseNode, SemanticErrorType::MULTIPLE_PANIC_HANDLERS, message);
+        return;
+    }
+
+    // The panics in other source files call it, so it is always emitted and exported
+    panicHandler.isPanicHandler = true;
+    panicHandler.used = true;
+    panicHandler.entry.used = true;
+    this.resourceManager.panicHandler = panicHandler;
 }
 
 /**
@@ -5381,6 +5438,11 @@ f<Any> TypeChecker.visitBuiltinPrintfCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_PRINTF;
     ASTNode* baseNode = cast<ASTNode*>(node);
 
+    // There is no libc to print with in freestanding mode
+    if this.cliOptions.freestanding {
+        return this.softErrorER(baseNode, SemanticErrorType::UNSUPPORTED_IN_FREESTANDING_MODE, String("The printf builtin needs a hosted libc"));
+    }
+
     // Retrieve templated string
     assert node.hasArgs;
     ASTNode* firstArg = getASTNode(node.argLst.args.front());
@@ -5707,6 +5769,11 @@ f<Any> TypeChecker.visitBuiltinSyscallCall(ASTFctCallNode* node) {
     // The syscall builtin is lowered to inline assembly, which the TPDE backend cannot compile
     if this.cliOptions.backend == Backend::TPDE {
         return this.softErrorER(baseNode, SemanticErrorType::UNSUPPORTED_BY_BACKEND, String("The TPDE backend does not support inline assembly, which the syscall builtin uses"));
+    }
+    // A target without OS has no kernel to call
+    if !this.cliOptions.targetHasOs {
+        const String message = String("The syscall builtin needs an OS kernel, but the target ") + this.cliOptions.targetTriple.value + " has none";
+        return this.softErrorER(baseNode, SemanticErrorType::UNSUPPORTED_IN_FREESTANDING_MODE, message);
     }
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
@@ -6182,6 +6249,11 @@ f<Any> TypeChecker.visitBuiltinErrTraceBufferCall(ASTFctCallNode* node) {
  */
 f<Any> TypeChecker.visitBuiltinStdErrCall(ASTFctCallNode* node) {
     assert node.fqFunctionName == BUILTIN_FCT_NAME_STDERR;
+
+    // There is no stderr stream in freestanding mode
+    if this.cliOptions.freestanding {
+        return this.softErrorER(cast<ASTNode*>(node), SemanticErrorType::UNSUPPORTED_IN_FREESTANDING_MODE, String("The stderr builtin needs a hosted libc"));
+    }
 
     const QualType byteType = QualType(SuperType::TY_BYTE);
     return this.builtinResult(node, byteType.toPtr(cast<ASTNode*>(node)));

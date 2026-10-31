@@ -138,7 +138,15 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
 
 public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const ModuleNamePair namePair = this.resolveNamePair(requestedModule);
-    const FilePath filePath = getStdDir() / "runtime" / (String(namePair.fileName) + ".spice");
+    const FilePath runtimeDir = getStdDir() / "runtime";
+    FilePath filePath = runtimeDir / (String(namePair.fileName) + ".spice");
+    // In freestanding mode, the freestanding variant of the runtime module is preferred, like for imports (see ImportCollector)
+    if this.resourceManager.cliOptions.freestanding {
+        const FilePath freestandingFilePath = runtimeDir / (String(namePair.fileName) + "_" + OS_SUFFIX_FREESTANDING + ".spice");
+        if freestandingFilePath.exists() {
+            filePath = freestandingFilePath;
+        }
+    }
     assert filePath != parentSourceFile.filePath;
 
     // Instruct the global resource manager to create a new source file

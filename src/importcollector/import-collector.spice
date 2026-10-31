@@ -86,7 +86,9 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     }
     FilePath basePath = rootDir / pathInRootDir;
 
-    const String osName = this.cliOptions.targetTriple.getOSTypeName();
+    // In freestanding mode, the OS part of the suffix is 'freestanding', so that freestanding variants of files can be shipped
+    // (e.g. file_freestanding.spice). Without an OS, it would be 'unknown' otherwise.
+    const String osName = this.cliOptions.freestanding ? String(OS_SUFFIX_FREESTANDING) : this.cliOptions.targetTriple.getOSTypeName();
     const String archName = this.cliOptions.targetTriple.getArchTypeName();
 
     // basePath never has a '.spice' extension yet at this point (import paths are given without one), so

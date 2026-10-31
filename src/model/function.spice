@@ -41,6 +41,7 @@ public type Function struct {
     public bool isVararg = false
     public bool isNoReturn = false // Set via the 'core.compiler.noReturn' attribute
     public bool isCold = false // Set via the 'core.compiler.cold' attribute
+    public bool isPanicHandler = false // Set via the 'core.compiler.panicHandler' attribute
     public bool mangleFunctionName = true
     public bool alreadyTypeChecked = false
     public bool used = false

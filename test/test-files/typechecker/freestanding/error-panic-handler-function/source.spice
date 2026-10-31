@@ -1,0 +1,10 @@
+// TEST: --freestanding
+
+#[core.compiler.panicHandler, core.compiler.noReturn]
+f<bool> onPanic(string message, string file, unsigned int line) {
+    return false;
+}
+
+f<int> main() {
+    panic(Error("Panic with a function as panic handler"));
+}

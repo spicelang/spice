@@ -1,0 +1,11 @@
+[Error|Semantic] ./source.spice:3:1:
+Imported source file not existing: The source file 'boot.spice' was not found
+
+The following paths were checked with descending priority:
+- boot_freestanding_x86_64.spice
+- boot_freestanding.spice
+- boot_x86_64.spice
+- boot.spice
+
+3  import "boot";
+   ^^^^^^^^^^^^^^

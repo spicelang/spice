@@ -1,0 +1,4 @@
+#[core.compiler.panicHandler, core.compiler.noReturn]
+public p onOtherPanic(string message, string file, unsigned int line) {
+    while true {}
+}

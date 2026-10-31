@@ -90,6 +90,9 @@ public type GlobalResourceManager struct {
     // Operator functions that were not available for certain operand types
     public UnorderedMap</*cacheKey=*/Hash, /*registryVersion=*/unsigned long> unavailableOpFctCache
     public RecursiveMutex symbolRegistryMutex // Guards the symbol lookup machinery during the parallel back end
+    // User-defined panic handler of the program, set via the 'core.compiler.panicHandler' attribute (freestanding mode only).
+    // Without one, panics lower to a trap in freestanding mode
+    public model::Function* panicHandler = nil<model::Function*>
     public bool abortCompilation = false
     unsigned long nextCustomTypeId = BYTE_MAX_VALUE + 1l // Start at 256 because all primitive types come first
     unsigned long nextScopeId = 0l

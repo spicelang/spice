@@ -1,0 +1,5 @@
+// TEST: --freestanding --sanitizer=address
+
+f<int> main() {
+    return 0;
+}

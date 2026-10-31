@@ -1,0 +1,5 @@
+// TEST: --freestanding
+
+f<int> main() {
+    byte* stream = __stderr();
+}

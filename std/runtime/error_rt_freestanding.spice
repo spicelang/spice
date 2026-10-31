@@ -1,0 +1,81 @@
+#![core.compiler.alwaysKeepOnNameCollision = true]
+
+// Freestanding variant of error_rt.spice. There is no stderr in freestanding mode, so the methods, that print the error and
+// the error return trace, are left out. The panic builtin hands the message over to the panic handler instead.
+
+// Well-known error codes
+public type ErrorCode enum {
+    Ok = 0,
+    RuntimeError = 1
+}
+
+/**
+ * This is the generalized error type in Spice and part of the error handling mechanism.
+ */
+public type Error struct {
+    ErrorCode code
+    string message
+}
+
+/**
+ * Construct a generic error with code 0 and a default message
+ */
+public p Error.ctor() {
+    this.code = ErrorCode::Ok;
+    this.message = "<no error>";
+}
+
+/**
+ * Construct an error with the given code and message
+ *
+ * @param errorCode Error code
+ * @param message Error message
+ */
+public p Error.ctor(ErrorCode errorCode, string message) {
+    this.code = errorCode;
+    this.message = message;
+}
+
+/**
+ * Construct an error with the given message and code 1
+ *
+ * @param message Error message
+ */
+public p Error.ctor(string message) {
+    this.code = ErrorCode::RuntimeError;
+    this.message = message;
+}
+
+/**
+ * Retrieve error code
+ *
+ * @return Error code
+ */
+public inline f<ErrorCode> Error.getCode() {
+    return this.code;
+}
+
+/**
+ * Retrieve error message as immutable string
+ *
+ * @return Error message
+ */
+public inline f<string> Error.getMessage() {
+    return this.message;
+}
+
+/**
+ * Check if the error is set to the default error code 0, which means ok / no error
+ *
+ * @return Is set to error code 0
+ */
+public inline f<bool> Error.isOk() {
+    return this.code == ErrorCode::Ok;
+}
+
+/**
+ * Panic with this error
+ */
+public inline p Error.triggerPanic() {
+    panic(*this);
+}
