@@ -308,6 +308,13 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bo
                 }
             }
         }
+        // The required lld flavor may also be installed elsewhere, e.g. by Homebrew to /opt/homebrew/bin
+        if requiresLLD {
+            const String lldPath = findProgram(String(requiredLLD));
+            if !lldPath.isEmpty() {
+                return ExternalBinaryFinderResult{requiredLLD, lldPath};
+            }
+        }
     } else if isWindows() {                                                        // LCOV_EXCL_LINE - coverage runs on Linux
         foreach const string linkerName : ["lld", "ld"] {                          // LCOV_EXCL_LINE - coverage runs on Linux
             if isCommandAvailable(linkerName) {                                    // LCOV_EXCL_LINE - coverage runs on Linux

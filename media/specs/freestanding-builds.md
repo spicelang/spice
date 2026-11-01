@@ -275,9 +275,12 @@ the loop in `memcpy` into a call to `memcpy`. Users can opt out to bring optimiz
 >   command line) and skips them locally, if QEMU is missing. The Linux CI installs `lld` and `qemu-system-arm`. x86_64 bare
 >   metal is not covered, since QEMU only boots 32-bit multiboot kernels directly.
 > - **Wasm:** besides moving `-nostdlib` to the freestanding setup, Wasm builds now always link with `wasm-ld`. Before, the
->   linker search picked an ELF linker like `ld.lld`, so linking a Wasm module failed. Hosted Wasm targets (e.g. WASI)
->   no longer get `-nostdlib`, `--no-entry` and `--export-all`, but are linked against the libc of the Wasm toolchain.
->   `common/success-link-wasm32` links a module and checks the Wasm header.
+>   linker search picked an ELF linker like `ld.lld`, so linking a Wasm module failed. Freestanding Wasm shared libraries
+>   get `--no-entry` as well, since clang would make `_initialize` of the libc of the Wasm toolchain their entry point. Hosted
+>   Wasm targets (e.g. WASI) no longer get `-nostdlib`, `--no-entry` and `--export-all`, but are linked against the libc of
+>   the Wasm toolchain.
+>   `common/success-link-wasm32` and `common/success-link-wasm32-dylib` link a module and a shared library and check
+>   the Wasm header.
 
 ### std tiers
 

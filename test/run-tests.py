@@ -635,6 +635,11 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
                         does_ref_exist(test_case.file(REF_NAME_EXIT_CODE)) or
                         does_ref_exist(test_case.file(REF_NAME_GDB_OUTPUT)))
     test_args = parse_test_args(main_source_path)
+    # In coverage mode, the compiler does not run in the work dir, so paths of linker scripts are made absolute here
+    if OPTS.coverage:
+        linker_script_prefix = "--linker-script="
+        test_args = [linker_script_prefix + os.path.abspath(arg[len(linker_script_prefix):])
+                     if arg.startswith(linker_script_prefix) else arg for arg in test_args]
     # The runtimes of the instrumentation need a hosted libc, so freestanding test cases are not instrumented
     is_freestanding = is_freestanding_build(test_args)
 

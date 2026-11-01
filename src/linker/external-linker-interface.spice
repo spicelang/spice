@@ -97,6 +97,12 @@ public p ExternalLinkerInterface.prepare() {
         this.addLinkerFlag("-Wl,-z,now");
     }
 
+    // A freestanding WebAssembly module is a library for its host, e.g. a browser, so it has no entry point. Clang would make
+    // _initialize the entry point of a shared library, which comes from the libc of the WebAssembly toolchain
+    if isFreestanding && this.isTargetWasm() {
+        this.addLinkerFlag("-Wl,--no-entry");
+    }
+
     // The following flags only make sense if we want to emit an executable
     if this.cliOptions.outputContainer != OutputContainer::EXECUTABLE {
         return;
@@ -138,10 +144,9 @@ public p ExternalLinkerInterface.prepare() {
         this.addLinkerFlag("--coverage");
     }
 
-    // A freestanding WebAssembly module is a library for its host, e.g. a browser: it has no entry point and exports all its
-    // symbols. Hosted ones (e.g. for WASI) get their entry point and exports from the libc of the WebAssembly toolchain
+    // A freestanding WebAssembly module exports all its symbols to its host. Hosted ones (e.g. for WASI) get their entry point
+    // and exports from the libc of the WebAssembly toolchain
     if isFreestanding && this.isTargetWasm() {
-        this.addLinkerFlag("-Wl,--no-entry");
         this.addLinkerFlag("-Wl,--export-all");
     }
 }
@@ -897,7 +902,7 @@ f<bool> testWasmLinkerSetup() {
     assert !hasLinkerFlag(freestandingLinker, "-static");
     assert freestandingLinker.getInvokerTargetTriple() == "wasm32-unknown-unknown";
 
-    // The WebAssembly specifics only apply to executables
+    // A freestanding WebAssembly shared library has no entry point either, but only exports its public symbols
     CliOptions libraryOptions;
     libraryOptions.freestanding = true;
     libraryOptions.targetHasOs = false;
@@ -907,7 +912,8 @@ f<bool> testWasmLinkerSetup() {
     libraryLinker.prepare();
     assert hasLinkerFlag(libraryLinker, "-nostdlib");
     assert hasLinkerFlag(libraryLinker, "-shared");
-    assert !hasLinkerFlag(libraryLinker, "-Wl,--no-entry");
+    assert hasLinkerFlag(libraryLinker, "-Wl,--no-entry");
+    assert !hasLinkerFlag(libraryLinker, "-Wl,--export-all");
 
     // A hosted WebAssembly module (e.g. for WASI) is linked against the libc of the WebAssembly toolchain
     CliOptions hostedOptions;
