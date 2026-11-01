@@ -1,0 +1,33 @@
+import "std/os/volatile";
+
+// Data register of the PL011 UART of the QEMU virt machine, which QEMU connects to stdout
+const unsigned long UART_DATA_REGISTER = 0x09000000l;
+
+// Semihosting operation and exit reason, see the semihosting specification of Arm
+const long SEMIHOSTING_SYS_EXIT = 0x18l;
+const long ADP_STOPPED_APPLICATION_EXIT = 0x20026l;
+
+/**
+ * Write the given string to the UART
+ */
+public p writeToUart(string text) {
+    unsafe {
+        char* dataRegister = cast<char*>(UART_DATA_REGISTER);
+        for long i = 0l; text[i] != '\0'; i++ {
+            volatileStore(dataRegister, text[i]);
+        }
+    }
+}
+
+/**
+ * Stop QEMU with the given exit code via semihosting
+ */
+#[core.compiler.noReturn]
+public p exitQemu(int exitCode) {
+    // On AArch64, SYS_EXIT takes a parameter block with the exit reason and the exit code
+    long[2] parameterBlock = [ADP_STOPPED_APPLICATION_EXIT, cast<long>(exitCode)];
+    unsafe {
+        asm("hlt #0xf000", "{x0},{x1},~{memory}", SEMIHOSTING_SYS_EXIT, &parameterBlock[0]);
+    }
+    while true {}
+}

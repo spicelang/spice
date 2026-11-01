@@ -19,6 +19,7 @@ public const string ATTR_CORE_COMPILER_PACKED = "core.compiler.packed";
 public const string ATTR_CORE_COMPILER_WARNINGS_IGNORE = "core.compiler.warnings.ignore";
 public const string ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING = "core.compiler.explicitErrorHandling";
 public const string ATTR_CORE_COMPILER_ERROR_RETURN_TRACING = "core.compiler.errorReturnTracing";
+public const string ATTR_CORE_COMPILER_REQUIRES_OS = "core.compiler.requiresOs";
 public const string ATTR_CORE_COMPILER_RED_ZONE = "core.compiler.redZone";
 public const string ATTR_CORE_COMPILER_NO_RETURN = "core.compiler.noReturn";
 public const string ATTR_CORE_COMPILER_COLD = "core.compiler.cold";
@@ -79,7 +80,8 @@ public f<bool> getAttrConfig(const String& key, AttrConfigValue& config) {
         config.target = targetModule;
         config.attrType = AttrType::TYPE_STRING;
     } else if key == ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION || key == ATTR_CORE_COMPILER_WARNINGS_IGNORE ||
-              key == ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING || key == ATTR_CORE_COMPILER_ERROR_RETURN_TRACING {
+              key == ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING || key == ATTR_CORE_COMPILER_ERROR_RETURN_TRACING ||
+              key == ATTR_CORE_COMPILER_REQUIRES_OS {
         config.target = targetModule;
         config.attrType = AttrType::TYPE_BOOL;
     } else if key == ATTR_CORE_COMPILER_FIXED_TYPE_ID {

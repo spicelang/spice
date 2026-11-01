@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:4:1:
+Import requires an operating system: The module 'std/net/http' cannot be imported in freestanding mode, because it depends on 'std/net/socket.spice', which requires an operating system
+
+4  import "std/net/http";
+   ^^^^^^^^^^^^^^^^^^^^^^

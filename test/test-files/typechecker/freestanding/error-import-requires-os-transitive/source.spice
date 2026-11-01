@@ -1,0 +1,9 @@
+// TEST: --target=aarch64-none-elf
+
+// std/net/http has no attribute itself, but depends on std/net/socket, which requires an operating system
+import "std/net/http";
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    while true {}
+}

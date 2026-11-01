@@ -71,6 +71,11 @@ IR refs without a platform suffix are only compared on x86_64.
 - `skip-without-tpde` — skip when the TPDE libraries are not available (no `TPDE_FLAGS` and no `setup-deps.py --tpde`), e.g. for tests of the std TPDE bindings
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests
 - `debug.gdb` — gdb script (used with `debug.out`)
+- `qemu.txt` — QEMU command line (first line), that boots the compiled program of an embedded target, e.g.
+  `qemu-system-aarch64 -machine virt -cpu cortex-a53 -nographic -semihosting-config enable=on,target=native`. The runner
+  appends `-kernel <executable>` and compares the output and exit code like for a native program (the program reports its
+  exit code via semihosting). Skipped locally, if the QEMU binary is not installed. Required on CI, so add `skip-macos` and
+  `skip-windows` (see `irgenerator/freestanding/success-qemu-aarch64`)
 
 ## 6. Generate expected output and run
 

@@ -110,6 +110,6 @@ Common files the runner reads/compares (presence is optional per case):
 - `symbol-table.json`, `type-registry.out` — expected symbol/type dumps
 - `syntax-tree.dot` / `dependency-graph.dot` — expected graphs
 - Platform/skip markers: `*-windows.*`, `*-macos.*`, `*-linux-aarch64.*`, `skip-windows`, `skip-macos`,
-  `skip-gh-actions`, `skip-without-tpde`, `disabled`, `run-builtin-tests`, `cli-flags.txt`, `debug.gdb`
+  `skip-gh-actions`, `skip-without-tpde`, `disabled`, `run-builtin-tests`, `cli-flags.txt`, `debug.gdb`, `qemu.txt`
 
 To produce these dumps manually for a single input, use the `spice-dump` skill.

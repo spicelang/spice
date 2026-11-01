@@ -64,8 +64,8 @@ public p ExternalLinkerInterface.dtor() {
  */
 public p ExternalLinkerInterface.prepare() {
     // Freestanding mode: no host crt files and no libc. Executables are linked statically, because there is no dynamic loader.
-    // Wasm keeps its own setup below.
-    const bool isFreestanding = this.cliOptions.freestanding && !this.isTargetWasm();
+    // WebAssembly modules are always self-contained, so they need no '-static'
+    const bool isFreestanding = this.cliOptions.freestanding;
     if isFreestanding {
         this.addLinkerFlag("-nostdlib");
     }
@@ -73,7 +73,7 @@ public p ExternalLinkerInterface.prepare() {
     // Static or shared linking
     if this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY {
         this.addLinkerFlag("-shared");
-    } else if isFreestanding {
+    } else if isFreestanding && !this.isTargetWasm() {
         this.addLinkerFlag("-static");
     } else if this.cliOptions.staticLinking {
         // A static PIE on Linux, so that static executables get ASLR for their image as well. This needs all linked archives
@@ -95,6 +95,12 @@ public p ExternalLinkerInterface.prepare() {
     if this.isTargetLinux() && !isFreestanding && (this.cliOptions.outputContainer == OutputContainer::EXECUTABLE || this.cliOptions.outputContainer == OutputContainer::SHARED_LIBRARY) {
         this.addLinkerFlag("-Wl,-z,relro");
         this.addLinkerFlag("-Wl,-z,now");
+    }
+
+    // A freestanding WebAssembly module is a library for its host, e.g. a browser, so it has no entry point. Clang would make
+    // _initialize the entry point of a shared library, which comes from the libc of the WebAssembly toolchain
+    if isFreestanding && this.isTargetWasm() {
+        this.addLinkerFlag("-Wl,--no-entry");
     }
 
     // The following flags only make sense if we want to emit an executable
@@ -138,10 +144,9 @@ public p ExternalLinkerInterface.prepare() {
         this.addLinkerFlag("--coverage");
     }
 
-    // Web Assembly
-    if this.isTargetWasm() {
-        this.addLinkerFlag("-nostdlib");
-        this.addLinkerFlag("-Wl,--no-entry");
+    // A freestanding WebAssembly module exports all its symbols to its host. Hosted ones (e.g. for WASI) get their entry point
+    // and exports from the libc of the WebAssembly toolchain
+    if isFreestanding && this.isTargetWasm() {
         this.addLinkerFlag("-Wl,--export-all");
     }
 }
@@ -235,6 +240,14 @@ p ExternalLinkerInterface.link() {
     if this.linkLibMath {
         args.pushBack(String("-lm"));
     }
+    // '-nostdlib' leaves out the builtins of the compiler runtime as well, so they are linked explicitly in freestanding mode,
+    // if the linker invoker can find them. Otherwise, the user passes them via 'core.linker.flag'
+    if this.cliOptions.freestanding {
+        const String builtinsLibrary = this.findBuiltinsLibrary(linkerInvoker);
+        if !builtinsLibrary.isEmpty() {
+            args.pushBack(builtinsLibrary);
+        }
+    }
     // The linker script is passed verbatim, not as linker flag, so that its path is not expanded like the flags of the attributes
     if !this.cliOptions.linkerScript.isEmpty() {
         args.pushBack(String("-T"));
@@ -292,6 +305,44 @@ f<String> ExternalLinkerInterface.getInvokerTargetTriple() {
         return String(triple.value);
     }
     return String(normalizedTriple.value) + "-elf";
+}
+
+/**
+ * Find the builtins library of the compiler runtime for the target: compiler-rt for clang, libgcc for GCC. LLVM emits calls into
+ * it for operations, that the target has no instructions for, e.g. __udivti3, __aeabi_* or soft-float arithmetic. The linker
+ * invoker reports the path, where it would look for the library. It only exists, if the runtime was built for the target.
+ *
+ * @param linkerInvoker Linker invoker
+ * @return Path of the builtins library or an empty string, if it does not exist for the target
+ */
+f<String> ExternalLinkerInterface.findBuiltinsLibrary(const ExternalBinaryFinderResult& linkerInvoker) {
+    const Vector<String> args = this.getBuiltinsLibraryQueryArgs(linkerInvoker.name == "clang");
+    const ExecResult queryResult = exec(linkerInvoker.path, args);
+    if queryResult.exitCode != 0 {
+        return String();
+    }
+    const String path = queryResult.output.trim();
+    if path.isEmpty() || !fileExists(path.getRaw()) {
+        return String();
+    }
+    return path;
+}
+
+/**
+ * Get the arguments for the linker invoker to print the path of the builtins library of the compiler runtime for the target
+ *
+ * @param isClangInvoker Whether the linker invoker is clang
+ * @return Query arguments
+ */
+f<Vector<String>> ExternalLinkerInterface.getBuiltinsLibraryQueryArgs(bool isClangInvoker) {
+    Vector<String> args;
+    // GCC prints its libgcc. It has no '--target=' option and only links for the host anyway
+    if isClangInvoker {
+        args.pushBack(String("--target=") + this.getInvokerTargetTriple());
+        args.pushBack(String("--rtlib=compiler-rt"));
+    }
+    args.pushBack(String("-print-libgcc-file-name"));
+    return args;
 }
 
 /**
@@ -830,8 +881,71 @@ f<bool> testFreestandingLinkerSetup() {
     assert bareMetalLinker.getInvokerTargetTriple() == "aarch64-none-elf";
     bareMetalOptions.targetTriple = llvm::Triple("thumbv7em-none-eabihf");
     assert bareMetalLinker.getInvokerTargetTriple() == "thumbv7em-none-eabihf";
-    // Wasm keeps its own setup
+    // Wasm is never ELF
     bareMetalOptions.targetTriple = llvm::Triple("wasm32-unknown-unknown");
     assert bareMetalLinker.getInvokerTargetTriple() == "wasm32-unknown-unknown";
+    return true;
+}
+
+#[test]
+f<bool> testWasmLinkerSetup() {
+    // A freestanding WebAssembly module has no entry point and exports all symbols. It is self-contained without '-static'
+    CliOptions freestandingOptions;
+    freestandingOptions.freestanding = true;
+    freestandingOptions.targetHasOs = false;
+    freestandingOptions.targetTriple = llvm::Triple("wasm32-unknown-unknown");
+    ExternalLinkerInterface freestandingLinker = ExternalLinkerInterface(freestandingOptions);
+    freestandingLinker.prepare();
+    assert hasLinkerFlag(freestandingLinker, "-nostdlib");
+    assert hasLinkerFlag(freestandingLinker, "-Wl,--no-entry");
+    assert hasLinkerFlag(freestandingLinker, "-Wl,--export-all");
+    assert !hasLinkerFlag(freestandingLinker, "-static");
+    assert freestandingLinker.getInvokerTargetTriple() == "wasm32-unknown-unknown";
+
+    // A freestanding WebAssembly shared library has no entry point either, but only exports its public symbols
+    CliOptions libraryOptions;
+    libraryOptions.freestanding = true;
+    libraryOptions.targetHasOs = false;
+    libraryOptions.targetTriple = llvm::Triple("wasm32-unknown-unknown");
+    libraryOptions.outputContainer = OutputContainer::SHARED_LIBRARY;
+    ExternalLinkerInterface libraryLinker = ExternalLinkerInterface(libraryOptions);
+    libraryLinker.prepare();
+    assert hasLinkerFlag(libraryLinker, "-nostdlib");
+    assert hasLinkerFlag(libraryLinker, "-shared");
+    assert hasLinkerFlag(libraryLinker, "-Wl,--no-entry");
+    assert !hasLinkerFlag(libraryLinker, "-Wl,--export-all");
+
+    // A hosted WebAssembly module (e.g. for WASI) is linked against the libc of the WebAssembly toolchain
+    CliOptions hostedOptions;
+    hostedOptions.targetTriple = llvm::Triple("wasm32-unknown-wasi");
+    ExternalLinkerInterface hostedLinker = ExternalLinkerInterface(hostedOptions);
+    hostedLinker.prepare();
+    assert !hasLinkerFlag(hostedLinker, "-nostdlib");
+    assert !hasLinkerFlag(hostedLinker, "-Wl,--no-entry");
+    assert !hasLinkerFlag(hostedLinker, "-Wl,--export-all");
+    return true;
+}
+
+#[test]
+f<bool> testBuiltinsLibraryQueryArgs() {
+    CliOptions options;
+    options.freestanding = true;
+    options.targetHasOs = false;
+    options.targetTriple = llvm::Triple("aarch64-none-elf");
+    ExternalLinkerInterface linker = ExternalLinkerInterface(options);
+    // Clang reports the compiler-rt builtins for the target
+    const Vector<String> clangArgs = linker.getBuiltinsLibraryQueryArgs(true);
+    assert clangArgs.getSize() == 3l;
+    assert clangArgs.get(0l) == "--target=aarch64-none-elf";
+    assert clangArgs.get(1l) == "--rtlib=compiler-rt";
+    assert clangArgs.get(2l) == "-print-libgcc-file-name";
+    // The same target triple as for linking, so x86_64-unknown-none gets the bare-metal toolchain of clang as well
+    options.targetTriple = llvm::Triple("x86_64-unknown-none");
+    const Vector<String> bareMetalArgs = linker.getBuiltinsLibraryQueryArgs(true);
+    assert bareMetalArgs.get(0l) == "--target=x86_64-unknown-none-elf";
+    // GCC reports its libgcc for the host
+    const Vector<String> gccArgs = linker.getBuiltinsLibraryQueryArgs(false);
+    assert gccArgs.getSize() == 1l;
+    assert gccArgs.get(0l) == "-print-libgcc-file-name";
     return true;
 }

@@ -1,0 +1,10 @@
+// TEST: --target=wasm32-unknown-unknown --output-container=dylib
+
+// A freestanding WebAssembly shared library has no entry point, like a module. Otherwise, clang would request _initialize,
+// which comes from the libc of the WebAssembly toolchain
+
+#[core.compiler.mangle = false]
+public f<int> fibo(int n) {
+    if n <= 1 { return n; }
+    return fibo(n - 1) + fibo(n - 2);
+}

@@ -1,0 +1,8 @@
+// TEST: --freestanding
+
+import "hosted";
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    while true {}
+}

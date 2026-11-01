@@ -6,8 +6,10 @@ description: >
 
 inputs:
   packages:
-    description: apt packages to install besides GCC and the ones of extra-packages, separated by spaces
-    default: ccache ninja-build graphviz uuid-dev libssl-dev clang
+    description: >
+      apt packages to install besides GCC and the ones of extra-packages, separated by spaces. lld links the freestanding
+      test programs for other targets and WebAssembly, QEMU runs the ones for embedded targets
+    default: ccache ninja-build graphviz uuid-dev libssl-dev clang lld qemu-system-arm
   gcc-version:
     description: Major version of GCC to install and make the default
     default: "16"

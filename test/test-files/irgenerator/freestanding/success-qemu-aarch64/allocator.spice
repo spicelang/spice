@@ -1,0 +1,45 @@
+// A bump allocator over the upper half of the 128 MiB RAM of the QEMU virt machine, far above the program. Each block starts
+// with a header of 8 bytes, that stores the size of the block, so that realloc knows how many bytes to copy. Memory is never
+// given back.
+
+const unsigned long HEAP_END = 0x48000000l;
+const unsigned long HEADER_SIZE = 8l;
+
+unsigned long HEAP_NEXT = 0x44000000l; // Address of the next free byte
+
+#[core.compiler.allocFunction]
+f<heap byte*> bumpAlloc(unsigned long size) {
+    // Keep the blocks 8 byte aligned
+    const unsigned long blockSize = HEADER_SIZE + (size + 7l) / 8l * 8l;
+    if HEAP_NEXT + blockSize > HEAP_END {
+        return nil<heap byte*>;
+    }
+    const unsigned long blockAddress = HEAP_NEXT;
+    HEAP_NEXT += blockSize;
+    unsafe {
+        unsigned long* header = cast<unsigned long*>(blockAddress);
+        *header = size;
+        return cast<heap byte*>(blockAddress + HEADER_SIZE);
+    }
+}
+
+#[core.compiler.reallocFunction]
+f<heap byte*> bumpRealloc(heap byte* ptr, unsigned long size) {
+    heap byte* newPtr = bumpAlloc(size);
+    if ptr == nil<heap byte*> || newPtr == nil<heap byte*> {
+        return newPtr;
+    }
+    unsafe {
+        const unsigned long* header = cast<unsigned long*>(cast<unsigned long>(ptr) - HEADER_SIZE);
+        const unsigned long copySize = *header < size ? *header : size;
+        for unsigned long i = 0l; i < copySize; i++ {
+            newPtr[i] = ptr[i];
+        }
+    }
+    return newPtr;
+}
+
+#[core.compiler.deallocFunction]
+p bumpDealloc(heap byte* _ptr) {
+    // A bump allocator does not free single blocks
+}

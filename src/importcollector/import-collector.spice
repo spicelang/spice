@@ -39,6 +39,12 @@ public f<Any> ImportCollector.visitEntry(ASTEntryNode* node) {
         this.visit(attr);
     }
 
+    // A module, that requires an operating system, is rejected at its import in freestanding mode. Its own imports are not
+    // collected, since they might not resolve without operating system and would hide that error
+    if this.sourceFile.requiresOs && this.cliOptions.freestanding {
+        return Any();
+    }
+
     // Visit all import defs
     foreach IVisitable* importDef : node.importDefs {
         this.visit(importDef);
@@ -175,6 +181,19 @@ public f<Any> ImportCollector.visitModAttr(ASTModAttrNode* node) {
         // The error return trace is stored thread-local and printed to stderr, so it is disabled in freestanding mode
         const bool errorReturnTracing = errorReturnTracingAttrValue.getBoolValue() && !this.cliOptions.freestanding;
         this.sourceFile.setErrorReturnTracing(errorReturnTracing);
+    }
+
+    // core.compiler.requiresOs
+    if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_REQUIRES_OS)) {
+        const CompileTimeValue requiresOsAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_REQUIRES_OS));
+        const bool requiresOs = requiresOsAttrValue.getBoolValue();
+        this.sourceFile.setRequiresOs(requiresOs);
+        // Imported modules are checked at their imports (see SourceFile.checkForOsRequiringImports), the main source file here
+        if requiresOs && this.cliOptions.freestanding && this.sourceFile.isMainSourceFile() {
+            ErrorManager& errorManager = this.resourceManager.getErrorManager();
+            const String message = String("The main source file requires an operating system, which is not available in freestanding mode");
+            errorManager.addHardError(cast<ASTNode*>(node), SemanticErrorType::UNSUPPORTED_IN_FREESTANDING_MODE, message);
+        }
     }
 
     return Any();

@@ -1,0 +1,10 @@
+// TEST: --target=wasm32-unknown-unknown --output-container=exec
+
+// A freestanding WebAssembly module needs no main function. It is linked with wasm-ld, without entry point and with all
+// symbols exported, so that its host (e.g. a browser) can call fibo
+
+#[core.compiler.mangle = false]
+public f<int> fibo(int n) {
+    if n <= 1 { return n; }
+    return fibo(n - 1) + fibo(n - 2);
+}

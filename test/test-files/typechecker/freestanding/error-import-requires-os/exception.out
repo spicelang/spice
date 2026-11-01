@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:1:
+Import requires an operating system: The module 'std/net/socket' cannot be imported in freestanding mode, because it requires an operating system
+
+3  import "std/net/socket";
+   ^^^^^^^^^^^^^^^^^^^^^^^^

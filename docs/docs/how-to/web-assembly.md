@@ -8,9 +8,10 @@ This guide shows you how to use Spice as programming language underneath your we
 
 ## Prerequisites
 
-For WebAssembly compilation and linkage, a WebAssembly linker is required. Spice uses the `wasm-link` linker, shipped with Clang
-per default. This means, you need Clang and `wasm-link` installed on your system. On Linux, you can simply install the Clang
-package. On Windows you can download MinGW64 with Clang from e.g. [winlibs.com](https://winlibs.com).
+For WebAssembly compilation and linkage, a WebAssembly linker is required. Spice uses `wasm-ld`, the WebAssembly linker of
+LLVM's lld, with Clang as linker invoker. This means, you need Clang and lld installed on your system. On Linux, you can
+simply install the Clang and lld packages. On Windows you can download MinGW64 with Clang from e.g.
+[winlibs.com](https://winlibs.com).
 
 ## Writing the program
 

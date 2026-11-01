@@ -1,0 +1,9 @@
+// TEST: --target=x86_64-unknown-none
+
+// The import of the package is rejected, not the import of std/net/socket in the package, which is no concern of the user
+import "spice_packages/netpkg/net";
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    while true {}
+}
