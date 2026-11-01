@@ -84,17 +84,22 @@ type CompileStageIOType enum {
     IO_OBJECT_FILE
 }
 
-type TimerOutput struct {
-  unsigned long lexerAndParser = 0l
-  unsigned long astVisualizer = 0l
-  unsigned long importCollector = 0l
-  unsigned long symbolTableBuilder = 0l
-  unsigned long typeCheckerPre = 0l
-  unsigned long typeCheckerPost = 0l
-  unsigned long depGraphVisualizer = 0l
-  unsigned long irGenerator = 0l
-  unsigned long irOptimizer = 0l
-  unsigned long objectEmitter = 0l
+/**
+ * Durations of the compile stages of a source file in microseconds
+ */
+public type TimerOutput struct {
+    public unsigned long lexerAndParser = 0l
+    public unsigned long astVisualizer = 0l
+    public unsigned long importCollector = 0l
+    public unsigned long symbolTableBuilder = 0l
+    public unsigned long typeCheckerPre = 0l
+    public unsigned long typeCheckerPost = 0l
+    public unsigned long depGraphVisualizer = 0l
+    public unsigned long irGenerator = 0l
+    public unsigned long irOptimizer = 0l // With LTO, only the pre-link optimization of the source file
+    public unsigned long bitcodeLinker = 0l // LTO only, main source file only
+    public unsigned long ltoOptimizer = 0l // LTO only, main source file only: post-link optimization of the whole program
+    public unsigned long objectEmitter = 0l
 }
 
 /**
@@ -111,7 +116,10 @@ public type CompilerOutput struct {
     String cacheStats
     public Vector<CompilerWarning> warnings
     public Vector<LintFinding> lintFindings
-    TimerOutput times
+    public TimerOutput times
+    // Size of the module, that the object emitter emits. Only counted, if compile statistics are requested (--dump-stats)
+    public unsigned long irFunctionCount = 0l
+    public unsigned long irInstructionCount = 0l
 }
 
 public type NameRegistryEntry struct {
@@ -210,7 +218,7 @@ public type SourceFile struct {
     // Number of name registry entries per target entry address, to answer isStructKnownByNameRegistry without scanning the registry
     UnorderedMap<long, unsigned long> nameRegistryTargetEntryCounts
     public unsigned int importedRuntimeModules = 0 // Public, because the RuntimeModuleManager needs access
-    unsigned short totalTypeCheckerRuns = 0s
+    public unsigned short totalTypeCheckerRuns = 0s // Public, because the compile statistics need access
     // Cycle-safety guards: the pipeline drivers recurse over a dependency graph that may contain cycles (circular
     // imports). These flags prevent re-entering a file that is already being processed in the same stage.
     bool registriesMerged = false
@@ -269,8 +277,8 @@ public p SourceFile.runParser() {
     }
 
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.lexerAndParser);
-    timer.start();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.lexerAndParser);
+    this.startStageTimer(timer);
 
     // The source file must exist. Raise the same error as the lexer stage does when it cannot be read.
     if !this.filePath.exists() {
@@ -291,7 +299,7 @@ public p SourceFile.runParser() {
     this.globalScope = this.resourceManager.createScope(nil<Scope*>, this, ScopeType::GLOBAL, &this.ast.node.codeLoc);
 
     this.previousStage = CompileStageType::LEXER_AND_PARSER;
-    timer.stop();
+    this.stopStageTimer(timer);
     this.printStatusMessage("Parser", CompileStageIOType::IO_CODE, CompileStageIOType::IO_AST, this.compilerOutput.times.lexerAndParser);
 }
 
@@ -305,8 +313,8 @@ public p SourceFile.runASTVisualizer() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.astVisualizer);
-    timer.start();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.astVisualizer);
+    this.startStageTimer(timer);
 
     // Generate dot code for this source file
     StringStream dotCode;
@@ -323,7 +331,7 @@ public p SourceFile.runASTVisualizer() {
     }
 
     this.previousStage = CompileStageType::AST_VISUALIZER;
-    timer.stop();
+    this.stopStageTimer(timer);
     this.printStatusMessage("AST Visualizer", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.astVisualizer);
 }
 
@@ -333,8 +341,8 @@ public p SourceFile.runImportCollector() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.importCollector);
-    timer.start();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.importCollector);
+    this.startStageTimer(timer);
 
     // Collect the imports for this source file
     ImportCollector importCollector = ImportCollector(this.resourceManager, this);
@@ -352,7 +360,7 @@ public p SourceFile.runImportCollector() {
     // The imported source files know their module attributes now
     this.checkForOsRequiringImports();
 
-    timer.stop();
+    this.stopStageTimer(timer);
     this.printStatusMessage("Import Collector", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.importCollector);
 }
 
@@ -362,8 +370,8 @@ public p SourceFile.runSymbolTableBuilder() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.symbolTableBuilder);
-    timer.start();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.symbolTableBuilder);
+    this.startStageTimer(timer);
 
     // Build the symbol table. The dependencies' exported name registries are merged in afterwards, in a separate pass
     // (mergeNameRegistriesRecursive), once every reachable file has built its own registry. This deferral is what makes
@@ -374,7 +382,7 @@ public p SourceFile.runSymbolTableBuilder() {
 
     this.previousStage = CompileStageType::SYMBOL_TABLE_BUILDER;
     this.resourceManager.compileProgress.finishFrontEnd();
-    timer.stop();
+    this.stopStageTimer(timer);
     this.printStatusMessage("Symbol Table Builder", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.symbolTableBuilder);
 }
 
@@ -392,8 +400,8 @@ public p SourceFile.runTypeCheckerPre() { // Public for the RuntimeModuleManager
         sourceFile.runTypeCheckerPre();
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.typeCheckerPre);
-    timer.start();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.typeCheckerPre);
+    this.startStageTimer(timer);
 
     // Then type-check the current file
     TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_PRE);
@@ -403,7 +411,7 @@ public p SourceFile.runTypeCheckerPre() { // Public for the RuntimeModuleManager
     this.previousStage = CompileStageType::TYPE_CHECKER_PRE;
     this.resourceManager.compileProgress.finishTypeCheckerPre();
     this.typeCheckerPreRunning = false;
-    timer.stop();
+    this.stopStageTimer(timer);
     this.printStatusMessage("Type Checker Pre", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.typeCheckerPre);
 }
 
@@ -428,8 +436,8 @@ p SourceFile.runTypeCheckerPost() {
 
     this.typeCheckerPostRunning = true;
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.typeCheckerPost);
-    timer.start();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.typeCheckerPost);
+    this.startStageTimer(timer);
 
     // Start type-checking loop. The type-checker can request a re-execution. The max number of type-checker runs is limited
     TypeChecker typeChecker = TypeChecker(this.resourceManager, this, TypeCheckerMode::TC_MODE_POST);
@@ -440,12 +448,10 @@ p SourceFile.runTypeCheckerPost() {
         this.reVisitRequested = false;
 
         // Type-check the current file first. Multiple times, if requested
-        timer.resume();
         typeChecker.visit(this.ast);
         this.checkForHardError();
-        timer.pause();
 
-        // Then type-check all dependencies
+        // Then type-check all dependencies. Their stage timers pause the one of this file
         foreach dyn dependency : this.dependencies {
             SourceFile* sourceFile = dependency.getSecond();
             sourceFile.runTypeCheckerPost();
@@ -454,8 +460,6 @@ p SourceFile.runTypeCheckerPost() {
 
     this.typeCheckerPostRunning = false;
 
-    // Measure the remaining work of this stage as well. The time spent in the dependencies above is not part of it
-    timer.resume();
     this.checkForSoftErrors();
 
     // Check if all dyn variables were type-inferred successfully
@@ -471,7 +475,7 @@ p SourceFile.runTypeCheckerPost() {
         this.resourceManager.compileProgress.finishTypeCheckerPost();
     }
     this.previousStage = CompileStageType::TYPE_CHECKER_POST;
-    timer.stop();
+    this.stopStageTimer(timer);
     this.printStatusMessage("Type Checker Post", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.typeCheckerPost, typeCheckerRuns);
 
     // Save the JSON version in the compiler output
@@ -498,8 +502,8 @@ public p SourceFile.runDependencyGraphVisualizer() {
     if !this.cliOptions.dump.dumpDependencyGraph && !this.cliOptions.testMode { return; }
     if this.previousStage >= CompileStageType::DEP_GRAPH_VISUALIZER { return; }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.depGraphVisualizer);
-    timer.start();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.depGraphVisualizer);
+    this.startStageTimer(timer);
 
     // Generate dot code for the full dependency graph
     StringStream dotCode;
@@ -515,7 +519,7 @@ public p SourceFile.runDependencyGraphVisualizer() {
     }
 
     this.previousStage = CompileStageType::DEP_GRAPH_VISUALIZER;
-    timer.stop();
+    this.stopStageTimer(timer);
     this.printStatusMessage("Dependency Graph Visualizer", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.depGraphVisualizer);
 }
 
@@ -525,7 +529,7 @@ public p SourceFile.runIRGenerator() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irGenerator);
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.irGenerator);
     timer.start();
     this.resourceManager.compileProgress.startBackEndStage(BackEndStage::IR_GENERATOR);
 
@@ -561,7 +565,7 @@ public p SourceFile.runDefaultIROptimizer() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irOptimizer);
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.irOptimizer);
     timer.start();
     this.resourceManager.compileProgress.startBackEndStage(BackEndStage::IR_OPTIMIZER);
 
@@ -595,7 +599,7 @@ public p SourceFile.runPreLinkIROptimizer() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irOptimizer);
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.irOptimizer);
     timer.start();
     this.resourceManager.compileProgress.startBackEndStage(BackEndStage::IR_OPTIMIZER);
 
@@ -615,7 +619,8 @@ public p SourceFile.runPreLinkIROptimizer() {
     }
 
     this.resourceManager.compileProgress.finishBackEndStage(BackEndStage::IR_OPTIMIZER);
-    timer.pause();
+    timer.stop();
+    this.printStatusMessage("IR Optimizer (pre-link)", CompileStageIOType::IO_IR, CompileStageIOType::IO_IR, this.compilerOutput.times.irOptimizer);
 }
 
 public p SourceFile.runBitcodeLinker() {
@@ -631,8 +636,8 @@ public p SourceFile.runBitcodeLinker() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irOptimizer);
-    timer.resume();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.bitcodeLinker);
+    timer.start();
     // The bitcode linker and the post-link optimizer form one stage for the whole program
     this.resourceManager.compileProgress.startBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
 
@@ -640,7 +645,8 @@ public p SourceFile.runBitcodeLinker() {
     BitcodeLinker linker = BitcodeLinker(this.resourceManager);
     linker.link();
 
-    timer.pause();
+    timer.stop();
+    this.printStatusMessage("Bitcode Linker", CompileStageIOType::IO_IR, CompileStageIOType::IO_IR, this.compilerOutput.times.bitcodeLinker);
 }
 
 public p SourceFile.runPostLinkIROptimizer() {
@@ -656,8 +662,8 @@ public p SourceFile.runPostLinkIROptimizer() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.irOptimizer);
-    timer.resume();
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.ltoOptimizer);
+    timer.start();
 
     // Optimize LTO module
     IROptimizer irOptimizer = IROptimizer(this.resourceManager, this);
@@ -677,7 +683,7 @@ public p SourceFile.runPostLinkIROptimizer() {
     this.previousStage = CompileStageType::IR_OPTIMIZER;
     this.resourceManager.compileProgress.finishBackEndStage(BackEndStage::LTO_IR_OPTIMIZER);
     timer.stop();
-    this.printStatusMessage("IR Optimizer", CompileStageIOType::IO_IR, CompileStageIOType::IO_IR, this.compilerOutput.times.irOptimizer);
+    this.printStatusMessage("LTO IR Optimizer", CompileStageIOType::IO_IR, CompileStageIOType::IO_IR, this.compilerOutput.times.ltoOptimizer);
 }
 
 public p SourceFile.runObjectEmitter() {
@@ -691,7 +697,15 @@ public p SourceFile.runObjectEmitter() {
         return;
     }
 
-    Timer timer = Timer(TimerMode::MILLIS, &this.compilerOutput.times.objectEmitter);
+    // Count the size of the module to emit for the compile statistics. This happens before the timer starts, so that it
+    // does not distort the emitter time
+    if !this.cliOptions.dump.statsFile.isEmpty() {
+        llvm::Module* moduleToEmit = this.cliOptions.useLTO ? &this.resourceManager.ltoModule : &this.llvmModule;
+        this.compilerOutput.irFunctionCount = moduleToEmit.getDefinedFunctionCount();
+        this.compilerOutput.irInstructionCount = moduleToEmit.getInstructionCount();
+    }
+
+    Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.objectEmitter);
     timer.start();
     // With LTO, the main source file emits the object file for the whole program
     const BackEndStage progressStage = this.cliOptions.useLTO ? BackEndStage::LTO_OBJECT_EMITTER : BackEndStage::OBJECT_EMITTER;
@@ -1815,14 +1829,48 @@ p SourceFile.visualizerOutput(const string outputNameRaw, const String& output) 
     }
 }
 
-p SourceFile.printStatusMessage(const string stage, const CompileStageIOType& in, const CompileStageIOType& out, unsigned long stageRuntime, unsigned short stageRuns = 0s) {
+/**
+ * Start the timer of a front-end or middle-end stage of this source file. These stages nest: e.g. the import collector runs
+ * the front ends of the imported source files and the type checker loads runtime modules. So the timer of the enclosing
+ * stage is paused, while the nested stage runs, to measure the time of each stage exclusively. The time accumulates over
+ * multiple runs of a stage. The back end does not nest its stages and runs in parallel, so it must not use this.
+ *
+ * @param timer Timer of the stage
+ */
+p SourceFile.startStageTimer(Timer& timer) {
+    Vector<Timer*>& runningStageTimers = this.resourceManager.runningStageTimers;
+    if !runningStageTimers.isEmpty() {
+        Timer* enclosingTimer = runningStageTimers.back();
+        enclosingTimer.pause();
+    }
+    timer.resume();
+    runningStageTimers.pushBack(&timer);
+}
+
+/**
+ * Stop the timer of a front-end or middle-end stage of this source file and resume the timer of the enclosing stage
+ *
+ * @param timer Timer of the stage
+ */
+p SourceFile.stopStageTimer(Timer& timer) {
+    Vector<Timer*>& runningStageTimers = this.resourceManager.runningStageTimers;
+    assert !runningStageTimers.isEmpty() && runningStageTimers.back() == &timer;
+    timer.stop();
+    runningStageTimers.popBack();
+    if !runningStageTimers.isEmpty() {
+        Timer* enclosingTimer = runningStageTimers.back();
+        enclosingTimer.resume();
+    }
+}
+
+p SourceFile.printStatusMessage(const string stage, const CompileStageIOType& in, const CompileStageIOType& out, unsigned long stageRuntimeMicros, unsigned short stageRuns = 0s) {
     if this.cliOptions.printDebugOutput {
         const string[5] compilerStageIoTypeName = ["Code", "CST", "AST", "IR", "Obj"];
         // Build output string
         StringStream outputStr;
         outputStr << "[" << stage << "] for " << this.fileName << ": ";
         outputStr << compilerStageIoTypeName[cast<int>(in)] << " --> " << compilerStageIoTypeName[cast<int>(out)];
-        outputStr << " (" << toString(stageRuntime) << " ms";
+        outputStr << " (" << toString(stageRuntimeMicros / 1000l) << " ms";
         if stageRuns > 0s {
             outputStr << "; " << toString(stageRuns) << " run(s)";
         }

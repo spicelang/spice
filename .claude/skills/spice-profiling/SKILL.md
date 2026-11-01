@@ -52,9 +52,14 @@ $SPICE build -d file.spice
 ```
 
 Per-stage lines look like `[Type Checker Post] for file.spice: ... (12 ms; 2 run(s))`, covering: Parser, Import Collector,
-Symbol Table Builder, Type Checker Pre/Post, IR Generator, IR Optimizer, Object Emitter. The summary reports
-BlockAllocator bytes/allocations, the total type count, and **Total compile time** split into front end, middle end and
-back end.
+Symbol Table Builder, Type Checker Pre/Post, IR Generator, IR Optimizer, (with LTO) Bitcode Linker and LTO IR Optimizer,
+Object Emitter. Front-end and middle-end stage times are exclusive (a nested stage, e.g. an imported file's parser, pauses
+the enclosing one) and accumulate over repeated runs. The summary reports BlockAllocator bytes/allocations, the total
+type count, and **Total compile time** split into front end, middle end and back end.
+
+For machine-readable numbers, `--dump-stats <file.json>` writes the stage times summed over all files (µs), the wall
+times incl. the linker, the peak memory usage of the compiler and counters (source files, types, IR instructions, ...).
+Pass `-j 1` for comparable runs. Format: `media/specs/benchmarks.md`.
 
 This tells you *which stage* dominates before you reach for a sampling profiler. Pair with `--dump-cache-stats` to see the
 function/struct/interface lookup-cache hit rates (a low hit rate points at redundant resolution work). A good

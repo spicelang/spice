@@ -1,0 +1,214 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/io/file";
+import "std/io/filepath";
+import "std/os/system";
+import "std/text/json/json-value";
+import "std/text/json/json-serializer";
+import "std/type/type-conversion";
+import "std/bindings/llvm/llvm" as llvm;
+
+// Own imports
+import "@/driver";
+import "@/exception/compiler-error";
+import "@/exception/fatal-error";
+import "@/global/global-resource-manager";
+import "@/source-file";
+import "@/util/test-util";
+
+// Version of the compile statistics format. Adding fields does not require a version bump
+public const unsigned long COMPILE_STATS_FORMAT_VERSION = 1l;
+
+/**
+ * Append a number field to a JSON object
+ *
+ * @param object JSON object
+ * @param key Field key
+ * @param value Field value
+ */
+p addNumberField(JsonValue* object, string key, unsigned long value) {
+    object.addObjectField(String(key), __new<JsonValue>(value));
+}
+
+/**
+ * Append a string field to a JSON object
+ *
+ * @param object JSON object
+ * @param key Field key
+ * @param value Field value
+ */
+p addStringField(JsonValue* object, string key, const String& value) {
+    object.addObjectField(String(key), __new<JsonValue>(value));
+}
+
+/**
+ * Build the compile statistics of the whole compilation as JSON object. The stage times are summed over all source files.
+ * The format is documented in media/specs/benchmarks.md.
+ *
+ * @param resourceManager Global resource manager of the compilation
+ * @param totalMicros Wall time of the whole compilation in microseconds
+ * @return Compile statistics as JSON object (heap-allocated, release it with deleteJsonValue)
+ */
+public f<JsonValue*> buildCompileStats(GlobalResourceManager& resourceManager, unsigned long totalMicros) {
+    const CliOptions& cliOptions = resourceManager.cliOptions;
+
+    // Sum up the stage times and counters of all source files
+    TimerOutput times;
+    unsigned long typeCheckerRuns = 0l;
+    unsigned long irFunctionCount = 0l;
+    unsigned long irInstructionCount = 0l;
+    foreach SourceFile* sourceFile : resourceManager.sourceFilesInCreationOrder {
+        const TimerOutput& fileTimes = sourceFile.compilerOutput.times;
+        times.lexerAndParser += fileTimes.lexerAndParser;
+        times.importCollector += fileTimes.importCollector;
+        times.symbolTableBuilder += fileTimes.symbolTableBuilder;
+        times.typeCheckerPre += fileTimes.typeCheckerPre;
+        times.typeCheckerPost += fileTimes.typeCheckerPost;
+        times.irGenerator += fileTimes.irGenerator;
+        times.irOptimizer += fileTimes.irOptimizer;
+        times.bitcodeLinker += fileTimes.bitcodeLinker;
+        times.ltoOptimizer += fileTimes.ltoOptimizer;
+        times.objectEmitter += fileTimes.objectEmitter;
+        typeCheckerRuns += cast<unsigned long>(sourceFile.totalTypeCheckerRuns);
+        irFunctionCount += sourceFile.compilerOutput.irFunctionCount;
+        irInstructionCount += sourceFile.compilerOutput.irInstructionCount;
+    }
+
+    result = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    addNumberField(result, "version", COMPILE_STATS_FORMAT_VERSION);
+
+    // Compiler
+    JsonValue* compiler = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    addStringField(compiler, "version", String(__get_build_var<string>("SPICE_VERSION", "dev")));
+    addStringField(compiler, "gitHash", String(__get_build_var<string>("SPICE_GIT_HASH", "dev")));
+    addStringField(compiler, "llvmVersion", String(llvm::getVersionString()));
+    result.addObjectField(String("compiler"), compiler);
+
+    // Options, that influence the measured values
+    JsonValue* options = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    addStringField(options, "optLevel", "O" + toString(cliOptions.optLevel));
+    options.addObjectField(String("lto"), __new<JsonValue>(cliOptions.useLTO));
+    addStringField(options, "backend", String(cliOptions.backend == Backend::TPDE ? "tpde" : "llvm"));
+    addNumberField(options, "jobs", resourceManager.getCompileJobCount());
+    result.addObjectField(String("options"), options);
+
+    // Wall times of the compilation
+    JsonValue* wallTime = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    addNumberField(wallTime, "frontEnd", resourceManager.frontEndTimer.getDurationInMicros());
+    addNumberField(wallTime, "middleEnd", resourceManager.middleEndTimer.getDurationInMicros());
+    addNumberField(wallTime, "backEnd", resourceManager.backEndTimer.getDurationInMicros());
+    addNumberField(wallTime, "linker", resourceManager.linkerTimer.getDurationInMicros());
+    addNumberField(wallTime, "total", totalMicros);
+    result.addObjectField(String("wallTime"), wallTime);
+
+    // Stage times, summed over all source files
+    JsonValue* stages = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    addNumberField(stages, "lexerAndParser", times.lexerAndParser);
+    addNumberField(stages, "importCollector", times.importCollector);
+    addNumberField(stages, "symbolTableBuilder", times.symbolTableBuilder);
+    addNumberField(stages, "typeCheckerPre", times.typeCheckerPre);
+    addNumberField(stages, "typeCheckerPost", times.typeCheckerPost);
+    addNumberField(stages, "irGenerator", times.irGenerator);
+    addNumberField(stages, "irOptimizer", times.irOptimizer);
+    addNumberField(stages, "bitcodeLinker", times.bitcodeLinker);
+    addNumberField(stages, "ltoOptimizer", times.ltoOptimizer);
+    addNumberField(stages, "objectEmitter", times.objectEmitter);
+    result.addObjectField(String("stages"), stages);
+
+    // Counters
+    JsonValue* counters = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
+    addNumberField(counters, "sourceFiles", resourceManager.sourceFiles.getSize());
+    addNumberField(counters, "lines", resourceManager.getTotalLineCount());
+    addNumberField(counters, "types", resourceManager.typeRegistry.getTypeCount());
+    addNumberField(counters, "typeCheckerRuns", typeCheckerRuns);
+    addNumberField(counters, "irFunctions", irFunctionCount);
+    addNumberField(counters, "irInstructions", irInstructionCount);
+    result.addObjectField(String("counters"), counters);
+
+    // Peak memory usage of the compiler process. The linker runs in a process of its own and is not included
+    addNumberField(result, "peakMemoryBytes", getPeakMemoryUsage());
+}
+
+/**
+ * Write the compile statistics of the whole compilation as JSON to the file, that was requested with --dump-stats
+ *
+ * @param resourceManager Global resource manager of the compilation
+ * @param totalMicros Wall time of the whole compilation in microseconds
+ */
+public p writeCompileStats(GlobalResourceManager& resourceManager, unsigned long totalMicros) {
+    JsonValue* stats = buildCompileStats(resourceManager, totalMicros);
+    JsonSerializer serializer = JsonSerializer(/*pretty=*/true);
+    const String content = serializer.serialize(stats) + "\n";
+    deleteJsonValue(stats);
+
+    const FilePath& statsFile = resourceManager.cliOptions.dump.statsFile;
+    const Result<bool> writeResult = writeFile(statsFile.toString(), content.getRaw());
+    if !writeResult.isOk() {
+        const String messageSuffix = "Failed to write compile statistics: " + statsFile.toString();
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, messageSuffix.getRaw());
+        abortWithError(error.getMessage());
+    }
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// Value of a number field of a JSON object
+f<unsigned long> getNumberField(JsonValue* object, string key) {
+    JsonValue* field = object.getField(key);
+    return field.getUnsignedInteger();
+}
+
+#[test]
+f<bool> testBuildCompileStats() {
+    const FilePath testDir = makeUniqueTestDir("spice-compile-stats-test");
+    const FilePath mainPath = testDir / "main.spice";
+    // The import collector of each file runs the front end of its import, so the stages nest
+    writeTestFile(mainPath, "import \"first\" as first;\n\nf<int> main() {\n    return first::getFirst();\n}\n");
+    writeTestFile(testDir / "first.spice", "import \"second\" as second;\n\npublic f<int> getFirst() {\n    return second::getSecond();\n}\n");
+    writeTestFile(testDir / "second.spice", "public f<int> getSecond() {\n    return 0;\n}\n");
+
+    unsigned long version;
+    unsigned long sourceFiles;
+    unsigned long irInstructions;
+    unsigned long total;
+    unsigned long frontAndMiddleEndWallTime;
+    unsigned long frontAndMiddleEndStageTime;
+    {
+        // Source files look up an LLVM target, so use the native one
+        CliOptions cliOptions;
+        cliOptions.targetTriple = llvm::normalizeTargetTriple(llvm::getDefaultTargetTriple());
+        cliOptions.isNativeTarget = true;
+        cliOptions.mainSourceFile = mainPath;
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        SourceFile* mainFile = resourceManager.createSourceFile(nil<SourceFile*>, String(MAIN_FILE_NAME), mainPath, false);
+        mainFile.runFrontEnd();
+        mainFile.runMiddleEnd();
+
+        JsonValue* stats = buildCompileStats(resourceManager, 42l);
+        version = getNumberField(stats, "version");
+        JsonValue* counters = stats.getField("counters");
+        sourceFiles = getNumberField(counters, "sourceFiles");
+        irInstructions = getNumberField(counters, "irInstructions");
+        JsonValue* wallTime = stats.getField("wallTime");
+        total = getNumberField(wallTime, "total");
+        frontAndMiddleEndWallTime = getNumberField(wallTime, "frontEnd") + getNumberField(wallTime, "middleEnd");
+        JsonValue* stages = stats.getField("stages");
+        frontAndMiddleEndStageTime = 0l;
+        const string[5] frontAndMiddleEndStages = ["lexerAndParser", "importCollector", "symbolTableBuilder", "typeCheckerPre", "typeCheckerPost"];
+        for unsigned int i = 0; i < 5; i++ {
+            frontAndMiddleEndStageTime += getNumberField(stages, frontAndMiddleEndStages[i]);
+        }
+        deleteJsonValue(stats);
+    }
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert version == COMPILE_STATS_FORMAT_VERSION;
+    assert sourceFiles == 3l;
+    assert irInstructions == 0l; // The back end did not run
+    assert total == 42l;
+    // Each stage is measured exclusively, so the nested stages are not counted twice
+    assert frontAndMiddleEndStageTime <= frontAndMiddleEndWallTime;
+    return true;
+}

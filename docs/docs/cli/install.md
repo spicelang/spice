@@ -34,6 +34,7 @@ You can apply following options to the `install` subcommand:
 | `-s`, `-asm` | `--dump-assembly`         | Dump Assembly code                                                                             |
 | -            | `--dump-object-file`      | Dump object files                                                                              |
 | -            | `--dump-dependency-graph` | Dump compile unit dependency graph                                                             |
+| -            | `--dump-stats`            | Write compile statistics (stage times, peak memory usage, counters) as JSON to the given file.                                              |
 | `-d`         | `--debug-output`          | Print compiler output for debugging.                                                           |
 | `-j <n>`     | `--jobs <n>`              | Set number of jobs to parallelize compilation (Default is auto)                                |
 | `-o`         | `--output`                | Set path for executable output.                                                                |
