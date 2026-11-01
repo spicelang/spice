@@ -126,7 +126,8 @@ public type SemanticErrorType enum {
     MULTIPLE_PANIC_HANDLERS,
     INVALID_ALLOCATOR_FUNCTION,
     MULTIPLE_ALLOCATOR_FUNCTIONS,
-    MISSING_ALLOCATOR_FUNCTIONS
+    MISSING_ALLOCATOR_FUNCTIONS,
+    IMPORT_REQUIRES_OS
 }
 
 public type SemanticError struct {
@@ -297,6 +298,7 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::INVALID_ALLOCATOR_FUNCTION: { return "Invalid allocator function"; }
         case SemanticErrorType::MULTIPLE_ALLOCATOR_FUNCTIONS: { return "Multiple allocator functions"; }
         case SemanticErrorType::MISSING_ALLOCATOR_FUNCTIONS: { return "Missing allocator functions"; }
+        case SemanticErrorType::IMPORT_REQUIRES_OS: { return "Import requires an operating system"; }
         default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

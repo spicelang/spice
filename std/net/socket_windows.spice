@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Link WinSock library
 #![core.windows.linker.flag = "-lws2_32"]
 

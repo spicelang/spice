@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 import "std/io/file";
 import "std/io/filepath";
 

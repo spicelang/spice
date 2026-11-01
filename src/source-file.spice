@@ -183,6 +183,7 @@ public type SourceFile struct {
     public bool ignoreWarnings = false
     public bool explicitErrorHandling = false
     public bool errorReturnTracing = false
+    public bool requiresOs = false // Set by the 'core.compiler.requiresOs' module attribute. Rejected in freestanding mode
     public bool reVisitRequested = true
     public CompileStageType previousStage = CompileStageType::NONE
     public CompilerOutput compilerOutput
@@ -347,6 +348,9 @@ public p SourceFile.runImportCollector() {
         SourceFile* sourceFile = dependency.getSecond();
         sourceFile.runFrontEnd();
     }
+
+    // The imported source files know their module attributes now
+    this.checkForOsRequiringImports();
 
     timer.stop();
     this.printStatusMessage("Import Collector", CompileStageIOType::IO_AST, CompileStageIOType::IO_AST, this.compilerOutput.times.importCollector);
@@ -1012,6 +1016,7 @@ public p SourceFile.setAlwaysKeepSymbolsOnNameCollision(bool value) { this.alway
 public p SourceFile.setIgnoreWarnings(bool value) { this.ignoreWarnings = value; }
 public p SourceFile.setExplicitErrorHandling(bool value) { this.explicitErrorHandling = value; }
 public p SourceFile.setErrorReturnTracing(bool value) { this.errorReturnTracing = value; }
+public p SourceFile.setRequiresOs(bool value) { this.requiresOs = value; }
 
 public f<bool> SourceFile.imports(const SourceFile* sourceFile) {
     foreach dyn dependency : this.dependencies {
@@ -1300,6 +1305,80 @@ p SourceFile.checkForAllocatorFunctions() {
     }
     this.resourceManager.errorManager.addHardError(cast<ASTNode*>(this.ast), SemanticErrorType::MISSING_ALLOCATOR_FUNCTIONS, message, false);
     this.checkForHardError();
+}
+
+/**
+ * In freestanding mode, check that this source file imports no module, that requires an operating system. A module requires
+ * one, if it has the 'core.compiler.requiresOs' attribute or depends on such a module. The error is reported at the import
+ * in the code of the user, so std files are not checked themselves: the import of the std module by the user covers them.
+ */
+p SourceFile.checkForOsRequiringImports() {
+    if !this.cliOptions.freestanding || this.isStdFile {
+        return;
+    }
+    foreach IVisitable* importDef : this.ast.importDefs {
+        const ASTImportDefNode* importDefNode = downcast<ASTImportDefNode>(importDef);
+        if !this.dependencies.contains(importDefNode.importName) {
+            continue;
+        }
+        SourceFile* importedSourceFile = this.dependencies.get(importDefNode.importName);
+        UnorderedSet<String> visitedSourceFiles;
+        const SourceFile* osRequiringSourceFile = importedSourceFile.findOsRequiringSourceFile(visitedSourceFiles);
+        if osRequiringSourceFile == nil<SourceFile*> {
+            continue;
+        }
+        String message = "The module '" + importDefNode.importPath + "' cannot be imported in freestanding mode, because it ";
+        if osRequiringSourceFile == importedSourceFile {
+            message += "requires an operating system";
+        } else {
+            message += "depends on '" + osRequiringSourceFile.getDisplayPath() + "', which requires an operating system";
+        }
+        this.resourceManager.errorManager.addHardError(getASTNode(importDef), SemanticErrorType::IMPORT_REQUIRES_OS, message);
+        this.checkForHardError();
+    }
+}
+
+/**
+ * Find a source file, that requires an operating system, among this source file and its (transitive) dependencies
+ *
+ * @param visitedSourceFiles File paths of the source files, that were already searched
+ * @return Source file, that requires an operating system, or nil if there is none
+ */
+f<SourceFile*> SourceFile.findOsRequiringSourceFile(UnorderedSet<String>& visitedSourceFiles) {
+    // Guard against circular imports
+    const String filePathStr = String(this.filePath.toString());
+    if visitedSourceFiles.contains(filePathStr) {
+        return nil<SourceFile*>;
+    }
+    visitedSourceFiles.insert(filePathStr);
+
+    if this.requiresOs {
+        return this;
+    }
+    foreach dyn dependency : this.dependencies {
+        SourceFile* sourceFile = dependency.getSecond();
+        SourceFile* osRequiringSourceFile = sourceFile.findOsRequiringSourceFile(visitedSourceFiles);
+        if osRequiringSourceFile != nil<SourceFile*> {
+            return osRequiringSourceFile;
+        }
+    }
+    return nil<SourceFile*>;
+}
+
+/**
+ * Get the path of this source file for error messages. Std files are shown relative to the std dir, the others with their
+ * file name only for comparable output, since their absolute path depends on the machine.
+ *
+ * @return Path for display
+ */
+f<String> SourceFile.getDisplayPath() {
+    const FilePath stdDir = getStdDir();
+    const String stdDirPrefix = String(stdDir.toGenericString()) + "/";
+    const String filePathStr = String(this.filePath.toGenericString());
+    if !stdDir.isEmpty() && filePathStr.startsWith(stdDirPrefix.getRaw()) {
+        return "std/" + filePathStr.getSubstring(stdDirPrefix.getLength());
+    }
+    return this.cliOptions.comparableOutput ? this.fileName : filePathStr;
 }
 
 /**

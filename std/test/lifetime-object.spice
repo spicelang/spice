@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 unsigned int OBJECT_COUNTER = 0;
 
 /**

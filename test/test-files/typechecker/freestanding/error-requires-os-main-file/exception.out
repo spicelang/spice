@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:1:
+Unsupported in freestanding mode: The main source file requires an operating system, which is not available in freestanding mode
+
+3  #![core.compiler.requiresOs]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

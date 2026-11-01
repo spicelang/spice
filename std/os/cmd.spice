@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Link external functions
 ext f<int> getpid();
 ext f<int> system(string);

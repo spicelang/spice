@@ -1,0 +1,9 @@
+#![core.compiler.requiresOs]
+
+// The imports of a module, that requires an operating system, are not resolved in freestanding mode. Otherwise, this one
+// would fail first, since there is no freestanding variant of std/os/os
+import "std/os/os";
+
+public f<int> getExitCode() {
+    return EXIT_CODE_SUCCESS;
+}
