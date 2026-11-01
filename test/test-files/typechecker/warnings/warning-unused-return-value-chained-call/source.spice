@@ -1,0 +1,19 @@
+type Cell struct {
+    int value
+}
+
+f<Cell&> Cell.self() {
+    return *this;
+}
+
+// Named like the builtin function 'panic', which terminates the control flow
+f<int> Cell.panic() {
+    return this.value;
+}
+
+f<int> main() {
+    Cell cell = Cell{ 1 };
+    // Only the last call of the chain discards its return value. The method call must not be taken for the builtin
+    cell.self().panic();
+    printf("%d\n", cell.self().panic());
+}

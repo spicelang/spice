@@ -120,7 +120,7 @@ public f<Any> PostTypeCheckingVerifier.visitAtomicExpr(ASTAtomicExprNode* node) 
 public f<Any> PostTypeCheckingVerifier.visitFctCall(ASTFctCallNode* node) {
     // Builtin calls (printf, len, panic, etc.) return early in the TypeChecker before
     // populating callee/calleeParentScope — skip them, matching the IRGenerator's behavior.
-    if isBuiltinFunction(node.fqFunctionName) {
+    if !node.isExprBasedCall() && isBuiltinFunction(node.fqFunctionName) {
         return this.visitChildren(cast<ASTNode*>(node));
     }
 

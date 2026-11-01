@@ -4393,8 +4393,13 @@ f<bool> matchArgType(const QualType& origExpectedTy, const QualType& origActualT
 
 public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
     // Check if this is a builtin call
-    if isBuiltinFunction(node.fqFunctionName) {
+    if !node.isExprBasedCall() && isBuiltinFunction(node.fqFunctionName) {
         return this.visitBuiltinCall(node);
+    }
+
+    // Expression-based calls are not wrapped in a value node, which sets the source location otherwise
+    if node.isExprBasedCall() {
+        this.diGenerator.setSourceLocation(cast<ASTNode*>(node));
     }
 
     const FctCallData& data = node.data.get(this.manIdx);
@@ -4406,8 +4411,11 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
         mangledName = spiceFunc.getMangledName();
     }
 
-    // Get entry of the first fragment
-    const SymbolTableEntry* firstFragEntry = this.currentScope.lookup(node.functionNameFragments.front());
+    // Get entry of the first fragment. Expression-based calls have no name path
+    const SymbolTableEntry* firstFragEntry = nil<const SymbolTableEntry*>;
+    if !node.isExprBasedCall() {
+        firstFragEntry = this.currentScope.lookup(node.functionNameFragments.front());
+    }
 
     // Get this type
     Vector<llvm::Value> argValues;
@@ -4415,21 +4423,31 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
     if data.isMethodCall() {
         assert !data.isCtorCall();
 
-        // Retrieve entry of the first fragment
-        assert firstFragEntry != nil<const SymbolTableEntry*>;
-        const QualType& firstFragQualType = firstFragEntry.getQualType();
-        const QualType baseType = firstFragQualType.getBase();
-        assert baseType.is(SuperType::TY_STRUCT) || baseType.is(SuperType::TY_INTERFACE);
-        QualType structType = baseType;
+        QualType structType = QualType(SuperType::TY_INVALID);
+        if node.receiverExpr != nil<IVisitable*> {
+            // Get address of the struct instance, that the receiver expression evaluates to. It is evaluated before the args
+            structType = this.getEvaluatedType(node.receiverExpr);
+            thisPtr = this.resolveAddress(node.receiverExpr);
+            structType = structType.removeReferenceWrapper();
 
-        // Get address of the referenced variable / struct instance
-        thisPtr = this.getAddress(firstFragEntry);
+            // Auto de-reference 'this' pointer
+            this.autoDeReferencePtr(thisPtr, structType);
+        } else {
+            // Retrieve entry of the first fragment
+            assert firstFragEntry != nil<const SymbolTableEntry*>;
+            const QualType& firstFragQualType = firstFragEntry.getQualType();
+            structType = firstFragQualType.getBase();
+
+            // Get address of the referenced variable / struct instance
+            thisPtr = this.getAddress(firstFragEntry);
+
+            // Auto de-reference 'this' pointer
+            QualType firstFragmentType = firstFragEntry.getQualType();
+            this.autoDeReferencePtr(thisPtr, firstFragmentType);
+        }
         assert !thisPtr.isNull();
-
-        // Auto de-reference 'this' pointer
-        QualType firstFragmentType = firstFragEntry.getQualType();
-        this.autoDeReferencePtr(thisPtr, firstFragmentType);
-        llvm::Type structTy = baseType.toLLVMType(this.sourceFile);
+        assert structType.is(SuperType::TY_STRUCT) || structType.is(SuperType::TY_INTERFACE);
+        llvm::Type structTy = structType.toLLVMType(this.sourceFile);
 
         // Traverse through structs - the first fragment is already looked up and the last one is the function name
         for unsigned long i = 1l; i < node.functionNameFragments.getSize() - 1l; i++ {
@@ -4490,15 +4508,23 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
     // function or lambda cast to a raw pointer can be handed to a C API as a callback without shifting its arguments.
     llvm::Value fctPtr;
 
+    // Get the address of the fat pointer, that the callee expression evaluates to. It is evaluated before the args
+    llvm::Value fatPtr;
+    if node.calleeExpr != nil<IVisitable*> {
+        assert data.isFctPtrCall();
+        QualType calleeType = this.getEvaluatedType(node.calleeExpr);
+        fatPtr = this.resolveAddress(node.calleeExpr);
+        calleeType = calleeType.removeReferenceWrapper();
+        this.autoDeReferencePtr(fatPtr, calleeType);
+    }
+
     // Get arg values
     if node.hasArgs {
         const Vector<IVisitable*>& args = node.argLst.args;
         argValues.reserve(args.getSize());
         QualTypeList paramSTypes;
         if data.isFctPtrCall() {
-            const QualType& firstFragQualType = firstFragEntry.getQualType();
-            const QualType firstFragBaseType = firstFragQualType.getBase();
-            paramSTypes = firstFragBaseType.getFunctionParamTypes();
+            paramSTypes = data.fctPtrType.getFunctionParamTypes();
         } else {
             paramSTypes = spiceFunc.getParamTypes();
         }
@@ -4554,10 +4580,12 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
 
     // Append the trailing capture-struct pointer for fat function pointer calls (see the ABI note above)
     if data.isFctPtrCall() {
-        llvm::Value fatPtr = this.getAddress(firstFragEntry);
-        // The fat pointer might be reached via pointers or references (e.g. a param of type f<int>()** or f<int>()&)
-        QualType fatPtrType = firstFragEntry.getQualType();
-        this.autoDeReferencePtr(fatPtr, fatPtrType);
+        if node.calleeExpr == nil<IVisitable*> {
+            fatPtr = this.getAddress(firstFragEntry);
+            // The fat pointer might be reached via pointers or references (e.g. a param of type f<int>()** or f<int>()&)
+            QualType fatPtrType = firstFragEntry.getQualType();
+            this.autoDeReferencePtr(fatPtr, fatPtrType);
+        }
         // Remember the address of the function pointer slot for the call below
         fctPtr = this.insertStructGEP(this.llvmTypes.lambdaFatPtrType, fatPtr, 0);
         // Load the captures pointer and add it to the argument list as the trailing argument
@@ -4570,12 +4598,10 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
     QualType returnSType = QualType(SuperType::TY_DYN);
     QualTypeList paramSTypes;
     if data.isFctPtrCall() {
-        const QualType& firstFragQualType = firstFragEntry.getQualType();
-        const QualType firstFragBaseType = firstFragQualType.getBase();
-        if firstFragQualType.isBase(SuperType::TY_FUNCTION) {
-            returnSType = firstFragBaseType.getFunctionReturnType();
+        if data.fctPtrType.is(SuperType::TY_FUNCTION) {
+            returnSType = data.fctPtrType.getFunctionReturnType();
         }
-        paramSTypes = firstFragBaseType.getFunctionParamTypes();
+        paramSTypes = data.fctPtrType.getFunctionParamTypes();
     } else {
         returnSType = spiceFunc.returnType;
         paramSTypes = spiceFunc.getParamTypes();

@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:6:20:
+Wrong data type for operator: Cannot call a value of type 'int', since it is no function or procedure
+
+6  printf("%d/n", getNumber()(2));
+                  ^^^^^^^^^^^^^^

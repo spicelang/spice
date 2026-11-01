@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:6:20:
+Member access is only allowed on structs and Strings: Cannot call a method on a value of type 'int', since it is no struct or interface
+
+6  printf("%d/n", getNumber().abs());
+                  ^^^^^^^^^^^^^^^^^

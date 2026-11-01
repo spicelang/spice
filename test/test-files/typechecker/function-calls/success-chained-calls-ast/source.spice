@@ -1,0 +1,28 @@
+type Cell struct {
+    int value
+}
+
+f<Cell&> Cell.self() {
+    return *this;
+}
+
+type T dyn;
+
+f<int> Cell.add<T>(T offset) {
+    return this.value + cast<int>(offset);
+}
+
+f<int> twice(int x) {
+    return x * 2;
+}
+
+f<f<int>(int)> getOperation() {
+    return twice;
+}
+
+f<int> main() {
+    Cell cell = Cell{ 1 };
+    printf("%d\n", cell.self().self().add<short>(2s));
+    printf("%d\n", getOperation()(3));
+    printf("%d\n", cell.self().value < 2);
+}

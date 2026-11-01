@@ -1,0 +1,12 @@
+type Cell struct {
+    int value
+}
+
+f<Cell&> Cell.self() {
+    return *this;
+}
+
+f<int> main() {
+    Cell cell = Cell{ 1 };
+    printf("%d\n", cell.self().getValue(2));
+}
