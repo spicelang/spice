@@ -13,11 +13,11 @@ base, and the check fails, if a benchmark regresses more than a configured thres
     - [x] Peak memory usage of the compiler process (`getPeakMemoryUsage` in `std/os/system`)
     - [x] Counters (source files, lines, types, type checker runs, IR functions and instructions)
     - [x] Tests and docs
-- [ ] Phase 2: benchmark runner and benchmarks
-    - [ ] `benchmark/run-benchmarks.py` with the `run` and `compare` commands
-    - [ ] Benchmark registry `benchmark/benchmarks.toml`
-    - [ ] Compile-time, runtime and self-compile benchmarks
-    - [ ] A/A noise measurement, thresholds derived from it
+- [x] Phase 2: benchmark runner and benchmarks
+    - [x] `benchmark/run-benchmarks.py` with the `run`, `compare`, `noise` and `export` commands
+    - [x] Benchmark registry `benchmark/benchmarks.toml`
+    - [x] Compile-time, runtime and self-compile benchmarks
+    - [x] A/A noise measurement (local), thresholds derived from it. To be repeated on the CI runner in phase 3
 - [ ] Phase 3: pre-merge check
     - [ ] `.github/workflows/benchmark.yml`, comparing the PR head against the merge base
     - [ ] Report as job summary and PR comment, `perf-regression-ok` label
@@ -42,16 +42,16 @@ base, and the check fails, if a benchmark regresses more than a configured thres
 | Measure        | Unit         | Source                                                  | Stability | Gated | Default threshold |
 |----------------|--------------|---------------------------------------------------------|-----------|-------|-------------------|
 | `instructions` | instructions | `valgrind --tool=cachegrind --cache-sim=no`, `Ir` total | ~±0.1 %   | yes   | 2 %               |
-| `max-rss`      | bytes        | compiler: `--dump-stats`; executables: `os.wait4`       | ~±1 %     | yes   | 5 %               |
+| `max-rss`      | bytes        | compiler: `--dump-stats`; executables: GNU `time`       | ~±1 %     | yes   | 5 %               |
 | `file-size`    | bytes        | size of the emitted executable                          | exact     | yes   | 3 %               |
 | `wall-time`    | ns           | runner, median of N interleaved runs                    | noisy     | no    | -                 |
 | `stage-<name>` | µs           | `--dump-stats`                                          | noisy     | no    | -                 |
 | `count-<name>` | count        | `--dump-stats`                                          | exact     | no    | -                 |
 
-- The thresholds are the defaults. A benchmark can override them in the registry. The final values are derived from the
-  A/A noise measurement (see below), e.g. `max(default, 5 σ)`.
-- A measure regresses, if the candidate value exceeds the baseline value by more than the threshold. Improvements beyond
-  the threshold are reported, but never fail the check.
+- The thresholds are the defaults. A benchmark can override them in the registry. The values are checked against the
+  A/A noise measurement (see below): `max(default, 5 σ)`.
+- A measure regresses, if the candidate value exceeds the baseline value by more than the threshold and by more than the
+  minimum delta of the measure (`max-rss`: 1 MiB). Improvements beyond both are reported, but never fail the check.
 - The counters are not gated, but shown in the report next to a regression, since they often explain it (e.g. more
   manifestations of a generic function).
 - `instructions` is measured without `--trace-children`, so the linker invoked by the compiler is not counted.
@@ -70,6 +70,19 @@ The instruction count of a compiler run must not depend on anything else than th
 
 The A/A measurement (the same commit benchmarked against itself, 10 times) verifies this before the gate is enabled and
 after changes to the runner.
+
+### A/A noise measurement (local)
+
+`run-benchmarks.py noise --repetitions 10` on a Ryzen 9 5950X (2026-11-01, 1b0b3f8d):
+
+- `instructions`: identical in all 10 repetitions for every benchmark (σ = 0).
+- `file-size`: identical for every benchmark, also between independent builds of the same program.
+- `max-rss`: σ ≤ 0.9 % and a maximum deviation ≤ 2 % for everything above 10 MiB (the compiler always uses more than
+  48 MiB, the self-compile 592 MiB with σ = 0.08 %). The small runtime programs fluctuate more in relative terms:
+  `regex` (4.4 MiB) by up to 11.7 %, `n-body` (1.9 MiB) by up to 6.2 %, but by at most 0.52 MiB in absolute terms. The
+  minimum delta of 1 MiB covers them, so the default thresholds hold for all benchmarks.
+
+The measurement has to be repeated on the CI runner in phase 3, before the gate is enabled.
 
 ## Compiler statistics (`--dump-stats`)
 
@@ -118,108 +131,168 @@ Layout:
 
 ```
 benchmark/
+├── README.md
 ├── run-benchmarks.py
 ├── benchmarks.toml
+├── generators.py
 ├── compile/<name>/source.spice
 └── runtime/<name>/source.spice
 ```
 
 The programs in `test/test-files/benchmark` are tests with small inputs and reference outputs. The benchmark programs
-are separate, but can start out as copies of them.
+are separate.
 
 ### Kinds
 
 - **`compile`**: compiles a program and measures the compiler. Measures: `instructions`, `max-rss`, `wall-time`,
-  `stage-*`, `count-*`. Runs once per configured optimization level and backend.
+  `stage-*`, `count-*`. Runs once per configured optimization level and backend. The source is either
+  `benchmark/compile/<name>/source.spice` or generated by a function in `benchmark/generators.py` with a given scale, so
+  that large synthetic programs need not be checked in.
 - **`runtime`**: compiles a program (not measured) and measures the emitted executable. Measures: `instructions`,
-  `max-rss`, `wall-time`, `file-size`. Each program takes its workload size as a command line argument, so that the
-  instruction count can be measured on a small workload and the wall time on a large one.
-- **`self-compile`**: compiles `src/main.spice` with the flags that `build.py` uses for a Release build (the runner
-  takes them from `BUILD_FLAGS` in `build.py`, which moves behind a `__main__` guard, so both stay in sync). The output
-  is the stage1 compiler. Measures: `max-rss`, `wall-time`, `stage-*`, `count-*`, `file-size` of the stage1 compiler;
-  `instructions` only in the nightly run, because of the cachegrind slowdown.
+  `max-rss`, `wall-time`, `file-size`. Each program takes its workload size as first command line argument, so that the
+  instruction count is measured on a small workload and the wall time on a large one. Each program prints a result, so
+  that the work cannot be optimized away.
+- **`self-compile`**: compiles `src/main.spice` of the compiler's own checkout with the flags of the Release build type
+  (`BUILD_TYPE_FLAGS` in `bootstrap.py`, which `build.py` uses as well). The output is the stage1 compiler. Measures:
+  `max-rss`, `wall-time`, `stage-*`, `count-*`, `file-size` of the stage1 compiler; `instructions` only in the `full`
+  suite, because of the cachegrind slowdown. A PR that changes the compiler sources changes the input as well, the
+  counters (`count-lines`, `count-ir-instructions`) show that.
 - **`self-compile-stage1`**: the same compilation, but done by the stage1 compiler of the `self-compile` benchmark. The
   compiler under test is built by the stage0 compiler, so changes to the code generation do not show in its own
   performance. The stage1 compiler shows them on a large real-world program.
 
 ### Initial set
 
-| Name                     | Kind     | Covers                                                    |
-|--------------------------|----------|-----------------------------------------------------------|
-| `hello-world`            | compile  | startup, std and runtime module import overhead           |
-| `std-generics`           | compile  | manifestations of `Vector`, `Map`, `String`, `Result`     |
-| `many-instantiations`    | compile  | synthetic: thousands of generic function/struct instances |
-| `deep-imports`           | compile  | synthetic: long import chains, many source files          |
-| `large-function`         | compile  | synthetic: one function with thousands of statements      |
-| `binary-trees`           | runtime  | heap allocation, ctors/dtors                              |
-| `n-body`                 | runtime  | floating point arithmetic, structs                        |
-| `fannkuch`               | runtime  | arrays, integer arithmetic                                |
-| `pidigits`               | runtime  | arbitrary precision arithmetic                            |
-| `hash-map`               | runtime  | `std/data/hash-table` inserts, lookups, removals          |
-| `string-builder`         | runtime  | `String` appends, reallocation                            |
-| `regex`                  | runtime  | `std/text/regex` matching                                 |
-| `self-compile`           | special  | the whole compiler                                        |
-| `self-compile-stage1`    | special  | codegen quality on a large program                        |
+| Name                  | Kind    | Covers                                                                      |
+|-----------------------|---------|-----------------------------------------------------------------------------|
+| `hello-world`         | compile | fixed cost: startup, runtime modules, object emission, linking              |
+| `std-generics`        | compile | manifestations of `Vector`, `Map`, `UnorderedMap`, `Set`, `PriorityQueue`, `Pair`, `Optional`, `Result`, algorithms with lambdas |
+| `many-instantiations` | compile | generated: 100 struct types, each with a generic struct, function and `Vector` |
+| `deep-imports`        | compile | generated: chain of 100 source files, each importing the next one          |
+| `large-function`      | compile | generated: one function with 1000 (O0) or 200 (O2) blocks of statements     |
+| `binary-trees`        | runtime | heap allocation, recursion                                                  |
+| `n-body`              | runtime | floating point arithmetic, struct fields                                    |
+| `fannkuch`            | runtime | array accesses, integer arithmetic                                          |
+| `sieve`               | runtime | `Vector<bool>` accesses in tight loops                                      |
+| `hash-map`            | runtime | `UnorderedMap` inserts, lookups, removals                                   |
+| `string-builder`      | runtime | `String` appends, reallocation, number formatting                           |
+| `regex`               | runtime | `std/text/regex` matching                                                   |
+| `self-compile`        | special | the whole compiler                                                          |
+| `self-compile-stage1` | special | codegen quality on a large program                                          |
 
-The compile benchmarks run with `-O0` and `-O2`, with the LLVM backend and, where supported, the TPDE backend. The
-benchmark ID is `<kind>/<name>/<config>`, e.g. `compile/std-generics/O2-llvm`.
+The compile benchmarks run with `-O0` and `-O2` with the LLVM backend, the small ones with `-O0` and the TPDE backend as
+well. TPDE benchmarks are skipped, if the std of a compiler under test does not ship TPDE. The benchmark ID is
+`<kind>/<name>/<config>`, e.g. `compile/std-generics/O2-llvm`, `runtime/sieve/O2` or `self-compile/release`.
 
-### Registry
+The O2 compile time of `large-function` grows steeply with the size of the function: about 1 s for 200 blocks, 5.5 s for
+400 and 44 s for 1000. This is worth an investigation of its own.
+
+### Registry (`benchmark/benchmarks.toml`)
 
 ```toml
-[defaults.thresholds]
+[defaults]
+runs = 5   # Measured wall-time runs per benchmark and compiler
+warmup = 1 # Unmeasured runs before
+
+[defaults.thresholds] # Percent
 instructions = 2.0
 max-rss = 5.0
 file-size = 3.0
 
+[defaults.min-deltas] # Absolute, in the unit of the measure
+max-rss = 1048576
+
+[defaults.warnings] # Highlighting of time differences
+percent = 10.0
+p-value = 0.01
+
 [[compile]]
-name = "std-generics"
-configs = ["O0-llvm", "O2-llvm", "O0-tpde"]
+name = "large-function"
+generator = "large_function"
+scale = 1000
+configs = ["O0-llvm"]
 
 [[runtime]]
 name = "binary-trees"
 opt-level = "O2"
 args-instructions = ["12"]
-args-wall-time = ["18"]
-thresholds = { max-rss = 10.0 }
+args-wall-time = ["17"]
+thresholds = { max-rss = 10.0 } # Optional override
+
+[self-compile]
+build-type = "Release"
+runs = 3
+warmup = 0
 ```
 
 ## Runner (`benchmark/run-benchmarks.py`)
 
 ```
-python benchmark/run-benchmarks.py run --compiler base=build/bench-base/spice --compiler head=build/spice \
-    [--suite pr|full] [--filter 'compile/*'] [--runs 5] --output results.json
-python benchmark/run-benchmarks.py compare results.json --baseline base --candidate head \
+python benchmark/run-benchmarks.py run --compiler base=../base/build/spice --compiler head=build/spice \
+    [--suite pr|full] [--filter 'compile/*'] [--exclude '...'] [--measures instructions,timed] [--runs 5] \
+    [--output build/benchmark-results.json]
+python benchmark/run-benchmarks.py compare build/benchmark-results.json --baseline base --candidate head \
     [--markdown report.md] [--report-only]
+python benchmark/run-benchmarks.py noise --compiler build/spice [--repetitions 10]
+python benchmark/run-benchmarks.py export build/benchmark-results.json --compiler head
 ```
 
-- `run` measures every benchmark with every given compiler. Wall-time runs are interleaved between the compilers
-  (`ABAB...`), after one warm-up run each, so that drifts of the machine hit both compilers equally.
-- `--suite pr` skips the nightly-only measures (`instructions` of `self-compile`), `--suite full` runs everything.
-- The output contains, per compiler, the results in the Bencher Metric Format (BMF) plus metadata (commit, stage0
-  version, LLVM version, runner image, CPU model):
+- `run` measures every benchmark with every given compiler. The timed runs are interleaved between the compilers
+  (`ABAB...`), after the warm-up runs, so that drifts of the machine hit all compilers equally. Then the instructions
+  are counted, one cachegrind run per compiler.
+- Each compiler uses the std of the checkout it lives in (the first parent directory with `std/` and `src/main.spice`),
+  via `SPICE_STD_DIR`. The self-compile compiles the sources of that checkout.
+- `--suite pr` skips the instruction count of the self-compile benchmarks, `--suite full` measures everything.
+  `--measures` restricts the measure groups: `instructions` (cachegrind) and `timed` (all other measures).
+- The results file contains the metadata of each compiler (commit, stage0 version, CPU, kernel, runner image), the
+  thresholds of each benchmark, and per compiler the results in BMF and the raw samples of the timed measures:
 
   ```json
   {
-    "metadata": { "head": { "commit": "...", "stage0": "0.29.2", "llvm": "23.1.0" }, "base": { } },
+    "version": 1,
+    "metadata": { "head": { "commit": "...", "stage0": "0.29.2", "cpu": "...", "runnerImage": "..." } },
+    "config": { "suite": "pr", "thresholds": { "runtime/sieve/O2": { "instructions": 2.0 } }, "warnings": { } },
     "results": {
       "head": {
         "compile/std-generics/O2-llvm": {
-          "instructions": { "value": 1234567890 },
-          "wall-time": { "value": 812000000, "lower_value": 801000000, "upper_value": 840000000 }
+          "instructions": { "value": 5120098304 },
+          "wall-time": { "value": 815200000, "lower_value": 801000000, "upper_value": 840000000 }
         }
       }
-    }
+    },
+    "samples": { "head": { "compile/std-generics/O2-llvm": { "wall-time": [815200000, ...] } } }
   }
   ```
 
-  BMF is the native upload format of Bencher and can be converted for other stores.
-- `compare` prints a table of all gated measures, the counters and the highlighted wall-time differences. It exits with
-  1, if a gated measure regressed, unless `--report-only` is given.
-- Only the Python standard library is used (`tomllib`, `statistics`, `os.wait4`). The Mann-Whitney U test is implemented
-  in the script.
-- The runner only supports Linux, since the gate runs on Linux only. Running it locally gives the same numbers as CI
-  only for `instructions`.
+- `compare` prints a Markdown report: the gated measures, that changed, the time differences above the warning limit,
+  all wall times (collapsed) and the changed counters. It exits with 1, if a gated measure regressed, unless
+  `--report-only` is given. Benchmarks with results of only one compiler are listed, but not compared.
+- `noise` runs the suite repeatedly with the same compiler (one timed run per repetition, interleaved) and prints the
+  standard deviation and the maximum deviation of every gated measure, with the suggested threshold
+  `max(default, 5 σ)`.
+- `export` prints the BMF results of one compiler, the input of the Bencher upload.
+- Only the Python standard library is used (`tomllib`, `statistics`). The Mann-Whitney U test is implemented in the
+  script: exact for small samples without ties, normal approximation otherwise.
+- The runner needs Linux, `valgrind`, GNU `time` and `setarch`. Running it locally gives the same numbers as CI only for
+  `instructions`.
+
+### Peak memory usage
+
+Python starts processes with `vfork`, and Linux keeps the peak RSS across `exec`. So the peak RSS of a direct child of
+the runner, and the one the compiler reads with `getrusage`, is at least the RSS of the Python process (about 12 MiB
+for a program, that needs 2 MiB). The runner therefore launches every timed run via GNU `time`, which forks from a small
+process: for executables it takes the peak RSS reported by `time`, for the compiler the `peakMemoryBytes` of
+`--dump-stats`, which does not include the linker.
+
+### Wall time
+
+The runner waits for the processes with a blocking wait and a timer for the timeout. `Popen.wait` with a timeout polls
+with sleeps of up to 50 ms, which quantizes the wall times.
+
+### Duration
+
+On a Ryzen 9 5950X, the `pr` suite takes about 6.5 minutes per compiler, of which the two self-compile benchmarks take
+about 3 minutes (28 s per compilation) and the O2 compile benchmarks under cachegrind most of the rest.
 
 ## Pre-merge check (`.github/workflows/benchmark.yml`)
 
@@ -236,7 +309,8 @@ on: pull_request (opened, synchronize, reopened, labeled, unlabeled), push to ma
 ### Pull requests
 
 1. Check out the PR head and the merge base (`git worktree add build/bench-base <merge-base>`).
-2. Set up the toolchain and LLVM with the existing composite actions, `setup-deps.py --tpde`, install `valgrind`.
+2. Set up the toolchain and LLVM with the existing composite actions, `setup-deps.py --tpde` (in both checkouts),
+   install `valgrind` and `time`.
 3. Build both compilers with `build.py`, each with the stage0 compiler pinned in its own checkout. A PR that bumps the
    stage0 version is thereby benchmarked correctly.
 4. `run-benchmarks.py run --suite pr` with both compilers.

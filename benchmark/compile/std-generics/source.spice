@@ -1,0 +1,71 @@
+// Uses many std containers with several element types. Measures the cost of generic manifestations of the std.
+
+import "std/data/vector";
+import "std/data/map";
+import "std/data/unordered-map";
+import "std/data/set";
+import "std/data/pair";
+import "std/data/optional";
+import "std/data/priority-queue";
+import "std/data/algorithm";
+import "std/type/type-conversion";
+
+type Point struct {
+    int x
+    int y
+}
+
+f<Result<int>> parseNumber(const String& text) {
+    if text.isEmpty() {
+        return err<int>("empty input");
+    }
+    return ok(toInt(text.getRaw()));
+}
+
+f<int> main() {
+    // Vectors of primitives, structs and Strings
+    Vector<int> numbers;
+    Vector<double> ratios;
+    Vector<Point> points;
+    Vector<String> names;
+    for int i = 0; i < 10; i++ {
+        numbers.pushBack(i);
+        ratios.pushBack(i / 3.0);
+        points.pushBack(Point{ i, i * 2 });
+        names.pushBack(String("name-") + toString(i));
+    }
+
+    // Algorithms with lambdas
+    const Vector<int> even = filter(numbers, f<bool>(const int& n) { return n % 2 == 0; });
+    const Vector<long> squares = map(numbers, f<long>(const int& n) { return cast<long>(n * n); });
+    const long sum = reduce(squares, 0l, f<long>(const long& acc, const long& n) { return acc + n; });
+    const Optional<int> firstBig = find(numbers, f<bool>(const int& n) { return n > 5; });
+
+    // Ordered and unordered maps
+    Map<String, int> nameToIndex;
+    UnorderedMap<int, String> indexToName;
+    UnorderedMap<String, Point> nameToPoint;
+    for unsigned long i = 0l; i < names.getSize(); i++ {
+        nameToIndex.upsert(names.get(i), cast<int>(i));
+        indexToName.upsert(cast<int>(i), names.get(i));
+        nameToPoint.upsert(names.get(i), points.get(i));
+    }
+
+    // Sets, pairs, priority queues
+    Set<int> seen;
+    Vector<Pair<String, double>> pairs;
+    PriorityQueue<long> queue;
+    for unsigned long i = 0l; i < numbers.getSize(); i++ {
+        seen.insert(numbers.get(i) % 4);
+        pairs.pushBack(Pair<String, double>(names.get(i), ratios.get(i)));
+        queue.push(squares.get(i));
+    }
+
+    // Results
+    Result<int> parsed = parseNumber(String("42"));
+    const int parsedValue = parsed.isOk() ? parsed.unwrap() : -1;
+
+    printf("%d %ld %d %d %d %lu %ld %d\n", even.getSize(), sum, firstBig.isPresent(), nameToIndex.getSize(), indexToName.getSize(), seen.getSize(), queue.pop(), parsedValue);
+    const Point& point = nameToPoint.get(names.get(3ul));
+    printf("%lu %lu %d\n", nameToPoint.getSize(), pairs.getSize(), point.x + point.y);
+}

@@ -1,0 +1,64 @@
+// Allocates and frees many small binary trees. Covers heap allocation, recursion and pointer chasing.
+// Usage: binary-trees <max depth>
+
+import "std/type/type-conversion";
+
+type Node struct {
+    Node* left = nil<Node*>
+    Node* right = nil<Node*>
+}
+
+f<Node*> createTree(int depth) {
+    Node* node = __new<Node>();
+    if depth > 0 {
+        node.left = createTree(depth - 1);
+        node.right = createTree(depth - 1);
+    }
+    return node;
+}
+
+f<long> checkTree(const Node* node) {
+    if node.left == nil<Node*> {
+        return 1l;
+    }
+    return 1l + checkTree(node.left) + checkTree(node.right);
+}
+
+p deleteTree(Node* node) {
+    if node == nil<Node*> { return; }
+    deleteTree(node.left);
+    deleteTree(node.right);
+    // Plain pointers, because a 'heap' local would be released again at the end of its scope
+    unsafe {
+        heap byte* raw = cast<heap byte*>(node);
+        sDealloc(raw);
+    }
+}
+
+f<int> main(int argc, string[] argv) {
+    const int minDepth = 4;
+    int maxDepth = argc > 1 ? toInt(argv[1]) : 16;
+    if maxDepth < minDepth + 2 {
+        maxDepth = minDepth + 2;
+    }
+
+    // Stretch tree
+    Node* stretchTree = createTree(maxDepth + 1);
+    printf("stretch tree of depth %d\t check: %ld\n", maxDepth + 1, checkTree(stretchTree));
+    deleteTree(stretchTree);
+
+    // Long-lived tree, that stays allocated while the short-lived trees come and go
+    Node* longLivedTree = createTree(maxDepth);
+    for int depth = minDepth; depth <= maxDepth; depth += 2 {
+        const int iterations = 1 << (maxDepth - depth + minDepth);
+        long check = 0l;
+        for int i = 0; i < iterations; i++ {
+            Node* tree = createTree(depth);
+            check += checkTree(tree);
+            deleteTree(tree);
+        }
+        printf("%d\t trees of depth %d\t check: %ld\n", iterations, depth, check);
+    }
+    printf("long lived tree of depth %d\t check: %ld\n", maxDepth, checkTree(longLivedTree));
+    deleteTree(longLivedTree);
+}
