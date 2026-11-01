@@ -15,6 +15,7 @@ import os
 import platform
 import re
 import shutil
+import signal
 import statistics
 import subprocess
 import sys
@@ -119,7 +120,7 @@ def cpu_model() -> str:
             if line.startswith("model name"):
                 return line.split(":", 1)[1].strip()
     except OSError:
-        pass
+        pass  # No /proc/cpuinfo (not Linux), fall back to the platform module
     return platform.processor() or "unknown"
 
 
@@ -241,6 +242,7 @@ class ProcessResult:
     wall_time_ns: int
     max_rss_bytes: int  # 0, if not measured
     output_file: Path
+    timed_out: bool = False
 
 
 def run_process(cmd: list[str], env: dict[str, str], cwd: Path, output_file: Path, timeout: int, disable_aslr: bool,
@@ -256,9 +258,21 @@ def run_process(cmd: list[str], env: dict[str, str], cwd: Path, output_file: Pat
     cwd.mkdir(parents=True, exist_ok=True)
     with output_file.open("wb") as out:
         start = time.perf_counter_ns()
-        proc = subprocess.Popen(cmd, env=env, cwd=cwd, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL)
+        # A session of its own, so that a timeout kills the whole process group. Killing only the direct child (e.g. GNU
+        # time) would leave the measured process running, which distorts the following measurements
+        proc = subprocess.Popen(cmd, env=env, cwd=cwd, stdout=out, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                start_new_session=True)
+        timed_out = threading.Event()
+
+        def kill_process_group() -> None:
+            timed_out.set()
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass  # Exited in the meantime
+
         # A blocking wait, because Popen.wait with a timeout polls with sleeps of up to 50 ms, which quantizes the wall time
-        killer = threading.Timer(timeout, proc.kill)
+        killer = threading.Timer(timeout, kill_process_group)
         killer.start()
         try:
             proc.wait()
@@ -271,10 +285,12 @@ def run_process(cmd: list[str], env: dict[str, str], cwd: Path, output_file: Pat
         lines = rss_file.read_text().strip().splitlines()
         if lines and lines[-1].strip().isdigit():
             max_rss_bytes = int(lines[-1]) * 1024
-    return ProcessResult(proc.returncode, elapsed, max_rss_bytes, output_file)
+    return ProcessResult(proc.returncode, elapsed, max_rss_bytes, output_file, timed_out.is_set())
 
 
-def check_success(result: ProcessResult, cmd: list[str], what: str) -> None:
+def check_success(result: ProcessResult, cmd: list[str], what: str, timeout: int) -> None:
+    if result.timed_out:
+        fail(f"{what} timed out after {timeout}s: {' '.join(cmd)}")
     if result.exit_code == 0:
         return
     output = result.output_file.read_text(errors="replace")
@@ -286,7 +302,7 @@ def count_instructions(cmd: list[str], env: dict[str, str], cwd: Path, timeout: 
     out_file = cwd / "cachegrind.out"
     valgrind_cmd = ["valgrind", "--tool=cachegrind", "--cache-sim=no", f"--cachegrind-out-file={out_file}", *cmd]
     result = run_process(valgrind_cmd, env, cwd, cwd / "cachegrind.log", timeout, disable_aslr)
-    check_success(result, valgrind_cmd, what)
+    check_success(result, valgrind_cmd, what, timeout)
     for line in out_file.read_text().splitlines():
         if line.startswith("summary:"):
             return int(line.split()[1])
@@ -388,7 +404,7 @@ class BenchmarkRunner:
             cmd = [str(executable), *benchmark.args_wall_time]
             result = run_process(cmd, compiler.env, directory, directory / "run.log", self.ctx.timeout, self.ctx.disable_aslr,
                                  measure_rss=True)
-            check_success(result, cmd, f"{benchmark.id} ({compiler.name})")
+            check_success(result, cmd, f"{benchmark.id} ({compiler.name})", self.ctx.timeout)
             if samples is not None:
                 samples.add("wall-time", result.wall_time_ns)
                 samples.add("max-rss", result.max_rss_bytes)
@@ -402,7 +418,7 @@ class BenchmarkRunner:
         # The compiler's own value is taken, because it does not include the linker
         result = run_process(cmd, compiler.env, directory, directory / "compile.log", self.ctx.timeout, self.ctx.disable_aslr,
                              measure_rss=True)
-        check_success(result, cmd, f"{benchmark.id} ({compiler.name})")
+        check_success(result, cmd, f"{benchmark.id} ({compiler.name})", self.ctx.timeout)
         if samples is not None:
             samples.add("wall-time", result.wall_time_ns)
             add_compile_stats(samples, stats_file)
@@ -418,7 +434,7 @@ class BenchmarkRunner:
             executable = self.output_path(benchmark, compiler)
             cmd = compile_cmd(compiler.path, benchmark.flags, benchmark.source, executable, None)
             result = run_process(cmd, compiler.env, directory, directory / "compile.log", self.ctx.timeout, False)
-            check_success(result, cmd, f"Building {benchmark.id} ({compiler.name})")
+            check_success(result, cmd, f"Building {benchmark.id} ({compiler.name})", self.ctx.timeout)
 
     def measure_instructions(self, benchmark: Benchmark, compiler: Compiler, samples: Samples) -> None:
         directory = bench_dir(compiler, benchmark)
@@ -669,8 +685,9 @@ def compare_results(data: dict, baseline: str, candidate: str) -> tuple[str, int
 
 def noise_report(data: dict, names: list[str], defaults: dict) -> str:
     lines = [f"## Noise of the gated measures over {len(names)} repetitions", ""]
-    lines += ["Suggested threshold: max(default, 5 σ), rounded up to 0.5 %. Not raised, if the maximum deviation stays below "
-              "the minimum delta of the measure.", ""]
+    explanation = ("Suggested threshold: max(default, 5 σ), rounded up to 0.5 %. Not raised, if the maximum deviation stays "
+                   "below the minimum delta of the measure.")
+    lines += [explanation, ""]
     lines += ["| Benchmark | Measure | Mean | σ | Max deviation | Default | Suggested |", "|---|---|---|---|---|---|---|"]
     first = data["results"][names[0]]
     default_thresholds = defaults.get("thresholds", {})

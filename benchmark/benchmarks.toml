@@ -110,5 +110,5 @@ args-wall-time = ["20000"]
 
 [self-compile]
 build-type = "Release"
-runs = 3
+runs = 5   # With fewer samples, the Mann-Whitney U test cannot reach p < 0.01 (the minimum p for 3 vs. 3 is 0.1)
 warmup = 0

@@ -221,7 +221,7 @@ thresholds = { max-rss = 10.0 } # Optional override
 
 [self-compile]
 build-type = "Release"
-runs = 3
+runs = 5
 warmup = 0
 ```
 
@@ -291,8 +291,10 @@ with sleeps of up to 50 ms, which quantizes the wall times.
 
 ### Duration
 
-On a Ryzen 9 5950X, the `pr` suite takes about 6.5 minutes per compiler, of which the two self-compile benchmarks take
-about 3 minutes (28 s per compilation) and the O2 compile benchmarks under cachegrind most of the rest.
+On a Ryzen 9 5950X, the `pr` suite takes about 8.5 minutes per compiler, of which the two self-compile benchmarks take
+about 5 minutes (28 s per compilation, 5 runs each) and the O2 compile benchmarks under cachegrind most of the rest. The
+self-compile needs 5 runs, because the Mann-Whitney U test cannot reach p < 0.01 with fewer samples (the minimum p for 3
+vs. 3 samples is 0.1).
 
 ## Pre-merge check (`.github/workflows/benchmark.yml`)
 
