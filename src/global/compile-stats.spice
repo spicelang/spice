@@ -6,7 +6,6 @@ import "std/io/filepath";
 import "std/os/system";
 import "std/text/json/json-value";
 import "std/text/json/json-serializer";
-import "std/type/type-conversion";
 import "std/bindings/llvm/llvm" as llvm;
 
 // Own imports
@@ -40,6 +39,23 @@ p addNumberField(JsonValue* object, string key, unsigned long value) {
  */
 p addStringField(JsonValue* object, string key, const String& value) {
     object.addObjectField(String(key), __new<JsonValue>(value));
+}
+
+/**
+ * Get the name of an opt level, like it is passed on the command line (without the dash)
+ *
+ * @param optLevel Opt level
+ * @return Name of the opt level
+ */
+f<string> getOptLevelName(OptLevel optLevel) {
+    switch optLevel {
+        case OptLevel::O0: { return "O0"; }
+        case OptLevel::O1: { return "O1"; }
+        case OptLevel::O2: { return "O2"; }
+        case OptLevel::O3: { return "O3"; }
+        case OptLevel::Os: { return "Os"; }
+        default: { return "Oz"; }
+    }
 }
 
 /**
@@ -87,7 +103,7 @@ public f<JsonValue*> buildCompileStats(GlobalResourceManager& resourceManager, u
 
     // Options, that influence the measured values
     JsonValue* options = __new<JsonValue>(JsonValueKind::JSON_OBJECT);
-    addStringField(options, "optLevel", "O" + toString(cliOptions.optLevel));
+    addStringField(options, "optLevel", String(getOptLevelName(cliOptions.optLevel)));
     options.addObjectField(String("lto"), __new<JsonValue>(cliOptions.useLTO));
     addStringField(options, "backend", String(cliOptions.backend == Backend::TPDE ? "tpde" : "llvm"));
     addNumberField(options, "jobs", resourceManager.getCompileJobCount());
@@ -143,8 +159,9 @@ public p writeCompileStats(GlobalResourceManager& resourceManager, unsigned long
     deleteJsonValue(stats);
 
     const FilePath& statsFile = resourceManager.cliOptions.dump.statsFile;
-    const Result<bool> writeResult = writeFile(statsFile.toString(), content.getRaw());
-    if !writeResult.isOk() {
+    // writeFile reports a failed write as ok(false)
+    Result<bool> writeResult = writeFile(statsFile.toString(), content.getRaw());
+    if !writeResult.isOk() || !writeResult.unwrap() {
         const String messageSuffix = "Failed to write compile statistics: " + statsFile.toString();
         const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, messageSuffix.getRaw());
         abortWithError(error.getMessage());
@@ -157,6 +174,15 @@ public p writeCompileStats(GlobalResourceManager& resourceManager, unsigned long
 f<unsigned long> getNumberField(JsonValue* object, string key) {
     JsonValue* field = object.getField(key);
     return field.getUnsignedInteger();
+}
+
+#[test]
+f<bool> testGetOptLevelName() {
+    assert getOptLevelName(OptLevel::O0) == "O0";
+    assert getOptLevelName(OptLevel::O3) == "O3";
+    assert getOptLevelName(OptLevel::Os) == "Os";
+    assert getOptLevelName(OptLevel::Oz) == "Oz";
+    return true;
 }
 
 #[test]
