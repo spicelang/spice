@@ -277,12 +277,19 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
  * @return Name of path to the linker executable
  */
 public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bool isGccInvoker) {
-    // The host linkers cannot link for arbitrary bare-metal targets, so freestanding cross builds use lld. Wasm keeps its setup
-    const bool requiresLLD = cliOptions.freestanding && !cliOptions.isNativeTarget && !cliOptions.targetTriple.isWasm();
+    // The host linkers cannot link for arbitrary bare-metal targets, so freestanding cross builds use lld. WebAssembly can only
+    // be linked by the WebAssembly flavor of lld
+    const bool isWasm = cliOptions.targetTriple.isWasm();
+    const bool requiresLLD = isWasm || (cliOptions.freestanding && !cliOptions.isNativeTarget);
+    const string requiredLLD = isWasm ? "wasm-ld" : "ld.lld";
     if isUnixBased() {
         // Use the flavor-specific lld driver, since the generic 'lld' driver refuses to be invoked directly
-        foreach const string linkerName : ["wild", "mold", "ld.lld", "ld64.lld", "gold", "ld"] {
-            if requiresLLD && linkerName != "ld.lld" {
+        foreach const string linkerName : ["wild", "mold", "ld.lld", "ld64.lld", "wasm-ld", "gold", "ld"] {
+            if requiresLLD && linkerName != requiredLLD {
+                continue;
+            }
+            // wasm-ld only links WebAssembly
+            if linkerName == "wasm-ld" && !isWasm {
                 continue;
             }
             // wild does only support linking for a subset of the Linux targets. GCC does not accept the path of the linker in
@@ -310,6 +317,10 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bo
     } else {                                                                       // LCOV_EXCL_LINE
         panic(Error("Unsupported platform"));                                      // LCOV_EXCL_LINE
     }                                                                              // LCOV_EXCL_LINE
+    if isWasm {
+        const LinkerError wasmLdError = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "WebAssembly builds require the wasm-ld linker of lld, but it was not found on the system");
+        abortWithError(wasmLdError.getMessage());
+    }
     if requiresLLD {
         const LinkerError lldError = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "Freestanding builds for other targets than the host require the lld linker, but it was not found on the system");
         abortWithError(lldError.getMessage());
