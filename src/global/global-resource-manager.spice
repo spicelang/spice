@@ -228,6 +228,11 @@ public f<SourceFile*> GlobalResourceManager.createSourceFile(SourceFile* parent,
         this.sourceFiles.upsert(sourceFileKey, newSourceFile);
         this.sourceFilesInCreationOrder.pushBack(newSourceFile);
         this.compileProgress.addSourceFile();
+
+        // Runtime files can also be imported explicitly. Register them, so that they know that they are the runtime module
+        if isStdFile {
+            this.runtimeModuleManager.registerIfRuntimeModule(newSourceFile);
+        }
     }
 
     return this.sourceFiles.get(sourceFileKey);

@@ -76,26 +76,6 @@ public f<bool> getRuntimeModuleForFunctionName(const String& functionName, Runti
     return true;
 }
 
-/**
- * Get the name of a top level definition, that identifies a source file as the given runtime module
- *
- * @param runtimeModule Runtime module
- * @return Identifying top level name
- */
-public f<string> getIdentifyingTopLevelName(RuntimeModule runtimeModule) {
-    switch runtimeModule {
-        case RuntimeModule::STRING_RT: { return STROBJ_NAME; } // String struct
-        case RuntimeModule::RESULT_RT: { return RESULTOBJ_NAME; } // Result struct
-        case RuntimeModule::ERROR_RT: { return ERROBJ_NAME; } // Error struct
-        case RuntimeModule::ERROR_TRACE_RT: { return "sErrTracePush"; } // sErrTracePush function
-        case RuntimeModule::MEMORY_RT: { return "sAlloc"; } // sAlloc function
-        case RuntimeModule::RTTI_RT: { return TIOBJ_NAME; } // TypeInfo struct
-        case RuntimeModule::STACK_TRACE_RT: { return "sDumpStacktrace"; } // sDumpStacktrace function
-        case RuntimeModule::LIBC_RT: { return "memcpy"; } // memcpy function
-        default: { panic(Error("Requested unknown runtime module")); } // LCOV_EXCL_LINE
-    }
-}
-
 type ModuleNamePair struct {
     string importName
     string fileName
@@ -103,7 +83,10 @@ type ModuleNamePair struct {
 
 public type RuntimeModuleManager struct {
     GlobalResourceManager &resourceManager
-    UnorderedMap<RuntimeModule, SourceFile *> modules
+    UnorderedMap<RuntimeModule, SourceFile *> modules // Runtime modules, that were requested
+    // Source files, that are runtime modules by their path. Unlike modules, this also contains the explicitly imported and
+    // the still loading runtime modules, so that they know that they are the runtime module themselves
+    UnorderedMap<RuntimeModule, SourceFile *> moduleFiles
 }
 
 public p RuntimeModuleManager.ctor(GlobalResourceManager &resourceManager) {
@@ -141,15 +124,47 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
 }
 
 /**
- * Check if the given source file is the given runtime module. Unlike SourceFile.isRT, this does not depend on the names,
- * that the source file defines
+ * Check if the given source file is the given runtime module, identified by its path. This does not depend on the
+ * names, that the source file defines
  *
  * @param sourceFile Source file
  * @param runtimeModule Runtime module
  * @return Is the runtime module or not
  */
-public f<bool> RuntimeModuleManager.isModule(const SourceFile* sourceFile, RuntimeModule runtimeModule) {
-    return this.modules.contains(runtimeModule) && this.modules.get(runtimeModule) == sourceFile;
+public f<bool> RuntimeModuleManager.isRuntimeModule(const SourceFile* sourceFile, RuntimeModule runtimeModule) {
+    return this.moduleFiles.contains(runtimeModule) && this.moduleFiles.get(runtimeModule) == sourceFile;
+}
+
+/**
+ * Register the given source file as runtime module, if it is the variant of a runtime module, that loadModule resolves
+ * for the current target. This also covers runtime files, that are imported explicitly instead of being requested, so
+ * that they know that they are the runtime module themselves
+ *
+ * @param sourceFile Newly created std source file
+ */
+public p RuntimeModuleManager.registerIfRuntimeModule(SourceFile* sourceFile) {
+    // Only the files directly in the runtime dir can be runtime modules
+    const FilePath runtimeDir = getStdDir() / "runtime";
+    FilePath parentDir = FilePath(sourceFile.filePath.getParentDir());
+    if !parentDir.equivalent(runtimeDir) {
+        return;
+    }
+
+    const RuntimeModule[8] runtimeModules = [
+        RuntimeModule::STRING_RT, RuntimeModule::RESULT_RT, RuntimeModule::ERROR_RT, RuntimeModule::ERROR_TRACE_RT,
+        RuntimeModule::MEMORY_RT, RuntimeModule::RTTI_RT, RuntimeModule::STACK_TRACE_RT, RuntimeModule::LIBC_RT
+    ];
+    for unsigned int i = 0u; i < len(runtimeModules); i++ {
+        const RuntimeModule runtimeModule = runtimeModules[i];
+        const ModuleNamePair namePair = this.resolveNamePair(runtimeModule);
+        const FilePath basePath = runtimeDir / String(namePair.fileName);
+        Vector<FilePath> candidatePaths;
+        const FilePath modulePath = resolvePlatformSpecificSourceFile(this.resourceManager.cliOptions, basePath, FilePath(), candidatePaths);
+        if !modulePath.isEmpty() && modulePath.equivalent(sourceFile.filePath) {
+            this.moduleFiles.upsert(runtimeModule, sourceFile);
+            return;
+        }
+    }
 }
 
 public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
