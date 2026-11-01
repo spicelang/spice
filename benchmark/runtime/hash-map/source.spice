@@ -1,0 +1,28 @@
+// Inserts, looks up and removes keys in an UnorderedMap. Covers hashing, probing and rehashing.
+// Usage: hash-map <key count>
+
+import "std/data/unordered-map";
+import "std/type/type-conversion";
+
+f<int> main(int argc, string[] argv) {
+    const long keyCount = argc > 1 ? toLong(toInt(argv[1])) : 100000l;
+
+    UnorderedMap<long, long> map;
+    for long i = 0l; i < keyCount; i++ {
+        // Spread the keys, so that they do not hash to consecutive buckets
+        map.upsert(i * 7919l, i);
+    }
+
+    long checksum = 0l;
+    for long i = 0l; i < keyCount * 2l; i++ {
+        const long key = i * 7919l;
+        if map.contains(key) {
+            checksum += map.get(key);
+        }
+    }
+
+    for long i = 0l; i < keyCount; i += 2l {
+        map.remove(i * 7919l);
+    }
+    printf("size: %lu, checksum: %ld\n", map.getSize(), checksum);
+}

@@ -1,0 +1,26 @@
+// Finds all matches of a regular expression in a generated text. Covers the std regex engine and String handling.
+// Usage: regex <line count>
+
+import "std/text/regex/regex";
+import "std/type/type-conversion";
+
+f<int> main(int argc, string[] argv) {
+    const int lineCount = argc > 1 ? toInt(argv[1]) : 1000;
+
+    String text;
+    for int i = 0; i < lineCount; i++ {
+        text.append("user");
+        text.append(toString(i));
+        text.append("@example.com sent ");
+        text.append(toString(i * 37 % 1000));
+        text.append(" bytes to host-");
+        text.append(toString(i % 13));
+        text.append(".internal\n");
+    }
+
+    Result<Regex> compiled = compileRegex(String("[a-z]+[0-9]+@[a-z]+\\.com"));
+    assert compiled.isOk();
+    Regex regex = compiled.unwrap();
+    const Vector<Match> matches = regex.findAll(text);
+    printf("matches: %lu\n", matches.getSize());
+}

@@ -26,6 +26,11 @@ ROOT_DIR = Path(__file__).resolve().parent
 EXE_NAME = "spice.exe" if sys.platform == "win32" else "spice"
 # Optimized with LTO, like the test runner builds the compiler under test (see test/run-tests.py)
 DEFAULT_BUILD_FLAGS = ["-O3", "-lto", "--native-features", "--strip-symbols"]
+# Flags of the build types of build.py. The benchmark runner compiles the compiler with them as well
+BUILD_TYPE_FLAGS = {
+    "Release": ["-O3", "-lto"],
+    "Debug": ["-O0", "-g"],
+}
 
 
 def log(msg: str) -> None:

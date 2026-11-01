@@ -10,10 +10,7 @@ sys.dont_write_bytecode = True
 import bootstrap  # noqa: E402
 
 ROOT_DIR = bootstrap.ROOT_DIR
-BUILD_FLAGS = {
-    "Release": ["-O3", "-lto"],
-    "Debug": ["-O0", "-g"],
-}
+BUILD_FLAGS = bootstrap.BUILD_TYPE_FLAGS
 
 parser = argparse.ArgumentParser(description="Build the Spice compiler.")
 parser.add_argument(

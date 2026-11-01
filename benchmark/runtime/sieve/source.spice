@@ -1,0 +1,22 @@
+// Counts the primes below a limit with the sieve of Eratosthenes. Covers Vector<bool> accesses in tight loops.
+// Usage: sieve <limit>
+
+import "std/data/vector";
+import "std/type/type-conversion";
+
+f<int> main(int argc, string[] argv) {
+    const unsigned long limit = argc > 1 ? cast<unsigned long>(toLong(toInt(argv[1]))) : 1000000ul;
+
+    Vector<bool> isComposite = Vector<bool>(limit + 1ul, false);
+    unsigned long primeCount = 0ul;
+    for unsigned long i = 2ul; i <= limit; i++ {
+        // Copied to a local, because a bool reference is not accepted as condition
+        const bool composite = isComposite[i];
+        if composite { continue; }
+        primeCount++;
+        for unsigned long multiple = i * i; multiple <= limit; multiple += i {
+            isComposite[multiple] = true;
+        }
+    }
+    printf("primes below %lu: %lu\n", limit, primeCount);
+}

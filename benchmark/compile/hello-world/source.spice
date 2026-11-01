@@ -1,0 +1,5 @@
+// Smallest possible program. Measures the fixed cost of a compilation: startup, runtime modules, object emission, linking.
+
+f<int> main() {
+    printf("Hello World!\n");
+}
