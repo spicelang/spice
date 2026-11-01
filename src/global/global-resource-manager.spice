@@ -76,10 +76,13 @@ public type GlobalResourceManager struct {
     public RuntimeModuleManager runtimeModuleManager
     public TypeRegistry typeRegistry // Interns all types and hands out stable `const Type*` handles
     public TypeNameDisambiguator typeNameDisambiguator // Hands out disambiguation suffixes for same-named types
-    // Wall times of the front end, middle end and back end over all source files
+    // Wall times of the front end, middle end and back end over all source files, and of the linker
     public Timer frontEndTimer
     public Timer middleEndTimer
     public Timer backEndTimer
+    public Timer linkerTimer
+    // Timers of the front-end and middle-end stages, that are running at the moment. See SourceFile.startStageTimer
+    public Vector<Timer*> runningStageTimers
     public ErrorManager errorManager
     public CompileProgress compileProgress // Progress bar on the console, if enabled (see compileProject)
     // Lookup caches of the managers

@@ -604,6 +604,11 @@ ext f<LLVMValueRef> LLVMGetBasicBlockParent(LLVMBasicBlockRef /*BB*/);
 ext f<unsigned int> LLVMCountBasicBlocks(LLVMValueRef /*Fn*/);
 ext f<LLVMValueRef> LLVMGetFirstInstruction(LLVMBasicBlockRef /*BB*/);
 ext f<LLVMValueRef> LLVMGetNextInstruction(LLVMValueRef /*Inst*/);
+ext f<LLVMValueRef> LLVMGetFirstFunction(LLVMModuleRef /*M*/);
+ext f<LLVMValueRef> LLVMGetNextFunction(LLVMValueRef /*Fn*/);
+ext f<LLVMBasicBlockRef> LLVMGetFirstBasicBlock(LLVMValueRef /*Fn*/);
+ext f<LLVMBasicBlockRef> LLVMGetNextBasicBlock(LLVMBasicBlockRef /*BB*/);
+ext f<LLVMBool> LLVMIsDeclaration(LLVMValueRef /*Global*/);
 ext p LLVMPositionBuilderBeforeDbgRecords(LLVMBuilderRef /*Builder*/, LLVMBasicBlockRef /*Block*/, LLVMValueRef /*Instr*/);
 ext p LLVMInstructionSetDebugLoc(LLVMValueRef /*Inst*/, LLVMMetadataRef /*Loc*/);
 ext f<unsigned int> LLVMGetEnumAttributeKindForName(string /*Name*/, unsigned long /*SLen*/);
@@ -1228,6 +1233,38 @@ public p Module.setTargetTriple(Triple triple) {
 
 public p Module.setDataLayout(DataLayout dataLayout) {
     LLVMSetModuleDataLayout(this.self, dataLayout.self);
+}
+
+// Number of functions with a body in this module. Declarations are not counted
+public f<unsigned long> Module.getDefinedFunctionCount() {
+    unsigned long count = 0l;
+    LLVMValueRef fct = LLVMGetFirstFunction(this.self);
+    while fct != nil<LLVMValueRef> {
+        if LLVMIsDeclaration(fct) == 0 {
+            count++;
+        }
+        fct = LLVMGetNextFunction(fct);
+    }
+    return count;
+}
+
+// Like llvm::Module::getInstructionCount: number of instructions in all functions of this module
+public f<unsigned long> Module.getInstructionCount() {
+    unsigned long count = 0l;
+    LLVMValueRef fct = LLVMGetFirstFunction(this.self);
+    while fct != nil<LLVMValueRef> {
+        LLVMBasicBlockRef block = LLVMGetFirstBasicBlock(fct);
+        while block != nil<LLVMBasicBlockRef> {
+            LLVMValueRef inst = LLVMGetFirstInstruction(block);
+            while inst != nil<LLVMValueRef> {
+                count++;
+                inst = LLVMGetNextInstruction(inst);
+            }
+            block = LLVMGetNextBasicBlock(block);
+        }
+        fct = LLVMGetNextFunction(fct);
+    }
+    return count;
 }
 
 // ===== BasicBlock =====

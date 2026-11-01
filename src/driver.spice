@@ -125,6 +125,7 @@ public type DumpSettings struct {
     public bool dumpObjectFiles = false
     public bool dumpToFiles = false
     public bool abortAfterDump = false
+    public FilePath statsFile // Compile statistics are written to this JSON file, if set
 }
 
 public type InstrumentationSettings struct {
@@ -970,6 +971,8 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--dump-object-file", this.cliOptions.dump.dumpObjectFiles, "Dump object files");
     // --dump-dependency-graph
     subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
+    // --dump-stats
+    subCmd.addOption("--dump-stats", this.cliOptions.dump.statsFile, "Write compile statistics (stage times, peak memory usage, counters) as JSON to the given file");
 
     // Source file. The parser requires positional options, and the existence of the file is checked after parsing
     subCmd.addOption("main-source-file", this.cliOptions.mainSourceFile, "Main source file");
@@ -1556,5 +1559,25 @@ f<bool> testFreestanding() {
     string[4] runArgs = ["spice", "run", "--freestanding", "main-file.spice"];
     assert parseAndEnrich(run, 4, runArgs);
     assert run.cliOptions.freestanding;
+    return true;
+}
+
+#[test]
+f<bool> testDumpStats() {
+    // No statistics by default
+    Driver noStats;
+    string[3] noStatsArgs = ["spice", "build", "main-file.spice"];
+    assert parseAndEnrich(noStats, 3, noStatsArgs);
+    assert noStats.cliOptions.dump.statsFile.isEmpty();
+
+    // The statistics file can be passed as separate argument or attached with '='
+    Driver separate;
+    string[5] separateArgs = ["spice", "build", "--dump-stats", "stats.json", "main-file.spice"];
+    assert parseAndEnrich(separate, 5, separateArgs);
+    assert separate.cliOptions.dump.statsFile.toGenericString() == "stats.json";
+    Driver attached;
+    string[4] attachedArgs = ["spice", "run", "--dump-stats=out/stats.json", "main-file.spice"];
+    assert parseAndEnrich(attached, 4, attachedArgs);
+    assert attached.cliOptions.dump.statsFile.toGenericString() == "out/stats.json";
     return true;
 }

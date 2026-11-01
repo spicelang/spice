@@ -2,11 +2,13 @@
 
 // Std imports
 import "std/os/os";
+import "std/time/timer";
 
 // Own imports
 import "@/source-file";
 import "@/driver";
 import "@/global/global-resource-manager";
+import "@/global/compile-stats";
 import "@/util/system-util";
 import "@/util/compile-progress";
 
@@ -17,6 +19,10 @@ import "@/util/compile-progress";
  * @return Successful or not
  */
 f<bool> compileProject(CliOptions& cliOptions) {
+    // Measure the wall time of the whole compilation for the compile statistics
+    Timer totalTimer = Timer(TimerMode::MICROS);
+    totalTimer.start();
+
     // Instantiate GlobalResourceManager
     GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
 
@@ -43,6 +49,7 @@ f<bool> compileProject(CliOptions& cliOptions) {
     if cliOptions.lintOnly {
         resourceManager.compileProgress.clear();
         mainSourceFile.collectAndPrintLintFindings();
+        writeCompileStatsIfRequested(resourceManager, totalTimer);
         return true;
     }
 
@@ -58,9 +65,11 @@ f<bool> compileProject(CliOptions& cliOptions) {
     // Link the target executable (link object files to executable/library)
     if cliOptions.outputContainer != OutputContainer::OBJECT_FILE {
         resourceManager.compileProgress.startLinking();
+        resourceManager.linkerTimer.start();
         resourceManager.linker.prepare();
         resourceManager.linker.run();
         resourceManager.linker.cleanup();
+        resourceManager.linkerTimer.stop();
         resourceManager.compileProgress.finishLinking();
     }
 
@@ -70,7 +79,23 @@ f<bool> compileProject(CliOptions& cliOptions) {
     // Print compiler warnings
     mainSourceFile.collectAndPrintWarnings();
 
+    writeCompileStatsIfRequested(resourceManager, totalTimer);
+
     return true;
+}
+
+/**
+ * Write the compile statistics, if requested with --dump-stats
+ *
+ * @param resourceManager Global resource manager of the compilation
+ * @param totalTimer Timer, that measures the whole compilation
+ */
+p writeCompileStatsIfRequested(GlobalResourceManager& resourceManager, Timer& totalTimer) {
+    if resourceManager.cliOptions.dump.statsFile.isEmpty() {
+        return;
+    }
+    totalTimer.stop();
+    writeCompileStats(resourceManager, totalTimer.getDurationInMicros());
 }
 
 /**

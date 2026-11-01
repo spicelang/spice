@@ -14,8 +14,8 @@ public type TimerMode enum {
  * High resolution timer
  */
 public type Timer struct {
-    unsigned long timeStart // Microseconds
-    unsigned long timeStop  // Microseconds
+    unsigned long timeStart = 0l // Microseconds
+    unsigned long timeStop = 0l  // Microseconds
     TimerMode mode
     unsigned long* timerOutput
 }

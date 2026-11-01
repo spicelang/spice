@@ -46,6 +46,9 @@ f<int> main() {
     assert !llvm::verifyFunction(func);
     llvm::Message output;
     assert !llvm::verifyModule(module, output);
+    // The printf declaration is no defined function. The builder folded the add, so only the call and the return are left
+    assert module.getDefinedFunctionCount() == 1l;
+    assert module.getInstructionCount() == 2l;
 
     const llvm::Message unoptimizedIR = module.print();
     printf("Unoptimized IR:\n%s", unoptimizedIR.get());
@@ -55,6 +58,10 @@ f<int> main() {
     passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
     passBuilder.addPass(llvm::AlwaysInlinerPass());
     passBuilder.run(module, targetMachine);
+
+    // The optimizer replaces printf with puts, which keeps the instruction count
+    assert module.getDefinedFunctionCount() == 1l;
+    assert module.getInstructionCount() == 2l;
 
     const llvm::Message optimizedIR = module.print();
     printf("Optimized IR:\n%s", optimizedIR.get());

@@ -1,0 +1,24 @@
+import "std/os/system";
+import "std/os/volatile";
+
+const unsigned long ALLOCATION_SIZE = 67108864l; // 64 MiB
+
+f<int> main() {
+    const unsigned long peakBefore = getPeakMemoryUsage();
+    assert peakBefore > 0l;
+
+    // Touch every page of a large allocation, so that it becomes resident. The stores are volatile, so that the optimizer
+    // does not remove the allocation
+    unsafe {
+        heap byte* data = sAllocUnsafe(ALLOCATION_SIZE);
+        for unsigned long i = 0l; i < ALLOCATION_SIZE; i += 1024l {
+            volatileStore(&data[i], cast<byte>(1));
+        }
+        sDealloc(data);
+    }
+
+    // The peak stays at least as high as the allocation, even after it was released
+    const unsigned long peakAfter = getPeakMemoryUsage();
+    assert peakAfter >= peakBefore + ALLOCATION_SIZE / 2l;
+    printf("All assertions passed!\n");
+}
