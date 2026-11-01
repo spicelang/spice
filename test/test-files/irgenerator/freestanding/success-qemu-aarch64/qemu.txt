@@ -1,0 +1,1 @@
+qemu-system-aarch64 -machine virt -cpu cortex-a53 -nographic -semihosting-config enable=on,target=native

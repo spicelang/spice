@@ -50,6 +50,7 @@ IS_X86_64 = TARGET_ARCH == "amd64"
 PATH_TEST_FILES = "./test-files"
 
 INPUT_NAME_CLI_FLAGS = "cli-flags.txt"
+INPUT_NAME_QEMU = "qemu.txt"
 REF_NAME_SOURCE = "source.spice"
 REF_NAME_SYNTAX_TREE = "syntax-tree.dot"
 REF_NAME_DEP_GRAPH = "dependency-graph.dot"
@@ -76,6 +77,9 @@ CTL_DEBUG_SCRIPT = "debug.gdb"
 # Names of the opt levels (in the order of REF_NAME_OPT_IR) for the -O cli option
 OPT_LEVEL_NAMES = "0123sz"
 
+# Timeout in seconds for running a test program in QEMU. A program, that crashes on bare metal, often hangs instead of exiting
+QEMU_TIMEOUT = 60
+
 GRAPH_NAME_AST = "AST"
 GRAPH_NAME_DEP_GRAPH = "Dependency Graph"
 GDB_READING_SYMBOLS_MESSAGE = "Reading symbols from "
@@ -94,6 +98,9 @@ OUTPUT_CONTAINER_EXTENSIONS = {
     "lib": ".lib" if IS_WINDOWS else ".a",
     "dylib": ".dll" if IS_WINDOWS else ".dylib" if IS_MACOS else ".so",
 }
+# File extensions of the output containers for WebAssembly targets
+OUTPUT_CONTAINER_EXTENSIONS_WASM = {"exec": ".wasm", "obj": ".o", "lib": ".a", "dylib": ".so"}
+WASM_MAGIC = b"\0asm"
 
 
 @dataclass(frozen=True)
@@ -202,14 +209,15 @@ def decode_output(output: bytes) -> str:
 
 
 def run_process(cmd: list[str] | str, capture_stderr: bool = True, shell: bool = False,
-                cwd: Path | None = None) -> tuple[str, int, str]:
+                cwd: Path | None = None, timeout: int | None = None) -> tuple[str, int, str]:
     """Run the given command. Returns the output (incl. stderr, if captured), the exit code and the separately captured
-    stderr output otherwise"""
+    stderr output otherwise. The timeout defaults to the one of the options"""
+    timeout = timeout or OPTS.timeout or None
     try:
         result = subprocess.run(cmd, shell=shell, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT if capture_stderr else subprocess.PIPE, timeout=OPTS.timeout or None)
+                                stderr=subprocess.STDOUT if capture_stderr else subprocess.PIPE, timeout=timeout)
     except subprocess.TimeoutExpired:
-        raise TimeoutError(f"Timed out after {OPTS.timeout}s: {cmd if isinstance(cmd, str) else shlex.join(cmd)}")
+        raise TimeoutError(f"Timed out after {timeout}s: {cmd if isinstance(cmd, str) else shlex.join(cmd)}")
     return decode_output(result.stdout), exit_code_of(result.returncode), decode_output(result.stderr or b"")
 
 
@@ -250,6 +258,24 @@ def is_freestanding_build(args: list[str]) -> bool:
     return False
 
 
+def get_target_triple(args: list[str]) -> str | None:
+    """Get the target triple, the given compiler args request. Like for the compiler, the last one wins"""
+    target_triple = None
+    for arg in args:
+        if arg.startswith("--target="):
+            target_triple = arg.split("=", 1)[1].lower()
+    return target_triple
+
+
+def get_qemu_command(test_case: TestCase) -> list[str] | None:
+    """Get the QEMU command line, that runs the test program of the given test case, from its qemu.txt, if it has one"""
+    qemu_file = test_case.file(INPUT_NAME_QEMU)
+    if not os.path.exists(qemu_file):
+        return None
+    lines = [line for line in read_file(qemu_file).splitlines() if line.strip()]
+    return shlex.split(lines[0]) if lines else None
+
+
 def get_output_container(args: list[str]) -> str | None:
     """Get the output container, the given compiler args request. Like for the compiler, the last one wins"""
     output_container = None
@@ -282,11 +308,17 @@ def detect_output_container(path: Path) -> str | None:
     return None
 
 
-def check_output_container(result: TestResult, artifact_dir: Path, output_container: str) -> None:
+def check_output_container(result: TestResult, artifact_dir: Path, output_container: str, target_triple: str | None) -> None:
     """Check that the compiler emitted the output file of the requested output container"""
-    output_path = artifact_dir / f"source{OUTPUT_CONTAINER_EXTENSIONS[output_container]}"
+    is_wasm = target_triple is not None and target_triple.startswith("wasm")
+    extensions = OUTPUT_CONTAINER_EXTENSIONS_WASM if is_wasm else OUTPUT_CONTAINER_EXTENSIONS
+    output_path = artifact_dir / f"source{extensions[output_container]}"
     if not output_path.exists():
         result.fail(f"Compiler did not emit the {output_container} output file '{output_path}'")
+    # Linked WebAssembly modules and object files share the header of the WebAssembly binary format
+    if is_wasm:
+        result.expect(output_path.read_bytes()[:4] == WASM_MAGIC, f"Expected a WebAssembly binary, but got '{output_path}'")
+        return
     # PIE executables and shared libraries both are ELF files of type ET_DYN, so executables are only checked for existence
     if output_container != "exec":
         actual_container = detect_output_container(output_path)
@@ -495,6 +527,10 @@ def is_disabled(test_case: TestCase) -> bool:
         return True
     if IS_MACOS and exists(CTL_SKIP_MACOS):
         return True
+    # Test programs for other machines run in QEMU. Locally, QEMU is optional. The CI installs it, so it is required there
+    qemu_command = get_qemu_command(test_case)
+    if qemu_command and not OPTS.is_github_actions and shutil.which(qemu_command[0]) is None:
+        return True
     return False
 
 
@@ -532,10 +568,16 @@ def check_execution(result: TestResult, test_case: TestCase, executable_path: Pa
         cli_flags = [line for line in read_file(cli_flags_file).splitlines() if line]
         if cli_flags:
             cmd += " " + cli_flags[0]
+    # A test program for another machine boots in QEMU, which reports the exit code of the program, e.g. via semihosting
+    timeout = None
+    qemu_command = get_qemu_command(test_case)
+    if qemu_command:
+        cmd = shlex.join([*qemu_command, "-kernel", str(executable_path)])
+        timeout = min(QEMU_TIMEOUT, OPTS.timeout) if OPTS.timeout else QEMU_TIMEOUT
     # In ASAN mode, always capture stderr as well: a sanitizer report has to fail the test case, even if it only checks an exit
     # code, that might match the one of the sanitizer
     capture_stderr = check_output or OPTS.asan
-    output, exit_code, stderr = run_process(cmd, capture_stderr=capture_stderr, shell=True)
+    output, exit_code, stderr = run_process(cmd, capture_stderr=capture_stderr, shell=True, timeout=timeout)
     if OPTS.asan:
         result.expect(not contains_sanitizer_report(output), f"Sanitizer report:\n{output}")
 
@@ -633,7 +675,7 @@ def exec_test_case(result: TestResult, test_case: TestCase) -> None:
 
     # Check the output file of the requested output container
     if requested_output_container is not None and not expects_error:
-        check_output_container(result, artifact_dir, requested_output_container)
+        check_output_container(result, artifact_dir, requested_output_container, get_target_triple(test_args))
 
     # Check AST
     def get_ast() -> str:

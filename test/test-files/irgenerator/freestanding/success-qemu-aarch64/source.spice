@@ -1,0 +1,50 @@
+// TEST: --target=aarch64-none-elf -O2 --linker-script=./test-files/irgenerator/freestanding/success-qemu-aarch64/link.ld
+
+// Runs on the virt machine of QEMU (see qemu.txt). start.S sets up the stack and calls kmain, which writes to the UART and
+// allocates from the RAM. The test ends with a panic, whose handler stops QEMU with the line of the panic as exit code
+
+#![core.linker.additionalSource = "start.S"]
+
+import "std/data/vector";
+import "board";
+import "allocator";
+
+#[core.compiler.panicHandler, core.compiler.noReturn]
+p onPanic(string message, string file, unsigned int line) {
+    writeToUart("Panic in ");
+    writeToUart(file);
+    writeToUart(": ");
+    writeToUart(message);
+    writeToUart("\n");
+    exitQemu(cast<int>(line));
+}
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p kmain() {
+    writeToUart("Hello from bare-metal AArch64!\n");
+
+    // String
+    String greeting = String("Hello");
+    greeting += " from the heap";
+    greeting += '!';
+    writeToUart(greeting.getRaw());
+    writeToUart("\n");
+    if greeting == "Hello from the heap!" {
+        writeToUart("Strings are equal\n");
+    }
+
+    // Vector
+    Vector<long> squares;
+    for long i = 1l; i <= 100l; i++ {
+        squares.pushBack(i * i);
+    }
+    long sum = 0l;
+    foreach long square : squares {
+        sum += square;
+    }
+    if sum == 338350l {
+        writeToUart("Sum is correct\n");
+    }
+
+    panic(Error("Stopping the machine"));
+}

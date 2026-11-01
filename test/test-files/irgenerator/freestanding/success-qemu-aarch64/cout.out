@@ -1,0 +1,5 @@
+Hello from bare-metal AArch64!
+Hello from the heap!
+Strings are equal
+Sum is correct
+Panic in ./source.spice: Stopping the machine
