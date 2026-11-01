@@ -1,0 +1,31 @@
+// Imports the runtime modules explicitly, which the compiler otherwise loads on demand. The explicitly imported files
+// must still be recognized as the runtime modules themselves, instead of requesting themselves as their own runtime.
+import "std/runtime/string_rt";
+import "std/runtime/result_rt";
+import "std/runtime/rtti_rt";
+import "std/runtime/memory_rt";
+import "std/runtime/error_rt";
+import "std/runtime/error_trace_rt";
+import "std/runtime/stack_trace_rt";
+
+f<Result<int>> parse(bool fail) {
+    if fail {
+        return err<int>(Error("Parsing failed"));
+    }
+    return ok(42);
+}
+
+f<int> main() {
+    String greeting = String("Hello");
+    greeting += " World";
+    printf("%s\n", greeting.getRaw());
+
+    Result<int> success = parse(false);
+    printf("Value: %d\n", success.unwrap());
+    const Result<int> failure = parse(true);
+    printf("Is error: %d\n", failure.isErr());
+
+    StackTrace trace;
+    trace.capture(0);
+    printf("Has frames: %d\n", !trace.isEmpty());
+}
