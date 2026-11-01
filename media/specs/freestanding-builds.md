@@ -268,8 +268,9 @@ the loop in `memcpy` into a call to `memcpy`. Users can opt out to bring optimiz
 >   libm calls, it is OS tier only via `std/type/type-conversion`.
 > - **QEMU tests:** the LLVM of Spice is built for AArch64, X86 and WebAssembly only, so there are no 32-bit Arm triples.
 >   `irgenerator/freestanding/success-qemu-aarch64` runs on the `virt` machine of `qemu-system-aarch64`: a `start.S` (via
->   `core.linker.additionalSource`) enables FP/SIMD and sets up the stack, a linker script places the image in the RAM, the
->   program writes to the PL011 UART via `volatileStore`, uses heap types with a bump allocator and stops QEMU from its panic
+>   `core.linker.additionalSource`) enables FP/SIMD and sets up the stack, a linker script places the image in the RAM. With the MMU off, unaligned accesses fault,
+>   so the test is built with `--cpu-features=+strict-align` and enables the alignment check (`SCTLR_EL1.A`), which older
+>   QEMU versions do not do on their own. The program writes to the PL011 UART via `volatileStore`, uses heap types with a bump allocator and stops QEMU from its panic
 >   handler via semihosting (`SYS_EXIT`). The runner boots programs of test cases with a `qemu.txt` control file (the QEMU
 >   command line) and skips them locally, if QEMU is missing. The Linux CI installs `lld` and `qemu-system-arm`. x86_64 bare
 >   metal is not covered, since QEMU only boots 32-bit multiboot kernels directly.

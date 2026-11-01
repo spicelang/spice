@@ -1,7 +1,8 @@
-// TEST: --target=aarch64-none-elf -O2 --linker-script=./test-files/irgenerator/freestanding/success-qemu-aarch64/link.ld
+// TEST: --target=aarch64-none-elf -O2 --cpu-features=+strict-align --linker-script=./test-files/irgenerator/freestanding/success-qemu-aarch64/link.ld
 
 // Runs on the virt machine of QEMU (see qemu.txt). start.S sets up the stack and calls kmain, which writes to the UART and
-// allocates from the RAM. The test ends with a panic, whose handler stops QEMU with the line of the panic as exit code
+// allocates from the RAM. The test ends with a panic, whose handler stops QEMU with the line of the panic as exit code.
+// The MMU stays off, so unaligned memory accesses fault and the code is generated without them (strict-align)
 
 #![core.linker.additionalSource = "start.S"]
 

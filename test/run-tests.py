@@ -216,8 +216,12 @@ def run_process(cmd: list[str] | str, capture_stderr: bool = True, shell: bool =
     try:
         result = subprocess.run(cmd, shell=shell, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT if capture_stderr else subprocess.PIPE, timeout=timeout)
-    except subprocess.TimeoutExpired:
-        raise TimeoutError(f"Timed out after {timeout}s: {cmd if isinstance(cmd, str) else shlex.join(cmd)}")
+    except subprocess.TimeoutExpired as e:
+        message = f"Timed out after {timeout}s: {cmd if isinstance(cmd, str) else shlex.join(cmd)}"
+        # The output until then shows how far e.g. a hanging test program got
+        if e.output:
+            message += f"\nOutput until the timeout:\n{decode_output(e.output)}"
+        raise TimeoutError(message)
     return decode_output(result.stdout), exit_code_of(result.returncode), decode_output(result.stderr or b"")
 
 
@@ -568,16 +572,19 @@ def check_execution(result: TestResult, test_case: TestCase, executable_path: Pa
         cli_flags = [line for line in read_file(cli_flags_file).splitlines() if line]
         if cli_flags:
             cmd += " " + cli_flags[0]
-    # A test program for another machine boots in QEMU, which reports the exit code of the program, e.g. via semihosting
+    # A test program for another machine boots in QEMU, which reports the exit code of the program, e.g. via semihosting. QEMU
+    # runs without a shell in between, so that the timeout stops QEMU itself
+    shell = True
     timeout = None
     qemu_command = get_qemu_command(test_case)
     if qemu_command:
-        cmd = shlex.join([*qemu_command, "-kernel", str(executable_path)])
+        cmd = [*qemu_command, "-kernel", str(executable_path)]
+        shell = False
         timeout = min(QEMU_TIMEOUT, OPTS.timeout) if OPTS.timeout else QEMU_TIMEOUT
     # In ASAN mode, always capture stderr as well: a sanitizer report has to fail the test case, even if it only checks an exit
     # code, that might match the one of the sanitizer
     capture_stderr = check_output or OPTS.asan
-    output, exit_code, stderr = run_process(cmd, capture_stderr=capture_stderr, shell=True, timeout=timeout)
+    output, exit_code, stderr = run_process(cmd, capture_stderr=capture_stderr, shell=shell, timeout=timeout)
     if OPTS.asan:
         result.expect(not contains_sanitizer_report(output), f"Sanitizer report:\n{output}")
 

@@ -222,7 +222,8 @@ public p kmain() {
 }
 ```
 
-QEMU starts the program without a stack, so a few lines of assembly set it up, before they call the Spice code. They also
+QEMU starts the program without a stack and with the MMU off, so a few lines of assembly set up the stack, before they
+call the Spice code. They also
 allow FP and SIMD instructions, which LLVM uses e.g. for copying memory. The file is compiled by the linker invoker via the
 `core.linker.additionalSource` attribute:
 
@@ -258,8 +259,11 @@ SECTIONS
 }
 ```
 
+With the MMU off, all data accesses are Device memory accesses, which fault, if they are unaligned. So the code is
+generated without unaligned accesses (`--cpu-features=+strict-align`), until the program sets up the MMU:
+
 ```sh
-$ spice build -O2 --target=aarch64-none-elf --linker-script=link.ld main.spice
+$ spice build -O2 --target=aarch64-none-elf --cpu-features=+strict-align --linker-script=link.ld main.spice
 $ qemu-system-aarch64 -machine virt -cpu cortex-a53 -nographic -semihosting-config enable=on,target=native -kernel main
 Hello from bare-metal AArch64!
 ```
