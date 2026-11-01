@@ -25,11 +25,11 @@ dependencies, that the compiler, the runtime modules and the linker add implicit
     - [x] ~~`memory_rt_freestanding.spice` and `string_rt_freestanding.spice`~~ libc shim `libc_rt_freestanding.spice`
     - [x] `mem*` implementations in std, `core.compiler.noBuiltins` attribute
     - [x] Tests and docs
-- [ ] Phase 3: std tiering and embedded targets
-    - [ ] `#![core.compiler.requiresOs]` module attribute and a matching semantic error
-    - [ ] Link compiler-rt builtins for embedded triples
-    - [ ] QEMU based executable tests
-    - [ ] Migrate the Wasm special case in the linker to freestanding mode
+- [x] Phase 3: std tiering and embedded targets
+    - [x] `#![core.compiler.requiresOs]` module attribute and a matching semantic error
+    - [x] Link compiler-rt builtins for embedded triples
+    - [x] QEMU based executable tests
+    - [x] Migrate the Wasm special case in the linker to freestanding mode
 
 ## Inventory of hosted dependencies
 
@@ -243,6 +243,40 @@ marked with a new `core.compiler.noBuiltins` attribute (LLVM `no-builtins`). Oth
 the loop in `memcpy` into a call to `memcpy`. Users can opt out to bring optimized implementations.
 
 ## Phase 3: std tiering and embedded targets
+
+> **Implementation note:** Phase 3 deviates from the plan below in these points:
+>
+> - **`requiresOs`:** only the modules, that call into the OS or libc themselves, get the attribute. A module, that depends on
+>   one of them, is found transitively (`SourceFile.checkForOsRequiringImports`): the error `IMPORT_REQUIRES_OS` is reported at
+>   the import in a non-std file, so that the user sees their own import and the module with the attribute, e.g. `std/net/http`
+>   via `std/net/socket.spice`. Imports in std files are not checked themselves. The import collector does not collect the
+>   imports of a module with the attribute in freestanding mode, since they might not resolve there (e.g. `std/os/os` has no
+>   freestanding variant) and would hide the error. The attribute on the main source file is reported as
+>   `UNSUPPORTED_IN_FREESTANDING_MODE`.
+> - **std tagging is partial:** the stage0 compiler builds `src/` against the std of the repository and rejects the unknown
+>   attribute. So only the OS tier modules outside the (all-platform) import closure of the compiler have the attribute yet:
+>   `std/net/socket*`, `std/net/tls`, `std/io/logging`, `std/time/datetime`, `std/os/cmd`, `std/os/cpu` and
+>   `std/test/lifetime-object`. After the stage0 bump, the remaining ones follow: `std/io/dir*`, `std/io/file`,
+>   `std/io/impl/*`, `std/io/progress-bar`, `std/io/cli-subcommand`, `std/os/env*`, `std/os/filesystem*`, `std/os/mutex`,
+>   `std/os/thread`, `std/os/process`, `std/os/system_*`, `std/os/impl/process_native*`, `std/time/time*`, `std/time/delay`,
+>   `std/type/type-conversion` and `std/text/print`. Their dependants (e.g. `std/io/filepath`, `std/os/atomic`,
+>   `std/os/message-queue`, `std/math/fct` or the JSON/TOML/YAML modules) are then covered transitively. `std/os/syscall_*`
+>   only need a kernel, not a hosted OS, and stay without it.
+> - **compiler-rt:** the linker invoker reports the builtins library for the target (`--rtlib=compiler-rt
+>   -print-libgcc-file-name` for clang, `-print-libgcc-file-name` for GCC, which reports its `libgcc`). It is linked in every
+>   freestanding build, if the file exists. Distributions mostly ship it for the host only. `std/math/fct` does not lower to
+>   libm calls, it is OS tier only via `std/type/type-conversion`.
+> - **QEMU tests:** the LLVM of Spice is built for AArch64, X86 and WebAssembly only, so there are no 32-bit Arm triples.
+>   `irgenerator/freestanding/success-qemu-aarch64` runs on the `virt` machine of `qemu-system-aarch64`: a `start.S` (via
+>   `core.linker.additionalSource`) enables FP/SIMD and sets up the stack, a linker script places the image in the RAM, the
+>   program writes to the PL011 UART via `volatileStore`, uses heap types with a bump allocator and stops QEMU from its panic
+>   handler via semihosting (`SYS_EXIT`). The runner boots programs of test cases with a `qemu.txt` control file (the QEMU
+>   command line) and skips them locally, if QEMU is missing. The Linux CI installs `lld` and `qemu-system-arm`. x86_64 bare
+>   metal is not covered, since QEMU only boots 32-bit multiboot kernels directly.
+> - **Wasm:** besides moving `-nostdlib` to the freestanding setup, Wasm builds now always link with `wasm-ld`. Before, the
+>   linker search picked an ELF linker like `ld.lld`, so linking a Wasm module failed. Hosted Wasm targets (e.g. WASI)
+>   no longer get `-nostdlib`, `--no-entry` and `--export-all`, but are linked against the libc of the Wasm toolchain.
+>   `common/success-link-wasm32` links a module and checks the Wasm header.
 
 ### std tiers
 
