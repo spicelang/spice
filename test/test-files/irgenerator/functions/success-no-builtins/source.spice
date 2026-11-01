@@ -1,0 +1,29 @@
+// The optimizer turns the fill loop into a call to memset, except for functions with the core.compiler.noBuiltins attribute,
+// like the implementation of memset itself. The functions are public, so that their definitions are kept
+
+public p fillBytes(byte* dest, byte value, unsigned long size) {
+    unsafe {
+        for unsigned long i = 0l; i < size; i++ {
+            dest[i] = value;
+        }
+    }
+}
+
+#[core.compiler.noBuiltins]
+public p fillBytesWithoutBuiltins(byte* dest, byte value, unsigned long size) {
+    unsafe {
+        for unsigned long i = 0l; i < size; i++ {
+            dest[i] = value;
+        }
+    }
+}
+
+f<int> main() {
+    byte[4] dest;
+    byte[4] destWithoutBuiltins;
+    unsafe {
+        fillBytes(cast<byte*>(&dest), cast<byte>(7), 4l);
+        fillBytesWithoutBuiltins(cast<byte*>(&destWithoutBuiltins), cast<byte>(7), 4l);
+    }
+    printf("%d %d\n", dest[3], destWithoutBuiltins[3]);
+}

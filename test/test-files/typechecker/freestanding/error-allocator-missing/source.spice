@@ -1,0 +1,13 @@
+// TEST: --freestanding
+
+// The String needs an allocator, but the program only has an alloc function
+
+#[core.compiler.allocFunction]
+f<heap byte*> arenaAlloc(unsigned long size) {
+    return nil<heap byte*>;
+}
+
+f<int> main() {
+    String text = String("Hello");
+    return 0;
+}

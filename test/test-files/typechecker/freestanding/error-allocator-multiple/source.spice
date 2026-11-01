@@ -1,0 +1,20 @@
+// TEST: --freestanding
+
+import "source2";
+
+#[core.compiler.allocFunction]
+f<heap byte*> arenaAlloc(unsigned long size) {
+    return nil<heap byte*>;
+}
+
+#[core.compiler.reallocFunction]
+f<heap byte*> arenaRealloc(heap byte* _ptr, unsigned long size) {
+    return nil<heap byte*>;
+}
+
+#[core.compiler.deallocFunction]
+p arenaDealloc(heap byte* _ptr) {}
+
+f<int> main() {
+    return 0;
+}

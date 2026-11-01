@@ -1,0 +1,4 @@
+// Linux syscall numbers for AArch64. Freestanding mode picks this file via its '_freestanding_aarch64' suffix
+public const unsigned short SYSCALL_WRITE = 64us;
+public const unsigned short SYSCALL_MMAP = 222us;
+public const unsigned short SYSCALL_EXIT = 93us;

@@ -1,0 +1,27 @@
+// TEST: --freestanding
+
+// The C functions of the freestanding runtime are weak, so the program can bring its own. Here, the String constructor calls
+// the strlen of the program
+
+import "io";
+import "allocator";
+
+unsigned int STRLEN_CALLS = 0;
+
+#[core.compiler.mangle = false]
+public f<unsigned long> strlen(string str) {
+    STRLEN_CALLS++;
+    unsigned long length = 0l;
+    while str[length] != '\0' {
+        length++;
+    }
+    return length;
+}
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    const String text = String("Own strlen");
+    writeToStdout(text.getRaw());
+    writeToStdout("\n");
+    exitProcess(cast<int>(STRLEN_CALLS));
+}

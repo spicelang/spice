@@ -174,6 +174,13 @@ public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
         baseNode.resizeToNumberOfManifestations(1l);
     }
 
+    // In freestanding mode, there is no libc, which would provide the C functions, that the runtime modules and the LLVM back end
+    // call (e.g. memcpy). So the program gets a runtime module, that defines them
+    const RuntimeModuleManager& runtimeModuleManager = this.resourceManager.runtimeModuleManager;
+    if isPrepare && this.cliOptions.freestanding && this.sourceFile.isMainFile && !runtimeModuleManager.isModuleAvailable(RuntimeModule::LIBC_RT) {
+        this.sourceFile.requestRuntimeModule(RuntimeModule::LIBC_RT);
+    }
+
     // Find switch statements, that cover all items of an enum. This has to be done before visiting the children, because
     // the control flow analysis of functions and procedures in the prepare stage relies on it
     if isPrepare {
@@ -1322,6 +1329,15 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
                 this.registerPanicHandler(fctDefBase, baseNode, isFunction, firstManifestation);
             }
         }
+        if hasTrueAttr(attrLst, ATTR_CORE_COMPILER_ALLOC_FUNCTION) {
+            this.registerAllocatorFunction(fctDefBase, baseNode, isFunction, firstManifestation, AllocatorFunctionKind::ALLOC);
+        }
+        if hasTrueAttr(attrLst, ATTR_CORE_COMPILER_REALLOC_FUNCTION) {
+            this.registerAllocatorFunction(fctDefBase, baseNode, isFunction, firstManifestation, AllocatorFunctionKind::REALLOC);
+        }
+        if hasTrueAttr(attrLst, ATTR_CORE_COMPILER_DEALLOC_FUNCTION) {
+            this.registerAllocatorFunction(fctDefBase, baseNode, isFunction, firstManifestation, AllocatorFunctionKind::DEALLOC);
+        }
         // The TPDE backend always uses the red zone in x86_64 leaf functions (see the --no-red-zone check in the driver)
         if attrLst.hasAttr(String(ATTR_CORE_COMPILER_RED_ZONE)) {
             const CompileTimeValue value = attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_RED_ZONE));
@@ -1418,6 +1434,103 @@ p TypeChecker.registerPanicHandler(ASTFctDefBaseNode* fctDefBase, ASTNode* baseN
     panicHandler.used = true;
     panicHandler.entry.used = true;
     this.resourceManager.panicHandler = panicHandler;
+}
+
+// Whether the given attribute list contains the given bool attribute with the value true
+f<bool> hasTrueAttr(ASTAttrLstNode* attrLst, const string attrName) {
+    const String name = String(attrName);
+    if !attrLst.hasAttr(name) {
+        return false;
+    }
+    const CompileTimeValue value = attrLst.getAttrValueByName(name);
+    return value.getBoolValue();
+}
+
+// Kinds of allocator functions
+type AllocatorFunctionKind enum {
+    ALLOC = 0,
+    REALLOC = 1,
+    DEALLOC = 2
+}
+
+/**
+ * Check the signature of an allocator function, that is declared with the 'core.compiler.allocFunction',
+ * 'core.compiler.reallocFunction' or 'core.compiler.deallocFunction' attribute, and register it as allocator function of the
+ * program. They get the linker names of the C functions malloc, realloc and free, which the runtime modules call. So the
+ * heap types work in freestanding mode without further changes, and there is at most one of each kind per program.
+ *
+ * @param fctDefBase Function or procedure definition node
+ * @param baseNode AST node of the definition
+ * @param isFunction Function or procedure
+ * @param allocatorFunction Function object of the definition
+ * @param kind Kind of the allocator function
+ */
+p TypeChecker.registerAllocatorFunction(ASTFctDefBaseNode* fctDefBase, ASTNode* baseNode, bool isFunction, Function* allocatorFunction, AllocatorFunctionKind kind) {
+    // In hosted mode, the libc allocates
+    if !this.cliOptions.freestanding {
+        this.softError(baseNode, SemanticErrorType::INVALID_ALLOCATOR_FUNCTION, String("Allocator functions are only supported in freestanding mode"));
+        return;
+    }
+
+    // Check the signature: f<heap byte*>(unsigned long size), f<heap byte*>(heap byte* ptr, unsigned long size) or
+    // p(heap byte* ptr). The heap qualifier is optional, since it does not change the ABI
+    string expectedSignature = "f<heap byte*> alloc(unsigned long size)";
+    string linkerName = "malloc";
+    if kind == AllocatorFunctionKind::REALLOC {
+        expectedSignature = "f<heap byte*> realloc(heap byte* ptr, unsigned long size)";
+        linkerName = "realloc";
+    } else if kind == AllocatorFunctionKind::DEALLOC {
+        expectedSignature = "p dealloc(heap byte* ptr)";
+        linkerName = "free";
+    }
+    const ParamList& params = allocatorFunction.paramList;
+    bool signatureMatches = !fctDefBase.isMethod && !fctDefBase.hasTemplateTypes;
+    if kind == AllocatorFunctionKind::DEALLOC {
+        signatureMatches = signatureMatches && !isFunction && params.getSize() == 1l && isBytePtrParam(params.get(0l));
+    } else {
+        signatureMatches = signatureMatches && isFunction && allocatorFunction.returnType.isPtrTo(SuperType::TY_BYTE);
+        if kind == AllocatorFunctionKind::ALLOC {
+            signatureMatches = signatureMatches && params.getSize() == 1l && isSizeParam(params.get(0l));
+        } else {
+            signatureMatches = signatureMatches && params.getSize() == 2l && isBytePtrParam(params.get(0l)) && isSizeParam(params.get(1l));
+        }
+    }
+    if !signatureMatches {
+        const String message = String("This allocator function must have the signature ") + expectedSignature;
+        this.softError(baseNode, SemanticErrorType::INVALID_ALLOCATOR_FUNCTION, message);
+        return;
+    }
+
+    // Only one allocator function of each kind per program
+    Function** registeredFunction = &this.resourceManager.allocFunction;
+    if kind == AllocatorFunctionKind::REALLOC {
+        registeredFunction = &this.resourceManager.reallocFunction;
+    } else if kind == AllocatorFunctionKind::DEALLOC {
+        registeredFunction = &this.resourceManager.deallocFunction;
+    }
+    const Function* existingFunction = *registeredFunction;
+    if existingFunction != nil<const Function*> && existingFunction.declNode != baseNode {
+        const String message = "The program already has this kind of allocator function, defined at " + existingFunction.declNode.codeLoc.toPrettyString();
+        this.softError(baseNode, SemanticErrorType::MULTIPLE_ALLOCATOR_FUNCTIONS, message);
+        return;
+    }
+
+    // The runtime modules in other source files call it, so it is always emitted and exported
+    allocatorFunction.predefinedMangledName = String(linkerName);
+    allocatorFunction.isAllocatorFunction = true;
+    allocatorFunction.used = true;
+    allocatorFunction.entry.used = true;
+    *registeredFunction = allocatorFunction;
+}
+
+// Whether the given param is a byte pointer, as allocator functions take it
+f<bool> isBytePtrParam(const Param& param) {
+    return param.qualType.isPtrTo(SuperType::TY_BYTE) && !param.isOptional;
+}
+
+// Whether the given param is an unsigned long, as allocator functions take the size
+f<bool> isSizeParam(const Param& param) {
+    return param.qualType.is(SuperType::TY_LONG) && !param.qualType.isSigned() && !param.isOptional;
 }
 
 /**

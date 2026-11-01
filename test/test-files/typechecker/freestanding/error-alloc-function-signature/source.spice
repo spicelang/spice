@@ -1,0 +1,10 @@
+// TEST: --freestanding
+
+#[core.compiler.allocFunction]
+f<heap byte*> arenaAlloc(int size) {
+    return nil<heap byte*>;
+}
+
+f<int> main() {
+    return 0;
+}

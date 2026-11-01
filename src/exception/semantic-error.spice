@@ -123,7 +123,10 @@ public type SemanticErrorType enum {
     INVALID_ASM_TEMPLATE,
     UNSUPPORTED_IN_FREESTANDING_MODE,
     INVALID_PANIC_HANDLER,
-    MULTIPLE_PANIC_HANDLERS
+    MULTIPLE_PANIC_HANDLERS,
+    INVALID_ALLOCATOR_FUNCTION,
+    MULTIPLE_ALLOCATOR_FUNCTIONS,
+    MISSING_ALLOCATOR_FUNCTIONS
 }
 
 public type SemanticError struct {
@@ -291,6 +294,9 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::UNSUPPORTED_IN_FREESTANDING_MODE: { return "Unsupported in freestanding mode"; }
         case SemanticErrorType::INVALID_PANIC_HANDLER: { return "Invalid panic handler"; }
         case SemanticErrorType::MULTIPLE_PANIC_HANDLERS: { return "Multiple panic handlers"; }
+        case SemanticErrorType::INVALID_ALLOCATOR_FUNCTION: { return "Invalid allocator function"; }
+        case SemanticErrorType::MULTIPLE_ALLOCATOR_FUNCTIONS: { return "Multiple allocator functions"; }
+        case SemanticErrorType::MISSING_ALLOCATOR_FUNCTIONS: { return "Missing allocator functions"; }
         default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }

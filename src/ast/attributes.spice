@@ -23,6 +23,10 @@ public const string ATTR_CORE_COMPILER_RED_ZONE = "core.compiler.redZone";
 public const string ATTR_CORE_COMPILER_NO_RETURN = "core.compiler.noReturn";
 public const string ATTR_CORE_COMPILER_COLD = "core.compiler.cold";
 public const string ATTR_CORE_COMPILER_PANIC_HANDLER = "core.compiler.panicHandler";
+public const string ATTR_CORE_COMPILER_ALLOC_FUNCTION = "core.compiler.allocFunction";
+public const string ATTR_CORE_COMPILER_REALLOC_FUNCTION = "core.compiler.reallocFunction";
+public const string ATTR_CORE_COMPILER_DEALLOC_FUNCTION = "core.compiler.deallocFunction";
+public const string ATTR_CORE_COMPILER_NO_BUILTINS = "core.compiler.noBuiltins";
 public const string ATTR_TEST = "test";
 public const string ATTR_TEST_NAME = "test.name";
 public const string ATTR_TEST_SKIP = "test.skip";
@@ -87,7 +91,8 @@ public f<bool> getAttrConfig(const String& key, AttrConfigValue& config) {
     } else if key == ATTR_CORE_COMPILER_MANGLE || key == ATTR_CORE_COMPILER_NO_RETURN || key == ATTR_CORE_COMPILER_COLD {
         config.target = targetFctProc | targetExtDecl;
         config.attrType = AttrType::TYPE_BOOL;
-    } else if key == ATTR_CORE_COMPILER_RED_ZONE || key == ATTR_CORE_COMPILER_PANIC_HANDLER {
+    } else if key == ATTR_CORE_COMPILER_RED_ZONE || key == ATTR_CORE_COMPILER_PANIC_HANDLER || key == ATTR_CORE_COMPILER_ALLOC_FUNCTION ||
+              key == ATTR_CORE_COMPILER_REALLOC_FUNCTION || key == ATTR_CORE_COMPILER_DEALLOC_FUNCTION || key == ATTR_CORE_COMPILER_NO_BUILTINS {
         config.target = targetFctProc;
         config.attrType = AttrType::TYPE_BOOL;
     } else if key == ATTR_CORE_COMPILER_MANGLED_NAME {

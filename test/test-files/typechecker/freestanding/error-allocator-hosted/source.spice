@@ -1,0 +1,8 @@
+#[core.compiler.allocFunction]
+f<heap byte*> arenaAlloc(unsigned long size) {
+    return nil<heap byte*>;
+}
+
+f<int> main() {
+    return 0;
+}

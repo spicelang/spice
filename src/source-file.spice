@@ -28,6 +28,7 @@ import "@/ast/ast-nodes";
 import "@/exception/compiler-error";
 import "@/exception/error-manager";
 import "@/exception/semantic-error";
+import "@/ast/attributes";
 import "@/model/function" as model;
 import "@/util/compiler-warning";
 import "@/util/system-util";
@@ -845,6 +846,10 @@ public p SourceFile.runMiddleEnd() {
     // Check that no two definitions of the program are exported under the same linker symbol name
     this.checkForExportedSymbolCollisions();
     if this.resourceManager.abortCompilation { return; }
+    // Check that a freestanding program, that allocates on the heap, brings the allocator functions
+    if this.isMainFile && this.cliOptions.freestanding {
+        this.checkForAllocatorFunctions();
+    }
     // Visualize dependency graph
     this.runDependencyGraphVisualizer();
     if this.resourceManager.abortCompilation { return; }
@@ -1265,6 +1270,39 @@ p SourceFile.checkForExportedSymbolCollisions() {
 }
 
 /**
+ * In freestanding mode, the memory and string runtime allocate with the allocator functions of the program (see
+ * TypeChecker.registerAllocatorFunction). So a program, that uses them, has to define all allocator functions. Otherwise, it
+ * would only fail at link time.
+ */
+p SourceFile.checkForAllocatorFunctions() {
+    const RuntimeModuleManager& runtimeModuleManager = this.resourceManager.runtimeModuleManager;
+    const bool allocates = runtimeModuleManager.isModuleAvailable(RuntimeModule::MEMORY_RT) || runtimeModuleManager.isModuleAvailable(RuntimeModule::STRING_RT);
+    if !allocates {
+        return;
+    }
+    Vector<String> missingAttrs;
+    if this.resourceManager.allocFunction == nil<model::Function*> {
+        missingAttrs.pushBack(String(ATTR_CORE_COMPILER_ALLOC_FUNCTION));
+    }
+    if this.resourceManager.reallocFunction == nil<model::Function*> {
+        missingAttrs.pushBack(String(ATTR_CORE_COMPILER_REALLOC_FUNCTION));
+    }
+    if this.resourceManager.deallocFunction == nil<model::Function*> {
+        missingAttrs.pushBack(String(ATTR_CORE_COMPILER_DEALLOC_FUNCTION));
+    }
+    if missingAttrs.isEmpty() {
+        return;
+    }
+    String message = String("The program uses heap allocations, which need allocator functions in freestanding mode. Missing: ");
+    for unsigned long i = 0l; i < missingAttrs.getSize(); i++ {
+        message += i == 0l ? "" : ", ";
+        message += missingAttrs.get(i);
+    }
+    this.resourceManager.errorManager.addHardError(cast<ASTNode*>(this.ast), SemanticErrorType::MISSING_ALLOCATOR_FUNCTIONS, message, false);
+    this.checkForHardError();
+}
+
+/**
  * Register the exported symbols of this source file and all its (transitive) dependencies in the given registry. This
  * covers the same source files as collectBackEndSourceFiles, so exactly the ones that end up in the linked program.
  *
@@ -1283,6 +1321,11 @@ p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSym
     foreach dyn dependency : this.dependencies {
         SourceFile* sourceFile = dependency.getSecond();
         sourceFile.registerExportedSymbols(exportedSymbols, visitedSourceFiles);
+    }
+
+    // The symbols of the freestanding libc runtime are weak, so the program may define them as well
+    if this.resourceManager.runtimeModuleManager.isModule(this, RuntimeModule::LIBC_RT) {
+        return;
     }
 
     foreach IVisitable* topLevelDef : this.ast.topLevelDefs {
