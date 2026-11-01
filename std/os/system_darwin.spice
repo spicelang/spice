@@ -1,9 +1,34 @@
+// Structs
+// Layout of 'struct rusage' on 64-bit Linux and macOS: two 'struct timeval' with 16 bytes each, followed by 14 longs
+type ResourceUsage struct {
+    long userTimeSec
+    long userTimeMicros
+    long systemTimeSec
+    long systemTimeMicros
+    long maxRss
+    long ixrss
+    long idrss
+    long isrss
+    long minflt
+    long majflt
+    long nswap
+    long inblock
+    long oublock
+    long msgsnd
+    long msgrcv
+    long nsignals
+    long nvcsw
+    long nivcsw
+}
+
 // External functions
 ext f<long> sysconf(int /*name*/);
 ext f<unsigned int> getpagesize();
+ext f<int> getrusage(int /*who*/, ResourceUsage* /*usage*/);
 
 // Constants
 const int SC_NPROCESSORS_ONLN = 84;
+const int RUSAGE_SELF = 0;
 
 /**
  * Returns the number of CPU cores of the host system.
@@ -21,4 +46,18 @@ public f<long> getCPUCoreCount() {
  */
 public f<unsigned int> getPageSize() {
     return getpagesize();
+}
+
+/**
+ * Returns the peak resident set size of the current process, i.e. the maximum amount of physical memory it used so far.
+ *
+ * return Peak memory usage in bytes
+ */
+public f<unsigned long> getPeakMemoryUsage() {
+    ResourceUsage usage = ResourceUsage{};
+    if getrusage(RUSAGE_SELF, &usage) != 0 {
+        return 0ul;
+    }
+    // macOS reports the maximum resident set size in bytes
+    return cast<unsigned long>(usage.maxRss);
 }

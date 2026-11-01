@@ -21,8 +21,24 @@ type SystemInfo struct {
     int wProcessorRevision
 }
 
+type ProcessMemoryCounters struct {
+    unsigned int cb
+    unsigned int pageFaultCount
+    unsigned long peakWorkingSetSize
+    unsigned long workingSetSize
+    unsigned long quotaPeakPagedPoolUsage
+    unsigned long quotaPagedPoolUsage
+    unsigned long quotaPeakNonPagedPoolUsage
+    unsigned long quotaNonPagedPoolUsage
+    unsigned long pagefileUsage
+    unsigned long peakPagefileUsage
+}
+
 // External functions
 ext p GetSystemInfo(SystemInfo*);
+ext f<byte*> GetCurrentProcess();
+// Exported by kernel32 since Windows 7, so the psapi library is not needed
+ext f<int> K32GetProcessMemoryInfo(byte* /*process*/, ProcessMemoryCounters* /*counters*/, unsigned int /*cb*/);
 
 /**
  * Returns the number of CPU cores of the host system.
@@ -73,4 +89,19 @@ public f<unsigned int> getPageSize() {
     SystemInfo info = SystemInfo{};
     GetSystemInfo(&info);
     return info.dwPageSize;
+}
+
+/**
+ * Returns the peak working set size of the current process, i.e. the maximum amount of physical memory it used so far.
+ *
+ * return Peak memory usage in bytes
+ */
+public f<unsigned long> getPeakMemoryUsage() {
+    ProcessMemoryCounters counters = ProcessMemoryCounters{};
+    const unsigned int size = cast<unsigned int>(sizeof<ProcessMemoryCounters>());
+    counters.cb = size;
+    if K32GetProcessMemoryInfo(GetCurrentProcess(), &counters, size) == 0 {
+        return 0ul;
+    }
+    return counters.peakWorkingSetSize;
 }
