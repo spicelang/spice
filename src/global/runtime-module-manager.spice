@@ -76,26 +76,6 @@ public f<bool> getRuntimeModuleForFunctionName(const String& functionName, Runti
     return true;
 }
 
-/**
- * Get the name of a top level definition, that identifies a source file as the given runtime module
- *
- * @param runtimeModule Runtime module
- * @return Identifying top level name
- */
-public f<string> getIdentifyingTopLevelName(RuntimeModule runtimeModule) {
-    switch runtimeModule {
-        case RuntimeModule::STRING_RT: { return STROBJ_NAME; } // String struct
-        case RuntimeModule::RESULT_RT: { return RESULTOBJ_NAME; } // Result struct
-        case RuntimeModule::ERROR_RT: { return ERROBJ_NAME; } // Error struct
-        case RuntimeModule::ERROR_TRACE_RT: { return "sErrTracePush"; } // sErrTracePush function
-        case RuntimeModule::MEMORY_RT: { return "sAlloc"; } // sAlloc function
-        case RuntimeModule::RTTI_RT: { return TIOBJ_NAME; } // TypeInfo struct
-        case RuntimeModule::STACK_TRACE_RT: { return "sDumpStacktrace"; } // sDumpStacktrace function
-        case RuntimeModule::LIBC_RT: { return "memcpy"; } // memcpy function
-        default: { panic(Error("Requested unknown runtime module")); } // LCOV_EXCL_LINE
-    }
-}
-
 type ModuleNamePair struct {
     string importName
     string fileName
@@ -141,14 +121,14 @@ public f<bool> RuntimeModuleManager.isModuleAvailable(RuntimeModule requestedMod
 }
 
 /**
- * Check if the given source file is the given runtime module. Unlike SourceFile.isRT, this does not depend on the names,
- * that the source file defines
+ * Check if the given source file is the given runtime module. This does not depend on the names, that the source file
+ * defines
  *
  * @param sourceFile Source file
  * @param runtimeModule Runtime module
  * @return Is the runtime module or not
  */
-public f<bool> RuntimeModuleManager.isModule(const SourceFile* sourceFile, RuntimeModule runtimeModule) {
+public f<bool> RuntimeModuleManager.isRuntimeModule(const SourceFile* sourceFile, RuntimeModule runtimeModule) {
     return this.modules.contains(runtimeModule) && this.modules.get(runtimeModule) == sourceFile;
 }
 
@@ -164,6 +144,8 @@ public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceF
     // Instruct the global resource manager to create a new source file
     SourceFile* moduleSourceFile = this.resourceManager.createSourceFile(parentSourceFile, String(namePair.importName), filePath, true);
     moduleSourceFile.isMainFile = false;
+    // Register the module before running its pipeline, so that the module knows that it is the runtime module itself
+    this.modules.upsert(requestedModule, moduleSourceFile);
 
     // Run frontend and first type checker run for the loaded source file
     moduleSourceFile.runFrontEnd();

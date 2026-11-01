@@ -1324,7 +1324,7 @@ p SourceFile.registerExportedSymbols(UnorderedMap<String, ASTNode*>& exportedSym
     }
 
     // The symbols of the freestanding libc runtime are weak, so the program may define them as well
-    if this.resourceManager.runtimeModuleManager.isModule(this, RuntimeModule::LIBC_RT) {
+    if this.isRT(RuntimeModule::LIBC_RT) {
         return;
     }
 
@@ -1513,12 +1513,7 @@ public f<llvm::Type> SourceFile.getLLVMType(const symboltable::Type* rawType) {
  * @return Is the runtime module or not
  */
 public f<bool> SourceFile.isRT(RuntimeModule runtimeModule) {
-    const String topLevelName = String(getIdentifyingTopLevelName(runtimeModule));
-    if !this.exportedNameRegistry.contains(topLevelName) {
-        return false;
-    }
-    const NameRegistryEntry& entry = this.exportedNameRegistry.get(topLevelName);
-    return entry.targetEntry.scope == this.globalScope;
+    return this.resourceManager.runtimeModuleManager.isRuntimeModule(this, runtimeModule);
 }
 
 // Check if this source file is the string / memory / RTTI / result runtime module itself

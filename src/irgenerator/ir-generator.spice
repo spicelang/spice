@@ -1903,7 +1903,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
         // Set attributes to function
         // ToDo: Set dso_local as soon as the LLVM C API allows it (not for public symbols of a shared library)
         // The C functions of the freestanding libc runtime are weak, so that the program can bring its own (e.g. optimized ones)
-        const bool isLibcRT = this.resourceManager.runtimeModuleManager.isModule(this.sourceFile, RuntimeModule::LIBC_RT);
+        const bool isLibcRT = this.sourceFile.isRT(RuntimeModule::LIBC_RT);
         func.setLinkage(isPublic && isLibcRT ? llvm::LLVMLinkage::WeakAnyLinkage : this.getSymbolLinkageType(isPublic));
         this.addCommonFctAttrs(func, entryType.isInline(), node.attrs);
         this.addUserFctAttrs(func, manifestation);
