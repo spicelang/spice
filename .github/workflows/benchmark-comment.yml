@@ -1,0 +1,86 @@
+name: Benchmark comment
+
+# Posts the report of the Benchmark workflow as PR comment. A workflow of its own, because the token of a pull_request run
+# from a fork cannot write to the PR. This workflow runs in the context of the default branch and never executes code of
+# the PR. The artifact is written by the code of the PR, so it is only used as comment text. The PR is determined from the
+# run, not from the artifact.
+
+on:
+  workflow_run:
+    workflows: [Benchmark]
+    types: [completed]
+
+jobs:
+  comment:
+    name: Post benchmark report
+    # Runs of superseded commits are canceled and get no comment. A re-run of the gate (benchmark-label.yml) completes the
+    # run again, which updates the status line of the comment
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_URL: ${{ github.event.workflow_run.html_url }}
+      RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      RUN_HEAD_REPO: ${{ github.event.workflow_run.head_repository.full_name }}
+      RUN_HEAD_OWNER: ${{ github.event.workflow_run.head_repository.owner.login }}
+      RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+      # Identifies the comment, that is updated on new runs
+      MARKER: '<!-- spice-benchmark-report -->'
+
+    steps:
+      - name: Post or update comment
+        run: |
+          # No report, if the PR changes nothing, that affects the benchmarks, or the run failed before the comparison
+          if ! gh run download "$RUN_ID" --repo "$REPO" --name benchmark-report --dir report; then
+            echo "::notice::The run $RUN_ID has no benchmark report"
+            exit 0
+          fi
+
+          # The open PR of the benchmarked branch, if its head is still the benchmarked commit. Skipped, if it is not unique
+          pr_numbers="$(gh api --method GET "repos/$REPO/pulls" -f state=open -f head="$RUN_HEAD_OWNER:$RUN_HEAD_BRANCH" \
+            --paginate --jq ".[] | select(.head.sha == \"$RUN_HEAD_SHA\" and .head.repo.full_name == \"$RUN_HEAD_REPO\") | .number")"
+          if [ "$(grep -c . <<< "$pr_numbers")" -ne 1 ]; then
+            echo "::notice::No unique open PR of $RUN_HEAD_REPO:$RUN_HEAD_BRANCH at $RUN_HEAD_SHA ('$pr_numbers'). Not posted"
+            exit 0
+          fi
+          pr_number="$pr_numbers"
+
+          # The status line is computed here from the current labels, so that it follows the re-runs of the gate. The flag
+          # in the artifact only selects the text
+          status=""
+          if [ "$(cat report/regressed 2>/dev/null)" = "true" ]; then
+            if gh api "repos/$REPO/pulls/$pr_number" --jq '.labels[].name' | grep -qx 'perf-regression-ok'; then
+              status="⚠️ Gated measures regressed. The regression is accepted by the label \`perf-regression-ok\`."
+            else
+              status="❌ The check fails, because gated measures regressed beyond their thresholds. If the regression is"
+              status+=" intended, add the label \`perf-regression-ok\`."
+            fi
+          fi
+
+          # Comments are limited to 65536 characters
+          {
+            echo "$MARKER"
+            head -c 60000 report/report.md
+            echo ""
+            if [ -n "$status" ]; then
+              echo "$status"
+              echo ""
+            fi
+            echo "<sub>Measured on a shared GitHub-hosted runner, so the times are only indicative. [Workflow run]($RUN_URL)</sub>"
+          } > body.md
+          comment_id="$(gh api --paginate "repos/$REPO/issues/$pr_number/comments" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$MARKER\"))) | .id" | head -n 1)"
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" -F body=@body.md > /dev/null
+            echo "Updated comment $comment_id on PR #$pr_number"
+          else
+            gh api --method POST "repos/$REPO/issues/$pr_number/comments" -F body=@body.md > /dev/null
+            echo "Posted a comment on PR #$pr_number"
+          fi

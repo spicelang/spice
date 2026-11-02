@@ -19,8 +19,11 @@ base, and the check fails, if a benchmark regresses more than a configured thres
     - [x] Compile-time, runtime and self-compile benchmarks
     - [x] A/A noise measurement (local), thresholds derived from it. To be repeated on the CI runner in phase 3
 - [ ] Phase 3: pre-merge check
-    - [ ] `.github/workflows/benchmark.yml`, comparing the PR head against the merge base
-    - [ ] Report as job summary and PR comment, `perf-regression-ok` label
+    - [x] `.github/workflows/benchmark.yml`, comparing the PR head against the merge base
+    - [x] Report as job summary and PR comment (`benchmark-comment.yml`), `perf-regression-ok` label
+      (`benchmark-label.yml`)
+    - [ ] A/A noise measurement on the CI runner (manual run of the workflow), before `Benchmark gate` is made a
+      required check
 - [ ] Phase 4: history and visualization
     - [ ] Bencher project, API token as repository secret
     - [ ] Upload the results of every push to `main` and of the nightly run
@@ -55,8 +58,8 @@ base, and the check fails, if a benchmark regresses more than a configured thres
 - The counters are not gated, but shown in the report next to a regression, since they often explain it (e.g. more
   manifestations of a generic function).
 - `instructions` is measured without `--trace-children`, so the linker invoked by the compiler is not counted.
-- Wall times are compared with a Mann-Whitney U test. A difference of more than 10 % with `p < 0.01` is highlighted in
-  the report as a warning.
+- Wall times are compared with a Mann-Whitney U test. A difference of more than 10 % and 1 ms with `p < 0.01` is
+  highlighted in the report as a warning. The absolute minimum keeps the stage times of small programs (a few µs) out.
 
 ### Determinism
 
@@ -64,9 +67,18 @@ The instruction count of a compiler run must not depend on anything else than th
 
 - All compiler runs pass `-j 1`. The parallel back end makes RSS and the order of work depend on thread scheduling.
 - The runner disables ASLR (`setarch -R`), so that the iteration order of pointer-keyed hash maps is stable.
-- Output files are written to fixed paths in a temporary directory with the same path length for every compiler.
-- The base and the head compiler use the std of their own checkout. Different path lengths of the two checkouts change
-  the instruction count by far less than the threshold.
+- The compiler embeds the paths of the source files relative to its working directory, e.g. in panic messages. So every
+  compiler runs in a work dir in its own checkout (`build/bench-tmp/c<idx>/<benchmark>`) and compiles a copy of the
+  benchmark sources in that work dir. The relative paths to the sources and to the std of its checkout are then the
+  same for every compiler. With a shared work dir, the base compiler saw `../../../../../base/std` instead of
+  `../../../../std`, which changed the instruction counts by up to 0.36 % and the file sizes by 64 to 128 bytes in the
+  first CI run.
+- The base and the head compiler use the std of their own checkout. The CI checks them out to paths of the same length
+  (`head/` and `base/`), so that the absolute paths do not differ in length either. Their content still changes the
+  instruction counts a little (e.g. hashes of path strings): `compile/std-generics/O0-llvm` executes 0.04 % more
+  instructions with the std in `.../base/std` than in `.../head/std`. In an A/A comparison of two checkouts of the same
+  commit, the instruction counts differ by up to 0.13 %, the file sizes not at all. The thresholds cover that; the same
+  absolute path for both compilers would need a mount namespace per process.
 
 The A/A measurement (the same commit benchmarked against itself, 10 times) verifies this before the gate is enabled and
 after changes to the runner.
@@ -82,7 +94,8 @@ after changes to the runner.
   `regex` (4.4 MiB) by up to 11.7 %, `n-body` (1.9 MiB) by up to 6.2 %, but by at most 0.52 MiB in absolute terms. The
   minimum delta of 1 MiB covers them, so the default thresholds hold for all benchmarks.
 
-The measurement has to be repeated on the CI runner in phase 3, before the gate is enabled.
+The measurement has to be repeated on the CI runner (manual run of the `Benchmark` workflow, see below), before the
+check is made a required status check.
 
 ## Compiler statistics (`--dump-stats`)
 
@@ -204,6 +217,7 @@ max-rss = 1048576
 
 [defaults.warnings] # Highlighting of time differences
 percent = 10.0
+min-delta-ms = 1.0
 p-value = 0.01
 
 [[compile]]
@@ -299,33 +313,63 @@ vs. 3 samples is 0.1).
 ## Pre-merge check (`.github/workflows/benchmark.yml`)
 
 ```
-on: pull_request (opened, synchronize, reopened, labeled, unlabeled), push to main, schedule (nightly),
-    workflow_dispatch
+on: pull_request (opened, synchronize, reopened), workflow_dispatch (A/A noise measurement)
+    Phase 4 adds: push to main, schedule (nightly)
 ```
 
 - Runs on `ubuntu-26.04` (Linux/x86_64) only. One platform is enough to detect regressions, and instruction counts on
   different platforms are not comparable anyway.
-- `paths-ignore` like in `ci.yml` (`docs/**`, `media/**`, `**.md`).
 - A `concurrency` group per PR cancels outdated runs.
+- Three jobs: `Benchmark changes` decides, whether the PR changes anything, that affects the benchmarks.
+  `Benchmark - Linux/x86_64` measures and reports. `Benchmark gate` decides pass or fail and is the check to require.
+- No `paths-ignore`, because a required check, whose workflow is filtered out, stays pending. Instead, the changes job
+  lists the files of the PR via the API, and the benchmark job is skipped, if all of them match `docs/**`, `media/**`
+  or `**.md` (like the `paths-ignore` of `ci.yml`). The gate passes then.
+- No `labeled`/`unlabeled` triggers. Every label event (e.g. the size label of `pull-request-size[bot]`) would create a
+  run, and the skipped check run of that run would hide the result of the real one in the PR, and count as passed for a
+  required check. The label is handled by `benchmark-label.yml` instead (see below).
 
 ### Pull requests
 
-1. Check out the PR head and the merge base (`git worktree add build/bench-base <merge-base>`).
-2. Set up the toolchain and LLVM with the existing composite actions, `setup-deps.py --tpde` (in both checkouts),
-   install `valgrind` and `time`.
+1. Check out the PR head (not the merge commit) to `head/`, with the full history, and the merge base of the head and
+   the base branch to `base/` (`git worktree add`). The two paths have the same length (see determinism).
+2. Set up the toolchain and LLVM with the existing composite actions of the head checkout, `setup-deps.py --tpde` (in
+   both checkouts), install `valgrind` and `time`. `CCACHE_BASEDIR` lets the TPDE build of the base checkout reuse the
+   ccache entries of the head checkout.
 3. Build both compilers with `build.py`, each with the stage0 compiler pinned in its own checkout. A PR that bumps the
-   stage0 version is thereby benchmarked correctly.
-4. `run-benchmarks.py run --suite pr` with both compilers.
-5. `run-benchmarks.py compare`. The report is written to the job summary (`$GITHUB_STEP_SUMMARY`) and uploaded as an
-   artifact together with `results.json`.
-6. The step fails, if a gated measure regressed and the PR does not have the `perf-regression-ok` label. With the label,
-   `--report-only` is passed. Adding or removing the label re-runs the workflow.
+   stage0 version is thereby benchmarked correctly. LLVM is the one of the head checkout for both, so the effect of an
+   LLVM bump on the compiler is not measured.
+4. `head/benchmark/run-benchmarks.py run --suite pr` with both compilers. Both are measured with the benchmarks and
+   the runner of the head checkout.
+5. `run-benchmarks.py compare`. The report is written to the job summary (`$GITHUB_STEP_SUMMARY`) and uploaded as the
+   artifact `benchmark-report`, together with `results.json` and the flag, whether a gated measure regressed. The
+   benchmark job itself does not fail on regressions.
+6. The gate fails, if the benchmark job failed, or if a gated measure regressed and the PR does not have the label
+   `perf-regression-ok`. It reads the current labels of the PR via the API, not the ones of the event payload.
+
+Adding or removing `perf-regression-ok` triggers `benchmark-label.yml` (`pull_request_target`, so that it can re-run
+jobs for PRs from forks as well; it never checks out code of the PR). It re-runs only the gate job of the latest
+completed benchmark run of the PR head, which reuses the outputs of the benchmark job, instead of benchmarking again.
+A run, that is still in progress, needs no re-run: its gate reads the labels, once it runs.
 
 The PR comment is posted by a second workflow (`benchmark-comment.yml`, triggered by `workflow_run`), which downloads
-the report artifact. The token of the benchmark workflow has no write access for PRs from forks. The comment is updated
-in place on new runs instead of adding a new one.
+the report artifact. The token of the benchmark workflow has no write access for PRs from forks. The comment workflow
+runs in the context of the default branch and never executes code of the PR. The artifact is written by the PR's code,
+so it is only used as comment text: the PR is the unique open PR of the head repository and branch of the run, whose
+head is still the benchmarked commit (which also drops reports of outdated commits). The status line (regression
+accepted by the label or not) is computed from the current labels, so a re-run of the gate updates it. The comment is
+identified by a marker and updated in place on new runs. `benchmark-comment.yml` and `benchmark-label.yml` only run,
+once they are on the default branch.
 
-Time budget: about 30 minutes, dominated by the two compiler builds and the two self-compile benchmarks.
+Time budget: about 30 minutes, dominated by the two compiler builds and the two self-compile benchmarks. The first run
+(PR #1704) took 29.5 minutes.
+
+### A/A noise measurement
+
+The manual run (`workflow_dispatch`, input `repetitions`, default 10) builds only the head compiler and runs
+`run-benchmarks.py noise --suite pr`. The noise report is written to the job summary and uploaded as artifact. It is
+repeated after changes to the runner or the runner image, and the thresholds in `benchmarks.toml` are raised, if they do
+not cover the noise.
 
 ### Pushes to `main` and nightly runs
 

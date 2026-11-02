@@ -1,0 +1,220 @@
+name: Benchmark
+
+# Pre-merge performance check, see media/specs/benchmarks.md. A pull request is benchmarked against its merge base: both
+# compilers are built and measured in the same job, so that they run on the same machine. The job 'Benchmark gate' fails,
+# if a gated measure (instruction count, peak memory usage, file size) regressed beyond its threshold, unless the PR has
+# the label 'perf-regression-ok'. Adding or removing the label re-runs only the gate (benchmark-label.yml). The PR comment
+# is posted by benchmark-comment.yml.
+#
+# The manual run measures the A/A noise of the gated measures on the runner (the same compiler benchmarked repeatedly),
+# which the thresholds in benchmark/benchmarks.toml have to cover.
+
+on:
+  # No label events: they would create runs, whose skipped jobs hide the result of the check. No path filter: the gate has
+  # to report a result for every PR, so that it can be a required check. The 'changes' job skips the benchmark instead
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      repetitions:
+        description: Repetitions of the A/A noise measurement
+        type: number
+        default: 10
+
+# One run per PR, a new push cancels the outdated run
+concurrency:
+  group: benchmark-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    name: Benchmark changes
+    runs-on: ubuntu-26.04
+    permissions:
+      pull-requests: read
+    outputs:
+      relevant: ${{ steps.files.outputs.relevant }}
+    steps:
+      - name: Check for changes, that affect the benchmarks
+        id: files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [ -z "$PR_NUMBER" ]; then
+            echo "relevant=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # A failing API call fails the step (no pipeline, whose status would be lost)
+          files="$(gh api --paginate "repos/$REPO/pulls/$PR_NUMBER/files" --jq '.[].filename')"
+          # Like the paths-ignore of ci.yml: docs/**, media/** and **.md do not affect the benchmarks
+          relevant=false
+          if grep -qvE '^(docs/|media/)|\.md$' <<< "$files"; then
+            relevant=true
+          fi
+          echo "Changes, that affect the benchmarks: $relevant"
+          echo "relevant=$relevant" >> "$GITHUB_OUTPUT"
+
+  benchmark:
+    name: Benchmark - Linux/x86_64
+    needs: changes
+    if: needs.changes.outputs.relevant == 'true'
+    # One platform is enough to detect regressions. Instruction counts of different platforms are not comparable anyway
+    runs-on: ubuntu-26.04
+    timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && 360 || 120 }}
+    # The job runs the downloaded stage0 compilers and the code of the PR, which need no write access and no git credentials
+    permissions:
+      contents: read
+    outputs:
+      regressed: ${{ steps.compare.outputs.regressed }}
+    env:
+      # The two checkouts have paths of the same length ('head' and 'base'), so that the absolute paths, that the compilers
+      # embed, have the same length. The base checkout reuses the ccache entries of the head checkout
+      CCACHE_BASEDIR: ${{ github.workspace }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          path: head
+          # The PR head, not the merge commit. The full history is needed to find the merge base
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # (0 is falsy in expressions, so the condition is inverted)
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Checkout merge base
+        if: github.event_name == 'pull_request'
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          merge_base="$(git -C head merge-base "$HEAD_SHA" "$BASE_SHA")"
+          echo "Merge base: $merge_base"
+          git -C head worktree add --detach ../base "$merge_base"
+          git -C base submodule update --init --recursive
+
+      - name: Setup Linux toolchain
+        uses: ./head/.github/actions/setup-linux-toolchain
+        with:
+          # valgrind counts the instructions, GNU time measures the peak memory usage of the executables
+          extra-packages: valgrind time
+
+      - name: Setup LLVM
+        uses: ./head/.github/actions/setup-llvm
+        with:
+          cache-key-suffix: linux-x64
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
+
+      - name: Download Libs (head)
+        # --tpde builds TPDE into the std, so that the TPDE benchmarks run
+        working-directory: head
+        run: python setup-deps.py --tpde
+
+      - name: Download Libs (base)
+        if: github.event_name == 'pull_request'
+        working-directory: base
+        run: python setup-deps.py --tpde
+
+      - name: Build compiler (head)
+        # With the stage0 compiler pinned in the checkout, so that a PR, that bumps the stage0 version, is measured correctly
+        working-directory: head
+        run: |
+          python fetch-stage0.py
+          python build.py
+
+      - name: Build compiler (base)
+        if: github.event_name == 'pull_request'
+        working-directory: base
+        run: |
+          python fetch-stage0.py
+          python build.py
+
+      - name: Run benchmarks
+        if: github.event_name == 'pull_request'
+        run: >-
+          python head/benchmark/run-benchmarks.py run --suite pr
+          --compiler base=base/build/spice --compiler head=head/build/spice --output results/results.json
+
+      - name: Compare results
+        if: github.event_name == 'pull_request'
+        id: compare
+        run: |
+          # Exits with 1, if a gated measure regressed. The report is only written, if the comparison succeeded
+          set +e
+          python head/benchmark/run-benchmarks.py compare results/results.json --baseline base --candidate head \
+            --markdown results/report.md
+          exit_code=$?
+          set -e
+          if [ ! -f results/report.md ]; then
+            exit 1
+          fi
+          regressed=false
+          if [ "$exit_code" -ne 0 ]; then
+            regressed=true
+          fi
+          echo "regressed=$regressed" >> "$GITHUB_OUTPUT"
+          # For the status line of the PR comment
+          echo "$regressed" > results/regressed
+
+      - name: Run A/A noise measurement
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          REPETITIONS: ${{ inputs.repetitions }}
+        run: |
+          mkdir -p results
+          python head/benchmark/run-benchmarks.py noise --compiler head/build/spice --repetitions "$REPETITIONS" \
+            --output results/noise.json > results/report.md
+
+      - name: Write job summary
+        if: (success() || failure()) && hashFiles('results/report.md') != ''
+        run: cat results/report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload report
+        if: (success() || failure()) && hashFiles('results/report.md') != ''
+        uses: actions/upload-artifact@v7
+        with:
+          # benchmark-comment.yml downloads the artifact by this name
+          name: benchmark-report
+          path: results/
+          retention-days: 30
+
+  gate:
+    # The check to require. It also passes, if the PR changes nothing, that affects the benchmarks
+    name: Benchmark gate
+    needs: [changes, benchmark]
+    if: github.event_name == 'pull_request' && (success() || failure())
+    runs-on: ubuntu-26.04
+    permissions:
+      pull-requests: read
+    steps:
+      - name: Check for regressions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RELEVANT: ${{ needs.changes.outputs.relevant }}
+          BENCHMARK_RESULT: ${{ needs.benchmark.result }}
+          REGRESSED: ${{ needs.benchmark.outputs.regressed }}
+        run: |
+          if [ "$RELEVANT" = "false" ]; then
+            echo "The PR changes nothing, that affects the benchmarks"
+            exit 0
+          fi
+          if [ "$BENCHMARK_RESULT" != "success" ]; then
+            echo "::error::The benchmark job did not succeed ($BENCHMARK_RESULT)"
+            exit 1
+          fi
+          if [ "$REGRESSED" != "true" ]; then
+            echo "No regressions of gated measures beyond their thresholds"
+            exit 0
+          fi
+          # The current labels, not the ones of the event payload, so that a re-run (benchmark-label.yml) sees a new label
+          if gh api "repos/$REPO/pulls/$PR_NUMBER" --jq '.labels[].name' | grep -qx 'perf-regression-ok'; then
+            echo "::warning::Gated measures regressed. The regression is accepted by the label 'perf-regression-ok'."
+            exit 0
+          fi
+          echo "::error::Gated measures regressed beyond their thresholds, see the summary of the benchmark job. If the" \
+            "regression is intended, add the label 'perf-regression-ok'."
+          exit 1

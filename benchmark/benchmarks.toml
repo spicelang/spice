@@ -16,9 +16,10 @@ file-size = 3.0
 max-rss = 1048576 # 1 MiB
 
 # Wall-time and stage-time differences are not gated. They are highlighted in the report, if they exceed this many
-# percent and the Mann-Whitney U test reports a p-value below 'p-value'
+# percent and 'min-delta-ms' milliseconds, and the Mann-Whitney U test reports a p-value below 'p-value'
 [defaults.warnings]
 percent = 10.0
+min-delta-ms = 1.0
 p-value = 0.01
 
 # Compile-time benchmarks: compile a program and measure the compiler. The source is benchmark/compile/<name>/source.spice,

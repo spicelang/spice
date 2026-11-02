@@ -36,3 +36,6 @@ docs/site
 
 # Auto-generated std library reference (produced by tools/generate_std_docs.py)
 docs/docs/std
+
+# Python bytecode
+__pycache__/

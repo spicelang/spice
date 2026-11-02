@@ -61,7 +61,7 @@ class Compiler:
     name: str
     path: Path
     root: Path  # Checkout, the compiler was built from. Its std is used, and its sources are compiled by the self-compile
-    work_dir: Path
+    work_dir: Path  # Working directory of the compilations and copies of the benchmark sources
     env: dict[str, str]
     supports_tpde: bool
 
@@ -89,7 +89,7 @@ def compiler_env(root: Path) -> dict[str, str]:
     return env
 
 
-def parse_compilers(specs: list[str], work_dir: Path) -> list[Compiler]:
+def parse_compilers(specs: list[str], work_dir: Path | None) -> list[Compiler]:
     compilers = []
     for idx, spec in enumerate(specs):
         name, sep, path_str = spec.partition("=")
@@ -103,8 +103,10 @@ def parse_compilers(specs: list[str], work_dir: Path) -> list[Compiler]:
         root = find_checkout_root(path)
         if root is None:
             fail(f"No Spice checkout (with std/ and src/main.spice) found above the compiler '{name}': {path}")
-        # Same path length for every compiler, so that the paths in the compiler do not change the instruction count
-        compiler_work_dir = work_dir / f"c{idx:02d}"
+        # The compiler embeds the paths of the source files relative to its working directory (e.g. in panic messages). With
+        # the work dir in the compiler's own checkout, the paths to its std and to the benchmark sources (copied into the
+        # work dir) are the same for every compiler, so that they change neither the instruction counts nor the file sizes
+        compiler_work_dir = (work_dir or root / "build" / "bench-tmp") / f"c{idx:02d}"
         compilers.append(Compiler(name, path, root, compiler_work_dir, compiler_env(root), std_ships_tpde(root)))
     return compilers
 
@@ -315,7 +317,6 @@ def count_instructions(cmd: list[str], env: dict[str, str], cwd: Path, timeout: 
 
 @dataclass
 class RunContext:
-    work_dir: Path
     timeout: int
     disable_aslr: bool
     measure_instructions: bool
@@ -371,21 +372,28 @@ class BenchmarkRunner:
     def __init__(self, ctx: RunContext, compilers: list[Compiler]) -> None:
         self.ctx = ctx
         self.compilers = compilers
-        self.generated_sources: dict[str, Path] = {}
+        self.sources: dict[tuple[str, str], Path] = {}  # (Compiler name, source key) -> main source file
         self.stage1_compilers: dict[str, Path] = {}  # Compiler name -> compiler built by its self-compile
 
     def source_of(self, benchmark: Benchmark, compiler: Compiler) -> Path:
         if benchmark.kind in ("self-compile", "self-compile-stage1"):
             return compiler.root / "src" / "main.spice"
+        # Each compiler compiles a copy in its own work dir, so that the relative paths are the same (see parse_compilers)
         if benchmark.generator is None:
-            return benchmark.source
-        key = f"{benchmark.generator}-{benchmark.scale}"
-        if key not in self.generated_sources:
-            out_dir = self.ctx.work_dir / "generated" / key
+            key = benchmark.source.parent.relative_to(BENCHMARK_DIR).as_posix().replace("/", "_")
+        else:
+            key = f"{benchmark.generator}-{benchmark.scale}"
+        if (compiler.name, key) not in self.sources:
+            out_dir = compiler.work_dir / "sources" / key
             shutil.rmtree(out_dir, ignore_errors=True)
-            out_dir.mkdir(parents=True)
-            self.generated_sources[key] = getattr(generators, benchmark.generator)(out_dir, benchmark.scale)
-        return self.generated_sources[key]
+            if benchmark.generator is None:
+                shutil.copytree(benchmark.source.parent, out_dir)
+                main_file = out_dir / benchmark.source.name
+            else:
+                out_dir.mkdir(parents=True)
+                main_file = getattr(generators, benchmark.generator)(out_dir, benchmark.scale)
+            self.sources[(compiler.name, key)] = main_file
+        return self.sources[(compiler.name, key)]
 
     def compiler_path_for(self, benchmark: Benchmark, compiler: Compiler) -> Path:
         if benchmark.kind == "self-compile-stage1":
@@ -432,7 +440,7 @@ class BenchmarkRunner:
         if benchmark.kind == "runtime":
             # Build the executable once. The compilation is not measured
             executable = self.output_path(benchmark, compiler)
-            cmd = compile_cmd(compiler.path, benchmark.flags, benchmark.source, executable, None)
+            cmd = compile_cmd(compiler.path, benchmark.flags, self.source_of(benchmark, compiler), executable, None)
             result = run_process(cmd, compiler.env, directory, directory / "compile.log", self.ctx.timeout, False)
             check_success(result, cmd, f"Building {benchmark.id} ({compiler.name})", self.ctx.timeout)
 
@@ -596,6 +604,7 @@ def compare_results(data: dict, baseline: str, candidate: str) -> tuple[str, int
     config = data["config"]
     warn_percent = config["warnings"].get("percent", 10.0)
     warn_p_value = config["warnings"].get("p-value", 0.01)
+    warn_min_delta_ms = config["warnings"].get("min-delta-ms", 1.0)
     min_deltas = config.get("min-deltas", {})
     base_results, cand_results = results[baseline], results[candidate]
     base_samples, cand_samples = data["samples"][baseline], data["samples"][candidate]
@@ -627,7 +636,9 @@ def compare_results(data: dict, baseline: str, candidate: str) -> tuple[str, int
             elif measure.startswith(SAMPLED_MEASURE_PREFIXES):
                 p_value = mann_whitney_p_value(base_samples.get(benchmark_id, {}).get(measure, []),
                                                cand_samples.get(benchmark_id, {}).get(measure, []))
-                significant = abs(change) > warn_percent and p_value < warn_p_value
+                # Stage times of small programs are a few µs, so a large relative change can be pure noise
+                delta_ms = abs(cand_value - base_value) / (1e6 if measure == "wall-time" else 1e3)
+                significant = abs(change) > warn_percent and p_value < warn_p_value and delta_ms > warn_min_delta_ms
                 wall_rows.append((benchmark_id, measure, base_value, cand_value, change, p_value, significant))
             elif measure.startswith("count-") and base_value != cand_value:
                 counter_rows.append((benchmark_id, measure, base_value, cand_value, change))
@@ -659,7 +670,8 @@ def compare_results(data: dict, baseline: str, candidate: str) -> tuple[str, int
     significant_rows = [row for row in wall_rows if row[6]]
     lines += ["### Times (not gated)", ""]
     if significant_rows:
-        lines += [f"⚠️ {len(significant_rows)} time(s) changed by more than {warn_percent:g} % with p < {warn_p_value:g}:", ""]
+        lines += [f"⚠️ {len(significant_rows)} time(s) changed by more than {warn_percent:g} % and {warn_min_delta_ms:g} ms "
+                  f"with p < {warn_p_value:g}:", ""]
         lines += table(["Benchmark", "Measure", baseline, candidate, "Change", "p-value"],
                        [[f"`{b}`", m, format_value(m, bv), format_value(m, cv), format_change(c), f"{p:.3f}"]
                         for b, m, bv, cv, c, p, _ in significant_rows])
@@ -734,9 +746,11 @@ def make_context(args: argparse.Namespace) -> RunContext:
     measures = set(args.measures.split(","))
     if unknown := measures - set(MEASURE_GROUPS):
         fail(f"Unknown measures: {', '.join(sorted(unknown))}, expected: {', '.join(MEASURE_GROUPS)}")
-    work_dir = args.work_dir.resolve()
-    work_dir.mkdir(parents=True, exist_ok=True)
-    return RunContext(work_dir, args.timeout, not args.keep_aslr, "instructions" in measures, "timed" in measures, args.suite)
+    return RunContext(args.timeout, not args.keep_aslr, "instructions" in measures, "timed" in measures, args.suite)
+
+
+def work_dir_arg(args: argparse.Namespace) -> Path | None:
+    return args.work_dir.resolve() if args.work_dir else None
 
 
 def load_and_select(args: argparse.Namespace) -> tuple[list[Benchmark], dict]:
@@ -759,7 +773,7 @@ def write_json(data: dict, output: Path) -> None:
 def cmd_run(args: argparse.Namespace) -> None:
     benchmarks, defaults = load_and_select(args)
     ctx = make_context(args)
-    compilers = parse_compilers(args.compiler, ctx.work_dir)
+    compilers = parse_compilers(args.compiler, work_dir_arg(args))
     write_json(build_results(compilers, benchmarks, defaults, ctx), args.output)
 
 
@@ -769,7 +783,7 @@ def cmd_noise(args: argparse.Namespace) -> None:
         benchmark.runs = 1
         benchmark.warmup = 0
     ctx = make_context(args)
-    compilers = parse_compilers([f"r{i}={args.compiler}" for i in range(args.repetitions)], ctx.work_dir)
+    compilers = parse_compilers([f"r{i}={args.compiler}" for i in range(args.repetitions)], work_dir_arg(args))
     data = build_results(compilers, benchmarks, defaults, ctx)
     if args.output:
         write_json(data, args.output)
@@ -803,7 +817,10 @@ def add_run_options(parser: argparse.ArgumentParser) -> None:
                         help="Comma-separated measure groups: instructions (cachegrind), timed (wall time, memory, stage "
                              "times, counters, file size). Default: both")
     parser.add_argument("--runs", type=int, default=None, help="Override the number of measured runs of every benchmark")
-    parser.add_argument("--work-dir", type=Path, default=ROOT_DIR / "build" / "bench-tmp", help="Directory for artifacts")
+    parser.add_argument("--work-dir", type=Path, default=None,
+                        help="Directory for artifacts (default: build/bench-tmp in the checkout of each compiler). With one "
+                             "directory for compilers of different checkouts, the relative paths to their std differ, which "
+                             "changes the instruction counts and file sizes slightly")
     parser.add_argument("--timeout", type=int, default=3600, help="Timeout per process in seconds (default: 3600)")
     parser.add_argument("--keep-aslr", action="store_true", help="Do not disable ASLR with setarch")
 
