@@ -811,8 +811,9 @@ def add_run_options(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--registry", type=Path, default=BENCHMARK_DIR / "benchmarks.toml", help="Benchmark registry")
     parser.add_argument("--filter", help="Comma-separated globs of the benchmark ids to run, e.g. 'compile/*,runtime/sieve/*'")
     parser.add_argument("--exclude", help="Comma-separated globs of the benchmark ids to skip")
-    parser.add_argument("--suite", choices=("pr", "full"), default="pr",
-                        help="pr: skip the instruction count of the self-compile, full: measure everything (default: pr)")
+    parser.add_argument("--suite", choices=("quick", "full"), default="quick",
+                        help="quick: skip the instruction count of the self-compile, full: measure everything "
+                             "(default: quick)")
     parser.add_argument("--measures", default=",".join(MEASURE_GROUPS),
                         help="Comma-separated measure groups: instructions (cachegrind), timed (wall time, memory, stage "
                              "times, counters, file size). Default: both")
