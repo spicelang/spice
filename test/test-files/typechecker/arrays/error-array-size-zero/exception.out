@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:3:5:
+Array size invalid: The size of an array must be > 0 and explicitly stated
+
+3  int[0] array;
+   ^^^^^^

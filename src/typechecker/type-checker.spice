@@ -2395,8 +2395,8 @@ public f<Any> TypeChecker.visitDataType(ASTDataTypeNode* node) {
                     hardcodedSize = cast<unsigned int>(globalVarValue.getIntValue());
                 }
 
-                if typeModifier.hasSize && hardcodedSize <= 1u {
-                    return this.softErrorQT(baseNode, SemanticErrorType::ARRAY_SIZE_INVALID, String("The size of an array must be > 1 and explicitly stated"));
+                if typeModifier.hasSize && hardcodedSize == 0u {
+                    return this.softErrorQT(baseNode, SemanticErrorType::ARRAY_SIZE_INVALID, String("The size of an array must be > 0 and explicitly stated"));
                 }
                 qualType = qualType.toArr(baseNode, hardcodedSize);
             }

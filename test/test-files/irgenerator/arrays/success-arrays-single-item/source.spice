@@ -1,0 +1,39 @@
+// Arrays with a single item are valid, just like arrays with more items.
+
+import "std/iterator/array-iterator";
+
+const int SIZE = 1;
+
+f<int> getFirst(int[1] values) {
+    return values[0];
+}
+
+f<int> main() {
+    // Explicit size with initializer
+    int[1] numbers = [ 42 ];
+    printf("Value: %d\n", numbers[0]);
+    printf("Length: %d\n", len(numbers));
+
+    // Default-initialized and assigned afterwards
+    double[1] doubles;
+    printf("Default: %f\n", doubles[0]);
+    doubles[0] = 1.5;
+    printf("Assigned: %f\n", doubles[0]);
+
+    // Size from a global constant
+    int[SIZE] sized = [ 123 ];
+    printf("Sized: %d\n", sized[0]);
+
+    // Pass to a function
+    numbers[0] = 7;
+    printf("Param: %d\n", getFirst(numbers));
+
+    // Iterate
+    foreach int number : numbers {
+        printf("Foreach: %d\n", number);
+    }
+
+    // Multi-dimensional
+    int[1][1] matrix = [ [ 9 ] ];
+    printf("Matrix: %d\n", matrix[0][0]);
+}
