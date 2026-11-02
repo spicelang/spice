@@ -1,3 +1,0 @@
-f<int> main() {
-    int[1] array; // The size of an array must be > 1
-}

@@ -1,0 +1,4 @@
+// The size of an array must be > 0
+f<int> main() {
+    int[0] array;
+}
