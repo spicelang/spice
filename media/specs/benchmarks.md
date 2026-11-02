@@ -22,12 +22,14 @@ the commit of the previous nightly run, and the run fails, if a benchmark regres
     - [x] Pre-merge check per pull request (PR #1704), replaced by the nightly check (see below)
     - [x] `.github/workflows/benchmark.yml`, comparing the head of `main` against the commit of the previous nightly run
     - [x] Report as job summary, the run fails on a regression
-    - [ ] A/A noise measurement on the CI runner (manual run of the workflow)
+    - [x] A/A noise measurement on the CI runner (manual run of the workflow), thresholds unchanged
     - [ ] Duration of the `full` suite on the CI runner
 - [ ] Phase 4: history and visualization
-    - [ ] Bencher project, API token as repository secret
-    - [ ] Upload the results of the nightly run
-    - [ ] Trend graphs per benchmark and measure
+    - [x] Bencher project [`spice`](https://bencher.dev/perf/spice) (public)
+    - [x] Project API key as repository secret `BENCHER_API_KEY`
+    - [x] Upload the results of the nightly run (job `Upload to Bencher`)
+    - [ ] Units of the custom measures in the Bencher project
+    - [ ] Trend graphs per benchmark and measure (linked from `benchmark/README.md`), after the first upload
 
 ## Design principles
 
@@ -94,8 +96,22 @@ changes to the runner.
   `regex` (4.4 MiB) by up to 11.7 %, `n-body` (1.9 MiB) by up to 6.2 %, but by at most 0.52 MiB in absolute terms. The
   minimum delta of 1 MiB covers them, so the default thresholds hold for all benchmarks.
 
-The measurement has to be repeated on the CI runner (manual run of the `Benchmark` workflow, see below), to verify that
-the thresholds cover the noise there.
+### A/A noise measurement (CI)
+
+Manual run of the `Benchmark` workflow in the mode `noise` on `ubuntu-26.04` (2026-11-02, 61960ff1,
+[run 41527641727](https://github.com/spicelang/spice/actions/runs/41527641727)), 10 repetitions:
+
+- `instructions` and `file-size`: identical in all 10 repetitions for every benchmark (σ = 0).
+- `max-rss`: less noisy than locally. The compiler runs deviate by at most 0.16 % (`compile/std-generics/O2-llvm`,
+  168 KiB), the self-compile by at most 0.04 % (598 MiB). The largest relative deviations are the small runtime
+  programs `regex` (4.9 MiB, 2.3 %, 115 KiB) and `fannkuch` (1.8 MiB, 1.7 %, 32 KiB), the largest absolute one
+  `sieve` (49 MiB, 0.46 %, 234 KiB).
+- 5 σ stays below the default threshold for every benchmark and measure, so the thresholds are unchanged.
+
+The repetitions run in one checkout, so the measurement does not include the difference between two checkouts of the
+same commit (up to 0.13 % `instructions`, see determinism), which the 2 % threshold covers as well.
+
+The measurement takes 57 minutes on the CI runner (the noise step, without the build).
 
 ## Compiler statistics (`--dump-stats`)
 
@@ -385,15 +401,26 @@ artifact `benchmark-noise`. It is repeated after changes to the runner or the ru
 The history is stored in [Bencher](https://bencher.dev): BMF is its native upload format, it supports multiple measures
 per benchmark, draws the trend graphs and is free for open-source projects. It can be self-hosted later, if needed.
 
-- The nightly runs upload the BMF results of the head compiler with `bencher run --file results.json --adapter json`, on
-  branch `main` and testbed `ubuntu-26.04-x86_64`, with the commit hash.
-- The API token is the repository secret `BENCHER_API_TOKEN`. Only the scheduled runs on `main` use it, never a manual
-  run on another branch.
-- The custom measures (`instructions`, `max-rss`, `file-size`, `stage-*`, `count-*`) are created in the Bencher project
-  with their units. Bencher's own thresholds are not used, the check is done by the runner (see design principles).
+- The job `Upload to Bencher` of the scheduled runs downloads the artifact `benchmark-nightly` of its run, exports the
+  BMF results of the head compiler (`run-benchmarks.py export`) and uploads them with
+  `bencher run --branch main --testbed ubuntu-26.04-x86_64 --hash <commit> --adapter json --file bmf.json`. The results
+  of the baseline compiler are not uploaded, the previous nightly run uploaded them as its head.
+- It also runs, if the benchmark job failed because of a regression, since the results are valid. It does not run, if
+  the comparison failed, or for manual runs, which would add points of other branches or commit ranges.
+- The CLI is installed with the action `bencherdev/bencher`. The actions of the job are pinned to the commit of a
+  release (with the version as comment, which Dependabot updates), since the job handles the API key.
+- The project is [`spice`](https://bencher.dev/perf/spice) (public). The project API key (`bencher_run_*`, limited to
+  uploads) is the repository secret `BENCHER_API_KEY`. Without it, the job is skipped with a notice. The job is
+  separate from the benchmark job, so the key is never exposed to the job, that builds and runs the compilers. Within
+  the job, only the configuration check and the upload step get the key, not the actions.
+- Bencher creates the branch, the testbed, the benchmarks and the measures on the first upload (measures by slug:
+  `instructions`, `max-rss`, `file-size`, `wall-time`, `stage-*`, `count-*`). The units of the custom measures are set
+  in the project afterwards: `instructions`, `count-*`: count; `max-rss`, `file-size`: bytes; `wall-time`: ns;
+  `stage-*`: µs. Bencher's own thresholds are not used, the check is done by the runner (see design principles).
 
-A stage0 bump changes all compile-time numbers at once. The metadata contains the stage0 version, so that such steps in
-the graphs can be attributed.
+A stage0 bump changes all compile-time numbers at once. The metadata in `results.json` (artifact of each nightly run)
+contains the stage0 version, so that such steps in the graphs can be attributed. BMF has no metadata, so Bencher does not
+show it.
 
 ## Future work
 

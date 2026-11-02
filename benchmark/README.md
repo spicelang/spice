@@ -47,7 +47,9 @@ The `Benchmark` workflow (`.github/workflows/benchmark.yml`) benchmarks the head
 commit of the previous nightly run, with `--suite full`, unless only `docs/`, `media/` or Markdown files changed. If
 there is no previous nightly run, or its commit is not an ancestor of the head, it compares against the parent commit.
 The report is shown in the job summary, and the run fails, if a gated measure regressed. The next nightly run compares
-against the regressed commit, so an intended regression needs no action.
+against the regressed commit, so an intended regression needs no action. The scheduled runs upload the results of the
+head compiler to Bencher, which shows the [trend graphs](https://bencher.dev/perf/spice) of every benchmark and
+measure.
 
 Manual runs of the workflow (they never move the baseline of the nightly runs):
 
