@@ -44,14 +44,16 @@ times are not: compare times only within one `run` invocation.
 ## CI
 
 The `Benchmark` workflow (`.github/workflows/benchmark.yml`) benchmarks the head of `main` every night against the
-commit of the previous nightly run, with `--suite full`, unless only `docs/`, `media/` or Markdown files changed. The
-report is shown in the job summary, and the run fails, if a gated measure regressed. The next nightly run compares
+commit of the previous nightly run, with `--suite full`, unless only `docs/`, `media/` or Markdown files changed. If
+there is no previous nightly run, or its commit is not an ancestor of the head, it compares against the parent commit.
+The report is shown in the job summary, and the run fails, if a gated measure regressed. The next nightly run compares
 against the regressed commit, so an intended regression needs no action.
 
-Manual runs of the workflow:
+Manual runs of the workflow (they never move the baseline of the nightly runs):
 
 - Mode `nightly` on a branch benchmarks the branch, e.g. a PR, against the commit given as `baseline` (e.g. its merge
-  base with `main`). Without `baseline`, against the commit of the previous nightly run.
+  base with `main`). Without `baseline`, against the commit of the previous nightly run, with the same parent-commit
+  fallback.
 - Mode `noise` measures the A/A noise on the CI runner.
 
 ## Adding a benchmark
