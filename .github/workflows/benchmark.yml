@@ -77,10 +77,11 @@ jobs:
             baseline="$(git rev-parse --verify "$INPUT_BASELINE^{commit}")"
           else
             # The commit of the previous nightly run: the newest unexpired 'benchmark-nightly' artifact of a run on main.
-            # The artifact is only uploaded, if the comparison succeeded, so a failed build or run does not move the
-            # baseline. A failing API call fails the step (no pipeline, whose status would be lost)
-            artifacts="$(gh api --method GET "repos/$REPO/actions/artifacts" -f name=benchmark-nightly -f per_page=100)"
-            baseline="$(jq -r '[.artifacts[] | select((.expired | not) and .workflow_run.head_branch == "main")]
+            # Only scheduled runs upload it, and only if the comparison succeeded, so a failed build or run does not move
+            # the baseline. A failing API call fails the step (no pipeline, whose status would be lost)
+            artifacts="$(gh api --method GET --paginate "repos/$REPO/actions/artifacts" -f name=benchmark-nightly \
+              -f per_page=100 --jq '.artifacts[]')"
+            baseline="$(jq -rs '[.[] | select((.expired | not) and .workflow_run.head_branch == "main")]
               | sort_by(.created_at) | last | .workflow_run.head_sha // empty' <<< "$artifacts")"
             if [ -n "$baseline" ] && ! git merge-base --is-ancestor "$baseline" "$head"; then
               echo "::warning::The commit $baseline of the previous nightly run is not an ancestor of $head"
@@ -218,7 +219,10 @@ jobs:
         if: (success() || failure()) && hashFiles('results/report.md') != ''
         uses: actions/upload-artifact@v7
         with:
-          # The 'prepare' job of the next nightly run finds its baseline by the artifact name
-          name: benchmark-${{ env.MODE }}
+          # The 'prepare' job of the next nightly run finds its baseline by the name 'benchmark-nightly'. Manual runs use
+          # other names, since their commit range can differ from the one since the previous nightly run
+          name: >-
+            ${{ github.event_name == 'schedule' && 'benchmark-nightly'
+            || env.MODE == 'nightly' && 'benchmark-manual' || 'benchmark-noise' }}
           path: results/
           retention-days: 90

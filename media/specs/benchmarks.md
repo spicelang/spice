@@ -306,10 +306,10 @@ with sleeps of up to 50 ms, which quantizes the wall times.
 
 ### Duration
 
-On a Ryzen 9 5950X, the `quick` suite takes about 8.5 minutes per compiler, of which the two self-compile benchmarks take
-about 5 minutes (28 s per compilation, 5 runs each) and the O2 compile benchmarks under cachegrind most of the rest. The
-self-compile needs 5 runs, because the Mann-Whitney U test cannot reach p < 0.01 with fewer samples (the minimum p for 3
-vs. 3 samples is 0.1).
+On a Ryzen 9 5950X, the `quick` suite takes about 8.5 minutes per compiler, of which the two self-compile benchmarks
+take about 5 minutes (28 s per compilation, 5 runs each) and the O2 compile benchmarks under cachegrind most of the
+rest. The self-compile needs 5 runs, because the Mann-Whitney U test cannot reach p < 0.01 with fewer samples (the
+minimum p for 3 vs. 3 samples is 0.1).
 
 ## Nightly check (`.github/workflows/benchmark.yml`)
 
@@ -333,10 +333,10 @@ after its merge, and attributed to the commit range of one night instead of one 
 ### Baseline
 
 The baseline is the commit, that the previous nightly run benchmarked as head: the head commit of the newest unexpired
-artifact `benchmark-nightly` of a run on `main`. The artifact is uploaded, whenever the comparison succeeded, also on a
-regression. So every commit range is compared exactly once: a regression fails one nightly run, the next run compares
-against the regressed commit. A run, that failed before the comparison (e.g. a broken build), uploads no artifact, so
-the next run covers its commits as well.
+artifact `benchmark-nightly` of a run on `main` (all pages of the artifact list). Only scheduled runs upload this
+artifact, whenever the comparison succeeded, also on a regression. So every commit range is compared exactly once: a
+regression fails one nightly run, the next run compares against the regressed commit. A run, that failed before the
+comparison (e.g. a broken build), uploads no artifact, so the next run covers its commits as well.
 
 - No artifact (the first run, or no run for 90 days, the retention of the artifact): the parent commit of the head.
 - The artifact commit is not an ancestor of the head (history rewritten): the parent commit, with a warning.
@@ -356,16 +356,18 @@ the next run covers its commits as well.
 4. `head/benchmark/run-benchmarks.py run --suite full` with both compilers. Both are measured with the benchmarks and
    the runner of the head checkout.
 5. `run-benchmarks.py compare`. The report is written to the job summary (`$GITHUB_STEP_SUMMARY`), below a link to the
-   compared commit range, and uploaded as the artifact `benchmark-nightly`, together with `results.json`. The job fails,
-   if a gated measure regressed. GitHub notifies the user, who last changed the `cron` of the workflow, about failed
-   scheduled runs.
+   compared commit range, and uploaded as an artifact (`benchmark-nightly` for scheduled runs), together with
+   `results.json`. The job fails, if a gated measure regressed. GitHub notifies the user, who last changed the `cron` of
+   the workflow, about failed scheduled runs.
 
 An intended regression needs no action: the next nightly run compares against it.
 
 A manual run in the mode `nightly` does the same for the selected branch. Without the input `baseline`, it compares
 against the commit of the previous nightly run on `main`, if that is an ancestor of the branch, otherwise against the
 parent commit. With `baseline` set to the merge base of a PR branch, it benchmarks the PR like the former pre-merge
-check. Its artifact does not move the baseline of the nightly runs, unless it ran on `main`.
+check. Its artifact is named `benchmark-manual`, so it never moves the baseline of the nightly runs: a manual run on
+`main` with an explicit baseline would otherwise let the next nightly run skip the commits between the previous nightly
+commit and that baseline.
 
 Time budget: the job timeout is 6 hours, the limit of GitHub-hosted runners. The `quick` suite took 29.5 minutes for two
 compilers, including the builds (PR #1704). The `full` suite additionally counts the instructions of the four
