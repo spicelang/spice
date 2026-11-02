@@ -2,8 +2,8 @@
 
 The benchmark suite measures the performance of the compiler and of the code it emits: end-to-end compile time, the time
 of each compile stage, peak memory usage of the compiler, runtime and size of the emitted executables. The results are
-stored as a history per benchmark and visualized as trend graphs. Every pull request is benchmarked against its merge
-base, and the check fails, if a benchmark regresses more than a configured threshold.
+stored as a history per benchmark and visualized as trend graphs. Every night, the head of `main` is benchmarked against
+the commit of the previous nightly run, and the run fails, if a benchmark regresses more than a configured threshold.
 
 ## Implementation steps:
 
@@ -18,15 +18,15 @@ base, and the check fails, if a benchmark regresses more than a configured thres
     - [x] Benchmark registry `benchmark/benchmarks.toml`
     - [x] Compile-time, runtime and self-compile benchmarks
     - [x] A/A noise measurement (local), thresholds derived from it. To be repeated on the CI runner in phase 3
-- [ ] Phase 3: pre-merge check
-    - [x] `.github/workflows/benchmark.yml`, comparing the PR head against the merge base
-    - [x] Report as job summary and PR comment (`benchmark-comment.yml`), `perf-regression-ok` label
-      (`benchmark-label.yml`)
-    - [ ] A/A noise measurement on the CI runner (manual run of the workflow), before `Benchmark gate` is made a
-      required check
+- [ ] Phase 3: nightly check
+    - [x] Pre-merge check per pull request (PR #1704), replaced by the nightly check (see below)
+    - [x] `.github/workflows/benchmark.yml`, comparing the head of `main` against the commit of the previous nightly run
+    - [x] Report as job summary, the run fails on a regression
+    - [ ] A/A noise measurement on the CI runner (manual run of the workflow)
+    - [ ] Duration of the `full` suite on the CI runner
 - [ ] Phase 4: history and visualization
     - [ ] Bencher project, API token as repository secret
-    - [ ] Upload the results of every push to `main` and of the nightly run
+    - [ ] Upload the results of the nightly run
     - [ ] Trend graphs per benchmark and measure
 
 ## Design principles
@@ -34,11 +34,11 @@ base, and the check fails, if a benchmark regresses more than a configured thres
 - **Gate only on stable measures.** GitHub-hosted runners are shared VMs, wall-clock times vary by 5-20 % between runs.
   Only measures that are stable across runs (instruction counts, peak RSS with one job, sizes) can fail a check. Wall
   times are recorded and graphed, but never fail a check.
-- **Compare within one job.** The pre-merge check builds the compilers of the merge base and of the PR head in the same
+- **Compare within one job.** The nightly check builds the compilers of the baseline and of the head commit in the same
   job and benchmarks them on the same machine. It never compares against numbers from the history store, which come from
   other machines. The history is for trends only.
-- **The gate does not depend on the history store.** The comparison and the pass/fail decision are done by the runner
-  script, so the store can be exchanged and an outage of the store does not block merging.
+- **The check does not depend on the history store.** The comparison and the pass/fail decision are done by the runner
+  script, so the store can be exchanged and an outage of the store does not hide regressions.
 
 ## Measures
 
@@ -80,8 +80,8 @@ The instruction count of a compiler run must not depend on anything else than th
   commit, the instruction counts differ by up to 0.13 %, the file sizes not at all. The thresholds cover that; the same
   absolute path for both compilers would need a mount namespace per process.
 
-The A/A measurement (the same commit benchmarked against itself, 10 times) verifies this before the gate is enabled and
-after changes to the runner.
+The A/A measurement (the same commit benchmarked against itself, 10 times) verifies this on the CI runner and after
+changes to the runner.
 
 ### A/A noise measurement (local)
 
@@ -94,8 +94,8 @@ after changes to the runner.
   `regex` (4.4 MiB) by up to 11.7 %, `n-body` (1.9 MiB) by up to 6.2 %, but by at most 0.52 MiB in absolute terms. The
   minimum delta of 1 MiB covers them, so the default thresholds hold for all benchmarks.
 
-The measurement has to be repeated on the CI runner (manual run of the `Benchmark` workflow, see below), before the
-check is made a required status check.
+The measurement has to be repeated on the CI runner (manual run of the `Benchmark` workflow, see below), to verify that
+the thresholds cover the noise there.
 
 ## Compiler statistics (`--dump-stats`)
 
@@ -168,7 +168,7 @@ are separate.
 - **`self-compile`**: compiles `src/main.spice` of the compiler's own checkout with the flags of the Release build type
   (`BUILD_TYPE_FLAGS` in `bootstrap.py`, which `build.py` uses as well). The output is the stage1 compiler. Measures:
   `max-rss`, `wall-time`, `stage-*`, `count-*`, `file-size` of the stage1 compiler; `instructions` only in the `full`
-  suite, because of the cachegrind slowdown. A PR that changes the compiler sources changes the input as well, the
+  suite, because of the cachegrind slowdown. A commit that changes the compiler sources changes the input as well, the
   counters (`count-lines`, `count-ir-instructions`) show that.
 - **`self-compile-stage1`**: the same compilation, but done by the stage1 compiler of the `self-compile` benchmark. The
   compiler under test is built by the stage0 compiler, so changes to the code generation do not show in its own
@@ -243,7 +243,7 @@ warmup = 0
 
 ```
 python benchmark/run-benchmarks.py run --compiler base=../base/build/spice --compiler head=build/spice \
-    [--suite pr|full] [--filter 'compile/*'] [--exclude '...'] [--measures instructions,timed] [--runs 5] \
+    [--suite quick|full] [--filter 'compile/*'] [--exclude '...'] [--measures instructions,timed] [--runs 5] \
     [--output build/benchmark-results.json]
 python benchmark/run-benchmarks.py compare build/benchmark-results.json --baseline base --candidate head \
     [--markdown report.md] [--report-only]
@@ -256,7 +256,8 @@ python benchmark/run-benchmarks.py export build/benchmark-results.json --compile
   are counted, one cachegrind run per compiler.
 - Each compiler uses the std of the checkout it lives in (the first parent directory with `std/` and `src/main.spice`),
   via `SPICE_STD_DIR`. The self-compile compiles the sources of that checkout.
-- `--suite pr` skips the instruction count of the self-compile benchmarks, `--suite full` measures everything.
+- `--suite quick` (the default) skips the instruction count of the self-compile benchmarks, `--suite full` measures
+  everything.
   `--measures` restricts the measure groups: `instructions` (cachegrind) and `timed` (all other measures).
 - The results file contains the metadata of each compiler (commit, stage0 version, CPU, kernel, runner image), the
   thresholds of each benchmark, and per compiler the results in BMF and the raw samples of the timed measures:
@@ -265,7 +266,7 @@ python benchmark/run-benchmarks.py export build/benchmark-results.json --compile
   {
     "version": 1,
     "metadata": { "head": { "commit": "...", "stage0": "0.29.2", "cpu": "...", "runnerImage": "..." } },
-    "config": { "suite": "pr", "thresholds": { "runtime/sieve/O2": { "instructions": 2.0 } }, "warnings": { } },
+    "config": { "suite": "full", "thresholds": { "runtime/sieve/O2": { "instructions": 2.0 } }, "warnings": { } },
     "results": {
       "head": {
         "compile/std-generics/O2-llvm": {
@@ -305,87 +306,91 @@ with sleeps of up to 50 ms, which quantizes the wall times.
 
 ### Duration
 
-On a Ryzen 9 5950X, the `pr` suite takes about 8.5 minutes per compiler, of which the two self-compile benchmarks take
-about 5 minutes (28 s per compilation, 5 runs each) and the O2 compile benchmarks under cachegrind most of the rest. The
-self-compile needs 5 runs, because the Mann-Whitney U test cannot reach p < 0.01 with fewer samples (the minimum p for 3
-vs. 3 samples is 0.1).
+On a Ryzen 9 5950X, the `quick` suite takes about 8.5 minutes per compiler, of which the two self-compile benchmarks
+take about 5 minutes (28 s per compilation, 5 runs each) and the O2 compile benchmarks under cachegrind most of the
+rest. The self-compile needs 5 runs, because the Mann-Whitney U test cannot reach p < 0.01 with fewer samples (the
+minimum p for 3 vs. 3 samples is 0.1).
 
-## Pre-merge check (`.github/workflows/benchmark.yml`)
+## Nightly check (`.github/workflows/benchmark.yml`)
 
 ```
-on: pull_request (opened, synchronize, reopened), workflow_dispatch (A/A noise measurement)
-    Phase 4 adds: push to main, schedule (nightly)
+on: schedule (02:00 UTC), workflow_dispatch (mode 'nightly' with an optional baseline, or mode 'noise')
 ```
+
+The benchmarks run nightly instead of per pull request: the pre-merge check (PR #1704) added about 30 minutes to the
+CI of every PR, and needed a PR comment workflow (`workflow_run`, because the token of a fork PR cannot comment) and a
+label to accept intended regressions (`pull_request_target`, to re-run the gate). A regression is now found up to a day
+after its merge, and attributed to the commit range of one night instead of one PR.
 
 - Runs on `ubuntu-26.04` (Linux/x86_64) only. One platform is enough to detect regressions, and instruction counts on
   different platforms are not comparable anyway.
-- A `concurrency` group per PR cancels outdated runs.
-- Three jobs: `Benchmark changes` decides, whether the PR changes anything, that affects the benchmarks.
-  `Benchmark - Linux/x86_64` measures and reports. `Benchmark gate` decides pass or fail and is the check to require.
-- No `paths-ignore`, because a required check, whose workflow is filtered out, stays pending. Instead, the changes job
-  lists the files of the PR via the API, and the benchmark job is skipped, if all of them match `docs/**`, `media/**`
-  or `**.md` (like the `paths-ignore` of `ci.yml`). The gate passes then.
-- No `labeled`/`unlabeled` triggers. Every label event (e.g. the size label of `pull-request-size[bot]`) would create a
-  run, and the skipped check run of that run would hide the result of the real one in the PR, and count as passed for a
-  required check. The label is handled by `benchmark-label.yml` instead (see below).
+- Two jobs: `Benchmark baseline` determines the baseline commit and whether anything has to be benchmarked.
+  `Benchmark - Linux/x86_64` measures, reports and fails on regressions.
+- Nightly runs are in one `concurrency` group without `cancel-in-progress`, so that a run, that starts while the
+  previous one is still running, waits for its artifact.
+- The scheduled run only runs in `spicelang/spice`, not in forks, that enabled scheduled workflows.
 
-### Pull requests
+### Baseline
 
-1. Check out the PR head (not the merge commit) to `head/`, with the full history, and the merge base of the head and
-   the base branch to `base/` (`git worktree add`). The two paths have the same length (see determinism).
+The baseline is the commit, that the previous nightly run benchmarked as head: the head commit of the newest unexpired
+artifact `benchmark-nightly` of a run on `main` (all pages of the artifact list). Only scheduled runs upload this
+artifact, whenever the comparison succeeded, also on a regression. So every commit range is compared exactly once: a
+regression fails one nightly run, the next run compares against the regressed commit. A run, that failed before the
+comparison (e.g. a broken build), uploads no artifact, so the next run covers its commits as well.
+
+- No artifact (the first run, or no run for 90 days, the retention of the artifact): the parent commit of the head.
+- The artifact commit is not an ancestor of the head (history rewritten): the parent commit, with a warning.
+- The baseline is the head (no new commits), or the commits change only `docs/**`, `media/**` or `**.md` (like the
+  `paths-ignore` of `ci.yml`): the benchmark job is skipped, and the baseline stays.
+
+### Steps
+
+1. Check out the head to `head/`, with the full history, and the baseline to `base/` (`git worktree add`). The two
+   paths have the same length (see determinism).
 2. Set up the toolchain and LLVM with the existing composite actions of the head checkout, `setup-deps.py --tpde` (in
    both checkouts), install `valgrind` and `time`. `CCACHE_BASEDIR` lets the TPDE build of the base checkout reuse the
    ccache entries of the head checkout.
-3. Build both compilers with `build.py`, each with the stage0 compiler pinned in its own checkout. A PR that bumps the
-   stage0 version is thereby benchmarked correctly. LLVM is the one of the head checkout for both, so the effect of an
-   LLVM bump on the compiler is not measured.
-4. `head/benchmark/run-benchmarks.py run --suite pr` with both compilers. Both are measured with the benchmarks and
+3. Build both compilers with `build.py`, each with the stage0 compiler pinned in its own checkout. A stage0 bump is
+   thereby benchmarked correctly. LLVM is the one of the head checkout for both, so the effect of an LLVM bump on the
+   compiler is not measured.
+4. `head/benchmark/run-benchmarks.py run --suite full` with both compilers. Both are measured with the benchmarks and
    the runner of the head checkout.
-5. `run-benchmarks.py compare`. The report is written to the job summary (`$GITHUB_STEP_SUMMARY`) and uploaded as the
-   artifact `benchmark-report`, together with `results.json` and the flag, whether a gated measure regressed. The
-   benchmark job itself does not fail on regressions.
-6. The gate fails, if the benchmark job failed, or if a gated measure regressed and the PR does not have the label
-   `perf-regression-ok`. It reads the current labels of the PR via the API, not the ones of the event payload.
+5. `run-benchmarks.py compare`. The report is written to the job summary (`$GITHUB_STEP_SUMMARY`), below a link to the
+   compared commit range, and uploaded as an artifact (`benchmark-nightly` for scheduled runs), together with
+   `results.json`. The job fails, if a gated measure regressed. GitHub notifies the user, who last changed the `cron` of
+   the workflow, about failed scheduled runs.
 
-Adding or removing `perf-regression-ok` triggers `benchmark-label.yml` (`pull_request_target`, so that it can re-run
-jobs for PRs from forks as well; it never checks out code of the PR). It re-runs only the gate job of the latest
-completed benchmark run of the PR head, which reuses the outputs of the benchmark job, instead of benchmarking again.
-A run, that is still in progress, needs no re-run: its gate reads the labels, once it runs.
+An intended regression needs no action: the next nightly run compares against it.
 
-The PR comment is posted by a second workflow (`benchmark-comment.yml`, triggered by `workflow_run`), which downloads
-the report artifact. The token of the benchmark workflow has no write access for PRs from forks. The comment workflow
-runs in the context of the default branch and never executes code of the PR. The artifact is written by the PR's code,
-so it is only used as comment text: the PR is the unique open PR of the head repository and branch of the run, whose
-head is still the benchmarked commit (which also drops reports of outdated commits). The status line (regression
-accepted by the label or not) is computed from the current labels, so a re-run of the gate updates it. The comment is
-identified by a marker and updated in place on new runs. `benchmark-comment.yml` and `benchmark-label.yml` only run,
-once they are on the default branch.
+A manual run in the mode `nightly` does the same for the selected branch. Without the input `baseline`, it compares
+against the commit of the previous nightly run on `main`, if that is an ancestor of the branch, otherwise against the
+parent commit. With `baseline` set to the merge base of a PR branch, it benchmarks the PR like the former pre-merge
+check. Its artifact is named `benchmark-manual`, so it never moves the baseline of the nightly runs: a manual run on
+`main` with an explicit baseline would otherwise let the next nightly run skip the commits between the previous nightly
+commit and that baseline.
 
-Time budget: about 30 minutes, dominated by the two compiler builds and the two self-compile benchmarks. The first run
-(PR #1704) took 29.5 minutes.
+Time budget: the job timeout is 6 hours, the limit of GitHub-hosted runners. The `quick` suite took 29.5 minutes for two
+compilers, including the builds (PR #1704). The `full` suite additionally counts the instructions of the four
+self-compilations under cachegrind; its duration on the CI runner is still to be measured.
 
 ### A/A noise measurement
 
-The manual run (`workflow_dispatch`, input `repetitions`, default 10) builds only the head compiler and runs
-`run-benchmarks.py noise --suite pr`. The noise report is written to the job summary and uploaded as artifact. It is
-repeated after changes to the runner or the runner image, and the thresholds in `benchmarks.toml` are raised, if they do
-not cover the noise.
-
-### Pushes to `main` and nightly runs
-
-- Only the head compiler is benchmarked. Pushes to `main` run `--suite pr`, the nightly run `--suite full`.
-- The results are uploaded to the history store. Nothing is gated.
+The manual run in the mode `noise` (input `repetitions`, default 10) builds only the head compiler and runs
+`run-benchmarks.py noise` with the `quick` suite. The noise report is written to the job summary and uploaded as the
+artifact `benchmark-noise`. It is repeated after changes to the runner or the runner image, and the thresholds in
+`benchmarks.toml` are raised, if they do not cover the noise.
 
 ## History and visualization
 
 The history is stored in [Bencher](https://bencher.dev): BMF is its native upload format, it supports multiple measures
 per benchmark, draws the trend graphs and is free for open-source projects. It can be self-hosted later, if needed.
 
-- The `main` push and nightly runs upload their BMF results with `bencher run --file results.json --adapter json`, on
+- The nightly runs upload the BMF results of the head compiler with `bencher run --file results.json --adapter json`, on
   branch `main` and testbed `ubuntu-26.04-x86_64`, with the commit hash.
-- The API token is the repository secret `BENCHER_API_TOKEN`. Only the upload on `main` uses it, never a PR run.
+- The API token is the repository secret `BENCHER_API_TOKEN`. Only the scheduled runs on `main` use it, never a manual
+  run on another branch.
 - The custom measures (`instructions`, `max-rss`, `file-size`, `stage-*`, `count-*`) are created in the Bencher project
-  with their units. Bencher's own thresholds are not used, the gate is done by the runner (see design principles).
+  with their units. Bencher's own thresholds are not used, the check is done by the runner (see design principles).
 
 A stage0 bump changes all compile-time numbers at once. The metadata contains the stage0 version, so that such steps in
 the graphs can be attributed.
