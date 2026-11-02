@@ -1,0 +1,65 @@
+name: Benchmark comment
+
+# Posts the report of the Benchmark workflow as PR comment. A workflow of its own, because the token of a pull_request run
+# from a fork cannot write to the PR. This workflow runs in the context of the default branch and never executes code of
+# the PR: the artifact is untrusted and only used as comment text.
+
+on:
+  workflow_run:
+    workflows: [Benchmark]
+    types: [completed]
+
+jobs:
+  comment:
+    name: Post benchmark report
+    # Skipped runs are label events of other labels, cancelled runs are outdated
+    if: >-
+      github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled' &&
+      github.event.workflow_run.conclusion != 'skipped'
+    runs-on: ubuntu-26.04
+    permissions:
+      actions: read
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      # Identifies the comment, that is updated on new runs
+      MARKER: '<!-- spice-benchmark-report -->'
+
+    steps:
+      - name: Post or update comment
+        run: |
+          # No report, if the run failed before the comparison (e.g. a build failure)
+          if ! gh run download "$RUN_ID" --repo "$REPO" --name benchmark-report --dir report; then
+            echo "::notice::The run $RUN_ID has no benchmark report"
+            exit 0
+          fi
+          pr_number="$(cat report/pr-number)"
+          if ! [[ "$pr_number" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid PR number in the benchmark report"
+            exit 1
+          fi
+          # The artifact is written by the code of the PR, so the PR number is only trusted, if the PR has the commit, that
+          # was benchmarked. This also skips the reports of outdated commits
+          pr_head_sha="$(gh api "repos/$REPO/pulls/$pr_number" --jq .head.sha)"
+          if [ "$pr_head_sha" != "$RUN_HEAD_SHA" ]; then
+            echo "::notice::PR #$pr_number is at $pr_head_sha, the report is of $RUN_HEAD_SHA. Not posted"
+            exit 0
+          fi
+
+          # Comments are limited to 65536 characters
+          {
+            echo "$MARKER"
+            head -c 60000 report/comment.md
+          } > body.md
+          comment_id="$(gh api --paginate "repos/$REPO/issues/$pr_number/comments" \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$MARKER\"))) | .id" | head -n 1)"
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" -F body=@body.md > /dev/null
+            echo "Updated comment $comment_id on PR #$pr_number"
+          else
+            gh api --method POST "repos/$REPO/issues/$pr_number/comments" -F body=@body.md > /dev/null
+            echo "Posted a comment on PR #$pr_number"
+          fi

@@ -41,6 +41,13 @@ python benchmark/run-benchmarks.py export build/benchmark-results.json --compile
 threshold. Wall times and stage times are only reported. The instruction counts are stable across runs and machines, the
 times are not: compare times only within one `run` invocation.
 
+## CI
+
+The `Benchmark` workflow (`.github/workflows/benchmark.yml`) benchmarks every pull request against its merge base, with
+`--suite pr`. The report is shown in the job summary and as PR comment. The check fails, if a gated measure regressed;
+if the regression is intended, add the label `perf-regression-ok` to the PR, which re-runs the check and lets it pass.
+A manual run of the workflow measures the A/A noise on the CI runner.
+
 ## Adding a benchmark
 
 - Compile time: add `compile/<name>/source.spice` (or a generator function in `generators.py`) and a `[[compile]]` entry.
