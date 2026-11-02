@@ -1,5 +1,7 @@
 // Arrays with a single item are valid, just like arrays with more items.
 
+import "std/iterator/array-iterator";
+
 const int SIZE = 1;
 
 f<int> getFirst(int[1] values) {
@@ -19,8 +21,8 @@ f<int> main() {
     printf("Assigned: %f\n", doubles[0]);
 
     // Size from a global constant
-    long[SIZE] longs = [ 123l ];
-    printf("Long: %ld\n", longs[0]);
+    int[SIZE] sized = [ 123 ];
+    printf("Sized: %d\n", sized[0]);
 
     // Pass to a function
     numbers[0] = 7;
