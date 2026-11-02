@@ -248,12 +248,15 @@ jobs:
     permissions:
       actions: read
       contents: read
+    # The API key is only passed to the steps, that need it. The actions are pinned to commits, because the job handles
+    # the key (the Bencher action installs the CLI, that receives it). Dependabot updates the pins and version comments
     env:
-      BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
       BENCHER_PROJECT: spice
     steps:
       - name: Check the Bencher configuration
         id: config
+        env:
+          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
         run: |
           configured=true
           if [ -z "$BENCHER_API_KEY" ]; then
@@ -264,7 +267,7 @@ jobs:
 
       - name: Checkout
         if: steps.config.outputs.configured == 'true'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           # Only the runner, for its export command
@@ -273,17 +276,19 @@ jobs:
 
       - name: Download results
         if: steps.config.outputs.configured == 'true'
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: benchmark-nightly
           path: results
 
       - name: Install the Bencher CLI
         if: steps.config.outputs.configured == 'true'
-        uses: bencherdev/bencher@v0.6.16
+        uses: bencherdev/bencher@7de3c69a85380826613050826b4bce062be2f07d # v0.6.16
 
       - name: Upload results
         if: steps.config.outputs.configured == 'true'
+        env:
+          BENCHER_API_KEY: ${{ secrets.BENCHER_API_KEY }}
         run: |
           # The head compiler only, the baseline was uploaded by the previous nightly run. Bencher creates unknown
           # branches, testbeds, benchmarks and measures. Its thresholds are not used, the comparison is done by the runner

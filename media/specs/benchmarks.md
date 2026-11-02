@@ -407,10 +407,12 @@ per benchmark, draws the trend graphs and is free for open-source projects. It c
   of the baseline compiler are not uploaded, the previous nightly run uploaded them as its head.
 - It also runs, if the benchmark job failed because of a regression, since the results are valid. It does not run, if
   the comparison failed, or for manual runs, which would add points of other branches or commit ranges.
-- The CLI is installed with the action `bencherdev/bencher`, pinned to a release.
+- The CLI is installed with the action `bencherdev/bencher`. The actions of the job are pinned to the commit of a
+  release (with the version as comment, which Dependabot updates), since the job handles the API key.
 - The project is [`spice`](https://bencher.dev/perf/spice) (public). The project API key (`bencher_run_*`, limited to
   uploads) is the repository secret `BENCHER_API_KEY`. Without it, the job is skipped with a notice. The job is
-  separate from the benchmark job, so the key is never exposed to the job, that builds and runs the compilers.
+  separate from the benchmark job, so the key is never exposed to the job, that builds and runs the compilers. Within
+  the job, only the configuration check and the upload step get the key, not the actions.
 - Bencher creates the branch, the testbed, the benchmarks and the measures on the first upload (measures by slug:
   `instructions`, `max-rss`, `file-size`, `wall-time`, `stage-*`, `count-*`). The units of the custom measures are set
   in the project afterwards: `instructions`, `count-*`: count; `max-rss`, `file-size`: bytes; `wall-time`: ns;
