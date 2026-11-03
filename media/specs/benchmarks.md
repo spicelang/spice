@@ -29,8 +29,8 @@ the commit of the previous nightly run, and the run fails, if a benchmark regres
     - [x] Project API key as repository secret `BENCHER_API_KEY`
     - [x] Upload the results of the nightly run (job `Upload to Bencher`)
     - [x] Names and units of the custom measures in the Bencher project (`benchmark/bencher-setup.py`)
-    - [x] Trend graphs per benchmark group and measure as plots of the project (`benchmark/bencher-setup.py`), linked
-      from `benchmark/README.md`
+    - [x] Trend graphs of the main measures per benchmark group as plots of the project
+      (`benchmark/bencher-setup.py`), linked from `benchmark/README.md`
 
 ## Design principles
 
@@ -440,11 +440,12 @@ manually after the first nightly upload of a new benchmark or measure. `--dry-ru
 
 - Measures: `max-rss` "Peak Memory" in bytes, `wall-time` "Wall Time" in ns, `stage-*` "Stage: ..." in µs, `count-*`
   "Count: ..." as count. The upload refers to the measures by slug, so the names can change.
-- Plots: 17, one per benchmark group and measure: compile -O0 and -O2 (instructions, wall time, peak memory), runtime
-  (instructions, wall time, peak memory, binary size), self-compile (instructions, wall time, peak memory), and for
-  `self-compile/release` the front-end and back-end stage times, the compiler binary size and the IR size. The
-  benchmarks of a group are selected by name pattern (e.g. `compile/*/O0-*`), so a new benchmark joins its plots on the
-  next run of the script. Plots are matched by title, existing ones are updated.
+- Plots: 17, for the main measures of each benchmark group: compile -O0 and -O2 (instructions, wall time, peak
+  memory), runtime (instructions, wall time, peak memory, binary size), self-compile (instructions, wall time, peak
+  memory), and for `self-compile/release` the front-end and back-end stage times, the compiler binary size and the IR
+  size. The other measures (e.g. the stage times of the compile benchmarks) are on the perf page only. The benchmarks
+  of a group are selected by name pattern (e.g. `compile/*/O0-*`), so a new benchmark joins its plots on the next run
+  of the script. Plots are matched by title, existing ones are updated.
 - A plot holds at most 8 benchmarks and 8 measures (Bencher limit), which is why the compile benchmarks are split by
   optimization level and the 10 stages into front end and back end. The script fails, if a group outgrows the limit.
 - Wide-ranging groups (instructions, compile wall times, stage times) use a logarithmic y-axis. The window is one year.
