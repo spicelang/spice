@@ -48,8 +48,9 @@ commit of the previous nightly run, with `--suite full`, unless only `docs/`, `m
 there is no previous nightly run, or its commit is not an ancestor of the head, it compares against the parent commit.
 The report is shown in the job summary, and the run fails, if a gated measure regressed. The next nightly run compares
 against the regressed commit, so an intended regression needs no action. The scheduled runs upload the results of the
-head compiler to Bencher, which shows the [trend graphs](https://bencher.dev/perf/spice) of every benchmark and
-measure.
+head compiler to Bencher: the [plots](https://bencher.dev/console/projects/spice/plots) show the trend of every
+benchmark group and measure, the [perf page](https://bencher.dev/perf/spice) any combination of benchmarks and
+measures.
 
 Manual runs of the workflow (they never move the baseline of the nightly runs):
 
@@ -64,3 +65,5 @@ Manual runs of the workflow (they never move the baseline of the nightly runs):
 - Runtime: add `runtime/<name>/source.spice`, that reads its workload size from `argv[1]` and prints a result, so that
   the work cannot be optimized away. Add a `[[runtime]]` entry with a small workload for the instruction count (a few
   seconds under cachegrind) and a larger one for the wall time (around 0.5 s).
+- After the first nightly upload of the new benchmark, run `python benchmark/bencher-setup.py` with a Bencher user API
+  key in `BENCHER_API_KEY`, which adds it to the plots of its group (see the spec, `media/specs/benchmarks.md`).
