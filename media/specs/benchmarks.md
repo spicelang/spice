@@ -18,18 +18,19 @@ the commit of the previous nightly run, and the run fails, if a benchmark regres
     - [x] Benchmark registry `benchmark/benchmarks.toml`
     - [x] Compile-time, runtime and self-compile benchmarks
     - [x] A/A noise measurement (local), thresholds derived from it. To be repeated on the CI runner in phase 3
-- [ ] Phase 3: nightly check
+- [x] Phase 3: nightly check
     - [x] Pre-merge check per pull request (PR #1704), replaced by the nightly check (see below)
     - [x] `.github/workflows/benchmark.yml`, comparing the head of `main` against the commit of the previous nightly run
     - [x] Report as job summary, the run fails on a regression
     - [x] A/A noise measurement on the CI runner (manual run of the workflow), thresholds unchanged
-    - [ ] Duration of the `full` suite on the CI runner
-- [ ] Phase 4: history and visualization
+    - [x] Duration of the `full` suite on the CI runner (62 minutes for two compilers, first nightly run)
+- [x] Phase 4: history and visualization
     - [x] Bencher project [`spice`](https://bencher.dev/perf/spice) (public)
     - [x] Project API key as repository secret `BENCHER_API_KEY`
     - [x] Upload the results of the nightly run (job `Upload to Bencher`)
-    - [ ] Units of the custom measures in the Bencher project
-    - [ ] Trend graphs per benchmark and measure (linked from `benchmark/README.md`), after the first upload
+    - [x] Names and units of the custom measures in the Bencher project (`benchmark/bencher-setup.py`)
+    - [x] Trend graphs of the main measures per benchmark group as plots of the project
+      (`benchmark/bencher-setup.py`), linked from `benchmark/README.md`
 
 ## Design principles
 
@@ -62,6 +63,8 @@ the commit of the previous nightly run, and the run fails, if a benchmark regres
 - `instructions` is measured without `--trace-children`, so the linker invoked by the compiler is not counted.
 - Wall times are compared with a Mann-Whitney U test. A difference of more than 10 % and 1 ms with `p < 0.01` is
   highlighted in the report as a warning. The absolute minimum keeps the stage times of small programs (a few µs) out.
+  The percentage minimum is needed as well: in the first nightly run, with identical compiler sources,
+  `self-compile-stage1/release` was 1.42 % faster with `p = 0.008`.
 
 ### Determinism
 
@@ -79,8 +82,11 @@ The instruction count of a compiler run must not depend on anything else than th
   (`head/` and `base/`), so that the absolute paths do not differ in length either. Their content still changes the
   instruction counts a little (e.g. hashes of path strings): `compile/std-generics/O0-llvm` executes 0.04 % more
   instructions with the std in `.../base/std` than in `.../head/std`. In an A/A comparison of two checkouts of the same
-  commit, the instruction counts differ by up to 0.13 %, the file sizes not at all. The thresholds cover that; the same
-  absolute path for both compilers would need a mount namespace per process.
+  commit, the instruction counts differ by up to 0.13 %, the file sizes not at all. The first nightly run (2026-11-03,
+  [run 41606909244](https://github.com/spicelang/spice/actions/runs/41606909244)) compared two commits with the same
+  compiler and std sources (only the workflow and docs changed): up to 0.15 % (`self-compile/release`), the file sizes
+  not at all. The thresholds cover that; the same absolute path for both compilers would need a mount namespace per
+  process.
 
 The A/A measurement (the same commit benchmarked against itself, 10 times) verifies this on the CI runner and after
 changes to the runner.
@@ -387,7 +393,8 @@ commit and that baseline.
 
 Time budget: the job timeout is 6 hours, the limit of GitHub-hosted runners. The `quick` suite took 29.5 minutes for two
 compilers, including the builds (PR #1704). The `full` suite additionally counts the instructions of the four
-self-compilations under cachegrind; its duration on the CI runner is still to be measured.
+self-compilations under cachegrind. In the first nightly run, it took 62 minutes for two compilers (the `run` step), the
+whole job 71.5 minutes, of which about 9 minutes are the setup and the builds.
 
 ### A/A noise measurement
 
@@ -408,15 +415,43 @@ per benchmark, draws the trend graphs and is free for open-source projects. It c
 - It also runs, if the benchmark job failed because of a regression, since the results are valid. It does not run, if
   the comparison failed, or for manual runs, which would add points of other branches or commit ranges.
 - The CLI is installed with the action `bencherdev/bencher`. The actions of the job are pinned to the commit of a
-  release (with the version as comment, which Dependabot updates), since the job handles the API key.
+  release (with the version as comment, which Dependabot updates), since the job handles the API key. The CLI itself
+  is the latest release (the `version` input of the action is meant for self-hosted Bencher only), which matches the
+  Bencher Cloud API.
 - The project is [`spice`](https://bencher.dev/perf/spice) (public). The project API key (`bencher_run_*`, limited to
   uploads) is the repository secret `BENCHER_API_KEY`. Without it, the job is skipped with a notice. The job is
   separate from the benchmark job, so the key is never exposed to the job, that builds and runs the compilers. Within
   the job, only the configuration check and the upload step get the key, not the actions.
 - Bencher creates the branch, the testbed, the benchmarks and the measures on the first upload (measures by slug:
-  `instructions`, `max-rss`, `file-size`, `wall-time`, `stage-*`, `count-*`). The units of the custom measures are set
-  in the project afterwards: `instructions`, `count-*`: count; `max-rss`, `file-size`: bytes; `wall-time`: ns;
-  `stage-*`: µs. Bencher's own thresholds are not used, the check is done by the runner (see design principles).
+  `instructions`, `max-rss`, `file-size`, `wall-time`, `stage-*`, `count-*`). Bencher's own thresholds are not used,
+  the check is done by the runner (see design principles).
+- The first upload (2026-11-03, [run 41606909244](https://github.com/spicelang/spice/actions/runs/41606909244)) created
+  21 benchmarks with 295 metrics in 9 seconds. The testbed got the slug `ubuntu-26-04-x86-64`; its name stays
+  `ubuntu-26.04-x86_64`, which `--testbed` matches. `instructions` and `file-size` were matched to Bencher's built-in
+  measures, which have their names and units already. The other 18 measures were created with their slug as name and
+  the placeholder unit `Measure (units)`.
+
+### Project configuration (`benchmark/bencher-setup.py`)
+
+The names and units of the measures and the plots of the perf page are set by `benchmark/bencher-setup.py`, not in the
+Bencher console, so that they are reproducible (e.g. for a self-hosted Bencher) and can be extended with the benchmarks.
+It needs a user API key (`bencher_user_*`) in `BENCHER_API_KEY`, since the project key can only upload, and is run
+manually after the first nightly upload of a new benchmark or measure. `--dry-run` prints the changes without a key.
+
+- Measures: `max-rss` "Peak Memory" in bytes, `wall-time` "Wall Time" in ns, `stage-*` "Stage: ..." in µs, `count-*`
+  "Count: ..." as count. The upload refers to the measures by slug, so the names can change.
+- Plots: 17, for the main measures of each benchmark group: compile -O0 and -O2 (instructions, wall time, peak
+  memory), runtime (instructions, wall time, peak memory, binary size), self-compile (instructions, wall time, peak
+  memory), and for `self-compile/release` the front-end and back-end stage times, the compiler binary size and the IR
+  size. The other measures (e.g. the stage times of the compile benchmarks) are on the perf page only. The benchmarks
+  of a group are selected by name pattern (e.g. `compile/*/O0-*`), so a new benchmark joins its plots on the next run
+  of the script. Plots are matched by title, existing ones are updated.
+- A plot holds at most 8 benchmarks and 8 measures (Bencher limit), which is why the compile benchmarks are split by
+  optimization level and the 10 stages into front end and back end. The script fails, if a group outgrows the limit.
+- Wide-ranging groups (instructions, compile wall times, stage times) use a logarithmic y-axis. The window is one year.
+  Only the metric `value` is drawn: Bencher draws the `lower_value` and `upper_value` of the sampled measures (wall
+  time, peak memory, stage times) as lines of their own otherwise. A plot with two measures (IR size) gets a y-axis
+  per measure, one with more (stage times) a chart per measure.
 
 A stage0 bump changes all compile-time numbers at once. The metadata in `results.json` (artifact of each nightly run)
 contains the stage0 version, so that such steps in the graphs can be attributed. BMF has no metadata, so Bencher does not
