@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:2:26:
+Expected an interface type: Expected interface type, got int
+
+2  TestStruct struct : int {
+                       ^^^
