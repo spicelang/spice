@@ -236,6 +236,7 @@ public const f<bool> CliOptions.isPositionIndependent() {
  * @param errorType Type of the error
  * @param message Error message suffix
  */
+#[core.compiler.noReturn]
 p raiseCliError(const CliErrorType errorType, const string message) {
     const CliError cliError = CliError(errorType, message);
     abortWithError(cliError.getMessage());

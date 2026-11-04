@@ -80,6 +80,7 @@ public p TPDEObjectEmitter.getASMString(String& output) {
  * @param errorType Type of the compiler error
  * @param message Error message suffix
  */
+#[core.compiler.noReturn]
 p raiseObjectEmitterError(CompilerErrorType errorType, const String& message) {
     const CompilerError error = CompilerError(errorType, message.getRaw());
     abortWithError(error.getMessage());

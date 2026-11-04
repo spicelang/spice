@@ -157,6 +157,7 @@ public p SemanticError.ctor(const ASTNode* node, const SemanticErrorType errorTy
  * @param errorType Type of the error
  * @param message Error message suffix
  */
+#[core.compiler.noReturn]
 public p abortWithSemanticError(const ASTNode* node, const SemanticErrorType errorType, const string message) {
     const SemanticError error = SemanticError(node, errorType, message);
     abortWithError(error.getMessage());

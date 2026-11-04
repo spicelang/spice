@@ -84,6 +84,7 @@ public inline p Error.print() {
 /**
  * Panic with this error
  */
+#[core.compiler.noReturn]
 public inline p Error.triggerPanic() {
     panic(*this);
 }

@@ -2850,6 +2850,7 @@ f<char> getEscapedChar(char c) {
  * @param errorType Type of the error
  * @param message Error message suffix
  */
+#[core.compiler.noReturn]
 p Parser.throwParserError(const CodeLoc& codeLoc, ParserErrorType errorType, string message) {
     const ParserError parserError = ParserError(codeLoc, errorType, message);
     abortWithError(parserError.getMessage());

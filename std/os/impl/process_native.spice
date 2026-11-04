@@ -16,6 +16,7 @@ ext f<int> dup2(int /*oldFd*/, int /*newFd*/);
 ext f<int> close(int /*fd*/);
 ext f<long> read(int /*fd*/, byte* /*buffer*/, unsigned long /*count*/);
 ext f<int> waitpid(int /*pid*/, int* /*status*/, int /*options*/);
+#[core.compiler.noReturn]
 ext p _exit(int /*status*/);
 ext f<int> fflush(byte* /*stream*/);
 
