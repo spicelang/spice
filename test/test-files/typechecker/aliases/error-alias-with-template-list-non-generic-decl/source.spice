@@ -1,0 +1,5 @@
+type IntAlias alias int;
+
+f<int> main() {
+    IntAlias<int> value = 1;
+}

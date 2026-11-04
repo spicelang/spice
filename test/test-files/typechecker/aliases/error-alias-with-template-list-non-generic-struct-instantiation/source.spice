@@ -1,0 +1,9 @@
+type Counter struct {
+    int count
+}
+
+type CounterAlias alias Counter;
+
+f<int> main() {
+    CounterAlias counter = CounterAlias<int>{1};
+}
