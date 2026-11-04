@@ -1,8 +1,8 @@
 [Error|Compiler]:
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
-[Error|Semantic] ./source.spice:7:17:
-Invalid symbol access: A symbol of type enum(Color) cannot be accessed here
+[Error|Semantic] ./source.spice:4:20:
+Invalid symbol access: A symbol of type import cannot be accessed here
 
-7  dyn color = Color;
-               ^^^^^
+4  dyn imported = s2;
+                  ^^

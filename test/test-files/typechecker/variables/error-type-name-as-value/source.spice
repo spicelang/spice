@@ -1,0 +1,25 @@
+// Type names have no value, so they cannot be used where a value is expected
+type S struct {
+    int x
+}
+
+type Color enum {
+    RED,
+    GREEN
+}
+
+type SAlias alias S;
+
+p take(int value) {
+    printf("%d\n", value);
+}
+
+f<int> main() {
+    dyn structValue = S;
+    dyn aliasValue = SAlias;
+    dyn enumValue = Color;
+    take(S);
+    // Enum items are values
+    Color color = Color::GREEN;
+    printf("%d\n", color);
+}

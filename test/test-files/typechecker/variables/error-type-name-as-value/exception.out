@@ -1,0 +1,26 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:18:23:
+Invalid symbol access: 'S' is a type and cannot be used as a value
+
+18  dyn structValue = S;
+                      ^
+
+[Error|Semantic] ./source.spice:19:22:
+Invalid symbol access: 'SAlias' is a type and cannot be used as a value
+
+19  dyn aliasValue = SAlias;
+                     ^^^^^^
+
+[Error|Semantic] ./source.spice:20:21:
+Invalid symbol access: 'Color' is a type and cannot be used as a value
+
+20  dyn enumValue = Color;
+                    ^^^^^
+
+[Error|Semantic] ./source.spice:21:10:
+Invalid symbol access: 'S' is a type and cannot be used as a value
+
+21  take(S);
+         ^
