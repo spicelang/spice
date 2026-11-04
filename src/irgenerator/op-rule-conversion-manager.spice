@@ -1227,6 +1227,7 @@ public f<LLVMExprResult> OpRuleConversionManager.callOperatorOverloadFct(ASTNode
 // ----------------------------------------------------------- Helpers -----------------------------------------------------------
 
 // Abort with an unhandled branch error for the given operator
+#[core.compiler.noReturn]
 p raiseOperatorFallthrough(string opName) {
     const String message = String("Operator fallthrough: ") + opName;
     panic(Error(message.getRaw()));

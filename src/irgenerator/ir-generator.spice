@@ -261,12 +261,14 @@ f<long> getFunctionKey(const model::Function* function) {
 }
 
 // Abort the compilation with a compiler error
+#[core.compiler.noReturn]
 p raiseCompilerError(const CodeLoc& codeLoc, CompilerErrorType errorType, const String& message) {
     const CompilerError compilerError = CompilerError(codeLoc, errorType, message.getRaw());
     abortWithError(compilerError.getMessage());
 }
 
 // Abort the compilation with a semantic error
+#[core.compiler.noReturn]
 p raiseSemanticError(const ASTNode* node, SemanticErrorType errorType, const String& message) {
     const SemanticError semanticError = SemanticError(node, errorType, message.getRaw());
     abortWithError(semanticError.getMessage());

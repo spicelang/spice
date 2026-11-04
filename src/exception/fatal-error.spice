@@ -7,6 +7,7 @@ import "std/os/os";
 import "@/util/compile-progress";
 
 // Link external functions
+#[core.compiler.noReturn]
 ext p exit(int /*status*/);
 
 /**
@@ -21,6 +22,7 @@ ext p exit(int /*status*/);
  *
  * @param message Error message
  */
+#[core.compiler.noReturn]
 public p abortWithError(const String& message) {
     clearActiveCompileProgress();
     printf("%s\n", message.getRaw());
