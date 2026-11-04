@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:4:14:
+Alias with template list: The aliased type 'int' does not take template types
+
+4  IntAlias<int> value = 1;
+            ^^^

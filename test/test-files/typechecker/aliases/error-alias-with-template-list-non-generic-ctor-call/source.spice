@@ -1,0 +1,13 @@
+type Counter struct {
+    int count
+}
+
+p Counter.ctor() {
+    this.count = 0;
+}
+
+type CounterAlias alias Counter;
+
+f<int> main() {
+    CounterAlias counter = CounterAlias<int>();
+}

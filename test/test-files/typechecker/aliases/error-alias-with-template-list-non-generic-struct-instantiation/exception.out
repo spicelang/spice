@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:8:41:
+Alias with template list: The aliased type 'Counter' does not take template types
+
+8  counter = CounterAlias<int>{1};
+                          ^^^

@@ -18,6 +18,9 @@ type TestStruct<T> struct {
 type TS alias TestStruct<short>;
 ```
 
+An alias always fixes all template types of the aliased type, so it cannot be used with a template list of its own.
+`TS<short>`, `TS<short>()` and `I32<int>` are rejected with an "Alias with template list" error.
+
 ## True aliases vs. type constraints
 
 The `type` keyword serves two different purposes depending on what follows it:

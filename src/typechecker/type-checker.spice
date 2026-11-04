@@ -160,6 +160,14 @@ f<Any> unresolvedER() {
     return Any(ExprResult{QualType(SuperType::TY_UNRESOLVED), nil<SymbolTableEntry*>});
 }
 
+// Build the error message for an alias that is used with a template list
+f<String> getAliasWithTemplateListMessage(const QualType& aliasedType) {
+    if aliasedType.getTemplateTypes().isEmpty() {
+        return String("The aliased type '") + aliasedType.getName(false) + "' does not take template types";
+    }
+    return String("The aliased type already has a template list");
+}
+
 // ======================================================== Type checker =========================================================
 
 public f<Any> TypeChecker.visitEntry(ASTEntryNode* node) {
@@ -2621,6 +2629,10 @@ public f<Any> TypeChecker.visitCustomDataType(ASTCustomDataTypeNode* node) {
 
     if entryType.is(SuperType::TY_ALIAS) {
         const QualType aliasedType = entryType.getAliased(entry);
+        // The alias provides all template types itself, so the type usage may not specify any
+        if node.templateTypeLst != nil<IVisitable*> {
+            return this.softErrorQT(getASTNode(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, getAliasWithTemplateListMessage(aliasedType));
+        }
         return Any(node.node.setEvaluatedSymbolType(aliasedType, this.manIdx));
     }
 
@@ -4664,9 +4676,9 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
         fqFunctionName = aliasedType.getSubType();
         // Retrieve concrete template types from type alias
         data.templateTypes = aliasedType.getTemplateTypes();
-        // Check if the aliased type specified template types and the struct instantiation does
-        if !data.templateTypes.isEmpty() && node.hasTemplateTypes {
-            return this.softErrorER(cast<ASTNode*>(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, String("The aliased type already has a template list"));
+        // The alias provides all template types itself, so the call may not specify any
+        if node.hasTemplateTypes {
+            return this.softErrorER(cast<ASTNode*>(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, getAliasWithTemplateListMessage(aliasedType));
         }
     }
 
@@ -5149,9 +5161,9 @@ public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* n
         // Retrieve concrete template types from type alias
         const QualType aliasedType = aliasedEntry.getQualType();
         concreteTemplateTypes = aliasedType.getTemplateTypes();
-        // Check if the aliased type specified template types and the struct instantiation does
-        if !concreteTemplateTypes.isEmpty() && node.templateTypeLst != nil<ASTTypeLstNode*> {
-            return this.softErrorER(cast<ASTNode*>(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, String("The aliased type already has a template list"));
+        // The alias provides all template types itself, so the struct instantiation may not specify any
+        if node.templateTypeLst != nil<ASTTypeLstNode*> {
+            return this.softErrorER(cast<ASTNode*>(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, getAliasWithTemplateListMessage(aliasedType));
         }
     }
 
