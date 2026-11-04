@@ -2980,7 +2980,7 @@ public f<Any> TypeChecker.visitAssertStmt(ASTAssertStmtNode* node) {
     if conditionType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
 
     // Check if condition evaluates to bool
-    if !conditionType.is(SuperType::TY_BOOL) {
+    if !conditionType.removeReferenceWrapper().is(SuperType::TY_BOOL) {
         return this.softErrorER(getASTNode(node.assignExpr), SemanticErrorType::ASSERTION_CONDITION_BOOL, String("The asserted condition must be of type bool"));
     }
 
@@ -3017,7 +3017,7 @@ public f<Any> TypeChecker.visitForLoop(ASTForLoopNode* node) {
     const QualType conditionType = condition.ty;
     if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
     // Check if condition evaluates to bool
-    if !conditionType.is(SuperType::TY_BOOL) {
+    if !conditionType.removeReferenceWrapper().is(SuperType::TY_BOOL) {
         return this.softErrorER(getASTNode(node.condAssign), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("For loop condition must be of type bool"));
     }
 
@@ -3183,7 +3183,7 @@ public f<Any> TypeChecker.visitWhileLoop(ASTWhileLoopNode* node) {
     const QualType conditionType = condition.ty;
     if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
     // Check if condition evaluates to bool
-    if !conditionType.is(SuperType::TY_BOOL) {
+    if !conditionType.removeReferenceWrapper().is(SuperType::TY_BOOL) {
         return this.softErrorER(getASTNode(node.condition), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("While loop condition must be of type bool"));
     }
 
@@ -3205,7 +3205,7 @@ public f<Any> TypeChecker.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
     const QualType conditionType = condition.ty;
     if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
     // Check if condition evaluates to bool
-    if !conditionType.is(SuperType::TY_BOOL) {
+    if !conditionType.removeReferenceWrapper().is(SuperType::TY_BOOL) {
         return this.softErrorER(getASTNode(node.condition), SemanticErrorType::CONDITION_MUST_BE_BOOL, String("Do-While loop condition must be of type bool"));
     }
 
@@ -3222,7 +3222,7 @@ public f<Any> TypeChecker.visitIfStmt(ASTIfStmtNode* node) {
     if conditionType.is(SuperType::TY_UNRESOLVED) { return Any(); }
     // Check if condition evaluates to bool
     ASTNode* conditionNode = getASTNode(node.condition);
-    if !conditionType.is(SuperType::TY_BOOL) {
+    if !conditionType.removeReferenceWrapper().is(SuperType::TY_BOOL) {
         return this.softErrorER(conditionNode, SemanticErrorType::CONDITION_MUST_BE_BOOL, String("If condition must be of type bool"));
     }
 
@@ -3641,7 +3641,7 @@ public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
     if falseType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
 
     // Check if the condition evaluates to bool
-    if !condition.ty.is(SuperType::TY_BOOL) {
+    if !condition.ty.removeReferenceWrapper().is(SuperType::TY_BOOL) {
         return this.softErrorER(getASTNode(node.condition), SemanticErrorType::OPERATOR_WRONG_DATA_TYPE, String("Condition operand in ternary must be a bool"));
     }
 
