@@ -297,6 +297,10 @@ public f<Any> SymbolTableBuilder.visitStructDef(ASTStructDefNode* node) {
     // Insert implicit field for each interface type
     if node.hasInterfaces {
         foreach ASTDataTypeNode* interfaceNode : node.interfaceTypeLst.dataTypes {
+            // Only custom types can be interfaces. Others, like 'int', are rejected by the type checker
+            if interfaceNode.baseDataType.customDataType == nil<ASTCustomDataTypeNode*> {
+                continue;
+            }
             const Vector<String>& fragments = interfaceNode.baseDataType.customDataType.typeNameFragments;
             const String& interfaceName = fragments.get(fragments.getSize() - 1l);
             SymbolTableEntry* interfaceFieldEntry = structScope.insert(String("this.") + interfaceName, cast<ASTNode*>(interfaceNode));

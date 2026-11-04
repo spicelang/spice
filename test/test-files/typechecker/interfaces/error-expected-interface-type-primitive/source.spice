@@ -1,0 +1,8 @@
+// A primitive type is not an interface and must not crash the symbol table builder
+type TestStruct struct : int {
+    int value
+}
+
+f<int> main() {
+    TestStruct s;
+}
