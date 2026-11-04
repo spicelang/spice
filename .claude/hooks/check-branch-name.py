@@ -10,7 +10,7 @@ import shlex
 import subprocess
 import sys
 
-PREFIXES = ["feature", "fix", "bug", "chore", "ci", "std", "bootstrap", "test", "docs", "security"]
+PREFIXES = ["feature", "fix", "bug", "chore", "ci", "std", "test", "docs", "security"]
 BRANCH_NAME_REGEX = re.compile(r"^(" + "|".join(PREFIXES) + r")/[a-z0-9]+(-[a-z0-9]+)*$")
 EXEMPT_BRANCHES = {"main", "HEAD"}
 GIT_GLOBAL_OPTS_WITH_VALUE = {"-C", "-c", "--git-dir", "--work-tree", "--namespace"}

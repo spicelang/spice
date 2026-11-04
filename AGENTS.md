@@ -109,8 +109,8 @@ before writing or modifying code.
 
 - Never use auto-generated or `claude/...` branch names. Name every branch `<type>/<slug>` with a short, lowercase,
   kebab-case slug, e.g. `fix/1409-condition-temporaries`.
-- Allowed types: `feature/`, `fix/` (or `bug/`), `chore/`, `ci/`, `std/`, `bootstrap/`, `test/`, `docs/`,
-  `security/`. See the `spice-contribute` skill for when to use which.
+- Allowed types: `feature/`, `fix/` (or `bug/`), `chore/`, `ci/`, `std/`, `test/`, `docs/`, `security/`. See the
+  `spice-contribute` skill for when to use which.
 - If the session starts on a pre-created branch, rename it with `git branch -m <type>/<slug>` before the first push.
 - This is enforced by the `.claude/hooks/check-branch-name.py` hook, which blocks git commands that create, rename or
   push a branch with a non-conforming name.
