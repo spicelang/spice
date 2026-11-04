@@ -1,0 +1,88 @@
+// The C library function never returns, so a call to it ends the control flow
+#[core.compiler.noReturn]
+ext p exit(int);
+
+#[core.compiler.noReturn]
+p fail(string message) {
+    printf("Error: %s\n", message);
+    exit(1);
+}
+
+type Parser struct {
+    string input
+    unsigned long pos = 0l
+}
+
+p Parser.ctor(string input) {
+    this.input = input;
+}
+
+#[core.compiler.noReturn]
+p Parser.abort() {
+    printf("Unexpected end of input at %d\n", this.pos);
+    exit(2);
+}
+
+// Ends with a call to a noReturn method
+f<char> Parser.next() {
+    if this.pos < len(this.input) {
+        return this.input[this.pos++];
+    }
+    this.abort();
+}
+
+// Ends with a call to a noReturn procedure
+f<int> parseDigit(char c) {
+    if c >= '0' && c <= '9' {
+        return cast<int>(c) - cast<int>('0');
+    }
+    fail("Not a digit");
+}
+
+// Both branches end with a call to a noReturn function
+f<int> checkedDiv(int a, int b) {
+    if b != 0 {
+        return a / b;
+    } else {
+        fail("Division by zero");
+    }
+}
+
+// Ends with a call to a noReturn ext function
+f<int> sign(int value) {
+    if value > 0 { return 1; }
+    if value < 0 { return -1; }
+    if value == 0 { return 0; }
+    exit(3);
+}
+
+type T dyn;
+
+// Generic function, that ends with a call to a noReturn procedure
+f<T> choose<T>(int index, T a, T b) {
+    if index == 0 { return a; }
+    if index == 1 { return b; }
+    fail("Index out of bounds");
+}
+
+f<int> main() {
+    Parser parser = Parser("42");
+    const int tens = parseDigit(parser.next());
+    const int ones = parseDigit(parser.next());
+    printf("Parsed: %d\n", tens * 10 + ones);
+    printf("Div: %d\n", checkedDiv(42, 6));
+    printf("Sign: %d\n", sign(-5));
+    printf("Choose: %d, %s\n", choose(1, 1, 2), choose(0, "a", "b"));
+
+    // Lambda, that ends with a call to a noReturn procedure
+    f<int>(int) half = f<int>(int value) {
+        if value % 2 == 0 {
+            return value / 2;
+        }
+        fail("Odd value");
+    };
+    printf("Half: %d\n", half(84));
+
+    // Terminates the program with exit code 1
+    printf("%d\n", parseDigit('x'));
+}

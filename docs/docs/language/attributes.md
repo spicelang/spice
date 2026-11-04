@@ -45,8 +45,9 @@ f<int> test(long input) {
   that runs while interrupts can push onto its stack, like a kernel, must not use it. The experimental TPDE backend
   always uses the red zone on x86_64, so it rejects `false` there (on AArch64, the value is accepted and has no effect)
 - `core.compiler.noReturn: bool`: Promise that the annotated function never returns to its caller, e.g. because it
-  always exits the process. The optimizer treats the code after each call as unreachable. Returning from such a
-  function anyway is undefined behavior
+  always exits the process. The optimizer treats the code after each call as unreachable. A call to it ends the
+  control flow, so a function does not need a return statement after it. Returning from such a function anyway is
+  undefined behavior
 - `core.compiler.cold: bool`: Mark the annotated function as rarely called, e.g. for error handling. The optimizer
   treats paths that call it as unlikely and lays them out away from the hot paths
 - `core.compiler.panicHandler: bool`: Make the annotated procedure the panic handler of a freestanding program. Panics,

@@ -3139,8 +3139,17 @@ public f<bool> ASTNode.returnsOnAllControlPaths(bool* doSetPredecessorsUnreachab
             return false;
         }
         case ASTNodeKind::FCT_CALL: {
-            // Some builtin functions terminate the control flow, e.g. panic
+            // Calls to functions with the 'core.compiler.noReturn' attribute terminate the control flow. The callee is only known,
+            // after the type checker has resolved the call in its check stage. It is not considered for marking statements as
+            // unreachable, because the marking is shared by all manifestations, but the callee may differ between them
             const ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(this);
+            if !*doSetPredecessorsUnreachable && manIdx < fctCallNode.data.getSize() {
+                const FctCallData& data = fctCallNode.data.get(manIdx);
+                if data.callee != nil<const Function*> && data.callee.isNoReturn {
+                    return true;
+                }
+            }
+            // Some builtin functions terminate the control flow, e.g. panic
             if fctCallNode.isExprBasedCall() {
                 return false;
             }
