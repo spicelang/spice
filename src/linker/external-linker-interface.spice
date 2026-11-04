@@ -517,7 +517,7 @@ public p ExternalLinkerInterface.startAdditionalSourceCompilation() {
     this.additionalSourceCompilationThreads.reserve(this.additionalSourceCompilations.getSize());
     for unsigned long i = 0l; i < this.additionalSourceCompilations.getSize(); i++ {
         AdditionalSourceCompilation* compilation = &this.additionalSourceCompilations.get(i);
-        this.additionalSourceCompilationThreads.pushBack(Thread(p() [[async]] {
+        this.additionalSourceCompilationThreads.pushBack(Thread(p() {
             compilation.result = exec(compilation.linkerInvokerPath, compilation.args, true);
         }));
         Thread& thread = this.additionalSourceCompilationThreads.back();

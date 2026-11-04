@@ -23,7 +23,6 @@
         {
           "codeLoc": "L1C16",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "input",
           "orderIndex": 1,
           "state": "initialized",
@@ -32,7 +31,6 @@
         {
           "codeLoc": "L1C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "initialized",
@@ -48,7 +46,6 @@
         {
           "codeLoc": "L10C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "faculty",
           "orderIndex": 2,
           "state": "initialized",
@@ -57,7 +54,6 @@
         {
           "codeLoc": "L9C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "input",
           "orderIndex": 1,
           "state": "initialized",
@@ -66,7 +62,6 @@
         {
           "codeLoc": "L8C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -79,7 +74,6 @@
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "faculty:L1C1",
       "orderIndex": 0,
       "state": "declared",
@@ -88,7 +82,6 @@
     {
       "codeLoc": "L8C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "main",
       "orderIndex": 1,
       "state": "declared",

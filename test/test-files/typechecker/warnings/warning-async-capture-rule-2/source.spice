@@ -1,8 +1,0 @@
-f<int> main() {
-    int x = 123;
-    int* xPtr = &x;
-    p() proc = p() [[async]] {
-        assert x - *xPtr == 0; // Causes invalid capture, because we have two captures, x and xPtr
-    };
-    proc();
-}

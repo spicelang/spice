@@ -31,7 +31,6 @@ public const string ATTR_CORE_COMPILER_NO_BUILTINS = "core.compiler.noBuiltins";
 public const string ATTR_TEST = "test";
 public const string ATTR_TEST_NAME = "test.name";
 public const string ATTR_TEST_SKIP = "test.skip";
-public const string ATTR_ASYNC = "async";
 public const string ATTR_IGNORE_UNUSED_RETURN_VALUE = "ignoreUnusedReturnValue";
 
 public type AttrTarget enum {
@@ -109,7 +108,7 @@ public f<bool> getAttrConfig(const String& key, AttrConfigValue& config) {
     } else if key == ATTR_TEST_NAME {
         config.target = targetFctProc;
         config.attrType = AttrType::TYPE_STRING;
-    } else if key == ATTR_ASYNC || key == ATTR_IGNORE_UNUSED_RETURN_VALUE {
+    } else if key == ATTR_IGNORE_UNUSED_RETURN_VALUE {
         config.target = targetFctProc | targetLambda;
         config.attrType = AttrType::TYPE_BOOL;
     } else {

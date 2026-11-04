@@ -9,7 +9,6 @@
         {
           "codeLoc": "L19C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "a",
           "orderIndex": 1,
           "state": "initialized",
@@ -18,7 +17,6 @@
         {
           "codeLoc": "L21C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "b",
           "orderIndex": 2,
           "state": "initialized",
@@ -27,7 +25,6 @@
         {
           "codeLoc": "L18C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -46,7 +43,6 @@
             {
               "codeLoc": "L8C19",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "initialLength",
               "orderIndex": 1,
               "state": "initialized",
@@ -55,7 +51,6 @@
             {
               "codeLoc": "L8C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -71,7 +66,6 @@
             {
               "codeLoc": "L12C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -85,7 +79,6 @@
         {
           "codeLoc": "L4C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "_f1",
           "orderIndex": 0,
           "state": "declared",
@@ -94,7 +87,6 @@
         {
           "codeLoc": "L8C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "declared",
@@ -103,7 +95,6 @@
         {
           "codeLoc": "L5C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "length",
           "orderIndex": 1,
           "state": "declared",
@@ -112,7 +103,6 @@
         {
           "codeLoc": "L12C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "printLength:L12C1",
           "orderIndex": 3,
           "state": "declared",
@@ -131,7 +121,6 @@
             {
               "codeLoc": "L8C19",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "initialLength",
               "orderIndex": 1,
               "state": "initialized",
@@ -140,7 +129,6 @@
             {
               "codeLoc": "L8C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -156,7 +144,6 @@
             {
               "codeLoc": "L8C19",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "initialLength",
               "orderIndex": 1,
               "state": "initialized",
@@ -165,7 +152,6 @@
             {
               "codeLoc": "L8C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -181,7 +167,6 @@
             {
               "codeLoc": "L12C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -197,7 +182,6 @@
             {
               "codeLoc": "L12C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -211,7 +195,6 @@
         {
           "codeLoc": "L4C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "_f1",
           "orderIndex": 0,
           "state": "initialized",
@@ -220,7 +203,6 @@
         {
           "codeLoc": "L8C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "declared",
@@ -229,7 +211,6 @@
         {
           "codeLoc": "L5C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "length",
           "orderIndex": 1,
           "state": "initialized",
@@ -238,7 +219,6 @@
         {
           "codeLoc": "L8C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "ctor:L8C1",
           "orderIndex": 2,
           "state": "declared",
@@ -247,7 +227,6 @@
         {
           "codeLoc": "L12C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "printLength:L12C1",
           "orderIndex": 3,
           "state": "declared",
@@ -256,7 +235,6 @@
         {
           "codeLoc": "L12C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "printLength:L12C1",
           "orderIndex": 3,
           "state": "declared",
@@ -269,7 +247,6 @@
     {
       "codeLoc": "L16C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "Alias",
       "orderIndex": 2,
       "state": "declared",
@@ -278,7 +255,6 @@
     {
       "codeLoc": "L16C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "Alias.container",
       "orderIndex": 3,
       "state": "declared",
@@ -287,7 +263,6 @@
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "T",
       "orderIndex": 0,
       "state": "declared",
@@ -296,7 +271,6 @@
     {
       "codeLoc": "L3C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "TestStruct",
       "orderIndex": 1,
       "state": "declared",
@@ -305,7 +279,6 @@
     {
       "codeLoc": "L3C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "TestStruct",
       "orderIndex": 1,
       "state": "declared",
@@ -314,7 +287,6 @@
     {
       "codeLoc": "L18C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "main",
       "orderIndex": 4,
       "state": "declared",

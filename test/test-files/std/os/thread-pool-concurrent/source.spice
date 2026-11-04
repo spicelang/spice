@@ -11,7 +11,7 @@ f<int> main() {
     Counter* counterPtr = &counter;
     ThreadPool tp = ThreadPool(8s);
     for int i = 0; i < 2000; i++ {
-        tp.enqueue(p() [[async]] {
+        tp.enqueue(p() {
             counterPtr.value.fetchAdd(1ul);
         });
     }
@@ -19,7 +19,7 @@ f<int> main() {
     tp.join();
     // The pool can be started again after it was joined
     for int i = 0; i < 100; i++ {
-        tp.enqueue(p() [[async]] {
+        tp.enqueue(p() {
             counterPtr.value.fetchAdd(1ul);
         });
     }

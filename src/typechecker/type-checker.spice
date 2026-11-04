@@ -35,7 +35,6 @@ import "@/symboltablebuilder/lifecycle";
 import "@/symboltablebuilder/scope";
 import "@/symboltablebuilder/scope-handle";
 import "@/symboltablebuilder/super-type";
-import "@/symboltablebuilder/symbol-table";
 import "@/symboltablebuilder/symbol-table-entry";
 import "@/symboltablebuilder/type";
 import "@/symboltablebuilder/type-chain";
@@ -260,56 +259,6 @@ f<bool> TypeChecker.coversAllEnumItems(ASTSwitchStmtNode* node) {
     }
     const ASTEnumItemLstNode* itemLst = downcast<ASTEnumItemLstNode>(enumDef.itemLst);
     return coveredItems.getSize() == itemLst.items.getSize();
-}
-
-/**
- * Check if the capture rules for async lambdas are enforced if the async attribute is set
- *
- * Only one capture with pointer type, pass-by-val is allowed, since only then we can store it in the second field of the
- * fat pointer and can ensure, that no stack variable is referenced inside the lambda.
- *
- * @param node Lambda node
- * @param attrs Lambda attributes
- * @return False if the rules are violated, true otherwise
- */
-#[ignoreUnusedReturnValue]
-f<bool> TypeChecker.checkAsyncLambdaCaptureRules(ASTNode* node, const ASTLambdaAttrNode* attrs) {
-    // If the async attribute is not set, we can return early
-    if attrs == nil<const ASTLambdaAttrNode*> {
-        return true; // Not violated
-    }
-    ASTAttrLstNode* attrLst = attrs.attrLst;
-    if !attrLst.hasAttr(String(ATTR_ASYNC)) {
-        return true; // Not violated
-    }
-    const CompileTimeValue asyncValue = attrLst.getAttrValueByName(String(ATTR_ASYNC));
-    if !asyncValue.getBoolValue() {
-        return true; // Not violated
-    }
-
-    // If we don't have any captures, we can return early
-    ASTLambdaBaseNode* lambdaBaseNode = asLambdaBaseNode(node);
-    Scope* bodyScope = lambdaBaseNode.bodyScope;
-    CaptureMap& captures = bodyScope.symbolTable.captures;
-    if captures.isEmpty() {
-        return true; // Not violated
-    }
-
-    // Check for the capture rules
-    bool violated = captures.getSize() > 1ul;
-    foreach Pair<const String&, Capture&> captureEntry : captures {
-        // Only the first capture is inspected
-        Capture& capture = captureEntry.getSecond();
-        const QualType capturedType = capture.capturedSymbol.getQualType();
-        violated = violated || !capturedType.isPtr() || capture.getMode() != CapturePassMode::BY_VALUE;
-        break;
-    }
-    if violated {
-        const String warningMessage = String("Async lambdas can only capture one pointer by value without storing captures in the caller stack frame, which can lead to bugs due to references, outliving the validity scope of the referenced variable.");
-        this.addWarning(node.codeLoc, CompilerWarningType::ASYNC_LAMBDA_CAPTURE_RULE_VIOLATION, warningMessage);
-    }
-
-    return false; // Violated
 }
 
 /**
@@ -5358,9 +5307,6 @@ public f<Any> TypeChecker.visitLambdaFunc(ASTLambdaFuncNode* node) {
     // Create function object
     this.createLambdaManifestation(baseNode, bodyScope, returnType, paramList);
 
-    // Check special requirements if this is an async lambda
-    this.checkAsyncLambdaCaptureRules(baseNode, node.lambdaAttr);
-
     return Any(ExprResult{node.node.node.setEvaluatedSymbolType(functionType, this.manIdx), nil<SymbolTableEntry*>});
 }
 
@@ -5395,9 +5341,6 @@ public f<Any> TypeChecker.visitLambdaProc(ASTLambdaProcNode* node) {
 
     // Create function object
     this.createLambdaManifestation(baseNode, bodyScope, QualType(SuperType::TY_DYN), paramList);
-
-    // Check special requirements if this is an async lambda
-    this.checkAsyncLambdaCaptureRules(baseNode, node.lambdaAttr);
 
     return Any(ExprResult{node.node.node.setEvaluatedSymbolType(functionType, this.manIdx), nil<SymbolTableEntry*>});
 }

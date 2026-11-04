@@ -898,14 +898,6 @@ public f<Any> SymbolTableBuilder.visitAttr(ASTAttrNode* node) {
     return Any();
 }
 
-// Shared by the lambda visit methods: an 'async' lambda attribute marks the lambda scope as async
-p SymbolTableBuilder.applyLambdaAttr(ASTLambdaAttrNode* lambdaAttr, Scope* bodyScope) {
-    if lambdaAttr != nil<ASTLambdaAttrNode*> && lambdaAttr.attrLst.hasAttr(String(ATTR_ASYNC)) {
-        const CompileTimeValue isAsyncScopeAttrValue = lambdaAttr.attrLst.getAttrValueByName(String(ATTR_ASYNC));
-        bodyScope.isAsyncScope = isAsyncScopeAttrValue.getBoolValue();
-    }
-}
-
 /**
  * Build the symbol table for a lambda: create its body scope, the 'result' variable of a lambda function and the param
  * symbols, and visit its body or expression
@@ -913,19 +905,16 @@ p SymbolTableBuilder.applyLambdaAttr(ASTLambdaAttrNode* lambdaAttr, Scope* bodyS
  * @param lambdaBase Lambda base node
  * @param baseNode AST node of the lambda
  * @param scopeId Scope id of the lambda
- * @param lambdaAttr Lambda attributes, nil if the lambda has none
  * @param hasResultVar Whether the lambda has a 'result' variable (lambda functions)
  * @param body Body or expression of the lambda
  */
-f<Any> SymbolTableBuilder.visitLambda(ASTLambdaBaseNode* lambdaBase, ASTNode* baseNode, const String& scopeId, ASTLambdaAttrNode* lambdaAttr, bool hasResultVar, IVisitable* body) {
+f<Any> SymbolTableBuilder.visitLambda(ASTLambdaBaseNode* lambdaBase, ASTNode* baseNode, const String& scopeId, bool hasResultVar, IVisitable* body) {
     // Create scope for the lambda body
     Scope* bodyScope = this.currentScope.createChildScope(scopeId, ScopeType::LAMBDA_BODY, &baseNode.codeLoc);
     lambdaBase.bodyScope = bodyScope;
     this.currentScope = bodyScope;
     // Requires capturing because the LLVM IR will end up in a separate function
     bodyScope.symbolTable.setCapturingRequired();
-    // Set to async scope if this is an async lambda
-    this.applyLambdaAttr(lambdaAttr, bodyScope);
 
     // Create symbol for 'result' variable
     if hasResultVar {
@@ -947,15 +936,25 @@ f<Any> SymbolTableBuilder.visitLambda(ASTLambdaBaseNode* lambdaBase, ASTNode* ba
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaFunc(ASTLambdaFuncNode* node) {
-    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), node.lambdaAttr, /*hasResultVar=*/true, node.body);
+    // Visit attributes
+    if node.lambdaAttr != nil<ASTLambdaAttrNode*> {
+        this.visit(node.lambdaAttr);
+    }
+
+    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), /*hasResultVar=*/true, node.body);
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaProc(ASTLambdaProcNode* node) {
-    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), node.lambdaAttr, /*hasResultVar=*/false, node.body);
+    // Visit attributes
+    if node.lambdaAttr != nil<ASTLambdaAttrNode*> {
+        this.visit(node.lambdaAttr);
+    }
+
+    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), /*hasResultVar=*/false, node.body);
 }
 
 public f<Any> SymbolTableBuilder.visitLambdaExpr(ASTLambdaExprNode* node) {
-    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), nil<ASTLambdaAttrNode*>, /*hasResultVar=*/false, node.lambdaExpr);
+    return this.visitLambda(&node.node, cast<ASTNode*>(node), node.getScopeId(), /*hasResultVar=*/false, node.lambdaExpr);
 }
 
 public f<Any> SymbolTableBuilder.visitTernaryExpr(ASTTernaryExprNode* node) {

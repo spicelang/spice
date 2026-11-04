@@ -495,14 +495,13 @@ public f<llvm::Value> IRGenerator.resolveValue(const QualType& qualType, LLVMExp
     assert !exprResult.ptr.isNull() || !exprResult.refPtr.isNull();
 
     // De-reference if reference type
-    const bool isVolatile = exprResult.entry != nil<const SymbolTableEntry*> && exprResult.entry.isVolatile;
     if !exprResult.refPtr.isNull() && exprResult.ptr.isNull() {
-        exprResult.ptr = this.insertLoad(this.builder.getPtrTy(), exprResult.refPtr, isVolatile);
+        exprResult.ptr = this.insertLoad(this.builder.getPtrTy(), exprResult.refPtr);
     }
 
     // Load the value from the pointer
     const QualType referencedType = qualType.removeReferenceWrapper();
-    exprResult.value = this.insertLoad(referencedType, exprResult.ptr, isVolatile);
+    exprResult.value = this.insertLoad(referencedType, exprResult.ptr);
 
     return exprResult.value;
 }
@@ -522,9 +521,8 @@ public f<llvm::Value> IRGenerator.resolveAddress(LLVMExprResult& exprResult) {
     }
 
     // Check if the reference address is already present
-    const bool isVolatile = exprResult.entry != nil<const SymbolTableEntry*> && exprResult.entry.isVolatile;
     if !exprResult.refPtr.isNull() && exprResult.ptr.isNull() {
-        exprResult.ptr = this.insertLoad(this.builder.getPtrTy(), exprResult.refPtr, isVolatile);
+        exprResult.ptr = this.insertLoad(this.builder.getPtrTy(), exprResult.refPtr);
         return exprResult.ptr;
     }
 
@@ -533,7 +531,7 @@ public f<llvm::Value> IRGenerator.resolveAddress(LLVMExprResult& exprResult) {
     assert !exprResult.value.isNull();
     const String varName = exprResult.entry != nil<const SymbolTableEntry*> ? exprResult.entry.name : String();
     exprResult.ptr = this.insertAlloca(exprResult.value.getType(), varName);
-    this.insertStore(exprResult.value, exprResult.ptr, isVolatile);
+    this.insertStore(exprResult.value, exprResult.ptr);
 
     return exprResult.ptr;
 }
@@ -1004,7 +1002,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         const llvm::Value lhsAddr = this.insertAlloca(lhsQualType);
         this.updateAddress(lhsEntry, lhsAddr);
         this.diGenerator.generateLocalVarDebugInfo(lhsEntry.name, lhsAddr);
-        this.generateShallowCopy(rhsAddress, lhsQualType.toLLVMType(this.sourceFile), lhsAddr, lhsEntry.isVolatile);
+        this.generateShallowCopy(rhsAddress, lhsQualType.toLLVMType(this.sourceFile), lhsAddr);
         rhs.ptr = lhsAddr;
         rhs.entry = lhsEntry;
         return rhs;
@@ -1074,7 +1072,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         if rhsSTypeNonRef.isTriviallyCopyable(node) {
             // Create shallow copy
             const llvm::Type rhsType = rhsSTypeNonRef.toLLVMType(this.sourceFile);
-            this.generateShallowCopy(rhsAddress, rhsType, lhsAddress, lhsEntry != nil<const SymbolTableEntry*> && lhsEntry.isVolatile);
+            this.generateShallowCopy(rhsAddress, rhsType, lhsAddress);
         } else {
             // Check if we have a copy ctor
             Scope* structScope = rhsSTypeNonRef.getBodyScope();
@@ -1123,7 +1121,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         const llvm::Type rhsType = rhsSTypeNonRef.toLLVMType(this.sourceFile);
         const llvm::Value rhsAddress = this.resolveAddress(rhs);
         assert !rhsAddress.isNull();
-        this.generateShallowCopy(rhsAddress, rhsType, lhsAddress, lhsEntry != nil<const SymbolTableEntry*> && lhsEntry.isVolatile);
+        this.generateShallowCopy(rhsAddress, rhsType, lhsAddress);
     } else {
         // We can load the value from the right side and store it to the left side
         // Retrieve value of the right side
@@ -1169,13 +1167,13 @@ f<const model::Function*> IRGenerator.getLhsDtorFct(ASTNode* node) {
     return assignNode.lhsDtorFct.get(this.manIdx);
 }
 
-p IRGenerator.generateShallowCopy(llvm::Value oldAddress, llvm::Type varType, llvm::Value targetAddress, bool isVolatile) {
+p IRGenerator.generateShallowCopy(llvm::Value oldAddress, llvm::Type varType, llvm::Value targetAddress) {
     // Retrieve size to copy
     const unsigned long typeSize = this.module.getTypeAllocSize(varType);
 
     // Create values for memcpy intrinsic
     const llvm::Value structSize = this.builder.getInt64(typeSize);
-    const llvm::Value copyVolatile = this.getInt1(isVolatile);
+    const llvm::Value copyVolatile = this.builder.getFalse();
 
     // Call memcpy intrinsic to execute the shallow copy
     const llvm::Function memcpyFct = this.stdFunctionManager.getMemcpyIntrinsic();
@@ -2089,7 +2087,7 @@ public f<llvm::Value> IRGenerator.materializeDecayedArrayArg(llvm::Value argValu
     const llvm::Type globalType = global.getValueType();
     const bool globalIsSmaller = this.module.getTypeAllocSize(globalType) < this.module.getTypeAllocSize(paramArrayType);
     const llvm::Value argAddress = this.insertAlloca(paramArrayType, String("arg.decay"));
-    this.generateShallowCopy(argValue, globalIsSmaller ? globalType : paramArrayType, argAddress, false);
+    this.generateShallowCopy(argValue, globalIsSmaller ? globalType : paramArrayType, argAddress);
     return argAddress;
 }
 
@@ -3271,7 +3269,7 @@ public f<Any> IRGenerator.visitAssignExpr(ASTAssignExprNode* node) {
         } else if !res.value.isNull() { // The operation only updated the value
             // Store the result
             lhs.value = res.value;
-            this.insertStore(lhs.value, lhs.ptr, lhs.entry != nil<const SymbolTableEntry*> && lhs.entry.isVolatile);
+            this.insertStore(lhs.value, lhs.ptr);
         }
         return exprResultAny(lhs);
     }
@@ -3847,11 +3845,6 @@ public f<Any> IRGenerator.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) {
             const LLVMExprResult res = this.conversionManager.getPrefixPlusPlusInst(baseNode, lhs, lhsSTy);
             lhs.value = res.value;
 
-            // If this operation happens on a volatile variable, store the value directly
-            if lhs.entry != nil<const SymbolTableEntry*> && lhs.entry.isVolatile {
-                this.insertStore(lhs.value, lhs.ptr, true);
-            }
-
             // Save to the existing address if possible, otherwise (e.g. for literals) allocate new space
             if lhs.ptr.isNull() {
                 lhs.ptr = this.insertAlloca(lhs.value.getType());
@@ -3864,11 +3857,6 @@ public f<Any> IRGenerator.visitPrefixUnaryExpr(ASTPrefixUnaryExprNode* node) {
             // Execute operation
             const LLVMExprResult res = this.conversionManager.getPrefixMinusMinusInst(baseNode, lhs, lhsSTy);
             lhs.value = res.value;
-
-            // If this operation happens on a volatile variable, store the value directly
-            if lhs.entry != nil<const SymbolTableEntry*> && lhs.entry.isVolatile {
-                this.insertStore(lhs.value, lhs.ptr, true);
-            }
 
             // Save to the existing address if possible, otherwise (e.g. for literals) allocate new space
             if lhs.ptr.isNull() {
@@ -4043,7 +4031,7 @@ public f<Any> IRGenerator.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
                 lhs.value = res.value;
                 lhs.ptr = res.ptr;
             } else {
-                this.insertStore(res.value, lhs.ptr, lhs.entry != nil<const SymbolTableEntry*> && lhs.entry.isVolatile);
+                this.insertStore(res.value, lhs.ptr);
                 lhs.ptr = llvm::Value();
             }
         }
@@ -4065,7 +4053,7 @@ public f<Any> IRGenerator.visitPostfixUnaryExpr(ASTPostfixUnaryExprNode* node) {
                 lhs.value = res.value;
                 lhs.ptr = res.ptr;
             } else {
-                this.insertStore(res.value, lhs.ptr, lhs.entry != nil<const SymbolTableEntry*> && lhs.entry.isVolatile);
+                this.insertStore(res.value, lhs.ptr);
                 lhs.ptr = llvm::Value();
             }
         }
@@ -4846,8 +4834,7 @@ public f<Any> IRGenerator.visitArrayInitialization(ASTArrayInitializationNode* n
             currentItemAddress = this.insertInBoundsGEP(itemType, currentItemAddress, this.getInt64(1l));
         }
         // Store the item value
-        const bool storeVolatile = exprResult.entry != nil<const SymbolTableEntry*> && exprResult.entry.isVolatile;
-        this.insertStore(itemValue, currentItemAddress, storeVolatile);
+        this.insertStore(itemValue, currentItemAddress);
     }
 
     return exprResultAny(exprResultWithPtr(arrayAddr));
@@ -4955,8 +4942,7 @@ public f<Any> IRGenerator.visitStructInstantiation(ASTStructInstantiationNode* n
         // Get field address
         const llvm::Value currentFieldAddress = this.insertStructGEP(structType, structAddr, cast<unsigned int>(spiceStruct.getFieldElementIndex(i)));
         // Store the item value
-        const bool storeVolatile = exprResult.entry != nil<const SymbolTableEntry*> && exprResult.entry.isVolatile;
-        this.insertStore(itemValue, currentFieldAddress, storeVolatile);
+        this.insertStore(itemValue, currentFieldAddress);
         i++;
     }
 
@@ -6747,7 +6733,7 @@ p IRGenerator.generateCopyCtorBodyPreamble(const model::Function* copyCtorFuncti
             this.insertStore(newHeapAddress, fieldAddress);
 
             // Copy data from the old heap storage to the new one
-            this.generateShallowCopy(originalHeapAddress, pointeeType, newHeapAddress, false);
+            this.generateShallowCopy(originalHeapAddress, pointeeType, newHeapAddress);
             this.insertJump(bExit);
 
             // Switch to exit block
@@ -6758,7 +6744,7 @@ p IRGenerator.generateCopyCtorBodyPreamble(const model::Function* copyCtorFuncti
 
         // Shallow copy
         const llvm::Type fieldLLVMType = fieldType.toLLVMType(this.sourceFile);
-        this.generateShallowCopy(originalFieldAddress, fieldLLVMType, fieldAddress, false);
+        this.generateShallowCopy(originalFieldAddress, fieldLLVMType, fieldAddress);
     }
 }
 
@@ -6859,7 +6845,7 @@ p IRGenerator.generateMoveCtorBodyPreamble(const model::Function* moveCtorFuncti
 
         // Shallow copy non-heap, non-struct (or trivially copyable struct) fields
         const llvm::Type fieldLLVMType = fieldType.toLLVMType(this.sourceFile);
-        this.generateShallowCopy(originalFieldAddress, fieldLLVMType, fieldAddress, false);
+        this.generateShallowCopy(originalFieldAddress, fieldLLVMType, fieldAddress);
     }
 }
 

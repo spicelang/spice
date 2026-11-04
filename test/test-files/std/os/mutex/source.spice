@@ -2,15 +2,15 @@ import "std/os/mutex";
 import "std/os/thread";
 
 // Shared state for the concurrent test. Bundling counter + mutex into a struct
-// lets the async worker capture a single `this` pointer (per the async capture
-// rules) and still access both fields.
+// lets the thread routine capture a single `this` pointer and still access both
+// fields.
 type Shared struct {
     Mutex m
     int counter = 0
 }
 
 p Shared.runWorkers() {
-    p() worker = p() [[async]] {
+    p() worker = p() {
         for int i = 0; i < 10000; i++ {
             LockGuard _ = LockGuard(this.m);
             this.counter++;

@@ -41,7 +41,7 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
  * Start the thread pool.
  */
 public p ThreadPool.start() {
-    p() workerRoutine = p() [[async]] {
+    p() workerRoutine = p() {
         p() task;
         while this.waitForNextJob(task) {
             task();

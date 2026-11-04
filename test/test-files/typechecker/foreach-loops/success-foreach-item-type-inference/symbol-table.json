@@ -15,7 +15,6 @@
                 {
                   "codeLoc": "L30C13",
                   "isGlobal": false,
-                  "isVolatile": false,
                   "name": "item",
                   "orderIndex": 0,
                   "state": "initialized",
@@ -33,7 +32,6 @@
         {
           "codeLoc": "L29C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -52,7 +50,6 @@
             {
               "codeLoc": "L19C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -61,7 +58,6 @@
             {
               "codeLoc": "L19C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -77,7 +73,6 @@
             {
               "codeLoc": "L15C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -86,7 +81,6 @@
             {
               "codeLoc": "L15C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -102,7 +96,6 @@
             {
               "codeLoc": "L23C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -111,7 +104,6 @@
             {
               "codeLoc": "L23C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -127,7 +119,6 @@
             {
               "codeLoc": "L11C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -143,7 +134,6 @@
             {
               "codeLoc": "L6C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -159,7 +149,6 @@
             {
               "codeLoc": "L27C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -173,7 +162,6 @@
         {
           "codeLoc": "L11C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "ctor:L11C1",
           "orderIndex": 3,
           "state": "declared",
@@ -182,7 +170,6 @@
         {
           "codeLoc": "L8C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "cursor",
           "orderIndex": 2,
           "state": "declared",
@@ -191,7 +178,6 @@
         {
           "codeLoc": "L6C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "default_copyctor:L6C1",
           "orderIndex": 8,
           "state": "declared",
@@ -200,7 +186,6 @@
         {
           "codeLoc": "L15C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "get:L15C1",
           "orderIndex": 4,
           "state": "declared",
@@ -209,7 +194,6 @@
         {
           "codeLoc": "L19C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
@@ -218,7 +202,6 @@
         {
           "codeLoc": "L23C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "isValid:L23C1",
           "orderIndex": 6,
           "state": "declared",
@@ -227,7 +210,6 @@
         {
           "codeLoc": "L7C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "item",
           "orderIndex": 1,
           "state": "declared",
@@ -236,7 +218,6 @@
         {
           "codeLoc": "L27C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "next:L27C1",
           "orderIndex": 7,
           "state": "declared",
@@ -245,7 +226,6 @@
         {
           "codeLoc": "L6C31",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "this.IIterator",
           "orderIndex": 0,
           "state": "declared",
@@ -264,7 +244,6 @@
             {
               "codeLoc": "L19C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -273,7 +252,6 @@
             {
               "codeLoc": "L19C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -289,7 +267,6 @@
             {
               "codeLoc": "L19C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -298,7 +275,6 @@
             {
               "codeLoc": "L19C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -314,7 +290,6 @@
             {
               "codeLoc": "L15C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -323,7 +298,6 @@
             {
               "codeLoc": "L15C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -339,7 +313,6 @@
             {
               "codeLoc": "L23C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -348,7 +321,6 @@
             {
               "codeLoc": "L23C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -364,7 +336,6 @@
             {
               "codeLoc": "L23C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -373,7 +344,6 @@
             {
               "codeLoc": "L23C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -389,7 +359,6 @@
             {
               "codeLoc": "L15C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "result",
               "orderIndex": 1,
               "state": "declared",
@@ -398,7 +367,6 @@
             {
               "codeLoc": "L15C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -414,7 +382,6 @@
             {
               "codeLoc": "L11C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -430,7 +397,6 @@
             {
               "codeLoc": "L6C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -446,7 +412,6 @@
             {
               "codeLoc": "L11C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -462,7 +427,6 @@
             {
               "codeLoc": "L27C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -478,7 +442,6 @@
             {
               "codeLoc": "L27C1",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "this",
               "orderIndex": 0,
               "state": "declared",
@@ -492,7 +455,6 @@
         {
           "codeLoc": "L11C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "ctor:L11C1",
           "orderIndex": 3,
           "state": "declared",
@@ -501,7 +463,6 @@
         {
           "codeLoc": "L8C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "cursor",
           "orderIndex": 2,
           "state": "declared",
@@ -510,7 +471,6 @@
         {
           "codeLoc": "L6C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "default_copyctor:L6C1",
           "orderIndex": 8,
           "state": "declared",
@@ -519,7 +479,6 @@
         {
           "codeLoc": "L19C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
@@ -528,7 +487,6 @@
         {
           "codeLoc": "L23C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "isValid:L23C1",
           "orderIndex": 6,
           "state": "declared",
@@ -537,7 +495,6 @@
         {
           "codeLoc": "L15C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "get:L15C1",
           "orderIndex": 4,
           "state": "declared",
@@ -546,7 +503,6 @@
         {
           "codeLoc": "L15C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "get:L15C1",
           "orderIndex": 4,
           "state": "declared",
@@ -555,7 +511,6 @@
         {
           "codeLoc": "L19C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "getIdx:L19C1",
           "orderIndex": 5,
           "state": "declared",
@@ -564,7 +519,6 @@
         {
           "codeLoc": "L23C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "isValid:L23C1",
           "orderIndex": 6,
           "state": "declared",
@@ -573,7 +527,6 @@
         {
           "codeLoc": "L7C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "item",
           "orderIndex": 1,
           "state": "declared",
@@ -582,7 +535,6 @@
         {
           "codeLoc": "L27C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "next:L27C1",
           "orderIndex": 7,
           "state": "declared",
@@ -591,7 +543,6 @@
         {
           "codeLoc": "L11C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "ctor:L11C1",
           "orderIndex": 3,
           "state": "declared",
@@ -600,7 +551,6 @@
         {
           "codeLoc": "L27C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "next:L27C1",
           "orderIndex": 7,
           "state": "declared",
@@ -609,7 +559,6 @@
         {
           "codeLoc": "L6C31",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "this.IIterator",
           "orderIndex": 0,
           "state": "declared",
@@ -622,7 +571,6 @@
     {
       "codeLoc": "L6C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "MockIterator",
       "orderIndex": 3,
       "state": "declared",
@@ -631,7 +579,6 @@
     {
       "codeLoc": "L6C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "MockIterator",
       "orderIndex": 3,
       "state": "declared",
@@ -640,7 +587,6 @@
     {
       "codeLoc": "L4C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "T",
       "orderIndex": 2,
       "state": "declared",
@@ -649,7 +595,6 @@
     {
       "codeLoc": "L29C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "main",
       "orderIndex": 4,
       "state": "declared",
@@ -658,7 +603,6 @@
     {
       "codeLoc": "L2C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "std/data/pair",
       "orderIndex": 1,
       "state": "declared",
@@ -667,7 +611,6 @@
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "std/iterator/iterator",
       "orderIndex": 0,
       "state": "declared",

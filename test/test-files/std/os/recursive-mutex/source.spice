@@ -32,7 +32,7 @@ f<int> main() {
     printf("Owner tryAcquire: %d\n", mutex.tryAcquire());
     TryResult tryResult = TryResult{&mutex, true};
     TryResult* tryResultPtr = &tryResult;
-    Thread tryThread = Thread(p() [[async]] {
+    Thread tryThread = Thread(p() {
         tryResultPtr.acquired = tryResultPtr.mutex.tryAcquire();
     });
     tryThread.run();
@@ -43,16 +43,16 @@ f<int> main() {
 
     // Concurrent recursive increments from multiple threads
     Counter* counterPtr = &counter;
-    Thread t1 = Thread(p() [[async]] {
+    Thread t1 = Thread(p() {
         for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
     });
-    Thread t2 = Thread(p() [[async]] {
+    Thread t2 = Thread(p() {
         for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
     });
-    Thread t3 = Thread(p() [[async]] {
+    Thread t3 = Thread(p() {
         for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
     });
-    Thread t4 = Thread(p() [[async]] {
+    Thread t4 = Thread(p() {
         for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
     });
     t1.run();

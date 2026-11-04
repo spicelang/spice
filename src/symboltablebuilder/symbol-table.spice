@@ -202,8 +202,6 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
         const QualType entryType = entry.getQualType();
         const dyn captureSkip = [SuperType::TY_IMPORT, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
         if this.capturingRequired && !this.captures.contains(name) && !entryType.isOneOf(captureSkip, len(captureSkip)) && !entry.isTypeDefinition() {
-            // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
-            entry.isVolatile = this.scope.isInAsyncScope() && !entry.scope.isInAsyncScope();
             // Add the capture to the current scope
             this.captures.upsert(name, Capture(entry));
         }
