@@ -1,0 +1,74 @@
+import "std/data/vector";
+import "std/data/pair";
+
+// Counts its live instances, to check that removeAt destructs each element exactly once
+public type Tracked struct {
+    int* liveCount
+    int value
+}
+
+public p Tracked.ctor(int* liveCount, int value) {
+    this.liveCount = liveCount;
+    this.value = value;
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Tracked.ctor(const Tracked& original) {
+    this.liveCount = original.liveCount;
+    this.value = original.value;
+    unsafe { (*this.liveCount)++; }
+}
+
+public p Tracked.dtor() {
+    unsafe { (*this.liveCount)--; }
+}
+
+// Owns a String, but has no user-defined operator=
+public type Named struct {
+    String name
+}
+
+f<int> main() {
+    // Element type without a user-defined operator=, removed at the front
+    Vector<Pair<String, String>> pairs;
+    pairs.pushBack(Pair<String, String>(String("k1"), String("v1")));
+    pairs.pushBack(Pair<String, String>(String("k2"), String("v2")));
+    pairs.removeAt(0l);
+    printf("pairs: size=%d first=%s:%s\n", pairs.getSize(), pairs.get(0l).first.getRaw(), pairs.get(0l).second.getRaw());
+
+    // Struct with an implicit operator=, removed in the middle and at the end
+    Vector<Named> names;
+    names.pushBack(Named{String("a")});
+    names.pushBack(Named{String("b")});
+    names.pushBack(Named{String("c")});
+    names.pushBack(Named{String("d")});
+    names.removeAt(1l);
+    names.removeAt(2l);
+    printf("names: size=%d %s %s\n", names.getSize(), names.get(0l).name.getRaw(), names.get(1l).name.getRaw());
+
+    // Strings, which have a user-defined operator=
+    Vector<String> strings;
+    strings.pushBack(String("x"));
+    strings.pushBack(String("y"));
+    strings.pushBack(String("z"));
+    strings.removeAt(1l);
+    printf("strings: size=%d %s %s\n", strings.getSize(), strings.get(0l).getRaw(), strings.get(1l).getRaw());
+
+    // Each element is destructed exactly once
+    int liveCount = 0;
+    {
+        Vector<Tracked> tracked;
+        for int i = 0; i < 5; i++ {
+            tracked.pushBack(Tracked(&liveCount, i));
+        }
+        printf("tracked: live=%d\n", liveCount);
+        tracked.removeAt(0l); // front
+        tracked.removeAt(1l); // middle
+        tracked.removeAt(2l); // end
+        printf("tracked: live=%d size=%d values=%d,%d\n", liveCount, tracked.getSize(), tracked.get(0l).value, tracked.get(1l).value);
+        tracked.removeAt(0l);
+        tracked.removeAt(0l);
+        printf("tracked: live=%d empty=%d\n", liveCount, tracked.isEmpty());
+    }
+    printf("tracked: live=%d after scope\n", liveCount);
+}
