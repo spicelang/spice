@@ -16,10 +16,9 @@ All work happens on a dedicated branch, never directly on `main`.
 |--------|---------|
 | `feature/<slug>` | New language features, compiler capabilities, or stdlib additions |
 | `fix/<slug>` (or `bug/<slug>`) | Bug fixes in the compiler, runtime, or stdlib |
-| `chore/<slug>` | Build system, dependency updates, repo maintenance |
+| `chore/<slug>` | Build system, dependency updates, stage0 bumps, compiler-internal refactors, repo maintenance |
 | `ci/<slug>` | GitHub Actions workflows, CI scripts, test infrastructure |
 | `std/<slug>` | Standard library changes that aren't strictly a new feature or fix |
-| `bootstrap/<slug>` | Compiler-internal changes in `src/` (refactors, bootstrapping, stage0 bumps) |
 | `test/<slug>` | New or updated test cases, test utilities, reference files |
 | `docs/<slug>` | Documentation-only changes under `docs/` |
 | `security/<slug>` | Security-sensitive fixes (prefer non-public disclosure first — see `CONTRIBUTING.md`) |
