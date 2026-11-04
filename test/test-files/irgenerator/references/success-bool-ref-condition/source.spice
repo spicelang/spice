@@ -1,0 +1,58 @@
+// A bool reference can be used everywhere, where a condition of type bool is expected
+
+// The loops modify the referenced value, so they terminate
+p countDown(bool& running, int& counter) {
+    while running {
+        counter--;
+        running = counter > 0;
+    }
+}
+
+f<int> main() {
+    bool flag = true;
+    bool& ref = flag;
+
+    // If and else-if
+    if ref { printf("if: true\n"); }
+    flag = false;
+    if ref {
+        printf("if: unexpected\n");
+    } else if !ref {
+        printf("else-if: negated reference\n");
+    }
+
+    // While loop with a reference parameter
+    bool running = true;
+    int counter = 3;
+    countDown(running, counter);
+    printf("while: counter=%d\n", counter);
+
+    // Do-while loop
+    flag = true;
+    int iterations = 0;
+    do {
+        iterations++;
+        flag = iterations < 2;
+    } while ref;
+    printf("do-while: iterations=%d\n", iterations);
+
+    // For loop
+    flag = true;
+    for int i = 0; ref; i++ {
+        flag = i < 2;
+        printf("for: i=%d\n", i);
+    }
+
+    // Ternary
+    printf("ternary: %s\n", ref ? "true" : "false");
+
+    // Assertion
+    flag = true;
+    assert ref;
+    printf("assert: ok\n");
+
+    // Reference to a constant
+    const bool constFlag = true;
+    const bool& constRef = constFlag;
+    if constRef && ref { printf("const reference: true\n"); }
+}

@@ -1,0 +1,10 @@
+if: true
+else-if: negated reference
+while: counter=0
+do-while: iterations=2
+for: i=0
+for: i=1
+for: i=2
+ternary: false
+assert: ok
+const reference: true
