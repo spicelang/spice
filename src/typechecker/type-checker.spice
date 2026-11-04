@@ -2621,6 +2621,10 @@ public f<Any> TypeChecker.visitCustomDataType(ASTCustomDataTypeNode* node) {
 
     if entryType.is(SuperType::TY_ALIAS) {
         const QualType aliasedType = entryType.getAliased(entry);
+        // Check if the aliased type specified template types and the type usage does
+        if !aliasedType.getTemplateTypes().isEmpty() && node.templateTypeLst != nil<IVisitable*> {
+            return this.softErrorQT(getASTNode(node.templateTypeLst), SemanticErrorType::ALIAS_WITH_TEMPLATE_LIST, String("The aliased type already has a template list"));
+        }
         return Any(node.node.setEvaluatedSymbolType(aliasedType, this.manIdx));
     }
 
