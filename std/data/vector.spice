@@ -294,15 +294,18 @@ public p Vector.removeAt(unsigned long index) {
     if index >= this.size {
         panic(Error("Access index out of bounds"));
     }
-    // Move all elements after the index one to the front
-    for unsigned long i = index; i < this.size - 1; i++ {
-        unsafe {
-            this.contents[i] = this.contents[i + 1];
-        }
-    }
-    // Destroy the last element
+    // Destroy the removed element
     unsafe {
-        sDestruct(this.contents[this.size - 1]);
+        sDestruct(this.contents[index]);
+    }
+    // Move all elements after the index one to the front. They are relocated bitwise like in insertAt(), since assigning
+    // them would alias the owned resources of element types without a user-defined operator=. The slot of the last element
+    // is given up without destructing it, because its element now lives one slot further to the front
+    if index < this.size - 1l {
+        unsafe {
+            const unsigned long moveSize = cast<unsigned long>(sizeof<T>()) * (this.size - index - 1l);
+            memmove(cast<byte*>(&this.contents[index]), cast<byte*>(&this.contents[index + 1l]), moveSize);
+        }
     }
     // Decrement the size
     this.size--;
