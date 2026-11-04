@@ -4397,6 +4397,13 @@ public f<Any> TypeChecker.visitAtomicExpr(ASTAtomicExprNode* node) {
     assert accessData.entry != nil<SymbolTableEntry*>;
     SymbolTableEntry* entry = accessData.entry;
     entry.used = true;
+
+    // Type names, e.g. of a struct, have no value
+    if entry.isTypeDefinition() {
+        const String message = String("'") + node.fqIdentifier + "' is a type and cannot be used as a value";
+        return this.softErrorER(baseNode, SemanticErrorType::INVALID_SYMBOL_ACCESS, message);
+    }
+
     accessData.capture = accessData.accessScope.symbolTable.lookupCapture(entry.name);
 
     const QualType varType = entry.getQualType();
