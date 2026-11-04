@@ -78,7 +78,6 @@ public type Scope struct {
     public const CodeLoc* codeLoc = nil<const CodeLoc*>
     public ScopeType scopeType
     public bool isGenericScope = false
-    public bool isAsyncScope = false
     public bool isCtorScope = false
     public bool isDtorScope = false
     // Only for expression scopes: dtor calls for the temporaries of the expression, in the order they are to be generated
@@ -418,18 +417,6 @@ public f<Vector<const Function*>> Scope.getVirtualMethods() {
 }
 
 /**
- * Check if this scope is within an async scope
- *
- * @return Within async scope or not
- */
-public f<bool> Scope.isInAsyncScope() {
-    if this.isAsyncScope {
-        return true;
-    }
-    return !this.isRootScope() && this.parent.isInAsyncScope();
-}
-
-/**
  * Get the scope of the function/procedure/lambda body, this scope is located in
  *
  * @return Function scope
@@ -628,7 +615,6 @@ public p Scope.deepCopyScope(Scope* newScope) {
     // Copy the members
     newScope.symbolTable.copyContentsFrom(this.symbolTable);
     newScope.isGenericScope = this.isGenericScope;
-    newScope.isAsyncScope = this.isAsyncScope;
     newScope.isCtorScope = this.isCtorScope;
     newScope.isDtorScope = this.isDtorScope;
     newScope.functions = this.functions;

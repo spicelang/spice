@@ -9,7 +9,7 @@ const int CONSUMER_COUNT = 3;
 const int ITEMS_PER_PRODUCER = 5000;
 
 // Shared state for the concurrent test. Bundling the queue + counters into a struct lets
-// the async workers capture a single `this` pointer (per the async capture rules). The
+// the thread routines capture a single `this` pointer. The
 // counters are plain longs guarded by a mutex rather than Atomic<long>, since Atomic only
 // makes each individual load()/store() thread-safe - composing them as
 // `counter.store(counter.load() + 1)` would still race between concurrent consumers.
@@ -21,12 +21,12 @@ type Shared struct {
 }
 
 p Shared.run() {
-    p() producer = p() [[async]] {
+    p() producer = p() {
         for int i = 0; i < ITEMS_PER_PRODUCER; i++ {
             this.mq.push(i + 1);
         }
     };
-    p() consumer = p() [[async]] {
+    p() consumer = p() {
         while true {
             Optional<int> item = this.mq.pop();
             if !item.isPresent() { break; }

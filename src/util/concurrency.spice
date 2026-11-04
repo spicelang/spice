@@ -127,7 +127,7 @@ f<bool> testConditionalLockOnlyLocksInParallelSection() {
     return true;
 }
 
-// Shared map and the mutex that guards it. Bundled, so that the async lambdas below only have to capture a single pointer
+// Shared map and the mutex that guards it. Bundled, so that the thread routines below only have to capture a single pointer
 type GuardedSharedMap struct {
     UnorderedMap<unsigned long, unsigned long>* sharedMap
     RecursiveMutex* mutex
@@ -149,7 +149,7 @@ p incrementGuarded(GuardedSharedMap* guardedMap, unsigned long key) {
 p incrementConcurrently(GuardedSharedMap* guardedMap) {
     ThreadPool pool = ThreadPool(4s);
     for unsigned int i = 0; i < 4; i++ {
-        pool.enqueue(p() [[async]] {
+        pool.enqueue(p() {
             for unsigned long key = 0l; key < 10000l; key++ {
                 incrementGuarded(guardedMap, key % 500l);
             }

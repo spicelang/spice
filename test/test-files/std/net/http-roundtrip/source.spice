@@ -12,7 +12,7 @@ import "std/time/delay";
 f<int> main() {
     ThreadPool pool = ThreadPool(2s);
 
-    pool.enqueue(p() [[async]] {
+    pool.enqueue(p() {
         HttpServer server = HttpServer(18085s);
         server.serve("/", "<h1>Index</h1>");
         server.get("/greet", p(const HttpRequest& request, HttpResponse& response) {
@@ -44,7 +44,7 @@ f<int> main() {
         server.close();
     });
 
-    pool.enqueue(p() [[async]] {
+    pool.enqueue(p() {
         delay(500); // give the server time to bind its port
         HttpClient client = HttpClient();
 

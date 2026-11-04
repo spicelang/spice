@@ -959,7 +959,7 @@ public p SourceFile.runBackEnd() {
     if runParallel {
         ThreadPool threadPool = ThreadPool(cast<unsigned short>(jobCount));
         foreach SourceFile* sourceFile : backEndSourceFiles {
-            threadPool.enqueue(p() [[async]] {
+            threadPool.enqueue(p() {
                 sourceFile.runBackEndForThisFile();
             });
         }

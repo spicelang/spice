@@ -27,7 +27,6 @@
         {
           "codeLoc": "L2C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "i",
           "orderIndex": 1,
           "state": "initialized",
@@ -36,7 +35,6 @@
         {
           "codeLoc": "L3C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "j",
           "orderIndex": 2,
           "state": "initialized",
@@ -45,7 +43,6 @@
         {
           "codeLoc": "L4C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "lambda",
           "orderIndex": 3,
           "state": "initialized",
@@ -54,7 +51,6 @@
         {
           "codeLoc": "L1C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -67,7 +63,6 @@
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "main",
       "orderIndex": 0,
       "state": "declared",

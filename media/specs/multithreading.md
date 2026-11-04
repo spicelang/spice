@@ -25,18 +25,18 @@
 Multithreading in Spice is not a dedicated grammar construct. Instead, it is implemented as a lightweight std library
 on top of POSIX threads (pthreads): `std/os/thread` provides the `Thread` struct, `std/os/thread-pool` provides
 `ThreadPool`, and `std/os/mutex` provides `Mutex`/`LockGuard`. A thread routine is simply a procedure lambda
-(`p() [[async]] { ... }`); the `[[async]]` attribute marks the lambda as safe to hand off to another thread.
+(`p() { ... }`).
 
 ### Spawning a thread
 This enables the programmer to execute a procedure in another thread that runs in parallel to the original one.
-Construct a `Thread` from a `p() [[async]]` lambda and call `run()` to start it. `run()` returns immediately; the
+Construct a `Thread` from a `p()` lambda and call `run()` to start it. `run()` returns immediately; the
 calling thread continues executing the code after it.
 
 ```spice
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread = Thread(p() [[async]] {
+    Thread thread = Thread(p() {
         // Do something
     });
     thread.run();
@@ -51,11 +51,11 @@ suspends until the target thread has terminated.
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread1 = Thread(p() [[async]] {
+    Thread thread1 = Thread(p() {
         // Do something
     });
     thread1.run();
-    Thread thread2 = Thread(p() [[async]] {
+    Thread thread2 = Thread(p() {
         // Do something
     });
     thread2.run();
@@ -73,7 +73,7 @@ id of the current thread from within the thread routine, call the free function 
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread1 = Thread(p() [[async]] {
+    Thread thread1 = Thread(p() {
         printf("Running on thread: %d\n", getThreadId());
     });
     thread1.run();
@@ -83,7 +83,7 @@ f<int> main() {
 ```
 
 ### Captures
-Variables from outside the thread routine that are used within it are called `captures`. Since `p() [[async]]` is a
+Variables from outside the thread routine that are used within it are called `captures`. Since `p()` is a
 lambda, captured variables are taken over by the `Lambda<p()>` that backs the `Thread`, which takes ownership of any
 captured state so it remains valid even after the enclosing stack frame returns. Mutable shared state that is
 written from multiple threads must still be protected with a `Mutex` (see below); Spice does not yet track or
@@ -133,11 +133,11 @@ import "std/time/delay";
 
 f<int> main() {
     ThreadPool tp = ThreadPool(3s); // Create a thread pool with 3 worker threads
-    tp.enqueue(p() [[async]] {
+    tp.enqueue(p() {
         delay(50);
         printf("Hello from task 1\n");
     });
-    tp.enqueue(p() [[async]] {
+    tp.enqueue(p() {
         delay(100);
         printf("Hello from task 2\n");
     });

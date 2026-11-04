@@ -45,7 +45,7 @@ define dso_local noundef i32 @main() #1 {
   %11 = call noundef i32 @pthread_join(i64 noundef %10, ptr noundef align 8 null)
   %12 = load i64, ptr %tid2, align 8
   %13 = call noundef i32 @pthread_join(i64 noundef %12, ptr noundef align 8 null)
-  %14 = load volatile i32, ptr %i, align 4
+  %14 = load i32, ptr %i, align 4
   %15 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %14)
   ret i32 0
 }
@@ -54,10 +54,10 @@ define dso_local noundef i32 @main() #1 {
 define internal void @_Z15lambda.L11C39.0v(ptr noundef nonnull dereferenceable(8) %0) #2 {
   %captures = alloca ptr, align 8
   store ptr %0, ptr %captures, align 8
-  %2 = load volatile ptr, ptr %captures, align 8
-  %3 = load volatile i32, ptr %2, align 4
+  %2 = load ptr, ptr %captures, align 8
+  %3 = load i32, ptr %2, align 4
   %4 = add nsw i32 %3, 1
-  store volatile i32 %4, ptr %2, align 4
+  store i32 %4, ptr %2, align 4
   %5 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0)
   ret void
 }
@@ -71,14 +71,14 @@ define internal void @_Z15lambda.L15C39.0v(ptr noundef nonnull dereferenceable(8
   store ptr %0, ptr %captures, align 8
   %2 = load ptr, ptr %captures, align 8
   %i.addr = getelementptr inbounds nuw { ptr, ptr }, ptr %2, i32 0, i32 1
-  %3 = load volatile ptr, ptr %i.addr, align 8
-  %4 = load volatile i32, ptr %3, align 4
+  %3 = load ptr, ptr %i.addr, align 8
+  %4 = load i32, ptr %3, align 4
   %5 = add nsw i32 %4, 1
-  store volatile i32 %5, ptr %3, align 4
-  %6 = load volatile ptr, ptr %2, align 8
-  %7 = load volatile double, ptr %6, align 8
+  store i32 %5, ptr %3, align 4
+  %6 = load ptr, ptr %2, align 8
+  %7 = load double, ptr %6, align 8
   %8 = fadd double %7, 1.230000e+00
-  store volatile double %8, ptr %6, align 8
+  store double %8, ptr %6, align 8
   %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1)
   ret void
 }

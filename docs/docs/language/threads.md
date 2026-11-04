@@ -12,15 +12,15 @@ A simple worker thread can be spawned like this:
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread = Thread(p() [[async]] {
+    Thread thread = Thread(p() {
         // Do something
     });
     thread.run();
 }
 ```
 
-Please always add the `[[async]]` attribute to the thread routine. This will ensure, that the thread routine is executed in a
-thread-safe manner. The `run()` method will start the thread. The thread will run until the thread routine returns.
+The `run()` method will start the thread. The thread will run until the thread routine returns. State, that the thread
+routine shares with other threads, has to be protected, e.g. with a [mutex](#mutexes) or an `Atomic` from `std/os/atomic`.
 
 To join a thread to the main thread, use the `join()` method:
 
@@ -28,11 +28,11 @@ To join a thread to the main thread, use the `join()` method:
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread1 = Thread(p() [[async]] {
+    Thread thread1 = Thread(p() {
         // Do something
     });
     thread1.run();
-    Thread thread2 = Thread(p() [[async]] {
+    Thread thread2 = Thread(p() {
         // Do something
     });
     thread2.run();
@@ -49,10 +49,10 @@ To get the ID of the current thread (i.e. within the thread routine), you can ca
 import "std/os/thread";
 
 f<int> main() {
-    Thread thread1 = Thread(p() [[async]] {
+    Thread thread1 = Thread(p() {
         // Do something
     });
-    Thread thread2 = Thread(p() [[async]] {
+    Thread thread2 = Thread(p() {
         // Do something
     });
     thread2.run();
@@ -76,15 +76,15 @@ import "std/time/delay";
 f<int> main() {
     ThreadPool tp = ThreadPool(3s); // Create a thread pool with 3 worker threads
     // Enque tasks to the thread pool, that will run in parallel
-    tp.enqueue(p() [[async]] {
+    tp.enqueue(p() {
         delay(50);
         printf("Hello from task 1\n");
     });
-    tp.enqueue(p() [[async]] {
+    tp.enqueue(p() {
         delay(100);
         printf("Hello from task 2\n");
     });
-    tp.enqueue(p() [[async]] {
+    tp.enqueue(p() {
         delay(150);
         printf("Hello from task 3\n");
     });
@@ -169,7 +169,7 @@ type Counter struct {
 }
 
 p Counter.incrementMany(int n) {
-    p() worker = p() [[async]] {
+    p() worker = p() {
         for int i = 0; i < n; i++ {
             LockGuard _ = LockGuard(this.m);
             this.value++;
@@ -237,7 +237,7 @@ type Signal struct {
 }
 
 p Signal.run() {
-    p() waiter = p() [[async]] {
+    p() waiter = p() {
         LockGuard _ = LockGuard(this.m);
         while !this.ready { // re-check after every wakeup, since wakeups can be spurious
             this.changed.wait(this.m);
@@ -276,7 +276,7 @@ import "std/data/optional";
 f<int> main() {
     MessageQueue<int> mq;
 
-    Thread producer = Thread(p() [[async]] {
+    Thread producer = Thread(p() {
         for int i = 0; i < 10; i++ {
             mq.push(i);
         }

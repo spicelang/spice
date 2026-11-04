@@ -9,7 +9,6 @@
         {
           "codeLoc": "L7C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -18,7 +17,6 @@
         {
           "codeLoc": "L7C26",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "testString",
           "orderIndex": 1,
           "state": "initialized",
@@ -34,7 +32,6 @@
         {
           "codeLoc": "L1C26",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "mandatoryArg",
           "orderIndex": 1,
           "state": "initialized",
@@ -43,7 +40,6 @@
         {
           "codeLoc": "L1C44",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "optionalArg",
           "orderIndex": 2,
           "state": "initialized",
@@ -52,7 +48,6 @@
         {
           "codeLoc": "L1C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -68,7 +63,6 @@
         {
           "codeLoc": "L1C26",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "mandatoryArg",
           "orderIndex": 1,
           "state": "initialized",
@@ -77,7 +71,6 @@
         {
           "codeLoc": "L1C44",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "optionalArg",
           "orderIndex": 2,
           "state": "initialized",
@@ -86,7 +79,6 @@
         {
           "codeLoc": "L1C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -102,7 +94,6 @@
         {
           "codeLoc": "L13C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "res",
           "orderIndex": 1,
           "state": "initialized",
@@ -111,7 +102,6 @@
         {
           "codeLoc": "L12C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -124,7 +114,6 @@
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "calledFunction:L1C1",
       "orderIndex": 0,
       "state": "declared",
@@ -133,7 +122,6 @@
     {
       "codeLoc": "L7C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "calledFunction:L7C1",
       "orderIndex": 1,
       "state": "declared",
@@ -142,7 +130,6 @@
     {
       "codeLoc": "L12C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "main",
       "orderIndex": 2,
       "state": "declared",

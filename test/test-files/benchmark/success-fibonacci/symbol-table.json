@@ -23,7 +23,6 @@
         {
           "codeLoc": "L1C13",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "n",
           "orderIndex": 1,
           "state": "initialized",
@@ -32,7 +31,6 @@
         {
           "codeLoc": "L1C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -48,7 +46,6 @@
         {
           "codeLoc": "L6C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -61,7 +58,6 @@
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "fibo:L1C1",
       "orderIndex": 0,
       "state": "declared",
@@ -70,7 +66,6 @@
     {
       "codeLoc": "L6C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "main",
       "orderIndex": 1,
       "state": "declared",

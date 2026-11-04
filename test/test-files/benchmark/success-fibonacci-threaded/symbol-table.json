@@ -23,7 +23,6 @@
         {
           "codeLoc": "L3C12",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "n",
           "orderIndex": 1,
           "state": "initialized",
@@ -32,7 +31,6 @@
         {
           "codeLoc": "L3C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -69,7 +67,6 @@
                     {
                       "codeLoc": "L13C13",
                       "isGlobal": false,
-                      "isVolatile": false,
                       "name": "res",
                       "orderIndex": 0,
                       "state": "initialized",
@@ -83,7 +80,6 @@
                 {
                   "codeLoc": "L16C9",
                   "isGlobal": false,
-                  "isVolatile": false,
                   "name": "thread",
                   "orderIndex": 0,
                   "state": "initialized",
@@ -97,7 +93,6 @@
             {
               "codeLoc": "L11C9",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
               "state": "initialized",
@@ -128,7 +123,6 @@
                 {
                   "codeLoc": "L21C9",
                   "isGlobal": false,
-                  "isVolatile": false,
                   "name": "thread",
                   "orderIndex": 0,
                   "state": "initialized",
@@ -142,7 +136,6 @@
             {
               "codeLoc": "L20C9",
               "isGlobal": false,
-              "isVolatile": false,
               "name": "i",
               "orderIndex": 0,
               "state": "initialized",
@@ -156,7 +149,6 @@
         {
           "codeLoc": "L8C1",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "result",
           "orderIndex": 0,
           "state": "declared",
@@ -165,7 +157,6 @@
         {
           "codeLoc": "L9C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "threadCount",
           "orderIndex": 1,
           "state": "initialized",
@@ -174,7 +165,6 @@
         {
           "codeLoc": "L10C5",
           "isGlobal": false,
-          "isVolatile": false,
           "name": "threads",
           "orderIndex": 2,
           "state": "initialized",
@@ -187,7 +177,6 @@
     {
       "codeLoc": "L3C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "fib:L3C1",
       "orderIndex": 1,
       "state": "declared",
@@ -196,7 +185,6 @@
     {
       "codeLoc": "L8C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "main",
       "orderIndex": 2,
       "state": "declared",
@@ -205,7 +193,6 @@
     {
       "codeLoc": "L1C1",
       "isGlobal": true,
-      "isVolatile": false,
       "name": "std/os/thread",
       "orderIndex": 0,
       "state": "declared",

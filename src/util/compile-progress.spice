@@ -275,7 +275,7 @@ p CompileProgress.startHeartbeat() {
     this.heartbeatRunning = true;
     this.mutex.release();
     CompileProgress* progress = this;
-    this.heartbeatThreads.pushBack(Thread(p() [[async]] {
+    this.heartbeatThreads.pushBack(Thread(p() {
         progress.runHeartbeat();
     }));
     Thread& heartbeatThread = this.heartbeatThreads.back();

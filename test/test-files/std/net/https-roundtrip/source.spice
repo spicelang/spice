@@ -28,7 +28,7 @@ f<int> main() {
 
     ThreadPool pool = ThreadPool(2s);
 
-    pool.enqueue(p() [[async]] {
+    pool.enqueue(p() {
         HttpServer server = HttpServer(18446s);
         Result<bool> tlsConfigured = server.useTls("./https-test-cert.pem", "./https-test-key.pem");
         assert tlsConfigured.isOk();
@@ -53,7 +53,7 @@ f<int> main() {
         server.close();
     });
 
-    pool.enqueue(p() [[async]] {
+    pool.enqueue(p() {
         delay(500); // give the server time to bind its port and load the certificate
 
         // A client that connects but sends garbage instead of a TLS handshake must only fail its

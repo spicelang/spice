@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:3:25:
+Unknown attribute: Unknown attribute 'async'
+
+3  p() routine = p() [[async]] {
+                       ^^^^^

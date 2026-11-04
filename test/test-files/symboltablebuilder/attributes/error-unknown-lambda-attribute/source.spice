@@ -1,0 +1,7 @@
+// Lambda attributes are validated like all other attributes. 'async' was removed and is unknown now
+f<int> main() {
+    p() routine = p() [[async]] {
+        printf("Hello from the routine\n");
+    };
+    routine();
+}

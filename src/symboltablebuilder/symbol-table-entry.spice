@@ -28,7 +28,6 @@ public type SymbolTableEntry struct {
     public ASTNode* declNode
     public unsigned long orderIndex
     public bool global
-    public bool isVolatile = false
     public bool isParam = false
     public bool anonymous = false
     public bool used = false
@@ -161,8 +160,7 @@ public f<bool> SymbolTableEntry.isTypeDefinition() {
  *     "const": true,
  *     "signed": false
  *   ],
- *   "isGlobal": false,
- *   "isVolatile": false
+ *   "isGlobal": false
  * }
  *
  * @return Symbol table entry as a JSON object
@@ -175,5 +173,4 @@ public f<JsonValue*> SymbolTableEntry.toJSON() {
     setJsonField(result, String("orderIndex"), __new<JsonValue>(this.orderIndex));
     setJsonField(result, String("state"), __new<JsonValue>(String(this.lifecycle.getCurrentStateName())));
     setJsonField(result, String("isGlobal"), __new<JsonValue>(this.global));
-    setJsonField(result, String("isVolatile"), __new<JsonValue>(this.isVolatile));
 }
