@@ -1,0 +1,28 @@
+import "std/iterator/array-iterator";
+
+type Tracked struct {
+    int value
+}
+
+f<int> sum(Tracked[3]& values) {
+    int total = 0;
+    foreach Tracked item : values {
+        total += item.value;
+    }
+    return total;
+}
+
+f<int> sumConst(const int[4]& values) {
+    int total = 0;
+    foreach unsigned long idx, const int item : values {
+        total += item * cast<int>(idx + 1l);
+    }
+    return total;
+}
+
+f<int> main() {
+    Tracked[3] arr = [Tracked{1}, Tracked{2}, Tracked{3}];
+    printf("sum=%d\n", sum(arr));
+    int[4] ints = [1, 2, 3, 4];
+    printf("weighted=%d\n", sumConst(ints));
+}
