@@ -1,0 +1,17 @@
+public type S struct {
+    public int x
+}
+
+public p S.ctor() {
+    this.x = 1;
+}
+
+p S.ctor(const S& original) {
+    this.x = original.x + 1;
+}
+
+// The private copy ctor may still be called implicitly from within its own source file
+public f<int> copyAndGet(const S& original) {
+    S copy = original;
+    return copy.x;
+}

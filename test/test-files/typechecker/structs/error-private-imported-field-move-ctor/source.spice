@@ -1,0 +1,15 @@
+import "dep";
+
+type Outer struct {
+    dep::S inner
+}
+
+f<Outer> make() {
+    Outer o;
+    return o;
+}
+
+f<int> main() {
+    Outer b = make();
+    printf("%d\n", b.inner.x);
+}

@@ -1,0 +1,10 @@
+import "dep";
+
+p take(dep::S s) {
+    printf("%d\n", s.x);
+}
+
+f<int> main() {
+    dep::S a = dep::S();
+    take(a);
+}

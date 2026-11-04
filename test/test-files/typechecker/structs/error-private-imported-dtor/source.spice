@@ -1,0 +1,6 @@
+import "dep";
+
+f<int> main() {
+    dep::S a = dep::S();
+    printf("%d\n", a.x);
+}
