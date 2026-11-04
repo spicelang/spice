@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:5:5:
+Insufficient symbol visibility: Procedure 'p S.ctor(const S&)' is called implicitly here, but has insufficient visibility
+
+5  dep::S b = a;
+   ^^^^^^^^^^^^

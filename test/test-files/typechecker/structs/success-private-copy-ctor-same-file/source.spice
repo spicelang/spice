@@ -1,0 +1,6 @@
+import "dep";
+
+f<int> main() {
+    const dep::S s = dep::S();
+    printf("Copied value: %d\n", dep::copyAndGet(s));
+}

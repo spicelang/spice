@@ -285,7 +285,26 @@ f<Function*> TypeChecker.matchCopyCtor(const QualType& thisType, const ASTNode* 
     // The new instance being constructed is never const, regardless of whether the copy source (thisType) is const
     const QualType nonConstThisType = thisType.toNonConst();
     const QualTypeList noTemplateTypeHints;
-    return matchFunction(matchScope, String(CTOR_FUNCTION_NAME), nonConstThisType, args, noTemplateTypeHints, true, node);
+    Function* copyCtor = matchFunction(matchScope, String(CTOR_FUNCTION_NAME), nonConstThisType, args, noTemplateTypeHints, true, node);
+    this.ensureImplicitCallVisibility(copyCtor, node);
+    return copyCtor;
+}
+
+/**
+ * Check if a struct method, that is called implicitly (e.g. a copy ctor or dtor), is visible from the current source file.
+ * An imported method without public visibility cannot be called, so it is rejected here instead of failing at link time.
+ *
+ * @param method Implicitly called method, or nil if there is none
+ * @param node Current AST node
+ */
+p TypeChecker.ensureImplicitCallVisibility(const Function* method, const ASTNode* node) {
+    if method == nil<const Function*> { return; }
+    const SymbolTableEntry* methodEntry = method.entry;
+    const QualType methodEntryType = methodEntry.getQualType();
+    if !methodEntryType.isPublic() && methodEntry.scope.isImportedBy(this.rootScope) {
+        const String message = String("Procedure '") + method.getSignature() + "' is called implicitly here, but has insufficient visibility";
+        throwSemanticError(node, SemanticErrorType::INSUFFICIENT_VISIBILITY, message);
+    }
 }
 
 /**
@@ -3526,6 +3545,7 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
                 const ArgList noArgs;
                 const Function*& lhsDtorFct = node.lhsDtorFct.get(this.manIdx);
                 lhsDtorFct = this.implicitlyCallStructMethod(lhsSType, String(DTOR_FUNCTION_NAME), noArgs, baseNode);
+                this.ensureImplicitCallVisibility(lhsDtorFct, baseNode);
             }
         }
     } else if node.op == AssignOp::OP_PLUS_EQUAL {
@@ -7195,6 +7215,7 @@ p TypeChecker.createCtorBodyPreamble(const Scope* bodyScope) {
             const ArgList noArgs;
             const QualTypeList noTemplateTypeHints;
             const Function* spiceFunc = matchFunction(matchScope, String(CTOR_FUNCTION_NAME), fieldType, noArgs, noTemplateTypeHints, false, fieldNode);
+            this.ensureImplicitCallVisibility(spiceFunc, fieldNode);
             if spiceFunc != nil<const Function*> {
                 const QualType& ctorThisType = spiceFunc.thisType;
                 fieldSymbol.updateType(fieldType.getWithBodyScope(ctorThisType.getBodyScope()), true);
@@ -7238,6 +7259,7 @@ p TypeChecker.createCopyCtorBodyPreamble(const Scope* bodyScope) {
             args.pushBack(Pair<QualType, bool>(fieldType.toConstRef(fieldNode), false /* we always have the field as storage */));
             const QualTypeList noTemplateTypeHints;
             const Function* copyCtorFct = matchFunction(matchScope, String(CTOR_FUNCTION_NAME), fieldType, args, noTemplateTypeHints, false, fieldNode);
+            this.ensureImplicitCallVisibility(copyCtorFct, fieldNode);
             if copyCtorFct != nil<const Function*> {
                 const QualType& ctorThisType = copyCtorFct.thisType;
                 fieldSymbol.updateType(fieldType.getWithBodyScope(ctorThisType.getBodyScope()), true);
@@ -7278,6 +7300,7 @@ p TypeChecker.createMoveCtorBodyPreamble(const Scope* bodyScope) {
             // function as used, so do that explicitly to ensure the inner move ctor's body is actually emitted.
             Scope* matchScope = fieldType.getBodyScope();
             Function* moveCtorFct = findMoveCtor(matchScope);
+            this.ensureImplicitCallVisibility(moveCtorFct, fieldSymbol.declNode);
             if moveCtorFct != nil<Function*> {
                 moveCtorFct.used = true;
                 if moveCtorFct.entry != nil<SymbolTableEntry*> {
@@ -7327,7 +7350,8 @@ p TypeChecker.createDtorBodyPreamble(const Scope* bodyScope, const ASTNode* node
             Scope* matchScope = fieldType.getBodyScope();
             const ArgList noArgs;
             const QualTypeList noTemplateTypeHints;
-            matchFunction(matchScope, String(DTOR_FUNCTION_NAME), fieldType, noArgs, noTemplateTypeHints, false, fieldNode);
+            const Function* dtorFct = matchFunction(matchScope, String(DTOR_FUNCTION_NAME), fieldType, noArgs, noTemplateTypeHints, false, fieldNode);
+            this.ensureImplicitCallVisibility(dtorFct, fieldNode);
         }
     }
 
@@ -7408,7 +7432,9 @@ public f<Function*> TypeChecker.implicitlyCallStructCopyCtor(const QualType& thi
     args.pushBack(Pair<QualType, bool>(argType, false /* we always have an entry here */));
     // The new instance being constructed is never const, regardless of whether the copy source is const
     const QualType nonConstThisType = thisType.toNonConst();
-    return this.implicitlyCallStructMethod(nonConstThisType, String(CTOR_FUNCTION_NAME), args, node);
+    Function* copyCtor = this.implicitlyCallStructMethod(nonConstThisType, String(CTOR_FUNCTION_NAME), args, node);
+    this.ensureImplicitCallVisibility(copyCtor, node);
+    return copyCtor;
 }
 
 /**
@@ -7422,6 +7448,9 @@ p TypeChecker.implicitlyCallStructDtor(SymbolTableEntry* entry, ResourcesForMani
     // Add the dtor to the resources to clean up to call it later in codegen
     const ArgList noArgs;
     Function* dtor = this.implicitlyCallStructMethod(entry, String(DTOR_FUNCTION_NAME), noArgs, node);
+    // Report an invisible dtor at the declaration of the variable, since the dtor call has no code location of its own
+    const ASTNode* errorNode = entry.declNode != nil<ASTNode*> ? entry.declNode : node;
+    this.ensureImplicitCallVisibility(dtor, errorNode);
     if dtor != nil<Function*> {
         resources.dtorFunctionsToCall.pushBack(Pair<SymbolTableEntry*, Function*>(entry, dtor));
     }

@@ -138,3 +138,35 @@ p consume(Buffer buffer) {
 Structs without a copy constructor, whose fields are all trivially copyable (e.g. a struct holding a handle), are passed as
 bitwise copies instead. Those stay owned by the caller and are not destructed by the called function. Functions declared with
 `ext` never destruct their parameters, so the caller destructs the copies it passes to them.
+
+## Visibility
+
+Constructors and destructors follow the same visibility rules as other methods. A non-public constructor or destructor can only
+be called from the source file that defines it. This also applies to the calls, that the compiler inserts implicitly: copying
+a value of an imported struct requires a public copy constructor, and a local variable or field of an imported struct
+requires a public destructor, if the struct defines one. Otherwise, the compiler reports an insufficient visibility error.
+
+```spice
+// dep.spice
+public type S struct {
+    public int x
+}
+
+public p S.ctor() {
+    this.x = 1;
+}
+
+p S.ctor(const S& original) { // Non-public copy constructor
+    this.x = original.x;
+}
+```
+
+```spice
+// main.spice
+import "dep";
+
+f<int> main() {
+    dep::S a = dep::S();
+    dep::S b = a; // Error: the copy constructor of dep::S has insufficient visibility
+}
+```

@@ -1,0 +1,9 @@
+import "dep";
+
+p overwrite(dep::S& target, const dep::S& source) {
+    target = source;
+}
+
+f<int> main() {
+    printf("Hello\n");
+}

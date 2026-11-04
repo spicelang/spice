@@ -1,0 +1,10 @@
+import "dep";
+
+type Outer struct {
+    dep::S inner
+}
+
+f<int> main() {
+    Outer a;
+    printf("%d\n", a.inner.x);
+}

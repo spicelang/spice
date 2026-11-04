@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:4:5:
+Insufficient symbol visibility: Procedure 'p S.dtor()' is called implicitly here, but has insufficient visibility
+
+4  target = source;
+   ^^^^^^^^^^^^^^^
