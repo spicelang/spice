@@ -6,9 +6,3 @@ Missing return statement: Not all control paths of this function have a return s
 
 1  f<bool> isValid(int input = 12) {
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-[Error|Semantic] ./source.spice:6:20:
-Referenced undefined function: Function/procedure 'isValid()' could not be found
-
-6  bool isValid = isValid();
-                  ^^^^^^^^^

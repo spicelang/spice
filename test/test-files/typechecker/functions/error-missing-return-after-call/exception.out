@@ -1,0 +1,14 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:11:1:
+Missing return statement: Not all control paths of this function have a return statement
+
+11  f<int> parseDigit(char c) {
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:19:1:
+Missing return statement: Not all control paths of this function have a return statement
+
+19  f<int> checkedDiv(int a, int b) {
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

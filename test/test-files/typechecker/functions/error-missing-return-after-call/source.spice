@@ -1,0 +1,29 @@
+p log(string message) {
+    printf("%s\n", message);
+}
+
+#[core.compiler.noReturn = false]
+p fail(string message) {
+    printf("Error: %s\n", message);
+}
+
+// The called procedure returns, so the control flow reaches the end of the function
+f<int> parseDigit(char c) {
+    if c >= '0' && c <= '9' {
+        return cast<int>(c) - cast<int>('0');
+    }
+    log("Not a digit");
+}
+
+// Explicitly disabled noReturn attribute
+f<int> checkedDiv(int a, int b) {
+    if b != 0 {
+        return a / b;
+    }
+    fail("Division by zero");
+}
+
+f<int> main() {
+    printf("%d\n", parseDigit('4'));
+    printf("%d\n", checkedDiv(42, 6));
+}

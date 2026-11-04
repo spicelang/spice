@@ -823,6 +823,11 @@ f<Any> TypeChecker.checkFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* bas
         // Visit statements in new scope
         this.visit(fctDefBase.body);
 
+        // Check if all control paths in a function return. This happens after visiting the body, so that calls are resolved
+        if isFunction {
+            this.checkReturnsOnAllControlPaths(baseNode, "function");
+        }
+
         // Clear type mapping
         this.typeMapping.clear();
 
@@ -838,6 +843,24 @@ f<Any> TypeChecker.checkFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* bas
     this.manIdx = 0l; // Reset the manifestation index
 
     return Any();
+}
+
+/**
+ * Check if all control paths of a function or lambda function return. Statements are not marked as unreachable here, because
+ * that happens in advance, before the statements are visited
+ *
+ * @param baseNode AST node of the function or lambda function
+ * @param kind Kind of the function for the error message
+ * @return All control paths return or not
+ */
+#[ignoreUnusedReturnValue]
+f<bool> TypeChecker.checkReturnsOnAllControlPaths(ASTNode* baseNode, string kind) {
+    bool doSetPredecessorsUnreachable = false;
+    if baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx) {
+        return true;
+    }
+    this.softError(baseNode, SemanticErrorType::MISSING_RETURN_STMT, "Not all control paths of this " + kind + " have a return statement");
+    return false;
 }
 
 /**
@@ -1180,13 +1203,10 @@ f<Any> TypeChecker.prepareFctOrProcDef(ASTFctDefBaseNode* fctDefBase, ASTNode* b
         return Any();
     }
 
-    // Mark unreachable statements and check if all control paths in a function return
+    // Mark unreachable statements. Whether all control paths of a function return is checked in the check stage, because calls
+    // to functions, that never return, terminate the control flow as well and calls are not resolved yet
     bool doSetPredecessorsUnreachable = true;
-    const bool returnsOnAllControlPaths = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
-    if isFunction && !returnsOnAllControlPaths {
-        this.softError(baseNode, SemanticErrorType::MISSING_RETURN_STMT, String("Not all control paths of this function have a return statement"));
-        return Any();
-    }
+    const bool _ = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
 
     // Check if dtor and has params
     if !isFunction && fctDefBase.hasParams && fctDefBase.name.name == DTOR_FUNCTION_NAME {
@@ -5291,11 +5311,9 @@ public f<Any> TypeChecker.visitStructInstantiation(ASTStructInstantiationNode* n
 public f<Any> TypeChecker.visitLambdaFunc(ASTLambdaFuncNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
 
-    // Check if all control paths in the lambda body return
-    bool returnsOnAllControlPaths = true;
-    if !baseNode.returnsOnAllControlPaths(&returnsOnAllControlPaths, this.manIdx) {
-        return this.softErrorER(baseNode, SemanticErrorType::MISSING_RETURN_STMT, String("Not all control paths of this lambda function have a return statement"));
-    }
+    // Mark unreachable statements
+    bool doSetPredecessorsUnreachable = true;
+    const bool _ = baseNode.returnsOnAllControlPaths(&doSetPredecessorsUnreachable, this.manIdx);
 
     // Change to function scope
     Scope* bodyScope = this.currentScope.getChildScope(node.getScopeId());
@@ -5323,6 +5341,11 @@ public f<Any> TypeChecker.visitLambdaFunc(ASTLambdaFuncNode* node) {
 
     // Visit lambda body
     this.visit(node.body);
+
+    // Check if all control paths in the lambda body return. This happens after visiting the body, so that calls are resolved
+    if !this.checkReturnsOnAllControlPaths(baseNode, "lambda function") {
+        return unresolvedER();
+    }
 
     // Leave function body scope
     scopeHandle.leaveScopeEarly();
