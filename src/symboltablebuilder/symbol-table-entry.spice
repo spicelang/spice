@@ -130,6 +130,24 @@ public f<bool> SymbolTableEntry.isField() {
 }
 
 /**
+ * Check if this symbol names a type, e.g. a struct or an alias, instead of a value
+ *
+ * @return Type definition or not
+ */
+public f<bool> SymbolTableEntry.isTypeDefinition() {
+    if this.declNode == nil<ASTNode*> {
+        return false;
+    }
+    switch this.declNode.kind {
+        case ASTNodeKind::STRUCT_DEF, ASTNodeKind::INTERFACE_DEF, ASTNodeKind::UNION_DEF, ASTNodeKind::ENUM_DEF,
+             ASTNodeKind::GENERIC_TYPE_DEF, ASTNodeKind::ALIAS_DEF: {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Stringify the current symbol to a human-readable form. Used to dump whole symbol tables with their contents.
  * The returned heap-allocated JSON value is owned by the caller.
  *

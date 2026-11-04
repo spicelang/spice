@@ -1,0 +1,5 @@
+Inside procedure lambda: 1 live guard(s)
+After procedure lambda: 0 live guard(s)
+Generic ctor call: 42
+Captured struct: 42
+Live guards at the end: 0
