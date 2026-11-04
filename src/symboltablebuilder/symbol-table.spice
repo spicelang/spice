@@ -197,10 +197,11 @@ public f<SymbolTableEntry*> SymbolTable.lookup(const String& name) {
             return nil<SymbolTableEntry*>;
         }
 
-        // Check if this scope requires capturing and capture the variable if appropriate
+        // Check if this scope requires capturing and capture the variable if appropriate. Type names, e.g. of a struct whose
+        // ctor is called, have no value, so they are not captured
         const QualType entryType = entry.getQualType();
         const dyn captureSkip = [SuperType::TY_IMPORT, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
-        if this.capturingRequired && !this.captures.contains(name) && !entryType.isOneOf(captureSkip, len(captureSkip)) {
+        if this.capturingRequired && !this.captures.contains(name) && !entryType.isOneOf(captureSkip, len(captureSkip)) && !entry.isTypeDefinition() {
             // We need to make the symbol volatile if we are in an async scope and try to access a symbol that is not in an async scope
             entry.isVolatile = this.scope.isInAsyncScope() && !entry.scope.isInAsyncScope();
             // Add the capture to the current scope

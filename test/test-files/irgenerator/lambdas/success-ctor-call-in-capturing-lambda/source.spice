@@ -1,0 +1,60 @@
+// Calling a ctor inside a capturing lambda must not capture the struct type itself
+
+type T dyn;
+
+// Counts its live instances via a pointer, that is captured by the lambdas below
+type Guard struct {
+    int* counter
+}
+
+p Guard.ctor(int* counter) {
+    this.counter = counter;
+    unsafe { (*this.counter)++; }
+}
+
+p Guard.dtor() {
+    unsafe { (*this.counter)--; }
+}
+
+type Box<T> struct {
+    T value
+}
+
+p Box.ctor(T value) {
+    this.value = value;
+}
+
+f<T> Box.get() {
+    return this.value;
+}
+
+f<int> main() {
+    int liveGuards = 0;
+    int* counter = &liveGuards;
+    int offset = 5;
+
+    // Ctor call in a capturing procedure lambda
+    p() guarded = p() {
+        Guard guard = Guard(counter);
+        unsafe { printf("Inside procedure lambda: %d live guard(s)\n", *counter); }
+    };
+    guarded();
+    printf("After procedure lambda: %d live guard(s)\n", liveGuards);
+
+    // Ctor call of a generic struct in a capturing function lambda
+    f<int>(int) addOffset = f<int>(int value) {
+        Box<int> box = Box<int>(value + offset);
+        return box.get();
+    };
+    printf("Generic ctor call: %d\n", addOffset(37));
+
+    // Captured struct variable next to a ctor call of the same struct type
+    Box<int> outerBox = Box<int>(21);
+    f<int>() doubleIt = f<int>() {
+        Guard guard = Guard(counter);
+        Box<int> innerBox = Box<int>(outerBox.value);
+        return innerBox.get() * 2;
+    };
+    printf("Captured struct: %d\n", doubleIt());
+    printf("Live guards at the end: %d\n", liveGuards);
+}
