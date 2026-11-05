@@ -203,9 +203,11 @@ homebrew_casks:
       email: noreply@spicelang.com
     hooks:
       post:
-        install: |
-          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice"]
-          system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/spice-shaker"]
+        install_steps: |
+          on_macos do
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/spice"]
+            run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "{{ .StagedPath }}/spice-shaker"]
+          end
     caveats: |
       The Spice standard library is staged alongside the binary in the cask's
       staged path. If the compiler cannot locate it automatically, set:
