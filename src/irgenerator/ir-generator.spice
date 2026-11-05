@@ -2509,7 +2509,7 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
             // Call iterate() function from std/iterator/array-iterator
             const llvm::Function iterateFct = this.stdFunctionManager.getIterateFct(data.getIteratorFct);
             const QualType iterableType = this.getEvaluatedType(iteratorAssignNode);
-            const unsigned long arraySize = cast<unsigned long>(iterableType.getArraySize());
+            const unsigned long arraySize = cast<unsigned long>(iterableType.removeReferenceWrapper().getArraySize());
             assert arraySize > 0l;
             Vector<llvm::Value> args;
             args.pushBack(iterablePtr);
