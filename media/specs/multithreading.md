@@ -16,8 +16,8 @@
 - [x] Add thread pools (`ThreadPool` in `std/os/thread-pool`)
 - [x] Add tests for the feature
 - [ ] Implement variable volatility
-- [ ] Add support for pipes (paused due to the work on generics)
-- [ ] Add `stash` and `pick` builtin
+- [x] Add message queues (`MessageQueue<T>` in `std/os/message-queue`)
+- [x] Add tests for the feature
 - [x] Add documentation (`docs/docs/language/threads.md`)
 
 ## Syntax
@@ -150,13 +150,26 @@ Other `ThreadPool` methods: `pause()`/`resume()` to temporarily stop/continue di
 `stop()` to let workers finish their current job and then exit, and `getRunningJobCount()`/`getQueuedJobCount()`/
 `getWorkerThreadCount()` for introspection.
 
-### Communication between threads (requires generics) — not yet implemented
-_Inspired by Goroutines and Channels from the Go programming language_
+### Communication between threads
+Spice provides a `MessageQueue<T>` type (`std/os/message-queue`) for passing values between threads. It is a FIFO
+queue, guarded by an internal mutex, so any number of producer and consumer threads can push and pop concurrently.
+`push()` never blocks, `pop()` blocks until a value is available. `tryPop()` is the non-blocking variant.
 
-For communication between threads, a `Pipe<T>` type is planned. A pipe would act as a temporary buffer queue for one
-or multiple values, pushed via a `stash(Pipe<any>, any)` builtin and received via a `pick(Pipe<any>)` builtin, which
-would block until a value is available. This depends on generics support and has not been started yet; no `Pipe`
-type, nor `stash`/`pick` builtins, currently exist in the language or standard library.
+Producers call `close()` to signal the end of the stream. After that, `push()` panics, while consumers keep draining the
+remaining values and get an empty `Optional` once the queue has run dry.
+
+```spice
+import "std/os/message-queue";
+import "std/data/optional";
+
+f<int> main() {
+    MessageQueue<int> mq;
+    mq.push(1);
+    mq.close();
+    Optional<int> item = mq.pop(); // 1
+    Optional<int> drained = mq.pop(); // empty, since the queue is closed and drained
+}
+```
 
 ### Reference points in the implementation
 
@@ -165,5 +178,7 @@ type, nor `stash`/`pick` builtins, currently exist in the language or standard l
 - `Mutex` / `LockGuard`: [std/os/mutex.spice](https://github.com/spicelang/spice/blob/main/std/os/mutex.spice)
 - User-facing documentation: [docs/docs/language/threads.md](https://github.com/spicelang/spice/blob/main/docs/docs/language/threads.md)
 - Tests for thread pools: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/thread-pool)
+- `MessageQueue<T>`: [std/os/message-queue.spice](https://github.com/spicelang/spice/blob/main/std/os/message-queue.spice)
+- Tests for message queues: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/message-queue)
 - Tests for mutexes: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/mutex)
 - Fully fledged functional test using `Thread` directly: [here](https://github.com/spicelang/spice/tree/main/test/test-files/benchmark/success-fibonacci-threaded)
