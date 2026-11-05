@@ -1,0 +1,142 @@
+// TEST: --sanitizer=address
+
+// A ctor, that starts with a call to another ctor of the same struct ('this.ctor(...)'), must leave the construction of
+// the fields to the called ctor. Constructing them in both ctors would overwrite the first instances without destructing
+// them, leaking their resources.
+
+ext f<heap byte*> malloc(unsigned long);
+ext p free(heap byte*);
+
+// Field type, that owns a heap allocation and reports its lifecycle
+type Resource struct {
+    heap byte* data
+}
+
+p Resource.ctor() {
+    this.data = malloc(16l);
+    printf("Resource.ctor\n");
+}
+
+p Resource.ctor(const Resource& _other) {
+    this.data = malloc(16l);
+    printf("Resource.ctor (copy)\n");
+}
+
+p Resource.dtor() {
+    free(this.data);
+    printf("Resource.dtor\n");
+}
+
+// Overloads, that delegate to each other, possibly over multiple steps
+type Holder struct {
+    Resource resource
+    unsigned long size = 7l
+    bool flag = false
+}
+
+p Holder.ctor(unsigned long size = 0l) {
+    this.size = size;
+}
+
+p Holder.ctor(unsigned int size) {
+    this.ctor(cast<unsigned long>(size));
+}
+
+p Holder.ctor(unsigned int size, bool flag) {
+    this.ctor(size);
+    this.flag = flag;
+}
+
+p Holder.ctor(const Holder& original) {
+    this.ctor(original.size + 1l);
+}
+
+// Generic struct, that delegates like the std containers do
+type T dyn;
+
+type Container<T> struct {
+    Resource resource
+    T value
+}
+
+p Container.ctor(const T& value) {
+    this.value = value;
+}
+
+p Container.ctor(const T& value, unsigned int times) {
+    this.ctor(value);
+    for unsigned int i = 1; i < times; i++ {
+        this.value += value;
+    }
+}
+
+// Struct with a vtable. The called ctor stores the vtable pointer
+type Shape interface {
+    f<int> getArea();
+}
+
+type Square struct : Shape {
+    Resource resource
+    int side
+}
+
+p Square.ctor(int side) {
+    this.side = side;
+}
+
+p Square.ctor() {
+    this.ctor(3);
+}
+
+f<int> Square.getArea() {
+    return this.side * this.side;
+}
+
+// A delegating call, that is not the first statement, is not affected
+type Late struct {
+    int value = 1
+}
+
+p Late.ctor(int value) {
+    this.value = value;
+}
+
+p Late.ctor() {
+    printf("Late value before delegation: %d\n", this.value);
+    this.ctor(5);
+}
+
+f<int> main() {
+    printf("-- Single delegation\n");
+    {
+        Holder holder = Holder(4);
+        printf("size = %d, flag = %d\n", holder.size, holder.flag);
+    }
+    printf("-- Chained delegation\n");
+    {
+        Holder holder = Holder(2, true);
+        printf("size = %d, flag = %d\n", holder.size, holder.flag);
+    }
+    printf("-- Delegating copy ctor\n");
+    {
+        Holder original = Holder(1l);
+        Holder copy = Holder(original);
+        printf("size = %d\n", copy.size);
+    }
+    printf("-- Generic struct\n");
+    {
+        Container<int> container = Container<int>(5, 3);
+        printf("value = %d\n", container.value);
+    }
+    printf("-- Struct with vtable\n");
+    {
+        Square square = Square();
+        Shape* shape = &square;
+        printf("area = %d\n", shape.getArea());
+    }
+    printf("-- Delegation, that is not the first statement\n");
+    {
+        Late late = Late();
+        printf("Late value after delegation: %d\n", late.value);
+    }
+}

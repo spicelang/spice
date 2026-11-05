@@ -71,6 +71,18 @@ f<int> main() {
 }
 ```
 
+A constructor can delegate to another constructor of the same struct, by starting its body with a `this.ctor(...)` call:
+
+```spice
+p Vec2.ctor(double xy) {
+    this.ctor(xy, xy); // delegates to the two-arg constructor
+}
+```
+
+The called constructor then initializes the fields, i.e. it calls the constructors of struct fields and stores the
+default field values. The delegating constructor does not do this itself, so every field is constructed exactly once.
+If the `this.ctor(...)` call is not the first statement, the fields are initialized by both constructors.
+
 ## Copy constructors
 
 When a struct value is copied (passed by value, returned by value, or assigned), Spice calls the *copy constructor*

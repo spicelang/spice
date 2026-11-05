@@ -2569,6 +2569,42 @@ public f<bool> isDirectFieldOfThis(const ASTNode* node) {
 }
 
 /**
+ * Check if a ctor body starts with a call to another ctor of the same struct (e.g. 'this.ctor(...)'). Such a ctor
+ * delegates the initialization of the fields to the called ctor.
+ *
+ * @param body Body of the ctor
+ * @return Starts with a delegating ctor call or not
+ */
+public f<bool> startsWithDelegatingCtorCall(IVisitable* body) {
+    const ASTStmtLstNode* stmtLst = downcast<ASTStmtLstNode>(getASTNode(body));
+    if stmtLst.statements.isEmpty() {
+        return false;
+    }
+    const ASTNode* stmtNode = getASTNode(stmtLst.statements.front());
+    if stmtNode.kind != ASTNodeKind::EXPR_STMT {
+        return false;
+    }
+    const ASTNode* exprNode = getASTNode(downcast<ASTExprStmtNode>(stmtNode).expr);
+    if exprNode.kind != ASTNodeKind::ATOMIC_EXPR {
+        return false;
+    }
+    const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(exprNode);
+    if atomicExpr.value == nil<IVisitable*> {
+        return false;
+    }
+    const ASTValueNode* value = downcast<ASTValueNode>(getASTNode(atomicExpr.value));
+    if value.fctCall == nil<IVisitable*> {
+        return false;
+    }
+    const ASTFctCallNode* fctCall = downcast<ASTFctCallNode>(getASTNode(value.fctCall));
+    if fctCall.isExprBasedCall() {
+        return false;
+    }
+    const Vector<String>& fragments = fctCall.functionNameFragments;
+    return fragments.getSize() == 2l && fragments.get(0l) == THIS_VARIABLE_NAME && fragments.get(1l) == CTOR_FUNCTION_NAME;
+}
+
+/**
  * Get the concrete node of an AST node
  *
  * @param node AST node, which must be of the given concrete node type

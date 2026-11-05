@@ -1,0 +1,25 @@
+-- Single delegation
+Resource.ctor
+size = 4, flag = 0
+Resource.dtor
+-- Chained delegation
+Resource.ctor
+size = 2, flag = 1
+Resource.dtor
+-- Delegating copy ctor
+Resource.ctor
+Resource.ctor
+size = 2
+Resource.dtor
+Resource.dtor
+-- Generic struct
+Resource.ctor
+value = 15
+Resource.dtor
+-- Struct with vtable
+Resource.ctor
+area = 9
+Resource.dtor
+-- Delegation, that is not the first statement
+Late value before delegation: 1
+Late value after delegation: 5
