@@ -1,29 +1,29 @@
 -- Single delegation
-Resource.ctor
+-- LifetimeObject 1 was created (ctor)
 size = 4, flag = 0
-Resource.dtor
+-- LifetimeObject 1 (dtor)
 -- Chained delegation
-Resource.ctor
+-- LifetimeObject 2 was created (ctor)
 size = 2, flag = 1
-Resource.dtor
+-- LifetimeObject 2 (dtor)
 -- Delegating copy ctor
-Resource.ctor
-Resource.ctor
+-- LifetimeObject 3 was created (ctor)
+-- LifetimeObject 4 was created (ctor)
 size = 2
-Resource.dtor
-Resource.dtor
+-- LifetimeObject 4 (dtor)
+-- LifetimeObject 3 (dtor)
 -- Generic struct
-Resource.ctor
+-- LifetimeObject 5 was created (ctor)
 value = 15
-Resource.dtor
+-- LifetimeObject 5 (dtor)
 -- Struct with vtable
-Resource.ctor
+-- LifetimeObject 6 was created (ctor)
 area = 9
-Resource.dtor
+-- LifetimeObject 6 (dtor)
 -- Parenthesized delegation
-Resource.ctor
+-- LifetimeObject 7 was created (ctor)
 value = 6
-Resource.dtor
+-- LifetimeObject 7 (dtor)
 -- Delegation, whose arguments access this
 value = 5
 -- Delegation, that is not the first statement

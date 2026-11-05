@@ -1,35 +1,13 @@
-// TEST: --sanitizer=address
+import "std/test/lifetime-object";
 
 // A ctor, that starts with a call to another ctor of the same struct ('this.ctor(...)'), must leave the construction of
 // the fields to the called ctor. Constructing them in both ctors would overwrite the first instances without destructing
-// them, leaking their resources.
-
-ext f<heap byte*> malloc(unsigned long);
-ext p free(heap byte*);
-
-// Field type, that owns a heap allocation and reports its lifecycle
-type Resource struct {
-    heap byte* data
-}
-
-p Resource.ctor() {
-    this.data = malloc(16l);
-    printf("Resource.ctor\n");
-}
-
-p Resource.ctor(const Resource& _other) {
-    this.data = malloc(16l);
-    printf("Resource.ctor (copy)\n");
-}
-
-p Resource.dtor() {
-    free(this.data);
-    printf("Resource.dtor\n");
-}
+// them. The LifetimeObject fields log every construction and destruction, so each field must be constructed and
+// destructed exactly once.
 
 // Overloads, that delegate to each other, possibly over multiple steps
 type Holder struct {
-    Resource resource
+    LifetimeObject lifetimeObject
     unsigned long size = 7l
     bool flag = false
 }
@@ -55,7 +33,7 @@ p Holder.ctor(const Holder& original) {
 type T dyn;
 
 type Container<T> struct {
-    Resource resource
+    LifetimeObject lifetimeObject
     T value
 }
 
@@ -76,7 +54,7 @@ type Shape interface {
 }
 
 type Square struct : Shape {
-    Resource resource
+    LifetimeObject lifetimeObject
     int side
 }
 
@@ -94,7 +72,7 @@ f<int> Square.getArea() {
 
 // A parenthesized delegating call delegates as well
 type Wrapped struct {
-    Resource resource
+    LifetimeObject lifetimeObject
     int value
 }
 
