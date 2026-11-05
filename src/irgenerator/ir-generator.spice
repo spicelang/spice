@@ -4430,6 +4430,12 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
 
             // Get address of the referenced variable / struct instance
             thisPtr = this.getAddress(firstFragEntry);
+            // Inside a lambda, the address of a by-reference capture is the capture slot, which holds the address of the
+            // captured variable. Load it to get the address of the struct instance itself
+            const Capture* capture = this.currentScope.symbolTable.lookupCapture(firstFragEntry.name);
+            if capture != nil<const Capture*> && capture.capturedSymbol == firstFragEntry && capture.getMode() == CapturePassMode::BY_REFERENCE {
+                thisPtr = this.insertLoad(this.builder.getPtrTy(), thisPtr);
+            }
 
             // Auto de-reference 'this' pointer
             QualType firstFragmentType = firstFragEntry.getQualType();
