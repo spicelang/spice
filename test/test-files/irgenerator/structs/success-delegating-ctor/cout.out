@@ -20,6 +20,12 @@ Resource.dtor
 Resource.ctor
 area = 9
 Resource.dtor
+-- Parenthesized delegation
+Resource.ctor
+value = 6
+Resource.dtor
+-- Delegation, whose arguments access this
+value = 5
 -- Delegation, that is not the first statement
 Late value before delegation: 1
 Late value after delegation: 5

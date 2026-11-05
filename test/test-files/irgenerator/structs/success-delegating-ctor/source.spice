@@ -92,6 +92,37 @@ f<int> Square.getArea() {
     return this.side * this.side;
 }
 
+// A parenthesized delegating call delegates as well
+type Wrapped struct {
+    Resource resource
+    int value
+}
+
+p Wrapped.ctor(int value) {
+    this.value = value;
+}
+
+p Wrapped.ctor() {
+    (this.ctor(6));
+}
+
+// A delegating call, whose arguments access 'this', reads the fields initialized by the delegating ctor
+type ReadsOwnField struct {
+    int value = 4
+}
+
+p ReadsOwnField.ctor(int value) {
+    this.value = value;
+}
+
+p ReadsOwnField.ctor() {
+    this.ctor(this.value + this.getOffset());
+}
+
+f<int> ReadsOwnField.getOffset() {
+    return 1;
+}
+
 // A delegating call, that is not the first statement, is not affected
 type Late struct {
     int value = 1
@@ -133,6 +164,16 @@ f<int> main() {
         Square square = Square();
         Shape* shape = &square;
         printf("area = %d\n", shape.getArea());
+    }
+    printf("-- Parenthesized delegation\n");
+    {
+        Wrapped wrapped = Wrapped();
+        printf("value = %d\n", wrapped.value);
+    }
+    printf("-- Delegation, whose arguments access this\n");
+    {
+        ReadsOwnField readsOwnField = ReadsOwnField();
+        printf("value = %d\n", readsOwnField.value);
     }
     printf("-- Delegation, that is not the first statement\n");
     {

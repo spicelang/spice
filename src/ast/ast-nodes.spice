@@ -2569,8 +2569,33 @@ public f<bool> isDirectFieldOfThis(const ASTNode* node) {
 }
 
 /**
+ * Check if an AST subtree accesses 'this', e.g. via 'this.field' or 'this.method()'
+ *
+ * @param node Root of the subtree
+ * @return Accesses 'this' or not
+ */
+f<bool> accessesThis(const ASTNode* node) {
+    if node.kind == ASTNodeKind::ATOMIC_EXPR && downcast<ASTAtomicExprNode>(node).fqIdentifier == THIS_VARIABLE_NAME {
+        return true;
+    }
+    if node.kind == ASTNodeKind::FCT_CALL {
+        const Vector<String>& fragments = downcast<ASTFctCallNode>(node).functionNameFragments;
+        if !fragments.isEmpty() && fragments.front() == THIS_VARIABLE_NAME {
+            return true;
+        }
+    }
+    foreach const ASTNode* child : node.children {
+        if accessesThis(child) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
  * Check if a ctor body starts with a call to another ctor of the same struct (e.g. 'this.ctor(...)'). Such a ctor
- * delegates the initialization of the fields to the called ctor.
+ * delegates the initialization of the fields to the called ctor. A call, whose arguments access 'this', does not count,
+ * because the arguments would read the fields before any ctor has initialized them.
  *
  * @param body Body of the ctor
  * @return Starts with a delegating ctor call or not
@@ -2589,6 +2614,14 @@ public f<bool> startsWithDelegatingCtorCall(IVisitable* body) {
         return false;
     }
     const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(exprNode);
+    // Unwrap parentheses, e.g. '(this.ctor(...));'
+    while atomicExpr.assignExpr != nil<IVisitable*> {
+        const ASTNode* innerNode = getASTNode(atomicExpr.assignExpr);
+        if innerNode.kind != ASTNodeKind::ATOMIC_EXPR {
+            return false;
+        }
+        atomicExpr = downcast<ASTAtomicExprNode>(innerNode);
+    }
     if atomicExpr.value == nil<IVisitable*> {
         return false;
     }
@@ -2601,7 +2634,10 @@ public f<bool> startsWithDelegatingCtorCall(IVisitable* body) {
         return false;
     }
     const Vector<String>& fragments = fctCall.functionNameFragments;
-    return fragments.getSize() == 2l && fragments.get(0l) == THIS_VARIABLE_NAME && fragments.get(1l) == CTOR_FUNCTION_NAME;
+    if fragments.getSize() != 2l || fragments.get(0l) != THIS_VARIABLE_NAME || fragments.get(1l) != CTOR_FUNCTION_NAME {
+        return false;
+    }
+    return fctCall.argLst == nil<ASTArgLstNode*> || !accessesThis(&fctCall.argLst.node);
 }
 
 /**

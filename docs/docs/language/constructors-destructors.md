@@ -81,7 +81,8 @@ p Vec2.ctor(double xy) {
 
 The called constructor then initializes the fields, i.e. it calls the constructors of struct fields and stores the
 default field values. The delegating constructor does not do this itself, so every field is constructed exactly once.
-If the `this.ctor(...)` call is not the first statement, the fields are initialized by both constructors.
+If the `this.ctor(...)` call is not the first statement, or its arguments access `this` (e.g. `this.ctor(this.size)`),
+the fields are initialized by both constructors.
 
 ## Copy constructors
 
