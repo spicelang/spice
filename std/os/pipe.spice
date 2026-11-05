@@ -1,0 +1,214 @@
+import "std/data/queue";
+import "std/data/optional";
+import "std/os/mutex";
+
+// Generic type definition
+type T dyn;
+
+/**
+ * A thread-safe, bounded channel for passing values between threads, inspired by Go channels.
+ *
+ * A pipe holds up to `capacity` values. `send()` blocks while the pipe is full and `receive()` blocks while it is
+ * empty, so a pipe also applies back pressure to producers that are faster than their consumers. A pipe with a
+ * capacity of 0 is unbuffered: `send()` blocks until a receiver has taken the value, so sender and receiver meet at
+ * the hand-over.
+ *
+ * Once `close()` has been called, `send()` panics and blocked senders and receivers wake up. Receivers keep
+ * draining any values that are still in the pipe and get an empty `Optional` only once it has run dry. This makes
+ * `close()` + receive-until-empty a safe way for producers to signal the end of the stream to consumers.
+ *
+ * For an unbounded queue, where producers never block, use `MessageQueue<T>` from `std/os/message-queue` instead.
+ */
+public type Pipe<T> struct {
+    Queue<T> buffer
+    unsigned long capacity = 0l
+    Mutex mutex
+    ConditionVariable itemAvailable  // Notified on send and on close
+    ConditionVariable spaceAvailable // Notified on receive and on close
+    bool closed = false
+    // Number of values ever put into / taken from the buffer. As the buffer is FIFO, the n-th sent value is
+    // taken by the n-th receive, which lets a sender on an unbuffered pipe find out when its value was taken
+    unsigned long sentCount = 0l
+    unsigned long receivedCount = 0l
+    unsigned long waitingReceivers = 0l
+}
+
+/**
+ * Construct an empty, open pipe
+ *
+ * @param capacity Maximum number of values the pipe can hold. 0 creates an unbuffered pipe
+ */
+public p Pipe.ctor(unsigned long capacity = 0l) {
+    this.capacity = capacity;
+}
+
+/**
+ * Construct an empty, open pipe
+ *
+ * @param capacity Maximum number of values the pipe can hold. 0 creates an unbuffered pipe
+ */
+public p Pipe.ctor(unsigned int capacity) {
+    // Do not delegate to the other ctor, as this would construct the mutex and condition variables a second time
+    this.capacity = cast<unsigned long>(capacity);
+}
+
+/**
+ * Send a value through the pipe. Blocks while the pipe is full. On an unbuffered pipe, this blocks until a receiver
+ * has taken the value, or the pipe got closed. Safe to call from multiple threads concurrently.
+ * Panics, if the pipe is closed.
+ *
+ * @param item Value to send
+ */
+public p Pipe.send(const T& item) {
+    LockGuard _ = LockGuard(this.mutex);
+    // An unbuffered pipe still parks the value of one sender in the buffer, until a receiver takes it
+    const unsigned long slotCount = this.capacity == 0l ? 1l : this.capacity;
+    // Re-check after every wakeup, since a wakeup can be spurious or another sender could have taken the space
+    while this.buffer.getSize() >= slotCount && !this.closed {
+        this.spaceAvailable.wait(this.mutex);
+    }
+    if this.closed { panic(Error("Pipe: cannot send to a closed pipe")); }
+    this.enqueue(item);
+    if this.capacity == 0l {
+        // Wait for the hand-over. If the pipe gets closed meanwhile, the value stays in the buffer to be drained
+        const unsigned long ticket = this.sentCount;
+        while this.receivedCount < ticket && !this.closed {
+            this.spaceAvailable.wait(this.mutex);
+        }
+    }
+}
+
+/**
+ * Send a value through the pipe without blocking. On an unbuffered pipe, this only succeeds if a receiver is
+ * waiting for a value.
+ *
+ * @param item Value to send
+ * @return True if the value was sent, false if the pipe is full or closed
+ */
+#[ignoreUnusedReturnValue]
+public f<bool> Pipe.trySend(const T& item) {
+    LockGuard _ = LockGuard(this.mutex);
+    if this.closed { return false; }
+    if this.capacity == 0l {
+        // Only hand the value over, if there is a waiting receiver, that is not already claimed by a buffered value
+        if this.waitingReceivers <= this.buffer.getSize() { return false; }
+    } else if this.buffer.getSize() >= this.capacity {
+        return false;
+    }
+    this.enqueue(item);
+    return true;
+}
+
+/**
+ * Receive the next value from the pipe, blocking until one becomes available. If the pipe is closed while waiting,
+ * this drains any remaining values first and only then returns an empty Optional instead of blocking forever.
+ *
+ * @return The next value, or an empty Optional if the pipe was closed and is now drained
+ */
+#[ignoreUnusedReturnValue]
+public f<Optional<T>> Pipe.receive() {
+    LockGuard _ = LockGuard(this.mutex);
+    this.waitingReceivers++;
+    // Re-check after every wakeup, since a wakeup can be spurious or another receiver could have taken the value
+    while this.buffer.isEmpty() && !this.closed {
+        this.itemAvailable.wait(this.mutex);
+    }
+    this.waitingReceivers--;
+    result = Optional<T>();
+    if !this.buffer.isEmpty() {
+        result.set(this.dequeue());
+    }
+}
+
+/**
+ * Receive the next value from the pipe without blocking. On an unbuffered pipe, this takes the value of a blocked
+ * sender, if there is one.
+ *
+ * @return The next value, or an empty Optional if the pipe is currently empty
+ */
+public f<Optional<T>> Pipe.tryReceive() {
+    LockGuard _ = LockGuard(this.mutex);
+    result = Optional<T>();
+    if !this.buffer.isEmpty() {
+        result.set(this.dequeue());
+    }
+}
+
+/**
+ * Close the pipe. After this call, `send()` panics and `trySend()` returns false. `receive()` and `tryReceive()`
+ * keep returning any values that were sent before the close, then start reporting an empty Optional once drained.
+ */
+public p Pipe.close() {
+    LockGuard _ = LockGuard(this.mutex);
+    this.closed = true;
+    // Wake up all blocked senders and receivers, so that they can observe the close
+    this.itemAvailable.notifyAll();
+    this.spaceAvailable.notifyAll();
+}
+
+/**
+ * Check whether the pipe has been closed via `close()`
+ *
+ * @return Closed or not closed
+ */
+public f<bool> Pipe.isClosed() {
+    LockGuard _ = LockGuard(this.mutex);
+    return this.closed;
+}
+
+/**
+ * Check whether the pipe currently holds no values
+ *
+ * @return Empty or not empty
+ */
+public f<bool> Pipe.isEmpty() {
+    LockGuard _ = LockGuard(this.mutex);
+    return this.buffer.isEmpty();
+}
+
+/**
+ * Retrieve the number of values, that are currently in the pipe
+ *
+ * @return Current number of values
+ */
+public f<unsigned long> Pipe.getSize() {
+    LockGuard _ = LockGuard(this.mutex);
+    return this.buffer.getSize();
+}
+
+/**
+ * Retrieve the maximum number of values the pipe can hold. 0 means, that the pipe is unbuffered
+ *
+ * @return Capacity of the pipe
+ */
+public f<unsigned long> Pipe.getCapacity() {
+    return this.capacity;
+}
+
+/**
+ * Put a value into the buffer and wake up a receiver. The calling thread must hold the mutex.
+ *
+ * @param item Value to put into the buffer
+ */
+p Pipe.enqueue(const T& item) {
+    this.buffer.push(item);
+    this.sentCount++;
+    this.itemAvailable.notifyOne();
+}
+
+/**
+ * Take the next value from the buffer and wake up senders. The calling thread must hold the mutex.
+ *
+ * @return Next value
+ */
+f<T> Pipe.dequeue() {
+    result = this.buffer.pop();
+    this.receivedCount++;
+    if this.capacity == 0l {
+        // Senders, that wait for space and senders, that wait for the hand-over of their value, share the condition
+        // variable. Wake up all of them, so that the sender, whose value was taken, is not missed
+        this.spaceAvailable.notifyAll();
+    } else {
+        this.spaceAvailable.notifyOne();
+    }
+}

@@ -1,0 +1,5 @@
+Single-threaded smoke tests passed!
+received count = 20000, received sum = 50010000
+Unbuffered hand-over tests passed!
+unbuffered count = 8000, unbuffered sum = 8004000
+All assertions passed!

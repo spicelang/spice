@@ -1,0 +1,203 @@
+import "std/os/pipe";
+import "std/os/thread";
+import "std/os/mutex";
+import "std/data/optional";
+import "std/data/vector";
+
+const int PRODUCER_COUNT = 4;
+const int CONSUMER_COUNT = 3;
+const int ITEMS_PER_PRODUCER = 5000;
+const unsigned long BUFFERED_CAPACITY = 4l;
+const int UNBUFFERED_ITEMS = 2000;
+
+// Shared state for the concurrent tests. Bundling the pipes + counters into a struct lets the thread routines capture a
+// single `this` pointer. The counters are guarded by a mutex, since they are updated by multiple consumers.
+type Shared struct {
+    Pipe<int> buffered = Pipe<int>(BUFFERED_CAPACITY)
+    Pipe<int> unbuffered
+    Pipe<int> unbufferedConcurrent
+    Mutex countersMutex
+    long receivedSum = 0l
+    long receivedCount = 0l
+    long unbufferedSum = 0l
+    long unbufferedCount = 0l
+    bool capacityExceeded = false
+    bool orderViolated = false
+    bool handOverMissed = false
+}
+
+// Many producers and consumers on a buffered pipe. Lost or duplicated values would break the totals
+p Shared.runBuffered() {
+    p() producer = p() {
+        for int i = 0; i < ITEMS_PER_PRODUCER; i++ {
+            this.buffered.send(i + 1);
+            // Senders block while the pipe is full, so it never holds more values than its capacity
+            if this.buffered.getSize() > BUFFERED_CAPACITY {
+                LockGuard _ = LockGuard(this.countersMutex);
+                this.capacityExceeded = true;
+            }
+        }
+    };
+    p() consumer = p() {
+        while true {
+            Optional<int> item = this.buffered.receive();
+            if !item.isPresent() { break; }
+            LockGuard _ = LockGuard(this.countersMutex);
+            this.receivedSum += cast<long>(item.get());
+            this.receivedCount++;
+        }
+    };
+
+    Vector<Thread> consumers;
+    for int i = 0; i < CONSUMER_COUNT; i++ {
+        consumers.pushBack(Thread(consumer));
+        Thread& consumerThread = consumers.back();
+        consumerThread.run();
+    }
+    Vector<Thread> producers;
+    for int i = 0; i < PRODUCER_COUNT; i++ {
+        producers.pushBack(Thread(producer));
+        Thread& producerThread = producers.back();
+        producerThread.run();
+    }
+
+    // Once every producer is done, closing the pipe lets the consumers drain the rest and return
+    foreach const Thread& t : producers { t.join(); }
+    this.buffered.close();
+    foreach const Thread& t : consumers { t.join(); }
+}
+
+// One producer and one consumer on an unbuffered pipe. Every send waits for the hand-over to the consumer
+p Shared.runUnbuffered() {
+    Thread producer = Thread(p() {
+        for int i = 0; i < UNBUFFERED_ITEMS; i++ {
+            this.unbuffered.send(i);
+            // The value was taken by the consumer, before send returned
+            if !this.unbuffered.isEmpty() { this.handOverMissed = true; }
+        }
+        this.unbuffered.close();
+    });
+    Thread consumer = Thread(p() {
+        int expected = 0;
+        while true {
+            Optional<int> item = this.unbuffered.receive();
+            if !item.isPresent() { break; }
+            if item.get() != expected { this.orderViolated = true; }
+            expected++;
+        }
+    });
+    consumer.run();
+    producer.run();
+    producer.join();
+    consumer.join();
+}
+
+// Many producers and consumers on an unbuffered pipe. Senders, that wait for space and senders, that wait for the
+// hand-over, share a condition variable. A missed wakeup would deadlock and lost or duplicated values break the totals
+p Shared.runUnbufferedConcurrent() {
+    p() producer = p() {
+        for int i = 0; i < UNBUFFERED_ITEMS; i++ {
+            this.unbufferedConcurrent.send(i + 1);
+        }
+    };
+    p() consumer = p() {
+        while true {
+            Optional<int> item = this.unbufferedConcurrent.receive();
+            if !item.isPresent() { break; }
+            LockGuard _ = LockGuard(this.countersMutex);
+            this.unbufferedSum += cast<long>(item.get());
+            this.unbufferedCount++;
+        }
+    };
+
+    Vector<Thread> consumers;
+    for int i = 0; i < CONSUMER_COUNT; i++ {
+        consumers.pushBack(Thread(consumer));
+        Thread& consumerThread = consumers.back();
+        consumerThread.run();
+    }
+    Vector<Thread> producers;
+    for int i = 0; i < PRODUCER_COUNT; i++ {
+        producers.pushBack(Thread(producer));
+        Thread& producerThread = producers.back();
+        producerThread.run();
+    }
+
+    foreach const Thread& t : producers { t.join(); }
+    this.unbufferedConcurrent.close();
+    foreach const Thread& t : consumers { t.join(); }
+}
+
+f<int> main() {
+    // Single-threaded smoke test on a buffered pipe
+    Pipe<int> pipe = Pipe<int>(2);
+    assert pipe.getCapacity() == 2l;
+    assert pipe.isEmpty();
+    assert pipe.getSize() == 0l;
+    assert !pipe.isClosed();
+
+    // trySend fills the pipe up to its capacity and reports a full pipe instead of blocking
+    assert pipe.trySend(1);
+    pipe.send(2);
+    assert pipe.getSize() == 2l;
+    assert !pipe.trySend(3);
+    assert pipe.getSize() == 2l;
+
+    // tryReceive and receive both dequeue in FIFO order
+    Optional<int> a = pipe.tryReceive();
+    assert a.isPresent() && a.get() == 1;
+    Optional<int> b = pipe.receive();
+    assert b.isPresent() && b.get() == 2;
+    Optional<int> empty = pipe.tryReceive();
+    assert !empty.isPresent();
+
+    pipe.send(42);
+    pipe.close();
+    assert pipe.isClosed();
+    // A closed pipe rejects new values...
+    assert !pipe.trySend(43);
+    // ...but still hands out values that were sent before the close...
+    Optional<int> afterClose = pipe.receive();
+    assert afterClose.isPresent() && afterClose.get() == 42;
+    // ...and only reports empty once fully drained, without blocking
+    Optional<int> drained = pipe.receive();
+    assert !drained.isPresent();
+    Optional<int> drainedTry = pipe.tryReceive();
+    assert !drainedTry.isPresent();
+
+    // An unbuffered pipe only accepts a value without blocking, if a receiver is waiting
+    Pipe<int> unbuffered;
+    assert unbuffered.getCapacity() == 0l;
+    assert !unbuffered.trySend(1);
+    assert unbuffered.isEmpty();
+    Optional<int> nothing = unbuffered.tryReceive();
+    assert !nothing.isPresent();
+
+    printf("Single-threaded smoke tests passed!\n");
+
+    Shared s;
+    s.runBuffered();
+    const long expectedCount = cast<long>(PRODUCER_COUNT) * cast<long>(ITEMS_PER_PRODUCER);
+    const long sumPerProducer = cast<long>(ITEMS_PER_PRODUCER) * cast<long>(ITEMS_PER_PRODUCER + 1) / 2l;
+    const long expectedSum = cast<long>(PRODUCER_COUNT) * sumPerProducer;
+    assert s.buffered.isEmpty();
+    assert !s.capacityExceeded;
+    assert s.receivedCount == expectedCount;
+    assert s.receivedSum == expectedSum;
+    printf("received count = %lld, received sum = %lld\n", s.receivedCount, s.receivedSum);
+
+    s.runUnbuffered();
+    assert !s.orderViolated;
+    assert !s.handOverMissed;
+    printf("Unbuffered hand-over tests passed!\n");
+
+    s.runUnbufferedConcurrent();
+    const long expectedUnbufferedCount = cast<long>(PRODUCER_COUNT) * cast<long>(UNBUFFERED_ITEMS);
+    const long unbufferedSumPerProducer = cast<long>(UNBUFFERED_ITEMS) * cast<long>(UNBUFFERED_ITEMS + 1) / 2l;
+    assert s.unbufferedConcurrent.isEmpty();
+    assert s.unbufferedCount == expectedUnbufferedCount;
+    assert s.unbufferedSum == cast<long>(PRODUCER_COUNT) * unbufferedSumPerProducer;
+    printf("unbuffered count = %lld, unbuffered sum = %lld\n", s.unbufferedCount, s.unbufferedSum);
+
+    printf("All assertions passed!\n");
+}

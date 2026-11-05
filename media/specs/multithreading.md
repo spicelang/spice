@@ -16,7 +16,8 @@
 - [x] Add thread pools (`ThreadPool` in `std/os/thread-pool`)
 - [x] Add tests for the feature
 - [ ] Implement variable volatility
-- [ ] Add support for pipes (paused due to the work on generics)
+- [x] Add support for pipes (`Pipe<T>` in `std/os/pipe`)
+- [x] Add tests for the feature
 - [ ] Add `stash` and `pick` builtin
 - [x] Add documentation (`docs/docs/language/threads.md`)
 
@@ -150,13 +151,29 @@ Other `ThreadPool` methods: `pause()`/`resume()` to temporarily stop/continue di
 `stop()` to let workers finish their current job and then exit, and `getRunningJobCount()`/`getQueuedJobCount()`/
 `getWorkerThreadCount()` for introspection.
 
-### Communication between threads (requires generics) — not yet implemented
+### Communication between threads
 _Inspired by Goroutines and Channels from the Go programming language_
 
-For communication between threads, a `Pipe<T>` type is planned. A pipe would act as a temporary buffer queue for one
-or multiple values, pushed via a `stash(Pipe<any>, any)` builtin and received via a `pick(Pipe<any>)` builtin, which
-would block until a value is available. This depends on generics support and has not been started yet; no `Pipe`
-type, nor `stash`/`pick` builtins, currently exist in the language or standard library.
+Two std types pass values between threads. Both are FIFO, guarded by an internal mutex and can be closed by producers
+to signal the end of the stream: after `close()`, consumers keep draining the remaining values and get an empty
+`Optional` once the stream has run dry.
+
+- `MessageQueue<T>` (`std/os/message-queue`) is unbounded: `push()` never blocks, `pop()` blocks while it is empty.
+- `Pipe<T>` (`std/os/pipe`) is a bounded channel: `send()` blocks while the pipe holds `capacity` values, `receive()`
+  blocks while it is empty. `trySend()`/`tryReceive()` are the non-blocking variants. A pipe with a capacity of 0 is
+  unbuffered: `send()` blocks until a receiver has taken the value. To find out when that happened, the pipe counts the
+  sent and received values. Since the buffer is FIFO, the n-th sent value is taken by the n-th receive.
+
+```spice
+import "std/os/pipe";
+
+Pipe<int> pipe = Pipe<int>(4);
+pipe.send(1);
+Optional<int> item = pipe.receive();
+```
+
+The `stash(pipe, value)` and `pick(pipe)` builtins of the original design are not implemented. They would be thin
+syntax on top of `Pipe.send()` and `Pipe.receive()`.
 
 ### Reference points in the implementation
 
@@ -165,5 +182,8 @@ type, nor `stash`/`pick` builtins, currently exist in the language or standard l
 - `Mutex` / `LockGuard`: [std/os/mutex.spice](https://github.com/spicelang/spice/blob/main/std/os/mutex.spice)
 - User-facing documentation: [docs/docs/language/threads.md](https://github.com/spicelang/spice/blob/main/docs/docs/language/threads.md)
 - Tests for thread pools: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/thread-pool)
+- `Pipe<T>`: [std/os/pipe.spice](https://github.com/spicelang/spice/blob/main/std/os/pipe.spice)
+- `MessageQueue<T>`: [std/os/message-queue.spice](https://github.com/spicelang/spice/blob/main/std/os/message-queue.spice)
+- Tests for pipes: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/pipe)
 - Tests for mutexes: [here](https://github.com/spicelang/spice/tree/main/test/test-files/std/os/mutex)
 - Fully fledged functional test using `Thread` directly: [here](https://github.com/spicelang/spice/tree/main/test/test-files/benchmark/success-fibonacci-threaded)

@@ -299,3 +299,43 @@ returns any items that were queued before the close, and only reports an empty `
 been fully drained — so consumers never have to guess when producers are done. Pushing to a closed queue panics.
 If you don't want to block, use `tryPop()` instead, which returns immediately with an empty `Optional` if the
 queue has no items right now. `isEmpty()` and `getSize()` report the current state of the queue.
+## Pipes
+
+The `std/os/pipe` module provides a `Pipe<T>` type, a bounded channel inspired by Go channels. Unlike a
+`MessageQueue<T>`, a pipe holds at most a fixed number of values: `send()` blocks while the pipe is full, so fast
+producers are slowed down to the pace of their consumers, and `receive()` blocks while it is empty.
+
+```spice
+import "std/os/pipe";
+import "std/os/thread";
+import "std/data/optional";
+
+f<int> main() {
+    Pipe<int> pipe = Pipe<int>(4); // holds up to 4 values
+
+    Thread producer = Thread(p() {
+        for int i = 0; i < 10; i++ {
+            pipe.send(i); // blocks while the pipe is full
+        }
+        pipe.close(); // signal that no more values will arrive
+    });
+    producer.run();
+
+    while true {
+        Optional<int> item = pipe.receive(); // blocks until a value is available or the pipe is closed
+        if !item.isPresent() { break; }
+        printf("Received: %d\n", item.get());
+    }
+
+    producer.join();
+}
+```
+
+A pipe, that is created without a capacity (`Pipe<int> pipe;`), is unbuffered: `send()` blocks until a receiver has
+taken the value, so sender and receiver meet at the hand-over.
+
+Closing works like for message queues: after `close()`, `receive()` still returns the values that were sent before
+the close and reports an empty `Optional` once the pipe is drained. Sending to a closed pipe panics. The non-blocking
+variants `trySend()` and `tryReceive()` return immediately: `trySend()` returns `false` if the pipe is full or closed
+(on an unbuffered pipe, if no receiver is waiting), `tryReceive()` returns an empty `Optional` if the pipe is empty.
+`isEmpty()`, `getSize()`, `getCapacity()` and `isClosed()` report the current state of the pipe.
