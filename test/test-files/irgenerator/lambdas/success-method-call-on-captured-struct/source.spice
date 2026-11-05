@@ -1,0 +1,32 @@
+import "std/data/vector";
+
+type Holder struct {
+    Vector<int> items
+}
+
+f<int> main() {
+    // Read a single captured struct via a method call
+    Vector<int> nums;
+    nums.pushBack(7);
+    f<long>() readIt = f<long>() { return cast<long>(nums.getSize()); };
+    printf("read: %d\n", readIt());
+
+    // Mutate a single captured struct via a method call. Structs are captured by reference
+    Vector<int> values;
+    p(int) add = p(int value) { values.pushBack(value); };
+    add(1);
+    add(2);
+    printf("mutate: %d %d %d\n", values.getSize(), values.get(0), values.get(1));
+
+    // Method call on a captured struct next to other captures
+    int offset = 10;
+    f<int>(unsigned long) getWithOffset = f<int>(unsigned long idx) { return values.get(idx) + offset; };
+    printf("multiple captures: %d\n", getWithOffset(1l));
+
+    // Method call on a field of a captured struct
+    Holder holder;
+    p(int) addToHolder = p(int value) { holder.items.pushBack(value); };
+    addToHolder(3);
+    addToHolder(4);
+    printf("nested: %d %d\n", holder.items.getSize(), holder.items.get(1));
+}
