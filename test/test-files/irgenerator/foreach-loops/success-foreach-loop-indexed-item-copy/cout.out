@@ -1,0 +1,7 @@
+item 0: 99
+item 1: 100
+item 2: 101
+array: 1 2 3
+ints: 10 20 30
+vector: 4 5
+vector by ref: 104 105

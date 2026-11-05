@@ -982,8 +982,8 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         // Only adopt the temporary's storage directly (temp stealing) unless it is a phi merging two independently
         // materialized pointers (e.g. a ternary whose branches each own their own storage). Lifetime markers require
         // their operand to be a real alloca, so stealing such a phi here would emit an invalid llvm.lifetime.end
-        // under --sanitizer=address. Any other pointer (a plain alloca, or one derived from it via GEP/load, as in
-        // the foreach-loop item extraction below) denotes a single, stable piece of storage and is safe to adopt.
+        // under --sanitizer=address. Any other pointer (a plain alloca, or one derived from it via GEP/load)
+        // denotes a single, stable piece of storage and is safe to adopt.
         // The temporary's ownership fully transfers to lhsEntry either way (its underlying storage is never
         // separately destructed), so falling back to a shallow copy into a dedicated alloca is exactly as correct,
         // just gives up the pointer-adoption optimization for the phi case.
@@ -995,9 +995,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
             this.diGenerator.generateLocalVarDebugInfo(lhsEntry.name, rhsAddress);
             return rhs;
         }
-        // Size the copy off lhsEntry's own type, not rhsSType: some callers (e.g. the foreach-loop item
-        // extraction below) pass a struct rhsSType only to steer this branch, while rhs itself resolves (through
-        // refPtr indirection) to a differently-typed value; lhsEntry's type is always the authoritative one here.
+        // Size the copy off lhsEntry's own type, not rhsSType: lhsEntry's type is always the authoritative one here.
         const QualType& lhsQualType = lhsEntry.getQualType();
         const llvm::Value lhsAddr = this.insertAlloca(lhsQualType);
         this.updateAddress(lhsEntry, lhsAddr);
@@ -2473,6 +2471,15 @@ public f<Any> IRGenerator.visitForLoop(ASTForLoopNode* node) {
     return Any();
 }
 
+f<QualType> getForeachItemRefType(const ForeachLoopData& data, bool hasIdx) {
+    if !hasIdx {
+        return data.getFct.returnType;
+    }
+    const QualTypeList pairTemplateTypes = data.getIdxFct.returnType.getTemplateTypes();
+    assert pairTemplateTypes.getSize() == 2l;
+    return pairTemplateTypes.get(1l);
+}
+
 public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     // Create blocks
     const String codeLine = node.codeLoc.toPrettyLine();
@@ -2550,7 +2557,11 @@ public f<Any> IRGenerator.visitForeachLoop(ASTForeachLoopNode* node) {
     } else {
         assert data.getFct != nil<model::Function*>;
     }
-    const QualType itemRefSTy = hasIdx ? data.getIdxFct.returnType : data.getFct.returnType;
+    // For the indexed variant, getIdx() returns a Pair<unsigned long, T&>, so the item reference type is the second template
+    // type of the pair. Using the reference type (and not the pair struct type) makes doAssignment copy the item instead of
+    // adopting the element storage as a temporary, which would let the item alias the iterated element
+    const QualType itemRefSTy = getForeachItemRefType(data, hasIdx);
+    assert itemRefSTy.isRef();
 
     // Visit idx variable declaration if required
     const SymbolTableEntry* idxEntry = nil<const SymbolTableEntry*>;

@@ -32,9 +32,11 @@ foreach.body.L5:                                  ; preds = %foreach.head.L5
   store i64 %6, ptr %index, align 8
   %item.addr = getelementptr inbounds nuw %struct.Pair, ptr %2, i32 0, i32 1
   %7 = load ptr, ptr %item.addr, align 8
-  %8 = load i64, ptr %index, align 8
-  %9 = load i32, ptr %7, align 4
-  %10 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %8, i32 noundef %9)
+  %8 = load i32, ptr %7, align 4
+  store i32 %8, ptr %item, align 4
+  %9 = load i64, ptr %index, align 8
+  %10 = load i32, ptr %item, align 4
+  %11 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i64 noundef %9, i32 noundef %10)
   br label %foreach.tail.L5
 
 foreach.tail.L5:                                  ; preds = %foreach.body.L5

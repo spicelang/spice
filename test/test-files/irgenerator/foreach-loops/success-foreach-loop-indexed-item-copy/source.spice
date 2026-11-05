@@ -1,0 +1,38 @@
+import "std/data/vector";
+import "std/iterator/array-iterator";
+
+type Tracked struct {
+    int value
+}
+
+f<int> main() {
+    // By-value struct item over an array
+    Tracked[3] arr = [Tracked{1}, Tracked{2}, Tracked{3}];
+    foreach unsigned long idx, Tracked item : arr {
+        item.value = 99 + cast<int>(idx);
+        printf("item %d: %d\n", idx, item.value);
+    }
+    printf("array: %d %d %d\n", arr[0].value, arr[1].value, arr[2].value);
+
+    // By-value primitive item over an array
+    int[3] ints = [10, 20, 30];
+    foreach unsigned long idx, int item : ints {
+        item = -1;
+    }
+    printf("ints: %d %d %d\n", ints[0], ints[1], ints[2]);
+
+    // By-value struct item over a vector
+    Vector<Tracked> vec;
+    vec.pushBack(Tracked{4});
+    vec.pushBack(Tracked{5});
+    foreach unsigned long idx, Tracked item : vec {
+        item.value = 0;
+    }
+    printf("vector: %d %d\n", vec.get(0).value, vec.get(1).value);
+
+    // Reference item still writes through to the element
+    foreach unsigned long idx, Tracked& item : vec {
+        item.value += 100;
+    }
+    printf("vector by ref: %d %d\n", vec.get(0).value, vec.get(1).value);
+}
