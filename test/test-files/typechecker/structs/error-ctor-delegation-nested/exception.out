@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:11:9:
+Invalid ctor delegation: A ctor can only call another ctor of the same struct as its first statement
+
+11  this.ctor(5);
+    ^^^^^^^^^^^^

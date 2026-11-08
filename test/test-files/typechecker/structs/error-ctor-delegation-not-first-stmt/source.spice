@@ -1,0 +1,17 @@
+type Late struct {
+    int value = 1
+}
+
+p Late.ctor(int value) {
+    this.value = value;
+}
+
+p Late.ctor() {
+    printf("Value before delegation: %d\n", this.value);
+    this.ctor(5);
+}
+
+f<int> main() {
+    Late late = Late();
+    printf("Value: %d\n", late.value);
+}
