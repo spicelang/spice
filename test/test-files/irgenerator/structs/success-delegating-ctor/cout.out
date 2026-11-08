@@ -1,0 +1,31 @@
+-- Single delegation
+-- LifetimeObject 1 was created (ctor)
+size = 4, flag = 0
+-- LifetimeObject 1 (dtor)
+-- Chained delegation
+-- LifetimeObject 2 was created (ctor)
+size = 2, flag = 1
+-- LifetimeObject 2 (dtor)
+-- Delegating copy ctor
+-- LifetimeObject 3 was created (ctor)
+-- LifetimeObject 4 was created (ctor)
+size = 2
+-- LifetimeObject 4 (dtor)
+-- LifetimeObject 3 (dtor)
+-- Generic struct
+-- LifetimeObject 5 was created (ctor)
+value = 15
+-- LifetimeObject 5 (dtor)
+-- Struct with vtable
+-- LifetimeObject 6 was created (ctor)
+area = 9
+-- LifetimeObject 6 (dtor)
+-- Parenthesized delegation
+-- LifetimeObject 7 was created (ctor)
+value = 6
+-- LifetimeObject 7 (dtor)
+-- Delegation, whose arguments access this
+value = 5
+-- Delegation, that is not the first statement
+Late value before delegation: 1
+Late value after delegation: 5

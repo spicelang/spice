@@ -1976,10 +1976,14 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
             }
         }
 
-        // Generate special ctor preamble before generating the body to store VTable, default field values, etc. if required
+        // Generate special ctor preamble before generating the body to store VTable, default field values, etc. if required.
+        // A ctor, that starts with a call to another ctor of the same struct, leaves this to the called ctor. Otherwise, the
+        // fields would be constructed twice, leaking the resources of the first instances
         if isCtor {
             this.isInCtorBody = true;
-            this.generateCtorBodyPreamble(this.currentScope);
+            if !startsWithDelegatingCtorCall(node.body) {
+                this.generateCtorBodyPreamble(this.currentScope);
+            }
         }
 
         // Visit function body
