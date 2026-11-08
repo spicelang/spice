@@ -4590,9 +4590,43 @@ public f<Any> TypeChecker.visitConstant(ASTConstantNode* node) {
     return Any(ExprResult{node.node.setEvaluatedSymbolType(constantType, this.manIdx), nil<SymbolTableEntry*>});
 }
 
+/**
+ * Check a call of another ctor of the same struct (e.g. 'this.ctor(...)') inside a ctor. Such a call delegates the
+ * initialization of the fields to the called ctor, so it must be the first statement of the ctor body. Otherwise, the
+ * fields would be initialized by both ctors. The args of the call must not access 'this', because they would read the
+ * fields before any ctor has initialized them.
+ *
+ * @param node Call of a ctor on 'this'
+ * @return Valid delegation or not
+ */
+f<bool> TypeChecker.checkCtorDelegation(ASTFctCallNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    // Search the enclosing ctor. A ctor call on 'this' in a lambda does not reach here, because a lambda body is no ctor body
+    ASTNode* ctorNode = baseNode.parent;
+    while ctorNode.kind != ASTNodeKind::PROC_DEF {
+        ctorNode = ctorNode.parent;
+        assert ctorNode != nil<ASTNode*>;
+    }
+    const ASTProcDefNode* ctorDef = downcast<ASTProcDefNode>(ctorNode);
+    if getLeadingCtorCall(ctorDef.body) != node {
+        this.softError(baseNode, SemanticErrorType::INVALID_CTOR_DELEGATION, String("A ctor can only call another ctor of the same struct as its first statement"));
+        return false;
+    }
+    if argsAccessThis(node) {
+        this.softError(baseNode, SemanticErrorType::INVALID_CTOR_DELEGATION, String("The args of a delegating ctor call must not access 'this'"));
+        return false;
+    }
+    return true;
+}
+
 public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     ASTNode* baseNode = cast<ASTNode*>(node);
     FctCallData& data = node.data.get(this.manIdx);
+
+    // Check if a call of another ctor of the same struct inside a ctor is a valid delegation
+    if isCtorCallOnThis(node) && this.currentScope.isInCtorBody() {
+        if !this.checkCtorDelegation(node) { return unresolvedER(); }
+    }
 
     // Visit the receiver of a method call on an expression or the callee of a call of an expression. It is evaluated
     // before the args

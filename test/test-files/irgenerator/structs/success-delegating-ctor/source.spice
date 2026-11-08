@@ -84,37 +84,6 @@ p Wrapped.ctor() {
     (this.ctor(6));
 }
 
-// A delegating call, whose arguments access 'this', reads the fields initialized by the delegating ctor
-type ReadsOwnField struct {
-    int value = 4
-}
-
-p ReadsOwnField.ctor(int value) {
-    this.value = value;
-}
-
-p ReadsOwnField.ctor() {
-    this.ctor(this.value + this.getOffset());
-}
-
-f<int> ReadsOwnField.getOffset() {
-    return 1;
-}
-
-// A delegating call, that is not the first statement, is not affected
-type Late struct {
-    int value = 1
-}
-
-p Late.ctor(int value) {
-    this.value = value;
-}
-
-p Late.ctor() {
-    printf("Late value before delegation: %d\n", this.value);
-    this.ctor(5);
-}
-
 f<int> main() {
     printf("-- Single delegation\n");
     {
@@ -147,15 +116,5 @@ f<int> main() {
     {
         Wrapped wrapped = Wrapped();
         printf("value = %d\n", wrapped.value);
-    }
-    printf("-- Delegation, whose arguments access this\n");
-    {
-        ReadsOwnField readsOwnField = ReadsOwnField();
-        printf("value = %d\n", readsOwnField.value);
-    }
-    printf("-- Delegation, that is not the first statement\n");
-    {
-        Late late = Late();
-        printf("Late value after delegation: %d\n", late.value);
     }
 }

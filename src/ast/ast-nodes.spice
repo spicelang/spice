@@ -2593,51 +2593,67 @@ f<bool> accessesThis(const ASTNode* node) {
 }
 
 /**
- * Check if a ctor body starts with a call to another ctor of the same struct (e.g. 'this.ctor(...)'). Such a ctor
- * delegates the initialization of the fields to the called ctor. A call, whose arguments access 'this', does not count,
- * because the arguments would read the fields before any ctor has initialized them.
+ * Check if a function call calls another ctor of the same struct (e.g. 'this.ctor(...)')
+ *
+ * @param fctCall Function call
+ * @return Call of a ctor on 'this' or not
+ */
+public f<bool> isCtorCallOnThis(const ASTFctCallNode* fctCall) {
+    if fctCall.isExprBasedCall() {
+        return false;
+    }
+    const Vector<String>& fragments = fctCall.functionNameFragments;
+    return fragments.getSize() == 2l && fragments.get(0l) == THIS_VARIABLE_NAME && fragments.get(1l) == CTOR_FUNCTION_NAME;
+}
+
+/**
+ * Check if the args of a function call access 'this'
+ *
+ * @param fctCall Function call
+ * @return Args access 'this' or not
+ */
+public f<bool> argsAccessThis(const ASTFctCallNode* fctCall) {
+    return fctCall.argLst != nil<ASTArgLstNode*> && accessesThis(&fctCall.argLst.node);
+}
+
+/**
+ * Get the call to another ctor of the same struct (e.g. 'this.ctor(...)'), that is the first statement of a ctor body.
+ * Such a ctor delegates the initialization of the fields to the called ctor.
  *
  * @param body Body of the ctor
- * @return Starts with a delegating ctor call or not
+ * @return Leading ctor call or nil if the body does not start with one
  */
-public f<bool> startsWithDelegatingCtorCall(IVisitable* body) {
+public f<const ASTFctCallNode*> getLeadingCtorCall(IVisitable* body) {
     const ASTStmtLstNode* stmtLst = downcast<ASTStmtLstNode>(getASTNode(body));
     if stmtLst.statements.isEmpty() {
-        return false;
+        return nil<const ASTFctCallNode*>;
     }
     const ASTNode* stmtNode = getASTNode(stmtLst.statements.front());
     if stmtNode.kind != ASTNodeKind::EXPR_STMT {
-        return false;
+        return nil<const ASTFctCallNode*>;
     }
     const ASTNode* exprNode = getASTNode(downcast<ASTExprStmtNode>(stmtNode).expr);
     if exprNode.kind != ASTNodeKind::ATOMIC_EXPR {
-        return false;
+        return nil<const ASTFctCallNode*>;
     }
     const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(exprNode);
     // Unwrap parentheses, e.g. '(this.ctor(...));'
     while atomicExpr.assignExpr != nil<IVisitable*> {
         const ASTNode* innerNode = getASTNode(atomicExpr.assignExpr);
         if innerNode.kind != ASTNodeKind::ATOMIC_EXPR {
-            return false;
+            return nil<const ASTFctCallNode*>;
         }
         atomicExpr = downcast<ASTAtomicExprNode>(innerNode);
     }
     if atomicExpr.value == nil<IVisitable*> {
-        return false;
+        return nil<const ASTFctCallNode*>;
     }
     const ASTValueNode* value = downcast<ASTValueNode>(getASTNode(atomicExpr.value));
     if value.fctCall == nil<IVisitable*> {
-        return false;
+        return nil<const ASTFctCallNode*>;
     }
     const ASTFctCallNode* fctCall = downcast<ASTFctCallNode>(getASTNode(value.fctCall));
-    if fctCall.isExprBasedCall() {
-        return false;
-    }
-    const Vector<String>& fragments = fctCall.functionNameFragments;
-    if fragments.getSize() != 2l || fragments.get(0l) != THIS_VARIABLE_NAME || fragments.get(1l) != CTOR_FUNCTION_NAME {
-        return false;
-    }
-    return fctCall.argLst == nil<ASTArgLstNode*> || !accessesThis(&fctCall.argLst.node);
+    return isCtorCallOnThis(fctCall) ? fctCall : nil<const ASTFctCallNode*>;
 }
 
 /**

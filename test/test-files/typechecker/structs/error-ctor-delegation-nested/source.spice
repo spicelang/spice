@@ -1,0 +1,18 @@
+type Nested struct {
+    int value = 1
+}
+
+p Nested.ctor(int value) {
+    this.value = value;
+}
+
+p Nested.ctor(bool flag) {
+    if flag {
+        this.ctor(5);
+    }
+}
+
+f<int> main() {
+    Nested nested = Nested(true);
+    printf("Value: %d\n", nested.value);
+}

@@ -24,8 +24,3 @@ area = 9
 -- LifetimeObject 7 was created (ctor)
 value = 6
 -- LifetimeObject 7 (dtor)
--- Delegation, whose arguments access this
-value = 5
--- Delegation, that is not the first statement
-Late value before delegation: 1
-Late value after delegation: 5

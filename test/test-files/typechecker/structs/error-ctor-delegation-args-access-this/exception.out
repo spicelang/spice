@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:10:5:
+Invalid ctor delegation: The args of a delegating ctor call must not access 'this'
+
+10  this.ctor(this.value + 1);
+    ^^^^^^^^^^^^^^^^^^^^^^^^^

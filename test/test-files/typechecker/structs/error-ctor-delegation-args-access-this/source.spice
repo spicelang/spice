@@ -1,0 +1,16 @@
+type ReadsOwnField struct {
+    int value = 4
+}
+
+p ReadsOwnField.ctor(int value) {
+    this.value = value;
+}
+
+p ReadsOwnField.ctor() {
+    this.ctor(this.value + 1);
+}
+
+f<int> main() {
+    ReadsOwnField readsOwnField = ReadsOwnField();
+    printf("Value: %d\n", readsOwnField.value);
+}
