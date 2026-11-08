@@ -24,28 +24,27 @@ You can apply following options to the `install` subcommand:
 
 | Option       | Long                      | Description                                                                                    |
 |--------------|---------------------------|------------------------------------------------------------------------------------------------|
-| `-d`         | `--debug-output`          | Print compiler output for debugging.                                                           |
-| `-q`         | `--quiet`                 | Do not show the compile progress bar.                                                          |
-| `-ast`       | `--dump-ast`              | Dump AST as serialized string and SVG image                                                    |
-| -            | `--dump-symtab`           | Dump serialized symbol tables                                                                  |
-| -            | `--dump-types`            | Dump all used types                                                                            |
-| -            | `--dump-cache-stats`      | Dump stats for compiler-internal lookup caches                                                 |
-| `-ir`        | `--dump-ir`               | Dump LLVM-IR                                                                                   |
-| `-s`, `-asm` | `--dump-assembly`         | Dump Assembly code                                                                             |
-| -            | `--dump-object-file`      | Dump object files                                                                              |
-| -            | `--dump-dependency-graph` | Dump compile unit dependency graph                                                             |
-| -            | `--dump-stats`            | Write compile statistics (stage times, peak memory usage, counters) as JSON to the given file.                                              |
-| `-d`         | `--debug-output`          | Print compiler output for debugging.                                                           |
-| `-j <n>`     | `--jobs <n>`              | Set number of jobs to parallelize compilation (Default is auto)                                |
-| `-o`         | `--output`                | Set path for executable output.                                                                |
-| `-O<n>`      | -                         | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2` (default), `-O3`, `-Os`, `-Oz` |
 | `-m`         | `--build-mode`            | Controls the build mode. <br> Valid values: `debug` (default) and `release`                    |
 | `-b`         | `--build-var`             | Add build variable to parametrize the compiled program (e.g. -v key=value)                     |
-| -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |
-| -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                      |
-| -            | `--no-red-zone`           | Do not use the red zone below the stack pointer (x86_64), e.g. for kernel code                 |
-| -            | `--relocation-model`      | Relocation model: `default`, `static`, `pic`, `pie`                                            |
 | -            | `--code-model`            | Code model: `default`, `tiny`, `small`, `kernel`, `medium`, `large`                            |
-| -            | `--freestanding`          | Compile without hosted libc, crt0 and OS                                                       |
-| -            | `--native-features`       | Tune the output for the CPU of the compiling machine (output not portable)                     |
 | -            | `--cpu-features`          | CPU features to enable (`+`) or disable (`-`), e.g. `+avx2,-sse4.1`                            |
+| `-d`         | `--debug-output`          | Print compiler output for debugging.                                                           |
+| `-s`, `-asm` | `--dump-assembly`         | Dump Assembly code                                                                             |
+| `-ast`       | `--dump-ast`              | Dump AST as serialized string and SVG image                                                    |
+| -            | `--dump-cache-stats`      | Dump stats for compiler-internal lookup caches                                                 |
+| -            | `--dump-dependency-graph` | Dump compile unit dependency graph                                                             |
+| `-ir`        | `--dump-ir`               | Dump LLVM-IR                                                                                   |
+| -            | `--dump-object-file`      | Dump object files                                                                              |
+| -            | `--dump-stats`            | Write compile statistics (stage times, peak memory usage, counters) as JSON to the given file.                                              |
+| -            | `--dump-symtab`           | Dump serialized symbol tables                                                                  |
+| -            | `--dump-types`            | Dump all used types                                                                            |
+| -            | `--freestanding`          | Compile without hosted libc, crt0 and OS                                                       |
+| `-j <n>`     | `--jobs <n>`              | Set number of jobs to parallelize compilation (Default is auto)                                |
+| -            | `--keep-frame-pointers`   | Set up a frame pointer in every function, so profilers can walk the stack                      |
+| -            | `--native-features`       | Tune the output for the CPU of the compiling machine (output not portable)                     |
+| -            | `--no-red-zone`           | Do not use the red zone below the stack pointer (x86_64), e.g. for kernel code                 |
+| `-O<n>`      | -                         | Set optimization level. <br> Valid options: `-O0`, `-O1`, `-O2` (default), `-O3`, `-Os`, `-Oz` |
+| `-o`         | `--output`                | Set path for executable output.                                                                |
+| `-q`         | `--quiet`                 | Do not show the compile progress bar.                                                          |
+| -            | `--relocation-model`      | Relocation model: `default`, `static`, `pic`, `pie`                                            |
+| -            | `--use-lifetime-markers`  | Generate lifetime markers to enhance optimizations                                             |
