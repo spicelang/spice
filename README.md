@@ -54,7 +54,7 @@ cd spice
 ```
 
 #### Setup dev environment
-There is a batch/shell script called `dev-setup` to help you with that. It will do the following things:
+There is a Python script called `dev-setup.py` to help you with that. It will do the following things:
 
 - Make sure you have all dependencies
 - Clone and build the required LLVM version with the required settings to the `llvm` subdirectory
