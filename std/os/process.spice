@@ -64,7 +64,8 @@ public f<Result<ProcessResult>> runProcessCaptured(const String& program, const 
 }
 
 /**
- * Search for a program on the PATH, like a shell would do it. On Windows, the '.exe' extension is tried as well.
+ * Search for a program on the PATH, like a shell would do it. On Windows, a name without an extension is searched with the
+ * '.exe' extension only, because Windows cannot start a file without an executable extension.
  *
  * @param name Name of the program. A name with a path separator is not searched for, but only checked for existence
  * @return Path to the program, or an empty string if it could not be found
@@ -91,7 +92,9 @@ public f<String> findProgram(const String& name) {
         if !dir.isEmpty() {
             const FilePath candidatePath = FilePath(dir) / name;
             const String candidate = String(candidatePath.toString());
-            if isProgramFile(candidate) {
+            // On Windows, only a name with an extension is taken as it is. Windows cannot start a file without one, e.g. the
+            // shell scripts of MSYS2 like /usr/bin/cmd, that would otherwise shadow cmd.exe on the PATH
+            if (!isWindows() || name.find('.') >= 0l) && isProgramFile(candidate) {
                 return candidate;
             }
             if isWindows() {

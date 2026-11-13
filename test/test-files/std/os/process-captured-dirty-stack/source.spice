@@ -18,7 +18,8 @@ f<unsigned long> dirtyStack() {
     }
 }
 
-// Runs a program with captured output, after the stack was filled with garbage
+// Runs a program with captured output, after the stack was filled with garbage. On Windows, this is cmd.exe, that a file
+// without an extension on the PATH (e.g. the cmd shell script of MSYS2) must not shadow
 f<int> runEcho(String& output) {
     Vector<String> args;
     String program = String("echo");
