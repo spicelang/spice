@@ -1,0 +1,47 @@
+import "std/data/vector";
+import "std/os/os";
+import "std/os/process";
+
+ext p memset(byte* /*dest*/, int /*value*/, unsigned long /*count*/);
+ext f<unsigned long> strlen(string /*str*/);
+
+const unsigned long DIRTY_SIZE = 16384l;
+
+// Fills a large stack frame with non-zero bytes. The frames of the process functions, that are called afterwards, reuse
+// this memory, so a struct field, that they do not initialize, holds garbage instead of a zero by chance
+f<unsigned long> dirtyStack() {
+    char[16384] buffer;
+    unsafe {
+        memset(cast<byte*>(&buffer), 0xFF, DIRTY_SIZE - 1l);
+        buffer[DIRTY_SIZE - 1l] = '\0';
+        return strlen(cast<string>(&buffer));
+    }
+}
+
+// Runs a program with captured output, after the stack was filled with garbage. On Windows, this is cmd.exe, that a file
+// without an extension on the PATH (e.g. the cmd shell script of MSYS2) must not shadow
+f<int> runEcho(String& output) {
+    Vector<String> args;
+    String program = String("echo");
+    if isWindows() {
+        program = String("cmd");
+        args.pushBack(String("/c"));
+        args.pushBack(String("echo"));
+    }
+    args.pushBack(String("captured"));
+    Result<ProcessResult> run = runProcessCaptured(program, args);
+    if run.isErr() {
+        return -1;
+    }
+    ProcessResult& processResult = run.unwrap();
+    output = processResult.output;
+    return processResult.exitCode;
+}
+
+f<int> main() {
+    printf("dirty bytes: %d\n", dirtyStack());
+    String output;
+    const int exitCode = runEcho(output);
+    printf("exit code: %d\n", exitCode);
+    printf("captured: %d\n", output.startsWith("captured"));
+}

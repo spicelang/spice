@@ -125,7 +125,8 @@ public f<int> spawnProcessAndWait(const String& program, const Vector<String>& a
     }
 
     // Create the pipe. Only its write end may be inherited, so that the child does not keep the read end open
-    SecurityAttributes pipeAttributes;
+    // Zero-initialized, so that the fields, that are not set here, are null (e.g. securityDescriptor)
+    SecurityAttributes pipeAttributes = SecurityAttributes{};
     pipeAttributes.length = cast<unsigned int>(sizeof<SecurityAttributes>());
     pipeAttributes.inheritHandle = WIN_TRUE;
     unsigned long readHandle = 0ul;
@@ -155,7 +156,7 @@ public f<int> spawnProcessAndWait(const String& program, const Vector<String>& a
 
     // Spawn the child
     int exitCode = PROCESS_SPAWN_FAILED;
-    ProcessInformation processInformation;
+    ProcessInformation processInformation = ProcessInformation{};
     bool spawned = false;
     unsafe {
         unsigned long* inheritedHandlesPtr = cast<unsigned long*>(&inheritedHandles);
@@ -236,7 +237,9 @@ f<bool> spawnWithInheritedHandles(const Vector<String>& quotedArgs, unsigned lon
         if InitializeProcThreadAttributeList(cast<byte*>(attributeList), 1u, 0u, &attributeListSize) != 0 {
             const unsigned long valueSize = inheritedHandleCount * sizeof<unsigned long>();
             if UpdateProcThreadAttribute(cast<byte*>(attributeList), 0u, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, inheritedHandles, valueSize, nil<byte*>, nil<unsigned long*>) != 0 {
-                StartupInfoExA startupInfo;
+                // Zero-initialized, so that the fields, that are not set here, are null. CreateProcessA rejects garbage
+                // in e.g. desktop or reserved2
+                StartupInfoExA startupInfo = StartupInfoExA{};
                 startupInfo.cb = cast<unsigned int>(sizeof<StartupInfoExA>());
                 startupInfo.flags = STARTF_USESTDHANDLES;
                 startupInfo.stdInput = stdInput;
