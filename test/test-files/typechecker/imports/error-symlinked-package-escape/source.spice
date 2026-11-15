@@ -1,0 +1,4 @@
+// The package itself may be a link to anywhere, but a link inside the package must not lead out of it
+import "spice_packages/dep/escape/secret" as secret;
+
+f<int> main() {}
