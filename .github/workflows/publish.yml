@@ -80,9 +80,10 @@ jobs:
         # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
-      - name: Fetch packages
-        # The packages, that the compiler sources build on, in the versions of src/spice.lock
-        run: python fetch-packages.py
+      - name: Install packages
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker
+        # release, that fetch-stage0.py downloaded along with the stage0 compiler
+        run: python fetch-stage0.py --sync-packages
 
       - name: Build compiler
         working-directory: build
@@ -216,9 +217,10 @@ jobs:
         # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
-      - name: Fetch packages
-        # The packages, that the compiler sources build on, in the versions of src/spice.lock
-        run: python fetch-packages.py
+      - name: Install packages
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker
+        # release, that fetch-stage0.py downloaded along with the stage0 compiler
+        run: python fetch-stage0.py --sync-packages
 
       - name: Build compiler
         working-directory: build
@@ -294,9 +296,10 @@ jobs:
         # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
-      - name: Fetch packages
-        # The packages, that the compiler sources build on, in the versions of src/spice.lock
-        run: python fetch-packages.py
+      - name: Install packages
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker
+        # release, that fetch-stage0.py downloaded along with the stage0 compiler
+        run: python fetch-stage0.py --sync-packages
 
       - name: Build compiler
         working-directory: build

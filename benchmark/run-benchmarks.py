@@ -107,12 +107,10 @@ def parse_compilers(specs: list[str], work_dir: Path | None) -> list[Compiler]:
         # the work dir in the compiler's own checkout, the paths to its std and to the benchmark sources (copied into the
         # work dir) are the same for every compiler, so that they change neither the instruction counts nor the file sizes
         compiler_work_dir = (work_dir or root / "build" / "bench-tmp") / f"c{idx:02d}"
-        # The self-compile needs the packages, that the compiler sources of the checkout build on. Checkouts from before the
-        # compiler sources had packages have no fetch-packages.py
-        fetch_packages_script = root / "fetch-packages.py"
-        if fetch_packages_script.is_file() and subprocess.run([sys.executable, str(fetch_packages_script), "--quiet"],
-                                                              cwd=root).returncode != 0:
-            fail(f"Installing the packages of the compiler sources of '{name}' failed: {root}")
+        # The self-compile needs the packages, that the compiler sources of the checkout build on. Spice Shaker of this
+        # checkout installs them. Checkouts from before the compiler sources had packages have no src/spice.lock
+        if (root / "src" / "spice.lock").is_file():
+            bootstrap.install_packages(source_dir=root / "src")
         compilers.append(Compiler(name, path, root, compiler_work_dir, compiler_env(root), std_ships_tpde(root)))
     return compilers
 

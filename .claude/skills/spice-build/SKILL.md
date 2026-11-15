@@ -13,10 +13,11 @@ for the current platform into `build/stage0/spice`.
 
 The compiler builds on two official packages ([spicelang/packages](https://github.com/spicelang/packages)): the LLVM C API
 bindings (`llvm`) and the TPDE bindings (`tpde`). They are declared in `src/spice.toml` and pinned with their checksums in
-`src/spice.lock`. `python fetch-packages.py` installs the locked versions from the Spice Rack registry into
-`src/spice_packages` (ignored by git); `build.py`, `bootstrap.py`, `test/run-tests.py` and the benchmark runner run it on their
-own, and once installed, it works offline. To bump a package, change the constraint in `src/spice.toml` if needed and run
-`spice-shaker update` in `src/`, then commit both files. The compiler sources import the packages relative to the main source
+`src/spice.lock`. Spice Shaker installs them into `src/spice_packages` (ignored by git) with `spice-shaker sync` in `src/`;
+`build.py`, `bootstrap.py`, `test/run-tests.py` and the benchmark runner do that on their own, and so does
+`python fetch-stage0.py --sync-packages`. They use the Spice Shaker release pinned in `.github/stage0-shaker-version`, that
+`fetch-stage0.py` downloads into `build/stage0/spice-shaker/` (`SPICE_SHAKER` overrides it). To bump a package, change the
+constraint in `src/spice.toml` if needed and run `spice-shaker update` in `src/`, then commit both files. The compiler sources import the packages relative to the main source
 file: `import "@/spice_packages/llvm/llvm" as llvm;`.
 
 The llvm package links LLVM statically, so building the compiler needs an LLVM build. The scripts find it via `LLVM_DIR` (`<llvm-build>/lib/cmake/llvm`) or `llvm-config`, or take `LLVM_LIB_DIR` and

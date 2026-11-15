@@ -80,7 +80,9 @@ If the compiler was built without the TPDE libraries, passing `--backend=tpde` p
 Besides being a backend of the Spice compiler, TPDE can also be used from Spice programs, which build LLVM modules with
 the [`llvm` package](https://rack.spicelang.com/packages/llvm). The [`tpde` package](https://rack.spicelang.com/packages/tpde)
 compiles such a module to an ELF object, in a file or in memory. Install it with Spice Shaker
-(`spice-shaker install tpde`, which installs the `llvm` package along with it):
+(`spice-shaker install tpde`, which installs the `llvm` package along with it). Spice Shaker installs the packages into the
+`spice_packages` dir of the project root, and the `tpde` package imports the `llvm` package from the `spice_packages` dir
+next to the main source file, so the main source file has to be in the project root:
 
 ```spice
 import "spice_packages/llvm/llvm" as llvm;
