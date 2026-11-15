@@ -68,7 +68,7 @@ IR refs without a platform suffix are only compared on x86_64.
 - `disabled` — skip the case entirely
 - `skip-gh-actions` — skip on CI
 - `skip-windows`, `skip-macos` — skip on that OS
-- `skip-without-tpde` — skip when the TPDE libraries are not available (no `TPDE_FLAGS` and no `setup-deps.py --tpde`), e.g. for tests of the std TPDE bindings
+- `skip-without-tpde` — skip when the TPDE libraries are not available (no `TPDE_FLAGS` and no `setup-deps.py --tpde`), e.g. for tests that need a compiler backed by TPDE
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests
 - `debug.gdb` — gdb script (used with `debug.out`)
 - `qemu.txt` — QEMU command line (first line), that boots the compiled program of an embedded target, e.g.

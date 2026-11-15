@@ -10,7 +10,7 @@ import "std/time/timer";
 import "std/io/filepath";
 import "std/io/file";
 import "std/os/system";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 import "std/os/recursive-mutex";
 import "std/math/hash";
 import "std/text/format";

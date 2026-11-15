@@ -26,14 +26,15 @@ f<int> main() {
 ## Packages
 
 ### `std/bindings`
-Spice bindings for the external libraries that the compiler and the std itself build on. Bindings for other libraries,
-like GTK 4, libcurl and SQLite, are available as [official packages](https://github.com/spicelang/packages).
+Spice bindings for the external libraries that the std itself builds on. Bindings for other libraries, like LLVM, TPDE,
+GTK 4, libcurl and SQLite, are available as [official packages](https://github.com/spicelang/packages).
 
-| Module            | Description                                                             |
-|-------------------|-------------------------------------------------------------------------|
-| `llvm/llvm`       | Bindings for the LLVM C API, plus linker flags and a target wrapper.    |
-| `openssl/openssl` | Bindings for the TLS parts of OpenSSL's libssl, used by `std/net/tls`.  |
-| `tpde/tpde`       | Bindings for the TPDE compiler back-end (needs `setup-deps.py --tpde`). |
+| Module            | Description                                                            |
+|-------------------|------------------------------------------------------------------------|
+| `openssl/openssl` | Bindings for the TLS parts of OpenSSL's libssl, used by `std/net/tls`. |
+
+The Linux release packages also ship the TPDE static libraries and headers in `bindings/tpde`, for the TPDE backend of the
+compiler and the [`tpde` package](https://rack.spicelang.com/packages/tpde).
 
 ### `std/crypto`
 Cryptographic hash functions that turn a message of any length into a fixed-size digest.

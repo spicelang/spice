@@ -37,7 +37,7 @@ jobs:
         uses: ./.github/actions/setup-linux-toolchain
         with:
           # clang compiles TPDE's encoding templates (deps/tpde/tpde-llvm), the GCC toolchain builds everything else.
-          # zlib, zstd and ncurses provide the static archives for linking the compiler (see std/bindings/llvm), libssl-dev the
+          # zlib, zstd and ncurses provide the static archives for linking the compiler (see the llvm package), libssl-dev the
           # OpenSSL archives for linking Spice Shaker (see std/bindings/openssl). The static libcrypto of the runner needs zlib,
           # zstd and jitterentropy as well, that 'pkg-config --static' lists for it.
           packages: ninja-build uuid-dev zlib1g-dev libzstd-dev libncurses-dev libssl-dev libjitterentropy3-dev pkg-config checksec jq clang
@@ -55,7 +55,7 @@ jobs:
           extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3 -DLLVM_ENABLE_ZLIB=OFF -DLLVM_ENABLE_ZSTD=OFF -DLLVM_ENABLE_PIC=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
 
       - name: Download Libs
-        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings. With the GCC
+        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the tpde package. With the GCC
         # toolchain, since the compiler links the TPDE archives statically together with its libstdc++
         env:
           CC: gcc
@@ -71,14 +71,18 @@ jobs:
           cp ../std/runtime/lib/libbacktrace.a libbacktrace.a
           # Its license, that setup-deps.py put into the std next to it, has to accompany the archive
           mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
-          # The TPDE static libraries, headers and licenses, that setup-deps.py put into the std for the std TPDE bindings
-          # (std/bindings/tpde). Released Linux packages ship them inside the std as well, so they travel with this job's
+          # The TPDE static libraries, headers and licenses, that setup-deps.py put into the std (std/bindings/tpde) for the TPDE
+          # backend of the compiler and the tpde package. Released Linux packages ship them inside the std as well, so they travel with this job's
           # binary just like libbacktrace.
           mkdir -p tpde && cp -r ../std/bindings/tpde/lib ../std/bindings/tpde/include ../std/bindings/tpde/LICENSES tpde/
 
       - name: Fetch stage0 compiler
         # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
+
+      - name: Fetch packages
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock
+        run: python fetch-packages.py
 
       - name: Build compiler
         working-directory: build
@@ -212,6 +216,10 @@ jobs:
         # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
 
+      - name: Fetch packages
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock
+        run: python fetch-packages.py
+
       - name: Build compiler
         working-directory: build
         run: |
@@ -285,6 +293,10 @@ jobs:
       - name: Fetch stage0 compiler
         # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
         run: python fetch-stage0.py
+
+      - name: Fetch packages
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock
+        run: python fetch-packages.py
 
       - name: Build compiler
         working-directory: build

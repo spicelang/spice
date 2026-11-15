@@ -6,7 +6,7 @@ import "std/io/filepath";
 import "std/os/system";
 import "std/text/json/json-value";
 import "std/text/json/json-serializer";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 
 // Own imports
 import "@/driver";

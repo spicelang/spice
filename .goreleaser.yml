@@ -88,7 +88,7 @@ archives:
       - src: "bin/spice-{{ .Os }}-{{ .Arch }}/runtime/LICENSES/*"
         dst: std/runtime/LICENSES
         strip_parent: true
-      # The TPDE static libraries and headers for the std TPDE bindings (std/bindings/tpde), with their licenses. Only the
+      # The TPDE static libraries and headers for the tpde package (std/bindings/tpde), with their licenses. Only the
       # Linux compiler jobs build TPDE, so each Linux output gets the ones of its own architecture. The other outputs have
       # none, so these patterns match nothing there, which GoReleaser only warns about.
       - src: "bin/spice-{{ .Os }}-{{ .Arch }}/tpde/lib/*.a"
@@ -136,7 +136,7 @@ nfpms:
         dst: /usr/lib/spice/std/runtime/LICENSES/
         file_info:
           mode: 0644
-      # The TPDE static libraries and headers for the std TPDE bindings (std/bindings/tpde), with their licenses
+      # The TPDE static libraries and headers for the tpde package (std/bindings/tpde), with their licenses
       - src: "bin/spice-linux-{{ .Arch }}/tpde/lib/*.a"
         dst: /usr/lib/spice/std/bindings/tpde/lib/
         file_info:

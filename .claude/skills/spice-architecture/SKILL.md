@@ -8,7 +8,10 @@ description: Orientation map of the Spice compiler codebase — the compilation 
 The compiler is self-hosted: it is written in Spice and lives in `src/`. It is built by a released Spice compiler (the
 stage0 compiler, see the `spice-build` skill). Imports of compiler files use the `@/` prefix (e.g.
 `import "@/ast/ast-nodes";`), which resolves relative to the main source file `src/main.spice`. The compiler emits LLVM IR through
-the LLVM C API bindings of the std (`std/bindings/llvm`).
+the LLVM C API bindings of the `llvm` package and uses TPDE through the `tpde` package
+([spicelang/packages](https://github.com/spicelang/packages)). They are declared in `src/spice.toml`, pinned in
+`src/spice.lock` and installed into `src/spice_packages` (see the `spice-build` skill), and imported with
+`import "@/spice_packages/llvm/llvm" as llvm;`.
 
 ## Entry & orchestration
 

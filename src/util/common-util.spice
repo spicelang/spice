@@ -2,7 +2,7 @@
 
 // Std imports
 import "std/text/stringstream";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 import "std/text/json/json-value";
 import "std/time/time";
 import "std/type/type-conversion";

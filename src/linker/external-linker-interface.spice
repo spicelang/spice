@@ -9,7 +9,7 @@ import "std/os/mutex";
 import "std/os/thread";
 import "std/type/type-conversion";
 import "std/text/string-ext";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 
 // Own imports
 import "@/exception/fatal-error";

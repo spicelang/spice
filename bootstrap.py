@@ -88,6 +88,13 @@ def find_llvm_include_dirs() -> str | None:
     return None
 
 
+def install_packages() -> None:
+    """Install the packages of src/spice.lock, that the compiler sources build on, into src/spice_packages"""
+    result = subprocess.run([sys.executable, str(ROOT_DIR / "fetch-packages.py"), "--quiet"], cwd=ROOT_DIR)
+    if result.returncode != 0:
+        fail("Installing the packages of the compiler sources failed (see 'python fetch-packages.py')")
+
+
 def uses_tpde_backend(build_flags: list[str]) -> bool:
     for i, flag in enumerate(build_flags):
         if flag.lower() == "--backend=tpde":
@@ -211,6 +218,7 @@ def main() -> None:
     stage0_compiler = stage0_compiler.resolve()
 
     # Environment, the stage compilers need to compile the compiler sources
+    install_packages()
     os.environ.setdefault("SPICE_STD_DIR", str(ROOT_DIR / "std"))
     if "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = find_llvm_lib_dir()

@@ -40,7 +40,7 @@ python setup-deps.py --tpde
 python build.py
 ```
 
-The compiler emits objects via the std TPDE bindings (see [Using TPDE from Spice code](#using-tpde-from-spice-code)), so
+The compiler emits objects via the TPDE bindings of the `tpde` package (see [Using TPDE from Spice code](#using-tpde-from-spice-code)), so
 it is only backed by TPDE if the TPDE libraries were available while building it.
 
 Requirements:
@@ -78,12 +78,13 @@ If the compiler was built without the TPDE libraries, passing `--backend=tpde` p
 ## Using TPDE from Spice code
 
 Besides being a backend of the Spice compiler, TPDE can also be used from Spice programs, which build LLVM modules with
-the LLVM bindings (`std/bindings/llvm`). The TPDE bindings (`std/bindings/tpde`) compile such a module to an ELF object,
-in a file or in memory:
+the [`llvm` package](https://rack.spicelang.com/packages/llvm). The [`tpde` package](https://rack.spicelang.com/packages/tpde)
+compiles such a module to an ELF object, in a file or in memory. Install it with Spice Shaker
+(`spice-shaker install tpde`, which installs the `llvm` package along with it):
 
 ```spice
-import "std/bindings/llvm/llvm" as llvm;
-import "std/bindings/tpde/tpde" as tpde;
+import "spice_packages/llvm/llvm" as llvm;
+import "spice_packages/tpde/tpde" as tpde;
 
 f<int> main() {
     llvm::LLVMContext context;
@@ -100,11 +101,11 @@ f<int> main() {
 }
 ```
 
-TPDE only offers a C++ API, so the bindings compile a small C API wrapper (`std/bindings/tpde/tpde-wrapper.cpp`) along
-with the program. They need the TPDE libraries and headers, in addition to what the LLVM bindings need.
+TPDE only offers a C++ API, so the package compiles a small C API wrapper (`src/tpde-wrapper.cpp` of the package) along
+with the program. It needs the TPDE libraries and headers, in addition to what the llvm package needs.
 
 The Linux release packages ship them inside the std, at `std/bindings/tpde/lib` and `std/bindings/tpde/include`, and the
-compiler points the bindings to them on its own. The shipped libraries are built against the LLVM version of the release
+compiler points the tpde package to them on its own. The shipped libraries are built against the LLVM version of the release
 (see `LLVM_VERSION` in the release workflow), so the LLVM the program links against has to be the same version.
 
 When building Spice from source on Linux, build TPDE with `python setup-deps.py --tpde`. It builds the `deps/tpde`

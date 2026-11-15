@@ -258,6 +258,6 @@ source, and links everything in a single step.
 
 !!! note "Existing bindings"
     The [official Spice packages](https://github.com/spicelang/packages) include ready-made bindings for several
-    popular C libraries, like `libcurl`, `gtk4` and `sqlite`, and the standard library ships the LLVM and OpenSSL
-    bindings under `std/bindings/`. Check those files for complete, production-ready examples of the patterns shown
+    popular C and C++ libraries, like `libcurl`, `gtk4`, `sqlite`, `llvm` and `tpde`, and the standard library ships the
+    OpenSSL bindings under `std/bindings/`. Check those files for complete, production-ready examples of the patterns shown
     in this tutorial.

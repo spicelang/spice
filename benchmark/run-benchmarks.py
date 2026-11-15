@@ -81,7 +81,7 @@ def std_ships_tpde(root: Path) -> bool:
 def compiler_env(root: Path) -> dict[str, str]:
     env = dict(os.environ)
     env["SPICE_STD_DIR"] = str(root / "std")
-    # The self-compile links the LLVM bindings of the std, which need the LLVM libraries and headers (like build.py)
+    # The self-compile links the LLVM bindings, which need the LLVM libraries and headers (like build.py)
     if "LLVM_LIB_DIR" not in env and (llvm_lib_dir := bootstrap.find_llvm_lib_dir()):
         env["LLVM_LIB_DIR"] = llvm_lib_dir
     if "LLVM_INCLUDE_DIRS" not in env and (llvm_include_dirs := bootstrap.find_llvm_include_dirs()):
@@ -107,6 +107,12 @@ def parse_compilers(specs: list[str], work_dir: Path | None) -> list[Compiler]:
         # the work dir in the compiler's own checkout, the paths to its std and to the benchmark sources (copied into the
         # work dir) are the same for every compiler, so that they change neither the instruction counts nor the file sizes
         compiler_work_dir = (work_dir or root / "build" / "bench-tmp") / f"c{idx:02d}"
+        # The self-compile needs the packages, that the compiler sources of the checkout build on. Checkouts from before the
+        # compiler sources had packages have no fetch-packages.py
+        fetch_packages_script = root / "fetch-packages.py"
+        if fetch_packages_script.is_file() and subprocess.run([sys.executable, str(fetch_packages_script), "--quiet"],
+                                                              cwd=root).returncode != 0:
+            fail(f"Installing the packages of the compiler sources of '{name}' failed: {root}")
         compilers.append(Compiler(name, path, root, compiler_work_dir, compiler_env(root), std_ships_tpde(root)))
     return compilers
 

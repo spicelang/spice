@@ -3,7 +3,7 @@
 // Std imports
 import "std/text/print";
 import "std/type/type-conversion";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 
 // Own imports
 import "@/compiler-pass";

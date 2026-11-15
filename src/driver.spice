@@ -16,8 +16,8 @@ import "std/io/filepath";
 import "std/text/string-ext";
 import "std/time/time";
 import "std/type/type-conversion";
-import "std/bindings/llvm/llvm" as llvm;
-import "std/bindings/tpde/tpde" as tpde;
+import "@/spice_packages/llvm/llvm" as llvm;
+import "@/spice_packages/tpde/tpde" as tpde;
 
 // Own imports
 import "@/exception/fatal-error";
@@ -935,7 +935,7 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         if inputString == BACKEND_LLVM {
             this.cliOptions.backend = Backend::LLVM;
         } else if inputString == BACKEND_TPDE {
-            // The compiler is backed by TPDE, if the TPDE libraries were linked into it via TPDE_FLAGS (see std/bindings/tpde)
+            // The compiler is backed by TPDE, if the TPDE libraries were linked into it via TPDE_FLAGS (see the tpde package)
             if !tpde::isAvailable() {
                 raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend is not available in this build. Rebuild the compiler with TPDE_FLAGS set.");
             }
