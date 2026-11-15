@@ -90,18 +90,14 @@ def find_llvm_include_dirs() -> str | None:
 
 def find_spice_shaker() -> Path | None:
     """
-    Spice Shaker, that installs the packages of the compiler sources: the one of SPICE_SHAKER, or else the release pinned in
-    .github/stage0-shaker-version, that fetch-stage0.py downloads into build/stage0/spice-shaker/
+    Spice Shaker, that installs the packages of the compiler sources: the one of SPICE_SHAKER, or else the latest release, that
+    fetch-stage0.py downloads into build/stage0/spice-shaker/ (and replaces, whenever it runs and a newer one is out)
     """
     if custom := os.environ.get("SPICE_SHAKER"):
         return Path(custom)
     shaker_dir = ROOT_DIR / "build" / "stage0" / "spice-shaker"
     candidate = shaker_dir / ("spice-shaker.exe" if sys.platform == "win32" else "spice-shaker")
-    pinned_version = (ROOT_DIR / ".github" / "stage0-shaker-version").read_text().strip()
-    stamp = shaker_dir / "version"
-    if candidate.is_file() and stamp.is_file() and stamp.read_text().strip() == pinned_version:
-        return candidate
-    return None
+    return candidate if candidate.is_file() else None
 
 
 def export_windows_ca_certificates(env: dict[str, str]) -> None:

@@ -5,10 +5,10 @@ The release is pinned in .github/stage0-version, so every build starts from the 
 src/ starts to use a language feature the pinned stage0 compiler does not support yet. Only releases from 0.29.0 on are
 supported, since older ones ship a different compiler as 'spice'.
 
-Along with it, the script downloads the Spice Shaker release pinned in .github/stage0-shaker-version, that installs the packages
-of the compiler sources (src/spice.toml, src/spice.lock) into src/spice_packages. It is a release of its own, since the
-compiler releases do not ship Spice Shaker on every platform. With --sync-packages, the script runs 'spice-shaker sync' in src/
-afterwards.
+Along with it, the script downloads the latest Spice Shaker release, that installs the packages of the compiler sources
+(src/spice.toml, src/spice.lock) into src/spice_packages. Spice Shaker is not pinned: every run looks up the latest release and
+replaces an older download, and only uses the one already downloaded if the lookup fails (e.g. offline). The release jobs ship
+the very same Spice Shaker with the compiler. With --sync-packages, the script runs 'spice-shaker sync' in src/ afterwards.
 
 The stage0 compiler lands in build/stage0/ (see --output-dir), Spice Shaker in build/stage0/spice-shaker/, and the script
 prints the path of the compiler executable.
@@ -23,15 +23,16 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import urllib.parse
 import urllib.request
 import zipfile
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent
 STAGE0_VERSION_FILE = ROOT_DIR / ".github" / "stage0-version"
-SHAKER_VERSION_FILE = ROOT_DIR / ".github" / "stage0-shaker-version"
 RELEASE_URL = "https://github.com/spicelang/spice/releases/download"
 SHAKER_RELEASE_URL = "https://github.com/spicelang/spice-shaker/releases/download"
+SHAKER_LATEST_RELEASE_URL = "https://github.com/spicelang/spice-shaker/releases/latest"
 IS_WINDOWS = sys.platform == "win32"
 EXE_NAME = "spice.exe" if IS_WINDOWS else "spice"
 
@@ -156,11 +157,34 @@ def fetch_compiler(version: str, output_dir: Path) -> Path:
     return stage0_path
 
 
-def fetch_shaker(version: str, output_dir: Path) -> Path:
+def get_latest_shaker_version() -> str:
+    """
+    Tag of the latest Spice Shaker release. GitHub redirects the latest release page to the one of its tag, which unlike the
+    REST API needs no token and has no rate limit for unauthenticated requests
+    """
+    with urllib.request.urlopen(SHAKER_LATEST_RELEASE_URL, timeout=60) as response:
+        final_url = response.geturl()
+    prefix = SHAKER_LATEST_RELEASE_URL.removesuffix("latest") + "tag/"
+    version = final_url.removeprefix(prefix) if final_url.startswith(prefix) else ""
+    if not version or "/" in version:
+        raise ValueError(f"unexpected redirect to {final_url}")
+    return urllib.parse.unquote(version)
+
+
+def fetch_shaker(output_dir: Path) -> Path:
     shaker_dir = output_dir / "spice-shaker"
     exe_path = shaker_dir / ("spice-shaker.exe" if IS_WINDOWS else "spice-shaker")
     stamp_path = shaker_dir / "version"
-    if exe_path.is_file() and stamp_path.is_file() and stamp_path.read_text().strip() == version:
+    installed_version = stamp_path.read_text().strip() if exe_path.is_file() and stamp_path.is_file() else None
+    try:
+        version = get_latest_shaker_version()
+    except (OSError, ValueError) as error:
+        if installed_version is None:
+            fail(f"Could not look up the latest Spice Shaker release: {error}")
+        print(f"Could not look up the latest Spice Shaker release ({error}), using the downloaded {installed_version}",
+              file=sys.stderr, flush=True)
+        return exe_path
+    if installed_version == version:
         return exe_path
 
     asset_name = get_asset_name("spice-shaker")
@@ -184,7 +208,7 @@ def fetch_shaker(version: str, output_dir: Path) -> Path:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Download the released Spice compiler, that builds the compiler sources (the stage0 compiler), and Spice Shaker.")
+    parser = argparse.ArgumentParser(description="Download the released Spice compiler, that builds the compiler sources (the stage0 compiler), and the latest Spice Shaker release.")
     parser.add_argument("--version", default=None,
                         help=f"Release to download (default: the one pinned in {STAGE0_VERSION_FILE.relative_to(ROOT_DIR)})")
     parser.add_argument("--output-dir", type=Path, default=ROOT_DIR / "build" / "stage0",
@@ -195,7 +219,7 @@ def main() -> None:
 
     output_dir = args.output_dir.resolve()
     stage0_path = fetch_compiler(args.version or STAGE0_VERSION_FILE.read_text().strip(), output_dir)
-    shaker_path = fetch_shaker(SHAKER_VERSION_FILE.read_text().strip(), output_dir)
+    shaker_path = fetch_shaker(output_dir)
     if args.sync_packages:
         sys.dont_write_bytecode = True
         import bootstrap

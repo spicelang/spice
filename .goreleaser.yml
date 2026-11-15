@@ -25,24 +25,28 @@ builds:
     hooks:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice{{ .Ext }} {{ .Path }}"
-  # The package manager Spice Shaker (spicelang/spice-shaker). The compiler jobs build it with the compiler, on Linux and macOS
-  # only: the std has no access to the Windows trust store yet, so it could not verify any https server there
+  # The package manager Spice Shaker (spicelang/spice-shaker): the latest release of it, that the compiler jobs downloaded
+  # with fetch-stage0.py
   - id: spice-shaker
     binary: spice-shaker
     main: ./.github/media/dummy.go
     goos:
       - linux
+      - windows
       - darwin
     goarch:
       - amd64
       - arm64
     ignore:
+      # Only offer amd64 support on Windows
+      - goos: windows
+        goarch: arm64
       # Only offer arm64 support on macOS (Intel runner deprecated by GitHub Actions)
       - goos: darwin
         goarch: amd64
     hooks:
       post:
-        - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice-shaker {{ .Path }}"
+        - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice-shaker{{ .Ext }} {{ .Path }}"
 
 upx:
   - enabled: true
@@ -72,12 +76,14 @@ dockers_v2:
 
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-    # The Windows archive has no Spice Shaker
-    allow_different_binary_count: true
     files:
       - LICENSE
       - std
       - tools/gdb
+      # The OpenSSL DLLs, that the Windows release of Spice Shaker needs next to its executable. The other outputs have none,
+      # so this pattern matches nothing there, which GoReleaser only warns about.
+      - src: "bin/spice-{{ .Os }}-{{ .Arch }}/*.dll"
+        strip_parent: true
       # The vendored libbacktrace the compiler job built for this very platform, put where the std expects it:
       # Spice programs link it as '-lbacktrace', and the compiler searches <std>/runtime/lib for it. It is a host
       # archive, so each output gets the one matching its own os/arch and never another's.

@@ -15,8 +15,9 @@ The compiler builds on two official packages ([spicelang/packages](https://githu
 bindings (`llvm`) and the TPDE bindings (`tpde`). They are declared in `src/spice.toml` and pinned with their checksums in
 `src/spice.lock`. Spice Shaker installs them into `src/spice_packages` (ignored by git) with `spice-shaker sync` in `src/`;
 `build.py`, `bootstrap.py`, `test/run-tests.py` and the benchmark runner do that on their own, and so does
-`python fetch-stage0.py --sync-packages`. They use the Spice Shaker release pinned in `.github/stage0-shaker-version`, that
-`fetch-stage0.py` downloads into `build/stage0/spice-shaker/` (`SPICE_SHAKER` overrides it). To bump a package, change the
+`python fetch-stage0.py --sync-packages`. They use the latest Spice Shaker release, that
+`fetch-stage0.py` downloads into `build/stage0/spice-shaker/` and replaces whenever it runs and a newer one is out (`SPICE_SHAKER`
+overrides it). To bump a package, change the
 constraint in `src/spice.toml` if needed and run `spice-shaker update` in `src/`, then commit both files. The compiler sources import the packages relative to the main source
 file: `import "@/spice_packages/llvm/llvm" as llvm;`.
 
