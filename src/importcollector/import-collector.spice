@@ -117,6 +117,12 @@ public f<Any> ImportCollector.visitImportDef(ASTImportDefNode* node) {
     if !isStd && rootDir.isEmpty() {
         intendedRoot = FilePath(String("."));
     }
+    // Spice Shaker installs path dependencies as links in the spice_packages dir, which may point anywhere. Files of an
+    // installed package therefore have to stay contained in the dir of the package instead of the project dir
+    const String packageDir = getPackageDir(pathInRootDir);
+    if !isStd && !packageDir.isEmpty() {
+        intendedRoot = intendedRoot / packageDir;
+    }
     const FilePath allowedRoot = intendedRoot.canonical();
     const FilePath canonicalImportPath = importPath.canonical();
     const String allowedRootPrefix = String(allowedRoot.toGenericString()) + "/";
@@ -197,4 +203,42 @@ public f<Any> ImportCollector.visitModAttr(ASTModAttrNode* node) {
     }
 
     return Any();
+}
+
+/**
+ * Get the dir of the installed package, that an import path leads into, e.g. 'spice_packages/llvm' for
+ * 'spice_packages/llvm/llvm' or 'lib/spice_packages/llvm' for 'lib/spice_packages/llvm/llvm'. The innermost
+ * spice_packages dir counts, since it holds the package, that the imported file belongs to.
+ *
+ * @param pathInRootDir Import path, relative to the dir it is resolved against
+ * @return Dir of the package, relative to the same dir, or an empty string if the path does not lead into a package
+ */
+f<String> getPackageDir(const String& pathInRootDir) {
+    unsigned long packageNameStart;
+    const long infixIdx = pathInRootDir.rfind(PACKAGES_DIR_INFIX);
+    if infixIdx != -1l {
+        packageNameStart = cast<unsigned long>(infixIdx) + getRawLength(PACKAGES_DIR_INFIX);
+    } else if pathInRootDir.startsWith(PACKAGES_DIR_PREFIX) {
+        packageNameStart = getRawLength(PACKAGES_DIR_PREFIX);
+    } else {
+        return String();
+    }
+    // A file directly in the spice_packages dir is no package
+    const long packageNameEnd = pathInRootDir.find('/', packageNameStart);
+    if packageNameEnd == -1l {
+        return String();
+    }
+    return pathInRootDir.getSubstring(0ul, packageNameEnd);
+}
+
+#[test]
+f<bool> testGetPackageDir() {
+    assert getPackageDir(String("spice_packages/llvm/llvm")) == "spice_packages/llvm";
+    assert getPackageDir(String("spice_packages/llvm/impl/core")) == "spice_packages/llvm";
+    assert getPackageDir(String("lib/spice_packages/llvm/llvm")) == "lib/spice_packages/llvm";
+    assert getPackageDir(String("spice_packages/a/spice_packages/b/c")) == "spice_packages/a/spice_packages/b";
+    assert getPackageDir(String("spice_packages/file")).isEmpty();
+    assert getPackageDir(String("lib/util")).isEmpty();
+    assert getPackageDir(String("my_spice_packages/llvm/llvm")).isEmpty();
+    return true;
 }

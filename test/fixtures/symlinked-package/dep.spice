@@ -1,0 +1,7 @@
+// This package lives outside test/test-files on purpose: the typechecker/imports/*-symlinked-package* test cases install
+// it through a link in their spice_packages dir, like Spice Shaker does for path dependencies.
+import "util" as util;
+
+public f<int> answer() {
+    return util::twice(21);
+}

@@ -1,0 +1,7 @@
+// The package is a link to a dir outside of the project, like Spice Shaker installs path dependencies. Its files and
+// their relative imports are resolved behind the link
+import "@/spice_packages/dep/dep" as dep;
+
+f<int> main() {
+    printf("Answer: %d\n", dep::answer());
+}

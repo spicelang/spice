@@ -115,6 +115,10 @@ external package if its import path leads through a `spice_packages` directory, 
 imports it with a relative import path. Source files that a package imports with the `@/` prefix belong to your project, so
 the compiler still prints their warnings.
 
+The directory of a package in `spice_packages` may be a link to a directory anywhere else, e.g. for path dependencies. An
+imported source file has to stay within the directory of its package though, so a link inside a package that leads out of it
+is rejected with `Import path '...' escapes the permitted directory tree`.
+
 ## Circular imports
 
 Source files may import each other, directly or transitively. Spice resolves such circular imports automatically — you
