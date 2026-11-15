@@ -8,6 +8,7 @@
 import "std/bindings/openssl/openssl";
 import "std/io/file";
 import "std/iterator/array-iterator";
+import "std/net/impl/system-cert-store";
 import "std/net/socket";
 import "std/os/env";
 
@@ -40,7 +41,7 @@ public p TlsContext.close() {
  * server it talks to gets no confidentiality guarantee worth having.
  *
  * @param caFile Path to a PEM file with trusted CA certificates, or "" to trust the operating
- *               system's default trust store
+ *               system's default trust store (see `loadDefaultTrustStore`)
  * @return A ready-to-use client context, or an error describing why it could not be built
  */
 public f<Result<TlsContext>> newClientTlsContext(string caFile = "") {
@@ -67,9 +68,11 @@ public f<Result<TlsContext>> newClientTlsContext(string caFile = "") {
 
 /**
  * Points a client context's trust store at the CA certificates of the operating system. OpenSSL looks for them where the
- * system it was built for keeps them, unless the SSL_CERT_FILE or SSL_CERT_DIR env vars say otherwise. A program that links
- * OpenSSL statically (like the released Spice Shaker) can run on a Linux distribution that keeps them elsewhere, so if the
- * default CA bundle is missing, the first CA bundle found at the paths of the common distributions is trusted as well.
+ * system it was built for keeps them, unless the SSL_CERT_FILE or SSL_CERT_DIR env vars say otherwise. If neither of them is
+ * set, the certificates of the certificate store of the operating system are trusted as well, on Windows, that keeps them
+ * there instead of in files. A program that links OpenSSL statically (like the released Spice Shaker) can run on a Linux
+ * distribution that keeps them elsewhere, so if the default CA bundle is missing, the first CA bundle found at the paths of
+ * the common distributions is trusted as well.
  *
  * @return true on success
  */
@@ -79,7 +82,7 @@ f<bool> loadDefaultTrustStore(SslCtx ctx) {
     }
     const Result<string> certFileEnv = getEnv("SSL_CERT_FILE");
     const Result<string> certDirEnv = getEnv("SSL_CERT_DIR");
-    if certFileEnv.isOk() || certDirEnv.isOk() || fileExists(sslDefaultCertFile()) {
+    if certFileEnv.isOk() || certDirEnv.isOk() || addSystemCertificates(ctx) || fileExists(sslDefaultCertFile()) {
         return true;
     }
     foreach const string caBundle : [

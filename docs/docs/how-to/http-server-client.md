@@ -193,7 +193,9 @@ Result<HttpResponse> secure = client.get("https://example.com/");
 ```
 
 By default, the server's certificate is verified against the operating system's trust store, and its host name is
-checked against the URL. Point verification at a specific CA bundle instead - for example to talk to a server with
+checked against the URL. On Windows, that is the certificate store of Windows: the certificates it trusts for server
+authentication. The `SSL_CERT_FILE` and `SSL_CERT_DIR` environment variables replace the trust store of the operating
+system with the given PEM file or directory. Point verification at a specific CA bundle instead - for example to talk to a server with
 a self-signed certificate - with `trustedCaFile`:
 
 ```spice

@@ -1,0 +1,121 @@
+#![core.compiler.requiresOs]
+#![core.windows.linker.flag = "-lcrypt32"]
+
+// The certificate store of the operating system for "std/net/tls", on Windows. Windows keeps the trusted CA certificates
+// in its certificate store instead of files, which OpenSSL does not read by itself. So they are copied into the trust store
+// of the OpenSSL context, the way curl (CURLSSLOPT_NATIVE_CA) and Python's ssl module do it.
+
+// Imports
+import "std/bindings/openssl/openssl";
+import "std/iterator/array-iterator";
+
+// Constants (from wincrypt.h and winerror.h)
+const unsigned int X509_ASN_ENCODING = 0x1u;
+const unsigned int CRYPT_E_NOT_FOUND = 0x80092004u;
+const string OID_SERVER_AUTH = "1.3.6.1.5.5.7.3.1"; // szOID_PKIX_KP_SERVER_AUTH
+
+// Structs (from wincrypt.h)
+type CertContext struct { // CERT_CONTEXT
+    unsigned int dwCertEncodingType
+    byte* pbCertEncoded
+    unsigned int cbCertEncoded
+    byte* pCertInfo
+    byte* hCertStore
+}
+
+type CertEnhKeyUsage struct { // CERT_ENHKEY_USAGE
+    unsigned int cUsageIdentifier
+    string* rgpszUsageIdentifier
+}
+
+// External functions (crypt32 and kernel32)
+ext f<byte*> CertOpenSystemStoreA(byte* /*prov*/, string /*subsystemProtocol*/);
+ext f<CertContext*> CertEnumCertificatesInStore(byte* /*certStore*/, CertContext* /*prevCertContext*/);
+ext f<int> CertCloseStore(byte* /*certStore*/, unsigned int /*flags*/);
+ext f<int> CertVerifyTimeValidity(byte* /*timeToVerify*/, byte* /*certInfo*/);
+ext f<int> CertGetEnhancedKeyUsage(CertContext* /*cert*/, unsigned int /*flags*/, CertEnhKeyUsage* /*usage*/,
+                                   unsigned int* /*usageSize*/);
+ext f<unsigned int> GetLastError();
+
+/**
+ * Adds the certificates, that Windows trusts for server authentication, to the trust store of a context: the root
+ * certificates of the ROOT system store and the intermediate ones of the CA system store. The latter only help to build the
+ * chain for servers, that do not send their intermediate certificates, since OpenSSL only trusts chains, that end in a root
+ * certificate. Certificates, that are expired or restricted to other purposes than server authentication, are left out.
+ *
+ * @param ctx Context, whose trust store to extend
+ * @return Whether certificates were added
+ */
+public f<bool> addSystemCertificates(SslCtx ctx) {
+    unsigned long addedCount = 0ul;
+    foreach const string storeName : ["ROOT", "CA"] {
+        addedCount += addCertificatesOfStore(ctx, storeName);
+    }
+    return addedCount > 0ul;
+}
+
+/**
+ * Adds the certificates of a system store, that Windows trusts for server authentication, to the trust store of a context.
+ *
+ * @param ctx Context, whose trust store to extend
+ * @param storeName Name of the system store, e.g. "ROOT"
+ * @return Number of added certificates
+ */
+f<unsigned long> addCertificatesOfStore(SslCtx ctx, string storeName) {
+    byte* store = CertOpenSystemStoreA(nil<byte*>, storeName);
+    if store == nil<byte*> {
+        return 0ul;
+    }
+    unsigned long addedCount = 0ul;
+    // Each call frees the context it gets, and the last one returns nil
+    CertContext* cert = CertEnumCertificatesInStore(store, nil<CertContext*>);
+    while cert != nil<CertContext*> {
+        if isTrustedForServerAuth(cert) {
+            const long encodedSize = cast<long>(cert.cbCertEncoded);
+            if sslCtxAddTrustedCertificate(ctx, cert.pbCertEncoded, encodedSize) {
+                addedCount++;
+            }
+        }
+        cert = CertEnumCertificatesInStore(store, cert);
+    }
+    CertCloseStore(store, 0u);
+    return addedCount;
+}
+
+/**
+ * Checks whether a certificate of a system store is an X.509 certificate, that is valid now and that Windows trusts for
+ * server authentication. The enhanced key usage of a certificate in a system store combines the extension of the
+ * certificate with the purposes, that the store allows for it.
+ *
+ * @param cert Certificate to check
+ * @return Whether it is trusted for server authentication
+ */
+f<bool> isTrustedForServerAuth(CertContext* cert) {
+    if (cert.dwCertEncodingType & X509_ASN_ENCODING) == 0u || cert.pCertInfo == nil<byte*> {
+        return false;
+    }
+    if CertVerifyTimeValidity(nil<byte*>, cert.pCertInfo) != 0 {
+        return false;
+    }
+    unsigned int usageSize = 0u;
+    if CertGetEnhancedKeyUsage(cert, 0u, nil<CertEnhKeyUsage*>, &usageSize) == 0 || usageSize == 0u {
+        return false;
+    }
+    // Freed at the end of the scope
+    heap byte* usageBuffer = sAllocUnsafe(cast<unsigned long>(usageSize));
+    bool trusted = false;
+    unsafe {
+        CertEnhKeyUsage* usage = cast<CertEnhKeyUsage*>(usageBuffer);
+        if CertGetEnhancedKeyUsage(cert, 0u, usage, &usageSize) != 0 {
+            if usage.cUsageIdentifier == 0u {
+                // No usage at all means good for all usages if the error is CRYPT_E_NOT_FOUND, and for none otherwise
+                trusted = GetLastError() == CRYPT_E_NOT_FOUND;
+            } else {
+                for unsigned int i = 0u; i < usage.cUsageIdentifier && !trusted; i++ {
+                    trusted = usage.rgpszUsageIdentifier[i] == OID_SERVER_AUTH;
+                }
+            }
+        }
+    }
+    return trusted;
+}

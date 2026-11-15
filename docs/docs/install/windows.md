@@ -40,5 +40,3 @@ Spice ships with its package manager [Spice Shaker](https://github.com/spicelang
 ```sh
 spice-shaker install <package>
 ```
-Spice Shaker does not find the CA certificates of Windows by itself yet. Set `SSL_CERT_FILE` to a PEM file with them, e.g.
-Mozilla's from [curl.se/ca/cacert.pem](https://curl.se/ca/cacert.pem), so that it can verify the servers it downloads the packages from.
