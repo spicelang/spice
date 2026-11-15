@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Windows version of process_native.spice, picked by the OS suffix. The two files must offer the same symbols.
 //
 // Without capturing, the program is started via _spawnvp(), which searches the PATH and inherits the environment and the

@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Process spawning for process.spice on Unix-based systems (Linux, macOS). Windows has its own process_native_windows.spice,
 // picked by the OS suffix. The two files must offer the same symbols.
 //

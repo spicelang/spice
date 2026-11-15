@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // External functions
 ext f<int> snprintf(char*, unsigned long, string, ...);
 ext f<long> strtoll(string, char**, int);

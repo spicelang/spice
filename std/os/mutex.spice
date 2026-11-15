@@ -1,3 +1,4 @@
+#![core.compiler.requiresOs]
 #![core.linker.flag = "-pthread"]
 
 // Link external functions

@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Layout of 'struct dirent' on Linux (glibc and musl, 64 bit)
 type DirEntry struct {
     unsigned long dIno

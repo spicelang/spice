@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Windows version of filepath_native.spice, picked by the OS suffix. The two files must offer the same symbols.
 //
 // Windows has no realpath(). The equivalent is to open the path and ask the OS for the final path of the opened

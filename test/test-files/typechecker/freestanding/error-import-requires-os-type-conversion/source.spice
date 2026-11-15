@@ -1,0 +1,9 @@
+// TEST: --target=aarch64-none-elf
+
+// std/text/format has no attribute itself, but depends on std/type/type-conversion, which uses snprintf of the C library
+import "std/text/format";
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    while true {}
+}

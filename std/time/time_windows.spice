@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Constants
 public const int TIMEZONE_UTC = 0;
 

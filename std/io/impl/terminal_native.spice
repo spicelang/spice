@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Link external functions
 ext f<int> isatty(int /*fd*/);
 

@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:4:1:
+Import requires an operating system: The module 'std/text/format' cannot be imported in freestanding mode, because it depends on 'std/type/type-conversion.spice', which requires an operating system
+
+4  import "std/text/format";
+   ^^^^^^^^^^^^^^^^^^^^^^^^^

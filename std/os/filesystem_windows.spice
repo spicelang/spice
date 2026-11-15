@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 import "std/os/env";
 
 // Windows directory, which is used if none of the environment variables below is set
