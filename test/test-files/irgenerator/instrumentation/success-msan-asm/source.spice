@@ -1,0 +1,22 @@
+// TEST: --target=x86_64-unknown-linux-gnu --sanitizer=memory --build-mode=release
+
+ext f<byte*> malloc(unsigned long);
+ext p free(byte*);
+
+// MemorySanitizer treats the outputs of inline asm as initialized. Reading them must not produce a report.
+f<int> main() {
+    unsafe {
+        // Direct output
+        const long direct = asm<long>("movq $$42, $0", "=r");
+        printf("Direct: %d\n", direct);
+
+        // Indirect output into uninitialized heap memory
+        byte* memory = malloc(16l);
+        long* indirect = cast<long*>(memory);
+        asm("movq $$7, $0", "=*m", indirect);
+        if *indirect == 7l {
+            printf("Indirect: %d\n", *indirect);
+        }
+        free(memory);
+    }
+}

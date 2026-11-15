@@ -136,6 +136,7 @@ Not planned: pure asm without the side effect flag, and multiple direct outputs 
 
 ## Further notes
 
-- MemorySanitizer does not see writes performed in asm, so outputs produce false positives. Either document this or
-  unpoison the outputs after the call.
+- MemorySanitizer needs no work. Its conservative asm handling (`-msan-handle-asm-conservative`, on by default) treats
+  direct outputs as initialized and unpoisons indirect outputs before the call, with the size of their `elementtype`
+  attribute. Covered by the `success-msan-asm` instrumentation test.
 - Debug info needs no work, the asm gets the location of the call.
