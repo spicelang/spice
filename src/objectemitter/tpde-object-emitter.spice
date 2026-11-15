@@ -4,8 +4,8 @@
 import "std/data/vector";
 import "std/io/file";
 import "std/io/filepath";
-import "std/bindings/llvm/llvm" as llvm;
-import "std/bindings/tpde/tpde" as tpde;
+import "@/spice_packages/llvm/llvm" as llvm;
+import "@/spice_packages/tpde/tpde" as tpde;
 
 // Own imports
 import "@/exception/fatal-error";
@@ -18,8 +18,8 @@ import "@/objectemitter/abstract-object-emitter";
  * Consumes an LLVM module directly and emits an ELF object at roughly -O0 code quality but significantly faster than LLVM
  * CodeGen at -O0. Supported targets: ELF on x86_64 or aarch64; small code model; PIC relocation only; no LTO.
  *
- * The emitter uses the std TPDE bindings, which are only backed by TPDE, if the TPDE libraries were linked into the compiler
- * (see std/bindings/tpde). The driver rejects the TPDE backend otherwise, so this emitter is only used if TPDE is available.
+ * The emitter uses the TPDE bindings of the tpde package, which are only backed by TPDE, if the TPDE libraries were linked
+ * into the compiler (via TPDE_FLAGS, see src/linker-flags.spice of the package). The driver rejects the TPDE backend otherwise, so this emitter is only used if TPDE is available.
  */
 public type TPDEObjectEmitter struct : IAbstractObjectEmitter {
     llvm::Module* module

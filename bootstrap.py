@@ -88,6 +88,99 @@ def find_llvm_include_dirs() -> str | None:
     return None
 
 
+def find_spice_shaker() -> Path | None:
+    """
+    Spice Shaker, that installs the packages of the compiler sources: the one of SPICE_SHAKER, or else the release pinned in
+    .github/stage0-shaker-version, that fetch-stage0.py downloads into build/stage0/spice-shaker/
+    """
+    if custom := os.environ.get("SPICE_SHAKER"):
+        return Path(custom)
+    shaker_dir = ROOT_DIR / "build" / "stage0" / "spice-shaker"
+    candidate = shaker_dir / ("spice-shaker.exe" if sys.platform == "win32" else "spice-shaker")
+    pinned_version = (ROOT_DIR / ".github" / "stage0-shaker-version").read_text().strip()
+    stamp = shaker_dir / "version"
+    if candidate.is_file() and stamp.is_file() and stamp.read_text().strip() == pinned_version:
+        return candidate
+    return None
+
+
+def export_windows_ca_certificates(env: dict[str, str]) -> None:
+    """
+    The OpenSSL DLLs of the Windows release of Spice Shaker look for the CA certificates relative to their own dir, where there
+    are none. So SSL_CERT_FILE points to the certificates, that Windows trusts for server authentication, unless SSL_CERT_FILE
+    or SSL_CERT_DIR is set already. They are exported like Python's ssl module loads them on Windows (CA and ROOT stores)
+    """
+    if env.get("SSL_CERT_FILE") or env.get("SSL_CERT_DIR"):
+        return
+    import ssl
+    pems = []
+    for store in ("CA", "ROOT"):
+        for cert, encoding, trust in ssl.enum_certificates(store):  # type: ignore[attr-defined]
+            if encoding == "x509_asn" and (trust is True or ssl.Purpose.SERVER_AUTH.oid in trust):
+                pem = ssl.DER_cert_to_PEM_cert(cert)
+                if pem not in pems:
+                    pems.append(pem)
+    if not pems:
+        fail("Windows trusts no certificates for server authentication, so Spice Shaker cannot reach the registry")
+    bundle = ROOT_DIR / "build" / "stage0" / "windows-ca-certificates.pem"
+    bundle.parent.mkdir(parents=True, exist_ok=True)
+    bundle.write_text("".join(pems), encoding="ascii")
+    env["SSL_CERT_FILE"] = str(bundle)
+
+
+def packages_sync_state(shaker: Path, source_dir: Path) -> str | None:
+    """
+    State of the inputs of 'spice-shaker sync': the manifest, the lock file and the Spice Shaker executable. None if a package
+    of the lock file is not installed, so that it has to be synced in any case
+    """
+    import tomllib
+    lock_file = source_dir / "spice.lock"
+    try:
+        lock = tomllib.loads(lock_file.read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return None
+    if not all((source_dir / "spice_packages" / str(entry.get("name", ""))).is_dir() for entry in lock.get("package", [])):
+        return None
+    digest = hashlib.sha256()
+    for path in (source_dir / "spice.toml", lock_file, shaker):
+        digest.update(path.read_bytes() if path.is_file() else b"")
+    return digest.hexdigest()
+
+
+def install_packages(shaker: Path | None = None, source_dir: Path = ROOT_DIR / "src") -> None:
+    """
+    Install the packages of the compiler sources (source_dir/spice.lock) into source_dir/spice_packages with 'spice-shaker sync'.
+    Spice Shaker is downloaded first (see fetch-stage0.py), if it is missing. 'spice-shaker sync' always asks the registry, so
+    it only runs if the manifest, the lock file or Spice Shaker changed since the last successful sync, or a package is
+    missing. That keeps rebuilds working offline
+    """
+    shaker = shaker or find_spice_shaker()
+    if shaker is None:
+        subprocess.run([sys.executable, str(ROOT_DIR / "fetch-stage0.py")], check=True, stdout=subprocess.DEVNULL)
+        shaker = find_spice_shaker()
+    if shaker is None or not shaker.is_file():
+        fail("Spice Shaker not found. Download it with 'python fetch-stage0.py' or set SPICE_SHAKER")
+    # Outside of spice_packages, which Spice Shaker manages
+    stamp = source_dir.parent / "build" / "packages-synced"
+    state = packages_sync_state(shaker, source_dir)
+    if state is not None and stamp.is_file() and stamp.read_text().strip() == state:
+        return
+    env = dict(os.environ)
+    if sys.platform == "win32":
+        export_windows_ca_certificates(env)
+    stamp.unlink(missing_ok=True)
+    try:
+        result = subprocess.run([str(shaker), "sync"], cwd=source_dir, env=env)
+    except OSError as error:
+        fail(f"Could not run Spice Shaker ({shaker}): {error}")
+    if result.returncode != 0:
+        fail(f"Installing the packages of {source_dir / 'spice.lock'} with '{shaker} sync' failed")
+    # Spice Shaker may have updated the lock file, so the state is taken after the sync
+    if (state := packages_sync_state(shaker, source_dir)) is not None:
+        stamp.parent.mkdir(parents=True, exist_ok=True)
+        stamp.write_text(state + "\n")
+
+
 def uses_tpde_backend(build_flags: list[str]) -> bool:
     for i, flag in enumerate(build_flags):
         if flag.lower() == "--backend=tpde":
@@ -211,6 +304,7 @@ def main() -> None:
     stage0_compiler = stage0_compiler.resolve()
 
     # Environment, the stage compilers need to compile the compiler sources
+    install_packages()
     os.environ.setdefault("SPICE_STD_DIR", str(ROOT_DIR / "std"))
     if "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = find_llvm_lib_dir()

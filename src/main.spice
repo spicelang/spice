@@ -120,7 +120,7 @@ f<int> main(int argc, string[] argv) {
 
     driver.enrich(); // Prepare the cli options
 
-    // Let the std TPDE bindings find the TPDE libraries, that release packages ship with the std
+    // Let the TPDE bindings (tpde package) find the TPDE libraries, that release packages ship with the std
     exportStdTPDEFlags(driver.cliOptions);
 
     // Kick off the compiling process

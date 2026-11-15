@@ -33,7 +33,7 @@ f<Tracked> localOrTemporary(bool returnLocal) {
     return local;
 }
 
-// The early return sits in a loop, like the ones of Triple.getArchTypeName() in the std LLVM bindings
+// The early return sits in a loop, like the ones of Triple.getArchTypeName() in the LLVM bindings of the llvm package
 f<Tracked> earlyReturnFromForLoop(int match) {
     const Tracked local = Tracked(1);
     for int i = 0; i < 3; i++ {

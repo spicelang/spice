@@ -11,8 +11,16 @@ for the current platform into `build/stage0/spice`.
 
 ## Prerequisites
 
-The compiler links LLVM through the std LLVM bindings (`std/bindings/llvm`), so building it needs an LLVM build. The
-scripts find it via `LLVM_DIR` (`<llvm-build>/lib/cmake/llvm`) or `llvm-config`, or take `LLVM_LIB_DIR` and
+The compiler builds on two official packages ([spicelang/packages](https://github.com/spicelang/packages)): the LLVM C API
+bindings (`llvm`) and the TPDE bindings (`tpde`). They are declared in `src/spice.toml` and pinned with their checksums in
+`src/spice.lock`. Spice Shaker installs them into `src/spice_packages` (ignored by git) with `spice-shaker sync` in `src/`;
+`build.py`, `bootstrap.py`, `test/run-tests.py` and the benchmark runner do that on their own, and so does
+`python fetch-stage0.py --sync-packages`. They use the Spice Shaker release pinned in `.github/stage0-shaker-version`, that
+`fetch-stage0.py` downloads into `build/stage0/spice-shaker/` (`SPICE_SHAKER` overrides it). To bump a package, change the
+constraint in `src/spice.toml` if needed and run `spice-shaker update` in `src/`, then commit both files. The compiler sources import the packages relative to the main source
+file: `import "@/spice_packages/llvm/llvm" as llvm;`.
+
+The llvm package links LLVM statically, so building the compiler needs an LLVM build. The scripts find it via `LLVM_DIR` (`<llvm-build>/lib/cmake/llvm`) or `llvm-config`, or take `LLVM_LIB_DIR` and
 `LLVM_INCLUDE_DIRS` (`-I<dir1> -I<dir2>`) directly. The local dev setup builds LLVM into `./llvm/build-release`:
 
 ```sh
@@ -22,7 +30,7 @@ export LLVM_DIR=$PWD/llvm/build-release/lib/cmake/llvm
 If LLVM and third-party libs are missing, run `python dev-setup.py` once (slow: it clones and builds LLVM).
 `python setup-deps.py` alone updates the submodules and builds libbacktrace into the std. `python setup-deps.py --tpde`
 (Linux, needs `LLVM_DIR` or `llvm-config`) also builds TPDE with its own CMake project and installs it into
-`std/bindings/tpde/`, where the compiler picks it up for `--backend=tpde` and the std TPDE bindings.
+`std/bindings/tpde/`, where the compiler picks it up for `--backend=tpde` and the tpde package (via `TPDE_FLAGS`).
 
 ## Build
 

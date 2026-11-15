@@ -20,7 +20,7 @@ for the Spice language.
         - `src/driver.spice`: CLI handling
         - `src/lexer/`, `src/parser/`: hand-written lexer and parser
         - `src/typechecker/`: type checking and inference, overload resolution, and related components
-        - `src/irgenerator/`: LLVM IR code generation (via the LLVM C API bindings in `std/bindings/llvm`)
+        - `src/irgenerator/`: LLVM IR code generation (via the LLVM C API bindings of the `llvm` package, see `src/spice.toml`)
     - `test/`: tests
         - `test/run-tests.py`: test runner
         - `test/test-files/`: test input files for various reference integration tests
@@ -37,8 +37,12 @@ The helper scripts are Python-based and cross-platform.
     - `python dev-setup.py`
 - The scripts find LLVM via `LLVM_DIR` (`<llvm-build>/lib/cmake/llvm`) or `llvm-config`. Alternatively, set
   `LLVM_LIB_DIR` and `LLVM_INCLUDE_DIRS` (`-I<dir1> -I<dir2>`).
-- Download the stage0 compiler (also done by `build.py` and `dev-setup.py`, if it is missing):
+- Download the stage0 compiler and the Spice Shaker release pinned in `.github/stage0-shaker-version` (also done by
+  `build.py` and `dev-setup.py`, if it is missing):
     - `python fetch-stage0.py`
+- Install the packages, that the compiler sources build on (`llvm` and `tpde`, pinned in `src/spice.lock`), into
+  `src/spice_packages` with Spice Shaker (also done by `build.py`, `bootstrap.py` and `test/run-tests.py`):
+    - `python fetch-stage0.py --sync-packages`
 - Optional: build the TPDE libraries into the std, for the experimental TPDE backend (Linux only):
     - `python setup-deps.py --tpde`
 

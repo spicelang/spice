@@ -32,7 +32,7 @@ jobs:
           extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
 
       - name: Download Libs
-        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the std TPDE bindings
+        # --tpde builds TPDE into the std, for the TPDE backend of the compiler and the tpde package
         run: python setup-deps.py --tpde
 
       - name: Fetch stage0 compiler

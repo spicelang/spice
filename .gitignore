@@ -39,3 +39,6 @@ docs/docs/std
 
 # Python bytecode
 __pycache__/
+
+# Packages of the compiler sources, that Spice Shaker installs from src/spice.lock
+/src/spice_packages/

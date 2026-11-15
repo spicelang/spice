@@ -68,7 +68,7 @@ log("done.")
 
 # Step 4: download third-party libs
 log("[Step 4] Downloading third-party libraries ...")
-# Also build TPDE (Linux only) against the LLVM from step 3, for the TPDE backend and the std TPDE bindings
+# Also build TPDE (Linux only) against the LLVM from step 3, for the TPDE backend and the tpde package
 setup_deps_env = {**os.environ, "LLVM_DIR": os.environ.get("LLVM_DIR", str((llvm_build / "lib" / "cmake" / "llvm").resolve()))}
 run(sys.executable, "setup-deps.py", "--tpde", env=setup_deps_env)
 log("done.")

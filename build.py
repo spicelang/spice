@@ -40,6 +40,9 @@ if compiler is None:
 if compiler is None or not compiler.is_file():
     bootstrap.fail("No compiler found to build with. Download the stage0 compiler ('python fetch-stage0.py') or pass --compiler")
 
+# The packages, that the compiler sources build on (src/spice.lock)
+bootstrap.install_packages()
+
 # Environment, the compiler needs to build the compiler sources. Always build with the std and compiler sources of this checkout
 os.environ.setdefault("LLVM_DIR", str(ROOT_DIR / "llvm" / "build-release" / "lib" / "cmake" / "llvm"))
 os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")

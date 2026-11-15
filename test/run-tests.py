@@ -904,7 +904,7 @@ def prepare_work_dir() -> None:
 
 def is_tpde_available() -> bool:
     """
-    The TPDE backend of the compiler under test and the std TPDE bindings, that some test cases use, need the TPDE libraries.
+    The TPDE backend of the compiler under test, that some test cases use, needs the TPDE libraries.
     The compilers take them from TPDE_FLAGS or, if it is not set, from the std (see 'setup-deps.py --tpde'). An empty TPDE_FLAGS
     disables them. TPDE only supports ELF targets
     """
@@ -1022,6 +1022,10 @@ def main() -> None:
         for test_case in test_cases:
             print(test_case.full_name if test_case else BUILTIN_TESTS_NAME)
         return
+
+    # Building the compiler sources (the compiler under test or the builtin tests) needs the packages of src/spice.lock
+    if OPTS.compiler is None or None in test_cases:
+        bootstrap.install_packages()
 
     # Build the compiler under test
     if OPTS.compiler is None:

@@ -1,7 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Std imports
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 
 // Own imports
 import "@/compiler-pass";

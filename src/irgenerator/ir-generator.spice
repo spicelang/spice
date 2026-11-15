@@ -9,7 +9,7 @@ import "std/data/pair";
 import "std/text/stringstream";
 import "std/type/type-conversion";
 import "std/type/types";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 
 // Own imports
 import "@/exception/fatal-error";

@@ -19,8 +19,8 @@ LIBBACKTRACE_LICENSE = Path("std/runtime/LICENSES/libbacktrace-LICENSE")
 # Records the submodule commit the archive was built from, so a bump rebuilds it but a repeat run does not.
 LIBBACKTRACE_STAMP = LIBBACKTRACE_BUILD / "built-from-revision"
 
-# TPDE is vendored as a submodule and built with its own CMake project. The TPDE backend of the compiler and the std TPDE
-# bindings (std/bindings/tpde) link its static libraries. They are installed into the std tree in the layout the Linux release
+# TPDE is vendored as a submodule and built with its own CMake project. The TPDE backend of the compiler and the TPDE
+# bindings of the tpde package link its static libraries. They are installed into the std tree in the layout the Linux release
 # packages ship, so the compiler derives TPDE_FLAGS from it (see getStdTPDEFlags in src/util/system-util.spice). TPDE only
 # emits ELF objects, so it is only built on Linux.
 TPDE_SRC = Path("deps/tpde")
@@ -201,7 +201,7 @@ def build_tpde() -> None:
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument("--tpde", action="store_true",
-                    help="Also build TPDE (Linux only) for the TPDE backend and the std TPDE bindings. Needs LLVM (LLVM_DIR or "
+                    help="Also build TPDE (Linux only) for the TPDE backend and the tpde package. Needs LLVM (LLVM_DIR or "
                          "llvm-config) and a clang for TPDE's encoding templates")
 args = parser.parse_args()
 

@@ -10,7 +10,7 @@ import "std/os/env";
 import "std/io/file";
 import "std/io/filepath";
 import "std/iterator/array-iterator";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 
 // Own imports
 import "@/exception/fatal-error";
@@ -94,7 +94,7 @@ public f<String> renderCommandForDisplay(const String& program, const Vector<Str
 /**
  * Expand a linker flag that may contain environment-variable references ('$VAR' on Unix, '%VAR%' on Windows) or a
  * backtick-quoted command substitution (e.g. "`pkg-config --cflags --libs libcurl`"), mirroring what a shell would have
- * done for these flags. Bindings rely on both forms (see e.g. std/bindings/llvm/linker-flags.spice and
+ * done for these flags. Bindings rely on both forms (see e.g. src/linker-flags.spice of the llvm package and
  * std/bindings/openssl/openssl.spice).
  *
  * Unlike a shell, only these two specific substitutions are recognized, and the backtick-quoted command is executed
@@ -470,8 +470,8 @@ public f<FilePath> getStdRuntimeLibDir() {
 }
 
 /**
- * Build the flags for the std TPDE bindings (std/bindings/tpde) from the TPDE headers and static libraries, that the Linux
- * release packages ship with the std. Returns an empty string if the given std does not ship them.
+ * Build the flags for the TPDE bindings (tpde package) from the TPDE headers and static libraries, that the Linux release
+ * packages ship with the std (std/bindings/tpde). Returns an empty string if the given std does not ship them.
  *
  * @param stdDir Std directory
  * @return Value for the TPDE_FLAGS env var, or an empty string
@@ -498,7 +498,8 @@ public f<String> getStdTPDEFlags(const FilePath& stdDir) {
 }
 
 /**
- * Point the std TPDE bindings to the TPDE headers and libraries, that the std ships, unless TPDE_FLAGS is set already.
+ * Point the TPDE bindings (tpde package) to the TPDE headers and libraries, that the std ships, unless TPDE_FLAGS is set
+ * already.
  * The bindings only use TPDE on Linux, and the shipped libraries are built for the host machine, so this only applies to native
  * builds on Linux. Has to be called before the compilation starts, because it changes the process environment.
  *

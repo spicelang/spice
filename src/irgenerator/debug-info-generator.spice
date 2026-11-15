@@ -6,7 +6,7 @@ import "std/data/stack";
 import "std/data/unordered-map";
 import "std/data/pair";
 import "std/math/hash";
-import "std/bindings/llvm/llvm" as llvm;
+import "@/spice_packages/llvm/llvm" as llvm;
 
 // Own imports
 import "@/ast/ast-nodes";
@@ -27,7 +27,7 @@ import "@/symboltablebuilder/type" as symboltable; // Aliased, because Type clas
 /**
  * Generates the debug info of a source file.
  *
- * It uses the LLVM C API (llvm::DIBuilder wrapper in std/bindings/llvm), which represents every debug info node as an
+ * It uses the LLVM C API (llvm::DIBuilder wrapper of the llvm package), which represents every debug info node as an
  * llvm::Metadata. A few capabilities of the C++ DIBuilder have no C-API equivalent and are therefore not supported:
  *   - Methods use createFunction (the C API has no createMethod).
  *   - Subprogram virtuality flags (SPFlagVirtual/SPFlagPureVirtual) cannot be set (the C API createFunction exposes only

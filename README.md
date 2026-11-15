@@ -59,7 +59,8 @@ There is a Python script called `dev-setup.py` to help you with that. It will do
 - Make sure you have all dependencies
 - Clone and build the required LLVM version with the required settings to the `llvm` subdirectory
 - Download and build all required third-party libs
-- Download the released Spice compiler (stage0 compiler), that builds the compiler from source
+- Download the released Spice compiler (stage0 compiler), that builds the compiler from source, and Spice Shaker
+- Install the packages, that the compiler builds on (the `llvm` and `tpde` bindings), into `src/spice_packages` with Spice Shaker
 - Build Spice for the first time into the `build` subdirectory
 
 Use this command to run it:

@@ -43,7 +43,7 @@ Implement `visitXyz` (or update the touched node's handlers) in each pass that m
 - **`src/symboltablebuilder/symbol-table-builder.spice`** — declare scopes/symbols it introduces.
 - **`src/typechecker/type-checker.spice`** — type rules. Remember it runs twice (pre mode bottom-up for generics, post mode
   top-down). Split logic by mode as neighbors do.
-- **`src/irgenerator/ir-generator.spice`** — emit LLVM IR (via the std LLVM bindings, `std/bindings/llvm`).
+- **`src/irgenerator/ir-generator.spice`** — emit LLVM IR (via the LLVM bindings of the `llvm` package, `src/spice_packages/llvm`).
 - Touch `src/importcollector/` only if the construct affects imports, and `src/linter/` if a lint rule should know it.
 
 Emit diagnostics for invalid uses via the `spice-diagnostics` skill.
