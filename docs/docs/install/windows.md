@@ -40,6 +40,3 @@ Spice ships with its package manager [Spice Shaker](https://github.com/spicelang
 ```sh
 spice-shaker install <package>
 ```
-Spice Shaker releases, that were built with a Spice version before the support for the certificate store of Windows,
-do not find the CA certificates by themselves. If Spice Shaker fails with `TLS certificate verification failed`, set
-`SSL_CERT_FILE` to a PEM file with them, e.g. Mozilla's from [curl.se/ca/cacert.pem](https://curl.se/ca/cacert.pem).
