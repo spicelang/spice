@@ -265,7 +265,6 @@ public f<ExternalBinaryFinderResult> findLinkerInvoker() {
     }
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_INVOKER_NOT_FOUND, "No supported linker invoker was found on the system. Supported are: clang and gcc");
     abortWithError(error.getMessage());
-    return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
 }
 
 /**
@@ -334,7 +333,6 @@ public f<ExternalBinaryFinderResult> findLinker(const CliOptions& cliOptions, bo
     }
     const LinkerError error = LinkerError(LinkerErrorType::LINKER_NOT_FOUND, "No supported linker was found on the system. Supported are: wild, mold, lld, gold and ld");
     abortWithError(error.getMessage());
-    return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
 }
 
 /**
@@ -378,7 +376,6 @@ public f<ExternalBinaryFinderResult> findArchiver() {
     }                                                                                  // LCOV_EXCL_LINE
     const LinkerError error = LinkerError(LinkerErrorType::ARCHIVER_NOT_FOUND, "No supported archiver was found on the system. Supported are: llvm-ar and ar");
     abortWithError(error.getMessage());
-    return ExternalBinaryFinderResult{"", String()}; // Unreachable, abortWithError exits the process
 }
 
 /**
