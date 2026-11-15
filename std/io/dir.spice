@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Std imports
 import "std/data/vector";
 import "std/io/impl/dir_native";

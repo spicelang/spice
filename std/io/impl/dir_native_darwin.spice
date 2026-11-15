@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Layout of 'struct dirent' on macOS (64 bit inode numbers, the only layout on arm64)
 type DirEntry struct {
     unsigned long dIno

@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Structs
 // Layout of 'struct rusage' on 64-bit Linux and macOS: two 'struct timeval' with 16 bytes each, followed by 14 longs
 type ResourceUsage struct {

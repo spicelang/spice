@@ -164,10 +164,10 @@ Your own modules can have the attribute as well, e.g. the hosted part of a libra
 module is rejected anyway, its own imports are not resolved in freestanding mode.
 
 !!! note
-    Not all modules of the OS tier have the attribute yet, e.g. `std/io/file`, `std/os/thread` and
-    `std/type/type-conversion` do not. The compiler itself uses them and is built with the previous release, which does
-    not know the attribute. Using them in freestanding mode fails later, e.g. with unresolved symbols like `snprintf` at link
-    time.
+    Some modules outside of `std/io`, `std/net`, `std/os` and `std/time` belong to the OS tier as well, since they depend
+    on `std/type/type-conversion`, which uses `snprintf`, `strtoll` and `strtod` of the C standard library. These are
+    `std/text/format`, the JSON, TOML and YAML modules of `std/text`, `std/math/fct`, `std/math/rand` and
+    `std/data/graph`. `std/os/atomic` is built on `std/os/mutex` and belongs to the OS tier as well.
 
 ## Compiler runtime builtins
 

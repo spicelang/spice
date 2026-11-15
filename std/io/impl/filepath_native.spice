@@ -1,3 +1,5 @@
+#![core.compiler.requiresOs]
+
 // Canonical path resolution for filepath.spice. Windows has no realpath() and therefore has its own
 // filepath_native_windows.spice, picked by the OS suffix. The two files must offer the same symbols.
 
