@@ -1,0 +1,19 @@
+#![core.compiler.requiresOs]
+
+// The certificate store of the operating system for "std/net/tls", on the operating systems, that keep the trusted CA
+// certificates in files. OpenSSL reads them by itself there, so there is nothing to add. See the _windows variant for the
+// one, that does not.
+
+// Imports
+import "std/bindings/openssl/openssl";
+
+/**
+ * Adds the certificates of the certificate store of the operating system to the trust store of a context. This operating
+ * system keeps them in files, that OpenSSL reads by itself (see `sslCtxSetDefaultVerifyPaths`), so it adds none.
+ *
+ * @param ctx Context, whose trust store to extend
+ * @return Whether certificates were added, always false here
+ */
+public f<bool> addSystemCertificates(SslCtx ctx) {
+    return false;
+}
