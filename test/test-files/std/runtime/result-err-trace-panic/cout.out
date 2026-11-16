@@ -1,4 +1,4 @@
-Program panicked at ../../../../../../std/runtime/result_rt.spice:42:29: it failed
+Program panicked at ../../../../../std/runtime/result_rt.spice:42:29: it failed
 42  this.error.isOk() { panic(this.error); }
                         ^^^^^^^^^^^^^^^^^
 Recorded error trace:

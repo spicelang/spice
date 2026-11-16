@@ -60,7 +60,8 @@ public f<String> CodeLoc.toPrettyString() {
 }
 
 /**
- * Returns the path of the source file this code location points into, relative to the root source file
+ * Returns the path of the source file this code location points into, relative to the dir of the root source file. Paths
+ * inside this dir start with './', e.g. './main.spice' or './sub/lib.spice'.
  *
  * @return Pretty file path
  */
@@ -69,10 +70,20 @@ public f<String> CodeLoc.toPrettyFilePath() {
     if len(ROOT_SOURCE_FILE_PATH) == 0 || len(this.sourceFilePath) == 0 {
         return String(this.sourceFilePath);
     }
-    String relativePath = getRelativePath(String(this.sourceFilePath), String(ROOT_SOURCE_FILE_PATH));
-    if relativePath == "." {
-        const FilePath path = FilePath(this.sourceFilePath);
-        relativePath = "./" + path.getFileName();
+    // The root source file path may have no dir component (e.g. 'main.spice'), so its dir is taken from its canonical form
+    const FilePath rootSourceFilePath = FilePath(ROOT_SOURCE_FILE_PATH);
+    FilePath canonicalRootSourceFilePath = rootSourceFilePath.canonical();
+    if canonicalRootSourceFilePath.isEmpty() {
+        return String(this.sourceFilePath);
+    }
+    String rootDir = canonicalRootSourceFilePath.getParentDir();
+    if rootDir.isEmpty() {
+        rootDir = String("/"); // The root source file lives in the file system root
+    }
+    String relativePath = getRelativePath(String(this.sourceFilePath), rootDir);
+    FilePath relativeFilePath = FilePath(relativePath);
+    if relativePath != ".." && !relativePath.startsWith("../") && !relativeFilePath.isAbsolute() {
+        relativePath = "./" + relativePath;
     }
     return relativePath;
 }
@@ -214,5 +225,42 @@ f<bool> testGetRelativePath() {
     assert linkResolvesToRealFile;
     assert upwardsFromLink == "../../../other.txt";
     assert downwardsToLink == "../real/nested/file.txt";
+    return true;
+}
+
+#[test]
+f<bool> testToPrettyFilePath() {
+    const FilePath testDir = makeUniqueTestDir("spice-code-loc-pretty-test");
+    const FilePath projectDir = testDir / "project";
+    createTestDirs(projectDir / "sub");
+    const FilePath mainFile = projectDir / "main.spice";
+    const FilePath libFile = projectDir / "lib.spice";
+    const FilePath subFile = projectDir / "sub" / "other.spice";
+    const FilePath outsideFile = testDir / "outside.spice";
+    writeTestFile(mainFile, "");
+    writeTestFile(libFile, "");
+    writeTestFile(subFile, "");
+    writeTestFile(outsideFile, "");
+
+    // The paths are made relative to the dir of the root source file, not to the root source file itself
+    setRootSourceFilePath(mainFile.toString());
+    const CodeLoc mainCodeLoc = CodeLoc(1l, 1l, mainFile.toString());
+    const CodeLoc libCodeLoc = CodeLoc(2l, 5l, libFile.toString());
+    const CodeLoc subCodeLoc = CodeLoc(1l, 1l, subFile.toString());
+    const CodeLoc outsideCodeLoc = CodeLoc(1l, 1l, outsideFile.toString());
+    const String prettyMain = mainCodeLoc.toPrettyFilePath();
+    const String prettyLib = libCodeLoc.toPrettyFilePath();
+    const String prettySub = subCodeLoc.toPrettyFilePath();
+    const String prettyOutside = outsideCodeLoc.toPrettyFilePath();
+    const String prettyLibCodeLoc = libCodeLoc.toPrettyString();
+
+    // Clean up before asserting, so that a failure does not leave the files behind or the root source file registered
+    setRootSourceFilePath("");
+    removeTestDir(testDir);
+    assert prettyMain == "./main.spice";
+    assert prettyLib == "./lib.spice";
+    assert prettySub == "./sub/other.spice";
+    assert prettyOutside == "../outside.spice";
+    assert prettyLibCodeLoc == "./lib.spice:2:5";
     return true;
 }
