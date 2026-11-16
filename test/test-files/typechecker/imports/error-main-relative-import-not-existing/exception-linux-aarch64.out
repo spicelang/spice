@@ -1,4 +1,4 @@
-[Error|Semantic] ../sub/inner.spice:2:1:
+[Error|Semantic] ./sub/inner.spice:2:1:
 Imported source file not existing: The source file 'other.spice' was not found
 
 The following paths were checked with descending priority:
