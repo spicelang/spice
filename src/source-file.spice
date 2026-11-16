@@ -1516,14 +1516,13 @@ public p SourceFile.collectAndPrintWarnings() {
             sourceFile.collectAndPrintWarnings();
         }
     }
-    // Warnings of external packages are no concern of the user
-    if this.isPackageFile {
+    // Warnings of external packages are no concern of the user. Files with the core.compiler.warnings.ignore attribute
+    // suppress all of their warnings, also the ones added directly while processing the file (e.g. by the type checker)
+    if this.isPackageFile || this.ignoreWarnings {
         return;
     }
     // Collect warnings for this file
-    if !this.ignoreWarnings {
-        this.globalScope.collectWarnings(this.compilerOutput.warnings);
-    }
+    this.globalScope.collectWarnings(this.compilerOutput.warnings);
     // Print warnings for this file. Generic code is checked once per manifestation, so the same warning may have been added
     // multiple times. Print each of them only once
     UnorderedSet<String> printedWarnings;

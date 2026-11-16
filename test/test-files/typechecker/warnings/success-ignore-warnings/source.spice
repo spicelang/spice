@@ -1,0 +1,27 @@
+#![core.compiler.warnings.ignore]
+
+f<string> getText() {
+    return "text";
+}
+
+f<int> main() {
+    int x = 1;
+    {
+        // Shadowed variable (added by the symbol table)
+        int x = 2;
+        printf("Inner: %d\n", x);
+    }
+    // Identity cast (added by the type checker)
+    int y = cast<int>(x);
+    // Unused return value (added by the type checker)
+    getText();
+    // Bool assignment as condition (added by the type checker)
+    bool a = false;
+    bool b = true;
+    if a = b {
+        printf("Assigned: %d\n", a);
+    }
+    // Unused variable (collected from the scope)
+    int unused = 3;
+    printf("Outer: %d, %d\n", x, y);
+}
