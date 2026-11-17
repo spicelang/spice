@@ -91,8 +91,7 @@ public p Vector.ctor(const Vector<T>& original) {
  * @param newValue Vector to copy from
  */
 public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
-    // Self-assignment: leave the queue as is; normalizing in place would
-    // overwrite source slots before the wrapped index reads them.
+    // Self-assignment: leave the vector as is, clearing it first would destroy the items to copy
     if &this == &newValue { return; }
     // Clear the old, resize the new one
     this.clear();
@@ -212,7 +211,7 @@ public f<const T&> operator[]<T, UIntOrULong>(const Vector<T>& v, UIntOrULong in
  * @param index Index to insert the item at
  * @param item Item to insert
  */
-public p Vector.insertAt<UIntOrULong>(unsigned UIntOrULong index, const T& item) {
+public p Vector.insertAt<UIntOrULong>(UIntOrULong index, const T& item) {
     if index > this.size {
         panic(Error("Access index out of bounds"));
     }

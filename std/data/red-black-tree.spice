@@ -61,23 +61,23 @@ p Node.ctor(const Node<K, V>& other) {
     panic(Error("This copy ctor should never be called!"));
 }
 
-inline inline f<bool> Node.isRoot() {
+inline f<bool> Node.isRoot() {
     return this.parent == nil<Node<K, V>*>;
 }
 
-inline inline f<bool> Node.hasLeftChild() {
+inline f<bool> Node.hasLeftChild() {
     return this.childLeft != nil<heap Node<K, V>*>;
 }
 
-inline inline f<bool> Node.hasRightChild() {
+inline f<bool> Node.hasRightChild() {
     return this.childRight != nil<heap Node<K, V>*>;
 }
 
-inline inline f<bool> Node.isRed() {
+inline f<bool> Node.isRed() {
     return this.color == NodeColor::RED;
 }
 
-inline inline f<bool> Node.isBlack() {
+inline f<bool> Node.isBlack() {
     return this.color == NodeColor::BLACK;
 }
 
