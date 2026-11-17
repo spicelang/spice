@@ -2272,7 +2272,8 @@ public type FctCallType enum {
     TYPE_ORDINARY,
     TYPE_METHOD,
     TYPE_CTOR,
-    TYPE_FCT_PTR
+    TYPE_FCT_PTR,
+    TYPE_FCT_PTR_FIELD // Call of a function pointer field with method call syntax, e.g. 'holder.callback()'
 }
 
 public type FctCallData struct {
@@ -2297,7 +2298,8 @@ public f<bool> FctCallData.isOrdinaryCall() { return this.callType == FctCallTyp
 public f<bool> FctCallData.isMethodCall() { return this.callType == FctCallType::TYPE_METHOD; }
 public f<bool> FctCallData.isVirtualMethodCall() { return this.isMethodCall() && this.thisType.isBase(SuperType::TY_INTERFACE); }
 public f<bool> FctCallData.isCtorCall() { return this.callType == FctCallType::TYPE_CTOR; }
-public f<bool> FctCallData.isFctPtrCall() { return this.callType == FctCallType::TYPE_FCT_PTR; }
+public f<bool> FctCallData.isFctPtrCall() { return this.callType == FctCallType::TYPE_FCT_PTR || this.isFctPtrFieldCall(); }
+public f<bool> FctCallData.isFctPtrFieldCall() { return this.callType == FctCallType::TYPE_FCT_PTR_FIELD; }
 
 public p FctCallData.setCompileTimeValue(const CompileTimeValue& value) {
     this.compileTimeValue = value;

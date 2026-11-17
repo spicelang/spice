@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:12:36:
+Referenced undefined function: Expected int but got bool
+
+12  n", holder.callback(true));
+                        ^^^^

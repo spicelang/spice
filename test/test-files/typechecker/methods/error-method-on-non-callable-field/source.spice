@@ -1,0 +1,9 @@
+type Holder struct {
+    int callback
+}
+
+f<int> main() {
+    Holder holder;
+    holder.callback = 1;
+    printf("%d\n", holder.callback());
+}

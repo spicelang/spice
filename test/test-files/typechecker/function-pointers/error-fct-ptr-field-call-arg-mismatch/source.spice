@@ -1,0 +1,13 @@
+f<int> identity(int x) {
+    return x;
+}
+
+type Holder struct {
+    f<int>(int) callback
+}
+
+f<int> main() {
+    Holder holder;
+    holder.callback = identity;
+    printf("%d\n", holder.callback(true));
+}

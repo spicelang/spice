@@ -4757,6 +4757,11 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(SuperType::TY_UNRESOLVED), this.manIdx), nil<SymbolTableEntry*>});
         }
         assert data.calleeParentScope != nil<Scope*>;
+
+        // If no method matches, the call might be a call of a function pointer field, e.g. 'holder.callback()'
+        if data.callee == nil<const Function*> && !this.visitFctPtrFieldCall(node) { // Check if soft errors occurred
+            return Any(ExprResult{node.node.setEvaluatedSymbolType(QualType(SuperType::TY_UNRESOLVED), this.manIdx), nil<SymbolTableEntry*>});
+        }
     } else if data.isFctPtrCall() {
         // This is a function pointer call
         if node.calleeExpr != nil<IVisitable*> {
@@ -5139,6 +5144,54 @@ f<bool> TypeChecker.visitMethodCall(ASTFctCallNode* node, Scope* structScope) {
     data.callee = matchFunction(matchScope, functionName, data.thisType, data.args, data.templateTypes, false, baseNode);
 
     return true;
+}
+
+/**
+ * Check a call with method call syntax, that no method matches, as call of a function pointer field with the method
+ * name, e.g. 'holder.callback()'. If the struct has no such field, the call is left untouched, so that the missing
+ * method gets reported.
+ *
+ * @param node Method call, that no method matches
+ * @return False if soft errors occurred
+ */
+f<bool> TypeChecker.visitFctPtrFieldCall(ASTFctCallNode* node) {
+    ASTNode* baseNode = cast<ASTNode*>(node);
+    FctCallData& data = node.data.get(this.manIdx);
+    if !data.thisType.is(SuperType::TY_STRUCT) { return true; }
+
+    // Retrieve the field, also looking through composed fields
+    const String& fieldName = node.functionNameFragments.back();
+    Struct* spiceStruct = data.thisType.getStruct(baseNode);
+    assert spiceStruct != nil<Struct*>;
+    Vector<unsigned long> indexPath;
+    SymbolTableEntry* fieldEntry = spiceStruct.lookupInComposedFields(fieldName, indexPath);
+    if fieldEntry == nil<SymbolTableEntry*> { return true; }
+    const QualType fieldType = fieldEntry.getQualType();
+    const QualType functionType = fieldType.autoDereference();
+    const dyn fctOrProc = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
+    if !functionType.isOneOf(fctOrProc, len(fctOrProc)) { return true; }
+
+    // Check for insufficient visibility
+    const QualType fieldBaseType = fieldType.getBase();
+    if spiceStruct.scope.isImportedBy(this.rootScope) && !fieldBaseType.isPublic() {
+        const String message = String("Cannot access field '") + fieldName + "' due to its private visibility";
+        this.softError(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, message);
+        return false;
+    }
+
+    // Function pointers have no template types
+    if node.hasTemplateTypes {
+        const String message = String("The function pointer field '") + fieldName + "' cannot be called with template types";
+        this.softError(cast<ASTNode*>(node.templateTypeLst), SemanticErrorType::INVALID_TEMPLATE_TYPES, message);
+        return false;
+    }
+    fieldEntry.used = true;
+
+    // From now on, this is a function pointer call. It has no callee function and passes no 'this' pointer
+    data.callType = FctCallType::TYPE_FCT_PTR_FIELD;
+    data.calleeParentScope = nil<Scope*>;
+    data.fctPtrType = functionType;
+    return this.visitFctPtrCall(node, functionType);
 }
 
 public f<Any> TypeChecker.visitArrayInitialization(ASTArrayInitializationNode* node) {
