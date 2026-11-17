@@ -24,6 +24,24 @@ public type Stack<T> struct {
 }
 
 /**
+ * Construct a stack, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
+public inline p Stack.ctor(unsigned long initAllocItems = 0l) {
+    this.resize(initAllocItems);
+}
+
+/**
+ * Construct a stack, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
+public inline p Stack.ctor(unsigned int initAllocItems) {
+    this.resize(cast<unsigned long>(initAllocItems));
+}
+
+/**
  * Construct a stack pre-filled with a number of copies of a default value
  *
  * @param initAllocItems Number of items to insert
@@ -31,7 +49,7 @@ public type Stack<T> struct {
  */
 public p Stack.ctor(unsigned long initAllocItems, const T &defaultValue) {
     // Allocate space for the initial number of elements
-    this.ctor(initAllocItems);
+    this.resize(initAllocItems);
     // Fill in the default values
     for unsigned long index = 0ul; index < initAllocItems; index++ {
         unsafe {
@@ -42,42 +60,15 @@ public p Stack.ctor(unsigned long initAllocItems, const T &defaultValue) {
 }
 
 /**
- * Construct a stack, pre-allocating space for the given number of items
- *
- * @param initAllocItems Number of items to pre-allocate space for
- */
-public p Stack.ctor(unsigned int initAllocItems) {
-    this.ctor(cast<unsigned long>(initAllocItems));
-}
-
-/**
- * Construct a stack, pre-allocating space for the given number of items
- *
- * @param initAllocItems Number of items to pre-allocate space for
- */
-public p Stack.ctor(unsigned long initAllocItems = 0l) {
-    // Leave the buffer unallocated when no capacity was requested
-    if initAllocItems == 0l { return; }
-    // Allocate space for the initial number of elements
-    const unsigned long itemSize = sizeof<T>();
-    Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
-    unsafe {
-        this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-    }
-    this.capacity = initAllocItems;
-}
-
-/**
  * Construct a stack as a deep copy of another stack
  *
  * @param original Stack to copy
  */
 public p Stack.ctor(const Stack<T>& original) {
-    this.ctor(original.capacity);
-    if original.size == 0l { return; }
+    this.resize(original.capacity);
     // Copy-construct each element individually, so non-trivial elements get their own owned resources
     // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
-    for unsigned long index = 0l; index < original.size; index++ {
+    for unsigned long index = 0ul; index < original.size; index++ {
         unsafe {
             __placement_new<T>(&this.contents[index], original.contents[index]);
         }
@@ -91,34 +82,20 @@ public p Stack.ctor(const Stack<T>& original) {
  * @param newValue Stack to copy from
  */
 public p operator=<T>(Stack<T>& this, const Stack<T>& newValue) {
-    const unsigned long itemSize = sizeof<T>();
-    // Destruct our currently owned elements before they get overwritten
+    // Self-assignment: leave the queue as is; normalizing in place would
+    // overwrite source slots before the wrapped index reads them.
+    if &this == &newValue { return; }
+    // Clear the old, resize the new one
     this.clear();
-    if newValue.capacity != this.capacity {
-        if newValue.capacity == 0l {
-            // Drop our buffer to match the unallocated source
-            unsafe {
-                heap byte*& oldAddress = cast<heap byte*>(this.contents);
-                sDealloc(oldAddress);
-                this.contents = nil<heap T*>;
-            }
-        } else {
-            unsafe {
-                Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-                this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-            }
-        }
-        this.capacity = newValue.capacity;
-    }
-    this.size = newValue.size;
-    if newValue.size == 0l { return; }
+    this.resize(newValue.capacity);
     // Copy-construct each element individually, so non-trivial elements get their own owned resources
     // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
-    for unsigned long index = 0l; index < newValue.size; index++ {
+    for unsigned long index = 0ul; index < newValue.size; index++ {
         unsafe {
             __placement_new<T>(&this.contents[index], newValue.contents[index]);
         }
     }
+    this.size = newValue.size;
 }
 
 /**
@@ -151,8 +128,7 @@ public p Stack.clear() {
 public p Stack.push(const T& item) {
     // Check if we need to (re-)allocate memory. Treat an unallocated stack the same as a full one.
     if this.size == this.capacity {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR;
-        this.resize(newCapacity);
+        this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
     }
 
     // Insert the element at the back
@@ -168,7 +144,9 @@ public p Stack.push(const T& item) {
  */
 #[ignoreUnusedReturnValue]
 public f<T> Stack.pop() {
-    if this.isEmpty() { panic(Error("The stack is empty")); }
+    if this.isEmpty() {
+        panic(Error("The stack is empty"));
+    }
     unsafe {
         // Copy the item via a reference to its slot. Assigning the subscript expression directly would move it bitwise,
         // so destructing the slot afterwards would free resources, that the returned item still uses
@@ -182,7 +160,9 @@ public f<T> Stack.pop() {
  * Retrieve topmost without removing it from the stack
  */
 public f<T&> Stack.top() {
-    if this.isEmpty() { panic(Error("The stack is empty")); }
+    if this.isEmpty() {
+        panic(Error("The stack is empty"));
+    }
     // Peek the element from the stack
     unsafe {
         return this.contents[this.size - 1l];
@@ -203,38 +183,38 @@ public f<unsigned long> Stack.getSize() {
  *
  * @return Current capacity of the stack
  */
-public f<unsigned long> Stack.getCapacity() {
+public inline f<unsigned long> Stack.getCapacity() {
     return this.capacity;
 }
 
 /**
- * Checks if the queue contains any items at the moment
+ * Checks if the stack contains any items at the moment
  *
  * @return Empty or not empty
  */
-public f<bool> Stack.isEmpty() {
+public inline f<bool> Stack.isEmpty() {
     return this.size == 0;
 }
 
 /**
- * Checks if the queue exhausts its capacity and needs to resize at the next call of push.
+ * Checks if the stack exhausts its capacity and needs to resize at the next call of push.
  * A stack with no allocated capacity is not considered full — the next push will simply
  * bootstrap the buffer.
  *
  * @return Full or not full
  */
-public f<bool> Stack.isFull() {
+public inline f<bool> Stack.isFull() {
     return this.capacity != 0l && this.size == this.capacity;
 }
 
 /**
- * Frees allocated memory that is not used by the queue
+ * Frees unused allocated memory
  */
 public p Stack.pack() {
-    // Return if no packing is required
-    if this.isFull() { return; }
-    // Pack the array
-    this.resize(this.size);
+    // Pack the array if necessary
+    if !this.isFull() {
+        this.resize(this.size);
+    }
 }
 
 /**
@@ -261,14 +241,18 @@ public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
  *
  * @return Not equal or equal
  */
-public f<bool> operator!=<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
+public inline f<bool> operator!=<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     return !(lhs == rhs);
 }
 
 /**
- * Re-allocates heap space for the queue contents
+ * Re-allocates heap space for the stack contents
  */
 p Stack.resize(unsigned long itemCount) {
+    if itemCount == this.capacity {
+        return;
+    }
+
     // Free the buffer if we are shrinking down to zero capacity
     if itemCount == 0l {
         unsafe {
@@ -280,10 +264,9 @@ p Stack.resize(unsigned long itemCount) {
         return;
     }
     // Allocate the new memory
-    const unsigned long itemSize = sizeof<T>();
     unsafe {
         heap byte*& oldAddress = cast<heap byte*>(this.contents);
-        unsigned long newSize = cast<unsigned long>(itemSize * itemCount);
+        const unsigned long newSize = sizeof<T>() * itemCount;
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
         this.contents = cast<heap T*>(allocResult.unwrapAndMove());
     }

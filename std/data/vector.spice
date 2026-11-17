@@ -37,17 +37,8 @@ public type Vector<T> struct : IIterable<T> {
  *
  * @param initialCapacity Number of items to pre-allocate space for
  */
-public p Vector.ctor(unsigned long initialCapacity = 0l) {
-    // Leave the buffer unallocated when no capacity was requested
-    if initialCapacity == 0l { return; }
-    // Allocate space for the initial number of elements
-    const unsigned long itemSize = sizeof<T>();
-    assert itemSize > 0l;
-    unsafe {
-        Result<heap byte*> allocResult = sAlloc(itemSize * initialCapacity);
-        this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-    }
-    this.capacity = initialCapacity;
+public inline p Vector.ctor(unsigned long initialCapacity = 0ul) {
+    this.resize(initialCapacity);
 }
 
 /**
@@ -55,8 +46,8 @@ public p Vector.ctor(unsigned long initialCapacity = 0l) {
  *
  * @param initialCapacity Number of items to pre-allocate space for
  */
-public p Vector.ctor(unsigned int initialCapacity) {
-    this.ctor(cast<unsigned long>(initialCapacity));
+public inline p Vector.ctor(unsigned int initialCapacity) {
+    this.resize(cast<unsigned long>(initialCapacity));
 }
 
 /**
@@ -67,7 +58,7 @@ public p Vector.ctor(unsigned int initialCapacity) {
  */
 public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
-    this.ctor(initAllocItems);
+    this.resize(initAllocItems);
     // Fill in the default values
     for unsigned long index = 0ul; index < initAllocItems; index++ {
         unsafe {
@@ -83,8 +74,7 @@ public p Vector.ctor(unsigned long initAllocItems, const T& defaultValue) {
  * @param original Vector to copy
  */
 public p Vector.ctor(const Vector<T>& original) {
-    this.ctor(original.capacity);
-    if original.size == 0l { return; }
+    this.resize(original.capacity);
     // Copy-construct each element individually, so non-trivial elements get their own owned resources
     // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
     for unsigned long index = 0ul; index < original.size; index++ {
@@ -101,32 +91,11 @@ public p Vector.ctor(const Vector<T>& original) {
  * @param newValue Vector to copy from
  */
 public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
-    const unsigned long itemSize = sizeof<T>();
-    assert itemSize > 0l;
-    // Destruct our currently owned elements before they get overwritten
-    for unsigned long index = 0ul; index < this.size; index++ {
-        unsafe {
-            sDestruct(this.contents[index]);
-        }
-    }
-    if newValue.capacity != this.capacity {
-        if newValue.capacity == 0l {
-            // Drop our buffer to match the unallocated source
-            unsafe {
-                heap byte*& oldAddress = cast<heap byte*>(this.contents);
-                sDealloc(oldAddress);
-                this.contents = nil<heap T*>;
-            }
-        } else {
-            unsafe {
-                Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-                this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-            }
-        }
-        this.capacity = newValue.capacity;
-    }
-    this.size = newValue.size;
-    if newValue.size == 0l { return; }
+    // Self-assignment: leave the vector as is, clearing it first would destroy the items to copy
+    if &this == &newValue { return; }
+    // Clear the old, resize the new one
+    this.clear();
+    this.resize(newValue.capacity);
     // Copy-construct each element individually, so non-trivial elements get their own owned resources
     // instead of aliasing the source's (a raw memcpy of the buffer would do the latter)
     for unsigned long index = 0ul; index < newValue.size; index++ {
@@ -134,6 +103,7 @@ public p operator=<T>(Vector<T>& this, const Vector<T>& newValue) {
             __placement_new<T>(&this.contents[index], newValue.contents[index]);
         }
     }
+    this.size = newValue.size;
 }
 
 /**
@@ -153,7 +123,7 @@ public p Vector.dtor() {
  *
  * @return Empty or not empty
  */
-public f<bool> Vector.isEmpty() {
+public inline f<bool> Vector.isEmpty() {
     return this.size == 0;
 }
 
@@ -164,7 +134,7 @@ public f<bool> Vector.isEmpty() {
  *
  * @return Full or not full
  */
-public f<bool> Vector.isFull() {
+public inline f<bool> Vector.isFull() {
     return this.capacity != 0l && this.size == this.capacity;
 }
 
@@ -174,10 +144,8 @@ public f<bool> Vector.isFull() {
 public p Vector.pushBack<T>(const T& item) {
     // Check if we need to (re-)allocate memory. Treat an unallocated vector the same as a full one.
     if this.size == this.capacity {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR;
-        this.resize(newCapacity);
+        this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
     }
-
     // Insert the element at the back
     unsafe {
         __placement_new<T>(&this.contents[this.size++], item);
@@ -191,7 +159,9 @@ public p Vector.pushBack<T>(const T& item) {
  */
 #[ignoreUnusedReturnValue]
 public f<T> Vector.popBack() {
-    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    if this.isEmpty() {
+        panic(Error("Access index out of bounds"));
+    }
     // Move the last item out of the vector. Assigning the subscript expression moves it bitwise, so it is neither copied nor
     // destructed: its slot is not part of the vector anymore and the returned item takes over its resources.
     unsafe {
@@ -204,22 +174,13 @@ public f<T> Vector.popBack() {
  *
  * @return item at index
  */
-public f<T&> Vector.get(unsigned long index) {
+public f<T&> Vector.get<UIntOrULong>(UIntOrULong index) {
     if index >= this.size {
         panic(Error("Access index out of bounds"));
     }
     unsafe {
         return this.contents[index];
     }
-}
-
-/**
- * Get an item at a certain index
- *
- * @return item at index
- */
-public f<T&> Vector.get(unsigned int index) {
-    return this.get(cast<unsigned long>(index));
 }
 
 /**
@@ -250,20 +211,20 @@ public f<const T&> operator[]<T, UIntOrULong>(const Vector<T>& v, UIntOrULong in
  * @param index Index to insert the item at
  * @param item Item to insert
  */
-public p Vector.insertAt(unsigned long index, const T& item) {
+public p Vector.insertAt<UIntOrULong>(UIntOrULong index, const T& item) {
     if index > this.size {
         panic(Error("Access index out of bounds"));
     }
     // Check if we need to (re-)allocate memory. Treat an unallocated vector the same as a full one.
     if this.size == this.capacity {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR;
-        this.resize(newCapacity);
+        this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
     }
     // Move all elements after the index one to the back. They are relocated bitwise like in resize(), since the slot behind
     // the last element is uninitialized and must not be assigned to. The slot at the index is re-initialized below.
     if index < this.size {
         unsafe {
-            const unsigned long moveSize = cast<unsigned long>(sizeof<T>()) * (this.size - index);
+            const unsigned long itemSize = sizeof<T>();
+            const unsigned long moveSize = itemSize * (this.size - index);
             memmove(cast<byte*>(&this.contents[index + 1l]), cast<byte*>(&this.contents[index]), moveSize);
         }
     }
@@ -276,21 +237,11 @@ public p Vector.insertAt(unsigned long index, const T& item) {
 }
 
 /**
- * Insert an item at a certain index
- *
- * @param index Index to insert the item at
- * @param item Item to insert
- */
-public p Vector.insertAt(unsigned int index, const T& item) {
-    this.insertAt(cast<unsigned long>(index), item);
-}
-
-/**
  * Remove an item at a certain index
  *
  * @param index Index of the item to remove
  */
-public p Vector.removeAt(unsigned long index) {
+public p Vector.removeAt<UIntOrULong>(UIntOrULong index) {
     if index >= this.size {
         panic(Error("Access index out of bounds"));
     }
@@ -303,7 +254,7 @@ public p Vector.removeAt(unsigned long index) {
     // is given up without destructing it, because its element now lives one slot further to the front
     if index < this.size - 1l {
         unsafe {
-            const unsigned long moveSize = cast<unsigned long>(sizeof<T>()) * (this.size - index - 1l);
+            const unsigned long moveSize = sizeof<T>() * (this.size - index - 1l);
             memmove(cast<byte*>(&this.contents[index]), cast<byte*>(&this.contents[index + 1l]), moveSize);
         }
     }
@@ -312,21 +263,14 @@ public p Vector.removeAt(unsigned long index) {
 }
 
 /**
- * Remove an item at a certain index
- *
- * @param index Index of the item to remove
- */
-public p Vector.removeAt(unsigned int index) {
-    this.removeAt(cast<unsigned long>(index));
-}
-
-/**
  * Get the first item in the vector
  *
  * @return item at index 0
  */
 public f<T&> Vector.front() {
-    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    if this.isEmpty() {
+        panic(Error("Access index out of bounds"));
+    }
     unsafe {
         return this.contents[0];
     }
@@ -338,7 +282,9 @@ public f<T&> Vector.front() {
  * @return item at index size - 1
  */
 public f<T&> Vector.back() {
-    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    if this.isEmpty() {
+        panic(Error("Access index out of bounds"));
+    }
     unsafe {
         return this.contents[this.size - 1];
     }
@@ -360,16 +306,7 @@ public p Vector.clear() {
 /**
  * Reserves `itemCount` items
  */
-public p Vector.reserve(unsigned long itemCount) {
-    if itemCount > this.capacity {
-        this.resize(itemCount);
-    }
-}
-
-/**
- * Reserves `itemCount` items
- */
-public p Vector.reserve(unsigned int itemCount) {
+public p Vector.reserve<UIntOrULong>(UIntOrULong itemCount) {
     if itemCount > this.capacity {
         this.resize(cast<unsigned long>(itemCount));
     }
@@ -380,7 +317,7 @@ public p Vector.reserve(unsigned int itemCount) {
  *
  * @return Current size of the vector
  */
-public f<unsigned long> Vector.getSize() {
+public inline f<unsigned long> Vector.getSize() {
     return this.size;
 }
 
@@ -389,27 +326,27 @@ public f<unsigned long> Vector.getSize() {
  *
  * @return Current capacity of the vector
  */
-public f<unsigned long> Vector.getCapacity() {
+public inline f<unsigned long> Vector.getCapacity() {
     return this.capacity;
 }
 
 /**
  * Retrieve a pointer to the data of the vector
  */
-public f<T*> Vector.getDataPtr() {
+public inline f<T*> Vector.getDataPtr() {
     unsafe {
         return cast<T*>(this.contents);
     }
 }
 
 /**
- * Frees allocated memory that is not used by the queue
+ * Frees unused allocated memory
  */
 public p Vector.pack() {
-    // Return if no packing is required
-    if this.isFull() { return; }
-    // Pack the array
-    this.resize(this.size);
+    // Pack the array if necessary
+    if !this.isFull() {
+        this.resize(this.size);
+    }
 }
 
 /**
@@ -436,14 +373,18 @@ public f<bool> operator==<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
  *
  * @return Not equal or equal
  */
-public f<bool> operator!=<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
+public inline f<bool> operator!=<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
     return !(lhs == rhs);
 }
 
 /**
- * Re-allocates heap space for the queue contents
+ * Re-allocates heap space for the vector contents
  */
 p Vector.resize(unsigned long itemCount) {
+    if itemCount == this.capacity {
+        return;
+    }
+
     // Free the buffer if we are shrinking down to zero capacity
     if itemCount == 0l {
         unsafe {
@@ -455,11 +396,9 @@ p Vector.resize(unsigned long itemCount) {
         return;
     }
     // Allocate the new memory
-    const long itemSize = sizeof<T>();
-    assert itemSize != 0l;
     unsafe {
         heap byte*& oldAddress = cast<heap byte*>(this.contents);
-        unsigned long newSize = cast<unsigned long>(itemSize * itemCount);
+        const unsigned long newSize = sizeof<T>() * itemCount;
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
         this.contents = cast<heap T*>(allocResult.unwrapAndMove());
     }
@@ -575,6 +514,6 @@ public inline p operator-=<T, Numeric>(VectorIterator<T>& it, Numeric offset) {
 /**
  * Retrieve a forward iterator for the vector
  */
-public f<VectorIterator<T>> Vector.getIterator() {
+public inline f<VectorIterator<T>> Vector.getIterator() {
     return VectorIterator<T>(*this);
 }

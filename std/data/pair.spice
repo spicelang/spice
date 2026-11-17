@@ -62,7 +62,7 @@ public inline p Pair.setSecond(const V2& second) {
  *
  * @return Equal or not equal
  */
-public f<bool> operator==<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
+public inline f<bool> operator==<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
     return lhs.first == rhs.first && lhs.second == rhs.second;
 }
 
@@ -71,6 +71,6 @@ public f<bool> operator==<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& r
  *
  * @return Not equal or equal
  */
-public f<bool> operator!=<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
+public inline f<bool> operator!=<V1, V2>(const Pair<V1, V2>& lhs, const Pair<V1, V2>& rhs) {
     return !(lhs == rhs);
 }

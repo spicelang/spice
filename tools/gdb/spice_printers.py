@@ -288,7 +288,7 @@ class SpiceOptionalPrinter:
         self.val = val
 
     def to_string(self):
-        if bool(self.val["isPresent"]):
+        if bool(self.val["present"]):
             return f"Some({self.val['data']})"
         return "None"
 

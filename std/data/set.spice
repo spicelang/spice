@@ -25,7 +25,7 @@ public type Set<V> struct : IIterable<V> {
  *
  * @param value The value to insert
  */
-public p Set.insert(const V& value) {
+public inline p Set.insert(const V& value) {
     this.tree.upsert(value, true);
 }
 
@@ -35,7 +35,7 @@ public p Set.insert(const V& value) {
  * @param value The value to check
  * @return true if the value is in the set, false otherwise
  */
-public f<bool> Set.contains(const V& value) {
+public inline f<bool> Set.contains(const V& value) {
     return this.tree.contains(value);
 }
 
@@ -45,14 +45,14 @@ public f<bool> Set.contains(const V& value) {
  *
  * @param value The value to remove
  */
-public p Set.remove(const V& value) {
+public inline p Set.remove(const V& value) {
     this.tree.remove(value);
 }
 
 /**
  * Clear all values from the set.
  */
-public p Set.clear() {
+public inline p Set.clear() {
     this.tree.clear();
 }
 
@@ -61,7 +61,7 @@ public p Set.clear() {
  *
  * @return The number of elements in the set
  */
-public f<unsigned long> Set.getSize() {
+public inline f<unsigned long> Set.getSize() {
     return this.tree.getSize();
 }
 
@@ -70,7 +70,7 @@ public f<unsigned long> Set.getSize() {
  *
  * @return true if the set is empty, false otherwise
  */
-public f<bool> Set.isEmpty() {
+public inline f<bool> Set.isEmpty() {
     return this.tree.isEmpty();
 }
 
@@ -98,7 +98,7 @@ public type SetIterator<V> struct : IIterator<const V&> {
  *
  * @param set Set to iterate over
  */
-public p SetIterator.ctor<V>(Set<V>& set) {
+public inline p SetIterator.ctor<V>(Set<V>& set) {
     this.rbtIterator = set.tree.getIterator();
 }
 /**
@@ -107,8 +107,7 @@ public p SetIterator.ctor<V>(Set<V>& set) {
  * @return Current value
  */
 public inline f<const V&> SetIterator.get() {
-    const Pair<const V&, bool&> pair = this.rbtIterator.get();
-    return pair.getFirst();
+    return this.rbtIterator.get().getFirst();
 }
 
 /**
@@ -152,6 +151,6 @@ public inline p operator++<V>(SetIterator<V>& it) {
 /**
  * Retrieve a forward iterator for the set
  */
-public f<SetIterator<V>> Set.getIterator() {
+public inline f<SetIterator<V>> Set.getIterator() {
     return SetIterator<V>(*this);
 }

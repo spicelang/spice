@@ -396,20 +396,20 @@ public inline p GraphBFSIterator.next() {
 /**
  * Retrieve a depth-first iterator for the graph
  */
-public f<GraphDFSIterator<T>> Graph.dfs(Vertex<T>* startVertex = nil<Vertex<T>*>) {
+public inline f<GraphDFSIterator<T>> Graph.dfs(Vertex<T>* startVertex = nil<Vertex<T>*>) {
     return GraphDFSIterator<T>(*this, startVertex);
 }
 
 /**
  * Retrieve a breadth-first iterator for the graph
  */
-public f<GraphBFSIterator<T>> Graph.bfs(Vertex<T>* startVertex = nil<Vertex<T>*>) {
+public inline f<GraphBFSIterator<T>> Graph.bfs(Vertex<T>* startVertex = nil<Vertex<T>*>) {
     return GraphBFSIterator<T>(*this, startVertex);
 }
 
 /**
  * Retrieve a depth-first iterator for the graph
  */
-public f<GraphDFSIterator<T>> Graph.getIterator() {
+public inline f<GraphDFSIterator<T>> Graph.getIterator() {
     return this.dfs();
 }

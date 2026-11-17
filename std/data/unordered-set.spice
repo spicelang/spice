@@ -162,6 +162,6 @@ public inline p operator++<V>(UnorderedSetIterator<V>& it) {
 /**
  * Retrieve a forward iterator for the unordered set
  */
-public f<UnorderedSetIterator<V>> UnorderedSet.getIterator() {
+public inline f<UnorderedSetIterator<V>> UnorderedSet.getIterator() {
     return UnorderedSetIterator<V>(*this);
 }

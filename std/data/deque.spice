@@ -7,6 +7,7 @@ const unsigned int RESIZE_FACTOR = 2;
 
 // Add generic type definition
 type T dyn;
+type UIntOrULong unsigned int|unsigned long;
 
 /**
  * A deque in Spice is a commonly used data structure that allows insertion and removal
@@ -33,6 +34,24 @@ public type Deque<T> struct {
 }
 
 /**
+ * Construct a deque, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
+public inline p Deque.ctor(unsigned long initAllocItems = 0l) {
+    this.resize(initAllocItems);
+}
+
+/**
+ * Construct a deque, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
+public inline p Deque.ctor(unsigned int initAllocItems) {
+    this.resize(cast<unsigned long>(initAllocItems));
+}
+
+/**
  * Construct a deque pre-filled with a number of copies of a default value
  *
  * @param initAllocItems Number of items to insert
@@ -52,38 +71,12 @@ public p Deque.ctor(unsigned long initAllocItems, const T& defaultValue) {
 }
 
 /**
- * Construct a deque, pre-allocating space for the given number of items
- *
- * @param initAllocItems Number of items to pre-allocate space for
- */
-public p Deque.ctor(unsigned int initAllocItems) {
-    this.ctor(cast<unsigned long>(initAllocItems));
-}
-
-/**
- * Construct a deque, pre-allocating space for the given number of items
- *
- * @param initAllocItems Number of items to pre-allocate space for
- */
-public p Deque.ctor(unsigned long initAllocItems = 0l) {
-    // Leave the buffer unallocated when no capacity was requested
-    if initAllocItems == 0l { return; }
-    // Allocate space for the initial number of elements
-    const long itemSize = sizeof<T>();
-    Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
-    unsafe {
-        this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-    }
-    this.capacity = initAllocItems;
-}
-
-/**
  * Construct a deque as a deep copy of another deque
  *
  * @param original Deque to copy
  */
 public p Deque.ctor(const Deque<T>& original) {
-    this.ctor(original.capacity);
+    this.resize(original.capacity);
     // Copy-construct elements in logical order, normalizing the layout so idxFront = 0. The slots are uninitialized, so
     // they must not be assigned to
     unsafe {
@@ -106,28 +99,12 @@ public p operator=<T>(Deque<T>& this, const Deque<T>& newValue) {
     // Self-assignment: leave the deque as is; normalizing in place would
     // overwrite source slots before the wrapped index reads them.
     if &this == &newValue { return; }
-    // Destruct our currently owned elements before their slots get overwritten
+    // Clear the old, resize the new one
     this.clear();
-    const long itemSize = sizeof<T>();
-    if newValue.capacity != this.capacity {
-        if newValue.capacity == 0l {
-            // Drop our buffer to match the unallocated source
-            unsafe {
-                heap byte*& oldAddress = cast<heap byte*>(this.contents);
-                sDealloc(oldAddress);
-                this.contents = nil<heap T*>;
-            }
-        } else {
-            unsafe {
-                Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-                this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-            }
-        }
-        this.capacity = newValue.capacity;
-    }
+    this.resize(newValue.capacity);
     // Copy-construct elements in logical order, normalizing the layout so idxFront = 0
     unsafe {
-        for unsigned long i = 0l; i < newValue.size; i++ {
+        for unsigned long i = 0ul; i < newValue.size; i++ {
             const unsigned long srcIdx = (newValue.idxFront + i) % newValue.capacity;
             __placement_new<T>(&this.contents[i], newValue.contents[srcIdx]);
         }
@@ -213,7 +190,9 @@ public p Deque.pushFront(const T& item) {
  */
 #[ignoreUnusedReturnValue]
 public f<T> Deque.popFront() {
-    if this.isEmpty() { panic(Error("Deque is empty")); }
+    if this.isEmpty() {
+        panic(Error("Deque is empty"));
+    }
 
     // Get item value
     unsafe {
@@ -237,7 +216,9 @@ public f<T> Deque.popFront() {
  */
 #[ignoreUnusedReturnValue]
 public f<T> Deque.popBack() {
-    if this.isEmpty() { panic(Error("Deque is empty")); }
+    if this.isEmpty() {
+        panic(Error("Deque is empty"));
+    }
 
     // Adjust indices and size
     this.idxBack = this.idxBack - 1 + this.capacity;
@@ -259,7 +240,9 @@ public f<T> Deque.popBack() {
  * @return First item
  */
 public f<T&> Deque.front() {
-    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    if this.isEmpty() {
+        panic(Error("Access index out of bounds"));
+    }
     unsafe {
         return this.contents[this.idxFront];
     }
@@ -271,7 +254,9 @@ public f<T&> Deque.front() {
  * @return Last item
  */
 public f<T&> Deque.back() {
-    if this.isEmpty() { panic(Error("Access index out of bounds")); }
+    if this.isEmpty() {
+        panic(Error("Access index out of bounds"));
+    }
     unsafe {
         return this.contents[(this.idxBack - 1 + this.capacity) % this.capacity];
     }
@@ -282,7 +267,7 @@ public f<T&> Deque.back() {
  *
  * @return Current size of the deque
  */
-public f<unsigned long> Deque.getSize() {
+public inline f<unsigned long> Deque.getSize() {
     return this.size;
 }
 
@@ -291,7 +276,7 @@ public f<unsigned long> Deque.getSize() {
  *
  * @return Current capacity of the deque
  */
-public f<unsigned long> Deque.getCapacity() {
+public inline f<unsigned long> Deque.getCapacity() {
     return this.capacity;
 }
 
@@ -300,7 +285,7 @@ public f<unsigned long> Deque.getCapacity() {
  *
  * @return Empty or not empty
  */
-public f<bool> Deque.isEmpty() {
+public inline f<bool> Deque.isEmpty() {
     return this.size == 0;
 }
 
@@ -311,34 +296,27 @@ public f<bool> Deque.isEmpty() {
  *
  * @return Full or not full
  */
-public f<bool> Deque.isFull() {
+public inline f<bool> Deque.isFull() {
     return this.capacity != 0l && this.size == this.capacity;
 }
 
 /**
  * Reserves `itemCount` items
  */
-public p Deque.reserve(unsigned long itemCount) {
+public p Deque.reserve<UIntOrULong>(UIntOrULong itemCount) {
     if itemCount > this.capacity {
-        this.resize(itemCount);
+        this.resize(cast<unsigned long>(itemCount));
     }
-}
-
-/**
- * Reserves `itemCount` items
- */
-public p Deque.reserve(unsigned int itemCount) {
-    this.reserve(cast<unsigned long>(itemCount));
 }
 
 /**
  * Frees allocated memory that is not used by the deque
  */
 public p Deque.pack() {
-    // Return if no packing is required
-    if this.isFull() { return; }
-    // Pack the array
-    this.resize(this.size);
+    // Pack the array if necessary
+    if !this.isFull() {
+        this.resize(this.size);
+    }
 }
 
 /**
@@ -367,7 +345,7 @@ public f<bool> operator==<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
  *
  * @return Not equal or equal
  */
-public f<bool> operator!=<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
+public inline f<bool> operator!=<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
     return !(lhs == rhs);
 }
 
@@ -375,6 +353,10 @@ public f<bool> operator!=<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
  * Re-allocates heap space for the deque contents
  */
 p Deque.resize(unsigned long itemCount) {
+    if itemCount == this.capacity {
+        return;
+    }
+
     // Free the buffer if we are shrinking down to zero capacity
     if itemCount == 0l {
         unsafe {
