@@ -5171,9 +5171,10 @@ f<bool> TypeChecker.visitFctPtrFieldCall(ASTFctCallNode* node) {
     const dyn fctOrProc = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     if !functionType.isOneOf(fctOrProc, len(fctOrProc)) { return true; }
 
-    // Check for insufficient visibility
+    // Check for insufficient visibility. The field might be declared in an imported struct, that a local struct composes,
+    // so check the scope of the struct, that declares the field
     const QualType fieldBaseType = fieldType.getBase();
-    if spiceStruct.scope.isImportedBy(this.rootScope) && !fieldBaseType.isPublic() {
+    if fieldEntry.scope.isImportedBy(this.rootScope) && !fieldBaseType.isPublic() {
         const String message = String("Cannot access field '") + fieldName + "' due to its private visibility";
         this.softError(baseNode, SemanticErrorType::INSUFFICIENT_VISIBILITY, message);
         return false;

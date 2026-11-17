@@ -1,0 +1,6 @@
+import "source1";
+
+f<int> main() {
+    Base base;
+    printf("%d\n", base.callback(1));
+}
