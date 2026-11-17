@@ -1,0 +1,10 @@
+import "source1";
+
+type Wrapper struct {
+    compose Base base
+}
+
+f<int> main() {
+    Wrapper wrapper;
+    printf("%d\n", wrapper.callback(1));
+}

@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:12:36:
+Invalid template types: The function pointer field 'callback' cannot be called with template types
+
+12  n", holder.callback<int>(1));
+                        ^^^

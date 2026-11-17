@@ -450,6 +450,29 @@ public f<llvm::Value> IRGenerator.insertStructGEP(llvm::Type ty, llvm::Value bas
     return this.builder.createStructGEP(ty, basePtr, index, varName.getRaw());
 }
 
+/**
+ * Get the address of a struct field, that is reached via the given index path through composed fields
+ *
+ * @param structTy LLVM type of the struct
+ * @param structPtr Address of the struct instance
+ * @param indexPath Field indices on the way to the field, as returned by Struct.lookupInComposedFields
+ * @return Address of the field
+ */
+f<llvm::Value> IRGenerator.insertFieldPathGEP(llvm::Type structTy, llvm::Value structPtr, const Vector<unsigned long>& indexPath) {
+    assert !indexPath.isEmpty();
+    // If the field was found directly (no composition involved), use the single-index helper, since it elides the GEP
+    // entirely for fields at offset 0. Otherwise, step through all composed fields on the way in a single GEP.
+    if indexPath.getSize() == 1l {
+        return this.insertStructGEP(structTy, structPtr, cast<unsigned int>(indexPath.front()));
+    }
+    Vector<llvm::Value> indices;
+    indices.pushBack(this.getInt64(0l));
+    foreach const unsigned long index : indexPath {
+        indices.pushBack(this.getInt32(cast<long>(index)));
+    }
+    return this.insertInBoundsGEP(structTy, structPtr, indices);
+}
+
 #[ignoreUnusedReturnValue]
 public f<llvm::Value> IRGenerator.resolveValue(IVisitable* node) {
     // Visit the given AST node
@@ -4423,10 +4446,12 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
         firstFragEntry = this.currentScope.lookup(node.functionNameFragments.front());
     }
 
-    // Get this type
+    // Get this type. Calls of function pointer fields need the address of the struct instance as well, to find the field
     Vector<llvm::Value> argValues;
     llvm::Value thisPtr;
-    if data.isMethodCall() {
+    // Address of the fat pointer for function pointer calls
+    llvm::Value fatPtr;
+    if data.isMethodCall() || data.isFctPtrFieldCall() {
         assert !data.isCtorCall();
 
         QualType structType = QualType(SuperType::TY_INVALID);
@@ -4475,32 +4500,35 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
             assert fieldBaseType.is(SuperType::TY_STRUCT) || fieldBaseType.is(SuperType::TY_INTERFACE);
             // Get struct type
             structType = fieldBaseType;
-            // Get address of field. If the field was found directly (no composition involved), keep using the
-            // single-index helper, since it elides the GEP entirely for fields at offset 0. Otherwise, step through
-            // all composed fields on the way in a single GEP.
-            if indexPath.getSize() == 1l {
-                thisPtr = this.insertStructGEP(structTy, thisPtr, cast<unsigned int>(indexPath.front()));
-            } else {
-                Vector<llvm::Value> indices;
-                indices.pushBack(this.getInt64(0l));
-                foreach const unsigned long index : indexPath {
-                    indices.pushBack(this.getInt32(cast<long>(index)));
-                }
-                thisPtr = this.insertInBoundsGEP(structTy, thisPtr, indices);
-            }
+            // Get address of field
+            thisPtr = this.insertFieldPathGEP(structTy, thisPtr, indexPath);
             // Auto de-reference pointer and get new struct type
             this.autoDeReferencePtr(thisPtr, fieldEntryType);
             const QualType newBaseType = fieldEntryType.getBase();
             structTy = newBaseType.toLLVMType(this.sourceFile);
         }
 
-        // Methods, that are inherited from an interface default method, expect a pointer to the interface part of the struct
-        if spiceFunc != nil<const model::Function*> && spiceFunc.isInheritedDefaultMethod() {
-            thisPtr = this.getUpcastedStructPtr(thisPtr, spiceFunc.defaultMethod.thisType, structType);
-        }
+        if data.isFctPtrFieldCall() {
+            // Get address of the function pointer field, that is called. The struct instance is no argument of the call
+            const String& fieldName = node.functionNameFragments.back();
+            Struct* spiceStruct = structType.getStruct(cast<ASTNode*>(node));
+            assert spiceStruct != nil<Struct*>;
+            Vector<unsigned long> indexPath;
+            const SymbolTableEntry* fieldEntry = spiceStruct.lookupInComposedFields(fieldName, indexPath);
+            assert fieldEntry != nil<const SymbolTableEntry*>;
+            fatPtr = this.insertFieldPathGEP(structTy, thisPtr, indexPath);
+            // The field might be a pointer or reference to a function pointer
+            QualType fieldType = fieldEntry.getQualType();
+            this.autoDeReferencePtr(fatPtr, fieldType);
+        } else {
+            // Methods, that are inherited from an interface default method, expect a pointer to the interface part of the struct
+            if spiceFunc != nil<const model::Function*> && spiceFunc.isInheritedDefaultMethod() {
+                thisPtr = this.getUpcastedStructPtr(thisPtr, spiceFunc.defaultMethod.thisType, structType);
+            }
 
-        // Add 'this' pointer to the front of the argument list
-        argValues.pushBack(thisPtr);
+            // Add 'this' pointer to the front of the argument list
+            argValues.pushBack(thisPtr);
+        }
     }
 
     if data.isCtorCall() {
@@ -4521,7 +4549,6 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
     llvm::Value fctPtr;
 
     // Get the address of the fat pointer, that the callee expression evaluates to. It is evaluated before the args
-    llvm::Value fatPtr;
     if node.calleeExpr != nil<IVisitable*> {
         assert data.isFctPtrCall();
         QualType calleeType = this.getEvaluatedType(node.calleeExpr);
@@ -4592,7 +4619,7 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
 
     // Append the trailing capture-struct pointer for fat function pointer calls (see the ABI note above)
     if data.isFctPtrCall() {
-        if node.calleeExpr == nil<IVisitable*> {
+        if node.calleeExpr == nil<IVisitable*> && !data.isFctPtrFieldCall() {
             fatPtr = this.getAddress(firstFragEntry);
             // The fat pointer might be reached via pointers or references (e.g. a param of type f<int>()** or f<int>()&)
             QualType fatPtrType = firstFragEntry.getQualType();

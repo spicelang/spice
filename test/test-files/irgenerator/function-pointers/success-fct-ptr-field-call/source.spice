@@ -1,0 +1,97 @@
+// Calls of function pointer fields with method call syntax
+
+f<int> twice(int x) {
+    return x * 2;
+}
+
+f<int> square(int x) {
+    return x * x;
+}
+
+type Button struct {
+    p() onClick
+    f<int>(int) transform
+}
+
+type Toolbar struct {
+    Button button
+}
+
+type Panel struct {
+    compose Button button
+}
+
+type Pipeline struct {
+    f<int>(int) step
+    f<int>(int)* stepPtr
+}
+
+// A method with the same name as a function pointer field takes precedence
+f<int> Pipeline.step(int x) {
+    return x + 1000;
+}
+
+f<int> Pipeline.run(int x) {
+    // Call a field through 'this'
+    return this.stepPtr(x);
+}
+
+type T dyn;
+
+type Mapper<T> struct {
+    f<T>(T) map
+}
+
+f<Button*> identity(Button* button) {
+    return button;
+}
+
+f<Button> makeButton() {
+    Button button;
+    button.onClick = p() { printf("Temporary clicked!\n"); };
+    button.transform = square;
+    return button;
+}
+
+f<int> main() {
+    Button button;
+    button.onClick = p() { printf("Clicked!\n"); };
+    button.transform = twice;
+    // Field of a local variable
+    button.onClick();
+    printf("%d\n", button.transform(4));
+    // Field of a nested struct
+    Toolbar toolbar;
+    toolbar.button = button;
+    printf("%d\n", toolbar.button.transform(5));
+    // Field behind a pointer
+    Button* buttonPtr = &button;
+    printf("%d\n", buttonPtr.transform(6));
+    // Field of the result of an expression
+    printf("%d\n", identity(&button).transform(8));
+    makeButton().onClick();
+    printf("%d\n", makeButton().transform(9));
+    // Field of a composed struct
+    Panel panel;
+    panel.onClick = p() { printf("Panel clicked!\n"); };
+    panel.transform = square;
+    panel.onClick();
+    printf("%d\n", panel.transform(3));
+    // Lambda in a field
+    button.transform = f<int>(int x) { return x + 7; };
+    printf("%d\n", button.transform(1));
+    // Method takes precedence over the field, which can still be called with parentheses
+    f<int>(int) fct = twice;
+    Pipeline pipeline;
+    pipeline.step = square;
+    pipeline.stepPtr = &fct;
+    printf("%d\n", pipeline.step(2));
+    printf("%d\n", (pipeline.step)(2));
+    // Field, that is a pointer to a function
+    printf("%d\n", pipeline.stepPtr(11));
+    printf("%d\n", pipeline.run(12));
+    // Field of a generic struct
+    Mapper<int> mapper;
+    mapper.map = twice;
+    printf("%d\n", mapper.map(13));
+}

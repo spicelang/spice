@@ -6,7 +6,7 @@
 - [x] Type-check method calls on receiver expressions and calls of callee expressions
 - [x] Generate IR for both kinds of calls
 - [x] Add tests and docs
-- [ ] Call function pointer fields without parentheses (`holder.callback()`)
+- [x] Call function pointer fields without parentheses (`holder.callback()`)
 
 ## Syntax
 
@@ -21,6 +21,7 @@ counters[1].get();                      // Method call on a subscript
 getCounter()!.get();                    // Method call on the result of an error propagation
 getOperation()(21);                     // Call of a returned function
 (button.onClick)();                     // Call of a function pointer field
+button.onClick();                       // Call of a function pointer field with method call syntax
 ```
 
 Grammar of the postfix unary expression:
@@ -55,6 +56,12 @@ struct or interface after dereferencing pointers and references, and becomes the
 resolved like for name paths. A callee has to be a function or procedure after dereferencing. Its type is stored in
 `FctCallData::fctPtrType`, which both kinds of function pointer calls use for their param and return types.
 
+A method call (on a name path or an expression), that no method of the struct matches, falls back to a function pointer
+field with the method name, e.g. `holder.callback()`. The field may also be reached through composed fields and may be a
+pointer or reference to a function or procedure. Such calls get the call type `TYPE_FCT_PTR_FIELD`, which counts as a
+function pointer call (`FctCallData::isFctPtrFieldCall()` implies `isFctPtrCall()`). Methods take precedence, so a field
+is only called if no method matches. If neither a method nor a callable field exists, the missing method is reported.
+
 A call, that is the receiver or callee of another call, uses its return value. So it neither gets an unused return value
 warning, nor counts as a discarded `Result<T>` with explicit error handling.
 
@@ -64,9 +71,13 @@ The `this` pointer of a method call on an expression is the address of the recei
 (e.g. a returned pointer) are stored to a temporary slot. The fat pointer of a call of an expression is obtained the
 same way. Temporary receivers are destructed like any other temporary value.
 
+For a call of a function pointer field, the address of the struct instance is obtained like the `this` pointer of a
+method call. The fat pointer is the field within it, which is not passed as argument.
+
 ## Limitations
 
-- A function pointer field has to be wrapped in parentheses to call it (`(holder.callback)()`), because
-  `holder.callback()` is a method call.
+- A function pointer field has to be wrapped in parentheses to call it (`(holder.callback)()`), if the struct has a
+  method with the same name, that matches the arguments.
+- Function pointer fields cannot be called with template types (`holder.callback<int>()`).
 - Methods can only be called through interface pointers and references, so `(*shapePtr).area()` is rejected like a
   method call on an interface value.

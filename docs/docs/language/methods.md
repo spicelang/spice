@@ -88,8 +88,8 @@ The receiver of a method call can be the result of a call, a subscript (`counter
 automatically. A temporary receiver, like the `Counter` that `makeCounter()` returns, is destructed like any other
 temporary value.
 
-In the same way, a function or procedure, that an expression evaluates to, can be called directly. To call a function
-or procedure, that is stored in a struct field, wrap the field access in parentheses:
+In the same way, a function or procedure, that an expression evaluates to, can be called directly. A function or
+procedure, that is stored in a struct field, can be called like a method:
 
 ```spice
 f<int> twice(int x) {
@@ -108,9 +108,12 @@ f<int> main() {
     printf("%d\n", getOperation()(21)); // 42
     Button button;
     button.onClick = p() { printf("Clicked!\n"); };
-    (button.onClick)(); // Clicked!
+    button.onClick(); // Clicked!
 }
 ```
+
+If the struct has a method with the same name, that matches the arguments, the method is called instead of the field. To
+call the field in this case, wrap the field access in parentheses: `(button.onClick)()`.
 
 ## Methods on generic structs
 

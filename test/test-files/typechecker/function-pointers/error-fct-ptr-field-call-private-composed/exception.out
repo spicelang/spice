@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:9:20:
+Insufficient symbol visibility: Cannot access field 'callback' due to its private visibility
+
+9  printf("%d/n", wrapper.callback(1));
+                  ^^^^^^^^^^^^^^^^^^^
