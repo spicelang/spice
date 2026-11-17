@@ -169,6 +169,6 @@ public inline p operator++<K, V>(MapIterator<K, V>& it) {
 /**
  * Retrieve a forward iterator for the map
  */
-public f<MapIterator<K, V>> Map.getIterator() {
+public inline f<MapIterator<K, V>> Map.getIterator() {
     return MapIterator<K, V>(*this);
 }

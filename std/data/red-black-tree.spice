@@ -61,23 +61,23 @@ p Node.ctor(const Node<K, V>& other) {
     panic(Error("This copy ctor should never be called!"));
 }
 
-inline f<bool> Node.isRoot() {
+inline inline f<bool> Node.isRoot() {
     return this.parent == nil<Node<K, V>*>;
 }
 
-inline f<bool> Node.hasLeftChild() {
+inline inline f<bool> Node.hasLeftChild() {
     return this.childLeft != nil<heap Node<K, V>*>;
 }
 
-inline f<bool> Node.hasRightChild() {
+inline inline f<bool> Node.hasRightChild() {
     return this.childRight != nil<heap Node<K, V>*>;
 }
 
-inline f<bool> Node.isRed() {
+inline inline f<bool> Node.isRed() {
     return this.color == NodeColor::RED;
 }
 
-inline f<bool> Node.isBlack() {
+inline inline f<bool> Node.isBlack() {
     return this.color == NodeColor::BLACK;
 }
 
@@ -97,7 +97,7 @@ public type RedBlackTree<K, V> struct : IIterable<Pair<K, V>> {
 /**
  * Constructs an empty tree
  */
-public p RedBlackTree.ctor() {}
+public inline p RedBlackTree.ctor() {}
 
 /**
  * Constructs a new tree as a deep copy of another tree
@@ -283,7 +283,7 @@ public f<Result<V>> RedBlackTree.findSafe(const K& key) {
  * @param key The key to search for
  * @return True if the key was found, false otherwise
  */
-public f<bool> RedBlackTree.contains(const K& key) {
+public inline f<bool> RedBlackTree.contains(const K& key) {
     return this.search(key) != nil<Node<K, V>*>;
 }
 
@@ -292,7 +292,7 @@ public f<bool> RedBlackTree.contains(const K& key) {
  *
  * @return The number of elements in the tree
  */
-public f<unsigned long> RedBlackTree.getSize() {
+public inline f<unsigned long> RedBlackTree.getSize() {
     return this.size;
 }
 
@@ -301,7 +301,7 @@ public f<unsigned long> RedBlackTree.getSize() {
  *
  * @return True if the tree is empty, false otherwise
  */
-public f<bool> RedBlackTree.isEmpty() {
+public inline f<bool> RedBlackTree.isEmpty() {
     return this.size == 0l;
 }
 
@@ -317,7 +317,7 @@ public p RedBlackTree.clear() {
 /**
  * Destruct the tree, freeing all its nodes.
  */
-public p RedBlackTree.dtor() {
+public inline p RedBlackTree.dtor() {
     this.freeSubtree(this.rootNode);
 }
 
@@ -652,6 +652,6 @@ public inline p RedBlackTreeIterator.next() {
 /**
  * Retrieve a forward iterator for the red black tree
  */
-public f<RedBlackTreeIterator<K, V>> RedBlackTree.getIterator() {
+public inline f<RedBlackTreeIterator<K, V>> RedBlackTree.getIterator() {
     return RedBlackTreeIterator<K, V>(*this);
 }

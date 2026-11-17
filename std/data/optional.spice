@@ -7,22 +7,22 @@ type T dyn;
  */
 public type Optional<T> struct {
     T data
-    bool isPresent = false
+    bool present = false
 }
 
 /**
  * Initialize optional without a value
  */
-public p Optional.ctor() {}
+public inline p Optional.ctor() {}
 
 /**
  * Initialize optional with an initial value
  *
  * @param data Initial data value
  */
-public p Optional.ctor(const T& data) {
+public inline p Optional.ctor(const T& data) {
     this.data = data;
-    this.isPresent = true;
+    this.present = true;
 }
 
 /**
@@ -32,7 +32,7 @@ public p Optional.ctor(const T& data) {
  */
 public inline p Optional.set(const T& data) {
     this.data = data;
-    this.isPresent = true;
+    this.present = true;
 }
 
 /**
@@ -41,7 +41,7 @@ public inline p Optional.set(const T& data) {
  * @return Data value
  */
 public inline f<T&> Optional.get() {
-    if !this.isPresent { panic(Error("Optional payload is not present")); }
+    if !this.present { panic(Error("Optional payload is not present")); }
     return this.data;
 }
 
@@ -51,7 +51,7 @@ public inline f<T&> Optional.get() {
  * @return Data value or default value
  */
 public inline f<T&> Optional.orElse(T& defaultValue) {
-    return this.isPresent ? this.data : defaultValue;
+    return this.present ? this.data : defaultValue;
 }
 
 /**
@@ -60,14 +60,14 @@ public inline f<T&> Optional.orElse(T& defaultValue) {
   * @return Data value or value of the function
   */
 public inline f<T&> Optional.orElseGet(f<T&>() getFct) {
-    return this.isPresent ? this.data : getFct();
+    return this.present ? this.data : getFct();
 }
 
 /**
  * Clears the value of the optional
  */
 public inline p Optional.clear() {
-    this.isPresent = false;
+    this.present = false;
 }
 
 /**
@@ -76,7 +76,7 @@ public inline p Optional.clear() {
  * @return Present or not
  */
 public inline f<bool> Optional.isPresent() {
-    return this.isPresent;
+    return this.present;
 }
 
 /**
@@ -85,10 +85,9 @@ public inline f<bool> Optional.isPresent() {
  * @return Equal or not equal
  */
 public f<bool> operator==<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
-    if lhs.isPresent != rhs.isPresent { return false; }
+    if lhs.present != rhs.present { return false; }
     // Two empty optionals are equal, regardless of any stale payload left behind by clear()
-    if !lhs.isPresent { return true; }
-    return lhs.data == rhs.data;
+    return !lhs.present || lhs.data == rhs.data;
 }
 
 /**
@@ -96,6 +95,6 @@ public f<bool> operator==<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
  *
  * @return Not equal or equal
  */
-public f<bool> operator!=<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
+public inline f<bool> operator!=<T>(const Optional<T>& lhs, const Optional<T>& rhs) {
     return !(lhs == rhs);
 }

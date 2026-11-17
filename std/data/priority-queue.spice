@@ -4,6 +4,7 @@ const unsigned int RESIZE_FACTOR = 2;
 
 // Add generic type definition
 type T dyn;
+type UIntOrULong unsigned int|unsigned long;
 
 /**
  * A priority queue in Spice is a commonly used data structure, in which every item has a priority
@@ -29,6 +30,24 @@ public type PriorityQueue<T> struct {
 }
 
 /**
+ * Construct a priority queue, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
+public inline p PriorityQueue.ctor(unsigned long initAllocItems = 0l) {
+    this.resize(initAllocItems);
+}
+
+/**
+ * Construct a priority queue, pre-allocating space for the given number of items
+ *
+ * @param initAllocItems Number of items to pre-allocate space for
+ */
+public inline p PriorityQueue.ctor(unsigned int initAllocItems) {
+    this.resize(cast<unsigned long>(initAllocItems));
+}
+
+/**
  * Construct a priority queue pre-filled with a number of copies of a default value
  *
  * @param initAllocItems Number of items to insert
@@ -36,7 +55,7 @@ public type PriorityQueue<T> struct {
  */
 public p PriorityQueue.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
-    this.ctor(initAllocItems);
+    this.resize(initAllocItems);
     // Fill in the default values. All items are equal, so the heap property holds trivially.
     for unsigned long index = 0ul; index < initAllocItems; index++ {
         unsafe {
@@ -47,38 +66,12 @@ public p PriorityQueue.ctor(unsigned long initAllocItems, const T& defaultValue)
 }
 
 /**
- * Construct a priority queue, pre-allocating space for the given number of items
- *
- * @param initAllocItems Number of items to pre-allocate space for
- */
-public p PriorityQueue.ctor(unsigned int initAllocItems) {
-    this.ctor(cast<unsigned long>(initAllocItems));
-}
-
-/**
- * Construct a priority queue, pre-allocating space for the given number of items
- *
- * @param initAllocItems Number of items to pre-allocate space for
- */
-public p PriorityQueue.ctor(unsigned long initAllocItems = 0l) {
-    // Leave the buffer unallocated when no capacity was requested
-    if initAllocItems == 0l { return; }
-    // Allocate space for the initial number of elements
-    const unsigned long itemSize = sizeof<T>();
-    unsafe {
-        Result<heap byte*> allocResult = sAlloc(itemSize * initAllocItems);
-        this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-    }
-    this.capacity = initAllocItems;
-}
-
-/**
  * Construct a priority queue as a deep copy of another priority queue
  *
  * @param original Priority queue to copy
  */
 public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
-    this.ctor(original.capacity);
+    this.resize(original.capacity);
     // Copying the underlying array in order preserves the heap property. Copy-construct each item, so items that own
     // resources get their own copies instead of aliasing the ones of the original (a bitwise copy would do the latter)
     for unsigned long index = 0ul; index < original.size; index++ {
@@ -97,25 +90,9 @@ public p PriorityQueue.ctor(const PriorityQueue<T>& original) {
 public p operator=<T>(PriorityQueue<T>& this, const PriorityQueue<T>& newValue) {
     // Self-assignment: leave the priority queue as is, clearing it first would destroy the items to copy
     if &this == &newValue { return; }
-    // Destruct our currently owned items before their slots get overwritten
+    // Clear the old, resize the new one
     this.clear();
-    const unsigned long itemSize = sizeof<T>();
-    if newValue.capacity != this.capacity {
-        if newValue.capacity == 0l {
-            // Drop our buffer to match the unallocated source
-            unsafe {
-                heap byte*& oldAddress = cast<heap byte*>(this.contents);
-                sDealloc(oldAddress);
-                this.contents = nil<heap T*>;
-            }
-        } else {
-            unsafe {
-                Result<heap byte*> allocResult = sRealloc(cast<heap byte*>(this.contents), itemSize * newValue.capacity);
-                this.contents = cast<heap T*>(allocResult.unwrapAndMove());
-            }
-        }
-        this.capacity = newValue.capacity;
-    }
+    this.resize(newValue.capacity);
     // Copy-construct each item in order, which preserves the heap property
     for unsigned long index = 0ul; index < newValue.size; index++ {
         unsafe {
@@ -143,8 +120,7 @@ public p PriorityQueue.dtor() {
 public p PriorityQueue.push(const T& item) {
     // Check if we need to (re-)allocate memory. Treat an unallocated priority queue the same as a full one.
     if this.size == this.capacity {
-        const unsigned long newCapacity = this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * cast<unsigned long>(RESIZE_FACTOR);
-        this.resize(newCapacity);
+        this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
     }
 
     // Insert the element at the back and restore the heap property by sifting it up
@@ -162,7 +138,9 @@ public p PriorityQueue.push(const T& item) {
  */
 #[ignoreUnusedReturnValue]
 public f<T> PriorityQueue.pop() {
-    if this.isEmpty() { panic(Error("The priority queue is empty")); }
+    if this.isEmpty() {
+        panic(Error("The priority queue is empty"));
+    }
     // Swap the root (highest priority) item with the last one and shrink, then restore the heap property
     this.size--;
     this.swapItems(0l, this.size);
@@ -183,7 +161,9 @@ public f<T> PriorityQueue.pop() {
  * @return Item with the highest priority
  */
 public f<T&> PriorityQueue.peek() {
-    if this.isEmpty() { panic(Error("The priority queue is empty")); }
+    if this.isEmpty() {
+        panic(Error("The priority queue is empty"));
+    }
     unsafe {
         return this.contents[0];
     }
@@ -194,7 +174,7 @@ public f<T&> PriorityQueue.peek() {
  *
  * @return Current size of the priority queue
  */
-public f<unsigned long> PriorityQueue.getSize() {
+public inline f<unsigned long> PriorityQueue.getSize() {
     return this.size;
 }
 
@@ -203,7 +183,7 @@ public f<unsigned long> PriorityQueue.getSize() {
  *
  * @return Current capacity of the priority queue
  */
-public f<unsigned long> PriorityQueue.getCapacity() {
+public inline f<unsigned long> PriorityQueue.getCapacity() {
     return this.capacity;
 }
 
@@ -212,7 +192,7 @@ public f<unsigned long> PriorityQueue.getCapacity() {
  *
  * @return Empty or not empty
  */
-public f<bool> PriorityQueue.isEmpty() {
+public inline f<bool> PriorityQueue.isEmpty() {
     return this.size == 0;
 }
 
@@ -223,7 +203,7 @@ public f<bool> PriorityQueue.isEmpty() {
  *
  * @return Full or not full
  */
-public f<bool> PriorityQueue.isFull() {
+public inline f<bool> PriorityQueue.isFull() {
     return this.capacity != 0l && this.size == this.capacity;
 }
 
@@ -243,27 +223,20 @@ public p PriorityQueue.clear() {
 /**
  * Reserves `itemCount` items
  */
-public p PriorityQueue.reserve(unsigned long itemCount) {
+public p PriorityQueue.reserve<UIntOrULong>(UIntOrULong itemCount) {
     if itemCount > this.capacity {
-        this.resize(itemCount);
+        this.resize(cast<unsigned long>(itemCount));
     }
-}
-
-/**
- * Reserves `itemCount` items
- */
-public p PriorityQueue.reserve(unsigned int itemCount) {
-    this.reserve(cast<unsigned long>(itemCount));
 }
 
 /**
  * Frees allocated memory that is not used by the priority queue
  */
 public p PriorityQueue.pack() {
-    // Return if no packing is required
-    if this.isFull() { return; }
-    // Pack the array
-    this.resize(this.size);
+    // Pack the array if necessary
+    if !this.isFull() {
+        this.resize(this.size);
+    }
 }
 
 /**
@@ -289,7 +262,7 @@ public f<bool> operator==<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>
  *
  * @return Not equal or equal
  */
-public f<bool> operator!=<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>& rhs) {
+public inline f<bool> operator!=<T>(const PriorityQueue<T>& lhs, const PriorityQueue<T>& rhs) {
     return !(lhs == rhs);
 }
 
@@ -346,9 +319,9 @@ p PriorityQueue.swapItems(unsigned long indexA, unsigned long indexB) {
         byte* itemA = cast<byte*>(&this.contents[indexA]);
         byte* itemB = cast<byte*>(&this.contents[indexB]);
         for unsigned long i = 0ul; i < itemSize; i++ {
-            const byte tmp = itemA[i];
-            itemA[i] = itemB[i];
-            itemB[i] = tmp;
+            itemA[i] ^= itemB[i];
+            itemB[i] ^= itemA[i];
+            itemA[i] ^= itemB[i];
         }
     }
 }
@@ -357,6 +330,10 @@ p PriorityQueue.swapItems(unsigned long indexA, unsigned long indexB) {
  * Re-allocates heap space for the priority queue contents
  */
 p PriorityQueue.resize(unsigned long itemCount) {
+    if itemCount == this.capacity {
+        return;
+    }
+
     // Free the buffer if we are shrinking down to zero capacity
     if itemCount == 0l {
         unsafe {
@@ -368,10 +345,9 @@ p PriorityQueue.resize(unsigned long itemCount) {
         return;
     }
     // Allocate the new memory
-    const unsigned long itemSize = sizeof<T>();
     unsafe {
         heap byte*& oldAddress = cast<heap byte*>(this.contents);
-        unsigned long newSize = cast<unsigned long>(itemSize * itemCount);
+        unsigned long newSize = sizeof<T>() * itemCount;
         Result<heap byte*> allocResult = sRealloc(oldAddress, newSize);
         this.contents = cast<heap T*>(allocResult.unwrapAndMove());
     }

@@ -179,6 +179,6 @@ public inline p operator++<K, V>(UnorderedMapIterator<K, V>& it) {
 /**
  * Retrieve a forward iterator for the unordered map
  */
-public f<UnorderedMapIterator<K, V>> UnorderedMap.getIterator() {
+public inline f<UnorderedMapIterator<K, V>> UnorderedMap.getIterator() {
     return UnorderedMapIterator<K, V>(*this);
 }
