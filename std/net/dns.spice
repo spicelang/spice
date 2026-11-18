@@ -246,6 +246,8 @@ public f<Result<DnsResponse>> DnsResolver.query(const String& name, unsigned sho
  * @return Answer of the name server
  */
 f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Vector<unsigned byte>& query, unsigned short id, const String& name, unsigned short recordType) {
+    // The whole exchange has to fit into the timeout. Dropped datagrams do not extend the time to wait for the answer.
+    const long deadline = getNativeMonotonicMillis() + cast<long>(this.config.timeoutMs);
     const int sockFd = openNativeSocket(server.address, server.port, SOCK_DGRAM_TYPE, this.config.timeoutMs)!;
     long written = 0l;
     unsafe {
@@ -257,8 +259,6 @@ f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Ve
     }
 
     // Without EDNS, an answer over UDP has at most 512 bytes. The buffer is larger, so that an oversized datagram is not cut.
-    // Dropped datagrams do not extend the time to wait for the answer.
-    const long deadline = getNativeMonotonicMillis() + cast<long>(this.config.timeoutMs);
     unsigned byte[4096] buffer;
     for unsigned int i = 0u; i < DNS_MAX_STRAY_DATAGRAMS; i++ {
         if !setRemainingTimeout(sockFd, deadline) { break; }

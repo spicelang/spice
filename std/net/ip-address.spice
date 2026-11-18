@@ -1,7 +1,5 @@
-// IPv4 and IPv6 addresses: parsing from and formatting to their textual representation
-
-// Imports
-import "std/type/type-conversion";
+// IPv4 and IPv6 addresses: parsing from and formatting to their textual representation.
+// The module has no dependency on the operating system, so that it stays usable in freestanding mode.
 
 // Constants
 public const unsigned int IPV4_ADDRESS_LENGTH = 4u;  // Number of bytes of an IPv4 address
@@ -384,8 +382,22 @@ f<String> formatIpv4Bytes(const unsigned byte[16] bytes, unsigned int offset) {
     String output = String();
     for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
         if i > 0u { output += '.'; }
-        output += toString(cast<int>(bytes[offset + i]));
+        output += formatDecimalByte(cast<int>(bytes[offset + i]));
     }
+    return output;
+}
+
+/**
+ * Formats a byte value as decimal number without leading zeros
+ *
+ * @param value Value between 0 and 255
+ * @return Decimal representation
+ */
+f<String> formatDecimalByte(int value) {
+    String output = String();
+    if value >= 100 { output += HEX_DIGITS[value / 100]; }
+    if value >= 10 { output += HEX_DIGITS[(value / 10) % 10]; }
+    output += HEX_DIGITS[value % 10];
     return output;
 }
 
