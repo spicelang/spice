@@ -20,6 +20,11 @@ const string HOSTS_FILE = "./dns-resolver-hosts.txt";
 int UDP_SERVER_FD = -1;
 int TCP_SERVER_FD = -1;
 int TCP_QUERIES_ANSWERED = 0;
+// Query log of the UDP server, read by main only after the server thread was joined
+int UDP_QUERY_COUNT = 0;
+int IPV4_FIRST_AAAA_QUERIES = 0;
+int FALLBACK_A_QUERY = -1;
+int FALLBACK_AAAA_QUERY = -1;
 
 // ----- Fake name server -----
 
@@ -74,7 +79,7 @@ f<Vector<unsigned byte>> nameData(string name) {
 /**
  * Builds the answer to the given query
  */
-f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool overTcp, String& questionName) {
+f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool overTcp, String& questionName, int& questionType) {
     // Question name and type
     questionName = String();
     unsigned long offset = 12ul;
@@ -84,7 +89,7 @@ f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool ov
         for unsigned long i = offset + 1ul; i <= offset + labelLength; i++ { questionName += cast<char>(cast<int>(query[i])); }
         offset += labelLength + 1ul;
     }
-    const int questionType = (cast<int>(query[offset + 1ul]) << 8) | cast<int>(query[offset + 2ul]);
+    questionType = (cast<int>(query[offset + 1ul]) << 8) | cast<int>(query[offset + 2ul]);
     const unsigned long questionEnd = offset + 5ul;
     const bool isA = questionType == 1;
     const bool isAaaa = questionType == 28;
@@ -113,6 +118,10 @@ f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool ov
                 answerCount++;
             }
         }
+    } else if questionName == "ipv4first.test" || questionName == "fallback.test" {
+        // Hosts for openClientSocket: the AAAA query for ipv4first.test is never answered (see serveUdp)
+        if isA { appendRecord(answers, "", 1, addressData("127.0.0.1")); answerCount++; }
+        if isAaaa { appendRecord(answers, "", 28, addressData("::1")); answerCount++; }
     } else if questionName == "host.search.test" {
         if isA { appendRecord(answers, "", 1, addressData("203.0.113.7")); answerCount++; }
     } else if questionName == "v6only.test" {
@@ -166,7 +175,18 @@ p serveUdp() {
         for long i = 0l; i < received; i++ { query.pushBack(buffer[i]); }
 
         String questionName;
-        Vector<unsigned byte> response = answerQuery(query, false, questionName);
+        int questionType = 0;
+        Vector<unsigned byte> response = answerQuery(query, false, questionName, questionType);
+        UDP_QUERY_COUNT++;
+        if questionName == "ipv4first.test" && questionType == 28 {
+            // An AAAA query, that is never answered, would hold up a resolver, that waits for it before connecting
+            IPV4_FIRST_AAAA_QUERIES++;
+            continue;
+        }
+        if questionName == "fallback.test" {
+            if questionType == 1 { FALLBACK_A_QUERY = UDP_QUERY_COUNT; }
+            if questionType == 28 { FALLBACK_AAAA_QUERY = UDP_QUERY_COUNT; }
+        }
         unsafe {
             unsigned byte* clientAddressPtr = clientAddress;
             if questionName == "spoofed.test" {
@@ -242,7 +262,8 @@ p serveTcpConnection() {
     const bool queryRead = readFully(connFd, query);
     assert queryRead;
     String questionName;
-    const Vector<unsigned byte> response = answerQuery(query, true, questionName);
+    int questionType = 0;
+    const Vector<unsigned byte> response = answerQuery(query, true, questionName, questionType);
     Vector<unsigned byte> message = Vector<unsigned byte>();
     appendShort(message, cast<int>(cast<long>(response.getSize())));
     foreach const unsigned byte b : response { message.pushBack(b); }
@@ -328,6 +349,28 @@ f<int> main() {
     printResolved(resolver, "bad..name");
     printResolved(resolver, "a.test", false, false);
 
+    // openClientSocket tries the IPv4 addresses first and only asks for the IPv6 ones, if none of them accepts the
+    // connection: ipv4first.test connects to IPv4 without waiting for its AAAA query, that is never answered, while
+    // fallback.test is refused over IPv4 and only then asks for its IPv6 address (which is refused as well)
+    int listeningPort = 0;
+    const int listeningFd = fakeOpenBoundSocket(SOCK_STREAM_VALUE, 0, listeningPort);
+    const int connectListenResult = fakeListen(listeningFd);
+    assert connectListenResult == 0;
+    int refusingPort = 0;
+    const int refusingFd = fakeOpenBoundSocket(SOCK_STREAM_VALUE, 0, refusingPort);
+    const int refusingCloseResult = fakeClose(refusingFd);
+    assert refusingCloseResult == 0;
+    Result<Socket> ipv4FirstResult = openClientSocket("ipv4first.test", cast<unsigned short>(listeningPort), resolver);
+    printf("openClientSocket ipv4first.test -> %s\n", ipv4FirstResult.isOk() ? "connected" : ipv4FirstResult.getErr().getMessage());
+    if ipv4FirstResult.isOk() {
+        const bool ipv4FirstClosed = ipv4FirstResult.unwrap().close();
+        assert ipv4FirstClosed;
+    }
+    const Result<Socket> fallbackResult = openClientSocket("fallback.test", cast<unsigned short>(refusingPort), resolver);
+    printf("openClientSocket fallback.test -> %s\n", fallbackResult.isOk() ? "connected" : fallbackResult.getErr().getMessage());
+    const int listeningCloseResult = fakeClose(listeningFd);
+    assert listeningCloseResult == 0;
+
     // A query for a name in mixed case matches the lowercase question, that comes back
     const Result<DnsResponse> mixedCaseResponse = resolver.query(String("A.Test."), DNS_TYPE_A);
     assert mixedCaseResponse.isOk();
@@ -337,6 +380,9 @@ f<int> main() {
     const Result<DnsResponse> stopResponse = resolver.query(String("stop.test"), DNS_TYPE_A);
     assert stopResponse.isOk();
     udpThread.join();
+    printf("AAAA queries for ipv4first.test: %d\n", IPV4_FIRST_AAAA_QUERIES);
+    const bool fallbackInOrder = FALLBACK_A_QUERY != -1 && FALLBACK_AAAA_QUERY > FALLBACK_A_QUERY;
+    printf("fallback.test asked for AAAA after A: %s\n", fallbackInOrder ? "yes" : "no");
     // A resolver, that skipped a TCP fallback, would leave the TCP worker waiting for a connection forever. Connections
     // without a query make up for the missing ones, and the number of answered queries is checked after the join. There
     // are always two of them, so that the count is not read while the worker may still change it. The ones, that the
