@@ -433,13 +433,13 @@ f<int> main() {
 
     // The system configuration yields at least one name server, and localhost resolves without asking any. What the
     // hosts file of the system lists for localhost is up to the system, so the loopback address is checked with a
-    // resolver, that has no hosts file and falls back to the reserved localhost addresses.
+    // resolver, that has no hosts file (empty path) and falls back to the reserved localhost addresses.
     const DnsConfig systemConfig = loadDnsConfig();
     assert !systemConfig.servers.isEmpty();
     DnsResolver systemResolver = DnsResolver();
     const Result<Vector<IpAddress>> systemLocalhost = systemResolver.resolve(String("localhost"), true, true);
     assert systemLocalhost.isOk();
-    DnsResolver noHostsResolver = DnsResolver(systemConfig, String("missing-hosts-file"));
+    DnsResolver noHostsResolver = DnsResolver(systemConfig, String());
     const Result<Vector<IpAddress>> fallbackLocalhost = noHostsResolver.resolve(String("localhost"), true, false);
     assert fallbackLocalhost.isOk();
     const String fallbackAddress = fallbackLocalhost.unwrap()[0].toString();
