@@ -73,6 +73,19 @@ f<int> main() {
     assert url4.port == 443s;
     String authority4 = url4.getAuthority();
     assert authority4 == "[::1]";
+    Result<Url> urlRes5 = parseUrl(String("https://[2001:DB8:0:0::1]:65535/"));
+    assert urlRes5.isOk();
+    Url url5 = urlRes5.unwrap();
+    assert url5.host == "2001:db8::1"; // Canonical form
+    assert url5.port == cast<unsigned short>(65535);
+    Result<Url> notIpv6InBrackets = parseUrl(String("http://[localhost]:8080/"));
+    assert notIpv6InBrackets.isErr();
+    Result<Url> ipv6WithoutBrackets = parseUrl(String("http://::1:8080/"));
+    assert ipv6WithoutBrackets.isErr();
+    Result<Url> portTooLarge = parseUrl(String("http://[::1]:73616/"));
+    assert portTooLarge.isErr();
+    Result<Url> portWayTooLarge = parseUrl(String("http://localhost:99999999999999999999/"));
+    assert portWayTooLarge.isErr();
     Result<Url> unclosedIpv6 = parseUrl(String("http://[::1/x"));
     assert unclosedIpv6.isErr();
     Result<Url> junkBehindIpv6 = parseUrl(String("http://[::1]x:80"));

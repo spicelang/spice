@@ -145,7 +145,8 @@ public type TlsSocket struct {
  * Opens a TCP connection to the given host and port and performs a TLS client handshake on top of
  * it, verifying the server's certificate against `context` and its name against `host`.
  *
- * @param host Host to connect to, either as IPv4 address, IPv6 address or hostname
+ * @param host Host to connect to, either as IPv4 address, IPv6 address without brackets (e.g. "::1", Linux only)
+ *             or hostname
  * @param port Port to connect to
  * @param context Client context that decides which certificates are trusted
  * @param timeoutMillis Read/write timeout applied before the handshake, 0 to block indefinitely.

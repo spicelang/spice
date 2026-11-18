@@ -1,6 +1,7 @@
 // Imports
 import "std/data/pair";
 import "std/data/vector";
+import "std/net/ip-address";
 import "std/net/socket";
 import "std/text/analysis";
 import "std/text/format";
@@ -681,16 +682,27 @@ f<string> parseAuthorityInto(const String& authority, Url& url) {
             if hostEnd == -1l || (hasPort && hostAndPort[cast<unsigned long>(portStart)] != ':') {
                 result = "URL carries a malformed IPv6 address";
             } else {
-                url.host = hostAndPort.getSubstring(1l, hostEnd - 1l);
+                // Only an IPv6 address may stand in brackets. It is kept in its canonical form, so that two spellings
+                // of the same address make the same host (e.g. when deciding whether a redirect stays on the host).
+                const Result<IpAddress> ipv6Address = parseIpv6Address(hostAndPort.getSubstring(1l, hostEnd - 1l));
+                if ipv6Address.isErr() {
+                    result = "URL carries a malformed IPv6 address";
+                } else {
+                    url.host = ipv6Address.unwrap().toString();
+                }
             }
         } else if portStart == -1l {
             url.host = hostAndPort;
         } else {
             url.host = hostAndPort.getSubstring(0l, portStart);
         }
+        // A colon left in the host can only stem from an IPv6 address without brackets, like in "http://::1:8080/"
+        if result == "" && url.host.find(':') != -1l && !hostAndPort.startsWith("[") {
+            result = "URL carries an IPv6 address without brackets";
+        }
         if result == "" && portStart != -1l {
             const String portText = hostAndPort.getSubstring(cast<unsigned long>(portStart) + 1l);
-            if !isDecimalNumber(portText) {
+            if !isDecimalNumber(portText) || portText.getLength() > 5ul || toLong(portText.getRaw()) > 65535l {
                 result = "URL carries a malformed port";
             } else {
                 url.port = cast<unsigned short>(toLong(portText.getRaw()));

@@ -222,15 +222,17 @@ are now TLS-handshaked before their request is read.
 ## Host name resolution
 
 The client accepts host names, IPv4 addresses and IPv6 addresses, the latter in brackets like in any URL
-(`http://[::1]:8080/`). On Linux, `openClientSocket` in `std/net/socket` resolves host names with the resolver of
+(`http://[::1]:8080/`). Connections over IPv6 are only supported on Linux so far; on macOS and Windows, such a URL is
+parsed, but the connection fails. On Linux, `openClientSocket` in `std/net/socket` resolves host names with the resolver of
 `std/net/dns`, which is written in Spice: it reads `/etc/hosts` and asks the name servers from `/etc/resolv.conf` for
 the IPv4 (A) and IPv6 (AAAA) addresses of the name, over UDP with a fallback to TCP for large answers. The addresses
 are then tried one after the other, IPv4 ones first, until a connection is established.
 
 It does not go through the name service switch (NSS) of the C library. This keeps statically linked programs working
 on systems with an older glibc than the one they were linked against, but it also means that name sources other than
-the hosts file and DNS, like mDNS for `.local` names, are not available. On macOS and Windows, `openClientSocket` uses
-the resolver of the operating system instead, for IPv4 addresses only.
+the hosts file and DNS, like mDNS for `.local` names, are not available. The IPv6 addresses of a host are only looked
+up, if none of its IPv4 addresses accepts the connection. On macOS and Windows, `openClientSocket` uses the resolver of
+the operating system instead, for IPv4 addresses only.
 
 `std/net/dns` itself works on Linux, macOS and Windows. Windows has no `resolv.conf`, so there the name servers and DNS
 suffixes of the network adapters, that are up, take its place, and the hosts file is read from

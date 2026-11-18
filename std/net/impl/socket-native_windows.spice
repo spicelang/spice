@@ -60,6 +60,7 @@ ext f<int> recv(int /*sockfd*/, byte* /*buf*/, int /*length*/, int /*flags*/);
 ext f<int> send(int /*sockfd*/, byte* /*buf*/, int /*length*/, int /*flags*/);
 ext f<int> closesocket(int /*sockfd*/);
 ext f<int> BCryptGenRandom(byte* /*hAlgorithm*/, byte* /*pbBuffer*/, unsigned int /*cbBuffer*/, unsigned int /*dwFlags*/);
+ext f<unsigned long> GetTickCount64();
 ext f<unsigned int> GetAdaptersAddresses(unsigned int /*family*/, unsigned int /*flags*/, byte* /*reserved*/, byte* /*adapterAddresses*/, unsigned int* /*sizePointer*/);
 
 /**
@@ -196,6 +197,16 @@ public f<long> writeNativeSocket(int sockFd, byte* buffer, unsigned long size) {
  */
 public p closeNativeSocket(int sockFd) {
     closesocket(sockFd);
+}
+
+/**
+ * Returns the time of a monotonic clock, that is not affected by changes of the system time. Only the
+ * difference between two values has a meaning.
+ *
+ * @return Monotonic time in milliseconds
+ */
+public f<long> getNativeMonotonicMillis() {
+    return cast<long>(GetTickCount64());
 }
 
 /**

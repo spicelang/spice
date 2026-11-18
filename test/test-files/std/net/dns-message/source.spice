@@ -72,7 +72,9 @@ f<int> main() {
     const String www = String("www.example.com");
     printResponse("cname", parseDnsResponse(fromHex("12348180000100030000000003777777076578616d706c6503636f6d0000010001c00c000500010000003c000603776562c010c02d000100010000003c0004c0000201c02d000100030000003c0004c0000202"), id, www, DNS_TYPE_A));
     printResponse("aaaa", parseDnsResponse(fromHex("1234818000010002000000000161047465737400001c0001c00c001c00010000003c001020010db8000000000000000000000001c00c001c00010000003c001020010db8000000000000000000000002"), id, String("a.test"), DNS_TYPE_AAAA));
-    printResponse("nxdomain", parseDnsResponse(fromHex("123481830000000000000000"), id, www, DNS_TYPE_A));
+    printResponse("nxdomain", parseDnsResponse(fromHex("12348183000100000000000003777777076578616d706c6503636f6d0000010001"), id, www, DNS_TYPE_A));
+    printResponse("nxdomain without question", parseDnsResponse(fromHex("123481830000000000000000"), id, www, DNS_TYPE_A));
+    printResponse("servfail without question", parseDnsResponse(fromHex("123481820000000000000000"), id, www, DNS_TYPE_A));
     printResponse("truncated", parseDnsResponse(fromHex("12348380000100000000000003777777076578616d706c6503636f6d0000010001"), id, www, DNS_TYPE_A));
     printResponse("uppercase", parseDnsResponse(fromHex("12348180000100010000000003575757074578616d706c6503434f4d0000010001c00c000100010000003c0004c0000203"), id, www, DNS_TYPE_A));
     printResponse("wrong id", parseDnsResponse(fromHex("123481830000000000000000"), cast<unsigned short>(0x4321), www, DNS_TYPE_A));
@@ -81,5 +83,7 @@ f<int> main() {
     printResponse("no response", parseDnsResponse(fromHex("123401000000000000000000"), id, www, DNS_TYPE_A));
     printResponse("too short", parseDnsResponse(fromHex("1234818000010000"), id, www, DNS_TYPE_A));
     printResponse("cut off", parseDnsResponse(fromHex("12348180000100010000000003777777076578616d706c6503636f6d0000010001c00c000100010000003c0004c000"), id, www, DNS_TYPE_A));
+    printResponse("cname with trailing bytes", parseDnsResponse(fromHex("12348180000100010000000003777777076578616d706c6503636f6d0000010001c00c000500010000003c000703776562c01000"), id, www, DNS_TYPE_A));
+    printResponse("dot inside label", parseDnsResponse(fromHex("12348180000100010000000003777777076578616d706c6503636f6d00000100010b7777772e6578616d706c6503636f6d00000100010000003c0004c0000205"), id, www, DNS_TYPE_A));
     printResponse("pointer loop", parseDnsResponse(fromHex("12348180000100010000000003777777076578616d706c6503636f6d0000010001c021000100010000003c0004c0000204"), id, www, DNS_TYPE_A));
 }

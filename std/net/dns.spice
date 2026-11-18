@@ -16,7 +16,6 @@
 import "std/data/vector";
 import "std/io/file";
 import "std/math/fct";
-import "std/math/rand";
 import "std/net/impl/socket-native";
 import "std/net/ip-address";
 import "std/text/format";
@@ -115,7 +114,9 @@ public p DnsResolver.ctor(const DnsConfig& config, const String& hostsFilePath) 
  * Resolves a host name to its addresses. An IP address literal (IPv6 optionally in brackets, like in
  * URLs) resolves to itself. Otherwise the name is looked up in the hosts file first and, if it is not
  * listed there, asked for at the name servers, with the search domains applied like described in
- * resolv.conf(5). The names "localhost" and "*.localhost" always resolve to the loopback addresses.
+ * resolv.conf(5). The names "localhost" and "*.localhost" resolve to the loopback addresses, unless
+ * the hosts file lists them (it takes precedence, like with the C library). Names, whose last label
+ * only consists of digits (like "127.1"), are rejected instead of being sent to the name servers.
  * IPv4 addresses come first in the result, IPv6 addresses second.
  *
  * @param host Host name or IP address literal
@@ -147,6 +148,9 @@ public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool
     const bool isAbsolute = name.endsWith(".");
     if isAbsolute { name = name.getSubstring(0l, cast<long>(name.getLength()) - 1l); }
     if !isValidDnsName(name) { return err<Vector<IpAddress>>(Error("Malformed host name")); }
+    // No top-level domain is all-numeric, so such a name is a shortened or mistyped IPv4 address (like "127.1"). The
+    // C function inet_aton would read some of these as addresses; they are rejected here, so that none leaks to DNS.
+    if hasNumericLastLabel(name) { return err<Vector<IpAddress>>(Error("Malformed host name: neither an IPv4 address nor a host name")); }
 
     // Hosts file
     if !this.hostsFilePath.isEmpty() {
@@ -158,7 +162,8 @@ public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool
         }
     }
 
-    // The localhost names are reserved for the loopback addresses (RFC 6761)
+    // The localhost names are reserved for the loopback addresses (RFC 6761). The hosts file is still consulted first,
+    // like the C library does, so that the setup of the system is honored.
     if name == "localhost" || name.endsWith(".localhost") {
         Vector<IpAddress> loopbackAddresses = Vector<IpAddress>();
         loopbackAddresses.pushBack(parseIpAddress(String("127.0.0.1")).unwrap());
@@ -199,23 +204,27 @@ public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool
  * servers are asked one after the other, until one gives a definite answer (the name exists or does
  * not exist), for the configured number of rounds.
  *
- * @param name Absolute name to ask for, without trailing dot
+ * @param name Absolute name to ask for, with or without trailing dot
  * @param recordType DNS_TYPE_A or DNS_TYPE_AAAA
  * @return Definite answer of a name server
  */
 public f<Result<DnsResponse>> DnsResolver.query(const String& name, unsigned short recordType) {
+    // Name servers echo the question in any case, but the answer is matched in lowercase
+    String queryName = toLower(name);
+    if queryName.endsWith(".") { queryName = queryName.getSubstring(0l, cast<long>(queryName.getLength()) - 1l); }
+
     for unsigned int attempt = 0u; attempt < this.config.attempts; attempt++ {
         foreach const DnsServer& server : this.config.servers {
-            const unsigned short id = generateQueryId();
-            const Result<Vector<unsigned byte>> queryResult = buildDnsQuery(id, name, recordType);
+            const unsigned short id = generateQueryId()!;
+            const Result<Vector<unsigned byte>> queryResult = buildDnsQuery(id, queryName, recordType);
             if queryResult.isErr() { return err<DnsResponse>(queryResult.getErr()); }
             const Vector<unsigned byte> query = queryResult.unwrap();
 
-            Result<DnsResponse> responseResult = this.exchangeUdp(server, query, id, name, recordType);
+            Result<DnsResponse> responseResult = this.exchangeUdp(server, query, id, queryName, recordType);
             if responseResult.isOk() && responseResult.unwrap().truncated {
-                responseResult = this.exchangeTcp(server, query, id, name, recordType);
+                responseResult = this.exchangeTcp(server, query, id, queryName, recordType);
             }
-            if responseResult.isOk() {
+            if responseResult.isOk() && !responseResult.unwrap().truncated {
                 const int responseCode = responseResult.unwrap().responseCode;
                 if responseCode == DNS_RCODE_NO_ERROR || responseCode == DNS_RCODE_NAME_ERROR { return responseResult; }
             }
@@ -248,8 +257,11 @@ f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Ve
     }
 
     // Without EDNS, an answer over UDP has at most 512 bytes. The buffer is larger, so that an oversized datagram is not cut.
+    // Dropped datagrams do not extend the time to wait for the answer.
+    const long deadline = getNativeMonotonicMillis() + cast<long>(this.config.timeoutMs);
     unsigned byte[4096] buffer;
     for unsigned int i = 0u; i < DNS_MAX_STRAY_DATAGRAMS; i++ {
+        if !setRemainingTimeout(sockFd, deadline) { break; }
         long received = 0l;
         unsafe {
             unsigned byte* bufferPtr = buffer;
@@ -282,6 +294,8 @@ f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Ve
  * @return Answer of the name server
  */
 f<Result<DnsResponse>> DnsResolver.exchangeTcp(const DnsServer& server, const Vector<unsigned byte>& query, unsigned short id, const String& name, unsigned short recordType) {
+    // The whole exchange has to fit into the timeout, not only every single read
+    const long deadline = getNativeMonotonicMillis() + cast<long>(this.config.timeoutMs);
     const int sockFd = openNativeSocket(server.address, server.port, SOCK_STREAM_TYPE, this.config.timeoutMs)!;
 
     // Length prefix and query in one go
@@ -290,19 +304,19 @@ f<Result<DnsResponse>> DnsResolver.exchangeTcp(const DnsServer& server, const Ve
     request.pushBack(cast<unsigned byte>(queryLength >> 8));
     request.pushBack(cast<unsigned byte>(queryLength & 0xFF));
     foreach const unsigned byte b : query { request.pushBack(b); }
-    if !writeAllBytes(sockFd, request) {
+    if !writeAllBytes(sockFd, request, deadline) {
         closeNativeSocket(sockFd);
         return err<DnsResponse>(Error("Error sending DNS query"));
     }
 
     Vector<unsigned byte> lengthPrefix = Vector<unsigned byte>(2ul, cast<unsigned byte>(0));
-    if !readExactBytes(sockFd, lengthPrefix) {
+    if !readExactBytes(sockFd, lengthPrefix, deadline) {
         closeNativeSocket(sockFd);
         return err<DnsResponse>(Error("No answer from the name server"));
     }
     const int responseLength = (cast<int>(lengthPrefix[0]) << 8) | cast<int>(lengthPrefix[1]);
     Vector<unsigned byte> message = Vector<unsigned byte>(cast<unsigned long>(cast<long>(responseLength)), cast<unsigned byte>(0));
-    const bool complete = readExactBytes(sockFd, message);
+    const bool complete = readExactBytes(sockFd, message, deadline);
     closeNativeSocket(sockFd);
     if !complete { return err<DnsResponse>(Error("Incomplete answer from the name server")); }
     return parseDnsResponse(message, id, name, recordType);
@@ -464,9 +478,12 @@ public f<Result<DnsResponse>> parseDnsResponse(const Vector<unsigned byte>& mess
     response.responseCode = flags & 0xF;
     response.truncated = (flags & 0x0200) != 0;
 
-    // The question has to be the one of the query. Some name servers leave it out of error responses.
+    // The question has to be the one of the query (RFC 5452). Some name servers leave it out of error responses like
+    // FORMERR or SERVFAIL, but an answer, that the resolver takes as definite (the name exists or does not exist), has
+    // to repeat it, so that a forged one has to guess more than the ID.
     unsigned long offset = DNS_HEADER_SIZE;
-    if questionCount != 1 && !(questionCount == 0 && response.responseCode != DNS_RCODE_NO_ERROR) {
+    const bool isDefinite = response.responseCode == DNS_RCODE_NO_ERROR || response.responseCode == DNS_RCODE_NAME_ERROR;
+    if questionCount != 1 && !(questionCount == 0 && !isDefinite) {
         return err<DnsResponse>(malformedError);
     }
     if questionCount == 1 {
@@ -498,7 +515,7 @@ public f<Result<DnsResponse>> parseDnsResponse(const Vector<unsigned byte>& mess
         if recordClass == DNS_CLASS_IN {
             if answerType == cast<int>(DNS_TYPE_CNAME) {
                 unsigned long targetOffset = offset;
-                if !readDnsName(message, targetOffset, record.target) || targetOffset > dataEnd { return err<DnsResponse>(malformedError); }
+                if !readDnsName(message, targetOffset, record.target) || targetOffset != dataEnd { return err<DnsResponse>(malformedError); }
                 records.pushBack(record);
             } else if answerType == cast<int>(DNS_TYPE_A) && dataLength == cast<unsigned long>(IPV4_ADDRESS_LENGTH) {
                 record.address = createIpv4Address(message[offset], message[offset + 1ul], message[offset + 2ul], message[offset + 3ul]);
@@ -557,6 +574,21 @@ f<bool> isValidDnsName(const String& name) {
         }
     }
     return labelLength != 0ul;
+}
+
+/**
+ * Checks if the last label of a name only consists of digits, like in "127.1" or "10.0.0.300"
+ *
+ * @param name Name without trailing dot
+ * @return Numeric last label or not
+ */
+f<bool> hasNumericLastLabel(const String& name) {
+    const long lastDot = name.rfind('.');
+    const unsigned long labelStart = lastDot == -1l ? 0ul : cast<unsigned long>(lastDot) + 1ul;
+    for unsigned long i = labelStart; i < name.getLength(); i++ {
+        if name[i] < '0' || name[i] > '9' { return false; }
+    }
+    return labelStart < name.getLength();
 }
 
 /**
@@ -653,6 +685,8 @@ f<bool> readDnsName(const Vector<unsigned byte>& message, unsigned long& offset,
         if !name.isEmpty() { name += '.'; }
         for unsigned long i = pos + 1ul; i < labelEnd; i++ {
             int c = cast<int>(message[i]);
+            // A dot inside a label could not be told apart from the separator between two labels
+            if c == cast<int>('.') { return false; }
             if c >= cast<int>('A') && c <= cast<int>('Z') { c += 32; }
             name += cast<char>(c);
         }
@@ -662,32 +696,48 @@ f<bool> readDnsName(const Vector<unsigned byte>& message, unsigned long& offset,
 }
 
 /**
- * Returns a random query ID. It comes from the kernel's random source, so that an attacker cannot
- * guess it to slip a forged answer in.
+ * Returns a random query ID. It comes from the random source of the operating system, so that an
+ * attacker cannot guess it to slip a forged answer in. Without that source, no query is sent at all,
+ * instead of one with a predictable ID.
  *
  * @return Query ID
  */
-f<unsigned short> generateQueryId() {
+f<Result<unsigned short>> generateQueryId() {
     unsigned byte[2] randomBytes;
     bool filled = false;
     unsafe {
         unsigned byte* randomBytesPtr = randomBytes;
         filled = fillNativeRandomBytes(randomBytesPtr, 2ul);
     }
-    if !filled { return cast<unsigned short>(randInt(0, 0xFFFF)); }
-    return cast<unsigned short>((cast<int>(randomBytes[0]) << 8) | cast<int>(randomBytes[1]));
+    if !filled { return err<unsigned short>(Error("No secure random numbers available for the DNS query ID")); }
+    return ok(cast<unsigned short>((cast<int>(randomBytes[0]) << 8) | cast<int>(randomBytes[1])));
 }
 
 /**
- * Writes all bytes of the given buffer to the given socket
+ * Limits the next read or write on the given socket to the time left until the given deadline
+ *
+ * @param sockFd Socket file descriptor
+ * @param deadline Deadline in milliseconds of the monotonic clock (see getNativeMonotonicMillis)
+ * @return Time is left and the timeout was set, or not
+ */
+f<bool> setRemainingTimeout(int sockFd, long deadline) {
+    const long remainingMs = deadline - getNativeMonotonicMillis();
+    if remainingMs <= 0l { return false; }
+    return setNativeSocketTimeout(sockFd, cast<unsigned long>(remainingMs));
+}
+
+/**
+ * Writes all bytes of the given buffer to the given socket, before the given deadline
  *
  * @param sockFd Socket file descriptor
  * @param bytes Bytes to write
+ * @param deadline Deadline in milliseconds of the monotonic clock (see getNativeMonotonicMillis)
  * @return All bytes were written or not
  */
-f<bool> writeAllBytes(int sockFd, const Vector<unsigned byte>& bytes) {
+f<bool> writeAllBytes(int sockFd, const Vector<unsigned byte>& bytes, long deadline) {
     unsigned long bytesWritten = 0ul;
     while bytesWritten < bytes.getSize() {
+        if !setRemainingTimeout(sockFd, deadline) { return false; }
         long written = 0l;
         unsafe {
             written = writeNativeSocket(sockFd, bytes.getDataPtr() + bytesWritten, bytes.getSize() - bytesWritten);
@@ -699,15 +749,17 @@ f<bool> writeAllBytes(int sockFd, const Vector<unsigned byte>& bytes) {
 }
 
 /**
- * Reads from the given socket, until the given buffer is full
+ * Reads from the given socket, until the given buffer is full or the given deadline has passed
  *
  * @param sockFd Socket file descriptor
  * @param bytes Buffer to fill, with the number of bytes to read as size
+ * @param deadline Deadline in milliseconds of the monotonic clock (see getNativeMonotonicMillis)
  * @return The buffer was filled or not
  */
-f<bool> readExactBytes(int sockFd, Vector<unsigned byte>& bytes) {
+f<bool> readExactBytes(int sockFd, Vector<unsigned byte>& bytes, long deadline) {
     unsigned long bytesRead = 0ul;
     while bytesRead < bytes.getSize() {
+        if !setRemainingTimeout(sockFd, deadline) { return false; }
         long received = 0l;
         unsafe {
             received = readNativeSocket(sockFd, bytes.getDataPtr() + bytesRead, bytes.getSize() - bytesRead);

@@ -313,24 +313,35 @@ public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingCon
 
 /**
  * Opens a TCP client socket and tries to connect it to a server socket. A host name may resolve to
- * several IPv4 and IPv6 addresses, which are tried one after the other (IPv4 ones first), until a
- * connection is established.
+ * several IPv4 and IPv6 addresses, which are tried one after the other, until a connection is
+ * established. The IPv4 addresses are looked up and tried first; the IPv6 addresses are only looked
+ * up, if none of them works, so that a slow or missing answer for them never delays a connection.
  *
  * @param host Host to connect to, either as IPv4 address, IPv6 address (optionally in brackets) or hostname
  * @param port Post to connect to
  * @return Socket file descriptor
  */
 public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
-    // Resolve the host before spending a file descriptor on it
-    const Vector<IpAddress> addresses = resolveHostAddresses(String(host))!;
-
-    foreach const IpAddress& address : addresses {
-        const Result<int> sockFdResult = openNativeSocket(address, port, SOCK_STREAM, 0ul);
-        if sockFdResult.isOk() {
-            // A client talks over the socket itself, so socket and connection descriptor are the same
-            const int sockFd = sockFdResult.unwrap();
-            return ok(Socket { sockFd, /*connFd*/ sockFd });
+    // The messages are literals, so the raw string outlives this function, like the error, that carries it
+    string errorMessage = "";
+    for int pass = 0; pass < 2; pass++ {
+        // Resolve the host before spending a file descriptor on it
+        const bool ipv6Pass = pass == 1;
+        const Result<Vector<IpAddress>> addressesResult = resolveHostAddresses(String(host), !ipv6Pass, ipv6Pass);
+        if addressesResult.isErr() {
+            // Keep the reason of the first failure, unless a later pass found addresses, that did not work
+            if errorMessage == "" { errorMessage = addressesResult.getErr().getMessage(); }
+            continue;
         }
+        foreach const IpAddress& address : addressesResult.unwrap() {
+            const Result<int> sockFdResult = openNativeSocket(address, port, SOCK_STREAM, 0ul);
+            if sockFdResult.isOk() {
+                // A client talks over the socket itself, so socket and connection descriptor are the same
+                const int sockFd = sockFdResult.unwrap();
+                return ok(Socket { sockFd, /*connFd*/ sockFd });
+            }
+        }
+        errorMessage = "Error connecting to socket";
     }
-    return err<Socket>(Error("Error connecting to socket"));
+    return err<Socket>(Error(errorMessage));
 }

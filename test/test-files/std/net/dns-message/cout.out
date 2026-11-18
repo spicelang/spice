@@ -9,6 +9,8 @@ query: 12 34 01 00 00 01 00 00 00 00 00 00 03 77 77 77 07 65 78 61 6d 70 6c 65 0
 cname: rcode=0 truncated=0 addresses=[192.0.2.1]
 aaaa: rcode=0 truncated=0 addresses=[2001:db8::1, 2001:db8::2]
 nxdomain: rcode=3 truncated=0 addresses=[]
+nxdomain without question: error: Malformed DNS response
+servfail without question: rcode=2 truncated=0 addresses=[]
 truncated: rcode=0 truncated=1 addresses=[]
 uppercase: rcode=0 truncated=0 addresses=[192.0.2.3]
 wrong id: error: DNS response does not answer the query
@@ -17,4 +19,6 @@ wrong type: error: DNS response does not answer the query
 no response: error: Malformed DNS response
 too short: error: Malformed DNS response
 cut off: error: Malformed DNS response
+cname with trailing bytes: error: Malformed DNS response
+dot inside label: error: Malformed DNS response
 pointer loop: error: Malformed DNS response

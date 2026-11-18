@@ -88,6 +88,7 @@ f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool ov
     const bool isAaaa = questionType == 28;
 
     int responseCode = 0;
+    int questionCount = 1;
     bool truncated = false;
     int answerCount = 0;
     Vector<unsigned byte> answers = Vector<unsigned byte>();
@@ -121,6 +122,10 @@ f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool ov
         answerCount++;
     } else if questionName == "servfail.test" {
         responseCode = 2;
+    } else if questionName == "unverifiable.test" {
+        // An NXDOMAIN, that does not repeat the question, must not end the search for an answer
+        responseCode = 3;
+        questionCount = 0;
     } else {
         responseCode = 3;
     }
@@ -129,11 +134,13 @@ f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool ov
     response.pushBack(query[0]);
     response.pushBack(query[1]);
     appendShort(response, 0x8180 | (truncated ? 0x0200 : 0) | responseCode);
-    appendShort(response, 1);
+    appendShort(response, questionCount);
     appendShort(response, answerCount);
     appendShort(response, 0);
     appendShort(response, 0);
-    for unsigned long i = 12ul; i < questionEnd; i++ { response.pushBack(query[i]); }
+    if questionCount == 1 {
+        for unsigned long i = 12ul; i < questionEnd; i++ { response.pushBack(query[i]); }
+    }
     foreach const unsigned byte b : answers { response.pushBack(b); }
     return response;
 }
@@ -176,6 +183,38 @@ p serveUdp() {
 }
 
 /**
+ * Reads exactly the size of the given buffer from a connection, however many reads it takes
+ */
+f<bool> readFully(int connFd, Vector<unsigned byte>& bytes) {
+    unsigned long bytesRead = 0ul;
+    while bytesRead < bytes.getSize() {
+        long received = 0l;
+        unsafe {
+            received = fakeRead(connFd, bytes.getDataPtr() + bytesRead, bytes.getSize() - bytesRead);
+        }
+        if received <= 0l { return false; }
+        bytesRead += cast<unsigned long>(received);
+    }
+    return true;
+}
+
+/**
+ * Writes all bytes of the given buffer to a connection, however many writes it takes
+ */
+f<bool> writeFully(int connFd, const Vector<unsigned byte>& bytes) {
+    unsigned long bytesWritten = 0ul;
+    while bytesWritten < bytes.getSize() {
+        long written = 0l;
+        unsafe {
+            written = fakeWrite(connFd, bytes.getDataPtr() + bytesWritten, bytes.getSize() - bytesWritten);
+        }
+        if written <= 0l { return false; }
+        bytesWritten += cast<unsigned long>(written);
+    }
+    return true;
+}
+
+/**
  * Answers the two queries over TCP, that the resolver sends for the A and the AAAA records of "big.test"
  */
 p serveTcp() {
@@ -189,25 +228,19 @@ p serveTcpConnection() {
     const int connFd = fakeAccept(TCP_SERVER_FD);
     assert connFd >= 0;
     Vector<unsigned byte> lengthPrefix = Vector<unsigned byte>(2ul, cast<unsigned byte>(0));
-    unsafe {
-        const long prefixRead = fakeRead(connFd, lengthPrefix.getDataPtr(), 2ul);
-        assert prefixRead == 2l;
-    }
+    const bool prefixRead = readFully(connFd, lengthPrefix);
+    assert prefixRead;
     const int queryLength = (cast<int>(lengthPrefix[0]) << 8) | cast<int>(lengthPrefix[1]);
     Vector<unsigned byte> query = Vector<unsigned byte>(cast<unsigned long>(cast<long>(queryLength)), cast<unsigned byte>(0));
-    unsafe {
-        const long queryRead = fakeRead(connFd, query.getDataPtr(), query.getSize());
-        assert queryRead == cast<long>(query.getSize());
-    }
+    const bool queryRead = readFully(connFd, query);
+    assert queryRead;
     String questionName;
     const Vector<unsigned byte> response = answerQuery(query, true, questionName);
     Vector<unsigned byte> message = Vector<unsigned byte>();
     appendShort(message, cast<int>(cast<long>(response.getSize())));
     foreach const unsigned byte b : response { message.pushBack(b); }
-    unsafe {
-        const long messageWritten = fakeWrite(connFd, message.getDataPtr(), message.getSize());
-        assert messageWritten == cast<long>(message.getSize());
-    }
+    const bool messageWritten = writeFully(connFd, message);
+    assert messageWritten;
     const int closeResult = fakeClose(connFd);
     assert closeResult == 0;
 }
@@ -250,7 +283,7 @@ f<int> main() {
     assert hostsWritten.isOk();
 
     // The first name server is unreachable, so every query falls through to the second one
-    DnsConfig config = parseResolvConf(String("search search.test\noptions timeout:2 attempts:1\n"));
+    DnsConfig config = parseResolvConf(String("search search.test\noptions timeout:1 attempts:1\n"));
     config.servers.clear();
     config.servers.pushBack(DnsServer { parseIpAddress(String("127.0.0.1")).unwrap(), cast<unsigned short>(closedPort) });
     config.servers.pushBack(DnsServer { parseIpAddress(String("127.0.0.1")).unwrap(), cast<unsigned short>(serverPort) });
@@ -269,6 +302,9 @@ f<int> main() {
     printResolved(resolver, "loop.test");
     printResolved(resolver, "missing.test");
     printResolved(resolver, "servfail.test");
+    printResolved(resolver, "unverifiable.test");
+    printResolved(resolver, "127.1");
+    printResolved(resolver, "10.0.0.300");
     printResolved(resolver, "myhost");
     printResolved(resolver, "myhost.", true, false);
     printResolved(resolver, "localhost");
@@ -278,6 +314,11 @@ f<int> main() {
     printResolved(resolver, "2001:db8::10", true, false);
     printResolved(resolver, "bad..name");
     printResolved(resolver, "a.test", false, false);
+
+    // A query for a name in mixed case matches the lowercase question, that comes back
+    const Result<DnsResponse> mixedCaseResponse = resolver.query(String("A.Test."), DNS_TYPE_A);
+    assert mixedCaseResponse.isOk();
+    printf("query A.Test. -> %s\n", mixedCaseResponse.unwrap().addresses[0].toString().getRaw());
 
     // Shut the fake name server down
     const Result<DnsResponse> stopResponse = resolver.query(String("stop.test"), DNS_TYPE_A);
