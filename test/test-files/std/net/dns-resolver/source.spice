@@ -288,18 +288,27 @@ p printResolved(DnsResolver& resolver, string host, bool includeIpv4 = true, boo
 }
 
 f<int> main() {
-    // UDP and TCP on the same ephemeral port, like a real name server
+    // UDP and TCP on the same ephemeral port, like a real name server. The TCP port with the number of the ephemeral UDP
+    // port may be taken (or reserved by the system), so a new pair is tried in that case.
     int serverPort = 0;
-    UDP_SERVER_FD = fakeOpenBoundSocket(SOCK_DGRAM_VALUE, 0, serverPort);
-    int tcpPort = 0;
-    TCP_SERVER_FD = fakeOpenBoundSocket(SOCK_STREAM_VALUE, serverPort, tcpPort);
-    assert tcpPort == serverPort;
+    for int attempt = 0; attempt < 20 && TCP_SERVER_FD == -1; attempt++ {
+        UDP_SERVER_FD = fakeOpenBoundSocket(SOCK_DGRAM_VALUE, 0, serverPort);
+        assert UDP_SERVER_FD >= 0;
+        int tcpPort = 0;
+        TCP_SERVER_FD = fakeOpenBoundSocket(SOCK_STREAM_VALUE, serverPort, tcpPort);
+        if TCP_SERVER_FD == -1 {
+            const int retryCloseResult = fakeClose(UDP_SERVER_FD);
+            assert retryCloseResult == 0;
+        }
+    }
+    assert TCP_SERVER_FD != -1;
     const int listenResult = fakeListen(TCP_SERVER_FD);
     assert listenResult == 0;
 
     // A port, that nobody listens on: queries to it are refused right away
     int closedPort = 0;
     const int closedPortFd = fakeOpenBoundSocket(SOCK_DGRAM_VALUE, 0, closedPort);
+    assert closedPortFd >= 0;
     const int closedPortCloseResult = fakeClose(closedPortFd);
     assert closedPortCloseResult == 0;
 
@@ -354,10 +363,12 @@ f<int> main() {
     // fallback.test is refused over IPv4 and only then asks for its IPv6 address (which is refused as well)
     int listeningPort = 0;
     const int listeningFd = fakeOpenBoundSocket(SOCK_STREAM_VALUE, 0, listeningPort);
+    assert listeningFd >= 0;
     const int connectListenResult = fakeListen(listeningFd);
     assert connectListenResult == 0;
     int refusingPort = 0;
     const int refusingFd = fakeOpenBoundSocket(SOCK_STREAM_VALUE, 0, refusingPort);
+    assert refusingFd >= 0;
     const int refusingCloseResult = fakeClose(refusingFd);
     assert refusingCloseResult == 0;
     Result<Socket> ipv4FirstResult = openClientSocket("ipv4first.test", cast<unsigned short>(listeningPort), resolver);

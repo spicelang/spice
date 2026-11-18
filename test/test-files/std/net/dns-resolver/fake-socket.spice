@@ -16,6 +16,8 @@ ext f<int> close(int /*fd*/);
 
 /**
  * Opens a socket bound to 127.0.0.1 and the given port (0 for an ephemeral one)
+ *
+ * @return Socket, -1 if the port is not available
  */
 public f<int> fakeOpenBoundSocket(int socketType, int port, int& boundPort) {
     const int sockFd = socket(FAKE_AF_INET, socketType, 0);
@@ -30,8 +32,11 @@ public f<int> fakeOpenBoundSocket(int socketType, int port, int& boundPort) {
     int addressLength = 16;
     unsafe {
         unsigned byte* addressPtr = address;
-        const int bindResult = bind(sockFd, addressPtr, addressLength);
-        assert bindResult == 0;
+        if bind(sockFd, addressPtr, addressLength) != 0 {
+            const int closeResult = close(sockFd);
+            assert closeResult == 0;
+            return -1;
+        }
         const int nameResult = getsockname(sockFd, addressPtr, &addressLength);
         assert nameResult == 0;
     }
