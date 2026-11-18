@@ -222,22 +222,21 @@ are now TLS-handshaked before their request is read.
 ## Host name resolution
 
 The client accepts host names, IPv4 addresses and IPv6 addresses, the latter in brackets like in any URL
-(`http://[::1]:8080/`). Connections over IPv6 are supported on Linux and Windows so far; on macOS, such a URL is parsed,
-but the connection fails. On Linux and Windows, `openClientSocket` in `std/net/socket` resolves host names with the
-resolver of `std/net/dns`, which is written in Spice: it looks the name up in the hosts file and asks the name servers
-for its IPv4 (A) and IPv6 (AAAA) addresses, over UDP with a fallback to TCP for large answers. The IPv4 addresses are
-tried first, one after the other; the IPv6 addresses are only looked up, if none of them accepts the connection.
+(`http://[::1]:8080/`). `openClientSocket` in `std/net/socket` resolves host names with the resolver of `std/net/dns`,
+which is written in Spice: it looks the name up in the hosts file and asks the name servers for its IPv4 (A) and IPv6
+(AAAA) addresses, over UDP with a fallback to TCP for large answers. The IPv4 addresses are tried first, one after the
+other; the IPv6 addresses are only looked up, if none of them accepts the connection.
 
-On Linux, the resolver reads `/etc/hosts` and the name servers from `/etc/resolv.conf`. It does not go through the name
-service switch (NSS) of the C library. This keeps statically linked programs working on systems with an older glibc
-than the one they were linked against, but it also means that name sources other than the hosts file and DNS, like
-mDNS for `.local` names, are not available. Windows has no `resolv.conf`, so there the name servers and DNS suffixes
-of the network adapters, that are up, take its place, and the hosts file is read from
-`%SystemRoot%\System32\drivers\etc\hosts`. Windows-specific name resolution policies (like the Name Resolution Policy
-Table or DNS over HTTPS) are not applied.
+On Linux and macOS, the resolver reads `/etc/hosts` and the name servers from `/etc/resolv.conf`. Windows has no
+`resolv.conf`, so there the name servers and DNS suffixes of the network adapters, that are up, take its place, and the
+hosts file is read from `%SystemRoot%\System32\drivers\etc\hosts`.
 
-On macOS, `openClientSocket` uses the resolver of the operating system instead, for IPv4 addresses only, since only that
-one knows the scoped and VPN-specific name servers. `std/net/dns` itself works there as well.
+The resolver does not go through the name resolution of the C library or the operating system. On Linux, this keeps
+statically linked programs working on systems with an older glibc than the one they were linked against. On the other
+hand, name sources other than the hosts file and DNS, like mDNS for `.local` names, are not available, and resolution
+policies of the operating system are not applied: on macOS, name servers that only apply to certain domains (e.g. the
+ones of a VPN, see `scutil --dns`) are not consulted, and on Windows, the Name Resolution Policy Table and DNS over HTTPS
+are not taken into account.
 
 You can also use the resolver directly, e.g. to look up the addresses of a host without connecting to it:
 
