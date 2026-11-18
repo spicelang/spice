@@ -1,6 +1,7 @@
 // Imports
 import "std/data/pair";
 import "std/data/vector";
+import "std/net/ip-address";
 import "std/net/socket";
 import "std/text/analysis";
 import "std/text/format";
@@ -574,7 +575,7 @@ f<bool> isDecimalNumber(const String& text) {
  */
 public type Url struct {
     public String scheme        // "http" or "https", always lower case
-    public String host          // Host name or IPv4 address, without the port
+    public String host          // Host name, IPv4 address or IPv6 address (without brackets), without the port
     public unsigned short port  // Port, defaulted from the scheme if the URL carries none
     public String path          // Path, always starting with a '/'
     public String query         // Query string, without the leading '?'
@@ -672,16 +673,46 @@ f<string> parseAuthorityInto(const String& authority, Url& url) {
         const long userInfoEnd = authority.rfind('@');
         const unsigned long hostStart = userInfoEnd == -1l ? 0l : cast<unsigned long>(userInfoEnd) + 1l;
         const String hostAndPort = authority.getSubstring(hostStart);
-        const long portStart = hostAndPort.rfind(':');
-        if portStart == -1l {
+        long portStart = hostAndPort.rfind(':');
+        if hostAndPort.startsWith("[") {
+            // An IPv6 address is enclosed in brackets, since its colons would collide with the one in front of the port
+            const long hostEnd = hostAndPort.find(']');
+            const bool hasPort = hostEnd != -1l && cast<unsigned long>(hostEnd) + 1l < hostAndPort.getLength();
+            portStart = hasPort ? hostEnd + 1l : -1l;
+            if hostEnd == -1l || (hasPort && hostAndPort[cast<unsigned long>(portStart)] != ':') {
+                result = "URL carries a malformed IPv6 address";
+            } else {
+                // Only an IPv6 address may stand in brackets. It is kept in its canonical form, so that two spellings
+                // of the same address make the same host (e.g. when deciding whether a redirect stays on the host).
+                const Result<IpAddress> ipv6Address = parseIpv6Address(hostAndPort.getSubstring(1l, hostEnd - 1l));
+                if ipv6Address.isErr() {
+                    result = "URL carries a malformed IPv6 address";
+                } else {
+                    url.host = ipv6Address.unwrap().toString();
+                }
+            }
+        } else if portStart == -1l {
             url.host = hostAndPort;
         } else {
             url.host = hostAndPort.getSubstring(0l, portStart);
+        }
+        // A colon left in the host can only stem from an IPv6 address without brackets, like in "http://::1:8080/"
+        if result == "" && url.host.find(':') != -1l && !hostAndPort.startsWith("[") {
+            result = "URL carries an IPv6 address without brackets";
+        }
+        if result == "" && portStart != -1l {
+            // An empty port stands for the default port of the scheme (RFC 3986, section 3.2.3), and leading zeros do not
+            // count towards the length of the port
             const String portText = hostAndPort.getSubstring(cast<unsigned long>(portStart) + 1l);
-            if !isDecimalNumber(portText) {
+            unsigned long significantStart = 0ul;
+            while significantStart + 1ul < portText.getLength() && portText[significantStart] == '0' { significantStart++; }
+            const String significantPortText = portText.getSubstring(significantStart);
+            if portText.isEmpty() {
+                // Keep the default port
+            } else if !isDecimalNumber(portText) || significantPortText.getLength() > 5ul || toLong(significantPortText.getRaw()) > 65535l {
                 result = "URL carries a malformed port";
             } else {
-                url.port = cast<unsigned short>(toLong(portText.getRaw()));
+                url.port = cast<unsigned short>(toLong(significantPortText.getRaw()));
             }
         }
         if result == "" && url.host.isEmpty() {
@@ -733,12 +764,16 @@ public f<String> Url.getRequestTarget() {
 
 /**
  * Returns the authority of this URL, i.e. the host plus the port if it deviates from the default
- * port of the scheme. This is what the Host header field carries.
+ * port of the scheme. This is what the Host header field carries. An IPv6 address is enclosed in
+ * brackets.
  *
- * @return Authority, e.g. "example.com:8080"
+ * @return Authority, e.g. "example.com:8080" or "[::1]:8080"
  */
 public f<String> Url.getAuthority() {
-    result = this.host;
+    const bool isIpv6Address = this.host.find(':') != -1l;
+    result = isIpv6Address ? String("[") : String();
+    result.append(this.host);
+    if isIpv6Address { result.append(']'); }
     const unsigned short defaultPort = this.scheme == "https" ? HTTPS_PORT_DEFAULT : HTTP_PORT_DEFAULT;
     if this.port != defaultPort {
         result.append(':');

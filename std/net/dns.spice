@@ -1,0 +1,992 @@
+#![core.compiler.requiresOs]
+
+// Stub resolver for host names: looks the name up in the hosts file and asks the name servers from
+// resolv.conf for its IPv4 (A) and IPv6 (AAAA) addresses, over UDP with a fallback to TCP for
+// truncated answers.
+//
+// The resolver does not go through the name service switch (NSS) of the C library. A statically
+// linked glibc still loads the NSS modules of the host at runtime, which crashes as soon as the host's
+// glibc is older than the one the program was linked against. Name sources other than the hosts file
+// and DNS (e.g. mDNS for '.local' names, LDAP, NIS) are therefore not available.
+//
+// On Windows, the name servers and search domains of the network adapters take the place of
+// resolv.conf (see "std/net/impl/socket-native").
+
+// Imports
+import "std/data/vector";
+import "std/io/file";
+import "std/math/fct";
+import "std/net/impl/socket-native";
+import "std/net/ip-address";
+import "std/text/analysis";
+import "std/text/format";
+import "std/text/string-ext";
+
+// Constants
+public const unsigned short DNS_PORT = 53s;        // Default port of a name server
+public const unsigned short DNS_TYPE_A = 1s;       // IPv4 address record
+public const unsigned short DNS_TYPE_CNAME = 5s;   // Canonical name record
+public const unsigned short DNS_TYPE_AAAA = 28s;   // IPv6 address record
+public const int DNS_RCODE_NO_ERROR = 0;           // The query was answered
+public const int DNS_RCODE_SERVER_FAILURE = 2;     // The name server could not process the query
+public const int DNS_RCODE_NAME_ERROR = 3;         // The queried name does not exist (NXDOMAIN)
+const int DNS_CLASS_IN = 1;                        // Internet class
+const unsigned long DNS_HEADER_SIZE = 12ul;        // Size of the header of a DNS message
+const unsigned long DNS_MAX_NAME_LENGTH = 253ul;   // Maximum length of a name in dotted notation, without trailing dot
+const unsigned long DNS_MAX_LABEL_LENGTH = 63ul;   // Maximum length of a single label of a name
+const unsigned long DNS_MAX_WIRE_NAME_LENGTH = 255ul; // Maximum length of an encoded name
+const unsigned int DNS_MAX_CNAME_CHAIN = 16u;      // Maximum number of CNAME records to follow
+const unsigned int DNS_MAX_COMPRESSION_JUMPS = 64u; // Maximum number of compression pointers to follow within a name
+const unsigned int DNS_MAX_STRAY_DATAGRAMS = 8u;   // Maximum number of unrelated datagrams to drop while waiting for an answer
+const int SOCK_STREAM_TYPE = 1;                    // SOCK_STREAM
+const int SOCK_DGRAM_TYPE = 2;                     // SOCK_DGRAM
+const unsigned int RESOLV_CONF_MAX_NAMESERVERS = 3u; // Name servers beyond the first three are ignored, like glibc does
+const unsigned int RESOLV_CONF_MAX_NDOTS = 15u;
+const unsigned int RESOLV_CONF_MAX_TIMEOUT_SECONDS = 30u;
+const unsigned int RESOLV_CONF_MAX_ATTEMPTS = 5u;
+
+/**
+ * Name server to send queries to
+ */
+public type DnsServer struct {
+    public IpAddress address    // Address of the name server
+    public unsigned short port  // Port of the name server, usually DNS_PORT
+}
+
+/**
+ * Configuration of the resolver, usually read from /etc/resolv.conf (see resolv.conf(5)) or, on
+ * Windows, taken from the network adapters
+ */
+public type DnsConfig struct {
+    public Vector<DnsServer> servers         // Name servers, asked in this order
+    public Vector<String> searchDomains      // Domains to append to names with less than ndots dots
+    public unsigned int ndots = 1u           // Number of dots, from which on a name is tried as absolute name first
+    public unsigned long timeoutMs = 5000ul  // Time to wait for the answer of a name server
+    public unsigned int attempts = 2u        // Number of rounds over all name servers
+}
+
+/**
+ * Answer of a name server to a single query
+ */
+public type DnsResponse struct {
+    public int responseCode             // Response code (RCODE), e.g. DNS_RCODE_NO_ERROR or DNS_RCODE_NAME_ERROR
+    public bool truncated               // The answer did not fit into the datagram and has to be asked for over TCP
+    public Vector<IpAddress> addresses  // Addresses of the queried name, with CNAME records followed
+}
+
+/**
+ * Resource record of the answer section, as far as the resolver is interested in it
+ */
+type DnsRecord struct {
+    String owner         // Name, that the record belongs to
+    unsigned short recordType // Record type
+    String target        // Target name of a CNAME record
+    IpAddress address    // Address of an A or AAAA record
+}
+
+/**
+ * Resolves host names to IPv4 and IPv6 addresses via the hosts file and DNS
+ */
+public type DnsResolver struct {
+    DnsConfig config            // Name servers and search rules
+    String hostsFilePath        // Path of the hosts file, empty to skip the hosts file
+    bool systemConfigPending    // The system configuration is still to be loaded, on the first query
+}
+
+/**
+ * Creates a resolver with the system configuration (see loadDnsConfig) and the hosts file of the
+ * system (see getSystemHostsFilePath). The configuration is only loaded, once a name server has to be
+ * asked, so that IP address literals and names from the hosts file do not pay for it.
+ */
+public p DnsResolver.ctor() {
+    this.hostsFilePath = getSystemHostsFilePath();
+    this.systemConfigPending = true;
+}
+
+/**
+ * Creates a resolver with the given configuration
+ *
+ * @param config Name servers and search rules
+ * @param hostsFilePath Path of the hosts file, empty to skip the hosts file
+ */
+public p DnsResolver.ctor(const DnsConfig& config, const String& hostsFilePath) {
+    this.config = config;
+    this.hostsFilePath = hostsFilePath;
+    this.systemConfigPending = false;
+}
+
+/**
+ * Resolves a host name to its addresses. An IP address literal (IPv6 optionally in brackets, like in
+ * URLs) resolves to itself. Otherwise the name is looked up in the hosts file first and, if it is not
+ * listed there, asked for at the name servers, with the search domains applied like described in
+ * resolv.conf(5). The names "localhost" and "*.localhost" resolve to the loopback addresses, unless
+ * the hosts file lists them (it takes precedence, like with the C library). Names, whose last label is
+ * a decimal or hexadecimal number (like "127.1" or "0x7f000001"), are rejected instead of being sent
+ * to the name servers.
+ * IPv4 addresses come first in the result, IPv6 addresses second.
+ *
+ * @param host Host name or IP address literal
+ * @param includeIpv4 Look for IPv4 addresses
+ * @param includeIpv6 Look for IPv6 addresses
+ * @return Addresses of the host, never empty
+ */
+public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool includeIpv4 = true, bool includeIpv6 = true) {
+    if !includeIpv4 && !includeIpv6 { return err<Vector<IpAddress>>(Error("No address family requested")); }
+    String name = String();
+    bool isAbsolute = false;
+    // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
+    const Result<Vector<IpAddress>> localResult = this.resolveLocally(host, includeIpv4, includeIpv6, name, isAbsolute);
+    if localResult.isErr() { return err<Vector<IpAddress>>(localResult.getErr()); }
+    const Vector<IpAddress>& localAddresses = localResult.unwrap();
+    if !localAddresses.isEmpty() { return ok(localAddresses); }
+
+    // DNS: the first candidate name, that has addresses, wins
+    this.loadPendingSystemConfig();
+    if this.config.servers.isEmpty() { return err<Vector<IpAddress>>(Error("No name server configured")); }
+    bool serverFailed = false;
+    const Vector<String> candidates = getCandidateNames(this.config, name, isAbsolute);
+    foreach const String& candidate : candidates {
+        Vector<IpAddress> addresses = Vector<IpAddress>();
+        if includeIpv4 { addresses = this.queryAddresses(candidate, DNS_TYPE_A, serverFailed); }
+        if includeIpv6 {
+            foreach const IpAddress& address : this.queryAddresses(candidate, DNS_TYPE_AAAA, serverFailed) { addresses.pushBack(address); }
+        }
+        if !addresses.isEmpty() { return ok(addresses); }
+    }
+    return err<Vector<IpAddress>>(getNotFoundError(serverFailed));
+}
+
+/**
+ * Opens a TCP connection to the given host and port. A host may have several IPv4 and IPv6 addresses,
+ * which are tried one after the other, until a connection is established:
+ * - Addresses, that need no name server (IP address literals, the hosts file, the localhost names),
+ *   are tried first, IPv4 ones before IPv6 ones.
+ * - Otherwise the candidate names (see resolve) are asked for one after the other. For each one, the
+ *   IPv4 addresses are looked up and tried first; the IPv6 addresses are only looked up, if none of
+ *   them works, so that a slow or missing answer for them never delays a connection. The first
+ *   candidate, that has any addresses, is the last one to be asked for, like with resolve.
+ *
+ * @param host Host name or IP address literal (IPv6 optionally in brackets)
+ * @param port Port to connect to
+ * @return File descriptor (socket handle on Windows) of the connected socket
+ */
+public f<Result<int>> DnsResolver.connectTcp(const String& host, unsigned short port) {
+    String name = String();
+    bool isAbsolute = false;
+    // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
+    const Result<Vector<IpAddress>> localResult = this.resolveLocally(host, true, true, name, isAbsolute);
+    if localResult.isErr() { return err<int>(localResult.getErr()); }
+    const Vector<IpAddress>& localAddresses = localResult.unwrap();
+    if !localAddresses.isEmpty() { return connectToAny(localAddresses, port); }
+
+    this.loadPendingSystemConfig();
+    if this.config.servers.isEmpty() { return err<int>(Error("No name server configured")); }
+    bool serverFailed = false;
+    const Vector<String> candidates = getCandidateNames(this.config, name, isAbsolute);
+    foreach const String& candidate : candidates {
+        bool candidateHasAddresses = false;
+        for int pass = 0; pass < 2; pass++ {
+            const unsigned short recordType = pass == 0 ? DNS_TYPE_A : DNS_TYPE_AAAA;
+            const Vector<IpAddress> addresses = this.queryAddresses(candidate, recordType, serverFailed);
+            if addresses.isEmpty() { continue; }
+            candidateHasAddresses = true;
+            const Result<int> sockFdResult = connectToAny(addresses, port);
+            if sockFdResult.isOk() { return sockFdResult; }
+        }
+        if candidateHasAddresses { return err<int>(Error("Error connecting to socket")); }
+    }
+    return err<int>(getNotFoundError(serverFailed));
+}
+
+/**
+ * Answers a host without asking a name server, if possible: an IP address literal resolves to itself,
+ * a name listed in the hosts file to the addresses there and the localhost names to the loopback
+ * addresses. Malformed names are rejected.
+ *
+ * @param host Host name or IP address literal
+ * @param includeIpv4 Look for IPv4 addresses
+ * @param includeIpv6 Look for IPv6 addresses
+ * @param name Receives the name to ask the name servers for: lowercase, without trailing dot
+ * @param isAbsolute Receives whether the name was given with a trailing dot
+ * @return Addresses of the host, IPv4 ones first, or none, if the name servers have to be asked
+ */
+f<Result<Vector<IpAddress>>> DnsResolver.resolveLocally(const String& host, bool includeIpv4, bool includeIpv6, String& name, bool& isAbsolute) {
+    Vector<IpAddress> addresses = Vector<IpAddress>();
+
+    // IP address literals need no lookup. IPv6 ones may come in brackets, like in URLs.
+    name = host;
+    if name.getLength() > 2l && name[0] == '[' && name[name.getLength() - 1l] == ']' {
+        name = name.getSubstring(1l, cast<long>(name.getLength()) - 2l);
+    }
+    const Result<IpAddress> literalResult = parseIpAddress(name);
+    if literalResult.isOk() {
+        const IpAddress literal = literalResult.unwrap();
+        if (literal.isIpv4() && includeIpv4) || (literal.isIpv6() && includeIpv6) {
+            addresses.pushBack(literal);
+            return ok(addresses);
+        }
+        return err<Vector<IpAddress>>(Error("Address is not of the requested address family"));
+    }
+
+    // Names are compared case-insensitively. A trailing dot marks an absolute name, that the search domains do not apply to.
+    name = toLower(name);
+    isAbsolute = name.endsWith(".");
+    if isAbsolute { name = name.getSubstring(0l, cast<long>(name.getLength()) - 1l); }
+    if !isValidDnsName(name) { return err<Vector<IpAddress>>(Error("Malformed host name")); }
+    // No top-level domain is all-numeric, so such a name is a shortened or mistyped IPv4 address (like "127.1"). The
+    // C function inet_aton would read some of these as addresses; they are rejected here, so that none leaks to DNS.
+    if hasNumericLastLabel(name) { return err<Vector<IpAddress>>(Error("Malformed host name: neither an IPv4 address nor a host name")); }
+
+    // Hosts file
+    if !this.hostsFilePath.isEmpty() {
+        const Result<String> hostsContent = readFile(this.hostsFilePath.getRaw());
+        if hostsContent.isOk() {
+            addresses = orderAddresses(lookupHostsFile(hostsContent.unwrap(), name), includeIpv4, includeIpv6);
+            if !addresses.isEmpty() { return ok(addresses); }
+        }
+    }
+
+    // The localhost names are reserved for the loopback addresses (RFC 6761). The hosts file is still consulted first,
+    // like the C library does, so that the setup of the system is honored.
+    if name == "localhost" || name.endsWith(".localhost") {
+        addresses.pushBack(createIpv4Address(cast<unsigned byte>(127), cast<unsigned byte>(0), cast<unsigned byte>(0), cast<unsigned byte>(1)));
+        addresses.pushBack(parseIpAddress(String("::1")).unwrap());
+        return ok(orderAddresses(addresses, includeIpv4, includeIpv6));
+    }
+    return ok(addresses);
+}
+
+/**
+ * Asks the name servers for the addresses of the given type of exactly the given name
+ *
+ * @param name Absolute name to ask for, without trailing dot
+ * @param recordType DNS_TYPE_A or DNS_TYPE_AAAA
+ * @param serverFailed Set, if no name server gave a definite answer
+ * @return Addresses, none if the name has none of this type
+ */
+f<Vector<IpAddress>> DnsResolver.queryAddresses(const String& name, unsigned short recordType, bool& serverFailed) {
+    const Result<DnsResponse> responseResult = this.query(name, recordType);
+    if responseResult.isErr() {
+        serverFailed = true;
+        return Vector<IpAddress>();
+    }
+    return responseResult.unwrap().addresses;
+}
+
+/**
+ * Loads the system configuration, if this resolver was created without one and has not loaded it yet
+ */
+p DnsResolver.loadPendingSystemConfig() {
+    if !this.systemConfigPending { return; }
+    this.config = loadDnsConfig();
+    this.systemConfigPending = false;
+}
+
+/**
+ * Asks the name servers for the records of the given type of exactly the given name. The name
+ * servers are asked one after the other, until one gives a definite answer (the name exists or does
+ * not exist), for the configured number of rounds.
+ *
+ * @param name Absolute name to ask for, with or without trailing dot
+ * @param recordType DNS_TYPE_A or DNS_TYPE_AAAA
+ * @return Definite answer of a name server
+ */
+public f<Result<DnsResponse>> DnsResolver.query(const String& name, unsigned short recordType) {
+    this.loadPendingSystemConfig();
+    // Name servers echo the question in any case, but the answer is matched in lowercase
+    String queryName = toLower(name);
+    if queryName.endsWith(".") { queryName = queryName.getSubstring(0l, cast<long>(queryName.getLength()) - 1l); }
+
+    for unsigned int attempt = 0u; attempt < this.config.attempts; attempt++ {
+        foreach const DnsServer& server : this.config.servers {
+            const unsigned short id = generateQueryId()!;
+            const Result<Vector<unsigned byte>> queryResult = buildDnsQuery(id, queryName, recordType);
+            if queryResult.isErr() { return err<DnsResponse>(queryResult.getErr()); }
+            const Vector<unsigned byte> query = queryResult.unwrap();
+
+            Result<DnsResponse> responseResult = this.exchangeUdp(server, query, id, queryName, recordType);
+            if responseResult.isOk() && responseResult.unwrap().truncated {
+                responseResult = this.exchangeTcp(server, query, id, queryName, recordType);
+            }
+            if responseResult.isOk() && !responseResult.unwrap().truncated {
+                const int responseCode = responseResult.unwrap().responseCode;
+                if responseCode == DNS_RCODE_NO_ERROR || responseCode == DNS_RCODE_NAME_ERROR { return responseResult; }
+            }
+            // No answer, a broken answer or a server failure: ask the next name server
+        }
+    }
+    return err<DnsResponse>(Error("No name server gave an answer"));
+}
+
+/**
+ * Sends a query to a name server via UDP and waits for its answer. Datagrams, that are no answer to
+ * the query (e.g. late answers to earlier queries or spoofing attempts), are dropped.
+ *
+ * @param server Name server to ask
+ * @param query Encoded query
+ * @param id ID of the query
+ * @param name Name, that the query asks for
+ * @param recordType Record type, that the query asks for
+ * @return Answer of the name server
+ */
+f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Vector<unsigned byte>& query, unsigned short id, const String& name, unsigned short recordType) {
+    // The whole exchange has to fit into the timeout. Dropped datagrams do not extend the time to wait for the answer.
+    const long deadline = getNativeMonotonicMillis() + cast<long>(this.config.timeoutMs);
+    const int sockFd = openNativeSocket(server.address, server.port, SOCK_DGRAM_TYPE, this.config.timeoutMs)!;
+    if !setRemainingTimeout(sockFd, deadline) {
+        closeNativeSocket(sockFd);
+        return err<DnsResponse>(Error("No answer from the name server"));
+    }
+    long written = 0l;
+    unsafe {
+        written = writeNativeSocket(sockFd, query.getDataPtr(), query.getSize());
+    }
+    if written != cast<long>(query.getSize()) {
+        closeNativeSocket(sockFd);
+        return err<DnsResponse>(Error("Error sending DNS query"));
+    }
+
+    // Without EDNS, an answer over UDP has at most 512 bytes. The buffer is larger, so that an oversized datagram is not cut.
+    unsigned byte[4096] buffer;
+    for unsigned int i = 0u; i < DNS_MAX_STRAY_DATAGRAMS; i++ {
+        if !setRemainingTimeout(sockFd, deadline) { break; }
+        long received = 0l;
+        unsafe {
+            unsigned byte* bufferPtr = buffer;
+            received = readNativeSocket(sockFd, bufferPtr, 4096ul);
+        }
+        if received <= 0l { break; } // Timeout or error, e.g. the port of the name server is closed
+        Vector<unsigned byte> message = Vector<unsigned byte>(cast<unsigned long>(received));
+        for long j = 0l; j < received; j++ {
+            message.pushBack(buffer[j]);
+        }
+        const Result<DnsResponse> responseResult = parseDnsResponse(message, id, name, recordType);
+        if responseResult.isOk() {
+            closeNativeSocket(sockFd);
+            return responseResult;
+        }
+    }
+    closeNativeSocket(sockFd);
+    return err<DnsResponse>(Error("No answer from the name server"));
+}
+
+/**
+ * Sends a query to a name server via TCP and waits for its answer. Over TCP, each message is preceded
+ * by its length as two bytes in network byte order.
+ *
+ * @param server Name server to ask
+ * @param query Encoded query
+ * @param id ID of the query
+ * @param name Name, that the query asks for
+ * @param recordType Record type, that the query asks for
+ * @return Answer of the name server
+ */
+f<Result<DnsResponse>> DnsResolver.exchangeTcp(const DnsServer& server, const Vector<unsigned byte>& query, unsigned short id, const String& name, unsigned short recordType) {
+    // The whole exchange has to fit into the timeout, not only every single read
+    const long deadline = getNativeMonotonicMillis() + cast<long>(this.config.timeoutMs);
+    const int sockFd = openNativeSocket(server.address, server.port, SOCK_STREAM_TYPE, this.config.timeoutMs)!;
+
+    // Length prefix and query in one go
+    Vector<unsigned byte> request = Vector<unsigned byte>(query.getSize() + 2ul);
+    const int queryLength = cast<int>(cast<long>(query.getSize()));
+    request.pushBack(cast<unsigned byte>(queryLength >> 8));
+    request.pushBack(cast<unsigned byte>(queryLength & 0xFF));
+    foreach const unsigned byte b : query { request.pushBack(b); }
+    if !writeAllBytes(sockFd, request, deadline) {
+        closeNativeSocket(sockFd);
+        return err<DnsResponse>(Error("Error sending DNS query"));
+    }
+
+    Vector<unsigned byte> lengthPrefix = Vector<unsigned byte>(2ul, cast<unsigned byte>(0));
+    if !readExactBytes(sockFd, lengthPrefix, deadline) {
+        closeNativeSocket(sockFd);
+        return err<DnsResponse>(Error("No answer from the name server"));
+    }
+    const int responseLength = (cast<int>(lengthPrefix[0]) << 8) | cast<int>(lengthPrefix[1]);
+    Vector<unsigned byte> message = Vector<unsigned byte>(cast<unsigned long>(cast<long>(responseLength)), cast<unsigned byte>(0));
+    const bool complete = readExactBytes(sockFd, message, deadline);
+    closeNativeSocket(sockFd);
+    if !complete { return err<DnsResponse>(Error("Incomplete answer from the name server")); }
+    return parseDnsResponse(message, id, name, recordType);
+}
+
+/**
+ * Reads the DNS configuration of the system: on Linux and macOS from /etc/resolv.conf, on Windows from
+ * the name servers and DNS suffixes of the network adapters. If there is none, the defaults apply,
+ * i.e. the name server on the local host is asked.
+ *
+ * @return DNS configuration
+ */
+public f<DnsConfig> loadDnsConfig() {
+    const Result<String> content = readNativeResolverConfig();
+    if content.isErr() { return parseResolvConf(String()); }
+    return parseResolvConf(content.unwrap());
+}
+
+/**
+ * Parses the content of a resolv.conf file (see resolv.conf(5)). Understood are the keywords
+ * 'nameserver' (up to three), 'search', 'domain' and 'options' with the options 'ndots:n',
+ * 'timeout:n' and 'attempts:n'. Anything else is ignored. Without any name server, the name server
+ * on the local host is used.
+ *
+ * @param content Content of the resolv.conf file
+ * @return DNS configuration
+ */
+public f<DnsConfig> parseResolvConf(const String& content) {
+    DnsConfig config = DnsConfig();
+    const Vector<String> lines = split(content, '\n');
+    foreach const String& line : lines {
+        const Vector<String> tokens = splitWhitespace(stripComment(line));
+        if tokens.getSize() < 2ul { continue; }
+        const String& keyword = tokens[0];
+        if keyword == "nameserver" {
+            if config.servers.getSize() >= cast<unsigned long>(RESOLV_CONF_MAX_NAMESERVERS) { continue; }
+            const Result<IpAddress> addressResult = parseIpAddress(tokens[1]);
+            if addressResult.isOk() { config.servers.pushBack(DnsServer { addressResult.unwrap(), DNS_PORT }); }
+        } else if keyword == "search" || keyword == "domain" {
+            // The last 'search' or 'domain' line wins
+            config.searchDomains.clear();
+            for unsigned long i = 1ul; i < tokens.getSize(); i++ {
+                String domain = toLower(tokens[i]);
+                if domain.endsWith(".") { domain = domain.getSubstring(0l, cast<long>(domain.getLength()) - 1l); }
+                if isValidDnsName(domain) { config.searchDomains.pushBack(domain); }
+                if keyword == "domain" { break; }
+            }
+        } else if keyword == "options" {
+            for unsigned long i = 1ul; i < tokens.getSize(); i++ {
+                const String& option = tokens[i];
+                if option.startsWith("ndots:") {
+                    const long value = parseDecimal(option.getSubstring(6l));
+                    if value >= 0l { config.ndots = cast<unsigned int>(cast<int>(min(value, cast<long>(RESOLV_CONF_MAX_NDOTS)))); }
+                } else if option.startsWith("timeout:") {
+                    const long value = parseDecimal(option.getSubstring(8l));
+                    if value >= 1l { config.timeoutMs = cast<unsigned long>(min(value, cast<long>(RESOLV_CONF_MAX_TIMEOUT_SECONDS))) * 1000ul; }
+                } else if option.startsWith("attempts:") {
+                    const long value = parseDecimal(option.getSubstring(9l));
+                    if value >= 1l { config.attempts = cast<unsigned int>(cast<int>(min(value, cast<long>(RESOLV_CONF_MAX_ATTEMPTS)))); }
+                }
+            }
+        }
+    }
+    if config.servers.isEmpty() {
+        config.servers.pushBack(DnsServer { parseIpAddress(String("127.0.0.1")).unwrap(), DNS_PORT });
+    }
+    return config;
+}
+
+/**
+ * Looks up a name in the content of a hosts file (see hosts(5)). Each line holds an address,
+ * followed by the canonical name and the aliases of the host.
+ *
+ * @param content Content of the hosts file
+ * @param name Name to look up, in lowercase and without trailing dot
+ * @return Addresses of all lines, that list the name, in the order of the lines
+ */
+public f<Vector<IpAddress>> lookupHostsFile(const String& content, const String& name) {
+    Vector<IpAddress> addresses = Vector<IpAddress>();
+    const Vector<String> lines = split(content, '\n');
+    foreach const String& line : lines {
+        const Vector<String> tokens = splitWhitespace(stripComment(line));
+        if tokens.getSize() < 2ul { continue; }
+        const Result<IpAddress> addressResult = parseIpAddress(tokens[0]);
+        if addressResult.isErr() { continue; }
+        for unsigned long i = 1ul; i < tokens.getSize(); i++ {
+            String hostName = toLower(tokens[i]);
+            if hostName.endsWith(".") { hostName = hostName.getSubstring(0l, cast<long>(hostName.getLength()) - 1l); }
+            if hostName == name {
+                addresses.pushBack(addressResult.unwrap());
+                break;
+            }
+        }
+    }
+    return addresses;
+}
+
+/**
+ * Encodes a query for the records of the given type of the given name, with recursion desired
+ *
+ * @param id ID of the query, that the answer has to carry
+ * @param name Absolute name to ask for, without trailing dot
+ * @param recordType Record type to ask for
+ * @return Encoded query
+ */
+public f<Result<Vector<unsigned byte>>> buildDnsQuery(unsigned short id, const String& name, unsigned short recordType) {
+    if !isValidDnsName(name) { return err<Vector<unsigned byte>>(Error("Malformed host name")); }
+    Vector<unsigned byte> query = Vector<unsigned byte>(DNS_HEADER_SIZE + name.getLength() + 6ul);
+
+    // Header: ID, flags (only RD set), one question, no answer, authority or additional records
+    appendUnsignedShort(query, cast<int>(id));
+    appendUnsignedShort(query, 0x0100);
+    appendUnsignedShort(query, 1);
+    appendUnsignedShort(query, 0);
+    appendUnsignedShort(query, 0);
+    appendUnsignedShort(query, 0);
+
+    // Question: name as sequence of length-prefixed labels, type and class
+    unsigned long labelStart = 0ul;
+    const unsigned long nameLength = name.getLength();
+    for unsigned long i = 0ul; i <= nameLength; i++ {
+        if i == nameLength || name[i] == '.' {
+            query.pushBack(cast<unsigned byte>(cast<int>(cast<long>(i - labelStart))));
+            for unsigned long j = labelStart; j < i; j++ {
+                query.pushBack(cast<unsigned byte>(cast<int>(name[j])));
+            }
+            labelStart = i + 1ul;
+        }
+    }
+    query.pushBack(cast<unsigned byte>(0));
+    appendUnsignedShort(query, cast<int>(recordType));
+    appendUnsignedShort(query, DNS_CLASS_IN);
+    return ok(query);
+}
+
+/**
+ * Decodes the answer of a name server to a query. The answer is only accepted, if it carries the ID
+ * of the query and repeats its question. The addresses are taken from the records of the queried
+ * name or, if it is an alias, from the records of the name that the CNAME records lead to.
+ *
+ * @param message Encoded answer
+ * @param id ID of the query
+ * @param name Name, that the query asked for, in lowercase and without trailing dot
+ * @param recordType Record type, that the query asked for
+ * @return Decoded answer
+ */
+public f<Result<DnsResponse>> parseDnsResponse(const Vector<unsigned byte>& message, unsigned short id, const String& name, unsigned short recordType) {
+    const Error malformedError = Error("Malformed DNS response");
+    if message.getSize() < DNS_HEADER_SIZE { return err<DnsResponse>(malformedError); }
+    if readUnsignedShort(message, 0ul) != cast<int>(id) { return err<DnsResponse>(Error("DNS response does not answer the query")); }
+    const int flags = readUnsignedShort(message, 2ul);
+    const bool isResponse = (flags & 0x8000) != 0;
+    const int opcode = (flags >> 11) & 0xF;
+    if !isResponse || opcode != 0 { return err<DnsResponse>(malformedError); }
+    const int questionCount = readUnsignedShort(message, 4ul);
+    const int answerCount = readUnsignedShort(message, 6ul);
+
+    DnsResponse response = DnsResponse {};
+    response.responseCode = flags & 0xF;
+    response.truncated = (flags & 0x0200) != 0;
+
+    // The question has to be the one of the query (RFC 5452). Some name servers leave it out of error responses like
+    // FORMERR or SERVFAIL, but an answer, that the resolver takes as definite (the name exists or does not exist), has
+    // to repeat it, so that a forged one has to guess more than the ID.
+    unsigned long offset = DNS_HEADER_SIZE;
+    const bool isDefinite = response.responseCode == DNS_RCODE_NO_ERROR || response.responseCode == DNS_RCODE_NAME_ERROR;
+    if questionCount != 1 && !(questionCount == 0 && !isDefinite) {
+        return err<DnsResponse>(malformedError);
+    }
+    if questionCount == 1 {
+        String questionName = String();
+        if !readDnsName(message, offset, questionName) { return err<DnsResponse>(malformedError); }
+        if offset + 4ul > message.getSize() { return err<DnsResponse>(malformedError); }
+        const int questionType = readUnsignedShort(message, offset);
+        const int questionClass = readUnsignedShort(message, offset + 2ul);
+        offset += 4ul;
+        if questionName != name || questionType != cast<int>(recordType) || questionClass != DNS_CLASS_IN {
+            return err<DnsResponse>(Error("DNS response does not answer the query"));
+        }
+    }
+    if response.truncated { return ok(response); }
+
+    // Answer section
+    Vector<DnsRecord> records = Vector<DnsRecord>();
+    for int i = 0; i < answerCount; i++ {
+        DnsRecord record = DnsRecord {};
+        if !readDnsName(message, offset, record.owner) { return err<DnsResponse>(malformedError); }
+        if offset + 10ul > message.getSize() { return err<DnsResponse>(malformedError); }
+        const int answerType = readUnsignedShort(message, offset);
+        const int recordClass = readUnsignedShort(message, offset + 2ul);
+        const unsigned long dataLength = cast<unsigned long>(cast<long>(readUnsignedShort(message, offset + 8ul)));
+        offset += 10ul;
+        if offset + dataLength > message.getSize() { return err<DnsResponse>(malformedError); }
+        const unsigned long dataEnd = offset + dataLength;
+        record.recordType = cast<unsigned short>(answerType);
+        if recordClass == DNS_CLASS_IN {
+            if answerType == cast<int>(DNS_TYPE_CNAME) {
+                unsigned long targetOffset = offset;
+                if !readDnsName(message, targetOffset, record.target) || targetOffset != dataEnd { return err<DnsResponse>(malformedError); }
+                records.pushBack(record);
+            } else if answerType == cast<int>(DNS_TYPE_A) && dataLength == cast<unsigned long>(IPV4_ADDRESS_LENGTH) {
+                record.address = createIpv4Address(message[offset], message[offset + 1ul], message[offset + 2ul], message[offset + 3ul]);
+                records.pushBack(record);
+            } else if answerType == cast<int>(DNS_TYPE_AAAA) && dataLength == cast<unsigned long>(IPV6_ADDRESS_LENGTH) {
+                unsigned short[8] groups;
+                for unsigned long g = 0ul; g < 8ul; g++ {
+                    groups[g] = cast<unsigned short>(readUnsignedShort(message, offset + 2ul * g));
+                }
+                record.address = createIpv6Address(groups);
+                records.pushBack(record);
+            }
+        }
+        offset = dataEnd;
+    }
+
+    // Follow the CNAME chain from the queried name to the canonical name
+    String canonicalName = name;
+    for unsigned int hop = 0u; hop < DNS_MAX_CNAME_CHAIN; hop++ {
+        bool followed = false;
+        foreach const DnsRecord& record : records {
+            if record.recordType == DNS_TYPE_CNAME && record.owner == canonicalName {
+                canonicalName = record.target;
+                followed = true;
+                break;
+            }
+        }
+        if !followed { break; }
+    }
+    foreach const DnsRecord& record : records {
+        if record.recordType == recordType && record.owner == canonicalName { response.addresses.pushBack(record.address); }
+    }
+    return ok(response);
+}
+
+/**
+ * Checks if the given text is a valid name to ask a name server for: at most 253 chars, made of
+ * labels with one to 63 chars, separated by single dots. Whitespace and control chars are rejected.
+ *
+ * @param name Name without trailing dot
+ * @return Valid or not
+ */
+f<bool> isValidDnsName(const String& name) {
+    const unsigned long nameLength = name.getLength();
+    if nameLength == 0ul || nameLength > DNS_MAX_NAME_LENGTH { return false; }
+    unsigned long labelLength = 0ul;
+    for unsigned long i = 0ul; i < nameLength; i++ {
+        const char c = name[i];
+        if c == '.' {
+            if labelLength == 0ul { return false; }
+            labelLength = 0ul;
+        } else {
+            if cast<int>(c) <= 32 || cast<int>(c) >= 127 { return false; }
+            labelLength++;
+            if labelLength > DNS_MAX_LABEL_LENGTH { return false; }
+        }
+    }
+    return labelLength != 0ul;
+}
+
+/**
+ * Checks if the last label of a name is a number, either decimal like in "127.1" or "10.0.0.300", or
+ * hexadecimal like in "0x7f000001" or "127.0x1" (both spellings, that inet_aton reads as addresses)
+ *
+ * @param name Name without trailing dot
+ * @return Numeric last label or not
+ */
+f<bool> hasNumericLastLabel(const String& name) {
+    const long lastDot = name.rfind('.');
+    unsigned long labelStart = lastDot == -1l ? 0ul : cast<unsigned long>(lastDot) + 1ul;
+    bool isHex = false;
+    if labelStart + 1ul < name.getLength() && name[labelStart] == '0' && (name[labelStart + 1ul] == 'x' || name[labelStart + 1ul] == 'X') {
+        isHex = true;
+        labelStart += 2ul;
+    }
+    for unsigned long i = labelStart; i < name.getLength(); i++ {
+        const char c = name[i];
+        if !(isHex ? isHexDigit(c) : isDecDigit(c)) { return false; }
+    }
+    // "0x" alone is a number for inet_aton as well
+    return isHex || labelStart < name.getLength();
+}
+
+/**
+ * Returns the names to ask the name servers for, in order, like described in resolv.conf(5): A name
+ * with at least ndots dots is tried as is first, then with each search domain appended. A name with
+ * less dots is tried with the search domains first. An absolute name is only tried as is.
+ *
+ * @param config DNS configuration
+ * @param name Name in lowercase, without trailing dot
+ * @param isAbsolute The name was given with a trailing dot
+ * @return Names to try
+ */
+f<Vector<String>> getCandidateNames(const DnsConfig& config, const String& name, bool isAbsolute) {
+    Vector<String> candidates = Vector<String>();
+    if isAbsolute {
+        candidates.pushBack(name);
+        return candidates;
+    }
+    unsigned int dotCount = 0u;
+    for unsigned long i = 0ul; i < name.getLength(); i++ {
+        if name[i] == '.' { dotCount++; }
+    }
+    const bool tryAsIsFirst = dotCount >= config.ndots;
+    if tryAsIsFirst { candidates.pushBack(name); }
+    foreach const String& searchDomain : config.searchDomains {
+        const String candidate = name + "." + searchDomain;
+        if isValidDnsName(candidate) { candidates.pushBack(candidate); }
+    }
+    if !tryAsIsFirst { candidates.pushBack(name); }
+    return candidates;
+}
+
+/**
+ * Keeps the addresses of the requested families, IPv4 ones first, and drops duplicates
+ *
+ * @param addresses Addresses to filter
+ * @param includeIpv4 Keep IPv4 addresses
+ * @param includeIpv6 Keep IPv6 addresses
+ * @return Filtered addresses
+ */
+f<Vector<IpAddress>> orderAddresses(const Vector<IpAddress>& addresses, bool includeIpv4, bool includeIpv6) {
+    Vector<IpAddress> ordered = Vector<IpAddress>();
+    for int pass = 0; pass < 2; pass++ {
+        const bool wantIpv6 = pass == 1;
+        if (wantIpv6 && !includeIpv6) || (!wantIpv6 && !includeIpv4) { continue; }
+        foreach const IpAddress& address : addresses {
+            if address.isIpv6() != wantIpv6 { continue; }
+            bool isDuplicate = false;
+            foreach const IpAddress& existing : ordered {
+                if existing == address { isDuplicate = true; }
+            }
+            if !isDuplicate { ordered.pushBack(address); }
+        }
+    }
+    return ordered;
+}
+
+/**
+ * Reads a name from a DNS message, following compression pointers (RFC 1035, section 4.1.4)
+ *
+ * @param message DNS message
+ * @param offset Offset of the name, moved behind the name
+ * @param name Receives the name in lowercase and dotted notation, without trailing dot
+ * @return Valid name or not
+ */
+f<bool> readDnsName(const Vector<unsigned byte>& message, unsigned long& offset, String& name) {
+    name = String();
+    const unsigned long messageSize = message.getSize();
+    unsigned long pos = offset;
+    bool jumped = false;
+    unsigned int jumpCount = 0u;
+    unsigned long wireLength = 1ul;
+    while pos < messageSize {
+        const int labelLength = cast<int>(message[pos]);
+        if labelLength == 0 {
+            if !jumped { offset = pos + 1ul; }
+            return true;
+        }
+        if (labelLength & 0xC0) == 0xC0 {
+            // Compression pointer to an earlier occurrence of the rest of the name
+            if pos + 1ul >= messageSize { return false; }
+            jumpCount++;
+            if jumpCount > DNS_MAX_COMPRESSION_JUMPS { return false; }
+            if !jumped { offset = pos + 2ul; }
+            jumped = true;
+            pos = cast<unsigned long>(cast<long>(((labelLength & 0x3F) << 8) | cast<int>(message[pos + 1ul])));
+            continue;
+        }
+        if (labelLength & 0xC0) != 0 { return false; } // Reserved label types
+        const unsigned long labelEnd = pos + 1ul + cast<unsigned long>(cast<long>(labelLength));
+        if labelEnd > messageSize { return false; }
+        wireLength += cast<unsigned long>(cast<long>(labelLength)) + 1ul;
+        if wireLength > DNS_MAX_WIRE_NAME_LENGTH { return false; }
+        if !name.isEmpty() { name += '.'; }
+        for unsigned long i = pos + 1ul; i < labelEnd; i++ {
+            const char c = cast<char>(cast<int>(message[i]));
+            // A dot inside a label could not be told apart from the separator between two labels
+            if c == '.' { return false; }
+            name += toLower(c);
+        }
+        pos = labelEnd;
+    }
+    return false;
+}
+
+/**
+ * Returns a random query ID. It comes from the random source of the operating system, so that an
+ * attacker cannot guess it to slip a forged answer in. Without that source, no query is sent at all,
+ * instead of one with a predictable ID.
+ *
+ * @return Query ID
+ */
+f<Result<unsigned short>> generateQueryId() {
+    unsigned byte[2] randomBytes;
+    bool filled = false;
+    unsafe {
+        unsigned byte* randomBytesPtr = randomBytes;
+        filled = fillNativeRandomBytes(randomBytesPtr, 2ul);
+    }
+    if !filled { return err<unsigned short>(Error("No secure random numbers available for the DNS query ID")); }
+    return ok(cast<unsigned short>((cast<int>(randomBytes[0]) << 8) | cast<int>(randomBytes[1])));
+}
+
+/**
+ * Limits the next read or write on the given socket to the time left until the given deadline
+ *
+ * @param sockFd Socket file descriptor
+ * @param deadline Deadline in milliseconds of the monotonic clock (see getNativeMonotonicMillis)
+ * @return Time is left and the timeout was set, or not
+ */
+f<bool> setRemainingTimeout(int sockFd, long deadline) {
+    const long remainingMs = deadline - getNativeMonotonicMillis();
+    if remainingMs <= 0l { return false; }
+    return setNativeSocketTimeout(sockFd, cast<unsigned long>(remainingMs));
+}
+
+/**
+ * Writes all bytes of the given buffer to the given socket, before the given deadline
+ *
+ * @param sockFd Socket file descriptor
+ * @param bytes Bytes to write
+ * @param deadline Deadline in milliseconds of the monotonic clock (see getNativeMonotonicMillis)
+ * @return All bytes were written or not
+ */
+f<bool> writeAllBytes(int sockFd, const Vector<unsigned byte>& bytes, long deadline) {
+    unsigned long bytesWritten = 0ul;
+    while bytesWritten < bytes.getSize() {
+        if !setRemainingTimeout(sockFd, deadline) { return false; }
+        long written = 0l;
+        unsafe {
+            written = writeNativeSocket(sockFd, bytes.getDataPtr() + bytesWritten, bytes.getSize() - bytesWritten);
+        }
+        if written <= 0l { return false; }
+        bytesWritten += cast<unsigned long>(written);
+    }
+    return true;
+}
+
+/**
+ * Reads from the given socket, until the given buffer is full or the given deadline has passed
+ *
+ * @param sockFd Socket file descriptor
+ * @param bytes Buffer to fill, with the number of bytes to read as size
+ * @param deadline Deadline in milliseconds of the monotonic clock (see getNativeMonotonicMillis)
+ * @return The buffer was filled or not
+ */
+f<bool> readExactBytes(int sockFd, Vector<unsigned byte>& bytes, long deadline) {
+    unsigned long bytesRead = 0ul;
+    while bytesRead < bytes.getSize() {
+        if !setRemainingTimeout(sockFd, deadline) { return false; }
+        long received = 0l;
+        unsafe {
+            received = readNativeSocket(sockFd, bytes.getDataPtr() + bytesRead, bytes.getSize() - bytesRead);
+        }
+        if received <= 0l { return false; }
+        bytesRead += cast<unsigned long>(received);
+    }
+    return true;
+}
+
+/**
+ * Appends a 16 bit value in network byte order
+ *
+ * @param bytes Buffer to append to
+ * @param value Value to append
+ */
+p appendUnsignedShort(Vector<unsigned byte>& bytes, int value) {
+    bytes.pushBack(cast<unsigned byte>((value >> 8) & 0xFF));
+    bytes.pushBack(cast<unsigned byte>(value & 0xFF));
+}
+
+/**
+ * Reads a 16 bit value in network byte order. The caller has to make sure, that the bytes exist.
+ *
+ * @param bytes Buffer to read from
+ * @param offset Offset of the value
+ * @return Value
+ */
+f<int> readUnsignedShort(const Vector<unsigned byte>& bytes, unsigned long offset) {
+    return (cast<int>(bytes[offset]) << 8) | cast<int>(bytes[offset + 1ul]);
+}
+
+/**
+ * Splits a line into its tokens, separated by whitespace (which includes the '\r' of a '\r\n' line break)
+ *
+ * @param line Line to split
+ * @return Tokens
+ */
+f<Vector<String>> splitWhitespace(const String& line) {
+    Vector<String> tokens = Vector<String>();
+    String token = String();
+    for unsigned long i = 0ul; i < line.getLength(); i++ {
+        const char c = line[i];
+        if isWhitespace(c) {
+            if !token.isEmpty() {
+                tokens.pushBack(token);
+                token = String();
+            }
+        } else {
+            token += c;
+        }
+    }
+    if !token.isEmpty() { tokens.pushBack(token); }
+    return tokens;
+}
+
+/**
+ * Cuts off a comment, starting with '#' or ';', from a line
+ *
+ * @param line Line to strip
+ * @return Line without comment
+ */
+f<String> stripComment(const String& line) {
+    for unsigned long i = 0ul; i < line.getLength(); i++ {
+        if line[i] == '#' || line[i] == ';' { return line.getSubstring(0l, cast<long>(i)); }
+    }
+    return line;
+}
+
+/**
+ * Parses a non-negative decimal number with at most 9 digits
+ *
+ * @param text Text to parse
+ * @return Number, -1 if the text is no such number
+ */
+f<long> parseDecimal(const String& text) {
+    if text.isEmpty() || text.getLength() > 9ul { return -1l; }
+    long value = 0l;
+    for unsigned long i = 0ul; i < text.getLength(); i++ {
+        const char c = text[i];
+        if !isDecDigit(c) { return -1l; }
+        value = value * 10l + cast<long>(cast<int>(c) - cast<int>('0'));
+    }
+    return value;
+}
+
+/**
+ * Tries to connect to the given addresses over TCP, one after the other
+ *
+ * @param addresses Addresses to try, in order
+ * @param port Port to connect to
+ * @return File descriptor of the first established connection
+ */
+f<Result<int>> connectToAny(const Vector<IpAddress>& addresses, unsigned short port) {
+    foreach const IpAddress& address : addresses {
+        const Result<int> sockFdResult = openNativeSocket(address, port, SOCK_STREAM_TYPE, 0ul);
+        if sockFdResult.isOk() { return sockFdResult; }
+    }
+    return err<int>(Error("Error connecting to socket"));
+}
+
+/**
+ * Returns the error for a name, that no candidate name led to addresses for
+ *
+ * @param serverFailed No name server gave a definite answer for at least one of the queries
+ * @return Error
+ */
+f<Error> getNotFoundError(bool serverFailed) {
+    if serverFailed { return Error("Could not resolve host name: no usable answer from the name servers"); }
+    return Error("Could not resolve host name: host not found");
+}
+
+/**
+ * Returns the path of the hosts file of the system: /etc/hosts on Linux and macOS,
+ * %SystemRoot%\System32\drivers\etc\hosts on Windows
+ *
+ * @return Path of the hosts file
+ */
+public f<String> getSystemHostsFilePath() {
+    return getNativeHostsFilePath();
+}
+
+/**
+ * Resolves a host name to its addresses with the system configuration (see loadDnsConfig) and the
+ * hosts file of the system. See DnsResolver.resolve for the details.
+ *
+ * @param host Host name or IP address literal
+ * @param includeIpv4 Look for IPv4 addresses
+ * @param includeIpv6 Look for IPv6 addresses
+ * @return Addresses of the host, IPv4 ones first, never empty
+ */
+public f<Result<Vector<IpAddress>>> resolveHostAddresses(const String& host, bool includeIpv4 = true, bool includeIpv6 = true) {
+    DnsResolver resolver = DnsResolver();
+    return resolver.resolve(host, includeIpv4, includeIpv6);
+}

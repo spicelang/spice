@@ -1,0 +1,24 @@
+servers: 192.0.2.53 (port 53) 2001:db8::53 (port 53) 198.51.100.53 (port 53)
+search: corp.example lab.example
+ndots=2 timeout=3000ms attempts=5
+default: 127.0.0.1 (port 53) ndots=1 timeout=5000ms attempts=2 search=0
+hosts myhost: 10.0.0.5 fe80::5
+hosts localhost: 127.0.0.1 ::1
+hosts unknown: 0
+query: 12 34 01 00 00 01 00 00 00 00 00 00 03 77 77 77 07 65 78 61 6d 70 6c 65 03 63 6f 6d 00 00 1c 00 01
+cname: rcode=0 truncated=0 addresses=[192.0.2.1]
+aaaa: rcode=0 truncated=0 addresses=[2001:db8::1, 2001:db8::2]
+nxdomain: rcode=3 truncated=0 addresses=[]
+nxdomain without question: error: Malformed DNS response
+servfail without question: rcode=2 truncated=0 addresses=[]
+truncated: rcode=0 truncated=1 addresses=[]
+uppercase: rcode=0 truncated=0 addresses=[192.0.2.3]
+wrong id: error: DNS response does not answer the query
+wrong name: error: DNS response does not answer the query
+wrong type: error: DNS response does not answer the query
+no response: error: Malformed DNS response
+too short: error: Malformed DNS response
+cut off: error: Malformed DNS response
+cname with trailing bytes: error: Malformed DNS response
+dot inside label: error: Malformed DNS response
+pointer loop: error: Malformed DNS response

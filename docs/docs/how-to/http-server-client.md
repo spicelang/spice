@@ -219,6 +219,58 @@ if tlsConfigured.isErr() {
 Everything else - routes, handlers, `start`/`run`/`stop` - stays the same; only the listening socket's connections
 are now TLS-handshaked before their request is read.
 
+## Host name resolution
+
+The client accepts host names, IPv4 addresses and IPv6 addresses, the latter in brackets like in any URL
+(`http://[::1]:8080/`). `openClientSocket` in `std/net/socket` resolves host names with the resolver of `std/net/dns`,
+which is written in Spice: it looks the name up in the hosts file and asks the name servers for its IPv4 (A) and IPv6
+(AAAA) addresses, over UDP with a fallback to TCP for large answers. Addresses from the hosts file win over the ones
+from DNS, and the names of the search list are asked for in their order. For each name, the IPv4 addresses are tried
+first, one after the other; the IPv6 addresses are only looked up, if none of them accepts the connection. The first
+name, that has any address, is the last one to be tried.
+
+Host names have to be fully spelled out: shorthand forms of IPv4 addresses, that the C library accepts, like `127.1`
+or `0x7f000001`, are rejected as malformed host names, also on Windows.
+
+On Linux and macOS, the resolver reads `/etc/hosts` and the name servers from `/etc/resolv.conf`. Windows has no
+`resolv.conf`, so there the name servers and DNS suffixes of the network adapters, that are up, take its place, and the
+hosts file is read from `%SystemRoot%\System32\drivers\etc\hosts`.
+
+The resolver does not go through the name resolution of the C library or the operating system. On Linux, this keeps
+statically linked programs working on systems with an older glibc than the one they were linked against. On the other
+hand, name sources other than the hosts file and DNS, like mDNS for `.local` names, are not available, and resolution
+policies of the operating system are not applied: on macOS, name servers that only apply to certain domains (e.g. the
+ones of a VPN, see `scutil --dns`) are not consulted, and on Windows, the Name Resolution Policy Table and DNS over HTTPS
+are not taken into account.
+
+You can also use the resolver directly, e.g. to look up the addresses of a host without connecting to it:
+
+```spice
+import "std/data/vector";
+import "std/net/dns";
+import "std/net/ip-address";
+
+f<int> main() {
+    Result<Vector<IpAddress>> addresses = resolveHostAddresses(String("example.com"));
+    if addresses.isErr() {
+        printf("Lookup failed: %s\n", addresses.getErr().getMessage());
+        return 1;
+    }
+    foreach const IpAddress& address : addresses.unwrap() {
+        printf("%s\n", address.toString().getRaw());
+    }
+}
+```
+
+To connect with a resolver of your own, e.g. one with a fixed set of name servers, pass it to `openClientSocket`.
+Replace `192.0.2.53`, an address reserved for documentation, with the address of your name server:
+
+```spice
+DnsConfig config = parseResolvConf(String("nameserver 192.0.2.53\noptions timeout:2\n"));
+DnsResolver resolver = DnsResolver(config, getSystemHostsFilePath());
+Result<Socket> socket = openClientSocket("example.com", 443s, resolver);
+```
+
 ## Putting it all together
 
 **`server.spice`:**

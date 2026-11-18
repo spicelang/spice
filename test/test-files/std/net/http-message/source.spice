@@ -58,6 +58,47 @@ f<int> main() {
     String authority = url2.getAuthority();
     assert authority == "localhost:8443";
 
+    Result<Url> urlRes3 = parseUrl(String("http://[2001:db8::1]:8080/x"));
+    assert urlRes3.isOk();
+    Url url3 = urlRes3.unwrap();
+    assert url3.host == "2001:db8::1";
+    assert url3.port == 8080s;
+    assert url3.path == "/x";
+    String authority3 = url3.getAuthority();
+    assert authority3 == "[2001:db8::1]:8080";
+    Result<Url> urlRes4 = parseUrl(String("https://[::1]"));
+    assert urlRes4.isOk();
+    Url url4 = urlRes4.unwrap();
+    assert url4.host == "::1";
+    assert url4.port == 443s;
+    String authority4 = url4.getAuthority();
+    assert authority4 == "[::1]";
+    Result<Url> urlRes5 = parseUrl(String("https://[2001:DB8:0:0::1]:65535/"));
+    assert urlRes5.isOk();
+    Url url5 = urlRes5.unwrap();
+    assert url5.host == "2001:db8::1"; // Canonical form
+    assert url5.port == cast<unsigned short>(65535);
+    Result<Url> notIpv6InBrackets = parseUrl(String("http://[localhost]:8080/"));
+    assert notIpv6InBrackets.isErr();
+    Result<Url> ipv6WithoutBrackets = parseUrl(String("http://::1:8080/"));
+    assert ipv6WithoutBrackets.isErr();
+    Result<Url> portTooLarge = parseUrl(String("http://[::1]:73616/"));
+    assert portTooLarge.isErr();
+    Result<Url> portWayTooLarge = parseUrl(String("http://localhost:99999999999999999999/"));
+    assert portWayTooLarge.isErr();
+    Result<Url> portLeadingZeros = parseUrl(String("http://localhost:0000080/"));
+    assert portLeadingZeros.isOk();
+    assert portLeadingZeros.unwrap().port == 80s;
+    Result<Url> portEmpty = parseUrl(String("https://[::1]:/"));
+    assert portEmpty.isOk();
+    assert portEmpty.unwrap().port == 443s;
+    Result<Url> portLeadingZerosTooLarge = parseUrl(String("http://localhost:000065536/"));
+    assert portLeadingZerosTooLarge.isErr();
+    Result<Url> unclosedIpv6 = parseUrl(String("http://[::1/x"));
+    assert unclosedIpv6.isErr();
+    Result<Url> junkBehindIpv6 = parseUrl(String("http://[::1]x:80"));
+    assert junkBehindIpv6.isErr();
+
     Result<Url> badScheme = parseUrl(String("ftp://example.com"));
     assert badScheme.isErr();
     Result<Url> noScheme = parseUrl(String("example.com/a"));

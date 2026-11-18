@@ -1,0 +1,39 @@
+a.test -> 192.0.2.1 2001:db8::1
+A.Test. -> 192.0.2.1 2001:db8::1
+a.test -> 192.0.2.1
+a.test -> 2001:db8::1
+alias.test -> 192.0.2.1 2001:db8::1
+big.test -> 198.51.100.0 198.51.100.1 198.51.100.2 198.51.100.3 198.51.100.4 198.51.100.5 198.51.100.6 198.51.100.7 198.51.100.8 198.51.100.9 198.51.100.10 198.51.100.11 198.51.100.12 198.51.100.13 198.51.100.14 198.51.100.15 198.51.100.16 198.51.100.17 198.51.100.18 198.51.100.19 198.51.100.20 198.51.100.21 198.51.100.22 198.51.100.23 198.51.100.24 198.51.100.25 198.51.100.26 198.51.100.27 198.51.100.28 198.51.100.29 198.51.100.30 198.51.100.31 198.51.100.32 198.51.100.33 198.51.100.34 198.51.100.35 198.51.100.36 198.51.100.37 198.51.100.38 198.51.100.39
+host -> 203.0.113.7
+v6only.test -> 2001:db8::6
+v6only.test -> error: Could not resolve host name: host not found
+spoofed.test -> 192.0.2.99
+loop.test -> error: Could not resolve host name: host not found
+missing.test -> error: Could not resolve host name: host not found
+servfail.test -> error: Could not resolve host name: no usable answer from the name servers
+unverifiable.test -> error: Could not resolve host name: no usable answer from the name servers
+127.1 -> error: Malformed host name: neither an IPv4 address nor a host name
+10.0.0.300 -> error: Malformed host name: neither an IPv4 address nor a host name
+0x7f000001 -> error: Malformed host name: neither an IPv4 address nor a host name
+127.0X1 -> error: Malformed host name: neither an IPv4 address nor a host name
+0x -> error: Malformed host name: neither an IPv4 address nor a host name
+a.0xample -> error: Could not resolve host name: host not found
+myhost -> 10.0.0.5 fe80::5
+myhost. -> 10.0.0.5
+localhost -> 127.0.0.1 ::1
+printer.localhost -> ::1
+192.0.2.10 -> 192.0.2.10
+[2001:db8::10] -> 2001:db8::10
+2001:db8::10 -> error: Address is not of the requested address family
+bad..name -> error: Malformed host name
+a.test -> error: No address family requested
+openClientSocket ipv4first.test -> connected
+openClientSocket fallback.test -> Error connecting to socket
+openClientSocket v6host.test -> Error connecting to socket
+openClientSocket app -> Error connecting to socket
+query A.Test. -> 192.0.2.1
+AAAA queries for ipv4first.test: 0
+Queries for overridden names: 0
+fallback.test asked for AAAA after A: yes
+resolveHost 127.1 -> Malformed host name: neither an IPv4 address nor a host name
+System configuration: localhost -> 127.0.0.1

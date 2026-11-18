@@ -1,0 +1,32 @@
+127.0.0.1 -> 127.0.0.1 (IPv4)
+0.0.0.0 -> 0.0.0.0 (IPv4)
+255.255.255.255 -> 255.255.255.255 (IPv4)
+256.0.0.1 -> error: Malformed IPv4 address
+1.2.3 -> error: Malformed IPv4 address
+1.2.3.4.5 -> error: Malformed IPv4 address
+1.2.3.4. -> error: Malformed IPv4 address
+01.2.3.4 -> error: Malformed IPv4 address
+1.2.3.-4 -> error: Malformed IPv4 address
+ -> error: Malformed IPv4 address
+:: -> :: (IPv6)
+::1 -> ::1 (IPv6)
+1:: -> 1:: (IPv6)
+2001:DB8::1 -> 2001:db8::1 (IPv6)
+2001:0db8:0000:0000:0000:ff00:0042:8329 -> 2001:db8::ff00:42:8329 (IPv6)
+1:0:0:2:0:0:0:3 -> 1:0:0:2::3 (IPv6)
+1:2:3:4:5:6:7:: -> 1:2:3:4:5:6:7:0 (IPv6)
+::2:3:4:5:6:7:8 -> 0:2:3:4:5:6:7:8 (IPv6)
+::ffff:192.168.0.1 -> ::ffff:192.168.0.1 (IPv6)
+64:ff9b::192.0.2.33 -> 64:ff9b::c000:221 (IPv6)
+::: -> error: Malformed IPv6 address
+1:::2 -> error: Malformed IPv6 address
+1::2::3 -> error: Malformed IPv6 address
+1:2:3:4:5:6:7:8:9 -> error: Malformed IPv6 address
+1:2:3:4:5:6:7 -> error: Malformed IPv6 address
+12345:: -> error: Malformed IPv6 address
+::g -> error: Malformed IPv6 address
+fe80::1%eth0 -> error: Malformed IPv6 address
+1: -> error: Malformed IPv6 address
+:1 -> error: Malformed IPv6 address
+::1.2.3.4:5 -> error: Malformed IPv6 address
+All assertions passed

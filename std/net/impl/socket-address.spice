@@ -1,0 +1,102 @@
+// Socket address structs (sockaddr_in / sockaddr_in6) of the supported platforms, laid out by hand, so that one code
+// path serves IPv4 and IPv6 on every platform. The module has no dependency on the operating system itself: the platform
+// specific helpers in "std/net/impl/socket-native" pass in their address family values and the layout of their structs.
+
+// Imports
+import "std/net/ip-address";
+
+// Constants
+const unsigned int SOCKADDR_IN_SIZE = 16u;  // sizeof(struct sockaddr_in)
+const unsigned int SOCKADDR_IN6_SIZE = 28u; // sizeof(struct sockaddr_in6)
+
+/**
+ * Layout of the first two bytes of the socket address structs. The port and the address follow at the same offsets on
+ * all supported platforms.
+ */
+public type SockAddrLayout enum {
+    FAMILY_16_BIT,           // Linux and Windows: the family as 16 bit value in host byte order
+    LENGTH_AND_FAMILY_8_BIT  // macOS (BSD): the length of the struct and the family as single bytes
+}
+
+/**
+ * A sockaddr_in or sockaddr_in6, ready to be handed to the socket calls
+ */
+public type NativeSockAddr struct {
+    public unsigned byte[28] bytes // Struct contents, large enough for a sockaddr_in6
+    public unsigned int size       // Number of used bytes, i.e. the size of the struct
+}
+
+/**
+ * Lays out the socket address struct for the given address and port. sin6_flowinfo and sin6_scope_id stay zero.
+ *
+ * @param address IPv4 or IPv6 address
+ * @param port Port in host byte order
+ * @param family Address family value of the platform (AF_INET or AF_INET6, matching the address)
+ * @param layout Layout of the struct on the platform
+ * @return Socket address struct
+ */
+public f<NativeSockAddr> createNativeSockAddr(const IpAddress& address, unsigned short port, int family, SockAddrLayout layout) {
+    NativeSockAddr sockAddr = NativeSockAddr {};
+    for unsigned int i = 0u; i < SOCKADDR_IN6_SIZE; i++ {
+        sockAddr.bytes[i] = cast<unsigned byte>(0);
+    }
+    sockAddr.size = address.isIpv6() ? SOCKADDR_IN6_SIZE : SOCKADDR_IN_SIZE;
+
+    if layout == SockAddrLayout::LENGTH_AND_FAMILY_8_BIT {
+        sockAddr.bytes[0] = cast<unsigned byte>(cast<int>(sockAddr.size));
+        sockAddr.bytes[1] = cast<unsigned byte>(family);
+    } else {
+        // Host byte order: copied byte by byte from a variable of its own, since the byte array guarantees no alignment
+        // for a 16 bit store
+        unsigned short familyValue = cast<unsigned short>(family);
+        unsafe {
+            unsigned byte* familyBytes = cast<unsigned byte*>(&familyValue);
+            sockAddr.bytes[0] = familyBytes[0];
+            sockAddr.bytes[1] = familyBytes[1];
+        }
+    }
+
+    // Port in network byte order
+    const int portValue = cast<int>(port);
+    sockAddr.bytes[2] = cast<unsigned byte>(portValue >> 8);
+    sockAddr.bytes[3] = cast<unsigned byte>(portValue & 0xFF);
+
+    // sin_addr follows the port directly, sin6_addr follows the 32 bit sin6_flowinfo
+    const unsigned int addressOffset = address.isIpv6() ? 8u : 4u;
+    for unsigned int i = 0u; i < address.getLength(); i++ {
+        sockAddr.bytes[addressOffset + i] = address.getByte(i);
+    }
+    return sockAddr;
+}
+
+/**
+ * Reads the address from a socket address struct, that the system handed out
+ *
+ * @param sockAddr Pointer to the struct, may be nil
+ * @param ipv4Family Address family value of IPv4 on the platform (AF_INET)
+ * @param ipv6Family Address family value of IPv6 on the platform (AF_INET6)
+ * @param layout Layout of the struct on the platform
+ * @return IP address
+ */
+public f<Result<IpAddress>> readNativeSockAddr(const unsigned byte* sockAddr, int ipv4Family, int ipv6Family, SockAddrLayout layout) {
+    if sockAddr == nil<unsigned byte*> { return err<IpAddress>(Error("No socket address")); }
+    unsigned short[8] groups;
+    unsafe {
+        int family = cast<int>(sockAddr[1]);
+        if layout == SockAddrLayout::FAMILY_16_BIT {
+            unsigned short familyValue = 0s;
+            unsigned byte* familyBytes = cast<unsigned byte*>(&familyValue);
+            familyBytes[0] = sockAddr[0];
+            familyBytes[1] = sockAddr[1];
+            family = cast<int>(familyValue);
+        }
+        if family == ipv4Family {
+            return ok(createIpv4Address(sockAddr[4], sockAddr[5], sockAddr[6], sockAddr[7]));
+        }
+        if family != ipv6Family { return err<IpAddress>(Error("Unknown address family")); }
+        for int i = 0; i < 8; i++ {
+            groups[i] = cast<unsigned short>((cast<int>(sockAddr[8 + 2 * i]) << 8) | cast<int>(sockAddr[9 + 2 * i]));
+        }
+    }
+    return ok(createIpv6Address(groups));
+}

@@ -1,0 +1,108 @@
+// Socket calls of the fake name server on Windows
+
+#![core.windows.linker.flag = "-lws2_32"]
+
+const int FAKE_AF_INET = 2;
+
+// External functions
+ext f<int> WSAStartup(short /*versionRequested*/, unsigned byte* /*wsaData*/);
+ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
+ext f<int> bind(int /*sockfd*/, unsigned byte* /*address*/, int /*address_len*/);
+ext f<int> listen(int /*sockfd*/, int /*backlog*/);
+ext f<int> accept(int /*sockfd*/, unsigned byte* /*address*/, int* /*address_len*/);
+ext f<int> getsockname(int /*sockfd*/, unsigned byte* /*address*/, int* /*address_len*/);
+ext f<int> recvfrom(int /*sockfd*/, unsigned byte* /*buf*/, int /*length*/, int /*flags*/, unsigned byte* /*address*/, int* /*address_len*/);
+ext f<int> sendto(int /*sockfd*/, unsigned byte* /*buf*/, int /*length*/, int /*flags*/, unsigned byte* /*address*/, int /*address_len*/);
+ext f<int> recv(int /*sockfd*/, unsigned byte* /*buf*/, int /*length*/, int /*flags*/);
+ext f<int> send(int /*sockfd*/, unsigned byte* /*buf*/, int /*length*/, int /*flags*/);
+ext f<int> closesocket(int /*sockfd*/);
+
+/**
+ * Opens a socket bound to 127.0.0.1 and the given port (0 for an ephemeral one)
+ *
+ * @return Socket, -1 if the port is not available
+ */
+public f<int> fakeOpenBoundSocket(int socketType, int port, int& boundPort) {
+    unsigned byte[512] wsaData; // Large enough for WSADATA, whose content is of no interest here
+    int startupResult = -1;
+    unsafe {
+        unsigned byte* wsaDataPtr = wsaData;
+        startupResult = WSAStartup(cast<short>(514), wsaDataPtr);
+    }
+    assert startupResult == 0;
+    const int sockFd = socket(FAKE_AF_INET, socketType, 0);
+    assert sockFd >= 0;
+    unsigned byte[16] address;
+    for int i = 0; i < 16; i++ { address[i] = cast<unsigned byte>(0); }
+    address[0] = cast<unsigned byte>(FAKE_AF_INET); // sin_family in host byte order (little endian)
+    address[2] = cast<unsigned byte>(port >> 8);
+    address[3] = cast<unsigned byte>(port & 0xFF);
+    address[4] = cast<unsigned byte>(127);
+    address[7] = cast<unsigned byte>(1);
+    int addressLength = 16;
+    unsafe {
+        unsigned byte* addressPtr = address;
+        if bind(sockFd, addressPtr, addressLength) != 0 {
+            const int closeResult = closesocket(sockFd);
+            assert closeResult == 0;
+            return -1;
+        }
+        const int nameResult = getsockname(sockFd, addressPtr, &addressLength);
+        assert nameResult == 0;
+    }
+    boundPort = (cast<int>(address[2]) << 8) | cast<int>(address[3]);
+    return sockFd;
+}
+
+/**
+ * Starts listening for connections on a bound TCP socket
+ */
+public f<int> fakeListen(int sockFd) {
+    return listen(sockFd, 4);
+}
+
+/**
+ * Accepts the next connection on a listening TCP socket
+ */
+public f<int> fakeAccept(int sockFd) {
+    unsafe {
+        return accept(sockFd, nil<unsigned byte*>, nil<int*>);
+    }
+}
+
+/**
+ * Receives a datagram and the address of its sender
+ */
+public f<long> fakeReceiveFrom(int sockFd, unsigned byte* buffer, unsigned long size, unsigned byte* peerAddress, int& peerAddressLength) {
+    unsafe {
+        return cast<long>(recvfrom(sockFd, buffer, cast<int>(size), 0, peerAddress, &peerAddressLength));
+    }
+}
+
+/**
+ * Sends a datagram to the given address
+ */
+public f<long> fakeSendTo(int sockFd, unsigned byte* buffer, unsigned long size, unsigned byte* peerAddress, int peerAddressLength) {
+    return cast<long>(sendto(sockFd, buffer, cast<int>(size), 0, peerAddress, peerAddressLength));
+}
+
+/**
+ * Reads from a connected socket
+ */
+public f<long> fakeRead(int sockFd, unsigned byte* buffer, unsigned long size) {
+    return cast<long>(recv(sockFd, buffer, cast<int>(size), 0));
+}
+
+/**
+ * Writes to a connected socket
+ */
+public f<long> fakeWrite(int sockFd, unsigned byte* buffer, unsigned long size) {
+    return cast<long>(send(sockFd, buffer, cast<int>(size), 0));
+}
+
+/**
+ * Closes a socket
+ */
+public f<int> fakeClose(int sockFd) {
+    return closesocket(sockFd);
+}

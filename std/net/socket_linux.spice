@@ -4,12 +4,16 @@
 
 // Import common logic
 import "std/net/socket";
+import "std/data/vector";
+import "std/net/dns";
+import "std/net/ip-address";
 
 // Type defs
 type SAFamilyT alias unsigned short;
 type SockLenT alias unsigned int;
 
 // Constants
+public const int AF_INET6 = 10;    // IPv6
 public const int SOL_SOCKET = 1;   // Option level for socket-level options
 public const int SO_REUSEADDR = 2; // Allow binding to a local address that is still in TIME_WAIT
 public const int SO_RCVTIMEO = 20; // Timeout for receive operations
@@ -79,17 +83,6 @@ type TimeVal struct {
     long tvUsec // Microseconds
 }
 
-/**
- * Host entry as returned by `gethostbyname`. Mirrors `struct hostent` from the C headers.
- */
-type HostEnt struct {
-    string  hName     // Official name of the host
-    string* hAliases  // Alias list, terminated by a nil entry
-    int     hAddrType // Address type (AF_INET for IPv4)
-    int     hLength   // Length of an address, in bytes
-    byte**  hAddrList // Address list, terminated by a nil entry
-}
-
 // External functions
 ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
 ext f<int> bind(int /*sockfd*/, const SockAddrIn* /*address*/, SockLenT /*address_len*/);
@@ -101,9 +94,6 @@ ext f<long> write(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
 ext f<int> close(int /*fd*/);
 ext f<unsigned int> htonl(unsigned int /*hostlong*/);      // Fairly simple to re-implement in Spice
 ext f<unsigned short> htons(unsigned short /*hostshort*/); // Fairly simple to re-implement in Spice
-ext f<InAddrT> inet_addr(string /*cp*/);
-ext f<HostEnt*> gethostbyname(string /*name*/);
-ext f<int> connect(int /*sockfd*/, const SockAddrIn* /*address*/, SockLenT /*address_len*/);
 
 /**
  * A network socket, wrapping the listening socket file descriptor and the current connection
@@ -266,31 +256,17 @@ public f<bool> Socket.close() {
 /**
  * Resolves a host given as either a dotted IPv4 address or a hostname to a raw IPv4 address in
  * network byte order.
- * Note: The DNS lookup is performed via `gethostbyname`, which is not thread-safe.
+ * Note: The lookup is performed by the resolver of "std/net/dns", which reads /etc/hosts and asks the
+ * name servers from /etc/resolv.conf, without going through the name service switch of the C library.
  *
  * @param host Dotted IPv4 address (e.g. "127.0.0.1") or hostname (e.g. "example.com")
  * @return IPv4 address in network byte order
  */
 public f<Result<InAddrT>> resolveHost(string host) {
-    // A dotted IPv4 address needs no name server round trip
-    const InAddrT numericAddr = inet_addr(host);
-    if numericAddr != INADDR_NONE { return ok<InAddrT>(numericAddr); }
-
-    // Fall back to a name lookup
-    HostEnt* entry = gethostbyname(host);
-    if entry == nil<HostEnt*> { return err<InAddrT>(Error("Could not resolve host name")); }
-    if entry.hAddrType != AF_INET { return err<InAddrT>(Error("Host name does not resolve to an IPv4 address")); }
-
-    InAddrT resolvedAddr = 0u;
-    unsafe {
-        byte** addrList = entry.hAddrList;
-        if addrList == nil<byte**> || addrList[0] == nil<byte*> {
-            return err<InAddrT>(Error("Host name resolved to an empty address list"));
-        }
-        InAddrT* firstAddr = cast<InAddrT*>(addrList[0]);
-        resolvedAddr = *firstAddr;
-    }
-    return ok<InAddrT>(resolvedAddr);
+    // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
+    const Result<Vector<IpAddress>> addressesResult = resolveHostAddresses(String(host), true, false);
+    if addressesResult.isErr() { return err<InAddrT>(addressesResult.getErr()); }
+    return ok<InAddrT>(addressesResult.unwrap()[0].toInAddr());
 }
 
 /**
@@ -337,29 +313,30 @@ public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingCon
 }
 
 /**
- * Opens a TCP client socket and tries to connect it to a server socket.
+ * Opens a TCP client socket and tries to connect it to a server socket. The host is resolved with the
+ * resolver of "std/net/dns" and the system configuration (see DnsResolver.connectTcp for the order, in
+ * which the addresses are tried).
  *
- * @param host Host to connect to, either as dotted IPv4 address or as hostname
- * @param port Post to connect to
+ * @param host Host to connect to, either as IPv4 address, IPv6 address (optionally in brackets) or hostname
+ * @param port Port to connect to
  * @return Socket file descriptor
  */
 public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
-    // Resolve the host before spending a file descriptor on it
-    const InAddrT hostAddr = resolveHost(host)!;
+    DnsResolver resolver = DnsResolver();
+    return openClientSocket(host, port, resolver);
+}
 
-    const int sockFd = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if sockFd == -1 { return err<Socket>(Error("Error opening socket client connection")); }
-
-    // Construct socket object. A client talks over the socket itself, so socket and connection descriptor are the same.
-    const Socket s = Socket { sockFd, /*connFd*/ sockFd };
-    const SockAddrIn servAddr = SockAddrIn { cast<SAFamilyT>(AF_INET), htons(port), InAddr { hostAddr }, 0ul };
-
-    // Connect to server
-    const int connectResult = connect(sockFd, &servAddr, cast<SockLenT>(sizeof<SockAddrIn>()));
-    if connectResult < 0 {
-        close(sockFd);
-        return err<Socket>(Error("Error connecting to socket"));
-    }
-
-    return ok(s);
+/**
+ * Opens a TCP client socket and tries to connect it to a server socket, resolving the host with the
+ * given resolver (see DnsResolver.connectTcp for the order, in which the addresses are tried).
+ *
+ * @param host Host to connect to, either as IPv4 address, IPv6 address (optionally in brackets) or hostname
+ * @param port Port to connect to
+ * @param resolver Resolver to resolve the host with
+ * @return Socket file descriptor
+ */
+public f<Result<Socket>> openClientSocket(string host, unsigned short port, DnsResolver& resolver) {
+    // A client talks over the socket itself, so socket and connection descriptor are the same
+    const int sockFd = resolver.connectTcp(String(host), port)!;
+    return ok(Socket { sockFd, /*connFd*/ sockFd });
 }
