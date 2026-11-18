@@ -263,8 +263,10 @@ public f<bool> Socket.close() {
  * @return IPv4 address in network byte order
  */
 public f<Result<InAddrT>> resolveHost(string host) {
-    const Vector<IpAddress> addresses = resolveHostAddresses(String(host), true, false)!;
-    return ok<InAddrT>(addresses[0].toInAddr());
+    // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
+    const Result<Vector<IpAddress>> addressesResult = resolveHostAddresses(String(host), true, false);
+    if addressesResult.isErr() { return err<InAddrT>(addressesResult.getErr()); }
+    return ok<InAddrT>(addressesResult.unwrap()[0].toInAddr());
 }
 
 /**

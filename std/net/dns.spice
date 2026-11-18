@@ -88,17 +88,19 @@ type DnsRecord struct {
  * Resolves host names to IPv4 and IPv6 addresses via the hosts file and DNS
  */
 public type DnsResolver struct {
-    DnsConfig config       // Name servers and search rules
-    String hostsFilePath   // Path of the hosts file, empty to skip the hosts file
+    DnsConfig config            // Name servers and search rules
+    String hostsFilePath        // Path of the hosts file, empty to skip the hosts file
+    bool systemConfigPending    // The system configuration is still to be loaded, on the first query
 }
 
 /**
  * Creates a resolver with the system configuration (see loadDnsConfig) and the hosts file of the
- * system (/etc/hosts, or %SystemRoot%\System32\drivers\etc\hosts on Windows)
+ * system (see getSystemHostsFilePath). The configuration is only loaded, once a name server has to be
+ * asked, so that IP address literals and names from the hosts file do not pay for it.
  */
 public p DnsResolver.ctor() {
-    this.config = loadDnsConfig();
-    this.hostsFilePath = getNativeHostsFilePath();
+    this.hostsFilePath = getSystemHostsFilePath();
+    this.systemConfigPending = true;
 }
 
 /**
@@ -110,6 +112,7 @@ public p DnsResolver.ctor() {
 public p DnsResolver.ctor(const DnsConfig& config, const String& hostsFilePath) {
     this.config = config;
     this.hostsFilePath = hostsFilePath;
+    this.systemConfigPending = false;
 }
 
 /**
@@ -129,26 +132,105 @@ public p DnsResolver.ctor(const DnsConfig& config, const String& hostsFilePath) 
  */
 public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool includeIpv4 = true, bool includeIpv6 = true) {
     if !includeIpv4 && !includeIpv6 { return err<Vector<IpAddress>>(Error("No address family requested")); }
+    String name = String();
+    bool isAbsolute = false;
+    // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
+    const Result<Vector<IpAddress>> localResult = this.resolveLocally(host, includeIpv4, includeIpv6, name, isAbsolute);
+    if localResult.isErr() { return err<Vector<IpAddress>>(localResult.getErr()); }
+    const Vector<IpAddress>& localAddresses = localResult.unwrap();
+    if !localAddresses.isEmpty() { return ok(localAddresses); }
+
+    // DNS: the first candidate name, that has addresses, wins
+    this.loadPendingSystemConfig();
+    if this.config.servers.isEmpty() { return err<Vector<IpAddress>>(Error("No name server configured")); }
+    bool serverFailed = false;
+    const Vector<String> candidates = getCandidateNames(this.config, name, isAbsolute);
+    foreach const String& candidate : candidates {
+        Vector<IpAddress> addresses = Vector<IpAddress>();
+        if includeIpv4 { addresses = this.queryAddresses(candidate, DNS_TYPE_A, serverFailed); }
+        if includeIpv6 {
+            foreach const IpAddress& address : this.queryAddresses(candidate, DNS_TYPE_AAAA, serverFailed) { addresses.pushBack(address); }
+        }
+        if !addresses.isEmpty() { return ok(addresses); }
+    }
+    return err<Vector<IpAddress>>(getNotFoundError(serverFailed));
+}
+
+/**
+ * Opens a TCP connection to the given host and port. A host may have several IPv4 and IPv6 addresses,
+ * which are tried one after the other, until a connection is established:
+ * - Addresses, that need no name server (IP address literals, the hosts file, the localhost names),
+ *   are tried first, IPv4 ones before IPv6 ones.
+ * - Otherwise the candidate names (see resolve) are asked for one after the other. For each one, the
+ *   IPv4 addresses are looked up and tried first; the IPv6 addresses are only looked up, if none of
+ *   them works, so that a slow or missing answer for them never delays a connection. The first
+ *   candidate, that has any addresses, is the last one to be asked for, like with resolve.
+ *
+ * @param host Host name or IP address literal (IPv6 optionally in brackets)
+ * @param port Port to connect to
+ * @return File descriptor (socket handle on Windows) of the connected socket
+ */
+public f<Result<int>> DnsResolver.connectTcp(const String& host, unsigned short port) {
+    String name = String();
+    bool isAbsolute = false;
+    // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
+    const Result<Vector<IpAddress>> localResult = this.resolveLocally(host, true, true, name, isAbsolute);
+    if localResult.isErr() { return err<int>(localResult.getErr()); }
+    const Vector<IpAddress>& localAddresses = localResult.unwrap();
+    if !localAddresses.isEmpty() { return connectToAny(localAddresses, port); }
+
+    this.loadPendingSystemConfig();
+    if this.config.servers.isEmpty() { return err<int>(Error("No name server configured")); }
+    bool serverFailed = false;
+    const Vector<String> candidates = getCandidateNames(this.config, name, isAbsolute);
+    foreach const String& candidate : candidates {
+        bool candidateHasAddresses = false;
+        for int pass = 0; pass < 2; pass++ {
+            const unsigned short recordType = pass == 0 ? DNS_TYPE_A : DNS_TYPE_AAAA;
+            const Vector<IpAddress> addresses = this.queryAddresses(candidate, recordType, serverFailed);
+            if addresses.isEmpty() { continue; }
+            candidateHasAddresses = true;
+            const Result<int> sockFdResult = connectToAny(addresses, port);
+            if sockFdResult.isOk() { return sockFdResult; }
+        }
+        if candidateHasAddresses { return err<int>(Error("Error connecting to socket")); }
+    }
+    return err<int>(getNotFoundError(serverFailed));
+}
+
+/**
+ * Answers a host without asking a name server, if possible: an IP address literal resolves to itself,
+ * a name listed in the hosts file to the addresses there and the localhost names to the loopback
+ * addresses. Malformed names are rejected.
+ *
+ * @param host Host name or IP address literal
+ * @param includeIpv4 Look for IPv4 addresses
+ * @param includeIpv6 Look for IPv6 addresses
+ * @param name Receives the name to ask the name servers for: lowercase, without trailing dot
+ * @param isAbsolute Receives whether the name was given with a trailing dot
+ * @return Addresses of the host, IPv4 ones first, or none, if the name servers have to be asked
+ */
+f<Result<Vector<IpAddress>>> DnsResolver.resolveLocally(const String& host, bool includeIpv4, bool includeIpv6, String& name, bool& isAbsolute) {
+    Vector<IpAddress> addresses = Vector<IpAddress>();
 
     // IP address literals need no lookup. IPv6 ones may come in brackets, like in URLs.
-    String name = host;
+    name = host;
     if name.getLength() > 2l && name[0] == '[' && name[name.getLength() - 1l] == ']' {
         name = name.getSubstring(1l, cast<long>(name.getLength()) - 2l);
     }
     const Result<IpAddress> literalResult = parseIpAddress(name);
     if literalResult.isOk() {
-        Vector<IpAddress> literalAddresses = Vector<IpAddress>();
         const IpAddress literal = literalResult.unwrap();
         if (literal.isIpv4() && includeIpv4) || (literal.isIpv6() && includeIpv6) {
-            literalAddresses.pushBack(literal);
-            return ok(literalAddresses);
+            addresses.pushBack(literal);
+            return ok(addresses);
         }
         return err<Vector<IpAddress>>(Error("Address is not of the requested address family"));
     }
 
     // Names are compared case-insensitively. A trailing dot marks an absolute name, that the search domains do not apply to.
     name = toLower(name);
-    const bool isAbsolute = name.endsWith(".");
+    isAbsolute = name.endsWith(".");
     if isAbsolute { name = name.getSubstring(0l, cast<long>(name.getLength()) - 1l); }
     if !isValidDnsName(name) { return err<Vector<IpAddress>>(Error("Malformed host name")); }
     // No top-level domain is all-numeric, so such a name is a shortened or mistyped IPv4 address (like "127.1"). The
@@ -159,77 +241,45 @@ public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool
     if !this.hostsFilePath.isEmpty() {
         const Result<String> hostsContent = readFile(this.hostsFilePath.getRaw());
         if hostsContent.isOk() {
-            const Vector<IpAddress> hostsAddresses = lookupHostsFile(hostsContent.unwrap(), name);
-            const Vector<IpAddress> filtered = orderAddresses(hostsAddresses, includeIpv4, includeIpv6);
-            if !filtered.isEmpty() { return ok(filtered); }
+            addresses = orderAddresses(lookupHostsFile(hostsContent.unwrap(), name), includeIpv4, includeIpv6);
+            if !addresses.isEmpty() { return ok(addresses); }
         }
     }
 
     // The localhost names are reserved for the loopback addresses (RFC 6761). The hosts file is still consulted first,
     // like the C library does, so that the setup of the system is honored.
     if name == "localhost" || name.endsWith(".localhost") {
-        Vector<IpAddress> loopbackAddresses = Vector<IpAddress>();
-        loopbackAddresses.pushBack(parseIpAddress(String("127.0.0.1")).unwrap());
-        loopbackAddresses.pushBack(parseIpAddress(String("::1")).unwrap());
-        return ok(orderAddresses(loopbackAddresses, includeIpv4, includeIpv6));
+        addresses.pushBack(createIpv4Address(cast<unsigned byte>(127), cast<unsigned byte>(0), cast<unsigned byte>(0), cast<unsigned byte>(1)));
+        addresses.pushBack(parseIpAddress(String("::1")).unwrap());
+        return ok(orderAddresses(addresses, includeIpv4, includeIpv6));
     }
-
-    // DNS
-    if this.config.servers.isEmpty() { return err<Vector<IpAddress>>(Error("No name server configured")); }
-    bool serverFailed = false;
-    const Vector<String> candidates = getCandidateNames(this.config, name, isAbsolute);
-    foreach const String& candidate : candidates {
-        Vector<IpAddress> addresses = Vector<IpAddress>();
-        if includeIpv4 {
-            const Result<DnsResponse> responseV4 = this.query(candidate, DNS_TYPE_A);
-            if responseV4.isOk() {
-                foreach const IpAddress& address : responseV4.unwrap().addresses { addresses.pushBack(address); }
-            } else {
-                serverFailed = true;
-            }
-        }
-        if includeIpv6 {
-            const Result<DnsResponse> responseV6 = this.query(candidate, DNS_TYPE_AAAA);
-            if responseV6.isOk() {
-                foreach const IpAddress& address : responseV6.unwrap().addresses { addresses.pushBack(address); }
-            } else {
-                serverFailed = true;
-            }
-        }
-        if !addresses.isEmpty() { return ok(addresses); }
-    }
-    if serverFailed { return err<Vector<IpAddress>>(Error("Could not resolve host name: no usable answer from the name servers")); }
-    return err<Vector<IpAddress>>(Error("Could not resolve host name: host not found"));
+    return ok(addresses);
 }
 
 /**
- * Opens a TCP connection to the given host and port. A host name may resolve to several IPv4 and IPv6
- * addresses, which are tried one after the other, until a connection is established. The IPv4
- * addresses are looked up and tried first; the IPv6 addresses are only looked up, if none of them
- * works, so that a slow or missing answer for them never delays a connection.
+ * Asks the name servers for the addresses of the given type of exactly the given name
  *
- * @param host Host name or IP address literal (IPv6 optionally in brackets)
- * @param port Port to connect to
- * @return File descriptor (socket handle on Windows) of the connected socket
+ * @param name Absolute name to ask for, without trailing dot
+ * @param recordType DNS_TYPE_A or DNS_TYPE_AAAA
+ * @param serverFailed Set, if no name server gave a definite answer
+ * @return Addresses, none if the name has none of this type
  */
-public f<Result<int>> DnsResolver.connectTcp(const String& host, unsigned short port) {
-    // The messages are literals, so the raw string outlives this function, like the error, that carries it
-    string errorMessage = "";
-    for int pass = 0; pass < 2; pass++ {
-        const bool ipv6Pass = pass == 1;
-        const Result<Vector<IpAddress>> addressesResult = this.resolve(host, !ipv6Pass, ipv6Pass);
-        if addressesResult.isErr() {
-            // Keep the reason of the first failure, unless a pass found addresses, that did not work
-            if errorMessage == "" { errorMessage = addressesResult.getErr().getMessage(); }
-            continue;
-        }
-        foreach const IpAddress& address : addressesResult.unwrap() {
-            const Result<int> sockFdResult = openNativeSocket(address, port, SOCK_STREAM_TYPE, 0ul);
-            if sockFdResult.isOk() { return sockFdResult; }
-        }
-        errorMessage = "Error connecting to socket";
+f<Vector<IpAddress>> DnsResolver.queryAddresses(const String& name, unsigned short recordType, bool& serverFailed) {
+    const Result<DnsResponse> responseResult = this.query(name, recordType);
+    if responseResult.isErr() {
+        serverFailed = true;
+        return Vector<IpAddress>();
     }
-    return err<int>(Error(errorMessage));
+    return responseResult.unwrap().addresses;
+}
+
+/**
+ * Loads the system configuration, if this resolver was created without one and has not loaded it yet
+ */
+p DnsResolver.loadPendingSystemConfig() {
+    if !this.systemConfigPending { return; }
+    this.config = loadDnsConfig();
+    this.systemConfigPending = false;
 }
 
 /**
@@ -242,6 +292,7 @@ public f<Result<int>> DnsResolver.connectTcp(const String& host, unsigned short 
  * @return Definite answer of a name server
  */
 public f<Result<DnsResponse>> DnsResolver.query(const String& name, unsigned short recordType) {
+    this.loadPendingSystemConfig();
     // Name servers echo the question in any case, but the answer is matched in lowercase
     String queryName = toLower(name);
     if queryName.endsWith(".") { queryName = queryName.getSubstring(0l, cast<long>(queryName.getLength()) - 1l); }
@@ -888,6 +939,42 @@ f<long> parseDecimal(const String& text) {
         value = value * 10l + cast<long>(cast<int>(c) - cast<int>('0'));
     }
     return value;
+}
+
+/**
+ * Tries to connect to the given addresses over TCP, one after the other
+ *
+ * @param addresses Addresses to try, in order
+ * @param port Port to connect to
+ * @return File descriptor of the first established connection
+ */
+f<Result<int>> connectToAny(const Vector<IpAddress>& addresses, unsigned short port) {
+    foreach const IpAddress& address : addresses {
+        const Result<int> sockFdResult = openNativeSocket(address, port, SOCK_STREAM_TYPE, 0ul);
+        if sockFdResult.isOk() { return sockFdResult; }
+    }
+    return err<int>(Error("Error connecting to socket"));
+}
+
+/**
+ * Returns the error for a name, that no candidate name led to addresses for
+ *
+ * @param serverFailed No name server gave a definite answer for at least one of the queries
+ * @return Error
+ */
+f<Error> getNotFoundError(bool serverFailed) {
+    if serverFailed { return Error("Could not resolve host name: no usable answer from the name servers"); }
+    return Error("Could not resolve host name: host not found");
+}
+
+/**
+ * Returns the path of the hosts file of the system: /etc/hosts on Linux and macOS,
+ * %SystemRoot%\System32\drivers\etc\hosts on Windows
+ *
+ * @return Path of the hosts file
+ */
+public f<String> getSystemHostsFilePath() {
+    return getNativeHostsFilePath();
 }
 
 /**

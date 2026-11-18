@@ -29,7 +29,11 @@ bad..name -> error: Malformed host name
 a.test -> error: No address family requested
 openClientSocket ipv4first.test -> connected
 openClientSocket fallback.test -> Error connecting to socket
+openClientSocket v6host.test -> Error connecting to socket
+openClientSocket app -> Error connecting to socket
 query A.Test. -> 192.0.2.1
 AAAA queries for ipv4first.test: 0
+Queries for overridden names: 0
 fallback.test asked for AAAA after A: yes
-System configuration: localhost resolves to 127.0.0.1
+resolveHost 127.1 -> Malformed host name: neither an IPv4 address nor a host name
+System configuration: localhost -> 127.0.0.1

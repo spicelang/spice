@@ -25,6 +25,7 @@ int UDP_QUERY_COUNT = 0;
 int IPV4_FIRST_AAAA_QUERIES = 0;
 int FALLBACK_A_QUERY = -1;
 int FALLBACK_AAAA_QUERY = -1;
+int OVERRIDDEN_QUERIES = 0;
 
 // ----- Fake name server -----
 
@@ -122,6 +123,11 @@ f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool ov
         // Hosts for openClientSocket: the AAAA query for ipv4first.test is never answered (see serveUdp)
         if isA { appendRecord(answers, "", 1, addressData("127.0.0.1")); answerCount++; }
         if isAaaa { appendRecord(answers, "", 28, addressData("::1")); answerCount++; }
+    } else if questionName == "v6host.test" || questionName == "app" {
+        // Reachable over IPv4 via DNS, but overridden by the hosts file (v6host.test) or by a search candidate (app)
+        if isA { appendRecord(answers, "", 1, addressData("127.0.0.1")); answerCount++; }
+    } else if questionName == "app.search.test" {
+        if isAaaa { appendRecord(answers, "", 28, addressData("::1")); answerCount++; }
     } else if questionName == "host.search.test" {
         if isA { appendRecord(answers, "", 1, addressData("203.0.113.7")); answerCount++; }
     } else if questionName == "v6only.test" {
@@ -178,6 +184,7 @@ p serveUdp() {
         int questionType = 0;
         Vector<unsigned byte> response = answerQuery(query, false, questionName, questionType);
         UDP_QUERY_COUNT++;
+        if questionName == "v6host.test" || questionName == "app" { OVERRIDDEN_QUERIES++; }
         if questionName == "ipv4first.test" && questionType == 28 {
             // An AAAA query, that is never answered, would hold up a resolver, that waits for it before connecting
             IPV4_FIRST_AAAA_QUERIES++;
@@ -318,7 +325,7 @@ f<int> main() {
     tcpThread.run();
 
     // The numeric names are listed as well, to show that they are rejected before the hosts file is consulted
-    const Result<bool> hostsWritten = writeFile(HOSTS_FILE, "10.0.0.5 MyHost.lan myhost\nfe80::5 myhost\n10.9.9.9 127.1 0x7f000001\n");
+    const Result<bool> hostsWritten = writeFile(HOSTS_FILE, "10.0.0.5 MyHost.lan myhost\nfe80::5 myhost\n10.9.9.9 127.1 0x7f000001\n::1 v6host.test\n");
     assert hostsWritten.isOk();
 
     // The first name server is unreachable, so every query falls through to the second one
@@ -379,6 +386,14 @@ f<int> main() {
     }
     const Result<Socket> fallbackResult = openClientSocket("fallback.test", cast<unsigned short>(refusingPort), resolver);
     printf("openClientSocket fallback.test -> %s\n", fallbackResult.isOk() ? "connected" : fallbackResult.getErr().getMessage());
+    // The hosts file and the order of the search candidates take precedence over the address family: v6host.test is only
+    // listed with ::1 in the hosts file, and app.search.test only has an IPv6 address. The IPv4 address, that DNS has for
+    // v6host.test and the bare name app, would accept the connection, but is never asked for. The listening socket only
+    // accepts IPv4, so the connection to ::1 fails on every host.
+    const Result<Socket> v6HostResult = openClientSocket("v6host.test", cast<unsigned short>(listeningPort), resolver);
+    printf("openClientSocket v6host.test -> %s\n", v6HostResult.isOk() ? "connected" : v6HostResult.getErr().getMessage());
+    const Result<Socket> appResult = openClientSocket("app", cast<unsigned short>(listeningPort), resolver);
+    printf("openClientSocket app -> %s\n", appResult.isOk() ? "connected" : appResult.getErr().getMessage());
     const int listeningCloseResult = fakeClose(listeningFd);
     assert listeningCloseResult == 0;
 
@@ -392,6 +407,7 @@ f<int> main() {
     assert stopResponse.isOk();
     udpThread.join();
     printf("AAAA queries for ipv4first.test: %d\n", IPV4_FIRST_AAAA_QUERIES);
+    printf("Queries for overridden names: %d\n", OVERRIDDEN_QUERIES);
     const bool fallbackInOrder = FALLBACK_A_QUERY != -1 && FALLBACK_AAAA_QUERY > FALLBACK_A_QUERY;
     printf("fallback.test asked for AAAA after A: %s\n", fallbackInOrder ? "yes" : "no");
     // A resolver, that skipped a TCP fallback, would leave the TCP worker waiting for a connection forever. Connections
@@ -411,15 +427,21 @@ f<int> main() {
     const bool hostsDeleted = deleteFile(HOSTS_FILE);
     assert udpCloseResult == 0 && tcpCloseResult == 0 && hostsDeleted;
 
-    // The system configuration yields at least one name server, and localhost resolves without asking any
+    // resolveHost reports names, that it rejects, as error
+    const Result<unsigned int> numericNameResult = resolveHost("127.1");
+    printf("resolveHost 127.1 -> %s\n", numericNameResult.isOk() ? "resolved" : numericNameResult.getErr().getMessage());
+
+    // The system configuration yields at least one name server, and localhost resolves without asking any. What the
+    // hosts file of the system lists for localhost is up to the system, so the loopback address is checked with a
+    // resolver, that has no hosts file and falls back to the reserved localhost addresses.
     const DnsConfig systemConfig = loadDnsConfig();
     assert !systemConfig.servers.isEmpty();
     DnsResolver systemResolver = DnsResolver();
-    const Result<Vector<IpAddress>> systemLocalhost = systemResolver.resolve(String("localhost"), true, false);
+    const Result<Vector<IpAddress>> systemLocalhost = systemResolver.resolve(String("localhost"), true, true);
     assert systemLocalhost.isOk();
-    bool hasLoopback = false;
-    foreach const IpAddress& address : systemLocalhost.unwrap() {
-        if address.toString() == "127.0.0.1" { hasLoopback = true; }
-    }
-    printf("System configuration: localhost %s\n", hasLoopback ? "resolves to 127.0.0.1" : "does not resolve to 127.0.0.1");
+    DnsResolver noHostsResolver = DnsResolver(systemConfig, String("missing-hosts-file"));
+    const Result<Vector<IpAddress>> fallbackLocalhost = noHostsResolver.resolve(String("localhost"), true, false);
+    assert fallbackLocalhost.isOk();
+    const String fallbackAddress = fallbackLocalhost.unwrap()[0].toString();
+    printf("System configuration: localhost -> %s\n", fallbackAddress.getRaw());
 }

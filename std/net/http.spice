@@ -701,11 +701,18 @@ f<string> parseAuthorityInto(const String& authority, Url& url) {
             result = "URL carries an IPv6 address without brackets";
         }
         if result == "" && portStart != -1l {
+            // An empty port stands for the default port of the scheme (RFC 3986, section 3.2.3), and leading zeros do not
+            // count towards the length of the port
             const String portText = hostAndPort.getSubstring(cast<unsigned long>(portStart) + 1l);
-            if !isDecimalNumber(portText) || portText.getLength() > 5ul || toLong(portText.getRaw()) > 65535l {
+            unsigned long significantStart = 0ul;
+            while significantStart + 1ul < portText.getLength() && portText[significantStart] == '0' { significantStart++; }
+            const String significantPortText = portText.getSubstring(significantStart);
+            if portText.isEmpty() {
+                // Keep the default port
+            } else if !isDecimalNumber(portText) || significantPortText.getLength() > 5ul || toLong(significantPortText.getRaw()) > 65535l {
                 result = "URL carries a malformed port";
             } else {
-                url.port = cast<unsigned short>(toLong(portText.getRaw()));
+                url.port = cast<unsigned short>(toLong(significantPortText.getRaw()));
             }
         }
         if result == "" && url.host.isEmpty() {

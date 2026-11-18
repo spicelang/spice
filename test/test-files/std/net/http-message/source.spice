@@ -86,6 +86,14 @@ f<int> main() {
     assert portTooLarge.isErr();
     Result<Url> portWayTooLarge = parseUrl(String("http://localhost:99999999999999999999/"));
     assert portWayTooLarge.isErr();
+    Result<Url> portLeadingZeros = parseUrl(String("http://localhost:0000080/"));
+    assert portLeadingZeros.isOk();
+    assert portLeadingZeros.unwrap().port == 80s;
+    Result<Url> portEmpty = parseUrl(String("https://[::1]:/"));
+    assert portEmpty.isOk();
+    assert portEmpty.unwrap().port == 443s;
+    Result<Url> portLeadingZerosTooLarge = parseUrl(String("http://localhost:000065536/"));
+    assert portLeadingZerosTooLarge.isErr();
     Result<Url> unclosedIpv6 = parseUrl(String("http://[::1/x"));
     assert unclosedIpv6.isErr();
     Result<Url> junkBehindIpv6 = parseUrl(String("http://[::1]x:80"));

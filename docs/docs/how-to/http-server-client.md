@@ -224,8 +224,13 @@ are now TLS-handshaked before their request is read.
 The client accepts host names, IPv4 addresses and IPv6 addresses, the latter in brackets like in any URL
 (`http://[::1]:8080/`). `openClientSocket` in `std/net/socket` resolves host names with the resolver of `std/net/dns`,
 which is written in Spice: it looks the name up in the hosts file and asks the name servers for its IPv4 (A) and IPv6
-(AAAA) addresses, over UDP with a fallback to TCP for large answers. The IPv4 addresses are tried first, one after the
-other; the IPv6 addresses are only looked up, if none of them accepts the connection.
+(AAAA) addresses, over UDP with a fallback to TCP for large answers. Addresses from the hosts file win over the ones
+from DNS, and the names of the search list are asked for in their order. For each name, the IPv4 addresses are tried
+first, one after the other; the IPv6 addresses are only looked up, if none of them accepts the connection. The first
+name, that has any address, is the last one to be tried.
+
+Host names have to be fully spelled out: shorthand forms of IPv4 addresses, that the C library accepts, like `127.1`
+or `0x7f000001`, are rejected as malformed host names, also on Windows.
 
 On Linux and macOS, the resolver reads `/etc/hosts` and the name servers from `/etc/resolv.conf`. Windows has no
 `resolv.conf`, so there the name servers and DNS suffixes of the network adapters, that are up, take its place, and the
@@ -257,11 +262,12 @@ f<int> main() {
 }
 ```
 
-To connect with a resolver of your own, e.g. one with a fixed set of name servers, pass it to `openClientSocket`:
+To connect with a resolver of your own, e.g. one with a fixed set of name servers, pass it to `openClientSocket`.
+Replace `192.0.2.53`, an address reserved for documentation, with the address of your name server:
 
 ```spice
 DnsConfig config = parseResolvConf(String("nameserver 192.0.2.53\noptions timeout:2\n"));
-DnsResolver resolver = DnsResolver(config, String("/etc/hosts"));
+DnsResolver resolver = DnsResolver(config, getSystemHostsFilePath());
 Result<Socket> socket = openClientSocket("example.com", 443s, resolver);
 ```
 

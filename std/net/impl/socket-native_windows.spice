@@ -36,6 +36,15 @@ const long NATIVE_ADAPTER_OPER_STATUS_OFFSET = 104l;
 // Offsets into IP_ADAPTER_DNS_SERVER_ADDRESS (64 bit layout)
 const long NATIVE_DNS_SERVER_NEXT_OFFSET = 8l;
 const long NATIVE_DNS_SERVER_SOCKADDR_OFFSET = 16l;
+// Offset of the scope id in SOCKADDR_IN6
+const long NATIVE_SOCKADDR_IN6_SCOPE_ID_OFFSET = 24l;
+// Largest timeout, that the timeout socket options can take
+const unsigned long NATIVE_MAX_TIMEOUT_MS = 2147483647ul;
+// Largest number of random bytes, that one BCryptGenRandom call is asked for
+const unsigned long NATIVE_MAX_RANDOM_CHUNK_SIZE = 65536ul;
+
+// Global variables
+bool NATIVE_WINSOCK_STARTED = false; // Winsock was started for this process
 
 /**
  * Mirrors `WSADATA` from the Winsock headers (64 bit layout)
@@ -84,9 +93,7 @@ public f<int> getNativeAddressFamily(const IpAddress& address) {
  * @return Handle of the connected socket
  */
 public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short port, int socketType, unsigned long timeoutMs) {
-    // Winsock counts its startups, so starting it for every socket is fine
-    NativeWsaData wsaData = NativeWsaData {};
-    if WSAStartup(cast<short>(NATIVE_WSA_VERSION), &wsaData) != 0 { return err<int>(Error("Error starting Winsock")); }
+    if !startNativeWinsock() { return err<int>(Error("Error starting Winsock")); }
 
     const int sockFd = socket(getNativeAddressFamily(address), socketType, 0);
     if sockFd == -1 { return err<int>(Error("Error opening socket")); }
@@ -109,15 +116,30 @@ public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short 
 }
 
 /**
+ * Starts Winsock for this process, unless it was started already. Winsock is never cleaned up, since
+ * sockets can live until the end of the process.
+ *
+ * @return Winsock is ready or not
+ */
+f<bool> startNativeWinsock() {
+    if NATIVE_WINSOCK_STARTED { return true; }
+    NativeWsaData wsaData = NativeWsaData {};
+    if WSAStartup(cast<short>(NATIVE_WSA_VERSION), &wsaData) != 0 { return false; }
+    NATIVE_WINSOCK_STARTED = true;
+    return true;
+}
+
+/**
  * Limits how long a single read or write on the given socket may block.
- * Note: Winsock takes the timeout as a plain millisecond count instead of a timeval.
+ * Note: Winsock takes the timeout as a plain millisecond count instead of a timeval. Longer timeouts,
+ * than it can take, are cut down to the longest one, that it can take.
  *
  * @param sockFd Socket handle
  * @param timeoutMs Timeout in milliseconds, 0 to block indefinitely
  * @return Setting the timeout was successful or not
  */
 public f<bool> setNativeSocketTimeout(int sockFd, unsigned long timeoutMs) {
-    int timeout = cast<int>(timeoutMs);
+    int timeout = cast<int>(timeoutMs > NATIVE_MAX_TIMEOUT_MS ? NATIVE_MAX_TIMEOUT_MS : timeoutMs);
     int receiveResult = 0;
     int sendResult = 0;
     unsafe {
@@ -137,8 +159,18 @@ public f<bool> setNativeSocketTimeout(int sockFd, unsigned long timeoutMs) {
  * @return Filling the buffer was successful or not
  */
 public f<bool> fillNativeRandomBytes(byte* buffer, unsigned long size) {
-    const int status = BCryptGenRandom(nil<byte*>, buffer, cast<unsigned int>(cast<int>(size)), NATIVE_BCRYPT_USE_SYSTEM_PREFERRED_RNG);
-    return status == 0;
+    // BCryptGenRandom takes the size as 32 bit integer, so larger buffers are filled in chunks
+    unsigned long filled = 0ul;
+    while filled < size {
+        const unsigned long chunkSize = size - filled > NATIVE_MAX_RANDOM_CHUNK_SIZE ? NATIVE_MAX_RANDOM_CHUNK_SIZE : size - filled;
+        int status = 0;
+        unsafe {
+            status = BCryptGenRandom(nil<byte*>, buffer + filled, cast<unsigned int>(cast<int>(chunkSize)), NATIVE_BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+        }
+        if status != 0 { return false; }
+        filled += chunkSize;
+    }
+    return true;
 }
 
 /**
@@ -201,7 +233,9 @@ public f<String> getNativeHostsFilePath() {
  * Collects the name servers and DNS suffixes of all network adapters, that are up, and writes them
  * down in the format of resolv.conf(5), so that "std/net/dns" can treat them like on any other
  * system. The site-local name servers fec0:0:0:ffff::1 to ::3, that Windows assigns to IPv6 adapters
- * without a configured name server, are left out, since they answer nowhere these days.
+ * without a configured name server, are left out, since they answer nowhere these days. IPv6 name
+ * servers with a scope (like link-local ones) are left out as well, since resolv.conf has no way to
+ * express which adapter they can be reached over.
  *
  * @return Resolver configuration in the format of resolv.conf
  */
@@ -228,7 +262,8 @@ public f<Result<String>> readNativeResolverConfig() {
                 if addressResult.isOk() {
                     const String address = addressResult.unwrap().toString();
                     const bool isDeprecatedSiteLocal = address == "fec0:0:0:ffff::1" || address == "fec0:0:0:ffff::2" || address == "fec0:0:0:ffff::3";
-                    if !isDeprecatedSiteLocal { addUnique(nameServers, address); }
+                    const bool isScoped = addressResult.unwrap().isIpv6() && readIntAt(sockAddr, NATIVE_SOCKADDR_IN6_SCOPE_ID_OFFSET) != 0;
+                    if !isDeprecatedSiteLocal && !isScoped { addUnique(nameServers, address); }
                 }
                 dnsServer = readPointerAt(dnsServer, NATIVE_DNS_SERVER_NEXT_OFFSET);
             }
