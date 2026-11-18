@@ -29,4 +29,23 @@ fe80::1%eth0 -> error: Malformed IPv6 address
 1: -> error: Malformed IPv6 address
 :1 -> error: Malformed IPv6 address
 ::1.2.3.4:5 -> error: Malformed IPv6 address
+0.0.0.0 -> unspecified
+127.0.0.1 -> loopback
+127.255.0.9 -> loopback
+169.254.1.1 -> link-local
+224.0.0.251 -> multicast
+239.255.255.250 -> multicast
+192.0.2.1 ->
+:: -> unspecified
+::1 -> loopback
+::2 ->
+fe80::1 -> link-local
+febf::1 -> link-local
+fec0::1 ->
+ff02::fb -> multicast
+2001:db8::1 ->
+::ffff:127.0.0.1 ->
+127.0.0.1: IPv4, 4 bytes, first byte 127
+2001:db8::1: IPv6, 16 bytes, first byte 32
+127.0.0.1: IPv4, 4 bytes, first byte 127
 All assertions passed

@@ -249,7 +249,7 @@ f<Result<Vector<IpAddress>>> DnsResolver.resolveLocally(const String& host, bool
     // The localhost names are reserved for the loopback addresses (RFC 6761). The hosts file is still consulted first,
     // like the C library does, so that the setup of the system is honored.
     if name == "localhost" || name.endsWith(".localhost") {
-        addresses.pushBack(createIpv4Address(cast<unsigned byte>(127), cast<unsigned byte>(0), cast<unsigned byte>(0), cast<unsigned byte>(1)));
+        addresses.pushBack(IpAddress(Ipv4Address(cast<unsigned byte>(127), cast<unsigned byte>(0), cast<unsigned byte>(0), cast<unsigned byte>(1))));
         addresses.pushBack(parseIpAddress(String("::1")).unwrap());
         return ok(orderAddresses(addresses, includeIpv4, includeIpv6));
     }
@@ -606,14 +606,14 @@ public f<Result<DnsResponse>> parseDnsResponse(const Vector<unsigned byte>& mess
                 if !readDnsName(message, targetOffset, record.target) || targetOffset != dataEnd { return err<DnsResponse>(malformedError); }
                 records.pushBack(record);
             } else if answerType == cast<int>(DNS_TYPE_A) && dataLength == cast<unsigned long>(IPV4_ADDRESS_LENGTH) {
-                record.address = createIpv4Address(message[offset], message[offset + 1ul], message[offset + 2ul], message[offset + 3ul]);
+                record.address = IpAddress(Ipv4Address(message[offset], message[offset + 1ul], message[offset + 2ul], message[offset + 3ul]));
                 records.pushBack(record);
             } else if answerType == cast<int>(DNS_TYPE_AAAA) && dataLength == cast<unsigned long>(IPV6_ADDRESS_LENGTH) {
                 unsigned short[8] groups;
                 for unsigned long g = 0ul; g < 8ul; g++ {
                     groups[g] = cast<unsigned short>(readUnsignedShort(message, offset + 2ul * g));
                 }
-                record.address = createIpv6Address(groups);
+                record.address = IpAddress(Ipv6Address(groups));
                 records.pushBack(record);
             }
         }

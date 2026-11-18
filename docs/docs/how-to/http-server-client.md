@@ -262,6 +262,25 @@ f<int> main() {
 }
 ```
 
+`std/net/ip-address` has a type for each address family, `Ipv4Address` and `Ipv6Address`, and `IpAddress`, which holds
+an address of either family, like the resolved ones above. `IpAddress.toIpv4()` and `IpAddress.toIpv6()` return the
+address of the specific family. All three implement the interface `IIpAddress`, so a function, that works with any
+address, can take an `IIpAddress` reference:
+
+```spice
+import "std/net/ip-address";
+
+p describe(const IIpAddress& address) {
+    printf("%s: IPv%d, loopback: %d\n", address.toString().getRaw(), address.isIpv6() ? 6 : 4, address.isLoopback());
+}
+
+f<int> main() {
+    describe(parseIpv4Address(String("127.0.0.1")).unwrap());
+    describe(parseIpv6Address(String("2001:db8::1")).unwrap());
+    describe(parseIpAddress(String("::1")).unwrap());
+}
+```
+
 To connect with a resolver of your own, e.g. one with a fixed set of name servers, pass it to `openClientSocket`.
 Replace `192.0.2.53`, an address reserved for documentation, with the address of your name server:
 

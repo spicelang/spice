@@ -684,7 +684,7 @@ f<string> parseAuthorityInto(const String& authority, Url& url) {
             } else {
                 // Only an IPv6 address may stand in brackets. It is kept in its canonical form, so that two spellings
                 // of the same address make the same host (e.g. when deciding whether a redirect stays on the host).
-                const Result<IpAddress> ipv6Address = parseIpv6Address(hostAndPort.getSubstring(1l, hostEnd - 1l));
+                const Result<Ipv6Address> ipv6Address = parseIpv6Address(hostAndPort.getSubstring(1l, hostEnd - 1l));
                 if ipv6Address.isErr() {
                     result = "URL carries a malformed IPv6 address";
                 } else {

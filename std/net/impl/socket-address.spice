@@ -35,7 +35,7 @@ public type NativeSockAddr struct {
  * @param layout Layout of the struct on the platform
  * @return Socket address struct
  */
-public f<NativeSockAddr> createNativeSockAddr(const IpAddress& address, unsigned short port, int family, SockAddrLayout layout) {
+public f<NativeSockAddr> createNativeSockAddr(const IIpAddress& address, unsigned short port, int family, SockAddrLayout layout) {
     NativeSockAddr sockAddr = NativeSockAddr {};
     for unsigned int i = 0u; i < SOCKADDR_IN6_SIZE; i++ {
         sockAddr.bytes[i] = cast<unsigned byte>(0);
@@ -91,12 +91,12 @@ public f<Result<IpAddress>> readNativeSockAddr(const unsigned byte* sockAddr, in
             family = cast<int>(familyValue);
         }
         if family == ipv4Family {
-            return ok(createIpv4Address(sockAddr[4], sockAddr[5], sockAddr[6], sockAddr[7]));
+            return ok(IpAddress(Ipv4Address(sockAddr[4], sockAddr[5], sockAddr[6], sockAddr[7])));
         }
         if family != ipv6Family { return err<IpAddress>(Error("Unknown address family")); }
         for int i = 0; i < 8; i++ {
             groups[i] = cast<unsigned short>((cast<int>(sockAddr[8 + 2 * i]) << 8) | cast<int>(sockAddr[9 + 2 * i]));
         }
     }
-    return ok(createIpv6Address(groups));
+    return ok(IpAddress(Ipv6Address(groups)));
 }

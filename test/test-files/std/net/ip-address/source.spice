@@ -10,6 +10,17 @@ p printParsed(string text) {
     }
 }
 
+p printDescription(const IIpAddress& address) {
+    printf("%s: IPv%d, %d bytes, first byte %d\n", address.toString().getRaw(), address.isIpv6() ? 6 : 4, address.getLength(), cast<int>(address.getByte(0u)));
+}
+
+p printClassified(string text) {
+    const IpAddress address = parseIpAddress(String(text)).unwrap();
+    const IIpAddress& anyAddress = address;
+    printf("%s ->%s%s%s%s\n", text, anyAddress.isUnspecified() ? " unspecified" : "", anyAddress.isLoopback() ? " loopback" : "",
+        anyAddress.isLinkLocal() ? " link-local" : "", anyAddress.isMulticast() ? " multicast" : "");
+}
+
 f<int> main() {
     // IPv4
     printParsed("127.0.0.1");
@@ -46,17 +57,64 @@ f<int> main() {
     printParsed(":1");
     printParsed("::1.2.3.4:5");
 
-    // Conversions and comparison
-    const IpAddress loopback = createIpv4Address(cast<unsigned byte>(127), cast<unsigned byte>(0), cast<unsigned byte>(0), cast<unsigned byte>(1));
-    const IpAddress roundTripped = createIpv4AddressFromInAddr(loopback.toInAddr());
-    assert roundTripped == loopback;
+    // Family-specific parsers only accept their own family
+    assert parseIpv4Address(String("::1")).isErr();
+    assert parseIpv6Address(String("127.0.0.1")).isErr();
+
+    // IPv4 address
+    const Ipv4Address loopback = Ipv4Address(cast<unsigned byte>(127), cast<unsigned byte>(0), cast<unsigned byte>(0), cast<unsigned byte>(1));
+    assert loopback == parseIpv4Address(String("127.0.0.1")).unwrap();
+    assert createIpv4AddressFromInAddr(loopback.toInAddr()) == loopback;
     assert loopback.getLength() == 4u;
     assert cast<int>(loopback.getByte(0u)) == 127;
+    assert Ipv4Address().isUnspecified();
+    assert Ipv4Address() == parseIpv4Address(String("0.0.0.0")).unwrap();
+
+    // IPv6 address
     unsigned short[8] groups = [ cast<unsigned short>(0x2001), cast<unsigned short>(0xdb8), cast<unsigned short>(0), cast<unsigned short>(0), cast<unsigned short>(0), cast<unsigned short>(0), cast<unsigned short>(0), cast<unsigned short>(1) ];
-    const IpAddress documentation = createIpv6Address(groups);
-    assert documentation == parseIpAddress(String("2001:db8::1")).unwrap();
-    assert documentation != parseIpAddress(String("2001:db8::2")).unwrap();
-    assert documentation != loopback;
+    const Ipv6Address documentation = Ipv6Address(groups);
+    assert documentation == parseIpv6Address(String("2001:db8::1")).unwrap();
+    assert documentation != parseIpv6Address(String("2001:db8::2")).unwrap();
     assert documentation.getLength() == 16u;
+    assert cast<int>(documentation.getGroup(1u)) == 0xdb8;
+    assert cast<int>(documentation.getByte(15u)) == 1;
+    assert Ipv6Address().isUnspecified();
+    assert parseIpv6Address(String("::ffff:10.0.0.1")).unwrap().isIpv4Mapped();
+    assert !documentation.isIpv4Mapped();
+
+    // Address of either family
+    const IpAddress anyLoopback = IpAddress(loopback);
+    const IpAddress anyDocumentation = IpAddress(documentation);
+    assert anyLoopback.isIpv4() && !anyLoopback.isIpv6();
+    assert anyDocumentation.isIpv6() && !anyDocumentation.isIpv4();
+    assert anyLoopback.toIpv4().unwrap() == loopback;
+    assert anyLoopback.toIpv6().isErr();
+    assert anyDocumentation.toIpv6().unwrap() == documentation;
+    assert anyDocumentation.toIpv4().isErr();
+    assert anyLoopback == parseIpAddress(String("127.0.0.1")).unwrap();
+    assert anyDocumentation == parseIpAddress(String("2001:db8::1")).unwrap();
+    assert anyDocumentation != anyLoopback;
+    assert IpAddress().isIpv4() && IpAddress().isUnspecified();
+
+    // Classification, through the interface
+    printClassified("0.0.0.0");
+    printClassified("127.0.0.1");
+    printClassified("127.255.0.9");
+    printClassified("169.254.1.1");
+    printClassified("224.0.0.251");
+    printClassified("239.255.255.250");
+    printClassified("192.0.2.1");
+    printClassified("::");
+    printClassified("::1");
+    printClassified("::2");
+    printClassified("fe80::1");
+    printClassified("febf::1");
+    printClassified("fec0::1");
+    printClassified("ff02::fb");
+    printClassified("2001:db8::1");
+    printClassified("::ffff:127.0.0.1");
+    printDescription(loopback);
+    printDescription(documentation);
+    printDescription(anyLoopback);
     printf("All assertions passed\n");
 }
