@@ -287,7 +287,8 @@ f<int> main() {
     udpThread.run();
     tcpThread.run();
 
-    const Result<bool> hostsWritten = writeFile(HOSTS_FILE, "10.0.0.5 MyHost.lan myhost\nfe80::5 myhost\n");
+    // The numeric names are listed as well, to show that they are rejected before the hosts file is consulted
+    const Result<bool> hostsWritten = writeFile(HOSTS_FILE, "10.0.0.5 MyHost.lan myhost\nfe80::5 myhost\n10.9.9.9 127.1 0x7f000001\n");
     assert hostsWritten.isOk();
 
     // The first name server is unreachable, so every query falls through to the second one

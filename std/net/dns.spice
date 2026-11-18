@@ -250,6 +250,10 @@ f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Ve
     // The whole exchange has to fit into the timeout. Dropped datagrams do not extend the time to wait for the answer.
     const long deadline = getNativeMonotonicMillis() + cast<long>(this.config.timeoutMs);
     const int sockFd = openNativeSocket(server.address, server.port, SOCK_DGRAM_TYPE, this.config.timeoutMs)!;
+    if !setRemainingTimeout(sockFd, deadline) {
+        closeNativeSocket(sockFd);
+        return err<DnsResponse>(Error("No answer from the name server"));
+    }
     long written = 0l;
     unsafe {
         written = writeNativeSocket(sockFd, query.getDataPtr(), query.getSize());
