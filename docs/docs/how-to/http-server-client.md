@@ -229,8 +229,12 @@ are then tried one after the other, IPv4 ones first, until a connection is estab
 
 It does not go through the name service switch (NSS) of the C library. This keeps statically linked programs working
 on systems with an older glibc than the one they were linked against, but it also means that name sources other than
-the hosts file and DNS, like mDNS for `.local` names, are not available. On macOS and Windows, the resolver of the
-operating system is used, for IPv4 addresses only.
+the hosts file and DNS, like mDNS for `.local` names, are not available. On macOS and Windows, `openClientSocket` uses
+the resolver of the operating system instead, for IPv4 addresses only.
+
+`std/net/dns` itself works on Linux, macOS and Windows. Windows has no `resolv.conf`, so there the name servers and DNS
+suffixes of the network adapters, that are up, take its place, and the hosts file is read from
+`%SystemRoot%\System32\drivers\etc\hosts`.
 
 You can also use the resolver directly, e.g. to look up the addresses of a host without connecting to it:
 

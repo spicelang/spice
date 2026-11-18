@@ -1,0 +1,352 @@
+#![core.compiler.requiresOs]
+
+// Link WinSock, the IP helper library (network adapters) and the CNG library (random numbers)
+#![core.windows.linker.flag = "-lws2_32 -liphlpapi -lbcrypt"]
+
+// Address-family-independent socket helpers for Windows, that "std/net/dns" builds on.
+// The socket address structs are laid out by hand here, so that one code path serves IPv4 and IPv6.
+// Besides, the helpers hide where the resolver of "std/net/dns" finds its configuration: Windows has no
+// resolv.conf, so the name servers and DNS suffixes of the network adapters are turned into one.
+
+// Imports
+import "std/data/vector";
+import "std/net/ip-address";
+import "std/os/env";
+
+// Constants
+const int NATIVE_AF_UNSPEC = 0;          // Any address family
+const int NATIVE_AF_INET = 2;            // IPv4
+const int NATIVE_AF_INET6 = 23;          // IPv6
+const int NATIVE_SOL_SOCKET = 65535;     // Option level for socket-level options (0xFFFF)
+const int NATIVE_SO_RCVTIMEO = 4102;     // Timeout for receive operations
+const int NATIVE_SO_SNDTIMEO = 4101;     // Timeout for send operations
+const int NATIVE_SOCKADDR_IN_SIZE = 16;  // sizeof(SOCKADDR_IN)
+const int NATIVE_SOCKADDR_IN6_SIZE = 28; // sizeof(SOCKADDR_IN6)
+const unsigned short NATIVE_WSA_VERSION = 514s; // Winsock 2.2
+const unsigned int NATIVE_BCRYPT_USE_SYSTEM_PREFERRED_RNG = 2u;
+const unsigned int NATIVE_ERROR_SUCCESS = 0u;
+const unsigned int NATIVE_ERROR_BUFFER_OVERFLOW = 111u;
+// GAA_FLAG_SKIP_UNICAST | GAA_FLAG_SKIP_ANYCAST | GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_FRIENDLY_NAME
+const unsigned int NATIVE_ADAPTER_FLAGS = 0x27u;
+const int NATIVE_IF_OPER_STATUS_UP = 1;
+// Offsets into IP_ADAPTER_ADDRESSES (64 bit layout)
+const long NATIVE_ADAPTER_NEXT_OFFSET = 8l;
+const long NATIVE_ADAPTER_DNS_SERVERS_OFFSET = 48l;
+const long NATIVE_ADAPTER_DNS_SUFFIX_OFFSET = 56l;
+const long NATIVE_ADAPTER_OPER_STATUS_OFFSET = 104l;
+// Offsets into IP_ADAPTER_DNS_SERVER_ADDRESS (64 bit layout)
+const long NATIVE_DNS_SERVER_NEXT_OFFSET = 8l;
+const long NATIVE_DNS_SERVER_SOCKADDR_OFFSET = 16l;
+
+/**
+ * Mirrors `WSADATA` from the Winsock headers (64 bit layout)
+ */
+type NativeWsaData struct {
+    unsigned short wVersion
+    unsigned short wHighVersion
+    unsigned short iMaxSockets
+    unsigned short iMaxUdpDg
+    char* lpVendorInfo
+    char[257] szDescription
+    char[129] szSystemStatus
+}
+
+// External functions
+ext f<int> WSAStartup(short /*versionRequested*/, NativeWsaData* /*wsaData*/);
+ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
+ext f<int> connect(int /*sockfd*/, byte* /*address*/, int /*address_len*/);
+ext f<int> setsockopt(int /*sockfd*/, int /*level*/, int /*optname*/, byte* /*optval*/, int /*optlen*/);
+ext f<int> recv(int /*sockfd*/, byte* /*buf*/, int /*length*/, int /*flags*/);
+ext f<int> send(int /*sockfd*/, byte* /*buf*/, int /*length*/, int /*flags*/);
+ext f<int> closesocket(int /*sockfd*/);
+ext f<int> BCryptGenRandom(byte* /*hAlgorithm*/, byte* /*pbBuffer*/, unsigned int /*cbBuffer*/, unsigned int /*dwFlags*/);
+ext f<unsigned int> GetAdaptersAddresses(unsigned int /*family*/, unsigned int /*flags*/, byte* /*reserved*/, byte* /*adapterAddresses*/, unsigned int* /*sizePointer*/);
+
+/**
+ * Returns the address family constant (AF_INET or AF_INET6) of the given address
+ *
+ * @param address IP address
+ * @return Address family
+ */
+public f<int> getNativeAddressFamily(const IpAddress& address) {
+    return address.isIpv6() ? NATIVE_AF_INET6 : NATIVE_AF_INET;
+}
+
+/**
+ * Opens a socket of the family of the given address and connects it to the given address and port.
+ * For a datagram socket, connecting only fixes the peer, so that plain receives and sends can be used
+ * and datagrams from any other sender are dropped.
+ *
+ * @param address Address to connect to
+ * @param port Port to connect to
+ * @param socketType SOCK_STREAM or SOCK_DGRAM
+ * @param timeoutMs Timeout for the single reads and writes on the socket in milliseconds, 0 for none
+ * @return Handle of the connected socket
+ */
+public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short port, int socketType, unsigned long timeoutMs) {
+    // Winsock counts its startups, so starting it for every socket is fine
+    NativeWsaData wsaData = NativeWsaData {};
+    if WSAStartup(cast<short>(NATIVE_WSA_VERSION), &wsaData) != 0 { return err<int>(Error("Error starting Winsock")); }
+
+    const int sockFd = socket(getNativeAddressFamily(address), socketType, 0);
+    if sockFd == -1 { return err<int>(Error("Error opening socket")); }
+    if timeoutMs != 0ul && !setNativeSocketTimeout(sockFd, timeoutMs) {
+        closesocket(sockFd);
+        return err<int>(Error("Error setting socket timeout"));
+    }
+
+    // SOCKADDR_IN / SOCKADDR_IN6. The family is in host byte order, the port in network byte order.
+    unsigned byte[28] sockAddr;
+    for int i = 0; i < NATIVE_SOCKADDR_IN6_SIZE; i++ {
+        sockAddr[i] = cast<unsigned byte>(0);
+    }
+    const int family = getNativeAddressFamily(address);
+    sockAddr[0] = cast<unsigned byte>(family & 0xFF);
+    sockAddr[1] = cast<unsigned byte>(family >> 8);
+    const int portValue = cast<int>(port);
+    sockAddr[2] = cast<unsigned byte>(portValue >> 8);
+    sockAddr[3] = cast<unsigned byte>(portValue & 0xFF);
+    int sockAddrSize = NATIVE_SOCKADDR_IN_SIZE;
+    if address.isIpv6() {
+        // sin6_flowinfo stays zero, sin6_addr starts behind it, sin6_scope_id stays zero
+        for unsigned int i = 0u; i < IPV6_ADDRESS_LENGTH; i++ {
+            sockAddr[8u + i] = address.getByte(i);
+        }
+        sockAddrSize = NATIVE_SOCKADDR_IN6_SIZE;
+    } else {
+        for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
+            sockAddr[4u + i] = address.getByte(i);
+        }
+    }
+
+    int connectResult = 0;
+    unsafe {
+        unsigned byte* sockAddrPtr = sockAddr;
+        connectResult = connect(sockFd, sockAddrPtr, sockAddrSize);
+    }
+    if connectResult != 0 {
+        closesocket(sockFd);
+        return err<int>(Error("Error connecting socket"));
+    }
+    return ok(sockFd);
+}
+
+/**
+ * Limits how long a single read or write on the given socket may block.
+ * Note: Winsock takes the timeout as a plain millisecond count instead of a timeval.
+ *
+ * @param sockFd Socket handle
+ * @param timeoutMs Timeout in milliseconds, 0 to block indefinitely
+ * @return Setting the timeout was successful or not
+ */
+public f<bool> setNativeSocketTimeout(int sockFd, unsigned long timeoutMs) {
+    int timeout = cast<int>(timeoutMs);
+    int receiveResult = 0;
+    int sendResult = 0;
+    unsafe {
+        const int optLen = cast<int>(sizeof<int>());
+        receiveResult = setsockopt(sockFd, NATIVE_SOL_SOCKET, NATIVE_SO_RCVTIMEO, cast<byte*>(&timeout), optLen);
+        sendResult = setsockopt(sockFd, NATIVE_SOL_SOCKET, NATIVE_SO_SNDTIMEO, cast<byte*>(&timeout), optLen);
+    }
+    return receiveResult == 0 && sendResult == 0;
+}
+
+/**
+ * Fills the given buffer with random bytes from the system, that are fit for values an attacker must
+ * not be able to predict (like the IDs of DNS queries)
+ *
+ * @param buffer Buffer to fill
+ * @param size Number of bytes to fill
+ * @return Filling the buffer was successful or not
+ */
+public f<bool> fillNativeRandomBytes(byte* buffer, unsigned long size) {
+    const int status = BCryptGenRandom(nil<byte*>, buffer, cast<unsigned int>(cast<int>(size)), NATIVE_BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+    return status == 0;
+}
+
+/**
+ * Reads from the given socket. Blocks until data arrives, the timeout of the socket expires or the
+ * connection breaks.
+ *
+ * @param sockFd Socket handle
+ * @param buffer Buffer to read into
+ * @param size Size of the buffer
+ * @return Number of bytes read, 0 or less on timeout, error or end of the connection
+ */
+public f<long> readNativeSocket(int sockFd, byte* buffer, unsigned long size) {
+    return cast<long>(recv(sockFd, buffer, cast<int>(size), 0));
+}
+
+/**
+ * Writes to the given socket. A single call may write only a part of the buffer.
+ *
+ * @param sockFd Socket handle
+ * @param buffer Buffer to write
+ * @param size Number of bytes to write
+ * @return Number of bytes written, 0 or less on timeout or error
+ */
+public f<long> writeNativeSocket(int sockFd, byte* buffer, unsigned long size) {
+    return cast<long>(send(sockFd, buffer, cast<int>(size), 0));
+}
+
+/**
+ * Closes the given socket
+ *
+ * @param sockFd Socket handle
+ */
+public p closeNativeSocket(int sockFd) {
+    closesocket(sockFd);
+}
+
+/**
+ * Returns the path of the hosts file of the system
+ *
+ * @return Path of the hosts file, usually C:\Windows\System32\drivers\etc\hosts
+ */
+public f<String> getNativeHostsFilePath() {
+    const Result<string> systemRoot = getEnv("SystemRoot");
+    String path = systemRoot.isOk() ? String(systemRoot.unwrap()) : String("C:\\Windows");
+    path += "\\System32\\drivers\\etc\\hosts";
+    return path;
+}
+
+/**
+ * Collects the name servers and DNS suffixes of all network adapters, that are up, and writes them
+ * down in the format of resolv.conf(5), so that "std/net/dns" can treat them like on any other
+ * system. The site-local name servers fec0:0:0:ffff::1 to ::3, that Windows assigns to IPv6 adapters
+ * without a configured name server, are left out, since they answer nowhere these days.
+ *
+ * @return Resolver configuration in the format of resolv.conf
+ */
+public f<Result<String>> readNativeResolverConfig() {
+    // The required buffer size can grow between two calls, if an adapter comes up in between
+    unsigned int bufferSize = 16384u;
+    Vector<unsigned byte> buffer = Vector<unsigned byte>();
+    unsigned int status = NATIVE_ERROR_BUFFER_OVERFLOW;
+    for int attempt = 0; attempt < 3 && status == NATIVE_ERROR_BUFFER_OVERFLOW; attempt++ {
+        buffer = Vector<unsigned byte>(cast<unsigned long>(bufferSize), cast<unsigned byte>(0));
+        status = GetAdaptersAddresses(cast<unsigned int>(NATIVE_AF_UNSPEC), NATIVE_ADAPTER_FLAGS, nil<byte*>, buffer.getDataPtr(), &bufferSize);
+    }
+    if status != NATIVE_ERROR_SUCCESS { return err<String>(Error("Could not query the network adapters")); }
+
+    Vector<String> nameServers = Vector<String>();
+    Vector<String> searchDomains = Vector<String>();
+    unsigned byte* adapter = buffer.getDataPtr();
+    while adapter != nil<unsigned byte*> {
+        if readIntAt(adapter, NATIVE_ADAPTER_OPER_STATUS_OFFSET) == NATIVE_IF_OPER_STATUS_UP {
+            unsigned byte* dnsServer = readPointerAt(adapter, NATIVE_ADAPTER_DNS_SERVERS_OFFSET);
+            while dnsServer != nil<unsigned byte*> {
+                const unsigned byte* sockAddr = readPointerAt(dnsServer, NATIVE_DNS_SERVER_SOCKADDR_OFFSET);
+                const Result<IpAddress> addressResult = readSockAddr(sockAddr);
+                if addressResult.isOk() {
+                    const String address = addressResult.unwrap().toString();
+                    const bool isDeprecatedSiteLocal = address == "fec0:0:0:ffff::1" || address == "fec0:0:0:ffff::2" || address == "fec0:0:0:ffff::3";
+                    if !isDeprecatedSiteLocal { addUnique(nameServers, address); }
+                }
+                dnsServer = readPointerAt(dnsServer, NATIVE_DNS_SERVER_NEXT_OFFSET);
+            }
+            const String dnsSuffix = readWideString(readPointerAt(adapter, NATIVE_ADAPTER_DNS_SUFFIX_OFFSET));
+            if !dnsSuffix.isEmpty() { addUnique(searchDomains, dnsSuffix); }
+        }
+        adapter = readPointerAt(adapter, NATIVE_ADAPTER_NEXT_OFFSET);
+    }
+
+    String config = String();
+    foreach const String& nameServer : nameServers {
+        config += "nameserver ";
+        config += nameServer;
+        config += '\n';
+    }
+    if !searchDomains.isEmpty() {
+        config += "search";
+        foreach const String& searchDomain : searchDomains {
+            config += ' ';
+            config += searchDomain;
+        }
+        config += '\n';
+    }
+    return ok(config);
+}
+
+/**
+ * Reads the address from a SOCKADDR_IN or SOCKADDR_IN6
+ *
+ * @param sockAddr Pointer to the socket address
+ * @return IP address
+ */
+f<Result<IpAddress>> readSockAddr(const unsigned byte* sockAddr) {
+    if sockAddr == nil<unsigned byte*> { return err<IpAddress>(Error("No socket address")); }
+    unsigned short[8] groups;
+    unsafe {
+        const int family = cast<int>(sockAddr[0]) | (cast<int>(sockAddr[1]) << 8);
+        if family == NATIVE_AF_INET {
+            return ok(createIpv4Address(sockAddr[4], sockAddr[5], sockAddr[6], sockAddr[7]));
+        }
+        if family != NATIVE_AF_INET6 { return err<IpAddress>(Error("Unknown address family")); }
+        for int i = 0; i < 8; i++ {
+            groups[i] = cast<unsigned short>((cast<int>(sockAddr[8 + 2 * i]) << 8) | cast<int>(sockAddr[9 + 2 * i]));
+        }
+    }
+    return ok(createIpv6Address(groups));
+}
+
+/**
+ * Reads a nil-terminated UTF-16 string, that only consists of ASCII chars (like a DNS suffix)
+ *
+ * @param wideString Pointer to the first char, may be nil
+ * @return String, empty if there is none or it contains chars outside of ASCII
+ */
+f<String> readWideString(const unsigned byte* wideString) {
+    String output = String();
+    if wideString == nil<unsigned byte*> { return output; }
+    unsafe {
+        for long i = 0l; i < 512l; i += 2l {
+            const int c = cast<int>(wideString[i]) | (cast<int>(wideString[i + 1l]) << 8);
+            if c == 0 { return output; }
+            if c >= 128 { return String(); }
+            output += cast<char>(c);
+        }
+    }
+    return String();
+}
+
+/**
+ * Reads a pointer from the given offset of a struct
+ *
+ * @param base Pointer to the struct
+ * @param offset Offset of the pointer field
+ * @return Value of the pointer field
+ */
+f<unsigned byte*> readPointerAt(const unsigned byte* base, long offset) {
+    unsafe {
+        unsigned byte** field = cast<unsigned byte**>(base + offset);
+        return *field;
+    }
+}
+
+/**
+ * Reads a 32 bit integer from the given offset of a struct
+ *
+ * @param base Pointer to the struct
+ * @param offset Offset of the integer field
+ * @return Value of the integer field
+ */
+f<int> readIntAt(const unsigned byte* base, long offset) {
+    unsafe {
+        int* field = cast<int*>(base + offset);
+        return *field;
+    }
+}
+
+/**
+ * Appends a string to a list, if the list does not contain it yet
+ *
+ * @param list List to append to
+ * @param value String to append
+ */
+p addUnique(Vector<String>& list, const String& value) {
+    foreach const String& existing : list {
+        if existing == value { return; }
+    }
+    list.pushBack(value);
+}

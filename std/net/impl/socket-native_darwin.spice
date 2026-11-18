@@ -2,8 +2,10 @@
 
 // Address-family-independent socket helpers for macOS, that "std/net/dns" and "std/net/socket" build on.
 // The socket address structs are laid out by hand here, so that one code path serves IPv4 and IPv6.
+// Besides, the helpers hide where the resolver of "std/net/dns" finds its configuration.
 
 // Imports
+import "std/io/file";
 import "std/net/ip-address";
 
 // Constants
@@ -14,6 +16,8 @@ const int NATIVE_SO_RCVTIMEO = 4102;     // Timeout for receive operations
 const int NATIVE_SO_SNDTIMEO = 4101;     // Timeout for send operations
 const int NATIVE_SOCKADDR_IN_SIZE = 16;  // sizeof(struct sockaddr_in)
 const int NATIVE_SOCKADDR_IN6_SIZE = 28; // sizeof(struct sockaddr_in6)
+const string NATIVE_RESOLV_CONF_PATH = "/etc/resolv.conf";
+const string NATIVE_HOSTS_FILE_PATH = "/etc/hosts";
 
 /**
  * Time span with microsecond resolution, as taken by the timeout socket options. Mirrors
@@ -28,6 +32,8 @@ type NativeTimeVal struct {
 ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
 ext f<int> connect(int /*sockfd*/, byte* /*address*/, unsigned int /*address_len*/);
 ext f<int> setsockopt(int /*sockfd*/, int /*level*/, int /*optname*/, byte* /*optval*/, unsigned int /*optlen*/);
+ext f<long> read(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
+ext f<long> write(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
 ext f<int> close(int /*fd*/);
 ext p arc4random_buf(byte* /*buf*/, unsigned long /*nbytes*/);
 
@@ -126,4 +132,56 @@ public f<bool> setNativeSocketTimeout(int sockFd, unsigned long timeoutMs) {
 public f<bool> fillNativeRandomBytes(byte* buffer, unsigned long size) {
     arc4random_buf(buffer, size); // Cannot fail
     return true;
+}
+
+/**
+ * Reads from the given socket. Blocks until data arrives, the timeout of the socket expires or the
+ * connection breaks.
+ *
+ * @param sockFd Socket file descriptor
+ * @param buffer Buffer to read into
+ * @param size Size of the buffer
+ * @return Number of bytes read, 0 or less on timeout, error or end of the connection
+ */
+public f<long> readNativeSocket(int sockFd, byte* buffer, unsigned long size) {
+    return read(sockFd, buffer, size);
+}
+
+/**
+ * Writes to the given socket. A single call may write only a part of the buffer.
+ *
+ * @param sockFd Socket file descriptor
+ * @param buffer Buffer to write
+ * @param size Number of bytes to write
+ * @return Number of bytes written, 0 or less on timeout or error
+ */
+public f<long> writeNativeSocket(int sockFd, byte* buffer, unsigned long size) {
+    return write(sockFd, buffer, size);
+}
+
+/**
+ * Closes the given socket
+ *
+ * @param sockFd Socket file descriptor
+ */
+public p closeNativeSocket(int sockFd) {
+    close(sockFd);
+}
+
+/**
+ * Returns the path of the hosts file of the system
+ *
+ * @return Path of the hosts file
+ */
+public f<String> getNativeHostsFilePath() {
+    return String(NATIVE_HOSTS_FILE_PATH);
+}
+
+/**
+ * Reads the resolver configuration of the system in the format of resolv.conf(5)
+ *
+ * @return Content of /etc/resolv.conf
+ */
+public f<Result<String>> readNativeResolverConfig() {
+    return readFile(NATIVE_RESOLV_CONF_PATH);
 }

@@ -20,3 +20,4 @@ printer.localhost -> ::1
 2001:db8::10 -> error: Address is not of the requested address family
 bad..name -> error: Malformed host name
 a.test -> error: No address family requested
+System configuration: localhost resolves to 127.0.0.1

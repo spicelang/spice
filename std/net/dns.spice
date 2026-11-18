@@ -9,7 +9,8 @@
 // glibc is older than the one the program was linked against. Name sources other than the hosts file
 // and DNS (e.g. mDNS for '.local' names, LDAP, NIS) are therefore not available.
 //
-// Supported on Linux and macOS (see "std/net/impl/socket-native").
+// On Windows, the name servers and search domains of the network adapters take the place of
+// resolv.conf (see "std/net/impl/socket-native").
 
 // Imports
 import "std/data/vector";
@@ -38,17 +39,10 @@ const unsigned int DNS_MAX_COMPRESSION_JUMPS = 64u; // Maximum number of compres
 const unsigned int DNS_MAX_STRAY_DATAGRAMS = 8u;   // Maximum number of unrelated datagrams to drop while waiting for an answer
 const int SOCK_STREAM_TYPE = 1;                    // SOCK_STREAM
 const int SOCK_DGRAM_TYPE = 2;                     // SOCK_DGRAM
-const string RESOLV_CONF_PATH = "/etc/resolv.conf";
-const string HOSTS_FILE_PATH = "/etc/hosts";
 const unsigned int RESOLV_CONF_MAX_NAMESERVERS = 3u; // Name servers beyond the first three are ignored, like glibc does
 const unsigned int RESOLV_CONF_MAX_NDOTS = 15u;
 const unsigned int RESOLV_CONF_MAX_TIMEOUT_SECONDS = 30u;
 const unsigned int RESOLV_CONF_MAX_ATTEMPTS = 5u;
-
-// External functions
-ext f<long> read(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
-ext f<long> write(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
-ext f<int> close(int /*fd*/);
 
 /**
  * Name server to send queries to
@@ -59,7 +53,8 @@ public type DnsServer struct {
 }
 
 /**
- * Configuration of the resolver, usually read from /etc/resolv.conf (see resolv.conf(5))
+ * Configuration of the resolver, usually read from /etc/resolv.conf (see resolv.conf(5)) or, on
+ * Windows, taken from the network adapters
  */
 public type DnsConfig struct {
     public Vector<DnsServer> servers         // Name servers, asked in this order
@@ -97,11 +92,12 @@ public type DnsResolver struct {
 }
 
 /**
- * Creates a resolver with the system configuration from /etc/resolv.conf and /etc/hosts
+ * Creates a resolver with the system configuration (see loadDnsConfig) and the hosts file of the
+ * system (/etc/hosts, or %SystemRoot%\System32\drivers\etc\hosts on Windows)
  */
 public p DnsResolver.ctor() {
     this.config = loadDnsConfig();
-    this.hostsFilePath = String(HOSTS_FILE_PATH);
+    this.hostsFilePath = getNativeHostsFilePath();
 }
 
 /**
@@ -244,10 +240,10 @@ f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Ve
     const int sockFd = openNativeSocket(server.address, server.port, SOCK_DGRAM_TYPE, this.config.timeoutMs)!;
     long written = 0l;
     unsafe {
-        written = write(sockFd, query.getDataPtr(), query.getSize());
+        written = writeNativeSocket(sockFd, query.getDataPtr(), query.getSize());
     }
     if written != cast<long>(query.getSize()) {
-        close(sockFd);
+        closeNativeSocket(sockFd);
         return err<DnsResponse>(Error("Error sending DNS query"));
     }
 
@@ -257,7 +253,7 @@ f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Ve
         long received = 0l;
         unsafe {
             unsigned byte* bufferPtr = buffer;
-            received = read(sockFd, bufferPtr, 4096ul);
+            received = readNativeSocket(sockFd, bufferPtr, 4096ul);
         }
         if received <= 0l { break; } // Timeout or error, e.g. the port of the name server is closed
         Vector<unsigned byte> message = Vector<unsigned byte>(cast<unsigned long>(received));
@@ -266,11 +262,11 @@ f<Result<DnsResponse>> DnsResolver.exchangeUdp(const DnsServer& server, const Ve
         }
         const Result<DnsResponse> responseResult = parseDnsResponse(message, id, name, recordType);
         if responseResult.isOk() {
-            close(sockFd);
+            closeNativeSocket(sockFd);
             return responseResult;
         }
     }
-    close(sockFd);
+    closeNativeSocket(sockFd);
     return err<DnsResponse>(Error("No answer from the name server"));
 }
 
@@ -295,31 +291,32 @@ f<Result<DnsResponse>> DnsResolver.exchangeTcp(const DnsServer& server, const Ve
     request.pushBack(cast<unsigned byte>(queryLength & 0xFF));
     foreach const unsigned byte b : query { request.pushBack(b); }
     if !writeAllBytes(sockFd, request) {
-        close(sockFd);
+        closeNativeSocket(sockFd);
         return err<DnsResponse>(Error("Error sending DNS query"));
     }
 
     Vector<unsigned byte> lengthPrefix = Vector<unsigned byte>(2ul, cast<unsigned byte>(0));
     if !readExactBytes(sockFd, lengthPrefix) {
-        close(sockFd);
+        closeNativeSocket(sockFd);
         return err<DnsResponse>(Error("No answer from the name server"));
     }
     const int responseLength = (cast<int>(lengthPrefix[0]) << 8) | cast<int>(lengthPrefix[1]);
     Vector<unsigned byte> message = Vector<unsigned byte>(cast<unsigned long>(cast<long>(responseLength)), cast<unsigned byte>(0));
     const bool complete = readExactBytes(sockFd, message);
-    close(sockFd);
+    closeNativeSocket(sockFd);
     if !complete { return err<DnsResponse>(Error("Incomplete answer from the name server")); }
     return parseDnsResponse(message, id, name, recordType);
 }
 
 /**
- * Reads the DNS configuration of the system from /etc/resolv.conf. If the file is missing, the
- * defaults apply, i.e. the name server on the local host is asked.
+ * Reads the DNS configuration of the system: on Linux and macOS from /etc/resolv.conf, on Windows from
+ * the name servers and DNS suffixes of the network adapters. If there is none, the defaults apply,
+ * i.e. the name server on the local host is asked.
  *
  * @return DNS configuration
  */
 public f<DnsConfig> loadDnsConfig() {
-    const Result<String> content = readFile(RESOLV_CONF_PATH);
+    const Result<String> content = readNativeResolverConfig();
     if content.isErr() { return parseResolvConf(String()); }
     return parseResolvConf(content.unwrap());
 }
@@ -693,7 +690,7 @@ f<bool> writeAllBytes(int sockFd, const Vector<unsigned byte>& bytes) {
     while bytesWritten < bytes.getSize() {
         long written = 0l;
         unsafe {
-            written = write(sockFd, bytes.getDataPtr() + bytesWritten, bytes.getSize() - bytesWritten);
+            written = writeNativeSocket(sockFd, bytes.getDataPtr() + bytesWritten, bytes.getSize() - bytesWritten);
         }
         if written <= 0l { return false; }
         bytesWritten += cast<unsigned long>(written);
@@ -713,7 +710,7 @@ f<bool> readExactBytes(int sockFd, Vector<unsigned byte>& bytes) {
     while bytesRead < bytes.getSize() {
         long received = 0l;
         unsafe {
-            received = read(sockFd, bytes.getDataPtr() + bytesRead, bytes.getSize() - bytesRead);
+            received = readNativeSocket(sockFd, bytes.getDataPtr() + bytesRead, bytes.getSize() - bytesRead);
         }
         if received <= 0l { return false; }
         bytesRead += cast<unsigned long>(received);
@@ -820,8 +817,8 @@ f<long> parseDecimal(const String& text) {
 }
 
 /**
- * Resolves a host name to its addresses with the system configuration from /etc/resolv.conf and
- * /etc/hosts. See DnsResolver.resolve for the details.
+ * Resolves a host name to its addresses with the system configuration (see loadDnsConfig) and the
+ * hosts file of the system. See DnsResolver.resolve for the details.
  *
  * @param host Host name or IP address literal
  * @param includeIpv4 Look for IPv4 addresses
