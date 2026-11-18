@@ -222,21 +222,22 @@ are now TLS-handshaked before their request is read.
 ## Host name resolution
 
 The client accepts host names, IPv4 addresses and IPv6 addresses, the latter in brackets like in any URL
-(`http://[::1]:8080/`). Connections over IPv6 are only supported on Linux so far; on macOS and Windows, such a URL is
-parsed, but the connection fails. On Linux, `openClientSocket` in `std/net/socket` resolves host names with the resolver of
-`std/net/dns`, which is written in Spice: it reads `/etc/hosts` and asks the name servers from `/etc/resolv.conf` for
-the IPv4 (A) and IPv6 (AAAA) addresses of the name, over UDP with a fallback to TCP for large answers. The addresses
-are then tried one after the other, IPv4 ones first, until a connection is established.
+(`http://[::1]:8080/`). Connections over IPv6 are supported on Linux and Windows so far; on macOS, such a URL is parsed,
+but the connection fails. On Linux and Windows, `openClientSocket` in `std/net/socket` resolves host names with the
+resolver of `std/net/dns`, which is written in Spice: it looks the name up in the hosts file and asks the name servers
+for its IPv4 (A) and IPv6 (AAAA) addresses, over UDP with a fallback to TCP for large answers. The IPv4 addresses are
+tried first, one after the other; the IPv6 addresses are only looked up, if none of them accepts the connection.
 
-It does not go through the name service switch (NSS) of the C library. This keeps statically linked programs working
-on systems with an older glibc than the one they were linked against, but it also means that name sources other than
-the hosts file and DNS, like mDNS for `.local` names, are not available. The IPv6 addresses of a host are only looked
-up, if none of its IPv4 addresses accepts the connection. On macOS and Windows, `openClientSocket` uses the resolver of
-the operating system instead, for IPv4 addresses only.
+On Linux, the resolver reads `/etc/hosts` and the name servers from `/etc/resolv.conf`. It does not go through the name
+service switch (NSS) of the C library. This keeps statically linked programs working on systems with an older glibc
+than the one they were linked against, but it also means that name sources other than the hosts file and DNS, like
+mDNS for `.local` names, are not available. Windows has no `resolv.conf`, so there the name servers and DNS suffixes
+of the network adapters, that are up, take its place, and the hosts file is read from
+`%SystemRoot%\System32\drivers\etc\hosts`. Windows-specific name resolution policies (like the Name Resolution Policy
+Table or DNS over HTTPS) are not applied.
 
-`std/net/dns` itself works on Linux, macOS and Windows. Windows has no `resolv.conf`, so there the name servers and DNS
-suffixes of the network adapters, that are up, take its place, and the hosts file is read from
-`%SystemRoot%\System32\drivers\etc\hosts`.
+On macOS, `openClientSocket` uses the resolver of the operating system instead, for IPv4 addresses only, since only that
+one knows the scoped and VPN-specific name servers. `std/net/dns` itself works there as well.
 
 You can also use the resolver directly, e.g. to look up the addresses of a host without connecting to it:
 
