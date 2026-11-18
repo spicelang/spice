@@ -6,6 +6,7 @@
 
 // Imports
 import "std/io/file";
+import "std/net/impl/socket-address";
 import "std/net/ip-address";
 
 // Constants
@@ -14,8 +15,6 @@ const int NATIVE_AF_INET6 = 10;          // IPv6
 const int NATIVE_SOL_SOCKET = 1;         // Option level for socket-level options
 const int NATIVE_SO_RCVTIMEO = 20;       // Timeout for receive operations
 const int NATIVE_SO_SNDTIMEO = 21;       // Timeout for send operations
-const int NATIVE_SOCKADDR_IN_SIZE = 16;  // sizeof(struct sockaddr_in)
-const int NATIVE_SOCKADDR_IN6_SIZE = 28; // sizeof(struct sockaddr_in6)
 const int NATIVE_MSG_NOSIGNAL = 16384;   // Do not raise SIGPIPE when writing to a broken connection (0x4000)
 const int NATIVE_CLOCK_MONOTONIC = 1;    // Clock, that is not affected by changes of the system time
 const string NATIVE_RESOLV_CONF_PATH = "/etc/resolv.conf";
@@ -78,37 +77,11 @@ public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short 
         return err<int>(Error("Error setting socket timeout"));
     }
 
-    // struct sockaddr_in / struct sockaddr_in6. The family is in host byte order, the port in network byte order.
-    unsigned byte[28] sockAddr;
-    for int i = 0; i < NATIVE_SOCKADDR_IN6_SIZE; i++ {
-        sockAddr[i] = cast<unsigned byte>(0);
-    }
-    const int portValue = cast<int>(port);
-    sockAddr[2] = cast<unsigned byte>(portValue >> 8);
-    sockAddr[3] = cast<unsigned byte>(portValue & 0xFF);
-    int sockAddrSize = NATIVE_SOCKADDR_IN_SIZE;
-    if address.isIpv6() {
-        // sin6_flowinfo stays zero, sin6_addr starts behind it, sin6_scope_id stays zero
-        for unsigned int i = 0u; i < IPV6_ADDRESS_LENGTH; i++ {
-            sockAddr[8u + i] = address.getByte(i);
-        }
-        sockAddrSize = NATIVE_SOCKADDR_IN6_SIZE;
-    } else {
-        for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
-            sockAddr[4u + i] = address.getByte(i);
-        }
-    }
-
+    NativeSockAddr sockAddr = createNativeSockAddr(address, port, getNativeAddressFamily(address), SockAddrLayout::FAMILY_16_BIT);
     int connectResult = 0;
     unsafe {
-        // The family is a 16 bit field in host byte order. It is copied byte by byte from a variable of its own,
-        // since the byte array guarantees no alignment for a 16 bit store.
-        unsigned short family = cast<unsigned short>(getNativeAddressFamily(address));
-        unsigned byte* familyBytes = cast<unsigned byte*>(&family);
-        sockAddr[0] = familyBytes[0];
-        sockAddr[1] = familyBytes[1];
-        unsigned byte* sockAddrPtr = sockAddr;
-        connectResult = connect(sockFd, sockAddrPtr, cast<unsigned int>(sockAddrSize));
+        unsigned byte* sockAddrPtr = sockAddr.bytes;
+        connectResult = connect(sockFd, sockAddrPtr, sockAddr.size);
     }
     if connectResult < 0 {
         close(sockFd);

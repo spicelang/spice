@@ -10,6 +10,7 @@
 
 // Imports
 import "std/data/vector";
+import "std/net/impl/socket-address";
 import "std/net/ip-address";
 import "std/os/env";
 
@@ -20,8 +21,6 @@ const int NATIVE_AF_INET6 = 23;          // IPv6
 const int NATIVE_SOL_SOCKET = 65535;     // Option level for socket-level options (0xFFFF)
 const int NATIVE_SO_RCVTIMEO = 4102;     // Timeout for receive operations
 const int NATIVE_SO_SNDTIMEO = 4101;     // Timeout for send operations
-const int NATIVE_SOCKADDR_IN_SIZE = 16;  // sizeof(SOCKADDR_IN)
-const int NATIVE_SOCKADDR_IN6_SIZE = 28; // sizeof(SOCKADDR_IN6)
 const unsigned short NATIVE_WSA_VERSION = 514s; // Winsock 2.2
 const unsigned int NATIVE_BCRYPT_USE_SYSTEM_PREFERRED_RNG = 2u;
 const unsigned int NATIVE_ERROR_SUCCESS = 0u;
@@ -96,34 +95,11 @@ public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short 
         return err<int>(Error("Error setting socket timeout"));
     }
 
-    // SOCKADDR_IN / SOCKADDR_IN6. The family is in host byte order, the port in network byte order.
-    unsigned byte[28] sockAddr;
-    for int i = 0; i < NATIVE_SOCKADDR_IN6_SIZE; i++ {
-        sockAddr[i] = cast<unsigned byte>(0);
-    }
-    const int family = getNativeAddressFamily(address);
-    sockAddr[0] = cast<unsigned byte>(family & 0xFF);
-    sockAddr[1] = cast<unsigned byte>(family >> 8);
-    const int portValue = cast<int>(port);
-    sockAddr[2] = cast<unsigned byte>(portValue >> 8);
-    sockAddr[3] = cast<unsigned byte>(portValue & 0xFF);
-    int sockAddrSize = NATIVE_SOCKADDR_IN_SIZE;
-    if address.isIpv6() {
-        // sin6_flowinfo stays zero, sin6_addr starts behind it, sin6_scope_id stays zero
-        for unsigned int i = 0u; i < IPV6_ADDRESS_LENGTH; i++ {
-            sockAddr[8u + i] = address.getByte(i);
-        }
-        sockAddrSize = NATIVE_SOCKADDR_IN6_SIZE;
-    } else {
-        for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
-            sockAddr[4u + i] = address.getByte(i);
-        }
-    }
-
+    NativeSockAddr sockAddr = createNativeSockAddr(address, port, getNativeAddressFamily(address), SockAddrLayout::FAMILY_16_BIT);
     int connectResult = 0;
     unsafe {
-        unsigned byte* sockAddrPtr = sockAddr;
-        connectResult = connect(sockFd, sockAddrPtr, sockAddrSize);
+        unsigned byte* sockAddrPtr = sockAddr.bytes;
+        connectResult = connect(sockFd, sockAddrPtr, cast<int>(sockAddr.size));
     }
     if connectResult != 0 {
         closesocket(sockFd);
@@ -248,7 +224,7 @@ public f<Result<String>> readNativeResolverConfig() {
             unsigned byte* dnsServer = readPointerAt(adapter, NATIVE_ADAPTER_DNS_SERVERS_OFFSET);
             while dnsServer != nil<unsigned byte*> {
                 const unsigned byte* sockAddr = readPointerAt(dnsServer, NATIVE_DNS_SERVER_SOCKADDR_OFFSET);
-                const Result<IpAddress> addressResult = readSockAddr(sockAddr);
+                const Result<IpAddress> addressResult = readNativeSockAddr(sockAddr, NATIVE_AF_INET, NATIVE_AF_INET6, SockAddrLayout::FAMILY_16_BIT);
                 if addressResult.isOk() {
                     const String address = addressResult.unwrap().toString();
                     const bool isDeprecatedSiteLocal = address == "fec0:0:0:ffff::1" || address == "fec0:0:0:ffff::2" || address == "fec0:0:0:ffff::3";
@@ -277,28 +253,6 @@ public f<Result<String>> readNativeResolverConfig() {
         config += '\n';
     }
     return ok(config);
-}
-
-/**
- * Reads the address from a SOCKADDR_IN or SOCKADDR_IN6
- *
- * @param sockAddr Pointer to the socket address
- * @return IP address
- */
-f<Result<IpAddress>> readSockAddr(const unsigned byte* sockAddr) {
-    if sockAddr == nil<unsigned byte*> { return err<IpAddress>(Error("No socket address")); }
-    unsigned short[8] groups;
-    unsafe {
-        const int family = cast<int>(sockAddr[0]) | (cast<int>(sockAddr[1]) << 8);
-        if family == NATIVE_AF_INET {
-            return ok(createIpv4Address(sockAddr[4], sockAddr[5], sockAddr[6], sockAddr[7]));
-        }
-        if family != NATIVE_AF_INET6 { return err<IpAddress>(Error("Unknown address family")); }
-        for int i = 0; i < 8; i++ {
-            groups[i] = cast<unsigned short>((cast<int>(sockAddr[8 + 2 * i]) << 8) | cast<int>(sockAddr[9 + 2 * i]));
-        }
-    }
-    return ok(createIpv6Address(groups));
 }
 
 /**

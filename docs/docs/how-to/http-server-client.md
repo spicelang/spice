@@ -257,6 +257,14 @@ f<int> main() {
 }
 ```
 
+To connect with a resolver of your own, e.g. one with a fixed set of name servers, pass it to `openClientSocket`:
+
+```spice
+DnsConfig config = parseResolvConf(String("nameserver 192.0.2.53\noptions timeout:2\n"));
+DnsResolver resolver = DnsResolver(config, String("/etc/hosts"));
+Result<Socket> socket = openClientSocket("example.com", 443s, resolver);
+```
+
 ## Putting it all together
 
 **`server.spice`:**

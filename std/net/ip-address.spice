@@ -1,6 +1,9 @@
 // IPv4 and IPv6 addresses: parsing from and formatting to their textual representation.
 // The module has no dependency on the operating system, so that it stays usable in freestanding mode.
 
+// Imports
+import "std/text/analysis";
+
 // Constants
 public const unsigned int IPV4_ADDRESS_LENGTH = 4u;  // Number of bytes of an IPv4 address
 public const unsigned int IPV6_ADDRESS_LENGTH = 16u; // Number of bytes of an IPv6 address
@@ -352,7 +355,7 @@ f<bool> parseIpv4Into(const String& text, long startIdx, long endIdx, IpAddress&
         int value = 0;
         while partEnd < endIdx && text[partEnd] != '.' {
             const char c = text[partEnd];
-            if c < '0' || c > '9' { return false; }
+            if !isDecDigit(c) { return false; }
             value = value * 10 + (cast<int>(c) - cast<int>('0'));
             partEnd++;
             if partEnd - i > 3l { return false; }
@@ -427,8 +430,8 @@ f<String> formatHexGroup(int group) {
  * @return Value of the digit, -1 if the char is no hex digit
  */
 f<int> getHexDigitValue(char c) {
-    if c >= '0' && c <= '9' { return cast<int>(c) - cast<int>('0'); }
-    if c >= 'a' && c <= 'f' { return cast<int>(c) - cast<int>('a') + 10; }
-    if c >= 'A' && c <= 'F' { return cast<int>(c) - cast<int>('A') + 10; }
+    if isDecDigit(c) { return cast<int>(c) - cast<int>('0'); }
+    if isBetween(c, 'a', 'f') { return cast<int>(c) - cast<int>('a') + 10; }
+    if isBetween(c, 'A', 'F') { return cast<int>(c) - cast<int>('A') + 10; }
     return -1;
 }

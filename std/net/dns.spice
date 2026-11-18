@@ -18,7 +18,9 @@ import "std/io/file";
 import "std/math/fct";
 import "std/net/impl/socket-native";
 import "std/net/ip-address";
+import "std/text/analysis";
 import "std/text/format";
+import "std/text/string-ext";
 
 // Constants
 public const unsigned short DNS_PORT = 53s;        // Default port of a name server
@@ -201,6 +203,36 @@ public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool
 }
 
 /**
+ * Opens a TCP connection to the given host and port. A host name may resolve to several IPv4 and IPv6
+ * addresses, which are tried one after the other, until a connection is established. The IPv4
+ * addresses are looked up and tried first; the IPv6 addresses are only looked up, if none of them
+ * works, so that a slow or missing answer for them never delays a connection.
+ *
+ * @param host Host name or IP address literal (IPv6 optionally in brackets)
+ * @param port Port to connect to
+ * @return File descriptor (socket handle on Windows) of the connected socket
+ */
+public f<Result<int>> DnsResolver.connectTcp(const String& host, unsigned short port) {
+    // The messages are literals, so the raw string outlives this function, like the error, that carries it
+    string errorMessage = "";
+    for int pass = 0; pass < 2; pass++ {
+        const bool ipv6Pass = pass == 1;
+        const Result<Vector<IpAddress>> addressesResult = this.resolve(host, !ipv6Pass, ipv6Pass);
+        if addressesResult.isErr() {
+            // Keep the reason of the first failure, unless a pass found addresses, that did not work
+            if errorMessage == "" { errorMessage = addressesResult.getErr().getMessage(); }
+            continue;
+        }
+        foreach const IpAddress& address : addressesResult.unwrap() {
+            const Result<int> sockFdResult = openNativeSocket(address, port, SOCK_STREAM_TYPE, 0ul);
+            if sockFdResult.isOk() { return sockFdResult; }
+        }
+        errorMessage = "Error connecting to socket";
+    }
+    return err<int>(Error(errorMessage));
+}
+
+/**
  * Asks the name servers for the records of the given type of exactly the given name. The name
  * servers are asked one after the other, until one gives a definite answer (the name exists or does
  * not exist), for the configured number of rounds.
@@ -351,7 +383,7 @@ public f<DnsConfig> loadDnsConfig() {
  */
 public f<DnsConfig> parseResolvConf(const String& content) {
     DnsConfig config = DnsConfig();
-    const Vector<String> lines = splitLines(content);
+    const Vector<String> lines = split(content, '\n');
     foreach const String& line : lines {
         const Vector<String> tokens = splitWhitespace(stripComment(line));
         if tokens.getSize() < 2ul { continue; }
@@ -401,7 +433,7 @@ public f<DnsConfig> parseResolvConf(const String& content) {
  */
 public f<Vector<IpAddress>> lookupHostsFile(const String& content, const String& name) {
     Vector<IpAddress> addresses = Vector<IpAddress>();
-    const Vector<String> lines = splitLines(content);
+    const Vector<String> lines = split(content, '\n');
     foreach const String& line : lines {
         const Vector<String> tokens = splitWhitespace(stripComment(line));
         if tokens.getSize() < 2ul { continue; }
@@ -598,9 +630,7 @@ f<bool> hasNumericLastLabel(const String& name) {
     }
     for unsigned long i = labelStart; i < name.getLength(); i++ {
         const char c = name[i];
-        const bool isDecimalDigit = c >= '0' && c <= '9';
-        const bool isHexLetter = (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-        if !isDecimalDigit && !(isHex && isHexLetter) { return false; }
+        if !(isHex ? isHexDigit(c) : isDecDigit(c)) { return false; }
     }
     // "0x" alone is a number for inet_aton as well
     return isHex || labelStart < name.getLength();
@@ -699,11 +729,10 @@ f<bool> readDnsName(const Vector<unsigned byte>& message, unsigned long& offset,
         if wireLength > DNS_MAX_WIRE_NAME_LENGTH { return false; }
         if !name.isEmpty() { name += '.'; }
         for unsigned long i = pos + 1ul; i < labelEnd; i++ {
-            int c = cast<int>(message[i]);
+            const char c = cast<char>(cast<int>(message[i]));
             // A dot inside a label could not be told apart from the separator between two labels
-            if c == cast<int>('.') { return false; }
-            if c >= cast<int>('A') && c <= cast<int>('Z') { c += 32; }
-            name += cast<char>(c);
+            if c == '.' { return false; }
+            name += toLower(c);
         }
         pos = labelEnd;
     }
@@ -808,29 +837,7 @@ f<int> readUnsignedShort(const Vector<unsigned byte>& bytes, unsigned long offse
 }
 
 /**
- * Splits a text into its lines. Line breaks may be '\n' or '\r\n'.
- *
- * @param text Text to split
- * @return Lines
- */
-f<Vector<String>> splitLines(const String& text) {
-    Vector<String> lines = Vector<String>();
-    String line = String();
-    for unsigned long i = 0ul; i < text.getLength(); i++ {
-        const char c = text[i];
-        if c == '\n' {
-            lines.pushBack(line);
-            line = String();
-        } else if c != '\r' {
-            line += c;
-        }
-    }
-    if !line.isEmpty() { lines.pushBack(line); }
-    return lines;
-}
-
-/**
- * Splits a line into its tokens, separated by spaces and tabs
+ * Splits a line into its tokens, separated by whitespace (which includes the '\r' of a '\r\n' line break)
  *
  * @param line Line to split
  * @return Tokens
@@ -840,7 +847,7 @@ f<Vector<String>> splitWhitespace(const String& line) {
     String token = String();
     for unsigned long i = 0ul; i < line.getLength(); i++ {
         const char c = line[i];
-        if c == ' ' || c == '\t' {
+        if isWhitespace(c) {
             if !token.isEmpty() {
                 tokens.pushBack(token);
                 token = String();
@@ -877,7 +884,7 @@ f<long> parseDecimal(const String& text) {
     long value = 0l;
     for unsigned long i = 0ul; i < text.getLength(); i++ {
         const char c = text[i];
-        if c < '0' || c > '9' { return -1l; }
+        if !isDecDigit(c) { return -1l; }
         value = value * 10l + cast<long>(cast<int>(c) - cast<int>('0'));
     }
     return value;
