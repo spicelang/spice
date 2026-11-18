@@ -14,6 +14,10 @@ servfail.test -> error: Could not resolve host name: no usable answer from the n
 unverifiable.test -> error: Could not resolve host name: no usable answer from the name servers
 127.1 -> error: Malformed host name: neither an IPv4 address nor a host name
 10.0.0.300 -> error: Malformed host name: neither an IPv4 address nor a host name
+0x7f000001 -> error: Malformed host name: neither an IPv4 address nor a host name
+127.0X1 -> error: Malformed host name: neither an IPv4 address nor a host name
+0x -> error: Malformed host name: neither an IPv4 address nor a host name
+a.0xample -> error: Could not resolve host name: host not found
 myhost -> 10.0.0.5 fe80::5
 myhost. -> 10.0.0.5
 localhost -> 127.0.0.1 ::1

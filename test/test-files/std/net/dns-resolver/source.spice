@@ -313,6 +313,10 @@ f<int> main() {
     printResolved(resolver, "unverifiable.test");
     printResolved(resolver, "127.1");
     printResolved(resolver, "10.0.0.300");
+    printResolved(resolver, "0x7f000001");
+    printResolved(resolver, "127.0X1");
+    printResolved(resolver, "0x");
+    printResolved(resolver, "a.0xample"); // A host name, that starts like a hex number
     printResolved(resolver, "myhost");
     printResolved(resolver, "myhost.", true, false);
     printResolved(resolver, "localhost");
@@ -333,13 +337,14 @@ f<int> main() {
     assert stopResponse.isOk();
     udpThread.join();
     // A resolver, that skipped a TCP fallback, would leave the TCP worker waiting for a connection forever. Connections
-    // without a query make up for the missing ones, and the number of answered queries is checked afterwards.
-    for int i = TCP_QUERIES_ANSWERED; i < 2; i++ {
+    // without a query make up for the missing ones, and the number of answered queries is checked after the join. There
+    // are always two of them, so that the count is not read while the worker may still change it. The ones, that the
+    // worker does not accept anymore, stay in the backlog of the listening socket until it is closed.
+    for int i = 0; i < 2; i++ {
         Result<Socket> wakeUpResult = openClientSocket("127.0.0.1", cast<unsigned short>(serverPort));
-        if wakeUpResult.isOk() {
-            const bool wakeUpClosed = wakeUpResult.unwrap().close();
-            assert wakeUpClosed;
-        }
+        assert wakeUpResult.isOk();
+        const bool wakeUpClosed = wakeUpResult.unwrap().close();
+        assert wakeUpClosed;
     }
     tcpThread.join();
     assert TCP_QUERIES_ANSWERED == 2;

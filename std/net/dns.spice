@@ -115,8 +115,9 @@ public p DnsResolver.ctor(const DnsConfig& config, const String& hostsFilePath) 
  * URLs) resolves to itself. Otherwise the name is looked up in the hosts file first and, if it is not
  * listed there, asked for at the name servers, with the search domains applied like described in
  * resolv.conf(5). The names "localhost" and "*.localhost" resolve to the loopback addresses, unless
- * the hosts file lists them (it takes precedence, like with the C library). Names, whose last label
- * only consists of digits (like "127.1"), are rejected instead of being sent to the name servers.
+ * the hosts file lists them (it takes precedence, like with the C library). Names, whose last label is
+ * a decimal or hexadecimal number (like "127.1" or "0x7f000001"), are rejected instead of being sent
+ * to the name servers.
  * IPv4 addresses come first in the result, IPv6 addresses second.
  *
  * @param host Host name or IP address literal
@@ -577,18 +578,28 @@ f<bool> isValidDnsName(const String& name) {
 }
 
 /**
- * Checks if the last label of a name only consists of digits, like in "127.1" or "10.0.0.300"
+ * Checks if the last label of a name is a number, either decimal like in "127.1" or "10.0.0.300", or
+ * hexadecimal like in "0x7f000001" or "127.0x1" (both spellings, that inet_aton reads as addresses)
  *
  * @param name Name without trailing dot
  * @return Numeric last label or not
  */
 f<bool> hasNumericLastLabel(const String& name) {
     const long lastDot = name.rfind('.');
-    const unsigned long labelStart = lastDot == -1l ? 0ul : cast<unsigned long>(lastDot) + 1ul;
-    for unsigned long i = labelStart; i < name.getLength(); i++ {
-        if name[i] < '0' || name[i] > '9' { return false; }
+    unsigned long labelStart = lastDot == -1l ? 0ul : cast<unsigned long>(lastDot) + 1ul;
+    bool isHex = false;
+    if labelStart + 1ul < name.getLength() && name[labelStart] == '0' && (name[labelStart + 1ul] == 'x' || name[labelStart + 1ul] == 'X') {
+        isHex = true;
+        labelStart += 2ul;
     }
-    return labelStart < name.getLength();
+    for unsigned long i = labelStart; i < name.getLength(); i++ {
+        const char c = name[i];
+        const bool isDecimalDigit = c >= '0' && c <= '9';
+        const bool isHexLetter = (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        if !isDecimalDigit && !(isHex && isHexLetter) { return false; }
+    }
+    // "0x" alone is a number for inet_aton as well
+    return isHex || labelStart < name.getLength();
 }
 
 /**
