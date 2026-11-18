@@ -574,7 +574,7 @@ f<bool> isDecimalNumber(const String& text) {
  */
 public type Url struct {
     public String scheme        // "http" or "https", always lower case
-    public String host          // Host name or IPv4 address, without the port
+    public String host          // Host name, IPv4 address or IPv6 address (without brackets), without the port
     public unsigned short port  // Port, defaulted from the scheme if the URL carries none
     public String path          // Path, always starting with a '/'
     public String query         // Query string, without the leading '?'
@@ -672,11 +672,23 @@ f<string> parseAuthorityInto(const String& authority, Url& url) {
         const long userInfoEnd = authority.rfind('@');
         const unsigned long hostStart = userInfoEnd == -1l ? 0l : cast<unsigned long>(userInfoEnd) + 1l;
         const String hostAndPort = authority.getSubstring(hostStart);
-        const long portStart = hostAndPort.rfind(':');
-        if portStart == -1l {
+        long portStart = hostAndPort.rfind(':');
+        if hostAndPort.startsWith("[") {
+            // An IPv6 address is enclosed in brackets, since its colons would collide with the one in front of the port
+            const long hostEnd = hostAndPort.find(']');
+            const bool hasPort = hostEnd != -1l && cast<unsigned long>(hostEnd) + 1l < hostAndPort.getLength();
+            portStart = hasPort ? hostEnd + 1l : -1l;
+            if hostEnd == -1l || (hasPort && hostAndPort[cast<unsigned long>(portStart)] != ':') {
+                result = "URL carries a malformed IPv6 address";
+            } else {
+                url.host = hostAndPort.getSubstring(1l, hostEnd - 1l);
+            }
+        } else if portStart == -1l {
             url.host = hostAndPort;
         } else {
             url.host = hostAndPort.getSubstring(0l, portStart);
+        }
+        if result == "" && portStart != -1l {
             const String portText = hostAndPort.getSubstring(cast<unsigned long>(portStart) + 1l);
             if !isDecimalNumber(portText) {
                 result = "URL carries a malformed port";
@@ -733,12 +745,16 @@ public f<String> Url.getRequestTarget() {
 
 /**
  * Returns the authority of this URL, i.e. the host plus the port if it deviates from the default
- * port of the scheme. This is what the Host header field carries.
+ * port of the scheme. This is what the Host header field carries. An IPv6 address is enclosed in
+ * brackets.
  *
- * @return Authority, e.g. "example.com:8080"
+ * @return Authority, e.g. "example.com:8080" or "[::1]:8080"
  */
 public f<String> Url.getAuthority() {
-    result = this.host;
+    const bool isIpv6Address = this.host.find(':') != -1l;
+    result = isIpv6Address ? String("[") : String();
+    result.append(this.host);
+    if isIpv6Address { result.append(']'); }
     const unsigned short defaultPort = this.scheme == "https" ? HTTPS_PORT_DEFAULT : HTTP_PORT_DEFAULT;
     if this.port != defaultPort {
         result.append(':');

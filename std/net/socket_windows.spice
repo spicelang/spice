@@ -11,6 +11,7 @@ type SAFamilyT alias unsigned short;
 type SockLenT alias int; // Winsock takes plain ints where POSIX takes socklen_t
 
 // Constants
+public const int AF_INET6 = 23;      // IPv6
 const unsigned short REQUESTED_WSA_VERSION = 514s;
 public const int SOL_SOCKET = 65535; // Option level for socket-level options (0xFFFF)
 public const int SO_REUSEADDR = 4;   // Allow binding to a local address that is still in TIME_WAIT

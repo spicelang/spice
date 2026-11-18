@@ -1,0 +1,341 @@
+import "std/data/vector";
+import "std/io/file";
+import "std/net/dns";
+import "std/net/ip-address";
+import "std/os/thread";
+import "std/type/type-conversion";
+
+/**
+ * Drives the resolver of "std/net/dns" against a fake name server on the loopback interface, that
+ * listens on an ephemeral port for UDP and TCP and answers from a fixed set of records.
+ */
+
+// Linux socket API, as far as the fake name server needs it
+ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
+ext f<int> bind(int /*sockfd*/, byte* /*address*/, unsigned int /*address_len*/);
+ext f<int> listen(int /*sockfd*/, int /*backlog*/);
+ext f<int> accept(int /*sockfd*/, byte* /*address*/, unsigned int* /*address_len*/);
+ext f<int> getsockname(int /*sockfd*/, byte* /*address*/, unsigned int* /*address_len*/);
+ext f<long> recvfrom(int /*sockfd*/, byte* /*buf*/, unsigned long /*length*/, int /*flags*/, byte* /*address*/, unsigned int* /*address_len*/);
+ext f<long> sendto(int /*sockfd*/, byte* /*buf*/, unsigned long /*length*/, int /*flags*/, byte* /*address*/, unsigned int /*address_len*/);
+ext f<long> read(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
+ext f<long> write(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
+ext f<int> close(int /*fd*/);
+
+const int AF_INET_VALUE = 2;
+const int SOCK_STREAM_VALUE = 1;
+const int SOCK_DGRAM_VALUE = 2;
+const string HOSTS_FILE = "./dns-resolver-hosts.txt";
+
+int UDP_SERVER_FD = -1;
+int TCP_SERVER_FD = -1;
+
+/**
+ * Socket address of 127.0.0.1 with the given port, laid out like `struct sockaddr_in` on Linux
+ */
+type LoopbackAddress struct {
+    unsigned byte[16] bytes
+}
+
+f<LoopbackAddress> createLoopbackAddress(int port) {
+    LoopbackAddress address = LoopbackAddress {};
+    address.bytes[0] = cast<unsigned byte>(AF_INET_VALUE); // Family in host byte order (little endian)
+    address.bytes[2] = cast<unsigned byte>(port >> 8);
+    address.bytes[3] = cast<unsigned byte>(port & 0xFF);
+    address.bytes[4] = cast<unsigned byte>(127);
+    address.bytes[7] = cast<unsigned byte>(1);
+    return address;
+}
+
+/**
+ * Opens a socket bound to 127.0.0.1 and the given port (0 for an ephemeral one) and returns the port it got
+ */
+f<int> openBoundSocket(int socketType, int port, int& boundPort) {
+    const int sockFd = socket(AF_INET_VALUE, socketType, 0);
+    assert sockFd >= 0;
+    LoopbackAddress address = createLoopbackAddress(port);
+    unsigned int addressLength = 16u;
+    unsafe {
+        unsigned byte* addressPtr = address.bytes;
+        const int bindResult = bind(sockFd, addressPtr, addressLength);
+        assert bindResult == 0;
+        const int nameResult = getsockname(sockFd, addressPtr, &addressLength);
+        assert nameResult == 0;
+    }
+    boundPort = (cast<int>(address.bytes[2]) << 8) | cast<int>(address.bytes[3]);
+    return sockFd;
+}
+
+// ----- Fake name server -----
+
+p appendShort(Vector<unsigned byte>& bytes, int value) {
+    bytes.pushBack(cast<unsigned byte>((value >> 8) & 0xFF));
+    bytes.pushBack(cast<unsigned byte>(value & 0xFF));
+}
+
+p appendName(Vector<unsigned byte>& bytes, string name) {
+    const String text = String(name);
+    unsigned long labelStart = 0ul;
+    for unsigned long i = 0ul; i <= text.getLength(); i++ {
+        if i == text.getLength() || text[i] == '.' {
+            bytes.pushBack(cast<unsigned byte>(cast<int>(cast<long>(i - labelStart))));
+            for unsigned long j = labelStart; j < i; j++ { bytes.pushBack(cast<unsigned byte>(cast<int>(text[j]))); }
+            labelStart = i + 1ul;
+        }
+    }
+    bytes.pushBack(cast<unsigned byte>(0));
+}
+
+/**
+ * Appends a record of the class IN with a TTL of 60 seconds. An empty owner refers to the question name.
+ */
+p appendRecord(Vector<unsigned byte>& answers, string owner, int recordType, const Vector<unsigned byte>& data) {
+    if String(owner).isEmpty() {
+        appendShort(answers, 0xC00C); // Compression pointer to the question name
+    } else {
+        appendName(answers, owner);
+    }
+    appendShort(answers, recordType);
+    appendShort(answers, 1);
+    appendShort(answers, 0);
+    appendShort(answers, 60);
+    appendShort(answers, cast<int>(cast<long>(data.getSize())));
+    foreach const unsigned byte b : data { answers.pushBack(b); }
+}
+
+f<Vector<unsigned byte>> addressData(string text) {
+    const IpAddress address = parseIpAddress(String(text)).unwrap();
+    Vector<unsigned byte> data = Vector<unsigned byte>();
+    for unsigned int i = 0u; i < address.getLength(); i++ { data.pushBack(address.getByte(i)); }
+    return data;
+}
+
+f<Vector<unsigned byte>> nameData(string name) {
+    Vector<unsigned byte> data = Vector<unsigned byte>();
+    appendName(data, name);
+    return data;
+}
+
+/**
+ * Builds the answer to the given query
+ */
+f<Vector<unsigned byte>> answerQuery(const Vector<unsigned byte>& query, bool overTcp, String& questionName) {
+    // Question name and type
+    questionName = String();
+    unsigned long offset = 12ul;
+    while cast<int>(query[offset]) != 0 {
+        const unsigned long labelLength = cast<unsigned long>(cast<long>(cast<int>(query[offset])));
+        if !questionName.isEmpty() { questionName += '.'; }
+        for unsigned long i = offset + 1ul; i <= offset + labelLength; i++ { questionName += cast<char>(cast<int>(query[i])); }
+        offset += labelLength + 1ul;
+    }
+    const int questionType = (cast<int>(query[offset + 1ul]) << 8) | cast<int>(query[offset + 2ul]);
+    const unsigned long questionEnd = offset + 5ul;
+    const bool isA = questionType == 1;
+    const bool isAaaa = questionType == 28;
+
+    int responseCode = 0;
+    bool truncated = false;
+    int answerCount = 0;
+    Vector<unsigned byte> answers = Vector<unsigned byte>();
+    if questionName == "a.test" {
+        if isA { appendRecord(answers, "", 1, addressData("192.0.2.1")); answerCount++; }
+        if isAaaa { appendRecord(answers, "", 28, addressData("2001:db8::1")); answerCount++; }
+    } else if questionName == "alias.test" {
+        appendRecord(answers, "", 5, nameData("a.test"));
+        answerCount++;
+        if isA { appendRecord(answers, "a.test", 1, addressData("192.0.2.1")); answerCount++; }
+        if isAaaa { appendRecord(answers, "a.test", 28, addressData("2001:db8::1")); answerCount++; }
+    } else if questionName == "big.test" {
+        // Too many records for a datagram: only the answer over TCP carries them
+        if !overTcp {
+            truncated = true;
+        } else if isA {
+            for int i = 0; i < 40; i++ {
+                const String address = String("198.51.100.") + toString(i);
+                appendRecord(answers, "", 1, addressData(address.getRaw()));
+                answerCount++;
+            }
+        }
+    } else if questionName == "host.search.test" {
+        if isA { appendRecord(answers, "", 1, addressData("203.0.113.7")); answerCount++; }
+    } else if questionName == "v6only.test" {
+        if isAaaa { appendRecord(answers, "", 28, addressData("2001:db8::6")); answerCount++; }
+    } else if questionName == "spoofed.test" {
+        if isA { appendRecord(answers, "", 1, addressData("192.0.2.99")); answerCount++; }
+    } else if questionName == "loop.test" {
+        appendRecord(answers, "", 5, nameData("loop.test"));
+        answerCount++;
+    } else if questionName == "servfail.test" {
+        responseCode = 2;
+    } else {
+        responseCode = 3;
+    }
+
+    Vector<unsigned byte> response = Vector<unsigned byte>();
+    response.pushBack(query[0]);
+    response.pushBack(query[1]);
+    appendShort(response, 0x8180 | (truncated ? 0x0200 : 0) | responseCode);
+    appendShort(response, 1);
+    appendShort(response, answerCount);
+    appendShort(response, 0);
+    appendShort(response, 0);
+    for unsigned long i = 12ul; i < questionEnd; i++ { response.pushBack(query[i]); }
+    foreach const unsigned byte b : answers { response.pushBack(b); }
+    return response;
+}
+
+/**
+ * Answers queries over UDP, until the query for "stop.test" arrives
+ */
+p serveUdp() {
+    unsigned byte[512] buffer;
+    while true {
+        unsigned byte[16] clientAddress;
+        unsigned int clientAddressLength = 16u;
+        long received = 0l;
+        unsafe {
+            unsigned byte* bufferPtr = buffer;
+            unsigned byte* clientAddressPtr = clientAddress;
+            received = recvfrom(UDP_SERVER_FD, bufferPtr, 512ul, 0, clientAddressPtr, &clientAddressLength);
+        }
+        if received <= 0l { break; }
+        Vector<unsigned byte> query = Vector<unsigned byte>();
+        for long i = 0l; i < received; i++ { query.pushBack(buffer[i]); }
+
+        String questionName;
+        Vector<unsigned byte> response = answerQuery(query, false, questionName);
+        unsafe {
+            unsigned byte* clientAddressPtr = clientAddress;
+            if questionName == "spoofed.test" {
+                // A forged answer with another ID comes first and has to be dropped by the resolver
+                Vector<unsigned byte> forged = response;
+                forged[0] = cast<unsigned byte>(cast<int>(forged[0]) ^ 0xFF);
+                forged[forged.getSize() - 1ul] = cast<unsigned byte>(66);
+                const long forgedSent = sendto(UDP_SERVER_FD, forged.getDataPtr(), forged.getSize(), 0, clientAddressPtr, clientAddressLength);
+                assert forgedSent == cast<long>(forged.getSize());
+            }
+            const long sent = sendto(UDP_SERVER_FD, response.getDataPtr(), response.getSize(), 0, clientAddressPtr, clientAddressLength);
+            assert sent == cast<long>(response.getSize());
+        }
+        if questionName == "stop.test" { break; }
+    }
+}
+
+/**
+ * Answers the two queries over TCP, that the resolver sends for the A and the AAAA records of "big.test"
+ */
+p serveTcp() {
+    for int i = 0; i < 2; i++ { serveTcpConnection(); }
+}
+
+/**
+ * Answers a single query over TCP
+ */
+p serveTcpConnection() {
+    int connFd = -1;
+    unsafe {
+        connFd = accept(TCP_SERVER_FD, nil<byte*>, nil<unsigned int*>);
+    }
+    assert connFd >= 0;
+    Vector<unsigned byte> lengthPrefix = Vector<unsigned byte>(2ul, cast<unsigned byte>(0));
+    unsafe {
+        const long prefixRead = read(connFd, lengthPrefix.getDataPtr(), 2ul);
+        assert prefixRead == 2l;
+    }
+    const int queryLength = (cast<int>(lengthPrefix[0]) << 8) | cast<int>(lengthPrefix[1]);
+    Vector<unsigned byte> query = Vector<unsigned byte>(cast<unsigned long>(cast<long>(queryLength)), cast<unsigned byte>(0));
+    unsafe {
+        const long queryRead = read(connFd, query.getDataPtr(), query.getSize());
+        assert queryRead == cast<long>(query.getSize());
+    }
+    String questionName;
+    const Vector<unsigned byte> response = answerQuery(query, true, questionName);
+    Vector<unsigned byte> message = Vector<unsigned byte>();
+    appendShort(message, cast<int>(cast<long>(response.getSize())));
+    foreach const unsigned byte b : response { message.pushBack(b); }
+    unsafe {
+        const long messageWritten = write(connFd, message.getDataPtr(), message.getSize());
+        assert messageWritten == cast<long>(message.getSize());
+    }
+    const int closeResult = close(connFd);
+    assert closeResult == 0;
+}
+
+// ----- Resolver -----
+
+p printResolved(DnsResolver& resolver, string host, bool includeIpv4 = true, bool includeIpv6 = true) {
+    const Result<Vector<IpAddress>> addressesResult = resolver.resolve(String(host), includeIpv4, includeIpv6);
+    if addressesResult.isErr() {
+        printf("%s -> error: %s\n", host, addressesResult.getErr().getMessage());
+        return;
+    }
+    printf("%s ->", host);
+    foreach const IpAddress& address : addressesResult.unwrap() { printf(" %s", address.toString().getRaw()); }
+    printf("\n");
+}
+
+f<int> main() {
+    // UDP and TCP on the same ephemeral port, like a real name server
+    int serverPort = 0;
+    UDP_SERVER_FD = openBoundSocket(SOCK_DGRAM_VALUE, 0, serverPort);
+    int tcpPort = 0;
+    TCP_SERVER_FD = openBoundSocket(SOCK_STREAM_VALUE, serverPort, tcpPort);
+    assert tcpPort == serverPort;
+    const int listenResult = listen(TCP_SERVER_FD, 4);
+    assert listenResult == 0;
+
+    // A port, that nobody listens on: queries to it are refused right away
+    int closedPort = 0;
+    const int closedPortFd = openBoundSocket(SOCK_DGRAM_VALUE, 0, closedPort);
+    const int closedPortCloseResult = close(closedPortFd);
+    assert closedPortCloseResult == 0;
+
+    Thread udpThread = Thread(serveUdp);
+    Thread tcpThread = Thread(serveTcp);
+    udpThread.run();
+    tcpThread.run();
+
+    const Result<bool> hostsWritten = writeFile(HOSTS_FILE, "10.0.0.5 MyHost.lan myhost\nfe80::5 myhost\n");
+    assert hostsWritten.isOk();
+
+    // The first name server is unreachable, so every query falls through to the second one
+    DnsConfig config = parseResolvConf(String("search search.test\noptions timeout:2 attempts:1\n"));
+    config.servers.clear();
+    config.servers.pushBack(DnsServer { parseIpAddress(String("127.0.0.1")).unwrap(), cast<unsigned short>(closedPort) });
+    config.servers.pushBack(DnsServer { parseIpAddress(String("127.0.0.1")).unwrap(), cast<unsigned short>(serverPort) });
+    DnsResolver resolver = DnsResolver(config, String(HOSTS_FILE));
+
+    printResolved(resolver, "a.test");
+    printResolved(resolver, "A.Test.");
+    printResolved(resolver, "a.test", true, false);
+    printResolved(resolver, "a.test", false, true);
+    printResolved(resolver, "alias.test");
+    printResolved(resolver, "big.test");
+    printResolved(resolver, "host");
+    printResolved(resolver, "v6only.test");
+    printResolved(resolver, "v6only.test", true, false);
+    printResolved(resolver, "spoofed.test");
+    printResolved(resolver, "loop.test");
+    printResolved(resolver, "missing.test");
+    printResolved(resolver, "servfail.test");
+    printResolved(resolver, "myhost");
+    printResolved(resolver, "myhost.", true, false);
+    printResolved(resolver, "localhost");
+    printResolved(resolver, "printer.localhost", false, true);
+    printResolved(resolver, "192.0.2.10");
+    printResolved(resolver, "[2001:db8::10]");
+    printResolved(resolver, "2001:db8::10", true, false);
+    printResolved(resolver, "bad..name");
+    printResolved(resolver, "a.test", false, false);
+
+    // Shut the fake name server down
+    const Result<DnsResponse> stopResponse = resolver.query(String("stop.test"), DNS_TYPE_A);
+    assert stopResponse.isOk();
+    udpThread.join();
+    tcpThread.join();
+    const int udpCloseResult = close(UDP_SERVER_FD);
+    const int tcpCloseResult = close(TCP_SERVER_FD);
+    const bool hostsDeleted = deleteFile(HOSTS_FILE);
+    assert udpCloseResult == 0 && tcpCloseResult == 0 && hostsDeleted;
+}

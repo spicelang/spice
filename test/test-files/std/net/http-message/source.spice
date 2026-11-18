@@ -58,6 +58,26 @@ f<int> main() {
     String authority = url2.getAuthority();
     assert authority == "localhost:8443";
 
+    Result<Url> urlRes3 = parseUrl(String("http://[2001:db8::1]:8080/x"));
+    assert urlRes3.isOk();
+    Url url3 = urlRes3.unwrap();
+    assert url3.host == "2001:db8::1";
+    assert url3.port == 8080s;
+    assert url3.path == "/x";
+    String authority3 = url3.getAuthority();
+    assert authority3 == "[2001:db8::1]:8080";
+    Result<Url> urlRes4 = parseUrl(String("https://[::1]"));
+    assert urlRes4.isOk();
+    Url url4 = urlRes4.unwrap();
+    assert url4.host == "::1";
+    assert url4.port == 443s;
+    String authority4 = url4.getAuthority();
+    assert authority4 == "[::1]";
+    Result<Url> unclosedIpv6 = parseUrl(String("http://[::1/x"));
+    assert unclosedIpv6.isErr();
+    Result<Url> junkBehindIpv6 = parseUrl(String("http://[::1]x:80"));
+    assert junkBehindIpv6.isErr();
+
     Result<Url> badScheme = parseUrl(String("ftp://example.com"));
     assert badScheme.isErr();
     Result<Url> noScheme = parseUrl(String("example.com/a"));

@@ -219,6 +219,38 @@ if tlsConfigured.isErr() {
 Everything else - routes, handlers, `start`/`run`/`stop` - stays the same; only the listening socket's connections
 are now TLS-handshaked before their request is read.
 
+## Host name resolution
+
+The client accepts host names, IPv4 addresses and IPv6 addresses, the latter in brackets like in any URL
+(`http://[::1]:8080/`). On Linux, `openClientSocket` in `std/net/socket` resolves host names with the resolver of
+`std/net/dns`, which is written in Spice: it reads `/etc/hosts` and asks the name servers from `/etc/resolv.conf` for
+the IPv4 (A) and IPv6 (AAAA) addresses of the name, over UDP with a fallback to TCP for large answers. The addresses
+are then tried one after the other, IPv4 ones first, until a connection is established.
+
+It does not go through the name service switch (NSS) of the C library. This keeps statically linked programs working
+on systems with an older glibc than the one they were linked against, but it also means that name sources other than
+the hosts file and DNS, like mDNS for `.local` names, are not available. On macOS and Windows, the resolver of the
+operating system is used, for IPv4 addresses only.
+
+You can also use the resolver directly, e.g. to look up the addresses of a host without connecting to it:
+
+```spice
+import "std/data/vector";
+import "std/net/dns";
+import "std/net/ip-address";
+
+f<int> main() {
+    Result<Vector<IpAddress>> addresses = resolveHostAddresses(String("example.com"));
+    if addresses.isErr() {
+        printf("Lookup failed: %s\n", addresses.getErr().getMessage());
+        return 1;
+    }
+    foreach const IpAddress& address : addresses.unwrap() {
+        printf("%s\n", address.toString().getRaw());
+    }
+}
+```
+
 ## Putting it all together
 
 **`server.spice`:**

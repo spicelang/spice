@@ -1,0 +1,136 @@
+#![core.compiler.requiresOs]
+
+// Address-family-independent socket helpers for Linux, that "std/net/dns" and "std/net/socket" build on.
+// The socket address structs are laid out by hand here, so that one code path serves IPv4 and IPv6.
+
+// Imports
+import "std/net/ip-address";
+
+// Constants
+const int NATIVE_AF_INET = 2;            // IPv4
+const int NATIVE_AF_INET6 = 10;          // IPv6
+const int NATIVE_SOL_SOCKET = 1;         // Option level for socket-level options
+const int NATIVE_SO_RCVTIMEO = 20;       // Timeout for receive operations
+const int NATIVE_SO_SNDTIMEO = 21;       // Timeout for send operations
+const int NATIVE_SOCKADDR_IN_SIZE = 16;  // sizeof(struct sockaddr_in)
+const int NATIVE_SOCKADDR_IN6_SIZE = 28; // sizeof(struct sockaddr_in6)
+
+/**
+ * Time span with microsecond resolution, as taken by the timeout socket options. Mirrors
+ * `struct timeval` from the C headers.
+ */
+type NativeTimeVal struct {
+    long tvSec  // Whole seconds
+    long tvUsec // Microseconds
+}
+
+// External functions
+ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
+ext f<int> connect(int /*sockfd*/, byte* /*address*/, unsigned int /*address_len*/);
+ext f<int> setsockopt(int /*sockfd*/, int /*level*/, int /*optname*/, byte* /*optval*/, unsigned int /*optlen*/);
+ext f<int> close(int /*fd*/);
+ext f<long> getrandom(byte* /*buf*/, unsigned long /*buflen*/, unsigned int /*flags*/);
+
+/**
+ * Returns the address family constant (AF_INET or AF_INET6) of the given address
+ *
+ * @param address IP address
+ * @return Address family
+ */
+public f<int> getNativeAddressFamily(const IpAddress& address) {
+    return address.isIpv6() ? NATIVE_AF_INET6 : NATIVE_AF_INET;
+}
+
+/**
+ * Opens a socket of the family of the given address and connects it to the given address and port.
+ * For a datagram socket, connecting only fixes the peer, so that plain reads and writes can be used
+ * and the kernel drops datagrams from any other sender.
+ *
+ * @param address Address to connect to
+ * @param port Port to connect to
+ * @param socketType SOCK_STREAM or SOCK_DGRAM
+ * @param timeoutMs Timeout for the single reads and writes on the socket in milliseconds, 0 for none
+ * @return File descriptor of the connected socket
+ */
+public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short port, int socketType, unsigned long timeoutMs) {
+    const int sockFd = socket(getNativeAddressFamily(address), socketType, 0);
+    if sockFd == -1 { return err<int>(Error("Error opening socket")); }
+    if timeoutMs != 0ul && !setNativeSocketTimeout(sockFd, timeoutMs) {
+        close(sockFd);
+        return err<int>(Error("Error setting socket timeout"));
+    }
+
+    // struct sockaddr_in / struct sockaddr_in6. The family is in host byte order, the port in network byte order.
+    unsigned byte[28] sockAddr;
+    for int i = 0; i < NATIVE_SOCKADDR_IN6_SIZE; i++ {
+        sockAddr[i] = cast<unsigned byte>(0);
+    }
+    const int portValue = cast<int>(port);
+    sockAddr[2] = cast<unsigned byte>(portValue >> 8);
+    sockAddr[3] = cast<unsigned byte>(portValue & 0xFF);
+    int sockAddrSize = NATIVE_SOCKADDR_IN_SIZE;
+    if address.isIpv6() {
+        // sin6_flowinfo stays zero, sin6_addr starts behind it, sin6_scope_id stays zero
+        for unsigned int i = 0u; i < IPV6_ADDRESS_LENGTH; i++ {
+            sockAddr[8u + i] = address.getByte(i);
+        }
+        sockAddrSize = NATIVE_SOCKADDR_IN6_SIZE;
+    } else {
+        for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
+            sockAddr[4u + i] = address.getByte(i);
+        }
+    }
+
+    int connectResult = 0;
+    unsafe {
+        unsigned byte* sockAddrPtr = sockAddr;
+        unsigned short* familyPtr = cast<unsigned short*>(sockAddrPtr);
+        *familyPtr = cast<unsigned short>(getNativeAddressFamily(address));
+        connectResult = connect(sockFd, sockAddrPtr, cast<unsigned int>(sockAddrSize));
+    }
+    if connectResult < 0 {
+        close(sockFd);
+        return err<int>(Error("Error connecting socket"));
+    }
+    return ok(sockFd);
+}
+
+/**
+ * Limits how long a single read or write on the given socket may block
+ *
+ * @param sockFd Socket file descriptor
+ * @param timeoutMs Timeout in milliseconds, 0 to block indefinitely
+ * @return Setting the timeout was successful or not
+ */
+public f<bool> setNativeSocketTimeout(int sockFd, unsigned long timeoutMs) {
+    NativeTimeVal timeout = NativeTimeVal { cast<long>(timeoutMs / 1000ul), cast<long>((timeoutMs % 1000ul) * 1000ul) };
+    int receiveResult = 0;
+    int sendResult = 0;
+    unsafe {
+        const unsigned int optLen = cast<unsigned int>(cast<int>(sizeof<NativeTimeVal>()));
+        receiveResult = setsockopt(sockFd, NATIVE_SOL_SOCKET, NATIVE_SO_RCVTIMEO, cast<byte*>(&timeout), optLen);
+        sendResult = setsockopt(sockFd, NATIVE_SOL_SOCKET, NATIVE_SO_SNDTIMEO, cast<byte*>(&timeout), optLen);
+    }
+    return receiveResult == 0 && sendResult == 0;
+}
+
+/**
+ * Fills the given buffer with random bytes from the kernel, that are fit for values an attacker must
+ * not be able to predict (like the IDs of DNS queries)
+ *
+ * @param buffer Buffer to fill
+ * @param size Number of bytes to fill
+ * @return Filling the buffer was successful or not
+ */
+public f<bool> fillNativeRandomBytes(byte* buffer, unsigned long size) {
+    unsigned long filled = 0ul;
+    while filled < size {
+        long result = 0l;
+        unsafe {
+            result = getrandom(buffer + filled, size - filled, 0u);
+        }
+        if result <= 0l { return false; }
+        filled += cast<unsigned long>(result);
+    }
+    return true;
+}

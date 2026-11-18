@@ -1,0 +1,85 @@
+import "std/data/vector";
+import "std/net/dns";
+import "std/net/ip-address";
+
+// Turns a hex string into the bytes of a DNS message
+f<Vector<unsigned byte>> fromHex(string hex) {
+    const String text = String(hex);
+    Vector<unsigned byte> bytes = Vector<unsigned byte>();
+    for unsigned long i = 0ul; i + 1ul < text.getLength(); i += 2ul {
+        const int high = hexDigitValue(text[i]);
+        const int low = hexDigitValue(text[i + 1ul]);
+        bytes.pushBack(cast<unsigned byte>((high << 4) | low));
+    }
+    return bytes;
+}
+
+f<int> hexDigitValue(char c) {
+    if c >= '0' && c <= '9' { return cast<int>(c) - cast<int>('0'); }
+    return cast<int>(c) - cast<int>('a') + 10;
+}
+
+p printResponse(string label, const Result<DnsResponse>& responseResult) {
+    if responseResult.isErr() {
+        printf("%s: error: %s\n", label, responseResult.getErr().getMessage());
+        return;
+    }
+    const DnsResponse& response = responseResult.unwrap();
+    printf("%s: rcode=%d truncated=%d addresses=[", label, response.responseCode, response.truncated);
+    foreach long i, const IpAddress& address : response.addresses {
+        if i > 0l { printf(", "); }
+        printf("%s", address.toString().getRaw());
+    }
+    printf("]\n");
+}
+
+f<int> main() {
+    // ----- resolv.conf -----
+    const String resolvConf = String("# Generated\r\nnameserver 192.0.2.53\nnameserver 2001:db8::53 ; second\nnameserver not-an-address\n") +
+        "nameserver 198.51.100.53\nnameserver 203.0.113.53\ndomain ignored.test\nsearch Corp.Example. lab.example\n" +
+        "options ndots:2 timeout:3 attempts:9 rotate\n";
+    const DnsConfig config = parseResolvConf(resolvConf);
+    printf("servers:");
+    foreach const DnsServer& server : config.servers { printf(" %s (port %d)", server.address.toString().getRaw(), server.port); }
+    printf("\nsearch:");
+    foreach const String& domain : config.searchDomains { printf(" %s", domain.getRaw()); }
+    printf("\nndots=%d timeout=%dms attempts=%d\n", config.ndots, config.timeoutMs, config.attempts);
+    const DnsConfig defaultConfig = parseResolvConf(String(""));
+    printf("default: %s (port %d) ndots=%d timeout=%dms attempts=%d search=%d\n", defaultConfig.servers[0].address.toString().getRaw(),
+        defaultConfig.servers[0].port, defaultConfig.ndots, defaultConfig.timeoutMs, defaultConfig.attempts, defaultConfig.searchDomains.getSize());
+
+    // ----- hosts file -----
+    const String hosts = String("127.0.0.1 localhost\n::1\tlocalhost ip6-localhost\n10.0.0.5 MyHost.lan myhost # comment\n") +
+        "#10.0.0.6 myhost\nbogus myhost\nfe80::5 myhost.\n";
+    printf("hosts myhost:");
+    foreach const IpAddress& address : lookupHostsFile(hosts, String("myhost")) { printf(" %s", address.toString().getRaw()); }
+    printf("\nhosts localhost:");
+    foreach const IpAddress& address : lookupHostsFile(hosts, String("localhost")) { printf(" %s", address.toString().getRaw()); }
+    printf("\nhosts unknown: %d\n", lookupHostsFile(hosts, String("unknown")).getSize());
+
+    // ----- Query encoding -----
+    const Vector<unsigned byte> query = buildDnsQuery(cast<unsigned short>(0x1234), String("www.example.com"), DNS_TYPE_AAAA).unwrap();
+    printf("query:");
+    foreach const unsigned byte b : query { printf(" %02x", cast<int>(b)); }
+    printf("\n");
+    assert buildDnsQuery(cast<unsigned short>(1), String("a..b"), DNS_TYPE_A).isErr();
+    assert buildDnsQuery(cast<unsigned short>(1), String(""), DNS_TYPE_A).isErr();
+    assert buildDnsQuery(cast<unsigned short>(1), String("a") * 64, DNS_TYPE_A).isErr();
+    assert buildDnsQuery(cast<unsigned short>(1), String("a") * 63, DNS_TYPE_A).isOk();
+
+    // ----- Response decoding -----
+    const unsigned short id = cast<unsigned short>(0x1234);
+    const String www = String("www.example.com");
+    printResponse("cname", parseDnsResponse(fromHex("12348180000100030000000003777777076578616d706c6503636f6d0000010001c00c000500010000003c000603776562c010c02d000100010000003c0004c0000201c02d000100030000003c0004c0000202"), id, www, DNS_TYPE_A));
+    printResponse("aaaa", parseDnsResponse(fromHex("1234818000010002000000000161047465737400001c0001c00c001c00010000003c001020010db8000000000000000000000001c00c001c00010000003c001020010db8000000000000000000000002"), id, String("a.test"), DNS_TYPE_AAAA));
+    printResponse("nxdomain", parseDnsResponse(fromHex("123481830000000000000000"), id, www, DNS_TYPE_A));
+    printResponse("truncated", parseDnsResponse(fromHex("12348380000100000000000003777777076578616d706c6503636f6d0000010001"), id, www, DNS_TYPE_A));
+    printResponse("uppercase", parseDnsResponse(fromHex("12348180000100010000000003575757074578616d706c6503434f4d0000010001c00c000100010000003c0004c0000203"), id, www, DNS_TYPE_A));
+    printResponse("wrong id", parseDnsResponse(fromHex("123481830000000000000000"), cast<unsigned short>(0x4321), www, DNS_TYPE_A));
+    printResponse("wrong name", parseDnsResponse(fromHex("12348380000100000000000003777777076578616d706c6503636f6d0000010001"), id, String("www.example.org"), DNS_TYPE_A));
+    printResponse("wrong type", parseDnsResponse(fromHex("12348380000100000000000003777777076578616d706c6503636f6d0000010001"), id, www, DNS_TYPE_AAAA));
+    printResponse("no response", parseDnsResponse(fromHex("123401000000000000000000"), id, www, DNS_TYPE_A));
+    printResponse("too short", parseDnsResponse(fromHex("1234818000010000"), id, www, DNS_TYPE_A));
+    printResponse("cut off", parseDnsResponse(fromHex("12348180000100010000000003777777076578616d706c6503636f6d0000010001c00c000100010000003c0004c000"), id, www, DNS_TYPE_A));
+    printResponse("pointer loop", parseDnsResponse(fromHex("12348180000100010000000003777777076578616d706c6503636f6d0000010001c021000100010000003c0004c0000204"), id, www, DNS_TYPE_A));
+}

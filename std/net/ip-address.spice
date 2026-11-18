@@ -1,0 +1,422 @@
+// IPv4 and IPv6 addresses: parsing from and formatting to their textual representation
+
+// Imports
+import "std/type/type-conversion";
+
+// Constants
+public const unsigned int IPV4_ADDRESS_LENGTH = 4u;  // Number of bytes of an IPv4 address
+public const unsigned int IPV6_ADDRESS_LENGTH = 16u; // Number of bytes of an IPv6 address
+const string HEX_DIGITS = "0123456789abcdef";
+
+/**
+ * An IPv4 or IPv6 address. The bytes are stored in network byte order. An IPv4 address only uses
+ * the first four of them, the others stay zero.
+ */
+public type IpAddress struct {
+    bool ipv6                // IPv6 or IPv4 address
+    unsigned byte[16] bytes  // Address bytes in network byte order
+}
+
+/**
+ * Checks if this is an IPv4 address
+ *
+ * @return IPv4 address or not
+ */
+public inline f<bool> IpAddress.isIpv4() {
+    return !this.ipv6;
+}
+
+/**
+ * Checks if this is an IPv6 address
+ *
+ * @return IPv6 address or not
+ */
+public inline f<bool> IpAddress.isIpv6() {
+    return this.ipv6;
+}
+
+/**
+ * Returns the number of bytes, that this address consists of
+ *
+ * @return 4 for an IPv4 address, 16 for an IPv6 address
+ */
+public inline f<unsigned int> IpAddress.getLength() {
+    return this.ipv6 ? IPV6_ADDRESS_LENGTH : IPV4_ADDRESS_LENGTH;
+}
+
+/**
+ * Returns the address byte at the given index, with index 0 being the most significant one
+ *
+ * @param index Index of the byte, smaller than getLength()
+ * @return Address byte
+ */
+public f<unsigned byte> IpAddress.getByte(unsigned int index) {
+    assert index < this.getLength();
+    return this.bytes[index];
+}
+
+/**
+ * Returns this IPv4 address in the form, that the socket structs carry it (`in_addr_t`): the four
+ * address bytes in network byte order, read as an unsigned int.
+ *
+ * @return IPv4 address in network byte order
+ */
+public f<unsigned int> IpAddress.toInAddr() {
+    assert !this.ipv6;
+    unsigned int inAddr = 0u;
+    unsafe {
+        unsigned byte* inAddrBytes = cast<unsigned byte*>(&inAddr);
+        for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
+            inAddrBytes[i] = this.bytes[i];
+        }
+    }
+    return inAddr;
+}
+
+/**
+ * Formats this address in its textual representation: an IPv4 address in dotted decimal notation, an
+ * IPv6 address in the canonical form of RFC 5952 (lowercase hex groups without leading zeros, the
+ * longest run of at least two zero groups compressed to "::" and IPv4-mapped addresses with their
+ * IPv4 part in dotted decimal notation).
+ *
+ * @return Textual representation of the address
+ */
+public f<String> IpAddress.toString() {
+    if !this.ipv6 { return formatIpv4Bytes(this.bytes, 0u); }
+
+    // IPv4-mapped IPv6 address (::ffff:a.b.c.d)
+    bool isIpv4Mapped = cast<int>(this.bytes[10]) == 0xFF && cast<int>(this.bytes[11]) == 0xFF;
+    for unsigned int i = 0u; i < 10u; i++ {
+        if cast<int>(this.bytes[i]) != 0 { isIpv4Mapped = false; }
+    }
+    if isIpv4Mapped { return String("::ffff:") + formatIpv4Bytes(this.bytes, 12u); }
+
+    // Find the longest run of zero groups. Only a run of at least two groups is compressed, the first one wins a tie.
+    int[8] groups;
+    for int i = 0; i < 8; i++ {
+        groups[i] = (cast<int>(this.bytes[2 * i]) << 8) | cast<int>(this.bytes[2 * i + 1]);
+    }
+    int bestStart = -1;
+    int bestLength = 1;
+    int runStart = -1;
+    for int i = 0; i < 8; i++ {
+        if groups[i] == 0 {
+            if runStart == -1 { runStart = i; }
+            const int runLength = i - runStart + 1;
+            if runLength > bestLength {
+                bestStart = runStart;
+                bestLength = runLength;
+            }
+        } else {
+            runStart = -1;
+        }
+    }
+
+    String output = String();
+    int i = 0;
+    while i < 8 {
+        if i == bestStart {
+            output += "::";
+            i += bestLength;
+            continue;
+        }
+        if i > 0 && i != bestStart + bestLength { output += ':'; }
+        output += formatHexGroup(groups[i]);
+        i++;
+    }
+    return output;
+}
+
+/**
+ * Checks if two addresses are equal, i.e. are of the same family and carry the same bytes
+ *
+ * @param lhs First address
+ * @param rhs Second address
+ * @return Equal or not
+ */
+public f<bool> operator==(const IpAddress& lhs, const IpAddress& rhs) {
+    if lhs.ipv6 != rhs.ipv6 { return false; }
+    for unsigned int i = 0u; i < IPV6_ADDRESS_LENGTH; i++ {
+        if lhs.bytes[i] != rhs.bytes[i] { return false; }
+    }
+    return true;
+}
+
+/**
+ * Checks if two addresses differ
+ *
+ * @param lhs First address
+ * @param rhs Second address
+ * @return Not equal or equal
+ */
+public f<bool> operator!=(const IpAddress& lhs, const IpAddress& rhs) {
+    return !(lhs == rhs);
+}
+
+/**
+ * Creates an IPv4 address from its four bytes, most significant first
+ *
+ * @param b0 First byte, e.g. 127 for 127.0.0.1
+ * @param b1 Second byte
+ * @param b2 Third byte
+ * @param b3 Fourth byte
+ * @return IPv4 address
+ */
+public f<IpAddress> createIpv4Address(unsigned byte b0, unsigned byte b1, unsigned byte b2, unsigned byte b3) {
+    IpAddress address = IpAddress {};
+    address.bytes[0] = b0;
+    address.bytes[1] = b1;
+    address.bytes[2] = b2;
+    address.bytes[3] = b3;
+    return address;
+}
+
+/**
+ * Creates an IPv4 address from the form, that the socket structs carry it in (`in_addr_t`)
+ *
+ * @param inAddr IPv4 address in network byte order
+ * @return IPv4 address
+ */
+public f<IpAddress> createIpv4AddressFromInAddr(unsigned int inAddr) {
+    IpAddress address = IpAddress {};
+    unsafe {
+        unsigned byte* inAddrBytes = cast<unsigned byte*>(&inAddr);
+        for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
+            address.bytes[i] = inAddrBytes[i];
+        }
+    }
+    return address;
+}
+
+/**
+ * Creates an IPv6 address from its eight 16 bit groups, most significant first
+ *
+ * @param groups Address groups
+ * @return IPv6 address
+ */
+public f<IpAddress> createIpv6Address(const unsigned short[8] groups) {
+    IpAddress address = IpAddress {};
+    address.ipv6 = true;
+    for int i = 0; i < 8; i++ {
+        const int group = cast<int>(groups[i]);
+        address.bytes[2 * i] = cast<unsigned byte>(group >> 8);
+        address.bytes[2 * i + 1] = cast<unsigned byte>(group & 0xFF);
+    }
+    return address;
+}
+
+/**
+ * Parses an IPv4 address in dotted decimal notation (e.g. "192.168.0.1") or an IPv6 address in one of
+ * the textual forms of RFC 4291 (e.g. "2001:db8::1" or "::ffff:192.168.0.1").
+ *
+ * @param text Textual representation of the address
+ * @return Parsed address
+ */
+public f<Result<IpAddress>> parseIpAddress(const String& text) {
+    if text.find(':') != -1l { return parseIpv6Address(text); }
+    return parseIpv4Address(text);
+}
+
+/**
+ * Parses an IPv4 address in dotted decimal notation, e.g. "192.168.0.1". Only the strict form with four
+ * decimal parts is accepted. Shortened forms like "127.1" and parts with leading zeros, that the C
+ * function `inet_aton` reads as octal numbers, are rejected, so that no text is read ambiguously.
+ *
+ * @param text Textual representation of the address
+ * @return Parsed address
+ */
+public f<Result<IpAddress>> parseIpv4Address(const String& text) {
+    IpAddress address = IpAddress {};
+    if !parseIpv4Into(text, 0l, cast<long>(text.getLength()), address, 0u) {
+        return err<IpAddress>(Error("Malformed IPv4 address"));
+    }
+    return ok(address);
+}
+
+/**
+ * Parses an IPv6 address in one of the textual forms of RFC 4291: eight hex groups separated by colons,
+ * optionally with one run of zero groups compressed to "::" and optionally with the last two groups
+ * written as an IPv4 address in dotted decimal notation (e.g. "::ffff:192.168.0.1").
+ * Zone identifiers (e.g. "fe80::1%eth0") are not supported.
+ *
+ * @param text Textual representation of the address
+ * @return Parsed address
+ */
+public f<Result<IpAddress>> parseIpv6Address(const String& text) {
+    const Error error = Error("Malformed IPv6 address");
+    const long length = cast<long>(text.getLength());
+    if length < 2l || length > 45l { return err<IpAddress>(error); }
+
+    IpAddress address = IpAddress {};
+    address.ipv6 = true;
+    int[8] groups;
+    int groupCount = 0;
+    int compressionIdx = -1; // Index of the group, that the "::" stands in front of
+    long i = 0l;
+    if text[0] == ':' {
+        if text[1] != ':' { return err<IpAddress>(error); }
+        compressionIdx = 0;
+        i = 2l;
+    }
+
+    while i < length {
+        if groupCount == 8 { return err<IpAddress>(error); }
+        long segmentEnd = i;
+        bool hasDot = false;
+        while segmentEnd < length && text[segmentEnd] != ':' {
+            if text[segmentEnd] == '.' { hasDot = true; }
+            segmentEnd++;
+        }
+
+        if hasDot {
+            // An embedded IPv4 address takes the place of the last two groups
+            if segmentEnd != length || groupCount > 6 { return err<IpAddress>(error); }
+            IpAddress ipv4Address = IpAddress {};
+            if !parseIpv4Into(text, i, segmentEnd, ipv4Address, 0u) { return err<IpAddress>(error); }
+            groups[groupCount] = (cast<int>(ipv4Address.bytes[0]) << 8) | cast<int>(ipv4Address.bytes[1]);
+            groups[groupCount + 1] = (cast<int>(ipv4Address.bytes[2]) << 8) | cast<int>(ipv4Address.bytes[3]);
+            groupCount += 2;
+            i = segmentEnd;
+            break;
+        }
+
+        // Hex group with one to four digits
+        const long digitCount = segmentEnd - i;
+        if digitCount < 1l || digitCount > 4l { return err<IpAddress>(error); }
+        int group = 0;
+        for long j = i; j < segmentEnd; j++ {
+            const int digitValue = getHexDigitValue(text[j]);
+            if digitValue == -1 { return err<IpAddress>(error); }
+            group = (group << 4) | digitValue;
+        }
+        groups[groupCount] = group;
+        groupCount++;
+        i = segmentEnd;
+        if i == length { break; }
+
+        // Skip the colon behind the group. A second one marks the compressed run of zero groups.
+        i++;
+        if i == length { return err<IpAddress>(error); }
+        if text[i] == ':' {
+            if compressionIdx != -1 { return err<IpAddress>(error); }
+            compressionIdx = groupCount;
+            i++;
+        }
+    }
+
+    // Without "::" all eight groups have to be given, with it at least one group has to be left out
+    if compressionIdx == -1 && groupCount != 8 { return err<IpAddress>(error); }
+    if compressionIdx != -1 && groupCount > 7 { return err<IpAddress>(error); }
+
+    // Move the groups behind the "::" to the end and fill the gap with zeros
+    const int zeroCount = 8 - groupCount;
+    int[8] expandedGroups;
+    int targetIdx = 0;
+    for int sourceIdx = 0; sourceIdx < groupCount; sourceIdx++ {
+        if sourceIdx == compressionIdx {
+            for int z = 0; z < zeroCount; z++ {
+                expandedGroups[targetIdx] = 0;
+                targetIdx++;
+            }
+        }
+        expandedGroups[targetIdx] = groups[sourceIdx];
+        targetIdx++;
+    }
+    while targetIdx < 8 {
+        expandedGroups[targetIdx] = 0; // "::" at the very end
+        targetIdx++;
+    }
+
+    for int g = 0; g < 8; g++ {
+        address.bytes[2 * g] = cast<unsigned byte>(expandedGroups[g] >> 8);
+        address.bytes[2 * g + 1] = cast<unsigned byte>(expandedGroups[g] & 0xFF);
+    }
+    return ok(address);
+}
+
+/**
+ * Parses an IPv4 address in strict dotted decimal notation from a part of the given text into four
+ * bytes of the given address
+ *
+ * @param text Text to read from
+ * @param startIdx Index of the first char of the address
+ * @param endIdx Index one behind the last char of the address
+ * @param address Address to write the bytes to
+ * @param byteOffset Index of the address byte to write the first byte to
+ * @return Valid IPv4 address or not
+ */
+f<bool> parseIpv4Into(const String& text, long startIdx, long endIdx, IpAddress& address, unsigned int byteOffset) {
+    unsigned int partCount = 0u;
+    long i = startIdx;
+    while partCount < IPV4_ADDRESS_LENGTH {
+        // Decimal part with one to three digits, no leading zeros
+        long partEnd = i;
+        int value = 0;
+        while partEnd < endIdx && text[partEnd] != '.' {
+            const char c = text[partEnd];
+            if c < '0' || c > '9' { return false; }
+            value = value * 10 + (cast<int>(c) - cast<int>('0'));
+            partEnd++;
+            if partEnd - i > 3l { return false; }
+        }
+        const long digitCount = partEnd - i;
+        if digitCount == 0l || value > 255 { return false; }
+        if digitCount > 1l && text[i] == '0' { return false; }
+        address.bytes[byteOffset + partCount] = cast<unsigned byte>(value);
+        partCount++;
+
+        // Expect a dot between the parts and the end behind the last one
+        if partCount == IPV4_ADDRESS_LENGTH { return partEnd == endIdx; }
+        if partEnd == endIdx { return false; }
+        i = partEnd + 1l;
+    }
+    return false;
+}
+
+/**
+ * Formats four bytes of an address in dotted decimal notation
+ *
+ * @param bytes Address bytes
+ * @param offset Index of the first of the four bytes
+ * @return Dotted decimal representation
+ */
+f<String> formatIpv4Bytes(const unsigned byte[16] bytes, unsigned int offset) {
+    String output = String();
+    for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
+        if i > 0u { output += '.'; }
+        output += toString(cast<int>(bytes[offset + i]));
+    }
+    return output;
+}
+
+/**
+ * Formats a 16 bit group of an IPv6 address as lowercase hex number without leading zeros
+ *
+ * @param group Group value
+ * @return Hex representation
+ */
+f<String> formatHexGroup(int group) {
+    String output = String();
+    bool hasDigits = false;
+    for int shift = 12; shift >= 0; shift -= 4 {
+        const int digitValue = (group >> shift) & 0xF;
+        if digitValue != 0 || hasDigits || shift == 0 {
+            output += HEX_DIGITS[digitValue];
+            hasDigits = true;
+        }
+    }
+    return output;
+}
+
+/**
+ * Returns the value of a hex digit
+ *
+ * @param c Char to read
+ * @return Value of the digit, -1 if the char is no hex digit
+ */
+f<int> getHexDigitValue(char c) {
+    if c >= '0' && c <= '9' { return cast<int>(c) - cast<int>('0'); }
+    if c >= 'a' && c <= 'f' { return cast<int>(c) - cast<int>('a') + 10; }
+    if c >= 'A' && c <= 'F' { return cast<int>(c) - cast<int>('A') + 10; }
+    return -1;
+}
