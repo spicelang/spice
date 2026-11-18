@@ -45,6 +45,9 @@ const unsigned long NATIVE_MAX_RANDOM_CHUNK_SIZE = 65536ul;
 
 // Global variables
 bool NATIVE_WINSOCK_STARTED = false; // Winsock was started for this process
+// SRWLOCK, that guards the startup of Winsock. An SRWLOCK is a single pointer, that starts out as zero, which a global
+// of primitive type can hold.
+unsigned long NATIVE_WINSOCK_LOCK = 0ul;
 
 /**
  * Mirrors `WSADATA` from the Winsock headers (64 bit layout)
@@ -61,6 +64,8 @@ type NativeWsaData struct {
 
 // External functions
 ext f<int> WSAStartup(short /*versionRequested*/, NativeWsaData* /*wsaData*/);
+ext p AcquireSRWLockExclusive(unsigned long* /*lock*/);
+ext p ReleaseSRWLockExclusive(unsigned long* /*lock*/);
 ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
 ext f<int> connect(int /*sockfd*/, byte* /*address*/, int /*address_len*/);
 ext f<int> setsockopt(int /*sockfd*/, int /*level*/, int /*optname*/, byte* /*optval*/, int /*optlen*/);
@@ -117,16 +122,20 @@ public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short 
 
 /**
  * Starts Winsock for this process, unless it was started already. Winsock is never cleaned up, since
- * sockets can live until the end of the process.
+ * sockets can live until the end of the process. Threads, that open their first socket at the same time,
+ * start it only once. A failed startup is tried again on the next call.
  *
  * @return Winsock is ready or not
  */
 f<bool> startNativeWinsock() {
-    if NATIVE_WINSOCK_STARTED { return true; }
-    NativeWsaData wsaData = NativeWsaData {};
-    if WSAStartup(cast<short>(NATIVE_WSA_VERSION), &wsaData) != 0 { return false; }
-    NATIVE_WINSOCK_STARTED = true;
-    return true;
+    AcquireSRWLockExclusive(&NATIVE_WINSOCK_LOCK);
+    if !NATIVE_WINSOCK_STARTED {
+        NativeWsaData wsaData = NativeWsaData {};
+        NATIVE_WINSOCK_STARTED = WSAStartup(cast<short>(NATIVE_WSA_VERSION), &wsaData) == 0;
+    }
+    const bool started = NATIVE_WINSOCK_STARTED;
+    ReleaseSRWLockExclusive(&NATIVE_WINSOCK_LOCK);
+    return started;
 }
 
 /**
