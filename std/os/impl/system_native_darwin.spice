@@ -1,0 +1,29 @@
+#![core.compiler.requiresOs]
+
+// macOS version of system_native.spice, picked by the OS suffix. The two files must offer the same symbols.
+
+// Link external functions
+ext f<long> sysconf(int /*name*/);
+
+// Constants
+const int SC_NPROCESSORS_ONLN = 58; // Value on macOS, glibc uses 84 (_SC_THREAD_CPUTIME on macOS)
+
+/**
+ * Returns the number of CPU cores of the host system, that are online.
+ *
+ * @return Number of cores
+ */
+public f<long> getNativeCPUCoreCount() {
+    return sysconf(SC_NPROCESSORS_ONLN);
+}
+
+/**
+ * Converts the maximum resident set size, as reported by getrusage, to bytes.
+ *
+ * @param maxRss Maximum resident set size, as reported by getrusage
+ * @return Maximum resident set size in bytes
+ */
+public f<unsigned long> convertNativeMaxRssToBytes(long maxRss) {
+    // macOS reports the maximum resident set size in bytes
+    return cast<unsigned long>(maxRss);
+}

@@ -1,0 +1,27 @@
+#![core.compiler.requiresOs]
+
+// Linux specifics of system.spice. macOS has its own system_native_darwin.spice, picked by the OS suffix. The two files
+// must offer the same symbols.
+
+// Link external functions
+ext f<long> get_nprocs();
+
+/**
+ * Returns the number of CPU cores of the host system, that are online.
+ *
+ * @return Number of cores
+ */
+public f<long> getNativeCPUCoreCount() {
+    return get_nprocs();
+}
+
+/**
+ * Converts the maximum resident set size, as reported by getrusage, to bytes.
+ *
+ * @param maxRss Maximum resident set size, as reported by getrusage
+ * @return Maximum resident set size in bytes
+ */
+public f<unsigned long> convertNativeMaxRssToBytes(long maxRss) {
+    // Linux reports the maximum resident set size in KiB
+    return cast<unsigned long>(maxRss) * 1024ul;
+}
