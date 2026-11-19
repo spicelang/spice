@@ -28,7 +28,9 @@ The path can be:
   `spice_packages` directories are left out.
 - `-`, which reads the source code from stdin and prints the formatted code to stdout. This is useful for editor integrations.
 
-The subcommand prints the paths of the files, that it reformatted.
+The subcommand prints the paths of the files, that it reformatted. It overwrites them in place, so they keep their
+permissions. While a file is written, its original code is backed up next to it as `<file>.<process id>.format-backup`. The
+backup is removed afterwards and only stays, if writing the file fails.
 
 ## Options
 You can apply following options to the `format` subcommand:

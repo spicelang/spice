@@ -5,7 +5,9 @@ import "std/data/vector";
 import "std/io/dir";
 import "std/io/file";
 import "std/io/filepath";
+import "std/os/cmd";
 import "std/os/os";
+import "std/type/type-conversion";
 
 // Own imports
 import "@/driver";
@@ -25,8 +27,8 @@ const string STDIN_DISPLAY_NAME = "<stdin>";
 const string SOURCE_FILE_EXTENSION = ".spice";
 const string PACKAGES_DIR_NAME = "spice_packages";
 const int EOF_CHAR = -1;
-// Suffix of the temporary file, that a reformatted source file is written to, before it replaces the source file
-const string TMP_FILE_SUFFIX = ".format.tmp";
+// Suffix of the backup file, that holds the original code of a source file, while the formatted code is written to it
+const string BACKUP_FILE_SUFFIX = ".format-backup";
 
 /**
  * Run the 'format' subcommand: format the given source file, all source files in the given directory or the source code from
@@ -88,7 +90,7 @@ public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& form
         } else if formatOptions.toStdout {
             printf("%s", formattedCode.getRaw());
         } else if !isFormatted {
-            writeSourceFile(sourceFile, formattedCode);
+            writeSourceFile(sourceFile, sourceCode, formattedCode);
             printf("%s\n", sourceFile.toString());
         }
     }
@@ -235,27 +237,49 @@ f<String> readSourceFile(const FilePath& filePath) {
 }
 
 /**
- * Write the given source code to the given source file. The code is written to a temporary file next to the source file
- * first, which replaces the source file afterwards. So the source file stays intact, if writing fails, e.g. on a full disk.
+ * Write the formatted code to the given source file. The source file is overwritten in place, so that it keeps its permissions,
+ * its owner and its links. The original code is backed up next to the source file first, so that it is not lost, if writing
+ * fails, e.g. on a full disk. The backup is removed afterwards. Its name contains the process id, so that concurrent runs do
+ * not share it.
  *
  * @param filePath Path of the source file
- * @param sourceCode Source code
+ * @param originalCode Original code of the source file
+ * @param formattedCode Formatted code
  */
-p writeSourceFile(const FilePath& filePath, const String& sourceCode) {
+p writeSourceFile(const FilePath& filePath, const String& originalCode, const String& formattedCode) {
     const String path = String(filePath.toString());
-    const String tmpPath = path + TMP_FILE_SUFFIX;
-    Result<bool> writeResult = writeFile(tmpPath.getRaw(), sourceCode.getRaw());
-    if !writeResult.isOk() || !writeResult.unwrap() {
-        const bool _ = deleteFile(tmpPath.getRaw()); // Best effort, the error below matters more
-        const String message = "Source file at path '" + path + "' cannot be written";
+    const String backupPath = path + "." + toString(getPID()) + BACKUP_FILE_SUFFIX;
+    if !writeTextFile(backupPath, originalCode) {
+        const bool _ = deleteFile(backupPath.getRaw()); // Best effort, the error below matters more
+        const String message = "Source file at path '" + path + "' cannot be backed up at '" + backupPath + "'. It was left unchanged";
         const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
         abortWithError(error.getMessage());
     }
-    if !moveFile(tmpPath, path) {
-        const String message = "Source file at path '" + path + "' cannot be replaced. The formatted code is in '" + tmpPath + "'";
+    if !writeTextFile(path, formattedCode) {
+        const String message = "Source file at path '" + path + "' cannot be written. Its original code is in '" + backupPath + "'";
         const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
         abortWithError(error.getMessage());
     }
+    const bool _ = deleteFile(backupPath.getRaw());
+}
+
+/**
+ * Write the given text to the given file, replacing its content
+ *
+ * @param path Path of the file
+ * @param text Text to write
+ * @return Whether the text was written completely
+ */
+f<bool> writeTextFile(const String& path, const String& text) {
+    Result<File> openResult = openFile(path, MODE_WRITE);
+    if !openResult.isOk() {
+        return false;
+    }
+    File file = openResult.unwrap();
+    const bool isWritten = file.write(text);
+    // Closing flushes the buffered text, which can fail as well, e.g. on a full disk
+    const bool isClosed = file.close();
+    return isWritten && isClosed;
 }
 
 // ============================================================== Tests ==============================================================
