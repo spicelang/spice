@@ -1,0 +1,66 @@
+import "std/net/socket";
+import "std/os/thread";
+
+// Port, that the server listens on (on all IPv4 addresses, the client connects via the loopback interface)
+const unsigned short SERVER_PORT = 18097s;
+// Timeout for the single reads and writes, so that a broken test fails instead of hanging
+const unsigned long IO_TIMEOUT_MS = 10000ul;
+
+/**
+ * Reads exactly the given number of bytes from the current connection of the given socket
+ *
+ * @param socket Socket to read from
+ * @param size Number of bytes to read
+ * @return Bytes read
+ */
+f<String> readExactly(Socket& socket, long size) {
+    String received;
+    char[16] buffer;
+    while cast<long>(received.getLength()) < size {
+        long count = 0l;
+        unsafe {
+            count = socket.read(cast<byte*>(&buffer), size - cast<long>(received.getLength()));
+        }
+        assert count > 0l;
+        for long i = 0l; i < count; i++ {
+            received.append(buffer[i]);
+        }
+    }
+    return received;
+}
+
+/**
+ * Drives a server socket and a client socket of "std/net/socket" against each other: the server accepts one
+ * connection, reads the request of the client and answers it. Only the main thread prints, so that the output does
+ * not depend on the scheduling of the threads.
+ */
+f<int> main() {
+    // The server listens before the client connects, so that the client cannot be refused
+    Socket server = openServerSocket(SERVER_PORT).unwrap();
+    Socket* serverPtr = &server;
+    String request;
+    String* requestPtr = &request;
+    Thread serverThread = Thread(p() {
+        assert serverPtr.acceptConnection().isOk();
+        assert serverPtr.setTimeout(IO_TIMEOUT_MS);
+        *requestPtr = readExactly(*serverPtr, 4l);
+        const string response = "pong";
+        unsafe {
+            assert serverPtr.writeAll(cast<byte*>(response), 4ul);
+        }
+        assert serverPtr.closeConnection();
+    });
+    serverThread.run();
+
+    Socket client = openClientSocket("127.0.0.1", SERVER_PORT).unwrap();
+    assert client.setTimeout(IO_TIMEOUT_MS);
+    assert client.write("ping") == 4l;
+    const String response = readExactly(client, 4l);
+    serverThread.join();
+    printf("Server received: %s\n", request.getRaw());
+    printf("Client received: %s\n", response.getRaw());
+
+    assert client.close();
+    assert server.close();
+    printf("All assertions passed!\n");
+}
