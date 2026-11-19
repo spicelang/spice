@@ -243,8 +243,7 @@ f<bool> isPlainSafe(const String& text) {
 // Checks whether the scalar starts with a character that YAML reads as an indicator
 f<bool> startsWithIndicator(const String& text) {
     const char c = text[0l];
-    if c == ',' || c == '[' || c == ']' || c == '{' || c == '}' || c == '#' || c == '&' || c == '*'
-       || c == '!' || c == '|' || c == '>' || c == '\'' || c == '"' || c == '%' || c == '@' || c == '`' {
+    if c == ',' || c == '[' || c == ']' || c == '{' || c == '}' || c == '#' || c == '&' || c == '*' || c == '!' || c == '|' || c == '>' || c == '\'' || c == '"' || c == '%' || c == '@' || c == '`' {
         return true;
     }
     // These only open a block entry when whitespace follows them

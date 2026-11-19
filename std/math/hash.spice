@@ -73,7 +73,6 @@ public f<Hash> hash(bool input) {
     return input ? 1231ul : 1237ul; // two distinct primes
 }
 
-
 /**
  * Hash a double value
  *

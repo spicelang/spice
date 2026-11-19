@@ -47,7 +47,7 @@ public inline p Stack.ctor(unsigned int initAllocItems) {
  * @param initAllocItems Number of items to insert
  * @param defaultValue Value to fill the stack with
  */
-public p Stack.ctor(unsigned long initAllocItems, const T &defaultValue) {
+public p Stack.ctor(unsigned long initAllocItems, const T& defaultValue) {
     // Allocate space for the initial number of elements
     this.resize(initAllocItems);
     // Fill in the default values

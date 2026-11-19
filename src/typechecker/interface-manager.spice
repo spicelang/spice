@@ -242,7 +242,6 @@ f<bool> matchTemplateTypes(Interface& candidate, const QualTypeList& reqTemplate
         return false;
     }
 
-
     // Loop over all template types
     foreach unsigned long i, GenericType& candidateTemplateType : candidate.templateTypes {
         QualType& candidateType = candidateTemplateType.qualType;
@@ -286,7 +285,6 @@ p substantiateSignatures(Interface& candidate, const TypeMapping& typeMapping, c
         }
     }
 }
-
 
 /**
  * Calculate the cache key for the interface lookup cache

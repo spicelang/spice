@@ -17,7 +17,7 @@ ext f<int> memcmp(string, string, unsigned long);
  * @param needle String to search
  * @return Last fragment
  */
-public f<String> getLastFragment(const String &haystack, const string needle) {
+public f<String> getLastFragment(const String& haystack, const string needle) {
     const unsigned long index = haystack.rfind(needle);
     return index != -1l ? haystack.getSubstring(index + getRawLength(needle)) : haystack;
 }

@@ -133,7 +133,7 @@ public f<CliOption<T>&> CliParser.addOption<T, StrOrConstStrObjRef>(StrOrConstSt
  */
 #[ignoreUnusedReturnValue]
 public f<CliOption<bool>&> CliParser.addFlag<StrOrConstStrObjRef>(StrOrConstStrObjRef name, bool& targetVariable, StrOrConstStrObjRef description) {
-   return  this.rootSubcommand.addFlag(name, targetVariable, description);
+    return this.rootSubcommand.addFlag(name, targetVariable, description);
 }
 
 /**

@@ -131,7 +131,7 @@ public f<Result<bool>> HttpServer.useTls(string certFile, string keyFile) {
  * @param handler Handler that fills in the response
  */
 public p HttpServer.route(HttpMethod method, string path, p(const HttpRequest&, HttpResponse&) handler) {
-    const HttpRoute newRoute = HttpRoute {
+    const HttpRoute newRoute = HttpRoute{
         method,
         String(path),
         /*isStatic=*/false,
@@ -202,7 +202,7 @@ public p HttpServer.delete(string path, p(const HttpRequest&, HttpResponse&) han
 public p HttpServer.serve(string path, string content, string contentType = CONTENT_TYPE_HTML) {
     // The content is owned by the route rather than captured by a lambda, since lambda captures are
     // shallow copies and would not keep a String alive past this call
-    const HttpRoute newRoute = HttpRoute {
+    const HttpRoute newRoute = HttpRoute{
         HttpMethod::GET,
         String(path),
         /*isStatic=*/true,

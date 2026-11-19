@@ -96,7 +96,7 @@ public p SymbolTableEntry.updateState(const LifecycleState& newState) {
  *
  * @return Declaration code location
  */
-public f<const CodeLoc &> SymbolTableEntry.getDeclCodeLoc() {
+public f<const CodeLoc&> SymbolTableEntry.getDeclCodeLoc() {
     return this.declNode.codeLoc;
 }
 
@@ -138,8 +138,7 @@ public f<bool> SymbolTableEntry.isTypeDefinition() {
         return false;
     }
     switch this.declNode.kind {
-        case ASTNodeKind::STRUCT_DEF, ASTNodeKind::INTERFACE_DEF, ASTNodeKind::UNION_DEF, ASTNodeKind::ENUM_DEF,
-             ASTNodeKind::GENERIC_TYPE_DEF, ASTNodeKind::ALIAS_DEF: {
+        case ASTNodeKind::STRUCT_DEF, ASTNodeKind::INTERFACE_DEF, ASTNodeKind::UNION_DEF, ASTNodeKind::ENUM_DEF, ASTNodeKind::GENERIC_TYPE_DEF, ASTNodeKind::ALIAS_DEF: {
             return true;
         }
     }

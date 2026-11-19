@@ -174,7 +174,7 @@ f<bool> disableNativeSigPipe(int sockFd) {
  * @return Setting the timeout was successful or not
  */
 public f<bool> setNativeSocketTimeout(int sockFd, unsigned long timeoutMs) {
-    NativeTimeVal timeout = NativeTimeVal { cast<long>(timeoutMs / 1000ul), cast<long>((timeoutMs % 1000ul) * 1000ul) };
+    NativeTimeVal timeout = NativeTimeVal{cast<long>(timeoutMs / 1000ul), cast<long>((timeoutMs % 1000ul) * 1000ul)};
     int receiveResult = 0;
     int sendResult = 0;
     unsafe {
@@ -259,7 +259,7 @@ public f<Result<String>> readNativeResolverConfig() {
  * @return Monotonic time in milliseconds
  */
 public f<long> getNativeMonotonicMillis() {
-    NativeTimeSpec time = NativeTimeSpec {};
+    NativeTimeSpec time = NativeTimeSpec{};
     clock_gettime(NATIVE_CLOCK_MONOTONIC, &time);
     return time.tvSec * 1000l + time.tvNsec / 1000000l;
 }

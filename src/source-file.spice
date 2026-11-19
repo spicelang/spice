@@ -229,7 +229,7 @@ public type SourceFile struct {
     bool lintFindingsCollected = false
 }
 
-public p SourceFile.ctor(GlobalResourceManager &resourceManager, SourceFile* parent, const String& name, const FilePath& filePath, bool isStdFile) {
+public p SourceFile.ctor(GlobalResourceManager& resourceManager, SourceFile* parent, const String& name, const FilePath& filePath, bool isStdFile) {
     // Copy data
     this.name = name;
     this.filePath = filePath;
@@ -275,7 +275,6 @@ public p SourceFile.runParser() {
     if this.previousStage >= CompileStageType::LEXER_AND_PARSER {
         return;
     }
-
 
     Timer timer = Timer(TimerMode::MICROS, &this.compilerOutput.times.lexerAndParser);
     this.startStageTimer(timer);

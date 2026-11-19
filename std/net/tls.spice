@@ -61,7 +61,7 @@ public f<Result<TlsContext>> newClientTlsContext(string caFile = "") {
         }
     }
 
-    const TlsContext context = TlsContext { ctx };
+    const TlsContext context = TlsContext{ctx};
     const Error error = Error(errorMessage);
     return errorMessage == "" ? ok(context) : err<TlsContext>(error);
 }
@@ -126,7 +126,7 @@ public f<Result<TlsContext>> newServerTlsContext(string certFile, string keyFile
         ctx = nil<SslCtx>;
     }
 
-    const TlsContext context = TlsContext { ctx };
+    const TlsContext context = TlsContext{ctx};
     const Error error = Error(errorMessage);
     return errorMessage == "" ? ok(context) : err<TlsContext>(error);
 }
@@ -158,7 +158,7 @@ public f<Result<TlsSocket>> openTlsClientSocket(string host, unsigned short port
                                                 unsigned long timeoutMillis = 0l) {
     string errorMessage = "";
     Ssl ssl = nil<Ssl>;
-    Socket sock = Socket {};
+    Socket sock = Socket{};
 
     const Result<Socket> socketResult = openClientSocket(host, port);
     if socketResult.isErr() {
@@ -183,7 +183,7 @@ public f<Result<TlsSocket>> openTlsClientSocket(string host, unsigned short port
         }
     }
 
-    const TlsSocket tlsSocket = TlsSocket { sock, ssl };
+    const TlsSocket tlsSocket = TlsSocket{sock, ssl};
     const Error error = Error(errorMessage);
     return errorMessage == "" ? ok(tlsSocket) : err<TlsSocket>(error);
 }
@@ -215,7 +215,7 @@ public f<Result<TlsSocket>> acceptTlsConnection(Socket& sock, const TlsContext& 
         }
     }
 
-    Socket sockCopy = Socket {};
+    Socket sockCopy = Socket{};
     if errorMessage == "" {
         // Transfer ownership of the connection to the TlsSocket: `sock` (the caller's listening
         // socket) forgets the file descriptor, so only the TlsSocket's own close ever reaches it -
@@ -225,7 +225,7 @@ public f<Result<TlsSocket>> acceptTlsConnection(Socket& sock, const TlsContext& 
         // directly from a reference parameter like `sock`.
         sockCopy = sock.detachConnection();
     }
-    const TlsSocket tlsSocket = TlsSocket { sockCopy, ssl };
+    const TlsSocket tlsSocket = TlsSocket{sockCopy, ssl};
     const Error error = Error(errorMessage);
     return errorMessage == "" ? ok(tlsSocket) : err<TlsSocket>(error);
 }

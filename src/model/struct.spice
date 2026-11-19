@@ -36,7 +36,7 @@ public p Struct.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, 
  * @return Name of the struct scope
  */
 public f<String> Struct.getScopeName() {
-    const String &appendix = this.structBase.isGenericSubstantiation() ? this.structBase.getSignature() : this.name;
+    const String& appendix = this.structBase.isGenericSubstantiation() ? this.structBase.getSignature() : this.name;
     return String(STRUCT_SCOPE_PREFIX) + appendix;
 }
 

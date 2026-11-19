@@ -7,7 +7,7 @@ import "std/type/lambda";
 type Pthread_t alias long;
 type Pthread_attr_t struct {
     unsigned byte detached
-    char *ss_sp
+    char* ss_sp
     unsigned long ss_size
 }
 

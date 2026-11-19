@@ -576,8 +576,3 @@ public f<bool> toBool(char input) {
 public f<bool> toBool(string input) {
     return input == "true";
 }
-
-
-
-
-

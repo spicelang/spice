@@ -70,8 +70,7 @@ public type ModuleShiftCache struct {
  */
 f<bool> readAt(unsigned long file, int offset, byte* buffer, unsigned long size) {
     unsigned int bytesRead = 0u;
-    return SetFilePointer(file, offset, nil<int*>, FILE_BEGIN) != INVALID_SET_FILE_POINTER &&
-           ReadFile(file, buffer, cast<unsigned int>(size), &bytesRead, nil<byte*>) != 0 && bytesRead == size;
+    return SetFilePointer(file, offset, nil<int*>, FILE_BEGIN) != INVALID_SET_FILE_POINTER && ReadFile(file, buffer, cast<unsigned int>(size), &bytesRead, nil<byte*>) != 0 && bytesRead == size;
 }
 
 /**
@@ -87,9 +86,11 @@ f<bool> readImageBase(unsigned long file, unsigned long& imageBase) {
         ntBytes = cast<byte*>(&ntHeaders);
     }
 
-    const bool isValid = readAt(file, 0, dosBytes, sizeof<DosHeader>()) && dosHeader.signature == DOS_SIGNATURE &&
-                         readAt(file, dosHeader.ntHeadersOffset, ntBytes, sizeof<NtHeaders>()) &&
-                         ntHeaders.signature == NT_SIGNATURE && ntHeaders.optionalHeaderMagic == PE32_PLUS_MAGIC;
+    const bool isValid = readAt(file, 0, dosBytes, sizeof<DosHeader>()) &&
+        dosHeader.signature == DOS_SIGNATURE &&
+        readAt(file, dosHeader.ntHeadersOffset, ntBytes, sizeof<NtHeaders>()) &&
+        ntHeaders.signature == NT_SIGNATURE &&
+        ntHeaders.optionalHeaderMagic == PE32_PLUS_MAGIC;
     if isValid {
         imageBase = ntHeaders.imageBase;
     }

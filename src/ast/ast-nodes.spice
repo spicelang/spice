@@ -837,7 +837,6 @@ public f<String> ASTMainFctDefNode.getScopeId() {
     return String("fct:main");
 }
 
-
 // ========================================================= FctNameNode =========================================================
 
 public type ASTFctNameNode struct : IVisitable {
@@ -856,7 +855,6 @@ public p ASTFctNameNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTFctNameNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFctName(this);
 }
-
 
 // ======================================================== FctDefBaseNode =======================================================
 
@@ -908,7 +906,6 @@ public f<String> ASTFctDefNode.getScopeId() {
     return String("fct:") + this.codeLoc.toString();
 }
 
-
 // ========================================================== ProcDefNode ========================================================
 
 public type ASTProcDefNode struct : IVisitable {
@@ -928,7 +925,6 @@ public f<Any> ASTProcDefNode.accept(IAbstractAstVisitor* visitor) {
 public f<String> ASTProcDefNode.getScopeId() {
     return String("proc:") + this.codeLoc.toString();
 }
-
 
 // ========================================================= StructDefNode =======================================================
 
@@ -961,7 +957,6 @@ public f<Any> ASTStructDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitStructDef(this);
 }
 
-
 // ======================================================== InterfaceDefNode =====================================================
 
 public type ASTInterfaceDefNode struct : IVisitable {
@@ -988,7 +983,6 @@ public p ASTInterfaceDefNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTInterfaceDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitInterfaceDef(this);
 }
-
 
 // ========================================================== UnionDefNode =======================================================
 
@@ -1017,7 +1011,6 @@ public f<Any> ASTUnionDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitUnionDef(this);
 }
 
-
 // ========================================================== EnumDefNode ========================================================
 
 public type ASTEnumDefNode struct : IVisitable {
@@ -1041,7 +1034,6 @@ public f<Any> ASTEnumDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEnumDef(this);
 }
 
-
 // ======================================================= GenericTypeDefNode ====================================================
 
 public type ASTGenericTypeDefNode struct : IVisitable {
@@ -1059,7 +1051,6 @@ public p ASTGenericTypeDefNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTGenericTypeDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitGenericTypeDef(this);
 }
-
 
 // ========================================================== AliasDefNode =======================================================
 
@@ -1085,7 +1076,6 @@ public f<Any> ASTAliasDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAliasDef(this);
 }
 
-
 // ======================================================== GlobalVarDefNode =====================================================
 
 public type ASTGlobalVarDefNode struct : IVisitable {
@@ -1105,7 +1095,6 @@ public p ASTGlobalVarDefNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTGlobalVarDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitGlobalVarDef(this);
 }
-
 
 // ========================================================== ExtDeclNode ========================================================
 
@@ -1135,7 +1124,6 @@ public f<String> ASTExtDeclNode.getScopeId() {
     return (this.hasReturnType ? String("func:") : String("proc:")) + this.codeLoc.toString();
 }
 
-
 // ========================================================= ImportDefNode =======================================================
 
 public type ASTImportDefNode struct : IVisitable {
@@ -1153,7 +1141,6 @@ public p ASTImportDefNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTImportDefNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitImportDef(this);
 }
-
 
 // ========================================================== UnsafeBlockNode ========================================================
 
@@ -1175,7 +1162,6 @@ public f<Any> ASTUnsafeBlockNode.accept(IAbstractAstVisitor* visitor) {
 public f<String> ASTUnsafeBlockNode.getScopeId() {
     return String("unsafe:") + this.codeLoc.toString();
 }
-
 
 // ============================================================ Cleanup ==========================================================
 
@@ -1213,7 +1199,6 @@ public f<String> ASTForLoopNode.getScopeId() {
 public f<String> ASTForLoopNode.getBodyScopeId() {
     return String("for-body:") + this.codeLoc.toString();
 }
-
 
 // ======================================================== ForeachLoopNode ======================================================
 
@@ -1256,7 +1241,6 @@ public f<String> ASTForeachLoopNode.getBodyScopeId() {
     return String("foreach-body:") + this.codeLoc.toString();
 }
 
-
 // ========================================================= WhileLoopNode =======================================================
 
 public type ASTWhileLoopNode struct : IVisitable {
@@ -1279,7 +1263,6 @@ public f<String> ASTWhileLoopNode.getScopeId() {
     return String("while:") + this.codeLoc.toString();
 }
 
-
 // ======================================================== DoWhileLoopNode ======================================================
 
 public type ASTDoWhileLoopNode struct : IVisitable {
@@ -1301,7 +1284,6 @@ public f<Any> ASTDoWhileLoopNode.accept(IAbstractAstVisitor* visitor) {
 public f<String> ASTDoWhileLoopNode.getScopeId() {
     return String("dowhile:") + this.codeLoc.toString();
 }
-
 
 // ========================================================== IfStmtNode ========================================================
 
@@ -1334,7 +1316,6 @@ public f<String> ASTIfStmtNode.getScopeId() {
     return String("if:") + this.codeLoc.toString();
 }
 
-
 // ========================================================== ElseStmtNode =======================================================
 
 public type ASTElseStmtNode struct : IVisitable {
@@ -1358,7 +1339,6 @@ public f<String> ASTElseStmtNode.getScopeId() {
     return String("if:") + this.codeLoc.toString();
 }
 
-
 // ========================================================= SwitchStmtNode ======================================================
 
 public type ASTSwitchStmtNode struct : IVisitable {
@@ -1378,7 +1358,6 @@ public p ASTSwitchStmtNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTSwitchStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitSwitchStmt(this);
 }
-
 
 // ========================================================= CaseBranchNode ======================================================
 
@@ -1402,7 +1381,6 @@ public f<String> ASTCaseBranchNode.getScopeId() {
     return String("case:") + this.codeLoc.toString();
 }
 
-
 // ======================================================== DefaultBranchNode ====================================================
 
 public type ASTDefaultBranchNode struct : IVisitable {
@@ -1423,7 +1401,6 @@ public f<Any> ASTDefaultBranchNode.accept(IAbstractAstVisitor* visitor) {
 public f<String> ASTDefaultBranchNode.getScopeId() {
     return String("default:") + this.codeLoc.toString();
 }
-
 
 // ===================================================== AnonymousBlockStmtNode ==================================================
 
@@ -1446,7 +1423,6 @@ public f<String> ASTAnonymousBlockStmtNode.getScopeId() {
     return String("anon:") + this.codeLoc.toString();
 }
 
-
 // ========================================================== StmtLstNode ========================================================
 
 public type ASTStmtLstNode struct : IVisitable {
@@ -1463,7 +1439,6 @@ public p ASTStmtLstNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTStmtLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitStmtLst(this);
 }
-
 
 // ==================================================== TypeLstWithEllipsisNode ==================================================
 
@@ -1482,7 +1457,6 @@ public f<Any> ASTTypeLstWithEllipsisNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTypeLstWithEllipsis(this);
 }
 
-
 // ======================================================== TypeAltsLstNode ======================================================
 
 public type ASTTypeAltsLstNode struct : IVisitable {
@@ -1498,7 +1472,6 @@ public p ASTTypeAltsLstNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTTypeAltsLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTypeAltsLst(this);
 }
-
 
 // ========================================================== DeclStmtNode =======================================================
 // Declared before ParamLstNode (which composes a Vector<ASTDeclStmtNode*> below) since parseParamLst
@@ -1533,7 +1506,6 @@ public f<Any> ASTDeclStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitDeclStmt(this);
 }
 
-
 // ========================================================== ParamLstNode =======================================================
 
 public type ASTParamLstNode struct : IVisitable {
@@ -1548,7 +1520,6 @@ public p ASTParamLstNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTParamLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitParamLst(this);
 }
-
 
 // =========================================================== ArgLstNode ========================================================
 
@@ -1570,7 +1541,6 @@ public p ASTArgLstNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTArgLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitArgLst(this);
 }
-
 
 // ========================================================== EnumItemNode =======================================================
 // Declared before EnumItemLstNode (which composes a Vector<ASTEnumItemNode*> below) since parseEnumDef
@@ -1594,7 +1564,6 @@ public f<Any> ASTEnumItemNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEnumItem(this);
 }
 
-
 // ======================================================== EnumItemLstNode ======================================================
 
 public type ASTEnumItemLstNode struct : IVisitable {
@@ -1609,7 +1578,6 @@ public p ASTEnumItemLstNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTEnumItemLstNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEnumItemLst(this);
 }
-
 
 // =========================================================== FieldNode =========================================================
 
@@ -1627,7 +1595,6 @@ public p ASTFieldNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTFieldNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitField(this);
 }
-
 
 // ========================================================= SignatureNode =======================================================
 
@@ -1662,7 +1629,6 @@ public f<Any> ASTSignatureNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitSignature(this);
 }
 
-
 // ========================================================== DeclStmtNode =======================================================
 
 // ========================================================== ExprStmtNode =======================================================
@@ -1681,7 +1647,6 @@ public f<Any> ASTExprStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitExprStmt(this);
 }
 
-
 // ========================================================== ModAttrNode ========================================================
 
 public type ASTModAttrNode struct : IVisitable {
@@ -1696,7 +1661,6 @@ public p ASTModAttrNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTModAttrNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitModAttr(this);
 }
-
 
 // =================================================== TopLevelDefAttrNode ================================================
 
@@ -1713,7 +1677,6 @@ public f<Any> ASTTopLevelDefAttrNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTopLevelDefinitionAttr(this);
 }
 
-
 // ======================================================== LambdaAttrNode =======================================================
 
 public type ASTLambdaAttrNode struct : IVisitable {
@@ -1728,7 +1691,6 @@ public p ASTLambdaAttrNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTLambdaAttrNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLambdaAttr(this);
 }
-
 
 // ========================================================= CaseConstantNode ====================================================
 
@@ -1748,7 +1710,6 @@ public p ASTCaseConstantNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTCaseConstantNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitCaseConstant(this);
 }
-
 
 // ========================================================= ReturnStmtNode ======================================================
 
@@ -1781,7 +1742,6 @@ public f<Any> ASTReturnStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitReturnStmt(this);
 }
 
-
 // ========================================================= BreakStmtNode =======================================================
 
 public type ASTBreakStmtNode struct : IVisitable {
@@ -1797,7 +1757,6 @@ public p ASTBreakStmtNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTBreakStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBreakStmt(this);
 }
-
 
 // ======================================================== ContinueStmtNode =====================================================
 
@@ -1815,12 +1774,10 @@ public f<Any> ASTContinueStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitContinueStmt(this);
 }
 
-
 // ======================================================= FallthroughStmtNode ===================================================
 
 public type ASTFallthroughStmtNode struct : IVisitable {
     compose public ASTStmtNode node
-
 }
 
 public p ASTFallthroughStmtNode.ctor(CodeLoc codeLoc) {
@@ -1830,7 +1787,6 @@ public p ASTFallthroughStmtNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTFallthroughStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitFallthroughStmt(this);
 }
-
 
 // ========================================================= AssertStmtNode ======================================================
 
@@ -1848,7 +1804,6 @@ public p ASTAssertStmtNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTAssertStmtNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAssertStmt(this);
 }
-
 
 // ========================================================= AssignExprNode =======================================================
 
@@ -1885,7 +1840,6 @@ public f<Any> ASTAssignExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAssignExpr(this);
 }
 
-
 // ======================================================== TernaryExprNode ======================================================
 
 // Copy ctor calls of a ternary. They depend on the operand types, so they are resolved once per manifestation
@@ -1913,7 +1867,6 @@ public f<Any> ASTTernaryExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitTernaryExpr(this);
 }
 
-
 // ======================================================= LogicalOrExprNode =====================================================
 
 public type ASTLogicalOrExprNode struct : IVisitable {
@@ -1929,7 +1882,6 @@ public p ASTLogicalOrExprNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTLogicalOrExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLogicalOrExpr(this);
 }
-
 
 // ======================================================= LogicalAndExprNode ====================================================
 
@@ -1947,7 +1899,6 @@ public f<Any> ASTLogicalAndExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitLogicalAndExpr(this);
 }
 
-
 // ======================================================= BitwiseOrExprNode =====================================================
 
 public type ASTBitwiseOrExprNode struct : IVisitable {
@@ -1963,7 +1914,6 @@ public p ASTBitwiseOrExprNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTBitwiseOrExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBitwiseOrExpr(this);
 }
-
 
 // ======================================================= BitwiseXorExprNode ====================================================
 
@@ -1981,7 +1931,6 @@ public f<Any> ASTBitwiseXorExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBitwiseXorExpr(this);
 }
 
-
 // ======================================================= BitwiseAndExprNode ====================================================
 
 public type ASTBitwiseAndExprNode struct : IVisitable {
@@ -1997,7 +1946,6 @@ public p ASTBitwiseAndExprNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTBitwiseAndExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitBitwiseAndExpr(this);
 }
-
 
 // ======================================================== EqualityExprNode =====================================================
 
@@ -2021,7 +1969,6 @@ public p ASTEqualityExprNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTEqualityExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitEqualityExpr(this);
 }
-
 
 // ======================================================= RelationalExprNode ====================================================
 
@@ -2048,7 +1995,6 @@ public f<Any> ASTRelationalExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitRelationalExpr(this);
 }
 
-
 // ========================================================= ShiftExprNode =======================================================
 
 public type ShiftOp enum {
@@ -2073,7 +2019,6 @@ public f<Any> ASTShiftExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitShiftExpr(this);
 }
 
-
 // ======================================================== AdditiveExprNode =====================================================
 
 public type AdditiveOp enum {
@@ -2097,7 +2042,6 @@ public p ASTAdditiveExprNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTAdditiveExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAdditiveExpr(this);
 }
-
 
 // ===================================================== MultiplicativeExprNode ==================================================
 
@@ -2124,7 +2068,6 @@ public f<Any> ASTMultiplicativeExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitMultiplicativeExpr(this);
 }
 
-
 // ========================================================== CastExprNode =======================================================
 
 public type ASTCastExprNode struct : IVisitable {
@@ -2142,7 +2085,6 @@ public p ASTCastExprNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTCastExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitCastExpr(this);
 }
-
 
 // ====================================================== PrefixUnaryExprNode ====================================================
 
@@ -2172,7 +2114,6 @@ public p ASTPrefixUnaryExprNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTPrefixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitPrefixUnaryExpr(this);
 }
-
 
 // ====================================================== PostfixUnaryExprNode ===================================================
 
@@ -2213,7 +2154,6 @@ public f<Any> ASTPostfixUnaryExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitPostfixUnaryExpr(this);
 }
 
-
 // ========================================================= AtomicExprNode ======================================================
 
 public type VarAccessData struct {
@@ -2241,7 +2181,6 @@ public f<Any> ASTAtomicExprNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitAtomicExpr(this);
 }
 
-
 // =========================================================== ValueNode =========================================================
 
 public type ASTValueNode struct : IVisitable {
@@ -2264,7 +2203,6 @@ public p ASTValueNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTValueNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitValue(this);
 }
-
 
 // ========================================================== FctCallNode ========================================================
 
@@ -2385,7 +2323,6 @@ public f<bool> ASTFctCallNode.hasReturnValueReceiver() {
     return current.children.getSize() > 1l || assignExprParent.kind != ASTNodeKind::EXPR_STMT;
 }
 
-
 // ==================================================== ArrayInitializationNode ==================================================
 
 public type ASTArrayInitializationNode struct : IVisitable {
@@ -2402,7 +2339,6 @@ public p ASTArrayInitializationNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTArrayInitializationNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitArrayInitialization(this);
 }
-
 
 // ==================================================== StructInstantiationNode ==================================================
 
@@ -2428,7 +2364,6 @@ public p ASTStructInstantiationNode.ctor(CodeLoc codeLoc) {
 public f<Any> ASTStructInstantiationNode.accept(IAbstractAstVisitor* visitor) {
     return visitor.visitStructInstantiation(this);
 }
-
 
 // ========================================================= LambdaBaseNode ======================================================
 
@@ -2480,7 +2415,6 @@ public f<String> ASTLambdaFuncNode.getScopeId() {
     return String("lambda:") + this.codeLoc.toString();
 }
 
-
 // ========================================================= LambdaProcNode ======================================================
 
 public type ASTLambdaProcNode struct : IVisitable {
@@ -2502,7 +2436,6 @@ public f<String> ASTLambdaProcNode.getScopeId() {
     return String("lambda:") + this.codeLoc.toString();
 }
 
-
 // ========================================================= LambdaExprNode =======================================================
 
 public type ASTLambdaExprNode struct : IVisitable {
@@ -2522,7 +2455,6 @@ public f<Any> ASTLambdaExprNode.accept(IAbstractAstVisitor* visitor) {
 public f<String> ASTLambdaExprNode.getScopeId() {
     return String("lambda:") + this.codeLoc.toString();
 }
-
 
 // ====================================================== FunctionDataTypeNode ===================================================
 
@@ -3378,15 +3310,15 @@ public f<bool> ASTNode.hasCompileTimeValue(unsigned long manIdx) {
             return hasCompileTimeValue(ternaryExprNode.condition, manIdx) && trueExprHasCompileTimeValue && falseExprHasCompileTimeValue;
         }
         case ASTNodeKind::LOGICAL_OR_EXPR,
-             ASTNodeKind::LOGICAL_AND_EXPR,
-             ASTNodeKind::BITWISE_OR_EXPR,
-             ASTNodeKind::BITWISE_XOR_EXPR,
-             ASTNodeKind::BITWISE_AND_EXPR,
-             ASTNodeKind::EQUALITY_EXPR,
-             ASTNodeKind::RELATIONAL_EXPR,
-             ASTNodeKind::SHIFT_EXPR,
-             ASTNodeKind::ADDITIVE_EXPR,
-             ASTNodeKind::MULTIPLICATIVE_EXPR: {
+            ASTNodeKind::LOGICAL_AND_EXPR,
+            ASTNodeKind::BITWISE_OR_EXPR,
+            ASTNodeKind::BITWISE_XOR_EXPR,
+            ASTNodeKind::BITWISE_AND_EXPR,
+            ASTNodeKind::EQUALITY_EXPR,
+            ASTNodeKind::RELATIONAL_EXPR,
+            ASTNodeKind::SHIFT_EXPR,
+            ASTNodeKind::ADDITIVE_EXPR,
+            ASTNodeKind::MULTIPLICATIVE_EXPR: {
             // All operands of these nodes are its children
             foreach ASTNode* operand : this.children {
                 if !operand.hasCompileTimeValue(manIdx) {

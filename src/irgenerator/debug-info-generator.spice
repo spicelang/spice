@@ -543,4 +543,3 @@ f<llvm::Metadata> DebugInfoGenerator.getUnionDIType(const ASTNode* node, const Q
     this.structTypeCache.upsert(hashKey, unionDiType);
     return unionDiType;
 }
-

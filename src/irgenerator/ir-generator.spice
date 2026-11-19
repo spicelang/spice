@@ -1539,8 +1539,7 @@ public f<unsigned int> IRGenerator.getArgOffset(const QualType& returnType) {
  * @param sretAddr Memory to return the value to, if it is returned via memory. A new temporary is used, if null
  * @return Call instruction
  */
-public f<llvm::Value> IRGenerator.insertCall(llvm::Type fctType, llvm::Value callee, const Vector<llvm::Value>& args,
-                                            const QualType& returnType, llvm::Value& resultAddr, llvm::Value sretAddr = llvm::Value()) {
+public f<llvm::Value> IRGenerator.insertCall(llvm::Type fctType, llvm::Value callee, const Vector<llvm::Value>& args, const QualType& returnType, llvm::Value& resultAddr, llvm::Value sretAddr = llvm::Value()) {
     const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
     resultAddr = llvm::Value();
     Vector<llvm::Value> loweredArgs;
@@ -1567,8 +1566,7 @@ public f<llvm::Value> IRGenerator.insertCall(llvm::Type fctType, llvm::Value cal
 /**
  * Insert a call to the given function, that returns a value of the given type (see the overload above)
  */
-public f<llvm::Value> IRGenerator.insertCall(llvm::Function callee, const Vector<llvm::Value>& args, const QualType& returnType,
-                                            llvm::Value& resultAddr, llvm::Value sretAddr = llvm::Value()) {
+public f<llvm::Value> IRGenerator.insertCall(llvm::Function callee, const Vector<llvm::Value>& args, const QualType& returnType, llvm::Value& resultAddr, llvm::Value sretAddr = llvm::Value()) {
     return this.insertCall(callee.getFunctionType(), callee.asValue(), args, returnType, resultAddr, sretAddr);
 }
 

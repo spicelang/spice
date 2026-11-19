@@ -36,7 +36,7 @@ public type NativeSockAddr struct {
  * @return Socket address struct
  */
 public f<NativeSockAddr> createNativeSockAddr(const IpAddress& address, unsigned short port, int family, SockAddrLayout layout) {
-    NativeSockAddr sockAddr = NativeSockAddr {};
+    NativeSockAddr sockAddr = NativeSockAddr{};
     for unsigned int i = 0u; i < SOCKADDR_IN6_SIZE; i++ {
         sockAddr.bytes[i] = cast<unsigned byte>(0);
     }

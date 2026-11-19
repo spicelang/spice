@@ -164,7 +164,7 @@ public f<bool> operator!=(const IpAddress& lhs, const IpAddress& rhs) {
  * @return IPv4 address
  */
 public f<IpAddress> createIpv4Address(unsigned byte b0, unsigned byte b1, unsigned byte b2, unsigned byte b3) {
-    IpAddress address = IpAddress {};
+    IpAddress address = IpAddress{};
     address.bytes[0] = b0;
     address.bytes[1] = b1;
     address.bytes[2] = b2;
@@ -179,7 +179,7 @@ public f<IpAddress> createIpv4Address(unsigned byte b0, unsigned byte b1, unsign
  * @return IPv4 address
  */
 public f<IpAddress> createIpv4AddressFromInAddr(unsigned int inAddr) {
-    IpAddress address = IpAddress {};
+    IpAddress address = IpAddress{};
     unsafe {
         unsigned byte* inAddrBytes = cast<unsigned byte*>(&inAddr);
         for unsigned int i = 0u; i < IPV4_ADDRESS_LENGTH; i++ {
@@ -196,7 +196,7 @@ public f<IpAddress> createIpv4AddressFromInAddr(unsigned int inAddr) {
  * @return IPv6 address
  */
 public f<IpAddress> createIpv6Address(const unsigned short[8] groups) {
-    IpAddress address = IpAddress {};
+    IpAddress address = IpAddress{};
     address.ipv6 = true;
     for int i = 0; i < 8; i++ {
         const int group = cast<int>(groups[i]);
@@ -227,7 +227,7 @@ public f<Result<IpAddress>> parseIpAddress(const String& text) {
  * @return Parsed address
  */
 public f<Result<IpAddress>> parseIpv4Address(const String& text) {
-    IpAddress address = IpAddress {};
+    IpAddress address = IpAddress{};
     if !parseIpv4Into(text, 0l, cast<long>(text.getLength()), address, 0u) {
         return err<IpAddress>(Error("Malformed IPv4 address"));
     }
@@ -248,7 +248,7 @@ public f<Result<IpAddress>> parseIpv6Address(const String& text) {
     const long length = cast<long>(text.getLength());
     if length < 2l || length > 45l { return err<IpAddress>(error); }
 
-    IpAddress address = IpAddress {};
+    IpAddress address = IpAddress{};
     address.ipv6 = true;
     int[8] groups;
     int groupCount = 0;
@@ -272,7 +272,7 @@ public f<Result<IpAddress>> parseIpv6Address(const String& text) {
         if hasDot {
             // An embedded IPv4 address takes the place of the last two groups
             if segmentEnd != length || groupCount > 6 { return err<IpAddress>(error); }
-            IpAddress ipv4Address = IpAddress {};
+            IpAddress ipv4Address = IpAddress{};
             if !parseIpv4Into(text, i, segmentEnd, ipv4Address, 0u) { return err<IpAddress>(error); }
             groups[groupCount] = (cast<int>(ipv4Address.bytes[0]) << 8) | cast<int>(ipv4Address.bytes[1]);
             groups[groupCount + 1] = (cast<int>(ipv4Address.bytes[2]) << 8) | cast<int>(ipv4Address.bytes[3]);

@@ -31,7 +31,7 @@ p checkParamCount(ASTFctDefBaseNode& fctDefBase, const string kindLabel, Vector<
     }
     if paramCount > MAX_PARAM_COUNT {
         const String message = String(kindLabel) + " '" + fctDefBase.name.name + "' has " + toString(paramCount) +
-                               " parameters (max " + toString(MAX_PARAM_COUNT) + "); consider grouping related parameters into a struct";
+            " parameters (max " + toString(MAX_PARAM_COUNT) + "); consider grouping related parameters into a struct";
         findings.pushBack(LintFinding(fctDefBase.codeLoc, TOO_MANY_PARAMETERS_RULE_ID, LintSeverity::WARNING, message));
     }
 }

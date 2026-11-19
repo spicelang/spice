@@ -8,7 +8,6 @@ import "std/data/vector";
 // Constants
 const int F_OK = 0; // File existence
 
-
 const unsigned short IF_MT  = 0o0170000us;
 const unsigned short IF_DIR = 0o0040000us;
 

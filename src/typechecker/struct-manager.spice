@@ -303,7 +303,6 @@ f<bool> matchTemplateTypes(Struct& candidate, const QualTypeList& reqTemplateTyp
         return false;
     }
 
-
     // Loop over all template types
     foreach unsigned long i, GenericType& candidateTemplateType : candidate.templateTypes {
         QualType& candidateType = candidateTemplateType.qualType;
@@ -347,7 +346,6 @@ p substantiateFieldTypes(Struct& candidate, const TypeMapping& typeMapping, cons
         }
     }
 }
-
 
 /**
  * Calculate the cache key for the struct lookup cache

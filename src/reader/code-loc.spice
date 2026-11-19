@@ -169,7 +169,7 @@ public f<bool> CodeLoc.isAfter(const CodeLoc& other) {
     return this.line == other.line ? this.col > other.col : this.line > other.line;
 }
 
-public f<bool> operator==(const CodeLoc &lhs, const CodeLoc &rhs) {
+public f<bool> operator==(const CodeLoc& lhs, const CodeLoc& rhs) {
     return lhs.sourceFilePath == rhs.sourceFilePath && lhs.line == rhs.line && lhs.col == rhs.col;
 }
 

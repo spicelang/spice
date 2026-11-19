@@ -82,18 +82,18 @@ type ModuleNamePair struct {
 }
 
 public type RuntimeModuleManager struct {
-    GlobalResourceManager &resourceManager
-    UnorderedMap<RuntimeModule, SourceFile *> modules // Runtime modules, that were requested
+    GlobalResourceManager& resourceManager
+    UnorderedMap<RuntimeModule, SourceFile*> modules // Runtime modules, that were requested
     // Source files, that are runtime modules by their path. Unlike modules, this also contains the explicitly imported and
     // the still loading runtime modules, so that they know that they are the runtime module themselves
-    UnorderedMap<RuntimeModule, SourceFile *> moduleFiles
+    UnorderedMap<RuntimeModule, SourceFile*> moduleFiles
 }
 
-public p RuntimeModuleManager.ctor(GlobalResourceManager &resourceManager) {
+public p RuntimeModuleManager.ctor(GlobalResourceManager& resourceManager) {
     this.resourceManager = resourceManager;
 }
 
-public f<SourceFile *> RuntimeModuleManager.requestModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
+public f<SourceFile*> RuntimeModuleManager.requestModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const String importName = String(this.resolveNamePair(requestedModule).importName);
 
     // Check if the requested module is available already, if not load it
@@ -114,7 +114,7 @@ public f<SourceFile *> RuntimeModuleManager.requestModule(SourceFile* parentSour
     return runtimeFile;
 }
 
-public f<SourceFile *> RuntimeModuleManager.getModule(RuntimeModule requestedModule) {
+public f<SourceFile*> RuntimeModuleManager.getModule(RuntimeModule requestedModule) {
     assert this.modules.contains(requestedModule);
     return this.modules.get(requestedModule);
 }
@@ -167,7 +167,7 @@ public p RuntimeModuleManager.registerIfRuntimeModule(SourceFile* sourceFile) {
     }
 }
 
-public f<SourceFile *> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
+public f<SourceFile*> RuntimeModuleManager.loadModule(SourceFile* parentSourceFile, RuntimeModule requestedModule) {
     const ModuleNamePair namePair = this.resolveNamePair(requestedModule);
     // Runtime modules are resolved like imports, so the platform specific variants (e.g. error_rt_freestanding.spice) win
     const FilePath basePath = getStdDir() / "runtime" / String(namePair.fileName);
