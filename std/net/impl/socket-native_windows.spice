@@ -183,7 +183,7 @@ public f<int> acceptNativeConnection(int sockFd) {
 f<bool> startNativeWinsock() {
     AcquireSRWLockExclusive(&NATIVE_WINSOCK_LOCK);
     if !NATIVE_WINSOCK_STARTED {
-        NativeWsaData wsaData = NativeWsaData {};
+        NativeWsaData wsaData = NativeWsaData{};
         NATIVE_WINSOCK_STARTED = WSAStartup(cast<short>(NATIVE_WSA_VERSION), &wsaData) == 0;
     }
     const bool started = NATIVE_WINSOCK_STARTED;

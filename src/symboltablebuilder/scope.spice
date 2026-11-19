@@ -563,7 +563,7 @@ public f<JsonValue*> Scope.getSymbolTableJSON() {
  * @return Child scope (heap allocated)
  */
 #[ignoreUnusedReturnValue]
-public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc *declCodeLoc) {
+public f<Scope*> Scope.createChildScope(const String& scopeName, ScopeType scopeType, const CodeLoc* declCodeLoc) {
     assert !this.children.contains(scopeName);
     Scope* child = this.sourceFile.resourceManager.createScope(this, this.sourceFile, scopeType, declCodeLoc);
     this.children.upsert(scopeName, child);
@@ -690,4 +690,3 @@ public f<Vector<SymbolTableEntry*>> Scope.getVarsGoingOutOfScope() {
 
     return varsGoingOutOfScope;
 }
-

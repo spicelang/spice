@@ -361,8 +361,7 @@ f<YamlValue*> YamlParser.parseBlockSequence(unsigned long indent) {
         this.parseSequenceEntry(sequence, indent);
         if !this.hasError {
             this.skipToContentLine();
-            scanning = !this.atEnd() && !this.atDocumentBoundary() && this.countIndent() == indent
-                       && this.lineStartsSequenceEntry(indent);
+            scanning = !this.atEnd() && !this.atDocumentBoundary() && this.countIndent() == indent && this.lineStartsSequenceEntry(indent);
             if scanning { this.pos += indent; }
         }
     }
@@ -492,8 +491,7 @@ f<YamlValue*> YamlParser.parseMappingValue(unsigned long keyIndent) {
                 this.skipToContentLine();
                 bool handled = false;
                 // A block sequence may line up with the key it belongs to
-                if !this.atEnd() && !this.atDocumentBoundary() && this.countIndent() == keyIndent
-                   && this.lineStartsSequenceEntry(keyIndent) {
+                if !this.atEnd() && !this.atDocumentBoundary() && this.countIndent() == keyIndent && this.lineStartsSequenceEntry(keyIndent) {
                     this.pos += keyIndent;
                     value = this.parseBlockSequence(keyIndent);
                     handled = true;
@@ -1087,8 +1085,7 @@ inline f<bool> isSeparationSpace(char c) {
 // Checks whether a ':' followed by the given character ends a plain scalar inside a
 // flow collection
 inline f<bool> isFlowScalarEnd(char c) {
-    return c == '\0' || c == '\n' || c == '\r' || c == ' ' || c == '\t' || c == ','
-           || c == ']' || c == '}';
+    return c == '\0' || c == '\n' || c == '\r' || c == ' ' || c == '\t' || c == ',' || c == ']' || c == '}';
 }
 
 // Checks whether the given character may appear in an anchor name

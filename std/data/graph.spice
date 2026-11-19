@@ -194,7 +194,7 @@ public type GraphDFSIterator<T> struct : IIterator<Vertex<T>> {
 public p GraphDFSIterator.ctor<T>(Graph<T>& graph, Vertex<T>* startVertex = nil<Vertex<T>*>) {
     this.graph = graph;
     if startVertex != nil<Vertex<T>*> {
-       this.stack.push(startVertex);
+        this.stack.push(startVertex);
     }
     this.advance();
 }

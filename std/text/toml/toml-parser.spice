@@ -659,8 +659,7 @@ f<TomlValue*> TomlParser.parseDateTime() {
         if !this.consumeDate() { return nil<TomlValue*>; }
         // The time part may be separated by 'T', 't' or a single space
         const char separator = this.peek();
-        const bool spaceSeparated = separator == ' ' && isDigit(this.peekAt(1l)) && isDigit(this.peekAt(2l))
-                                    && this.peekAt(3l) == ':';
+        const bool spaceSeparated = separator == ' ' && isDigit(this.peekAt(1l)) && isDigit(this.peekAt(2l)) && this.peekAt(3l) == ':';
         if separator == 'T' || separator == 't' || spaceSeparated {
             this.pos++;
             if !this.consumeTime() { return nil<TomlValue*>; }

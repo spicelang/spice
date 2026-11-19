@@ -1,0 +1,6 @@
+# Commits that are skipped by git blame, e.g. bulk formatting changes.
+# GitHub picks this file up automatically. Locally, enable it with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+
+# Format the compiler and the standard library with the formatter
+7b8e6f50033069a214815fc2cb6a6ea1633127dc

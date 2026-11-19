@@ -267,7 +267,6 @@ f<bool> matchTemplateTypes(Union& candidate, const QualTypeList& reqTemplateType
         return false;
     }
 
-
     // Loop over all template types
     foreach unsigned long i, GenericType& candidateTemplateType : candidate.templateTypes {
         QualType& candidateType = candidateTemplateType.qualType;
@@ -298,7 +297,6 @@ p substantiateFieldTypes(Union& candidate, const TypeMapping& typeMapping, const
         }
     }
 }
-
 
 /**
  * Calculate the cache key for the union lookup cache

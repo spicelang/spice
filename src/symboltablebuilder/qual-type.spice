@@ -187,7 +187,7 @@ public f<QualTypeList> QualType.getTemplateTypes() {
  * @param templateTypes Custom set of template types
  * @return Struct instance
  */
-public f<Struct*> QualType.getStruct(const ASTNode* node, const QualTypeList &templateTypes) {
+public f<Struct*> QualType.getStruct(const ASTNode* node, const QualTypeList& templateTypes) {
     assert this.is(SuperType::TY_STRUCT);
     Scope* bodyScope = this.getBodyScope();
     Scope* structDefScope = bodyScope.parent;

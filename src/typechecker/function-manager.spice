@@ -595,7 +595,6 @@ f<bool> matchThisType(Function& candidate, const QualType& reqThisType, TypeMapp
         return true;
     }
 
-
     // Check if the requested 'this' type matches the candidate 'this' type. The type mapping may be extended
     if !matchRequestedToCandidateType(candidate.thisType, reqThisType, typeMapping, candidate.templateTypes, false, strictQualifierMatching) {
         return false;
@@ -621,7 +620,6 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
     if candidate.isVararg && reqArgs.getSize() < candidate.paramList.getSize() {
         return false;
     }
-
 
     // Loop over all parameters
     foreach unsigned long i, const Arg& arg : reqArgs {

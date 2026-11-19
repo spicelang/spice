@@ -74,13 +74,10 @@ public f<bool> getAttrConfig(const String& key, AttrConfigValue& config) {
     const unsigned byte targetLambda = cast<unsigned byte>(AttrTarget::TARGET_LAMBDA);
     const unsigned byte targetUnion = cast<unsigned byte>(AttrTarget::TARGET_UNION);
 
-    if key == ATTR_CORE_LINKER_FLAG || key == ATTR_CORE_LINUX_LINKER_FLAG || key == ATTR_CORE_DARWIN_LINKER_FLAG ||
-       key == ATTR_CORE_WINDOWS_LINKER_FLAG || key == ATTR_CORE_LINKER_ADDITIONAL_SOURCE {
+    if key == ATTR_CORE_LINKER_FLAG || key == ATTR_CORE_LINUX_LINKER_FLAG || key == ATTR_CORE_DARWIN_LINKER_FLAG || key == ATTR_CORE_WINDOWS_LINKER_FLAG || key == ATTR_CORE_LINKER_ADDITIONAL_SOURCE {
         config.target = targetModule;
         config.attrType = AttrType::TYPE_STRING;
-    } else if key == ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION || key == ATTR_CORE_COMPILER_WARNINGS_IGNORE ||
-              key == ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING || key == ATTR_CORE_COMPILER_ERROR_RETURN_TRACING ||
-              key == ATTR_CORE_COMPILER_REQUIRES_OS {
+    } else if key == ATTR_CORE_COMPILER_KEEP_ON_NAME_COLLISION || key == ATTR_CORE_COMPILER_WARNINGS_IGNORE || key == ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING || key == ATTR_CORE_COMPILER_ERROR_RETURN_TRACING || key == ATTR_CORE_COMPILER_REQUIRES_OS {
         config.target = targetModule;
         config.attrType = AttrType::TYPE_BOOL;
     } else if key == ATTR_CORE_COMPILER_FIXED_TYPE_ID {
@@ -92,8 +89,7 @@ public f<bool> getAttrConfig(const String& key, AttrConfigValue& config) {
     } else if key == ATTR_CORE_COMPILER_MANGLE || key == ATTR_CORE_COMPILER_NO_RETURN || key == ATTR_CORE_COMPILER_COLD {
         config.target = targetFctProc | targetExtDecl;
         config.attrType = AttrType::TYPE_BOOL;
-    } else if key == ATTR_CORE_COMPILER_RED_ZONE || key == ATTR_CORE_COMPILER_PANIC_HANDLER || key == ATTR_CORE_COMPILER_ALLOC_FUNCTION ||
-              key == ATTR_CORE_COMPILER_REALLOC_FUNCTION || key == ATTR_CORE_COMPILER_DEALLOC_FUNCTION || key == ATTR_CORE_COMPILER_NO_BUILTINS {
+    } else if key == ATTR_CORE_COMPILER_RED_ZONE || key == ATTR_CORE_COMPILER_PANIC_HANDLER || key == ATTR_CORE_COMPILER_ALLOC_FUNCTION || key == ATTR_CORE_COMPILER_REALLOC_FUNCTION || key == ATTR_CORE_COMPILER_DEALLOC_FUNCTION || key == ATTR_CORE_COMPILER_NO_BUILTINS {
         config.target = targetFctProc;
         config.attrType = AttrType::TYPE_BOOL;
     } else if key == ATTR_CORE_COMPILER_MANGLED_NAME {

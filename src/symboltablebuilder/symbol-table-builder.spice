@@ -189,7 +189,6 @@ f<Any> SymbolTableBuilder.visitFctOrProcDef(ASTFctDefBaseNode* node, bool isFunc
 // ─── real logic ───────────────────────────────────────────────────────────────
 
 public f<Any> SymbolTableBuilder.visitEntry(ASTEntryNode* node) {
-
     // Initialize
     this.currentScope = this.rootScope;
 
@@ -546,7 +545,6 @@ public f<Any> SymbolTableBuilder.visitUnsafeBlock(ASTUnsafeBlockNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
-
     // Create scope for the loop head. The loop variable lives there, since it has to survive from one round to the next
     Scope* headScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LOOP_HEAD, &node.codeLoc);
     node.headScope = headScope;
@@ -577,7 +575,6 @@ public f<Any> SymbolTableBuilder.visitForLoop(ASTForLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitForeachLoop(ASTForeachLoopNode* node) {
-
     // Create scope for the loop head. The index variable lives there, since it has to survive from one round to the next
     Scope* headScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::LOOP_HEAD, &node.codeLoc);
     node.headScope = headScope;
@@ -607,7 +604,6 @@ public f<Any> SymbolTableBuilder.visitForeachLoop(ASTForeachLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitWhileLoop(ASTWhileLoopNode* node) {
-
     // Create scope for the loop body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::WHILE_BODY, &node.codeLoc);
     node.bodyScope = bodyScope;
@@ -626,7 +622,6 @@ public f<Any> SymbolTableBuilder.visitWhileLoop(ASTWhileLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
-
     // Create scope for the loop body
     Scope* bodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::WHILE_BODY, &node.codeLoc);
     node.bodyScope = bodyScope;
@@ -645,7 +640,6 @@ public f<Any> SymbolTableBuilder.visitDoWhileLoop(ASTDoWhileLoopNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitIfStmt(ASTIfStmtNode* node) {
-
     // Create scope for the then body
     Scope* thenBodyScope = this.currentScope.createChildScope(node.getScopeId(), ScopeType::IF_ELSE_BODY, &node.codeLoc);
     node.thenBodyScope = thenBodyScope;
@@ -669,7 +663,6 @@ public f<Any> SymbolTableBuilder.visitIfStmt(ASTIfStmtNode* node) {
 }
 
 public f<Any> SymbolTableBuilder.visitElseStmt(ASTElseStmtNode* node) {
-
     // Visit if statement in the case of an else if branch
     if node.isElseIf {
         this.visit(node.ifStmt);

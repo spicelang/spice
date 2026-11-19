@@ -28,8 +28,7 @@ const long MAX_CYCLOMATIC_COMPLEXITY = 10l;
 f<long> countDecisionPoints(ASTNode* node) {
     long count = 0l;
     const ASTNodeKind kind = node.kind;
-    if kind == ASTNodeKind::IF_STMT || kind == ASTNodeKind::FOR_LOOP || kind == ASTNodeKind::FOREACH_LOOP ||
-       kind == ASTNodeKind::WHILE_LOOP || kind == ASTNodeKind::DO_WHILE_LOOP || kind == ASTNodeKind::CASE_BRANCH {
+    if kind == ASTNodeKind::IF_STMT || kind == ASTNodeKind::FOR_LOOP || kind == ASTNodeKind::FOREACH_LOOP || kind == ASTNodeKind::WHILE_LOOP || kind == ASTNodeKind::DO_WHILE_LOOP || kind == ASTNodeKind::CASE_BRANCH {
         count++;
     }
     foreach ASTNode* child : node.getChildren() {
@@ -51,7 +50,7 @@ p checkComplexity(ASTFctDefBaseNode& fctDefBase, const string kindLabel, Vector<
     const long complexity = 1l + countDecisionPoints(getASTNode(fctDefBase.body));
     if complexity > MAX_CYCLOMATIC_COMPLEXITY {
         const String message = String(kindLabel) + " '" + fctDefBase.name.name + "' has a cyclomatic complexity of " +
-                               toString(complexity) + " (max " + toString(MAX_CYCLOMATIC_COMPLEXITY) + "); consider splitting it up";
+            toString(complexity) + " (max " + toString(MAX_CYCLOMATIC_COMPLEXITY) + "); consider splitting it up";
         findings.pushBack(LintFinding(fctDefBase.codeLoc, CYCLOMATIC_COMPLEXITY_RULE_ID, LintSeverity::WARNING, message));
     }
 }

@@ -188,8 +188,7 @@ public inline p FilePath.replaceExtension(string newExtension) {
         separatorIdx = windowsSeparatorIdx;
     }
     const long fileNameStart = separatorIdx + 1l;
-    const bool isParentDirName = dotIdx == fileNameStart + 1l && dotIdx == cast<long>(this.path.getLength()) - 1l &&
-                                 this.path[fileNameStart] == '.';
+    const bool isParentDirName = dotIdx == fileNameStart + 1l && dotIdx == cast<long>(this.path.getLength()) - 1l && this.path[fileNameStart] == '.';
     if dotIdx > fileNameStart && !isParentDirName {
         this.path = this.path.getSubstring(0, dotIdx);
     }
@@ -427,8 +426,7 @@ public f<FilePath> FilePath.lexicallyRelative(const FilePath& base) {
 
     // Skip the common prefix
     unsigned long commonCount = 0l;
-    while commonCount < pathComponents.getSize() && commonCount < baseComponents.getSize() &&
-            pathComponents.get(commonCount) == baseComponents.get(commonCount) {
+    while commonCount < pathComponents.getSize() && commonCount < baseComponents.getSize() && pathComponents.get(commonCount) == baseComponents.get(commonCount) {
         commonCount++;
     }
 
@@ -527,7 +525,7 @@ f<String> joinPathComponents(const String& root, const Vector<String>& component
     return joined;
 }
 
-#[test, test.name="FilePath path-safety Smoke test"]
+#[test, test.name = "FilePath path-safety Smoke test"]
 public f<bool> testFilePathPathSafetySmoke() {
     // hasRootPath / isAbsolute - purely lexical, no filesystem access
     const FilePath absPath = FilePath("/home/user/file.txt");

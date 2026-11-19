@@ -50,7 +50,7 @@ public f<int> Socket.getConnFd() {
  * @return A standalone socket that owns the detached connection
  */
 public f<Socket> Socket.detachConnection() {
-    const Socket detached = Socket { -1, this.connFd };
+    const Socket detached = Socket{-1, this.connFd};
     this.connFd = 0;
     return detached;
 }
@@ -202,7 +202,7 @@ public f<Result<InAddrT>> resolveHost(string host) {
  */
 public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
     const int sockFd = openNativeServerSocket(createIpv4AddressFromInAddr(INADDR_ANY), port, maxWaitingConnections)!;
-    return ok(Socket { sockFd, /*connFd*/ 0 });
+    return ok(Socket{sockFd, /*connFd*/ 0});
 }
 
 /**
@@ -231,5 +231,5 @@ public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
 public f<Result<Socket>> openClientSocket(string host, unsigned short port, DnsResolver& resolver) {
     // A client talks over the socket itself, so socket and connection descriptor are the same
     const int sockFd = resolver.connectTcp(String(host), port)!;
-    return ok(Socket { sockFd, /*connFd*/ sockFd });
+    return ok(Socket{sockFd, /*connFd*/ sockFd});
 }
