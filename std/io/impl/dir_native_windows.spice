@@ -1,0 +1,123 @@
+#![core.compiler.requiresOs]
+
+// Windows version of dir_native.spice, picked by the OS suffix. The two files must offer the same symbols.
+
+// Std imports
+import "std/data/vector";
+
+// Constants
+const int F_OK = 0; // File existence
+
+
+const unsigned short IF_MT  = 0o0170000us;
+const unsigned short IF_DIR = 0o0040000us;
+
+const int INVALID_HANDLE = -1; // Decimal for 0xFFFFFFFF
+
+const int FILE_ATTRIBUTE_DIRECTORY = 16;
+const int FILE_ATTRIBUTE_REPARSE_POINT = 1024; // Symbolic links and junctions
+
+type FileStat struct {
+    unsigned int st_dev    // ID of the device containing file
+    unsigned short st_ino  // Inode number
+    unsigned short st_mode // File type and mode
+    short st_nlink         // Number of hard links
+    short st_uid           // User ID of owner
+    short st_gid           // Group ID of owner
+    unsigned int st_rdev   // Device ID (if special file)
+    int st_size            // Total size in bytes
+    long st_atime          // Time of last access
+    long st_mtime          // Time of last modificatio
+    long st_ctime          // Time of last status change
+}
+
+type FileTime struct {
+    int f1
+    int f2
+}
+
+type DirEntry struct {
+    int fileAttributes
+    FileTime f2
+    FileTime f3
+    FileTime f4
+    int f5
+    int f6
+    int f7
+    int f8
+    char[260] fileName
+    char[14] f9
+}
+
+// Link external functions
+ext f<int> access(string, int);
+ext f<int> stat(string, FileStat*);
+#[core.linker.dll = true, core.compiler.mangledName = "FindFirstFileA"]
+ext f<byte*> findFirstFileA(string, DirEntry*);
+#[core.linker.dll = true, core.compiler.mangledName = "FindNextFileA"]
+ext f<bool> findNextFileA(byte*, DirEntry*);
+#[core.linker.dll = true, core.compiler.mangledName = "FindClose"]
+ext f<bool> findClose(byte*);
+
+/**
+ * Checks if a directory is existing.
+ *
+ * @param path Path to check
+ * @return Existing or not
+ */
+public f<bool> isNativeDir(string path) {
+    // Check if there exists something, a file or a dir
+    if access(path, F_OK) == 0 {
+        // Check if it is a dir
+        dyn fs = FileStat{};
+        if stat(path, &fs) != 0 {
+            return false;
+        }
+        return (fs.st_mode & IF_MT) == IF_DIR;
+    }
+    return false;
+}
+
+/**
+ * Append the entries of a directory to the given vector. Symbolic links and junctions to directories are not descended
+ * into.
+ *
+ * @param dirPath Path to the directory
+ * @param prefix Relative path of the directory, which is prepended to the entry names
+ * @param recursive Descend into subdirectories or not
+ * @param entries Vector to append the entries to
+ * @return True if the directory could be opened, false if not
+ */
+public f<bool> collectNativeDirEntries(string dirPath, const String& prefix, bool recursive, Vector<String>& entries) {
+    // FindFirstFileA expects a search pattern, so match everything inside the directory
+    const String searchPattern = String(dirPath) + "\\*";
+    DirEntry dirEntry = DirEntry{};
+    byte* handle = findFirstFileA(searchPattern.getRaw(), &dirEntry);
+    if handle == cast<unsigned long>(INVALID_HANDLE) { return false; }
+
+    bool readMore = true;
+    while readMore {
+        String name;
+        unsafe {
+            name = String(cast<string>(&dirEntry.fileName));
+        }
+        if name != "." && name != ".." {
+            String relativePath = prefix;
+            if !relativePath.isEmpty() { relativePath += "/"; }
+            relativePath += name;
+            entries.pushBack(relativePath);
+
+            // Links are not followed, so that a link cycle cannot cause endless recursion
+            const bool isDir = (dirEntry.fileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+            const bool isLink = (dirEntry.fileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
+            if recursive && isDir && !isLink {
+                const String childPath = String(dirPath) + "\\" + name;
+                collectNativeDirEntries(childPath.getRaw(), relativePath, true, entries);
+            }
+        }
+        // Check if there is another entry
+        readMore = findNextFileA(handle, &dirEntry);
+    }
+    findClose(handle);
+    return true;
+}

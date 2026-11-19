@@ -2,6 +2,7 @@
 
 // Std imports
 import "std/data/vector";
+import "std/os/os";
 import "std/io/impl/dir_native";
 
 // File permission modes
@@ -24,22 +25,10 @@ public const int MODE_OTHER_R   = 0o0000004;
 public const int MODE_OTHER_W   = 0o0000002;
 public const int MODE_OTHER_X   = 0o0000001;
 
-const int F_OK = 0; // File existence
-const int X_OK = 1; // Can execute
-const int W_OK = 2; // Can write
-const int R_OK = 4; // Can read
-
-// Directory entry types, as reported by readdir
-const int DT_UNKNOWN = 0; // The file system does not report the type
-const int DT_DIR = 4;     // Directory
-
 // Link external functions
 ext f<int> mkdir(string, int);
 ext f<int> rmdir(string);
 ext f<int> rename(string, string);
-ext f<byte*> opendir(string);
-ext f<int> closedir(byte*);
-ext f<long> readlink(string, byte*, unsigned long);
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
@@ -81,20 +70,14 @@ public f<int> renameDir(string oldPath, string newPath) {
  * @return Existing or not
  */
 public f<bool> dirExists(string path) {
-    // Open the path as a directory. Unlike stat, this does not depend on the platform-specific layout of struct stat
-    byte* dirStream = opendir(path);
-    if dirStream == nil<byte*> {
-        return false;
-    }
-    closedir(dirStream);
-    return true;
+    return isNativeDir(path);
 }
 
 /**
  * Creates an empty directory at the specified path, with the specified mode.
  * Unlike mkDir, mkDirs can also create nested path structures: any missing parent directories
  * are created along the way, in order. Directories that already exist anywhere along the path
- * (including the target itself) are left as is.
+ * (including the target itself) are left as is. On Windows, both '/' and '\' are accepted as separators.
  *
  * There are predefined constants for the mode available:
  * MODE_ALL_RWX, MODE_ALL_RW, MODE_ALL_R,
@@ -105,20 +88,24 @@ public f<bool> dirExists(string path) {
  * @return Result code of the create operation: 0 = successful, -1 = failed
  */
 public f<int> mkDirs(string path, int mode) {
-    const String fullPath = String(path);
+    String fullPath = String(path);
     if fullPath.isEmpty() { return -1; }
+    fullPath.replaceAll('/', PATH_SEPARATOR);
 
     // Walk the path component by component, creating each missing directory along the way.
-    // A leading '/' produces an empty first prefix, which is skipped, so absolute paths work too.
+    // A leading separator produces an empty first prefix, which is skipped, so absolute paths work too. On Windows, a drive
+    // letter like "C:\" produces a drive prefix ("C:"), which is skipped as well, since it always pre-exists and mkdir
+    // rejects it.
     unsigned long searchStart = 0l;
     while true {
-        const long sepIndex = fullPath.find('/', searchStart);
+        const long sepIndex = fullPath.find(PATH_SEPARATOR, searchStart);
         const bool isLast = sepIndex == -1l;
         const long end = isLast ? cast<long>(fullPath.getLength()) : sepIndex;
         const String prefix = fullPath.getSubstring(0l, end);
 
         // Another process may create the directory between the check and mkdir, so only a still missing directory is an error
-        if !prefix.isEmpty() && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 && !dirExists(prefix.getRaw()) {
+        const bool isDrivePrefix = isWindows() && prefix.getLength() == 2l && prefix.endsWith(":");
+        if !prefix.isEmpty() && !isDrivePrefix && !dirExists(prefix.getRaw()) && mkdir(prefix.getRaw(), mode) != 0 && !dirExists(prefix.getRaw()) {
             return -1;
         }
 
@@ -138,7 +125,7 @@ public f<int> mkDirs(string path, int mode) {
  */
 public f<Result<Vector<String>>> listDir(string path) {
     Vector<String> entries;
-    if !collectDirEntries(path, String(), false, entries) {
+    if !collectNativeDirEntries(path, String(), false, entries) {
         return err<Vector<String>>(Error("Could not open directory"));
     }
     return ok(entries);
@@ -147,66 +134,16 @@ public f<Result<Vector<String>>> listDir(string path) {
 /**
  * Lists all files and subdirectories inside the given directory and, recursively, inside its subdirectories. Each entry
  * is reported as a path relative to the given directory, with '/' as separator. A directory is listed before its
- * contents. Symbolic links to directories are listed, but not descended into. Subdirectories, that cannot be opened
- * (e.g. due to missing permissions) are listed, but their contents are left out.
+ * contents. Symbolic links (and on Windows junctions) to directories are listed, but not descended into. Subdirectories,
+ * that cannot be opened (e.g. due to missing permissions) are listed, but their contents are left out.
  *
  * @param path Path to the directory
  * @return Relative paths of the entries, or an error if the directory could not be opened
  */
 public f<Result<Vector<String>>> listDirRecursive(string path) {
     Vector<String> entries;
-    if !collectDirEntries(path, String(), true, entries) {
+    if !collectNativeDirEntries(path, String(), true, entries) {
         return err<Vector<String>>(Error("Could not open directory"));
     }
     return ok(entries);
-}
-
-/**
- * Append the entries of a directory to the given vector
- *
- * @param dirPath Path to the directory
- * @param prefix Relative path of the directory, which is prepended to the entry names
- * @param recursive Descend into subdirectories or not
- * @param entries Vector to append the entries to
- * @return True if the directory could be opened, false if not
- */
-f<bool> collectDirEntries(string dirPath, const String& prefix, bool recursive, Vector<String>& entries) {
-    byte* dirStream = opendir(dirPath);
-    if dirStream == nil<byte*> { return false; }
-
-    String name;
-    int entryType = DT_UNKNOWN;
-    while readNextDirEntry(dirStream, name, entryType) {
-        if name == "." || name == ".." { continue; }
-        String relativePath = prefix;
-        if !relativePath.isEmpty() { relativePath += "/"; }
-        relativePath += name;
-        entries.pushBack(relativePath);
-
-        if recursive {
-            const String childPath = String(dirPath) + "/" + name;
-            // Symbolic links are never followed, so that a link cycle cannot cause endless recursion. They are reported as
-            // such, unless the file system does not report entry types at all. Then the entry has to be checked directly,
-            // but dirExists follows links, so links have to be ruled out first
-            const bool isUnknownDir = entryType == DT_UNKNOWN && !isSymlink(childPath.getRaw()) && dirExists(childPath.getRaw());
-            const bool isDir = entryType == DT_DIR || isUnknownDir;
-            if isDir {
-                collectDirEntries(childPath.getRaw(), relativePath, true, entries);
-            }
-        }
-    }
-    closedir(dirStream);
-    return true;
-}
-
-/**
- * Check if the given path is a symbolic link, without following it
- *
- * @param path Path to check
- * @return Symbolic link or not
- */
-f<bool> isSymlink(string path) {
-    // readlink only succeeds on symbolic links. One byte of the link target is enough to tell
-    byte targetStart;
-    return readlink(path, &targetStart, 1ul) >= 0l;
 }
