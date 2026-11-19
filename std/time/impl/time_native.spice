@@ -1,0 +1,28 @@
+#![core.compiler.requiresOs]
+
+// Time of day retrieval for time.spice. Windows has a 32 bit 'long' and therefore its own
+// time_native_windows.spice, picked by the OS suffix. The two files must offer the same symbols.
+
+// Layout of 'struct timeval' with a 64 bit 'long'
+type TimeVal struct {
+    unsigned long tvSec
+    unsigned long tvUsec
+}
+type TimeZone struct {
+    int tzMinutewest
+    int tzDsttime
+}
+
+// Link external functions
+ext f<int> gettimeofday(TimeVal*, TimeZone*);
+
+/**
+ * Retrieve the current time of day
+ *
+ * @return Microseconds since the Unix epoch (1970-01-01T00:00:00Z)
+ */
+public f<long> getNativeTimeOfDayMicros() {
+    TimeVal time = TimeVal{};
+    gettimeofday(&time, nil<TimeZone*>);
+    return 1000000l * cast<long>(time.tvSec) + cast<long>(time.tvUsec);
+}
