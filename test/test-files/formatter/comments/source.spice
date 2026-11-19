@@ -14,6 +14,9 @@
 
 f<int> main() {
     int x = compute(1, 2);
+    string s = "Line break \
+inside";  // Aligned after a string with a line break
+    int y = 3;           // Aligned after a string with a line break
     if x > 1 {
         x--;
     }

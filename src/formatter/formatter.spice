@@ -532,7 +532,7 @@ f<unsigned long> SourceFormatter.computeLineIndentCol(unsigned long idx, Frame& 
     const FmtToken& code = this.tokens.get(cast<unsigned long>(codeIdx));
     if top.alignCol >= 0l && !top.alignDecided && !isCloser(code.tokenType) {
         const FmtToken& firstItem = this.tokens.get(cast<unsigned long>(top.openerIdx + 1l));
-        const FmtToken& lineStart = code.lineBreaksBefore > 0l ? code : token;
+        const FmtToken& lineStart = this.tokens.get(this.findOrigLineStart(cast<unsigned long>(codeIdx)));
         top.isAligned = lineStart.origStartCol == firstItem.origStartCol;
         top.alignDecided = true;
     }
@@ -547,6 +547,21 @@ f<unsigned long> SourceFormatter.computeLineIndentCol(unsigned long idx, Frame& 
         return getContentCol(top);
     }
     return this.startsUnit(cast<unsigned long>(codeIdx), top) ? top.baseCol : top.baseCol + INDENT_WIDTH;
+}
+
+/**
+ * Find the first token on the original line of the given token, e.g. an inline comment before it
+ *
+ * @param idx Index of the token
+ * @return Index of the first token on the line
+ */
+f<unsigned long> SourceFormatter.findOrigLineStart(unsigned long idx) {
+    const unsigned long line = this.tokens.get(idx).startLine;
+    unsigned long startIdx = idx;
+    while startIdx > 0l && this.tokens.get(startIdx - 1l).startLine == line {
+        startIdx--;
+    }
+    return startIdx;
 }
 
 /**

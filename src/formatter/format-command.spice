@@ -17,6 +17,7 @@ import "@/exception/fatal-error";
 import "@/formatter/formatter";
 import "@/global/global-resource-manager";
 import "@/util/common-util";
+import "@/util/test-util";
 
 // External functions
 ext f<int> getchar();
@@ -65,7 +66,12 @@ public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& form
             const CliError cliError = CliError(CliErrorType::INCOMPATIBLE_OPTIONS, "--stdout only works with a single source file");
             abortWithError(cliError.getMessage());
         }
-        sourceFiles = collectSourceFiles(formatOptions.path);
+        String unreadablePath;
+        if !collectSourceFiles(formatOptions.path, sourceFiles, unreadablePath) {
+            const String message = "Path '" + unreadablePath + "' cannot be read";
+            const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+            abortWithError(error.getMessage());
+        }
     } else if fileExists(formatOptions.path.toString()) {
         sourceFiles.pushBack(formatOptions.path);
     } else {
@@ -114,17 +120,19 @@ f<String> formatWithOwnResourceManager(CliOptions& cliOptions, const String& sou
 
 /**
  * Collect all Spice source files in the given directory and its subdirectories, sorted by path. Hidden directories and the
- * directories of installed packages are left out.
+ * directories of installed packages are left out. The directory listing leaves out the contents of directories, that cannot
+ * be read or searched, so the collection fails for them instead of silently skipping their source files.
  *
  * @param dir Directory to search
- * @return Paths of the source files
+ * @param sourceFiles Vector to append the paths of the source files to
+ * @param unreadablePath Set to the path, that cannot be read, if the collection fails
+ * @return Whether all directories could be read
  */
-f<Vector<FilePath>> collectSourceFiles(const FilePath& dir) {
+f<bool> collectSourceFiles(const FilePath& dir, Vector<FilePath>& sourceFiles, String& unreadablePath) {
     Result<Vector<String>> entriesResult = listDirRecursive(dir.toString());
-    if !entriesResult.isOk() {
-        const String message = "Directory '" + String(dir.toString()) + "' cannot be read";
-        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
-        abortWithError(error.getMessage());
+    if !entriesResult.isOk() || !isAccessible(dir.toString()) {
+        unreadablePath = String(dir.toString());
+        return false;
     }
     const Vector<String> entries = entriesResult.unwrap();
 
@@ -136,15 +144,13 @@ f<Vector<FilePath>> collectSourceFiles(const FilePath& dir) {
             continue;
         }
 
-        // The listing leaves out the contents of directories, that cannot be read. Fail instead of skipping their source files.
-        // An entry, that is left out itself, e.g. a hidden directory, does not matter
+        // An entry, that is left out itself, e.g. a hidden directory, does not have to be accessible
         const FilePath entryPath = dir / entry;
         const string entryPathStr = entryPath.toString();
         const bool isLeftOut = isExcludedPath(entry + "/");
-        if !isLeftOut && fileExists(entryPathStr) && !isFileReadable(entryPathStr) {
-            const String message = "Path '" + String(entryPathStr) + "' cannot be read";
-            const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
-            abortWithError(error.getMessage());
+        if !isLeftOut && fileExists(entryPathStr) && !isAccessible(entryPathStr) {
+            unreadablePath = String(entryPathStr);
+            return false;
         }
 
         if entry.endsWith(SOURCE_FILE_EXTENSION) && !dirExists(entryPathStr) {
@@ -170,11 +176,24 @@ f<Vector<FilePath>> collectSourceFiles(const FilePath& dir) {
         }
     }
 
-    Vector<FilePath> sourceFiles;
     foreach unsigned long idx : order {
         sourceFiles.pushBack(dir / relativePaths.get(idx));
     }
-    return sourceFiles;
+    return true;
+}
+
+/**
+ * Check if the given file or directory can be read. A directory has to be searchable as well (except on Windows, which has
+ * no search permission), so that the entries within it can be accessed.
+ *
+ * @param path Path of the file or directory
+ * @return Accessible or not
+ */
+f<bool> isAccessible(string path) {
+    if !isFileReadable(path) {
+        return false;
+    }
+    return isWindows() || !dirExists(path) || isFileExecutable(path);
 }
 
 /**
@@ -283,6 +302,53 @@ f<bool> writeTextFile(const String& path, const String& text) {
 }
 
 // ============================================================== Tests ==============================================================
+
+#[test]
+f<bool> testFormatCommandFailsOnInaccessibleDirs() {
+    // Windows has no POSIX permissions
+    if isWindows() {
+        return true;
+    }
+
+    // One directory, that cannot be read, and one, that can be read, but not searched
+    const FilePath testDir = makeUniqueTestDir("spice-format-test");
+    const FilePath unreadableDir = testDir / "unreadable";
+    const FilePath unsearchableDir = testDir / "unsearchable";
+    createTestDirs(unreadableDir / "sub");
+    createTestDirs(unsearchableDir / "sub");
+    writeTestFile(unreadableDir / "sub" / "a.spice", "f<int> main() {}\n");
+    writeTestFile(unsearchableDir / "sub" / "b.spice", "f<int> main() {}\n");
+
+    // Collect from each directory with only the other one locked
+    const bool lockedUnreadable = changeFilePermissions(unreadableDir.toString(), 0o000s);
+    Vector<FilePath> filesWithUnreadable;
+    String unreadablePath;
+    const bool unreadableCollected = collectSourceFiles(testDir, filesWithUnreadable, unreadablePath);
+    const bool unlockedUnreadable = changeFilePermissions(unreadableDir.toString(), 0o755s);
+
+    const bool lockedUnsearchable = changeFilePermissions(unsearchableDir.toString(), 0o444s);
+    // The superuser bypasses the permissions, so the locks only take effect for other users
+    const bool permissionsEnforced = !isFileExecutable(unsearchableDir.toString());
+    Vector<FilePath> filesWithUnsearchable;
+    String unsearchablePath;
+    const bool unsearchableCollected = collectSourceFiles(testDir, filesWithUnsearchable, unsearchablePath);
+    const bool unlockedUnsearchable = changeFilePermissions(unsearchableDir.toString(), 0o755s);
+
+    // Without locks, both source files are found
+    Vector<FilePath> allFiles;
+    String noUnreadablePath;
+    const bool allCollected = collectSourceFiles(testDir, allFiles, noUnreadablePath);
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert lockedUnreadable && unlockedUnreadable && lockedUnsearchable && unlockedUnsearchable;
+    assert allCollected && allFiles.getSize() == 2l;
+    if permissionsEnforced {
+        assert !unreadableCollected && unreadablePath.endsWith("unreadable");
+        assert !unsearchableCollected && unsearchablePath.endsWith("unsearchable");
+    }
+    return true;
+}
 
 #[test]
 f<bool> testFormatCommandExcludedPaths() {

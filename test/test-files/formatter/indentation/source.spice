@@ -63,3 +63,9 @@ p alignedWithComment() {
   // The comment does not decide about the alignment
          2);
 }
+
+p alignedWithInlineComment() {
+  foobar(1,
+  // The inline comment belongs to the line of the item
+         /* Inline */ 2);
+}
