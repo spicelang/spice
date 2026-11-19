@@ -167,7 +167,7 @@ public f<Result<int>> openNativeServerSocket(const IpAddress& address, unsigned 
  * Accepts an incoming connection on the given listening socket. Blocks until a client connects.
  *
  * @param sockFd Handle of the listening socket
- * @return Handle of the connection, a negative value on error
+ * @return Handle of the connection, -1 on error
  */
 public f<int> acceptNativeConnection(int sockFd) {
     return accept(sockFd, nil<byte*>, nil<int*>);

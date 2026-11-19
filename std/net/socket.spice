@@ -63,7 +63,8 @@ public f<Socket> Socket.detachConnection() {
  */
 public f<Result<int>> Socket.acceptConnection() {
     this.connFd = acceptNativeConnection(this.sockFd);
-    if this.connFd < 0 { return err<int>(Error("Error while accepting connection")); }
+    // Only -1 marks an error: on Windows, a valid socket handle may be negative when read as int
+    if this.connFd == -1 { return err<int>(Error("Error while accepting connection")); }
     return ok(this.connFd);
 }
 
