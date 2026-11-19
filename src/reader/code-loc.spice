@@ -199,7 +199,7 @@ f<bool> testGetRelativePath() {
     // there. Through the symlink, the file lives three levels below the test dir, not two
     const FilePath linkDir = testDir / "link-parent" / "link";
     createTestDirs(testDir / "link-parent");
-    const bool hasSymlink = createTestDirSymlink(realDir, linkDir);
+    const bool hasSymlink = createTestSymlink(realDir, linkDir);
     String upwardsFromLink = String("../../../other.txt");
     String downwardsToLink = String("../real/nested/file.txt");
     bool linkResolvesToRealFile = true;

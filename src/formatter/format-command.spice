@@ -259,7 +259,7 @@ f<String> readSourceFile(const FilePath& filePath) {
  * Write the formatted code to the given source file. The source file is overwritten in place, so that it keeps its permissions,
  * its owner and its links. The original code is backed up next to the source file first, so that it is not lost, if writing
  * fails, e.g. on a full disk. The backup is removed afterwards. Its name contains the process id, so that concurrent runs do
- * not share it.
+ * not share it. See writeBackupFile() for how the backup is protected.
  *
  * @param filePath Path of the source file
  * @param originalCode Original code of the source file
@@ -268,9 +268,11 @@ f<String> readSourceFile(const FilePath& filePath) {
 p writeSourceFile(const FilePath& filePath, const String& originalCode, const String& formattedCode) {
     const String path = String(filePath.toString());
     const String backupPath = path + "." + toString(getPID()) + BACKUP_FILE_SUFFIX;
-    if !writeTextFile(backupPath, originalCode) {
-        const bool _ = deleteFile(backupPath.getRaw()); // Best effort, the error below matters more
-        const String message = "Source file at path '" + path + "' cannot be backed up at '" + backupPath + "'. It was left unchanged";
+    if !writeBackupFile(backupPath, originalCode) {
+        String message = "Source file at path '" + path + "' cannot be backed up at '" + backupPath + "'. It was left unchanged";
+        if fileExists(backupPath.getRaw()) {
+            message += ". The backup path exists already, e.g. from an earlier run, that failed";
+        }
         const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
         abortWithError(error.getMessage());
     }
@@ -295,6 +297,39 @@ f<bool> writeTextFile(const String& path, const String& text) {
         return false;
     }
     File file = openResult.unwrap();
+    return writeAndCloseFile(file, text);
+}
+
+/**
+ * Write the original code of a source file to a new backup file. The backup is created exclusively, so that it neither replaces
+ * an existing file, e.g. the backup of an earlier run, that failed, nor writes through a symbolic link at its predictable path.
+ * Only its owner can read it, because the source file might not be readable for others.
+ *
+ * @param backupPath Path of the backup file
+ * @param originalCode Original code of the source file
+ * @return Whether the backup was written completely
+ */
+f<bool> writeBackupFile(const String& backupPath, const String& originalCode) {
+    Result<File> openResult = openNewFile(backupPath, S_IRUSR | S_IWUSR);
+    if !openResult.isOk() {
+        return false; // Whatever exists at the path, does not belong to this run, so it is left as it is
+    }
+    File file = openResult.unwrap();
+    if !writeAndCloseFile(file, originalCode) {
+        const bool _ = deleteFile(backupPath.getRaw()); // Best effort. This run created the file, so it may remove it
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Write the given text to the given open file and close it
+ *
+ * @param file Open file
+ * @param text Text to write
+ * @return Whether the text was written completely
+ */
+f<bool> writeAndCloseFile(File& file, const String& text) {
     const bool isWritten = file.write(text);
     // Closing flushes the buffered text, which can fail as well, e.g. on a full disk
     const bool isClosed = file.close();
@@ -347,6 +382,40 @@ f<bool> testFormatCommandFailsOnInaccessibleDirs() {
         assert !unreadableCollected && unreadablePath.endsWith("unreadable");
         assert !unsearchableCollected && unsearchablePath.endsWith("unsearchable");
     }
+    return true;
+}
+
+#[test]
+f<bool> testFormatCommandWritesBackupForOwnerOnly() {
+    // Windows has no POSIX permissions and creating symlinks needs special privileges there
+    if isWindows() {
+        return true;
+    }
+    const FilePath testDir = makeUniqueTestDir("spice-format-test");
+    const String backupPath = String((testDir / "a.spice.1.format-backup").toString());
+    const FilePath linkTarget = testDir / "target.spice";
+    const FilePath linkPath = testDir / "b.spice.1.format-backup";
+
+    // The backup holds the original code and only its owner can read and write it
+    const bool backupWritten = writeBackupFile(backupPath, String("f<int> main() {}\n"));
+    const String backupContent = readTestFile(FilePath(backupPath));
+    const String backupPermissions = getTestFilePermissions(FilePath(backupPath));
+
+    // An existing file at the backup path is neither overwritten nor removed
+    const bool existingOverwritten = writeBackupFile(backupPath, String("other code"));
+    const String keptContent = readTestFile(FilePath(backupPath));
+
+    // A symlink at the backup path is not written through, even if its target does not exist
+    const bool linkCreated = createTestSymlink(linkTarget, linkPath);
+    const bool linkWrittenThrough = writeBackupFile(String(linkPath.toString()), String("f<int> main() {}\n"));
+    const bool linkTargetCreated = fileExists(linkTarget.toString());
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert backupWritten && backupContent == "f<int> main() {}\n";
+    assert backupPermissions == "-rw-------";
+    assert !existingOverwritten && keptContent == "f<int> main() {}\n";
+    assert linkCreated && !linkWrittenThrough && !linkTargetCreated;
     return true;
 }
 
