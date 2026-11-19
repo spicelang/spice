@@ -12,7 +12,9 @@ import "std/net/ip-address";
 // Constants
 const int NATIVE_AF_INET = 2;            // IPv4
 const int NATIVE_AF_INET6 = 30;          // IPv6
+const int NATIVE_SOCK_STREAM = 1;        // Stream socket (TCP)
 const int NATIVE_SOL_SOCKET = 65535;     // Option level for socket-level options (0xFFFF)
+const int NATIVE_SO_REUSEADDR = 4;       // Allow binding to a local address that is still in TIME_WAIT
 const int NATIVE_SO_RCVTIMEO = 4102;     // Timeout for receive operations
 const int NATIVE_SO_SNDTIMEO = 4101;     // Timeout for send operations
 const int NATIVE_SO_NOSIGPIPE = 4130;    // Do not raise SIGPIPE when writing to a broken connection (0x1022)
@@ -41,6 +43,9 @@ type NativeTimeSpec struct {
 // External functions
 ext f<int> socket(int /*domain*/, int /*type*/, int /*protocol*/);
 ext f<int> connect(int /*sockfd*/, byte* /*address*/, unsigned int /*address_len*/);
+ext f<int> bind(int /*sockfd*/, byte* /*address*/, unsigned int /*address_len*/);
+ext f<int> listen(int /*sockfd*/, int /*backlog*/);
+ext f<int> accept(int /*sockfd*/, byte* /*address*/, unsigned int* /*address_len*/);
 ext f<int> setsockopt(int /*sockfd*/, int /*level*/, int /*optname*/, byte* /*optval*/, unsigned int /*optlen*/);
 ext f<long> read(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
 ext f<long> write(int /*fd*/, byte* /*buf*/, unsigned long /*length*/);
@@ -72,14 +77,7 @@ public f<int> getNativeAddressFamily(const IpAddress& address) {
 public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short port, int socketType, unsigned long timeoutMs) {
     const int sockFd = socket(getNativeAddressFamily(address), socketType, 0);
     if sockFd == -1 { return err<int>(Error("Error opening socket")); }
-    // macOS has no MSG_NOSIGNAL, so writing to a connection, that the peer has closed, is kept from raising SIGPIPE
-    // (which would end the program) by an option of the socket
-    int noSigPipe = 1;
-    int noSigPipeResult = 0;
-    unsafe {
-        noSigPipeResult = setsockopt(sockFd, NATIVE_SOL_SOCKET, NATIVE_SO_NOSIGPIPE, cast<byte*>(&noSigPipe), cast<unsigned int>(cast<int>(sizeof<int>())));
-    }
-    if noSigPipeResult != 0 {
+    if !disableNativeSigPipe(sockFd) {
         close(sockFd);
         return err<int>(Error("Error configuring socket"));
     }
@@ -99,6 +97,73 @@ public f<Result<int>> openNativeSocket(const IpAddress& address, unsigned short 
         return err<int>(Error("Error connecting socket"));
     }
     return ok(sockFd);
+}
+
+/**
+ * Opens a stream socket of the family of the given address, binds it to the given address and port and
+ * starts listening for incoming connections on it.
+ *
+ * @param address Local address to bind to, e.g. 0.0.0.0 for all IPv4 addresses of the host
+ * @param port Port to bind to
+ * @param maxWaitingConnections Maximum length of the queue of pending connections
+ * @return File descriptor of the listening socket
+ */
+public f<Result<int>> openNativeServerSocket(const IpAddress& address, unsigned short port, int maxWaitingConnections) {
+    const int sockFd = socket(getNativeAddressFamily(address), NATIVE_SOCK_STREAM, 0);
+    if sockFd == -1 { return err<int>(Error("Error creating socket")); }
+
+    // Allow rebinding the port right away instead of waiting out the TIME_WAIT of the previous socket
+    int reuseAddr = 1;
+    unsafe {
+        setsockopt(sockFd, NATIVE_SOL_SOCKET, NATIVE_SO_REUSEADDR, cast<byte*>(&reuseAddr), cast<unsigned int>(cast<int>(sizeof<int>())));
+    }
+
+    NativeSockAddr sockAddr = createNativeSockAddr(address, port, getNativeAddressFamily(address), SockAddrLayout::LENGTH_AND_FAMILY_8_BIT);
+    int bindResult = 0;
+    unsafe {
+        unsigned byte* sockAddrPtr = sockAddr.bytes;
+        bindResult = bind(sockFd, sockAddrPtr, sockAddr.size);
+    }
+    if bindResult < 0 {
+        close(sockFd);
+        return err<int>(Error("Error binding to address"));
+    }
+    if listen(sockFd, maxWaitingConnections) < 0 {
+        close(sockFd);
+        return err<int>(Error("Error listening on address"));
+    }
+    return ok(sockFd);
+}
+
+/**
+ * Accepts an incoming connection on the given listening socket. Blocks until a client connects.
+ *
+ * @param sockFd File descriptor of the listening socket
+ * @return File descriptor of the connection, a negative value on error
+ */
+public f<int> acceptNativeConnection(int sockFd) {
+    const int connFd = accept(sockFd, nil<byte*>, nil<unsigned int*>);
+    if connFd >= 0 && !disableNativeSigPipe(connFd) {
+        close(connFd);
+        return -1;
+    }
+    return connFd;
+}
+
+/**
+ * Keeps writes to a connection, that the peer has closed, from raising SIGPIPE, which would end the program.
+ * macOS has no MSG_NOSIGNAL, so this takes an option of the socket instead.
+ *
+ * @param sockFd Socket file descriptor
+ * @return Setting the option was successful or not
+ */
+f<bool> disableNativeSigPipe(int sockFd) {
+    int noSigPipe = 1;
+    int optionResult = 0;
+    unsafe {
+        optionResult = setsockopt(sockFd, NATIVE_SOL_SOCKET, NATIVE_SO_NOSIGPIPE, cast<byte*>(&noSigPipe), cast<unsigned int>(cast<int>(sizeof<int>())));
+    }
+    return optionResult == 0;
 }
 
 /**
@@ -162,9 +227,11 @@ public f<long> writeNativeSocket(int sockFd, byte* buffer, unsigned long size) {
  * Closes the given socket
  *
  * @param sockFd Socket file descriptor
+ * @return Closing the socket was successful or not
  */
-public p closeNativeSocket(int sockFd) {
-    close(sockFd);
+#[ignoreUnusedReturnValue]
+public f<bool> closeNativeSocket(int sockFd) {
+    return close(sockFd) == 0;
 }
 
 /**

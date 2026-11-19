@@ -1,12 +1,18 @@
 #![core.compiler.requiresOs]
 
-// Info taken from https://github.com/openbsd/src/blob/master/sys/sys/socket.h
+// TCP sockets on all platforms. The platform specific socket calls live in "std/net/impl/socket-native".
+
+// Imports
+import "std/data/vector";
+import "std/net/dns";
+import "std/net/ip-address";
+import "std/net/impl/socket-native";
 
 // Type defs
 public type InAddrT alias unsigned int;
 public type InPortT alias unsigned short;
 
-// Constants
+// Constants (info taken from https://github.com/openbsd/src/blob/master/sys/sys/socket.h)
 public const int AF_INET = 2;     // IPv4
 public const int SOCK_STREAM = 1; // Stream socket
 public const int SOCK_DGRAM = 2;  // Datagram socket
@@ -14,3 +20,215 @@ public const int IPPROTO_IP = 0;
 public const int IPPROTO_UDP = 17;
 public const InAddrT INADDR_ANY = 0u;
 public const InAddrT INADDR_NONE = 0xFFFFFFFFu; // returned by inet_addr for malformed addresses
+
+/**
+ * A network socket, wrapping the listening socket file descriptor and the current connection
+ */
+public type Socket struct {
+    int sockFd // Actual socket
+    int connFd // Current connection
+}
+
+/**
+ * Returns the file descriptor of the current connection, i.e. what a layer on top of the raw
+ * socket (like the TLS handshake in "std/net/tls") has to hand to its own I/O calls.
+ *
+ * @return Connection file descriptor
+ */
+public f<int> Socket.getConnFd() {
+    return this.connFd;
+}
+
+/**
+ * Detaches the current connection from this socket and hands it back as a new, independent
+ * `Socket` that owns it, leaving this socket without a connection. Used when a connection's
+ * ownership moves to another object (like the TLS wrapper in "std/net/tls"), so that only the new
+ * owner's `close`/`closeConnection` ever reaches the file descriptor - otherwise this socket
+ * accepting (and then closing) a later, unrelated connection that happens to reuse the same
+ * descriptor number could close it out from under the new owner instead.
+ *
+ * @return A standalone socket that owns the detached connection
+ */
+public f<Socket> Socket.detachConnection() {
+    const Socket detached = Socket { -1, this.connFd };
+    this.connFd = 0;
+    return detached;
+}
+
+/**
+ * Accept an incoming connection to the socket and save the connection file descriptor
+ * to the socket object.
+ *
+ * @return Connection file descriptor
+ */
+public f<Result<int>> Socket.acceptConnection() {
+    this.connFd = acceptNativeConnection(this.sockFd);
+    if this.connFd < 0 { return err<int>(Error("Error while accepting connection")); }
+    return ok(this.connFd);
+}
+
+/**
+ * Write a raw string to the socket.
+ *
+ * @param message Content of the message
+ * @return Number of bytes written
+ */
+public f<long> Socket.write(string message) {
+    const unsigned long messageLength = len(message);
+    if messageLength == 0l { return 0l; }
+    byte* messageBytes = nil<byte*>;
+    unsafe {
+        messageBytes = cast<byte*>(message);
+    }
+    return writeNativeSocket(this.connFd, messageBytes, messageLength);
+}
+
+/**
+ * Write an array of bytes to the socket.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param content Buffer of bytes to send
+ * @param size Number of bytes from the buffer to send
+ * @return Number of bytes written
+ */
+public f<long> Socket.write(byte* content, unsigned long size) {
+    if size == 0l { return 0l; }
+    return writeNativeSocket(this.connFd, content, size);
+}
+
+/**
+ * Write an array of bytes to the socket, retrying until either all of them were handed over to the
+ * network stack or the connection breaks. A single write call is free to accept only a part of the
+ * buffer, so anything that must arrive in full has to go through this method.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param content Buffer of bytes to send
+ * @param size Number of bytes from the buffer to send
+ * @return true if all bytes were written, false if the connection broke in between
+ */
+public f<bool> Socket.writeAll(byte* content, unsigned long size) {
+    unsigned long bytesWritten = 0l;
+    while bytesWritten < size {
+        long written = 0l;
+        unsafe {
+            written = writeNativeSocket(this.connFd, content + bytesWritten, size - bytesWritten);
+        }
+        if written <= 0l { return false; }
+        bytesWritten += cast<unsigned long>(written);
+    }
+    return true;
+}
+
+/**
+ * Read n bytes from the socket to the given buffer.
+ * Note: The given buffer needs to be at least of the given size.
+ *
+ * @param buffer Buffer to write the result into
+ * @param size Number of bytes to read
+ * @return Number of bytes written
+ */
+public f<long> Socket.read(byte* buffer, long size) {
+    return readNativeSocket(this.connFd, buffer, cast<unsigned long>(size));
+}
+
+/**
+ * Limits how long a single read or write on this socket may block. Without a timeout a peer that
+ * connects but never sends anything keeps the caller waiting forever.
+ * The timeout applies to the current connection, which for a client socket is the socket itself.
+ *
+ * @param milliseconds Timeout in milliseconds, 0 to block indefinitely again
+ * @return Setting the timeout was successful or not
+ */
+public f<bool> Socket.setTimeout(unsigned long milliseconds) {
+    const int targetFd = this.connFd != 0 ? this.connFd : this.sockFd;
+    return setNativeSocketTimeout(targetFd, milliseconds);
+}
+
+/**
+ * Closes the current connection of the socket, while keeping the socket itself open. This is what a
+ * server does after it has finished serving a single client.
+ *
+ * @return Closing the connection was successful or not
+ */
+public f<bool> Socket.closeConnection() {
+    // A client socket uses the same descriptor for the socket and the connection, so closing the
+    // connection there would take the socket down with it.
+    if this.connFd == 0 || this.connFd == this.sockFd { return true; }
+    const bool success = closeNativeSocket(this.connFd);
+    this.connFd = 0;
+    return success;
+}
+
+/**
+ * Closes the socket. This method should always be called by the user before exiting the program.
+ * Note: On Windows, Winsock itself is not shut down here, since other sockets of the process may still
+ * be in use. Windows reclaims it when the process exits.
+ *
+ * @return Closing the connection was successful or not
+ */
+public f<bool> Socket.close() {
+    const bool connectionClosed = this.closeConnection();
+    return closeNativeSocket(this.sockFd) && connectionClosed;
+}
+
+/**
+ * Resolves a host given as either a dotted IPv4 address or a hostname to a raw IPv4 address in
+ * network byte order.
+ * Note: The lookup is performed by the resolver of "std/net/dns", which reads the hosts file of the
+ * system and asks the name servers of the system configuration (/etc/resolv.conf, or the network
+ * adapters on Windows), without going through the resolver of the C library.
+ *
+ * @param host Dotted IPv4 address (e.g. "127.0.0.1") or hostname (e.g. "example.com")
+ * @return IPv4 address in network byte order
+ */
+public f<Result<InAddrT>> resolveHost(string host) {
+    // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
+    const Result<Vector<IpAddress>> addressesResult = resolveHostAddresses(String(host), true, false);
+    if addressesResult.isErr() { return err<InAddrT>(addressesResult.getErr()); }
+    return ok<InAddrT>(addressesResult.unwrap()[0].toInAddr());
+}
+
+/**
+ * Opens a TCP server socket and exposes it to the given port on all IPv4 addresses of the host.
+ * The maxWaitingConnections defines the maximum length to which the queue of pending connections may grow. If a
+ * connection request arrives when the queue is full, the client may receive an error with an indication of
+ * ECONNREFUSED or, if the underlying protocol support retransmission, the request may be ignored so that a later
+ * reattempt at connection succeeds.
+ *
+ * @param port Port to open the socket on
+ * @param maxWaitingConnections Maximum size of the queue of pending client connections
+ * @return Socket file descriptor
+ */
+public f<Result<Socket>> openServerSocket(unsigned short port, int maxWaitingConnections = 5) {
+    const int sockFd = openNativeServerSocket(createIpv4AddressFromInAddr(INADDR_ANY), port, maxWaitingConnections)!;
+    return ok(Socket { sockFd, /*connFd*/ 0 });
+}
+
+/**
+ * Opens a TCP client socket and tries to connect it to a server socket. The host is resolved with the
+ * resolver of "std/net/dns" and the system configuration (see DnsResolver.connectTcp for the order, in
+ * which the addresses are tried).
+ *
+ * @param host Host to connect to, either as IPv4 address, IPv6 address (optionally in brackets) or hostname
+ * @param port Port to connect to
+ * @return Socket file descriptor
+ */
+public f<Result<Socket>> openClientSocket(string host, unsigned short port) {
+    DnsResolver resolver = DnsResolver();
+    return openClientSocket(host, port, resolver);
+}
+
+/**
+ * Opens a TCP client socket and tries to connect it to a server socket, resolving the host with the
+ * given resolver (see DnsResolver.connectTcp for the order, in which the addresses are tried).
+ *
+ * @param host Host to connect to, either as IPv4 address, IPv6 address (optionally in brackets) or hostname
+ * @param port Port to connect to
+ * @param resolver Resolver to resolve the host with
+ * @return Socket file descriptor
+ */
+public f<Result<Socket>> openClientSocket(string host, unsigned short port, DnsResolver& resolver) {
+    // A client talks over the socket itself, so socket and connection descriptor are the same
+    const int sockFd = resolver.connectTcp(String(host), port)!;
+    return ok(Socket { sockFd, /*connFd*/ sockFd });
+}
