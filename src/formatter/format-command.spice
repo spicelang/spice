@@ -27,12 +27,12 @@ const string PACKAGES_DIR_NAME = "spice_packages";
 const int EOF_CHAR = -1;
 
 /**
- * Run the 'fmt' subcommand: format the given source file, all source files in the given directory or the source code from
+ * Run the 'format' subcommand: format the given source file, all source files in the given directory or the source code from
  * stdin. Reformatted files are written back and their paths are printed. In check mode, the files are left as they are and
  * the paths of the files, that are not formatted, are printed instead.
  *
  * @param cliOptions Command line options
- * @param formatOptions Options of the fmt subcommand
+ * @param formatOptions Options of the format subcommand
  * @return Exit code: 0 on success, 1 if a file is not formatted in check mode
  */
 public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& formatOptions) {

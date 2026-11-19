@@ -243,7 +243,7 @@ p raiseCliError(const CliErrorType errorType, const string message) {
 }
 
 /**
- * Options of the fmt subcommand
+ * Options of the format subcommand
  */
 public type FormatOptions struct {
     public FilePath path // Source file or directory to format, '-' for stdin
@@ -779,12 +779,12 @@ p Driver.addLintSubcommand() {
 }
 
 /**
- * Add fmt subcommand to cli interface
+ * Add format subcommand to cli interface
  */
 p Driver.addFormatSubcommand() {
     // Create sub-command itself
-    CliSubcommand& subCmd = this.cliParser.addSubcommand("fmt", "Formats your Spice source files");
-    subCmd.addAlias("format");
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("format", "Formats your Spice source files");
+    subCmd.addAlias("fmt");
     subCmd.setCallback(p() {
         this.shouldFormat = true;
     });
@@ -1417,7 +1417,7 @@ f<bool> testOutputFileExtensions() {
 #[test]
 f<bool> testFormatSubcommand() {
     Driver formatMinimal;
-    string[3] formatMinimalArgs = ["spice", "fmt", "main-file.spice"];
+    string[3] formatMinimalArgs = ["spice", "format", "main-file.spice"];
     assert parseOnly(formatMinimal, 3, formatMinimalArgs) == EXIT_CODE_SUCCESS;
     assert formatMinimal.shouldFormat;
     assert !formatMinimal.shouldCompile;
@@ -1427,7 +1427,7 @@ f<bool> testFormatSubcommand() {
 
     // '-' reads the source code from stdin. It must not be mistaken for an option
     Driver formatComplex;
-    string[5] formatComplexArgs = ["spice", "format", "--check", "--stdout", "-"];
+    string[5] formatComplexArgs = ["spice", "fmt", "--check", "--stdout", "-"];
     assert parseOnly(formatComplex, 5, formatComplexArgs) == EXIT_CODE_SUCCESS;
     assert formatComplex.shouldFormat;
     assert formatComplex.formatOptions.check;

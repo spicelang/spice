@@ -1,24 +1,24 @@
 ---
-title: Fmt subcommand
+title: Format subcommand
 tags:
   - Command Line Interface
-  - Fmt
+  - Format
   - Formatter
 ---
 
-The `fmt` subcommand formats your Spice source files, so that all of them follow the same layout. It only changes whitespace,
-the code itself stays untouched.
+The `format` subcommand formats your Spice source files, so that all of them follow the same layout. It only changes
+whitespace, the code itself stays untouched.
 
 ## Usage
 === "Long form"
-    Use the `fmt` subcommand by executing:
-    ```sh
-    $ spice fmt [options] <path>
-    ```
-=== "Alias"
-    Use the `fmt` subcommand by executing:
+    Use the `format` subcommand by executing:
     ```sh
     $ spice format [options] <path>
+    ```
+=== "Short form"
+    Use the `format` subcommand by executing:
+    ```sh
+    $ spice fmt [options] <path>
     ```
 
 The path can be:
@@ -31,7 +31,7 @@ The path can be:
 The subcommand prints the paths of the files, that it reformatted.
 
 ## Options
-You can apply following options to the `fmt` subcommand:
+You can apply following options to the `format` subcommand:
 
 | Option     | Description                                                                                                                      |
 |------------|----------------------------------------------------------------------------------------------------------------------------------|
@@ -41,13 +41,13 @@ You can apply following options to the `fmt` subcommand:
 ## Examples
 ```sh
 # Format all source files in the current directory
-$ spice fmt .
+$ spice format .
 
 # Fail, if a source file in src is not formatted
-$ spice fmt --check src
+$ spice format --check src
 
 # Format code from stdin
-$ echo 'f<int>main(){return 0;}' | spice fmt -
+$ echo 'f<int>main(){return 0;}' | spice format -
 f<int> main() { return 0; }
 ```
 
@@ -76,6 +76,6 @@ The formatter keeps the line breaks within statements as they are, so you decide
 
 ## Editor integration
 The Spice extensions for [VS Code](https://github.com/spicelang/vscode-spice) and
-[IntelliJ-based IDEs](https://github.com/spicelang/intellij-spice) use `spice fmt -` to format the open file, e.g. via the
+[IntelliJ-based IDEs](https://github.com/spicelang/intellij-spice) use `spice format -` to format the open file, e.g. via the
 "Format Document" / "Reformat Code" action or on save. Any other editor can do the same: pipe the content of the file into
-`spice fmt -` and replace it with the output.
+`spice format -` and replace it with the output.

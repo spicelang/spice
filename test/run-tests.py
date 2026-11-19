@@ -7,8 +7,8 @@ built compiler via --compiler, or let the runner build it from the sources in sr
 the released stage0 compiler from fetch-stage0.py).
 
 Besides the reference test cases, the runner builds the compiler sources in test build mode and runs their builtin tests
-(#[test] functions), runs the linter test cases against the 'lint' subcommand and the formatter test cases against the 'fmt'
-subcommand.
+(#[test] functions), runs the linter test cases against the 'lint' subcommand and the formatter test cases against the
+'format' subcommand.
 """
 import argparse
 import difflib
@@ -111,7 +111,7 @@ class Suite:
     dir_name: str  # Dir in test/test-files
     grouped: bool  # Test cases are grouped in sub dirs
     linter: bool = False  # Test cases run against the 'lint' subcommand
-    formatter: bool = False  # Test cases run against the 'fmt' subcommand
+    formatter: bool = False  # Test cases run against the 'format' subcommand
 
 
 SUITES = [
@@ -805,10 +805,10 @@ def exec_linter_test_case(result: TestResult, test_case: TestCase) -> None:
 
 def exec_formatter_test_case(result: TestResult, test_case: TestCase) -> None:
     """
-    Run a formatter test case: format the source file with the 'fmt' subcommand and compare the formatted code against
+    Run a formatter test case: format the source file with the 'format' subcommand and compare the formatted code against
     format.out. Formatting has to be idempotent, so formatting the reference file itself must not change it either.
     """
-    output, exit_code = run_compiler(result, ["fmt", "--stdout", test_case.file(REF_NAME_SOURCE)])
+    output, exit_code = run_compiler(result, ["format", "--stdout", test_case.file(REF_NAME_SOURCE)])
 
     error_ref_path = test_case.file(REF_NAME_ERROR_OUTPUT)
     error_message = extract_error_message(output, exit_code)
@@ -825,7 +825,7 @@ def exec_formatter_test_case(result: TestResult, test_case: TestCase) -> None:
     format_ref_path = test_case.file(REF_NAME_FORMAT_OUTPUT)
     check_ref_match(result, format_ref_path, lambda: output)
     if does_ref_exist(format_ref_path) and not OPTS.update_refs:
-        reformatted_output, _ = run_compiler(result, ["fmt", "--stdout", format_ref_path])
+        reformatted_output, _ = run_compiler(result, ["format", "--stdout", format_ref_path])
         result.expect(reformatted_output == output, "Formatting the formatted code changes it again:\n"
                       f"{diff(output, reformatted_output, format_ref_path)}")
 
