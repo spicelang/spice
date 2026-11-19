@@ -35,6 +35,9 @@ int MaxRetries = 3;
 // Global variable compliant with SNAKE_CASE
 int MAX_RETRIES = 3;
 
+// Global variable compliant with SNAKE_CASE, digits are allowed after the first char
+int MAX_RETRIES_V2 = 4;
+
 // Interface violation: PascalCase required, but has an underscore
 type I_Shape interface {
     f<int> getArea();
@@ -72,6 +75,6 @@ f<int> main() {
     Point b = Point(1, 2);
     print_point(a);
     printPoint(b);
-    printf("%d, %d, %d, %d\n", bad_function_name(1, 2), addTwo(1, 2), MaxRetries, MAX_RETRIES);
+    printf("%d, %d, %d, %d, %d\n", bad_function_name(1, 2), addTwo(1, 2), MaxRetries, MAX_RETRIES, MAX_RETRIES_V2);
     return a == b ? 0 : 1;
 }

@@ -38,14 +38,14 @@ f<bool> isPascalCase(const String& input) {
 }
 
 /**
- * Check whether an identifier is written in SNAKE_CASE (all uppercase, underscores)
+ * Check whether an identifier is written in SNAKE_CASE (starts uppercase, then uppercase, digits or underscores)
  */
 f<bool> isSnakeCase(const String& input) {
-    if input.isEmpty() { return false; }
+    if input.isEmpty() || !isUpper(firstChar(input)) { return false; }
     const unsigned long length = input.getLength();
-    for unsigned long i = 0l; i < length; i++ {
+    for unsigned long i = 1l; i < length; i++ {
         const char c = input[i];
-        if !isUpper(c) && c != '_' {
+        if !isUpper(c) && !isDigit(c) && c != '_' {
             return false;
         }
     }
