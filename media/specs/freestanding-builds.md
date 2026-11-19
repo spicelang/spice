@@ -179,7 +179,7 @@ use it as well.
 - The attribute on the main source file is reported as `UNSUPPORTED_IN_FREESTANDING_MODE`.
 - Tagged: `std/net/socket*`, `std/net/tls`, `std/io/logging`, `std/io/file`, `std/io/dir*`, `std/io/progress-bar`,
   `std/io/cli-subcommand`, `std/io/impl/*`, `std/os/env*`, `std/os/filesystem*`, `std/os/mutex`, `std/os/thread`,
-  `std/os/system_*`, `std/os/impl/process_native*`, `std/os/cmd`, `std/os/cpu`, `std/time/time`,
+  `std/os/system*`, `std/os/impl/*`, `std/os/cmd`, `std/os/cpu`, `std/time/time`,
   `std/time/impl/*`, `std/time/delay`, `std/time/datetime`, `std/type/type-conversion`, `std/text/print` and
   `std/test/lifetime-object`. Modules, that only depend on a tagged module (e.g. `std/os/process`, `std/time/timer`,
   `std/text/format`), are not tagged themselves. `std/os/syscall_*` only need a kernel, not a hosted OS, and stay

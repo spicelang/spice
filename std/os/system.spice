@@ -1,5 +1,11 @@
 #![core.compiler.requiresOs]
 
+// System information on Linux and macOS. Windows has its own system_windows.spice, picked by the OS suffix. The few
+// differences between Linux and macOS live in impl/system_native[_darwin].spice.
+
+// Std imports
+import "std/os/impl/system_native";
+
 // Structs
 // Layout of 'struct rusage' on 64-bit Linux and macOS: two 'struct timeval' with 16 bytes each, followed by 14 longs
 type ResourceUsage struct {
@@ -24,12 +30,10 @@ type ResourceUsage struct {
 }
 
 // External functions
-ext f<long> sysconf(int /*name*/);
 ext f<unsigned int> getpagesize();
 ext f<int> getrusage(int /*who*/, ResourceUsage* /*usage*/);
 
 // Constants
-const int SC_NPROCESSORS_ONLN = 58; // Value on macOS, glibc uses 84 (_SC_THREAD_CPUTIME on macOS)
 const int RUSAGE_SELF = 0;
 
 /**
@@ -38,7 +42,7 @@ const int RUSAGE_SELF = 0;
  * return Number of cores
  */
 public f<long> getCPUCoreCount() {
-    return sysconf(SC_NPROCESSORS_ONLN);
+    return getNativeCPUCoreCount();
 }
 
 /**
@@ -60,6 +64,5 @@ public f<unsigned long> getPeakMemoryUsage() {
     if getrusage(RUSAGE_SELF, &usage) != 0 {
         return 0ul;
     }
-    // macOS reports the maximum resident set size in bytes
-    return cast<unsigned long>(usage.maxRss);
+    return convertNativeMaxRssToBytes(usage.maxRss);
 }

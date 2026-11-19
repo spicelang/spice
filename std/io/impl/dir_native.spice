@@ -1,31 +1,84 @@
 #![core.compiler.requiresOs]
 
-// Layout of 'struct dirent' on Linux (glibc and musl, 64 bit)
-type DirEntry struct {
-    unsigned long dIno
-    long dOff
-    unsigned short dRecordLen
-    byte dType
-    char[256] dName
-}
+// Directory operations for dir.spice on Linux and macOS. Windows has its own dir_native_windows.spice, picked by the OS
+// suffix. The two files must offer the same symbols. The layout of 'struct dirent' differs between the platforms and
+// lives in dirent[_darwin[_x86_64]].spice.
+
+// Std imports
+import "std/data/vector";
+import "std/io/impl/dirent";
+
+// Directory entry types, as reported by readdir
+const int DT_UNKNOWN = 0; // The file system does not report the type
+const int DT_DIR = 4;     // Directory
 
 // Link external functions
-ext f<DirEntry*> readdir(byte* /*dirStream*/);
+ext f<byte*> opendir(string);
+ext f<int> closedir(byte*);
+ext f<long> readlink(string, byte*, unsigned long);
 
 /**
- * Read the next entry of an open directory stream
+ * Checks if a directory is existing.
  *
- * @param dirStream Directory stream, as returned by opendir
- * @param name Receives the name of the entry
- * @param entryType Receives the type of the entry (DT_* value of 'struct dirent')
- * @return True if an entry was read, false if the end of the stream was reached
+ * @param path Path to check
+ * @return Existing or not
  */
-public f<bool> readNextDirEntry(byte* dirStream, String& name, int& entryType) {
-    DirEntry* dirEntry = readdir(dirStream);
-    if dirEntry == nil<DirEntry*> { return false; }
-    unsafe {
-        name = String(cast<string>(&dirEntry.dName));
+public f<bool> isNativeDir(string path) {
+    // Open the path as a directory. Unlike stat, this does not depend on the platform-specific layout of struct stat
+    byte* dirStream = opendir(path);
+    if dirStream == nil<byte*> {
+        return false;
     }
-    entryType = cast<int>(dirEntry.dType);
+    closedir(dirStream);
     return true;
+}
+
+/**
+ * Append the entries of a directory to the given vector. Symbolic links to directories are not descended into.
+ *
+ * @param dirPath Path to the directory
+ * @param prefix Relative path of the directory, which is prepended to the entry names
+ * @param recursive Descend into subdirectories or not
+ * @param entries Vector to append the entries to
+ * @return True if the directory could be opened, false if not
+ */
+public f<bool> collectNativeDirEntries(string dirPath, const String& prefix, bool recursive, Vector<String>& entries) {
+    byte* dirStream = opendir(dirPath);
+    if dirStream == nil<byte*> { return false; }
+
+    String name;
+    int entryType = DT_UNKNOWN;
+    while readNextDirEntry(dirStream, name, entryType) {
+        if name == "." || name == ".." { continue; }
+        String relativePath = prefix;
+        if !relativePath.isEmpty() { relativePath += "/"; }
+        relativePath += name;
+        entries.pushBack(relativePath);
+
+        if recursive {
+            const String childPath = String(dirPath) + "/" + name;
+            // Symbolic links are never followed, so that a link cycle cannot cause endless recursion. They are reported as
+            // such, unless the file system does not report entry types at all. Then the entry has to be checked directly,
+            // but isNativeDir follows links, so links have to be ruled out first
+            const bool isUnknownDir = entryType == DT_UNKNOWN && !isSymlink(childPath.getRaw()) && isNativeDir(childPath.getRaw());
+            const bool isDir = entryType == DT_DIR || isUnknownDir;
+            if isDir {
+                collectNativeDirEntries(childPath.getRaw(), relativePath, true, entries);
+            }
+        }
+    }
+    closedir(dirStream);
+    return true;
+}
+
+/**
+ * Check if the given path is a symbolic link, without following it
+ *
+ * @param path Path to check
+ * @return Symbolic link or not
+ */
+f<bool> isSymlink(string path) {
+    // readlink only succeeds on symbolic links. One byte of the link target is enough to tell
+    byte targetStart;
+    return readlink(path, &targetStart, 1ul) >= 0l;
 }

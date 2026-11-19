@@ -1,4 +1,5 @@
 import "std/io/dir" as dir;
+import "std/os/filesystem";
 
 f<int> main() {
     printf("Nested existing before create: %d\n", dirExists("./test-mkdirs-nested/a/b"));
@@ -15,4 +16,15 @@ f<int> main() {
     dyn rmReturnCode2 = rmDir("./test-mkdirs-nested/a");
     dyn rmReturnCode3 = rmDir("./test-mkdirs-nested");
     printf("Nested existing after delete: %d\n", dirExists("./test-mkdirs-nested"));
+
+    // Absolute path: its leading separator (or drive prefix on Windows) must be skipped. '/' works as separator everywhere
+    const String absRoot = getCurrentWorkingDir() + "/test-mkdirs-absolute";
+    const String absPath = absRoot + "/a";
+    printf("Absolute existing before create: %d\n", dirExists(absPath.getRaw()));
+    dyn mkAbsReturnCode = mkDirs(absPath.getRaw(), dir::MODE_ALL_RWX);
+    printf("mkDirs return code (absolute): %d\n", mkAbsReturnCode);
+    printf("Absolute existing after create: %d\n", dirExists(absPath.getRaw()));
+    rmDir(absPath.getRaw());
+    rmDir(absRoot.getRaw());
+    printf("Absolute existing after delete: %d\n", dirExists(absRoot.getRaw()));
 }
