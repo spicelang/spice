@@ -4,3 +4,7 @@ Nested existing after create: 1
 Intermediate existing after create: 1
 mkDirs return code (already existing): 0
 Nested existing after delete: 0
+Absolute existing before create: 0
+mkDirs return code (absolute): 0
+Absolute existing after create: 1
+Absolute existing after delete: 0
