@@ -1,0 +1,58 @@
+import "std/data/vector";
+import "std/io/file";
+import "std/os/os";
+import "std/os/process";
+
+f<int> main() {
+    // Own file names, because the tests run in parallel in the same working dir
+    const string path = "./file-open-new.txt";
+    const string linkPath = "./file-open-new-link.txt";
+    const string linkTarget = "./file-open-new-target.txt";
+    bool _ = deleteFile(path); // Leftovers of an earlier run would make the creation fail
+    _ = deleteFile(linkPath);
+
+    // Create a new file, that only its owner can read and write
+    Result<File> createResult = openNewFile(path, S_IRUSR | S_IWUSR);
+    assert createResult.isOk();
+    File file = createResult.unwrap();
+    assert file.write("Hello, world!");
+    assert file.close();
+    Result<String> contentResult = readFile(path);
+    assert contentResult.isOk();
+    assert contentResult.unwrap() == "Hello, world!";
+    assert isFileReadable(path);
+    assert isFileWritable(path);
+
+    // An existing file is neither opened nor overwritten
+    Result<File> existingResult = openNewFile(String(path), S_IRUSR | S_IWUSR);
+    assert existingResult.isErr();
+    Result<String> keptResult = readFile(path);
+    assert keptResult.isOk();
+    assert keptResult.unwrap() == "Hello, world!";
+
+    // A file in a missing directory cannot be created
+    Result<File> missingDirResult = openNewFile("./file-open-new-missing/file.txt", S_IRUSR | S_IWUSR);
+    assert missingDirResult.isErr();
+
+    // A symbolic link is not written through, even if its target does not exist. Creating symbolic links requires special
+    // privileges on Windows
+    if !isWindows() {
+        Vector<String> args;
+        args.pushBack(String("-s"));
+        args.pushBack(String(linkTarget));
+        args.pushBack(String(linkPath));
+        Result<ProcessResult> linkResult = runProcessCaptured(String("ln"), args);
+        assert linkResult.isOk();
+        const ProcessResult& linkProcess = linkResult.unwrap();
+        assert linkProcess.exitCode == 0;
+        Result<File> linkOpenResult = openNewFile(linkPath, S_IRUSR | S_IWUSR);
+        assert linkOpenResult.isErr();
+        assert !fileExists(linkTarget);
+        assert deleteFile(linkPath);
+    }
+
+    // Clean up
+    assert deleteFile(path);
+
+    printf("All assertions passed!\n");
+}

@@ -73,13 +73,49 @@ public p writeTestFile(const FilePath& path, const string content) {
 }
 
 /**
- * Create a symlink to a dir. Creating symlinks requires special privileges on Windows, so this is only supported on Unix
+ * Read the content of the given file. Fails the test, if the file cannot be read
  *
- * @param target Dir, the symlink points to
+ * @param path File path
+ * @return File content
+ */
+public f<String> readTestFile(const FilePath& path) {
+    const Result<String> readResult = readFile(path.toString());
+    assert readResult.isOk();
+    return readResult.unwrap();
+}
+
+/**
+ * Get the permissions of a file, as 'ls -l' shows them, e.g. '-rw-r--r--'. Std has no function for that, as the layout of
+ * 'struct stat' differs between the platforms. Only supported on Unix
+ *
+ * @param path File path
+ * @return Permission string, or an empty string, if it cannot be retrieved
+ */
+public f<String> getTestFilePermissions(const FilePath& path) {
+    Vector<String> args;
+    args.pushBack(String("-ld"));
+    args.pushBack(String(path.toString()));
+    const Result<ProcessResult> processResult = runProcessCaptured(String("ls"), args);
+    if !processResult.isOk() {
+        return String();
+    }
+    const ProcessResult& process = processResult.unwrap();
+    // The type and the 9 permission bits. Linux and macOS may append a marker for extended attributes or ACLs
+    if process.exitCode != 0 || process.output.getLength() < 10l {
+        return String();
+    }
+    return process.output.getSubstring(0ul, 10l);
+}
+
+/**
+ * Create a symlink to a file or dir, which does not need to exist. Creating symlinks requires special privileges on Windows,
+ * so this is only supported on Unix
+ *
+ * @param target File or dir, the symlink points to
  * @param link Path of the symlink
  * @return Created or not
  */
-public f<bool> createTestDirSymlink(const FilePath& target, const FilePath& link) {
+public f<bool> createTestSymlink(const FilePath& target, const FilePath& link) {
     if isWindows() {
         return false;
     }

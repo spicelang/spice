@@ -30,7 +30,8 @@ The path can be:
 
 The subcommand prints the paths of the files, that it reformatted. It overwrites them in place, so they keep their
 permissions. While a file is written, its original code is backed up next to it as `<file>.<process id>.format-backup`. The
-backup is removed afterwards and only stays, if writing the file fails.
+backup is removed afterwards and only stays, if writing the file fails. Only the user, that runs the formatter, can read the
+backup. If something exists at the backup path already, e.g. the backup of an earlier run, the file is left unchanged.
 
 ## Options
 You can apply following options to the `format` subcommand:
