@@ -1,0 +1,88 @@
+name: Format
+
+on:
+  pull_request:
+    paths:
+      - '**.spice'
+      - '.github/workflows/format.yml'
+
+jobs:
+  check-format:
+    name: Check formatting
+    runs-on: ubuntu-26.04
+    # The job builds and runs the compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+          # The merge commit of the pull request and its first parent, the tip of the base branch
+          fetch-depth: 2
+
+      - name: Collect changed source files
+        id: changed
+        # test/test-files is left out: its sources are test inputs, whose refs depend on their layout, and some of them do not
+        # parse on purpose. Packages under spice_packages are not formatted either
+        run: |
+          git diff --name-only --diff-filter=d HEAD^1 HEAD -- '*.spice' ':!test/test-files/**' ':!**/spice_packages/**' \
+            > "$RUNNER_TEMP/changed-files.txt"
+          cat "$RUNNER_TEMP/changed-files.txt"
+          if [ -s "$RUNNER_TEMP/changed-files.txt" ]; then
+            echo "any=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The stage0 compiler has no format command yet, so the compiler is built from src/ first. Once the pinned stage0
+      # compiler has it, the steps up to "Build compiler" can be replaced by "Fetch stage0 compiler" alone
+      - name: Setup Linux toolchain
+        if: steps.changed.outputs.any == 'true'
+        uses: ./.github/actions/setup-linux-toolchain
+        with:
+          # The test-only packages graphviz and qemu-system-arm are not needed to build the compiler
+          packages: ccache ninja-build uuid-dev libssl-dev clang lld
+
+      - name: Setup LLVM
+        if: steps.changed.outputs.any == 'true'
+        uses: ./.github/actions/setup-llvm
+        with:
+          # Shares the LLVM cache of the Linux/x86_64 CI job
+          cache-key-suffix: linux-x64
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
+
+      - name: Download Libs
+        if: steps.changed.outputs.any == 'true'
+        run: python setup-deps.py
+
+      - name: Fetch stage0 compiler
+        if: steps.changed.outputs.any == 'true'
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
+        run: python fetch-stage0.py
+
+      - name: Build compiler
+        if: steps.changed.outputs.any == 'true'
+        # Debug builds without LTO and is the fastest to build
+        run: python build.py --build-type Debug
+
+      - name: Check formatting
+        if: steps.changed.outputs.any == 'true'
+        run: |
+          status=0
+          while IFS= read -r file; do
+            # The check prints the path of an unformatted file, or the error, if the file cannot be formatted, e.g. as it does
+            # not parse
+            if ! output="$(build/spice format --check "$file" 2>&1)"; then
+              status=1
+              if [ "$output" = "$file" ]; then
+                echo "::error file=$file::File is not formatted. Run 'spice format $file' to format it"
+                build/spice format --stdout "$file" > "$RUNNER_TEMP/formatted.spice"
+                diff -u --label "$file" --label "$file (formatted)" "$file" "$RUNNER_TEMP/formatted.spice" || true
+              else
+                echo "::error file=$file::File cannot be formatted"
+                echo "$output"
+              fi
+            fi
+          done < "$RUNNER_TEMP/changed-files.txt"
+          exit "$status"
