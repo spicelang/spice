@@ -1,0 +1,10 @@
+import "std/os/system";
+
+f<int> main() {
+    const long coreCount = getCPUCoreCount();
+    // Every machine has at least one core. ThreadPool takes the core count as its default worker count, which is an
+    // unsigned short
+    assert coreCount >= 1l;
+    assert coreCount <= 65535l;
+    printf("All assertions passed!\n");
+}

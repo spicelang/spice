@@ -29,7 +29,7 @@ ext f<unsigned int> getpagesize();
 ext f<int> getrusage(int /*who*/, ResourceUsage* /*usage*/);
 
 // Constants
-const int SC_NPROCESSORS_ONLN = 84;
+const int SC_NPROCESSORS_ONLN = 58; // Value on macOS, glibc uses 84 (_SC_THREAD_CPUTIME on macOS)
 const int RUSAGE_SELF = 0;
 
 /**
