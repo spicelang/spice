@@ -12,7 +12,8 @@ directly to native machine code via [LLVM](https://llvm.org), producing lean bin
 - **Safety where it counts** — strong static typing, immutability via `const`, and automatic memory management
   through deterministic destructors, without a garbage collector.
 - **Practical interop** — can call C and C++ libraries directly and cross-compile to any LLVM-supported target.
-- **Self-contained toolchain** — a single binary covers compilation, running, testing, and installing packages.
+- **Self-contained toolchain** — a single binary covers compilation, running, testing, formatting, linting, and installing
+  packages.
 
 ## What Spice is good for
 

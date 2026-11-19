@@ -25,6 +25,8 @@ Spice offers the option to annotate single function or whole modules via attribu
 - `core.compiler.requiresOs: bool (default: false)`: Mark the module as one, that needs a hosted operating system, e.g.
   because it calls functions of the C standard library. Importing it, or a module that depends on it, in freestanding mode
   is a compile error (see the [freestanding how-to](../how-to/freestanding.md#standard-library-tiers))
+- `core.compiler.warnings.ignore: bool (default: false)`: Suppress the compiler warnings and the
+  [lint findings](../cli/lint.md) for the module
 
 
 ## Function attributes
