@@ -37,6 +37,7 @@ nav = [
     "cli/test.md",
     "cli/install.md",
     "cli/uninstall.md",
+    "cli/lint.md",
     "cli/format.md",
   ] },
   { Tutorials = [
