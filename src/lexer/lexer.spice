@@ -27,6 +27,21 @@ public type Lexer struct {
 
 public p Lexer.ctor(const FilePath& filePath) {
     this.reader = Reader(filePath);
+    this.tokenize();
+}
+
+/**
+ * Lex the given source code from memory instead of from a file, e.g. source code that was read from stdin
+ *
+ * @param sourceCode Source code to lex
+ * @param filePath Path of the source file, which the code locations refer to. Has to outlive the lexer
+ */
+public p Lexer.ctor(const String& sourceCode, const FilePath& filePath) {
+    this.reader = Reader(sourceCode, filePath);
+    this.tokenize();
+}
+
+p Lexer.tokenize() {
     this.curIdx = 0l;
 
     // Tokenize the whole input up front. Materializing the token stream once turns getToken(),
@@ -76,6 +91,15 @@ public f<TokenType> Lexer.peekRelevantType(unsigned long k) {
 
 public f<const Token&> Lexer.getToken() {
     return this.tokens.get(this.curIdx);
+}
+
+/**
+ * Get the whole token stream, including the comment tokens and the terminating EOF token
+ *
+ * @return All tokens
+ */
+public f<const Vector<Token>&> Lexer.getTokens() {
+    return this.tokens;
 }
 
 /**

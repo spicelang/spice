@@ -1,0 +1,26 @@
+const int FIRST  = 1; // One
+const int SECOND = 2; // Two
+const int THIRD  = 3; // Three
+
+public const string NAME_SHORT =  "a";
+public const string NAME_LONGER = "b";
+
+type IntLong    int|long;
+type StrOrChar  String|char;
+
+type Entry struct {
+    int    key
+    String value
+    bool   isUsed // Whether the entry is in use
+}
+
+f<bool> Entry.isEmpty()     { return !this.isUsed; }
+f<bool> Entry.hasKey(int k) { return this.key == k; }
+
+f<int> main() {
+    const int[6] table = [
+        1,  2,  3,
+        10, 20, 30
+    ];
+    return table[0];
+}

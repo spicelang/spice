@@ -1,0 +1,30 @@
+#![core.compiler.alwaysKeepOnNameCollision=true]
+import "std/data/vector";
+
+ext f<int> printf(string,...);
+type IntOrLong int | long;
+
+type Pair<T> struct {
+    T first
+    T second
+}
+
+f<bool> operator==<T>( const Pair<T> &a,const Pair<T> &b ){return a.first==b.first&&a.second==b.second;}
+
+#[test,test.name="spacing"]
+f<bool> testSpacing(){
+    int x=-1+2*3%4;
+    int* ptr=&x;
+    *ptr = - x;
+    x++; --x;
+    Vector<Vector<int>>nested;
+    Pair<int> pair=Pair<int>{ 1,2 };
+    int[3] arr=[ 1,2,3 ];
+    const bool b=!(x<3)||x>=4&&x!=5;
+    const long shifted=1l<<4>>2;
+    const f<int>(int) square=f<int>(int y){return y*y;};
+    const f<bool>(int) isEven=(int z)->z%2==0;
+    x=cast<int>(sizeof<Pair<int>>());
+    printf("%d %d\n",arr [0],square (x));
+    return b?isEven(x):pair==Pair<int>{1,2};
+}

@@ -20,6 +20,11 @@ public type Reader struct {
     // One char lookahead buffer, filled by peekChar()
     char peekedChar = '\0'
     bool hasPeekedChar = false
+    // Input from memory instead of a file, e.g. source code that was read from stdin
+    bool readsFromMemory = false
+    String memoryInput
+    unsigned long memoryInputPos = 0l // Offset of the next char to read within the memory input
+    bool memoryInputExhausted = false
 }
 
 public p Reader.ctor(const FilePath& inputPath) {
@@ -34,6 +39,22 @@ public p Reader.ctor(const FilePath& inputPath) {
         abortWithError(error.getMessage());
     }
     this.file = result.unwrap();
+
+    // Read the first character
+    this.advance();
+}
+
+/**
+ * Read the given source code from memory instead of from a file
+ *
+ * @param sourceCode Source code to read
+ * @param inputPath Path of the source file, which the code locations refer to
+ */
+public p Reader.ctor(const String& sourceCode, const FilePath& inputPath) {
+    this.filePath = inputPath;
+    this.curCodeLoc = CodeLoc(1l, 0l, inputPath.toString());
+    this.readsFromMemory = true;
+    this.memoryInput = sourceCode;
 
     // Read the first character
     this.advance();
@@ -64,13 +85,40 @@ public inline f<CodeLoc&> Reader.getCodeLoc() {
  */
 public f<char> Reader.peekChar() {
     if !this.hasPeekedChar {
-        if this.file.isEOF() {
+        if this.isInputExhausted() {
             return '\0';
         }
-        this.peekedChar = this.file.readChar();
+        this.peekedChar = this.readInputChar();
         this.hasPeekedChar = true;
     }
     return this.peekedChar;
+}
+
+/**
+ * Read the next char from the input file or the memory input
+ *
+ * @return Next char
+ */
+f<char> Reader.readInputChar() {
+    if !this.readsFromMemory {
+        return this.file.readChar();
+    }
+    if this.memoryInputPos >= this.memoryInput.getLength() {
+        this.memoryInputExhausted = true;
+        return '\0';
+    }
+    const char c = this.memoryInput[this.memoryInputPos];
+    this.memoryInputPos++;
+    return c;
+}
+
+/**
+ * Check if the input file or the memory input is read to its end
+ *
+ * @return Exhausted or not
+ */
+f<bool> Reader.isInputExhausted() {
+    return this.readsFromMemory ? this.memoryInputExhausted : this.file.isEOF();
 }
 
 /**
@@ -82,7 +130,7 @@ public p Reader.advance() {
         this.curChar = this.peekedChar;
         this.hasPeekedChar = false;
     } else {
-        this.curChar = this.file.readChar();
+        this.curChar = this.readInputChar();
     }
     // Keep track of the source code, so that parts of it can be retrieved later on
     this.curOffset = this.sourceCode.getLength();
@@ -150,7 +198,7 @@ public inline f<bool> Reader.isEOF() {
     if this.hasPeekedChar {
         return false;
     }
-    return this.file.isEOF();
+    return this.isInputExhausted();
 }
 // ─── tests ────────────────────────────────────────────────────────────────────
 
@@ -191,5 +239,31 @@ f<bool> testReaderReadsFileContent() {
     assert secondChar == 'h';
     assert secondLine == 1l;
     assert secondCol == 2l;
+    return true;
+}
+
+#[test]
+f<bool> testReaderReadsMemoryContent() {
+    const FilePath filePath = FilePath("memory.spice");
+    const String expectedContent = String("Line 1\nLine 2");
+
+    // Read the whole input
+    Reader reader = Reader(expectedContent, filePath);
+    const char firstChar = reader.getChar();
+    const char peekedChar = reader.peekChar();
+    while !reader.isEOF() {
+        reader.advance();
+    }
+    const String content = reader.getSourceCode(0l, expectedContent.getLength());
+    const CodeLoc& endCodeLoc = reader.getCodeLoc();
+
+    // An empty input is at its end right away
+    Reader emptyReader = Reader(String(), filePath);
+
+    assert content == expectedContent;
+    assert endCodeLoc.line == 2l;
+    assert firstChar == 'L';
+    assert peekedChar == 'i';
+    assert emptyReader.isEOF();
     return true;
 }

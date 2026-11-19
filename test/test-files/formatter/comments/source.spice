@@ -1,0 +1,26 @@
+// Copyright header
+
+
+
+    /**
+     * Doc comment of a function, that is indented too far
+     */
+    f<int> compute(int a /* first */, int b /*second*/) { // Trailing comment after the brace
+  int sum = a + b;    // Aligned
+  int product = a * b;// Not aligned
+      /* Block comment before a statement */ return sum + product;
+  // Comment before the closing brace
+}
+
+f<int> main() {
+    int x = compute(1, 2);
+    if x > 1 {
+        x--;
+    }
+    // Comment before else
+    else {
+        x++;
+    }
+    return x; // Comment at the end of the file without line break
+}
+// Last comment

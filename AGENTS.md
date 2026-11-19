@@ -81,6 +81,8 @@ The helper scripts are Python-based and cross-platform.
     - `build/spice --help`
 - You can use an available sanitizer of your choice on Spice code (e.g. ASAN, TSAN, TYSAN, etc.)
     - `build/spice run --sanitizer=address <source-file.spice>`
+- Format a source file or all source files in a directory in place (`--check` only reports unformatted files):
+    - `build/spice fmt <source-file-or-dir>`
 
 ## Debugging
 

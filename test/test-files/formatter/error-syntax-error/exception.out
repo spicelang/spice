@@ -1,0 +1,1 @@
+[Error|Parser] ./test-files/formatter/error-syntax-error/source.spice:2:13: Parsing failed: Unexpected token ';'

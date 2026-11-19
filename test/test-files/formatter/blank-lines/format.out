@@ -1,0 +1,11 @@
+import "std/io/file";
+
+f<int> main() {
+    int x = 1;
+
+    x++;
+}
+
+f<int> other() {
+    return 0;
+}

@@ -1,0 +1,44 @@
+type Color enum {
+    RED,
+    GREEN,
+    BLUE
+}
+
+f<int> classify(Color color) {
+    switch color {
+        case Color::RED,
+            Color::GREEN: {
+            return 1;
+        }
+        default: { return 2; }
+    }
+}
+
+p loop() {
+    int i = 0;
+    do {
+        i++;
+    } while i < 10;
+    if i > 5 {
+        i--;
+    } else {
+        i++;
+    }
+    foreach int j : [1, 2, 3] {
+        i += j;
+    }
+}
+
+f<int> main() {
+    const bool cond = 1 < 2 &&
+        3 < 4;
+    printf("%d %d\n", classify(Color::RED),
+        classify(Color::BLUE));
+    printf("%d %d\n",
+        1,
+        2);
+    const p() fct = p() {
+        loop();
+    };
+    return cond ? 0 : 1;
+}
