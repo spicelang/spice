@@ -775,7 +775,8 @@ p Driver.addLintSubcommand() {
         this.cliOptions.lintOnly = true;
     });
 
-    this.addCompileSubcommandOptions(subCmd);
+    // Linting stops after the type checker, so the code generation options would have no effect
+    this.addFrontEndOptions(subCmd);
 }
 
 /**
@@ -829,7 +830,20 @@ p Driver.addUninstallSubcommand() {
     subCmd.addOption("main-source-file", this.cliOptions.mainSourceFile, "Main source file");
 }
 
+/**
+ * Add the options of the subcommands, that compile the program. These are the front-end options, which are shared with
+ * the lint subcommand, and the options, that only affect the code generation
+ */
 p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
+    this.addFrontEndOptions(subCmd);
+    this.addCodeGenOptions(subCmd);
+}
+
+/**
+ * Add the options, that affect the front and middle end (parsing, symbol table building, type checking) or their output.
+ * These are useful for every subcommand, that analyzes the program, including the lint subcommand
+ */
+p Driver.addFrontEndOptions(CliSubcommand& subCmd) {
     const p(const string&) buildModeCallback = p(const string& buildMode) {
         const String inputString = toLower(String(buildMode));
         if inputString == BUILD_MODE_DEBUG {
@@ -864,16 +878,47 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     // --build-mode
     CliOption<string>& buildModeOption = subCmd.addOption("--build-mode", buildModeCallback, "Build mode: debug (default), release, test");
     buildModeOption.addAlias("-m");
+    // --build-var
+    CliOption<string>& buildVarOption = subCmd.addOption("--build-var", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");
+    buildVarOption.addAlias("-b");
+    buildVarOption.allowMultipleValues();
+    // --freestanding
+    subCmd.addFlag("--freestanding", this.cliOptions.freestanding, "Compile for an environment without hosted libc, crt0 and OS, e.g. a kernel or firmware. Implied by a target without OS");
+
+    // --debug-output
+    CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
+    debugOutputFlag.addAlias("-d");
+    // --quiet
+    CliOption<bool>& quietFlag = subCmd.addFlag("--quiet", this.cliOptions.quiet, "Do not show the compile progress");
+    quietFlag.addAlias("-q");
+    // --dump-ast
+    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump AST as serialized string and SVG image");
+    dumpAstFlag.addAlias("-ast");
+    // --dump-symtab
+    subCmd.addFlag("--dump-symtab", this.cliOptions.dump.dumpSymbolTable, "Dump serialized symbol tables");
+    // --dump-types
+    subCmd.addFlag("--dump-types", this.cliOptions.dump.dumpTypes, "Dump all used types");
+    // --dump-cache-stats
+    subCmd.addFlag("--dump-cache-stats", this.cliOptions.dump.dumpCacheStats, "Dump stats for compiler-internal lookup caches");
+    // --dump-dependency-graph
+    subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
+    // --dump-stats
+    subCmd.addOption("--dump-stats", this.cliOptions.dump.statsFile, "Write compile statistics (stage times, peak memory usage, counters) as JSON to the given file");
+
+    // Source file. The parser requires positional options, and the existence of the file is checked after parsing
+    subCmd.addOption("main-source-file", this.cliOptions.mainSourceFile, "Main source file");
+}
+
+/**
+ * Add the options, that only affect the back end, i.e. the code generation, optimization and the emitted output
+ */
+p Driver.addCodeGenOptions(CliSubcommand& subCmd) {
     // --llvm-args
     CliOption<String>& llvmArgsOption = subCmd.addOption("--llvm-args", this.cliOptions.llvmArgs, "Additional arguments for LLVM");
     llvmArgsOption.addAlias("-llvm");
     // --jobs
     CliOption<int>& jobsOption = subCmd.addOption("--jobs", this.cliOptions.compileJobCount, "Number of source files to compile in parallel in the back end (0 = auto)");
     jobsOption.addAlias("-j");
-    // --build-var
-    CliOption<string>& buildVarOption = subCmd.addOption("--build-var", buildVarCallback, "Add build variable to parametrize the compiled program (e.g. -v key=value)");
-    buildVarOption.addAlias("-b");
-    buildVarOption.allowMultipleValues();
     // --use-lifetime-markers
     subCmd.addFlag("--use-lifetime-markers", this.cliOptions.useLifetimeMarkers, "Generate lifetime markers to enhance optimizations");
     // --use-tbaa-metadata
@@ -918,8 +963,6 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
         }
     };
     subCmd.addOption("--code-model", codeModelCallback, "Code model, i.e. how far code and data may be apart: default (small), tiny, small, kernel, medium, large");
-    // --freestanding
-    subCmd.addFlag("--freestanding", this.cliOptions.freestanding, "Compile for an environment without hosted libc, crt0 and OS, e.g. a kernel or firmware. Implied by a target without OS");
     // --native-features
     subCmd.addFlag("--native-features", this.cliOptions.useNativeFeatures, "Tune the output for the CPU of the compiling machine and use all of its features. The output might not run on other machines of the same architecture");
     // --cpu-features
@@ -977,21 +1020,6 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     };
     subCmd.addOption("--backend", backendCallback, "Codegen backend: llvm (default), tpde (experimental — fast, unoptimized; requires opt-in build)");
 
-    // --debug-output
-    CliOption<bool>& debugOutputFlag = subCmd.addFlag("--debug-output", this.cliOptions.printDebugOutput, "Enable debug output");
-    debugOutputFlag.addAlias("-d");
-    // --quiet
-    CliOption<bool>& quietFlag = subCmd.addFlag("--quiet", this.cliOptions.quiet, "Do not show the compile progress");
-    quietFlag.addAlias("-q");
-    // --dump-ast
-    CliOption<bool>& dumpAstFlag = subCmd.addFlag("--dump-ast", this.cliOptions.dump.dumpAST, "Dump AST as serialized string and SVG image");
-    dumpAstFlag.addAlias("-ast");
-    // --dump-symtab
-    subCmd.addFlag("--dump-symtab", this.cliOptions.dump.dumpSymbolTable, "Dump serialized symbol tables");
-    // --dump-types
-    subCmd.addFlag("--dump-types", this.cliOptions.dump.dumpTypes, "Dump all used types");
-    // --dump-cache-stats
-    subCmd.addFlag("--dump-cache-stats", this.cliOptions.dump.dumpCacheStats, "Dump stats for compiler-internal lookup caches");
     // --dump-ir
     CliOption<bool>& dumpIrFlag = subCmd.addFlag("--dump-ir", this.cliOptions.dump.dumpIR, "Dump LLVM-IR");
     dumpIrFlag.addAlias("-ir");
@@ -1001,13 +1029,6 @@ p Driver.addCompileSubcommandOptions(CliSubcommand& subCmd) {
     dumpAsmFlag.addAlias("-s");
     // --dump-object-file
     subCmd.addFlag("--dump-object-file", this.cliOptions.dump.dumpObjectFiles, "Dump object files");
-    // --dump-dependency-graph
-    subCmd.addFlag("--dump-dependency-graph", this.cliOptions.dump.dumpDependencyGraph, "Dump compile unit dependency graph");
-    // --dump-stats
-    subCmd.addOption("--dump-stats", this.cliOptions.dump.statsFile, "Write compile statistics (stage times, peak memory usage, counters) as JSON to the given file");
-
-    // Source file. The parser requires positional options, and the existence of the file is checked after parsing
-    subCmd.addOption("main-source-file", this.cliOptions.mainSourceFile, "Main source file");
 }
 
 p Driver.addInstrumentationOptions(CliSubcommand& subCmd) {
@@ -1237,13 +1258,19 @@ f<bool> testTestLintInstallSubcommands() {
     assert lintMinimal.cliOptions.buildMode == BuildMode::DEBUG;
 
     Driver lintComplex;
-    string[8] lintComplexArgs = ["spice", "l", "-d", "-ast", "-Os", "-m", "release", "main-file.spice"];
-    assert parseAndEnrich(lintComplex, 8, lintComplexArgs);
+    string[10] lintComplexArgs = ["spice", "l", "-d", "-ast", "--freestanding", "-b", "key=value", "-m", "release", "main-file.spice"];
+    assert parseAndEnrich(lintComplex, 10, lintComplexArgs);
     assert lintComplex.cliOptions.lintOnly;
-    assert lintComplex.cliOptions.optLevel == OptLevel::Os;
+    assert lintComplex.cliOptions.freestanding;
+    assert lintComplex.cliOptions.buildVars.get(String("key")) == "value";
     assert lintComplex.cliOptions.buildMode == BuildMode::RELEASE;
     assert lintComplex.cliOptions.printDebugOutput;
     assert lintComplex.cliOptions.dump.dumpAST;
+
+    // Lint: the code generation options are not available
+    Driver lintCodeGen;
+    string[4] lintCodeGenArgs = ["spice", "lint", "-O3", "main-file.spice"];
+    assert parseOnly(lintCodeGen, 4, lintCodeGenArgs) != EXIT_CODE_SUCCESS;
 
     // Install: the executable is built into the bin directory of Spice
     Driver install;
