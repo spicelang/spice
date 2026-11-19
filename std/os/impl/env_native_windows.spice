@@ -1,0 +1,17 @@
+#![core.compiler.requiresOs]
+
+// Windows version of env_native.spice, picked by the OS suffix. The two files must offer the same symbols.
+
+// Link external functions
+ext f<int> _putenv_s(string /*name*/, string /*value*/);
+
+/**
+ * Sets the content of an environment variable to the given value. An existing value is overwritten.
+ *
+ * @param name Name of the env variable
+ * @param value Value to set
+ * @return Successful or not
+ */
+public f<bool> setNativeEnv(string name, string value) {
+    return _putenv_s(name, value) == 0;
+}

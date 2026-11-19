@@ -1,0 +1,18 @@
+#![core.compiler.requiresOs]
+
+// Setting environment variables for env.spice. Windows has no setenv() and therefore has its own env_native_windows.spice,
+// picked by the OS suffix. The two files must offer the same symbols.
+
+// Link external functions
+ext f<int> setenv(string /*name*/, string /*value*/, int /*overwrite*/);
+
+/**
+ * Sets the content of an environment variable to the given value. An existing value is overwritten.
+ *
+ * @param name Name of the env variable
+ * @param value Value to set
+ * @return Successful or not
+ */
+public f<bool> setNativeEnv(string name, string value) {
+    return setenv(name, value, 1) == 0;
+}
