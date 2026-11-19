@@ -80,6 +80,8 @@ type FmtToken struct {
  */
 type SourceFormatter struct {
     Vector<FmtToken> tokens // All tokens, except for the EOF token
+    Vector<long> nextCodeIdx // For each token: Index of the next token, that is no comment. -1 if there is none
+    Vector<long> prevCodeIdx // For each token: Index of the previous token, that is no comment. -1 if there is none
 }
 
 /**
@@ -131,6 +133,25 @@ p SourceFormatter.ctor(const String& sourceCode, const Vector<Token>& lexerToken
         token.origEndCol = col;
 
         this.tokens.pushBack(token);
+    }
+
+    // Index the neighboring code tokens of each token once, so that runs of comments are not scanned over and over
+    const unsigned long count = this.tokens.getSize();
+    long prevCode = -1l;
+    for unsigned long i = 0l; i < count; i++ {
+        this.prevCodeIdx.pushBack(prevCode);
+        this.nextCodeIdx.pushBack(-1l);
+        if !isComment(this.tokens.get(i).tokenType) {
+            prevCode = cast<long>(i);
+        }
+    }
+    long nextCode = -1l;
+    for long i = cast<long>(count) - 1l; i >= 0l; i-- {
+        long& nextCodeOfToken = this.nextCodeIdx.get(cast<unsigned long>(i));
+        nextCodeOfToken = nextCode;
+        if !isComment(this.tokens.get(cast<unsigned long>(i)).tokenType) {
+            nextCode = i;
+        }
     }
 }
 
@@ -293,13 +314,7 @@ f<long> SourceFormatter.findLastTokenAtOrBefore(unsigned long offset) {
  * @return Token index or -1 if there is none
  */
 f<long> SourceFormatter.findNextCodeToken(long idx) {
-    const long tokenCount = cast<long>(this.tokens.getSize());
-    for long i = idx + 1l; i < tokenCount; i++ {
-        if !isComment(this.tokens.get(cast<unsigned long>(i)).tokenType) {
-            return i;
-        }
-    }
-    return -1l;
+    return this.nextCodeIdx.get(cast<unsigned long>(idx));
 }
 
 /**
@@ -309,12 +324,7 @@ f<long> SourceFormatter.findNextCodeToken(long idx) {
  * @return Token index or -1 if there is none
  */
 f<long> SourceFormatter.findPrevCodeToken(long idx) {
-    for long i = idx - 1l; i >= 0l; i-- {
-        if !isComment(this.tokens.get(cast<unsigned long>(i)).tokenType) {
-            return i;
-        }
-    }
-    return -1l;
+    return this.prevCodeIdx.get(cast<unsigned long>(idx));
 }
 
 // =========================================================== Formatting ===========================================================
@@ -371,7 +381,8 @@ f<bool> SourceFormatter.isJoinedWithPrevLine(unsigned long idx) {
         if !isBlockBrace(token) || token.isUnitStart {
             return false;
         }
-        return prev.tokenType != TokenType::SEMICOLON && prev.tokenType != TokenType::LBRACE && prev.tokenType != TokenType::RBRACE;
+        const bool isAfterBlock = prev.tokenType == TokenType::RBRACE && isBlockBrace(prev);
+        return prev.tokenType != TokenType::SEMICOLON && prev.tokenType != TokenType::LBRACE && !isAfterBlock;
     }
     if token.tokenType == TokenType::ELSE {
         return prev.tokenType == TokenType::RBRACE;
@@ -428,7 +439,7 @@ f<String> SourceFormatter.render() {
             col = appendMultiLineComment(output, token, col);
         } else {
             output += token.text;
-            col += getCodePointCount(token.text);
+            col = advanceColumn(col, token.text);
         }
         if isComment(token.tokenType) {
             continue;
@@ -517,10 +528,12 @@ f<unsigned long> SourceFormatter.computeLineIndentCol(unsigned long idx, Frame& 
     }
 
     // The first line with items of a list decides, whether the items are aligned to the first one, which is on the line of the
-    // opening bracket. They are, if they are aligned in the original code
-    if top.alignCol >= 0l && !top.alignDecided {
+    // opening bracket. They are, if they are aligned in the original code. Only the code items count, comments do not
+    const FmtToken& code = this.tokens.get(cast<unsigned long>(codeIdx));
+    if top.alignCol >= 0l && !top.alignDecided && !isCloser(code.tokenType) {
         const FmtToken& firstItem = this.tokens.get(cast<unsigned long>(top.openerIdx + 1l));
-        top.isAligned = token.origStartCol == firstItem.origStartCol;
+        const FmtToken& lineStart = code.lineBreaksBefore > 0l ? code : token;
+        top.isAligned = lineStart.origStartCol == firstItem.origStartCol;
         top.alignDecided = true;
     }
 
@@ -556,6 +569,28 @@ f<bool> SourceFormatter.startsUnit(unsigned long idx, const Frame& top) {
         return isBlockBrace(prev);
     }
     return prev.tokenType == TokenType::SEMICOLON;
+}
+
+/**
+ * Get the column after the given text, if it is appended at the given column. The text can contain line breaks, e.g. a
+ * string literal with an escaped line break
+ *
+ * @param col Column, where the text starts
+ * @param text Text
+ * @return Column after the text
+ */
+f<unsigned long> advanceColumn(unsigned long col, const String& text) {
+    const unsigned long length = text.getLength();
+    long lastLineBreak = -1l;
+    for unsigned long i = 0l; i < length; i++ {
+        if text[i] == '\n' {
+            lastLineBreak = cast<long>(i);
+        }
+    }
+    if lastLineBreak < 0l {
+        return col + getCodePointCount(text);
+    }
+    return getCodePointCount(text.getSubstring(cast<unsigned long>(lastLineBreak + 1l)));
 }
 
 /**
@@ -1007,6 +1042,13 @@ f<bool> isPostfixOp(const FmtToken& token) {
  * @return Formatted source code
  */
 public f<String> formatSourceCode(GlobalResourceManager& resourceManager, const String& sourceCode, const FilePath& filePath) {
+    // The formatted code is assembled from strings, which end at a NUL char. So source code with NUL chars cannot be formatted
+    if containsNulChar(sourceCode) {
+        const String message = "Source file '" + String(filePath.toString()) + "' contains a NUL char and cannot be formatted";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+
     Lexer lexer = Lexer(sourceCode, filePath);
     Parser parser = Parser(resourceManager, nil<SourceFile*>, lexer);
     ASTEntryNode* ast = parser.parse();
@@ -1027,7 +1069,24 @@ public f<String> formatSourceCode(GlobalResourceManager& resourceManager, const 
 }
 
 /**
- * Check if the two given token streams consist of the same tokens. The whitespace within comments does not count
+ * Check if the given text contains a NUL char
+ *
+ * @param text Text to check
+ * @return Contains a NUL char or not
+ */
+f<bool> containsNulChar(const String& text) {
+    const unsigned long length = text.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        if text[i] == '\0' {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the two given token streams consist of the same tokens. Only the whitespace within comments does not count, because
+ * comments may be reindented
  *
  * @param origTokens Tokens of the original source code
  * @param origCode Original source code
@@ -1046,9 +1105,13 @@ f<bool> haveSameTokens(const Vector<Token>& origTokens, const String& origCode, 
         if origToken.tokenType != newToken.tokenType {
             return false;
         }
-        const String origText = removeWhitespace(getTokenSource(origCode, origToken));
-        const String newText = removeWhitespace(getTokenSource(newCode, newToken));
-        if origText != newText {
+        const String origText = getTokenSource(origCode, origToken);
+        const String newText = getTokenSource(newCode, newToken);
+        if isComment(origToken.tokenType) {
+            if removeWhitespace(origText) != removeWhitespace(newText) {
+                return false;
+            }
+        } else if origText != newText {
             return false;
         }
     }
@@ -1121,6 +1184,20 @@ f<bool> testFormatterIndentation() {
 f<bool> testFormatterBlankLinesAndComments() {
     const String formatted = formatForTest("// Header\n\n\n\nimport \"std/io/file\";\n\nf<int> main() {\n\n    int a = 1;   // One\n    int bb = 2;  // Two\n\n}\n");
     assert formatted == "// Header\n\nimport \"std/io/file\";\n\nf<int> main() {\n    int a = 1;   // One\n    int bb = 2;  // Two\n}\n";
+    return true;
+}
+
+#[test]
+f<bool> testFormatterComparesTokensExactly() {
+    const FilePath filePath = FilePath("test.spice");
+    const String original = String("string s = \"a b\"; // A  comment\n");
+    const String changedLiteral = String("string s = \"ab\"; // A  comment\n");
+    const String reindentedComment = String("string s = \"a b\";   //  A comment\n");
+    Lexer originalLexer = Lexer(original, filePath);
+    Lexer changedLiteralLexer = Lexer(changedLiteral, filePath);
+    Lexer reindentedCommentLexer = Lexer(reindentedComment, filePath);
+    assert !haveSameTokens(originalLexer.getTokens(), original, changedLiteralLexer.getTokens(), changedLiteral);
+    assert haveSameTokens(originalLexer.getTokens(), original, reindentedCommentLexer.getTokens(), reindentedComment);
     return true;
 }
 

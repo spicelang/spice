@@ -25,6 +25,8 @@ const string STDIN_DISPLAY_NAME = "<stdin>";
 const string SOURCE_FILE_EXTENSION = ".spice";
 const string PACKAGES_DIR_NAME = "spice_packages";
 const int EOF_CHAR = -1;
+// Suffix of the temporary file, that a reformatted source file is written to, before it replaces the source file
+const string TMP_FILE_SUFFIX = ".format.tmp";
 
 /**
  * Run the 'format' subcommand: format the given source file, all source files in the given directory or the source code from
@@ -36,14 +38,13 @@ const int EOF_CHAR = -1;
  * @return Exit code: 0 on success, 1 if a file is not formatted in check mode
  */
 public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& formatOptions) {
-    GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
     const String pathStr = String(formatOptions.path.toString());
 
     // Source code from stdin. The formatted code goes to stdout, unless only checking
     if pathStr == STDIN_PATH {
         const String sourceCode = readStdin();
         const FilePath displayPath = FilePath(STDIN_DISPLAY_NAME);
-        const String formattedCode = formatSourceCode(resourceManager, sourceCode, displayPath);
+        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, displayPath);
         if formatOptions.check {
             if formattedCode != sourceCode {
                 printf("%s\n", STDIN_DISPLAY_NAME);
@@ -71,26 +72,42 @@ public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& form
         abortWithError(error.getMessage());
     }
 
-    // Format them one after another
+    // Format them one after another. Check mode takes precedence over printing the formatted code
     unsigned long unformattedCount = 0l;
     foreach const FilePath& sourceFile : sourceFiles {
         const String sourceCode = readSourceFile(sourceFile);
-        const String formattedCode = formatSourceCode(resourceManager, sourceCode, sourceFile);
-        if formatOptions.toStdout {
+        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, sourceFile);
+        const bool isFormatted = formattedCode == sourceCode;
+        if !isFormatted {
+            unformattedCount++;
+        }
+        if formatOptions.check {
+            if !isFormatted {
+                printf("%s\n", sourceFile.toString());
+            }
+        } else if formatOptions.toStdout {
             printf("%s", formattedCode.getRaw());
-            continue;
-        }
-        if formattedCode == sourceCode {
-            continue;
-        }
-        unformattedCount++;
-        if !formatOptions.check {
+        } else if !isFormatted {
             writeSourceFile(sourceFile, formattedCode);
+            printf("%s\n", sourceFile.toString());
         }
-        printf("%s\n", sourceFile.toString());
     }
 
     return formatOptions.check && unformattedCount > 0l ? EXIT_CODE_ERROR : EXIT_CODE_SUCCESS;
+}
+
+/**
+ * Format the given source code with a resource manager of its own. It owns the syntax tree, so this releases the syntax tree
+ * of each file, before the next one is formatted.
+ *
+ * @param cliOptions Command line options
+ * @param sourceCode Source code to format
+ * @param filePath Path of the source file, which errors refer to
+ * @return Formatted source code
+ */
+f<String> formatWithOwnResourceManager(CliOptions& cliOptions, const String& sourceCode, const FilePath& filePath) {
+    GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+    return formatSourceCode(resourceManager, sourceCode, filePath);
 }
 
 /**
@@ -112,14 +129,25 @@ f<Vector<FilePath>> collectSourceFiles(const FilePath& dir) {
     // Keep the source files
     Vector<String> relativePaths;
     foreach const String& entry : entries {
-        if !entry.endsWith(SOURCE_FILE_EXTENSION) || isExcludedPath(entry) {
+        // Skip the entries within the directories, that are left out
+        if isExcludedPath(entry) {
             continue;
         }
+
+        // The listing leaves out the contents of directories, that cannot be read. Fail instead of skipping their source files.
+        // An entry, that is left out itself, e.g. a hidden directory, does not matter
         const FilePath entryPath = dir / entry;
-        if dirExists(entryPath.toString()) {
-            continue;
+        const string entryPathStr = entryPath.toString();
+        const bool isLeftOut = isExcludedPath(entry + "/");
+        if !isLeftOut && fileExists(entryPathStr) && !isFileReadable(entryPathStr) {
+            const String message = "Path '" + String(entryPathStr) + "' cannot be read";
+            const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+            abortWithError(error.getMessage());
         }
-        relativePaths.pushBack(entry);
+
+        if entry.endsWith(SOURCE_FILE_EXTENSION) && !dirExists(entryPathStr) {
+            relativePaths.pushBack(entry);
+        }
     }
 
     // Sort them, so that the order does not depend on the file system. This sorts the indices of the paths (insertion sort)
@@ -207,15 +235,24 @@ f<String> readSourceFile(const FilePath& filePath) {
 }
 
 /**
- * Write the given source code to the given source file
+ * Write the given source code to the given source file. The code is written to a temporary file next to the source file
+ * first, which replaces the source file afterwards. So the source file stays intact, if writing fails, e.g. on a full disk.
  *
  * @param filePath Path of the source file
  * @param sourceCode Source code
  */
 p writeSourceFile(const FilePath& filePath, const String& sourceCode) {
-    Result<bool> writeResult = writeFile(filePath.toString(), sourceCode.getRaw());
+    const String path = String(filePath.toString());
+    const String tmpPath = path + TMP_FILE_SUFFIX;
+    Result<bool> writeResult = writeFile(tmpPath.getRaw(), sourceCode.getRaw());
     if !writeResult.isOk() || !writeResult.unwrap() {
-        const String message = "Source file at path '" + String(filePath.toString()) + "' cannot be written";
+        const bool _ = deleteFile(tmpPath.getRaw()); // Best effort, the error below matters more
+        const String message = "Source file at path '" + path + "' cannot be written";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+    if !moveFile(tmpPath, path) {
+        const String message = "Source file at path '" + path + "' cannot be replaced. The formatted code is in '" + tmpPath + "'";
         const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
         abortWithError(error.getMessage());
     }
@@ -225,6 +262,7 @@ p writeSourceFile(const FilePath& filePath, const String& sourceCode) {
 
 #[test]
 f<bool> testFormatCommandExcludedPaths() {
+    assert isExcludedPath(String(".git/")); // A directory itself
     assert !isExcludedPath(String("main.spice"));
     assert !isExcludedPath(String("src/main.spice"));
     assert !isExcludedPath(String(".hidden.spice")); // Only directories are excluded

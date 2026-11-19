@@ -33,10 +33,10 @@ The subcommand prints the paths of the files, that it reformatted.
 ## Options
 You can apply following options to the `format` subcommand:
 
-| Option     | Description                                                                                                                      |
-|------------|----------------------------------------------------------------------------------------------------------------------------------|
-| `--check`  | Do not write the files, but print the paths of the files, that are not formatted, and exit with code 1, if there are any. For CI |
-| `--stdout` | Print the formatted code instead of writing it back to the file. Only works with a single source file                           |
+| Option     | Description                                                                                                                       |
+|------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| `--check`  | Do not write the files, but print the paths of the files, that are not formatted, and exit with code 1, if there are any. For CI  |
+| `--stdout` | Print the formatted code instead of writing it back to the file. Only works with a single source file. `--check` takes precedence |
 
 ## Examples
 ```sh
@@ -75,7 +75,6 @@ The formatter keeps the line breaks within statements as they are, so you decide
     file as it is.
 
 ## Editor integration
-The Spice extensions for [VS Code](https://github.com/spicelang/vscode-spice) and
-[IntelliJ-based IDEs](https://github.com/spicelang/intellij-spice) use `spice format -` to format the open file, e.g. via the
-"Format Document" / "Reformat Code" action or on save. Any other editor can do the same: pipe the content of the file into
-`spice format -` and replace it with the output.
+An editor can format the open file with `spice format -`: pipe the content of the file into it and replace the content with
+the output, if the exit code is 0. Otherwise, keep the content as it is and show the output, which is the error message, e.g.
+a syntax error.

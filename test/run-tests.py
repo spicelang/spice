@@ -824,10 +824,12 @@ def exec_formatter_test_case(result: TestResult, test_case: TestCase) -> None:
 
     format_ref_path = test_case.file(REF_NAME_FORMAT_OUTPUT)
     check_ref_match(result, format_ref_path, lambda: output)
-    if does_ref_exist(format_ref_path) and not OPTS.update_refs:
-        reformatted_output, _ = run_compiler(result, ["format", "--stdout", format_ref_path])
+    # Format the reference variant again, that check_ref_match compared against
+    selected_ref_path = next((path for path in expand_ref_paths(format_ref_path) if os.path.exists(path)), None)
+    if selected_ref_path is not None and not OPTS.update_refs:
+        reformatted_output, _ = run_compiler(result, ["format", "--stdout", selected_ref_path])
         result.expect(reformatted_output == output, "Formatting the formatted code changes it again:\n"
-                      f"{diff(output, reformatted_output, format_ref_path)}")
+                      f"{diff(output, reformatted_output, selected_ref_path)}")
 
 
 # -------------------- Compiler builds --------------------

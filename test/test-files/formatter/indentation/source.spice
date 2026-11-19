@@ -49,3 +49,17 @@ f<int> main() {
   };
   return cond ? 0 : 1;
 }
+
+f<bool> isOrigin(Pair<int> value) {
+    if value == Pair<int>{0, 0}
+    {
+        return true;
+    }
+    return false;
+}
+
+p alignedWithComment() {
+  foobar(1,
+  // The comment does not decide about the alignment
+         2);
+}
