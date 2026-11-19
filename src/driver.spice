@@ -452,6 +452,10 @@ public p Driver.enrich() {
         if this.cliOptions.instrumentation.codeCoverage {
             raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend does not support code coverage instrumentation");
         }
+        // The sanitizer passes register their runtime initializers as module ctors with a priority, which TPDE does not support
+        if this.cliOptions.instrumentation.sanitizer != Sanitizer::NONE {
+            raiseCliError(CliErrorType::INCOMPATIBLE_OPTIONS, "The TPDE backend does not support sanitizers");
+        }
         if !this.isTargetLinux() {
             raiseCliError(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "The TPDE backend only supports ELF targets (Linux)");
         }

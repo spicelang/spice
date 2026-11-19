@@ -434,8 +434,8 @@ Pass `help=1` in any of them to make the program print all options of that runti
 
 - **Freestanding builds** cannot use sanitizers, since their runtimes need a hosted libc. See
   [Freestanding builds](freestanding.md).
-- **The [TPDE backend](experimental-backends.md)** does not support sanitizers. Use the default LLVM backend for
-  instrumented builds.
+- **The [TPDE backend](experimental-backends.md)** does not support sanitizers, so the compiler rejects `--sanitizer` in
+  combination with `--backend=tpde`. Use the default LLVM backend for instrumented builds.
 - **Uninstrumented code** is invisible to the sanitizers. Bugs inside a C library you link against, that was not built
   with the same sanitizer, go unnoticed, and with MemorySanitizer they even cause false positives.
 - **Sanitizers only see the code that runs.** A clean sanitizer run tells you that this particular run had no bugs of
