@@ -1,0 +1,362 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/dir";
+import "std/io/file";
+import "std/io/filepath";
+import "std/os/cmd";
+import "std/os/os";
+import "std/type/type-conversion";
+
+// Own imports
+import "@/driver";
+import "@/exception/cli-error";
+import "@/exception/compiler-error";
+import "@/exception/fatal-error";
+import "@/formatter/formatter";
+import "@/global/global-resource-manager";
+import "@/util/common-util";
+import "@/util/test-util";
+
+// External functions
+ext f<int> getchar();
+
+// Constants
+const string STDIN_PATH = "-";
+const string STDIN_DISPLAY_NAME = "<stdin>";
+const string SOURCE_FILE_EXTENSION = ".spice";
+const string PACKAGES_DIR_NAME = "spice_packages";
+const int EOF_CHAR = -1;
+// Suffix of the backup file, that holds the original code of a source file, while the formatted code is written to it
+const string BACKUP_FILE_SUFFIX = ".format-backup";
+
+/**
+ * Run the 'format' subcommand: format the given source file, all source files in the given directory or the source code from
+ * stdin. Reformatted files are written back and their paths are printed. In check mode, the files are left as they are and
+ * the paths of the files, that are not formatted, are printed instead.
+ *
+ * @param cliOptions Command line options
+ * @param formatOptions Options of the format subcommand
+ * @return Exit code: 0 on success, 1 if a file is not formatted in check mode
+ */
+public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& formatOptions) {
+    const String pathStr = String(formatOptions.path.toString());
+
+    // Source code from stdin. The formatted code goes to stdout, unless only checking
+    if pathStr == STDIN_PATH {
+        const String sourceCode = readStdin();
+        const FilePath displayPath = FilePath(STDIN_DISPLAY_NAME);
+        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, displayPath);
+        if formatOptions.check {
+            if formattedCode != sourceCode {
+                printf("%s\n", STDIN_DISPLAY_NAME);
+                return EXIT_CODE_ERROR;
+            }
+            return EXIT_CODE_SUCCESS;
+        }
+        printf("%s", formattedCode.getRaw());
+        return EXIT_CODE_SUCCESS;
+    }
+
+    // Collect the source files
+    Vector<FilePath> sourceFiles;
+    if dirExists(formatOptions.path.toString()) {
+        if formatOptions.toStdout {
+            const CliError cliError = CliError(CliErrorType::INCOMPATIBLE_OPTIONS, "--stdout only works with a single source file");
+            abortWithError(cliError.getMessage());
+        }
+        String unreadablePath;
+        if !collectSourceFiles(formatOptions.path, sourceFiles, unreadablePath) {
+            const String message = "Path '" + unreadablePath + "' cannot be read";
+            const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+            abortWithError(error.getMessage());
+        }
+    } else if fileExists(formatOptions.path.toString()) {
+        sourceFiles.pushBack(formatOptions.path);
+    } else {
+        const String message = "File or directory '" + pathStr + "' does not exist";
+        const CompilerError error = CompilerError(CompilerErrorType::SOURCE_FILE_NOT_FOUND, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+
+    // Format them one after another. Check mode takes precedence over printing the formatted code
+    unsigned long unformattedCount = 0l;
+    foreach const FilePath& sourceFile : sourceFiles {
+        const String sourceCode = readSourceFile(sourceFile);
+        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, sourceFile);
+        const bool isFormatted = formattedCode == sourceCode;
+        if !isFormatted {
+            unformattedCount++;
+        }
+        if formatOptions.check {
+            if !isFormatted {
+                printf("%s\n", sourceFile.toString());
+            }
+        } else if formatOptions.toStdout {
+            printf("%s", formattedCode.getRaw());
+        } else if !isFormatted {
+            writeSourceFile(sourceFile, sourceCode, formattedCode);
+            printf("%s\n", sourceFile.toString());
+        }
+    }
+
+    return formatOptions.check && unformattedCount > 0l ? EXIT_CODE_ERROR : EXIT_CODE_SUCCESS;
+}
+
+/**
+ * Format the given source code with a resource manager of its own. It owns the syntax tree, so this releases the syntax tree
+ * of each file, before the next one is formatted.
+ *
+ * @param cliOptions Command line options
+ * @param sourceCode Source code to format
+ * @param filePath Path of the source file, which errors refer to
+ * @return Formatted source code
+ */
+f<String> formatWithOwnResourceManager(CliOptions& cliOptions, const String& sourceCode, const FilePath& filePath) {
+    GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+    return formatSourceCode(resourceManager, sourceCode, filePath);
+}
+
+/**
+ * Collect all Spice source files in the given directory and its subdirectories, sorted by path. Hidden directories and the
+ * directories of installed packages are left out. The directory listing leaves out the contents of directories, that cannot
+ * be read or searched, so the collection fails for them instead of silently skipping their source files.
+ *
+ * @param dir Directory to search
+ * @param sourceFiles Vector to append the paths of the source files to
+ * @param unreadablePath Set to the path, that cannot be read, if the collection fails
+ * @return Whether all directories could be read
+ */
+f<bool> collectSourceFiles(const FilePath& dir, Vector<FilePath>& sourceFiles, String& unreadablePath) {
+    Result<Vector<String>> entriesResult = listDirRecursive(dir.toString());
+    if !entriesResult.isOk() || !isAccessible(dir.toString()) {
+        unreadablePath = String(dir.toString());
+        return false;
+    }
+    const Vector<String> entries = entriesResult.unwrap();
+
+    // Keep the source files
+    Vector<String> relativePaths;
+    foreach const String& entry : entries {
+        // Skip the entries within the directories, that are left out
+        if isExcludedPath(entry) {
+            continue;
+        }
+
+        // An entry, that is left out itself, e.g. a hidden directory, does not have to be accessible
+        const FilePath entryPath = dir / entry;
+        const string entryPathStr = entryPath.toString();
+        const bool isLeftOut = isExcludedPath(entry + "/");
+        if !isLeftOut && fileExists(entryPathStr) && !isAccessible(entryPathStr) {
+            unreadablePath = String(entryPathStr);
+            return false;
+        }
+
+        if entry.endsWith(SOURCE_FILE_EXTENSION) && !dirExists(entryPathStr) {
+            relativePaths.pushBack(entry);
+        }
+    }
+
+    // Sort them, so that the order does not depend on the file system. This sorts the indices of the paths (insertion sort)
+    const unsigned long pathCount = relativePaths.getSize();
+    Vector<unsigned long> order;
+    for unsigned long i = 0l; i < pathCount; i++ {
+        order.pushBack(i);
+    }
+    for unsigned long i = 1l; i < pathCount; i++ {
+        unsigned long j = i;
+        while j > 0l && isStringLess(relativePaths.get(order.get(j)), relativePaths.get(order.get(j - 1l))) {
+            unsigned long& current = order.get(j);
+            unsigned long& previous = order.get(j - 1l);
+            const unsigned long tmp = current;
+            current = previous;
+            previous = tmp;
+            j--;
+        }
+    }
+
+    foreach unsigned long idx : order {
+        sourceFiles.pushBack(dir / relativePaths.get(idx));
+    }
+    return true;
+}
+
+/**
+ * Check if the given file or directory can be read. A directory has to be searchable as well (except on Windows, which has
+ * no search permission), so that the entries within it can be accessed.
+ *
+ * @param path Path of the file or directory
+ * @return Accessible or not
+ */
+f<bool> isAccessible(string path) {
+    if !isFileReadable(path) {
+        return false;
+    }
+    return isWindows() || !dirExists(path) || isFileExecutable(path);
+}
+
+/**
+ * Check if the given relative path lies within a hidden directory or a directory of installed packages
+ *
+ * @param relativePath Path relative to the searched directory, with '/' as separator
+ * @return Excluded or not
+ */
+f<bool> isExcludedPath(const String& relativePath) {
+    const unsigned long length = relativePath.getLength();
+    unsigned long segmentStart = 0l;
+    for unsigned long i = 0l; i <= length; i++ {
+        if i < length && relativePath[i] != '/' {
+            continue;
+        }
+        // Only the directories count, not the file name
+        if i == length {
+            break;
+        }
+        const String segment = relativePath.getSubstring(segmentStart, cast<long>(i - segmentStart));
+        if segment.startsWith(".") || segment == PACKAGES_DIR_NAME {
+            return true;
+        }
+        segmentStart = i + 1l;
+    }
+    return false;
+}
+
+/**
+ * Read the source code from stdin until its end
+ *
+ * @return Source code
+ */
+f<String> readStdin() {
+    String sourceCode;
+    while true {
+        const int c = getchar();
+        if c == EOF_CHAR {
+            break;
+        }
+        sourceCode += cast<char>(c);
+    }
+    return sourceCode;
+}
+
+/**
+ * Read the given source file
+ *
+ * @param filePath Path of the source file
+ * @return Source code
+ */
+f<String> readSourceFile(const FilePath& filePath) {
+    Result<String> readResult = readFile(filePath.toString());
+    if !readResult.isOk() {
+        const String message = "Source file at path '" + String(filePath.toString()) + "' cannot be opened";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+    return readResult.unwrap();
+}
+
+/**
+ * Write the formatted code to the given source file. The source file is overwritten in place, so that it keeps its permissions,
+ * its owner and its links. The original code is backed up next to the source file first, so that it is not lost, if writing
+ * fails, e.g. on a full disk. The backup is removed afterwards. Its name contains the process id, so that concurrent runs do
+ * not share it.
+ *
+ * @param filePath Path of the source file
+ * @param originalCode Original code of the source file
+ * @param formattedCode Formatted code
+ */
+p writeSourceFile(const FilePath& filePath, const String& originalCode, const String& formattedCode) {
+    const String path = String(filePath.toString());
+    const String backupPath = path + "." + toString(getPID()) + BACKUP_FILE_SUFFIX;
+    if !writeTextFile(backupPath, originalCode) {
+        const bool _ = deleteFile(backupPath.getRaw()); // Best effort, the error below matters more
+        const String message = "Source file at path '" + path + "' cannot be backed up at '" + backupPath + "'. It was left unchanged";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+    if !writeTextFile(path, formattedCode) {
+        const String message = "Source file at path '" + path + "' cannot be written. Its original code is in '" + backupPath + "'";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+    const bool _ = deleteFile(backupPath.getRaw());
+}
+
+/**
+ * Write the given text to the given file, replacing its content
+ *
+ * @param path Path of the file
+ * @param text Text to write
+ * @return Whether the text was written completely
+ */
+f<bool> writeTextFile(const String& path, const String& text) {
+    Result<File> openResult = openFile(path, MODE_WRITE);
+    if !openResult.isOk() {
+        return false;
+    }
+    File file = openResult.unwrap();
+    const bool isWritten = file.write(text);
+    // Closing flushes the buffered text, which can fail as well, e.g. on a full disk
+    const bool isClosed = file.close();
+    return isWritten && isClosed;
+}
+
+// ============================================================== Tests ==============================================================
+
+#[test]
+f<bool> testFormatCommandFailsOnInaccessibleDirs() {
+    // Windows has no POSIX permissions
+    if isWindows() {
+        return true;
+    }
+
+    // One directory, that cannot be read, and one, that can be read, but not searched
+    const FilePath testDir = makeUniqueTestDir("spice-format-test");
+    const FilePath unreadableDir = testDir / "unreadable";
+    const FilePath unsearchableDir = testDir / "unsearchable";
+    createTestDirs(unreadableDir / "sub");
+    createTestDirs(unsearchableDir / "sub");
+    writeTestFile(unreadableDir / "sub" / "a.spice", "f<int> main() {}\n");
+    writeTestFile(unsearchableDir / "sub" / "b.spice", "f<int> main() {}\n");
+
+    // Collect from each directory with only the other one locked
+    const bool lockedUnreadable = changeFilePermissions(unreadableDir.toString(), 0o000s);
+    Vector<FilePath> filesWithUnreadable;
+    String unreadablePath;
+    const bool unreadableCollected = collectSourceFiles(testDir, filesWithUnreadable, unreadablePath);
+    const bool unlockedUnreadable = changeFilePermissions(unreadableDir.toString(), 0o755s);
+
+    const bool lockedUnsearchable = changeFilePermissions(unsearchableDir.toString(), 0o444s);
+    // The superuser bypasses the permissions, so the locks only take effect for other users
+    const bool permissionsEnforced = !isFileExecutable(unsearchableDir.toString());
+    Vector<FilePath> filesWithUnsearchable;
+    String unsearchablePath;
+    const bool unsearchableCollected = collectSourceFiles(testDir, filesWithUnsearchable, unsearchablePath);
+    const bool unlockedUnsearchable = changeFilePermissions(unsearchableDir.toString(), 0o755s);
+
+    // Without locks, both source files are found
+    Vector<FilePath> allFiles;
+    String noUnreadablePath;
+    const bool allCollected = collectSourceFiles(testDir, allFiles, noUnreadablePath);
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert lockedUnreadable && unlockedUnreadable && lockedUnsearchable && unlockedUnsearchable;
+    assert allCollected && allFiles.getSize() == 2l;
+    if permissionsEnforced {
+        assert !unreadableCollected && unreadablePath.endsWith("unreadable");
+        assert !unsearchableCollected && unsearchablePath.endsWith("unsearchable");
+    }
+    return true;
+}
+
+#[test]
+f<bool> testFormatCommandExcludedPaths() {
+    assert isExcludedPath(String(".git/")); // A directory itself
+    assert !isExcludedPath(String("main.spice"));
+    assert !isExcludedPath(String("src/main.spice"));
+    assert !isExcludedPath(String(".hidden.spice")); // Only directories are excluded
+    assert isExcludedPath(String(".git/main.spice"));
+    assert isExcludedPath(String("src/spice_packages/llvm/llvm.spice"));
+    return true;
+}

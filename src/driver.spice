@@ -243,11 +243,22 @@ p raiseCliError(const CliErrorType errorType, const string message) {
 }
 
 /**
+ * Options of the format subcommand
+ */
+public type FormatOptions struct {
+    public FilePath path // Source file or directory to format, '-' for stdin
+    public bool check = false // Only report the files, that are not formatted, instead of formatting them
+    public bool toStdout = false // Print the formatted code instead of writing it back to the file
+}
+
+/**
  * Helper class to setup the cli interface and command line parser
  */
 public type Driver struct {
     public CliOptions cliOptions
+    public FormatOptions formatOptions
     public bool shouldCompile = false
+    public bool shouldFormat = false
     public bool shouldInstall = false
     public bool shouldUninstall = false
     public bool shouldExecute = false
@@ -270,6 +281,7 @@ public p Driver.ctor() {
     this.addRunSubcommand();
     this.addTestSubcommand();
     this.addLintSubcommand();
+    this.addFormatSubcommand();
     this.addInstallSubcommand();
     this.addUninstallSubcommand();
 }
@@ -764,6 +776,25 @@ p Driver.addLintSubcommand() {
     });
 
     this.addCompileSubcommandOptions(subCmd);
+}
+
+/**
+ * Add format subcommand to cli interface
+ */
+p Driver.addFormatSubcommand() {
+    // Create sub-command itself
+    CliSubcommand& subCmd = this.cliParser.addSubcommand("format", "Formats your Spice source files");
+    subCmd.addAlias("fmt");
+    subCmd.setCallback(p() {
+        this.shouldFormat = true;
+    });
+
+    // --check
+    subCmd.addFlag("--check", this.formatOptions.check, "Do not write the files, but list the ones, that are not formatted, and fail if there are any");
+    // --stdout
+    subCmd.addFlag("--stdout", this.formatOptions.toStdout, "Print the formatted code instead of writing it back to the file");
+    // Source file or directory
+    subCmd.addOption("path", this.formatOptions.path, "Source file or directory to format. '-' reads the source code from stdin and prints the formatted code");
 }
 
 /**
@@ -1380,6 +1411,28 @@ f<bool> testOutputFileExtensions() {
     assert getOutputFileExtension(cliOptions, OutputContainer::SHARED_LIBRARY) == "dll";
     cliOptions.targetTriple = llvm::Triple(String("wasm32"), String("unknown"), String("unknown"));
     assert getOutputFileExtension(cliOptions, OutputContainer::EXECUTABLE) == "wasm";
+    return true;
+}
+
+#[test]
+f<bool> testFormatSubcommand() {
+    Driver formatMinimal;
+    string[3] formatMinimalArgs = ["spice", "format", "main-file.spice"];
+    assert parseOnly(formatMinimal, 3, formatMinimalArgs) == EXIT_CODE_SUCCESS;
+    assert formatMinimal.shouldFormat;
+    assert !formatMinimal.shouldCompile;
+    assert !formatMinimal.formatOptions.check;
+    assert !formatMinimal.formatOptions.toStdout;
+    assert formatMinimal.formatOptions.path == FilePath("main-file.spice");
+
+    // '-' reads the source code from stdin. It must not be mistaken for an option
+    Driver formatComplex;
+    string[5] formatComplexArgs = ["spice", "fmt", "--check", "--stdout", "-"];
+    assert parseOnly(formatComplex, 5, formatComplexArgs) == EXIT_CODE_SUCCESS;
+    assert formatComplex.shouldFormat;
+    assert formatComplex.formatOptions.check;
+    assert formatComplex.formatOptions.toStdout;
+    assert formatComplex.formatOptions.path == FilePath("-");
     return true;
 }
 

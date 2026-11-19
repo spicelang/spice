@@ -7,7 +7,8 @@ built compiler via --compiler, or let the runner build it from the sources in sr
 the released stage0 compiler from fetch-stage0.py).
 
 Besides the reference test cases, the runner builds the compiler sources in test build mode and runs their builtin tests
-(#[test] functions), and runs the linter test cases against the 'lint' subcommand.
+(#[test] functions), runs the linter test cases against the 'lint' subcommand and the formatter test cases against the
+'format' subcommand.
 """
 import argparse
 import difflib
@@ -64,6 +65,7 @@ REF_NAME_GDB_OUTPUT = "debug.out"
 REF_NAME_ERROR_OUTPUT = "exception.out"
 REF_NAME_WARNING_OUTPUT = "warning.out"
 REF_NAME_LINT_OUTPUT = "lint.out"
+REF_NAME_FORMAT_OUTPUT = "format.out"
 REF_NAME_EXIT_CODE = "exit-code.out"
 
 CTL_SKIP_DISABLED = "disabled"
@@ -109,6 +111,7 @@ class Suite:
     dir_name: str  # Dir in test/test-files
     grouped: bool  # Test cases are grouped in sub dirs
     linter: bool = False  # Test cases run against the 'lint' subcommand
+    formatter: bool = False  # Test cases run against the 'format' subcommand
 
 
 SUITES = [
@@ -122,6 +125,7 @@ SUITES = [
     Suite("BenchmarkTests", "benchmark", False),
     Suite("ExampleTests", "examples", False),
     Suite("LinterTests", "linter", False, linter=True),
+    Suite("FormatterTests", "formatter", False, formatter=True),
 ]
 BUILTIN_TESTS_NAME = "CompilerTests.BuiltinTests"
 
@@ -799,6 +803,35 @@ def exec_linter_test_case(result: TestResult, test_case: TestCase) -> None:
     check_ref_match(result, test_case.file(REF_NAME_LINT_OUTPUT), lambda: ANSI_ESCAPE_REGEX.sub("", output))
 
 
+def exec_formatter_test_case(result: TestResult, test_case: TestCase) -> None:
+    """
+    Run a formatter test case: format the source file with the 'format' subcommand and compare the formatted code against
+    format.out. Formatting has to be idempotent, so formatting the reference file itself must not change it either.
+    """
+    output, exit_code = run_compiler(result, ["format", "--stdout", test_case.file(REF_NAME_SOURCE)])
+
+    error_ref_path = test_case.file(REF_NAME_ERROR_OUTPUT)
+    error_message = extract_error_message(output, exit_code)
+    if error_message is not None:
+        if not does_ref_exist(error_ref_path):
+            result.fail(f"Expected no error, but got: {error_message}")
+        check_ref_match(result, error_ref_path, lambda: error_message)
+        return
+    if exit_code != 0:
+        result.fail(f"Compiler exited with code {exit_code}:\n{output}")
+    if does_ref_exist(error_ref_path):
+        result.fail("Expected error, but got no error")
+
+    format_ref_path = test_case.file(REF_NAME_FORMAT_OUTPUT)
+    check_ref_match(result, format_ref_path, lambda: output)
+    # Format the reference variant again, that check_ref_match compared against
+    selected_ref_path = next((path for path in expand_ref_paths(format_ref_path) if os.path.exists(path)), None)
+    if selected_ref_path is not None and not OPTS.update_refs:
+        reformatted_output, _ = run_compiler(result, ["format", "--stdout", selected_ref_path])
+        result.expect(reformatted_output == output, "Formatting the formatted code changes it again:\n"
+                      f"{diff(output, reformatted_output, selected_ref_path)}")
+
+
 # -------------------- Compiler builds --------------------
 
 
@@ -869,6 +902,8 @@ def run_test(test_case: TestCase | None) -> TestResult:
             result.skipped = True
         elif test_case.suite.linter:
             exec_linter_test_case(result, test_case)
+        elif test_case.suite.formatter:
+            exec_formatter_test_case(result, test_case)
         else:
             exec_test_case(result, test_case)
     except TestFailed:

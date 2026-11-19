@@ -7,6 +7,7 @@ import "std/time/timer";
 // Own imports
 import "@/source-file";
 import "@/driver";
+import "@/formatter/format-command";
 import "@/global/global-resource-manager";
 import "@/global/compile-stats";
 import "@/util/system-util";
@@ -111,6 +112,11 @@ f<int> main(int argc, string[] argv) {
     const int exitCode = driver.parse(argc, argv);
     if exitCode != EXIT_CODE_SUCCESS {
         return exitCode;
+    }
+
+    // Format the source files. This needs no compilation
+    if driver.shouldFormat {
+        return runFormatCommand(driver.cliOptions, driver.formatOptions);
     }
 
     // Cancel here if we do not have to compile

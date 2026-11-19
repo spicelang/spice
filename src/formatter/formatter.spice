@@ -1,0 +1,1231 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/filepath";
+import "std/text/analysis";
+
+// Own imports
+import "@/ast/ast-nodes";
+import "@/driver";
+import "@/exception/compiler-error";
+import "@/exception/fatal-error";
+import "@/global/global-resource-manager";
+import "@/lexer/lexer";
+import "@/lexer/token";
+import "@/parser/parser";
+import "@/source-file";
+
+// Constants
+const unsigned long INDENT_WIDTH = 4l;
+// Maximum number of line breaks between two tokens. Two line breaks make one blank line
+const unsigned long MAX_LINE_BREAKS = 2l;
+
+/**
+ * Kind of a bracket pair. The formatter tracks the open bracket pairs to compute the indentation of the lines
+ */
+type FrameKind enum {
+    BLOCK, // Braces of a block or a type body, which contain statements or similar units
+    LIST // Parentheses, square brackets and the braces of a struct instantiation, which contain a list of items
+}
+
+/**
+ * Open bracket pair, whose content is indented relative to the line of the opening bracket
+ */
+type Frame struct {
+    FrameKind kind
+    long openerIdx // Index of the opening token. -1 for the frame of the whole file
+    unsigned long closerCol // Indentation of a line, that starts with the closing token
+    unsigned long baseCol // Indentation of the lines within the bracket pair
+    unsigned long unitCol // Blocks: Indentation of the line, where the current statement started
+    // Lists, whose first item is on the line of the opening bracket: Column of the first item. Otherwise -1. The items in the
+    // following lines are either aligned to the first item or indented by one level, depending on what the original code does
+    long alignCol
+    bool alignDecided // Whether it is decided if the items are aligned to the first one
+    bool isAligned // Whether the items are aligned to the first one
+}
+
+/**
+ * Token with all information the formatter needs about it
+ */
+type FmtToken struct {
+    TokenType tokenType
+    String text // Source code of the token. Line comments without the line break at the end
+    unsigned long startOffset // Offset of the first char within the original source code
+    unsigned long endOffset // Offset after the last char within the original source code
+    unsigned long startLine // Line of the first char in the original source code
+    unsigned long endLine // Line of the last char in the original source code
+    unsigned long origStartCol // Column of the first char within its line in the original source code, starting at 0
+    unsigned long origEndCol // Column after the last char within its line in the original source code
+    ASTNodeKind ownerKind // Kind of the innermost syntax tree node, that covers the token
+    bool isUnitStart // Whether the token starts a statement, a top level definition, a field or a similar unit
+    unsigned long lineBreaksBefore // Number of line breaks before the token in the formatted source code
+}
+
+/**
+ * The source formatter brings Spice source code into the canonical layout. It only changes whitespace:
+ *
+ * - Indentation with four spaces per level, computed from the bracket pairs. Continuation lines of a statement get one more
+ *   level. The items of a list, whose first item is on the line of the opening bracket, stay aligned to the first item, if they
+ *   are aligned in the original code. Otherwise, they are indented by one level as well
+ * - Canonical spacing between the tokens of a line, e.g. around binary operators, after commas and keywords
+ * - Opening braces of blocks on the line of their construct (K&R style), 'else' on the line of the preceding '}'
+ * - At most one blank line in a row, no blank lines at the start or end of a bracket pair
+ * - Comments at the end of a line and aligned declarations, e.g. the names of consecutive fields, keep their original column,
+ *   if it can be reached, so that they stay aligned
+ *
+ * Line breaks within statements are kept as written. The formatter works on the token stream of the lexer, which contains
+ * the comments, and uses the syntax tree to tell apart tokens with multiple meanings, e.g. '<' as generic bracket or as
+ * comparison, '*' as pointer type modifier or as multiplication and '{' as block or as struct instantiation.
+ */
+type SourceFormatter struct {
+    Vector<FmtToken> tokens // All tokens, except for the EOF token
+    Vector<long> nextCodeIdx // For each token: Index of the next token, that is no comment. -1 if there is none
+    Vector<long> prevCodeIdx // For each token: Index of the previous token, that is no comment. -1 if there is none
+}
+
+/**
+ * Create a formatter for the given tokens of the given source code
+ *
+ * @param sourceCode Source code, that was lexed
+ * @param lexerTokens Tokens of the source code, including the comments and the terminating EOF token
+ */
+p SourceFormatter.ctor(const String& sourceCode, const Vector<Token>& lexerTokens) {
+    // Walk through the source code once to compute the line and column of each token
+    unsigned long offset = 0l;
+    unsigned long line = 1l;
+    unsigned long col = 0l;
+    const unsigned long tokenCount = lexerTokens.getSize();
+    for unsigned long i = 0l; i < tokenCount; i++ {
+        const Token& lexerToken = lexerTokens.get(i);
+        if lexerToken.tokenType == TokenType::EOF {
+            break;
+        }
+
+        FmtToken token;
+        token.tokenType = lexerToken.tokenType;
+        token.startOffset = lexerToken.startOffset;
+        token.endOffset = lexerToken.endOffset;
+        token.ownerKind = ASTNodeKind::INVALID;
+        token.isUnitStart = false;
+        token.lineBreaksBefore = 0l;
+        String text = sourceCode.getSubstring(lexerToken.startOffset, cast<long>(lexerToken.endOffset - lexerToken.startOffset));
+        if lexerToken.tokenType == TokenType::LINE_COMMENT {
+            text = trimEnd(text);
+        }
+        token.text = text;
+
+        // Start of the token
+        while offset < lexerToken.startOffset {
+            advancePosition(sourceCode[offset], line, col);
+            offset++;
+        }
+        token.startLine = line;
+        token.origStartCol = col;
+
+        // End of the token
+        const unsigned long textEndOffset = lexerToken.startOffset + text.getLength();
+        while offset < textEndOffset {
+            advancePosition(sourceCode[offset], line, col);
+            offset++;
+        }
+        token.endLine = line;
+        token.origEndCol = col;
+
+        this.tokens.pushBack(token);
+    }
+
+    // Index the neighboring code tokens of each token once, so that runs of comments are not scanned over and over
+    const unsigned long count = this.tokens.getSize();
+    long prevCode = -1l;
+    for unsigned long i = 0l; i < count; i++ {
+        this.prevCodeIdx.pushBack(prevCode);
+        this.nextCodeIdx.pushBack(-1l);
+        if !isComment(this.tokens.get(i).tokenType) {
+            prevCode = cast<long>(i);
+        }
+    }
+    long nextCode = -1l;
+    for long i = cast<long>(count) - 1l; i >= 0l; i-- {
+        long& nextCodeOfToken = this.nextCodeIdx.get(cast<unsigned long>(i));
+        nextCodeOfToken = nextCode;
+        if !isComment(this.tokens.get(cast<unsigned long>(i)).tokenType) {
+            nextCode = i;
+        }
+    }
+}
+
+/**
+ * Advance the given line and column by the given char
+ *
+ * @param c Char to advance by
+ * @param line Line to update
+ * @param col Column to update
+ */
+p advancePosition(char c, unsigned long& line, unsigned long& col) {
+    if c == '\n' {
+        line++;
+        col = 0l;
+    } else if !isUtf8ContinuationByte(c) {
+        // Count code points instead of bytes
+        col++;
+    }
+}
+
+/**
+ * Check if the given char is a continuation byte of a multibyte UTF-8 sequence (0b10xxxxxx)
+ *
+ * @param c Char to check
+ * @return Continuation byte or not
+ */
+f<bool> isUtf8ContinuationByte(char c) {
+    const int byteValue = cast<int>(cast<byte>(c));
+    return (byteValue & 0xC0) == 0x80;
+}
+
+/**
+ * Get the number of code points of the given UTF-8 string
+ *
+ * @param text Text to measure
+ * @return Number of code points
+ */
+f<unsigned long> getCodePointCount(const String& text) {
+    unsigned long count = 0l;
+    const unsigned long length = text.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        if !isUtf8ContinuationByte(text[i]) {
+            count++;
+        }
+    }
+    return count;
+}
+
+/**
+ * Remove the whitespace at the end of the given text
+ *
+ * @param text Text to trim
+ * @return Trimmed text
+ */
+f<String> trimEnd(const String& text) {
+    unsigned long length = text.getLength();
+    while length > 0l && isWhitespace(text[length - 1l]) {
+        length--;
+    }
+    return text.getSubstring(0ul, cast<long>(length));
+}
+
+// ====================================================== Syntax tree analysis ======================================================
+
+/**
+ * Attach the information from the syntax tree to the tokens: the kind of the innermost node, that covers each token, and
+ * whether a token starts a statement or a similar unit
+ *
+ * @param node Root node of the syntax tree
+ */
+p SourceFormatter.analyzeSyntaxTree(ASTNode* node) {
+    const long start = node.codeLoc.sourceIntervalStart;
+    const long stop = node.codeLoc.sourceIntervalStop;
+    if start >= 0l && stop >= start {
+        const long firstIdx = this.findFirstTokenAtOrAfter(cast<unsigned long>(start));
+        const long lastIdx = this.findLastTokenAtOrBefore(cast<unsigned long>(stop));
+        if firstIdx >= 0l && lastIdx >= firstIdx {
+            // The children are visited afterwards, so they override the kind for the tokens they cover
+            for long i = firstIdx; i <= lastIdx; i++ {
+                this.tokens.get(cast<unsigned long>(i)).ownerKind = node.kind;
+            }
+            if isUnitNode(node) {
+                this.tokens.get(cast<unsigned long>(firstIdx)).isUnitStart = true;
+            }
+            // The definition after an attribute like '#[test]' starts in the next line
+            if node.kind == ASTNodeKind::TOP_LEVEL_DEF_ATTR {
+                const long nextIdx = this.findNextCodeToken(lastIdx);
+                if nextIdx >= 0l {
+                    this.tokens.get(cast<unsigned long>(nextIdx)).isUnitStart = true;
+                }
+            }
+        }
+    }
+
+    foreach ASTNode* child : node.children {
+        this.analyzeSyntaxTree(child);
+    }
+}
+
+/**
+ * Check if the given node is a statement or a similar unit, whose first token starts a new line, that is not a continuation
+ *
+ * @param node Node to check
+ * @return Unit or not
+ */
+f<bool> isUnitNode(ASTNode* node) {
+    switch node.kind {
+        case ASTNodeKind::FIELD, ASTNodeKind::SIGNATURE, ASTNodeKind::ENUM_ITEM, ASTNodeKind::CASE_BRANCH, ASTNodeKind::DEFAULT_BRANCH: {
+            return true;
+        }
+    }
+    ASTNode* parent = node.parent;
+    return parent != nil<ASTNode*> && (parent.kind == ASTNodeKind::ENTRY || parent.kind == ASTNodeKind::STMT_LST);
+}
+
+/**
+ * Find the index of the first token, that starts at or after the given offset
+ *
+ * @param offset Offset within the source code
+ * @return Token index or -1 if there is none
+ */
+f<long> SourceFormatter.findFirstTokenAtOrAfter(unsigned long offset) {
+    long low = 0l;
+    long high = cast<long>(this.tokens.getSize());
+    while low < high {
+        const long mid = (low + high) / 2l;
+        if this.tokens.get(cast<unsigned long>(mid)).startOffset < offset {
+            low = mid + 1l;
+        } else {
+            high = mid;
+        }
+    }
+    return low < cast<long>(this.tokens.getSize()) ? low : -1l;
+}
+
+/**
+ * Find the index of the last token, that starts at or before the given offset
+ *
+ * @param offset Offset within the source code
+ * @return Token index or -1 if there is none
+ */
+f<long> SourceFormatter.findLastTokenAtOrBefore(unsigned long offset) {
+    long low = 0l;
+    long high = cast<long>(this.tokens.getSize());
+    while low < high {
+        const long mid = (low + high) / 2l;
+        if this.tokens.get(cast<unsigned long>(mid)).startOffset <= offset {
+            low = mid + 1l;
+        } else {
+            high = mid;
+        }
+    }
+    return low - 1l;
+}
+
+/**
+ * Find the next token after the given one, that is no comment
+ *
+ * @param idx Index of the token to start after
+ * @return Token index or -1 if there is none
+ */
+f<long> SourceFormatter.findNextCodeToken(long idx) {
+    return this.nextCodeIdx.get(cast<unsigned long>(idx));
+}
+
+/**
+ * Find the previous token before the given one, that is no comment
+ *
+ * @param idx Index of the token to start before
+ * @return Token index or -1 if there is none
+ */
+f<long> SourceFormatter.findPrevCodeToken(long idx) {
+    return this.prevCodeIdx.get(cast<unsigned long>(idx));
+}
+
+// =========================================================== Formatting ===========================================================
+
+/**
+ * Format the tokens. The syntax tree has to be analyzed before
+ *
+ * @return Formatted source code
+ */
+f<String> SourceFormatter.format() {
+    this.computeLineBreaks();
+    return this.render();
+}
+
+/**
+ * Compute the number of line breaks before each token. Most line breaks are kept as they are in the original source code
+ */
+p SourceFormatter.computeLineBreaks() {
+    const unsigned long tokenCount = this.tokens.getSize();
+    for unsigned long i = 1l; i < tokenCount; i++ {
+        const FmtToken& prev = this.tokens.get(i - 1l);
+        FmtToken& token = this.tokens.get(i);
+        unsigned long lineBreaks = token.startLine - prev.endLine;
+
+        // K&R style. A comment in between keeps the line break, because a line comment has to end its line
+        if lineBreaks > 0l && !isComment(prev.tokenType) && this.isJoinedWithPrevLine(i) {
+            lineBreaks = 0l;
+        }
+        // Collapse multiple blank lines to one
+        if lineBreaks > MAX_LINE_BREAKS {
+            lineBreaks = MAX_LINE_BREAKS;
+        }
+        // No blank lines at the start or end of a bracket pair
+        if lineBreaks > 1l && (isOpener(prev.tokenType) || isCloser(token.tokenType)) {
+            lineBreaks = 1l;
+        }
+
+        token.lineBreaksBefore = lineBreaks;
+    }
+}
+
+/**
+ * Check if the given token belongs on the line of the previous token: the opening brace of a block, 'else' after the closing
+ * brace of the if branch and 'while' after the closing brace of the body of a do-while loop
+ *
+ * @param idx Index of the token to check
+ * @return Joined with the previous line or not
+ */
+f<bool> SourceFormatter.isJoinedWithPrevLine(unsigned long idx) {
+    const FmtToken& prev = this.tokens.get(idx - 1l);
+    const FmtToken& token = this.tokens.get(idx);
+    if token.tokenType == TokenType::LBRACE {
+        // An anonymous block statement starts on its own line
+        if !isBlockBrace(token) || token.isUnitStart {
+            return false;
+        }
+        const bool isAfterBlock = prev.tokenType == TokenType::RBRACE && isBlockBrace(prev);
+        return prev.tokenType != TokenType::SEMICOLON && prev.tokenType != TokenType::LBRACE && !isAfterBlock;
+    }
+    if token.tokenType == TokenType::ELSE {
+        return prev.tokenType == TokenType::RBRACE;
+    }
+    if token.tokenType == TokenType::WHILE && token.ownerKind == ASTNodeKind::DO_WHILE_LOOP {
+        return prev.tokenType == TokenType::RBRACE;
+    }
+    return false;
+}
+
+/**
+ * Assemble the formatted source code. The indentation of each line is computed on the way, from the open bracket pairs
+ *
+ * @return Formatted source code
+ */
+f<String> SourceFormatter.render() {
+    Vector<Frame> frames;
+    Frame fileFrame = createFrame(FrameKind::BLOCK, -1l, 0l);
+    fileFrame.baseCol = 0l;
+    fileFrame.unitCol = 0l;
+    frames.pushBack(fileFrame);
+
+    String output;
+    unsigned long col = 0l; // Column in the current line of the output in code points
+    unsigned long lineIndentCol = 0l; // Indentation of the current line of the output
+    const unsigned long tokenCount = this.tokens.getSize();
+    for unsigned long i = 0l; i < tokenCount; i++ {
+        const FmtToken& token = this.tokens.get(i);
+
+        // Whitespace before the token
+        const bool startsLine = i == 0l || token.lineBreaksBefore > 0l;
+        if startsLine {
+            for unsigned long lineBreak = 0l; lineBreak < token.lineBreaksBefore; lineBreak++ {
+                output += '\n';
+            }
+            lineIndentCol = this.computeLineIndentCol(i, frames.back());
+            appendSpaces(output, lineIndentCol);
+            col = lineIndentCol;
+        } else {
+            const unsigned long spaces = this.getSpacesBefore(i, col);
+            appendSpaces(output, spaces);
+            col += spaces;
+        }
+
+        // Remember the column of the first item of a list, if it is on the line of the opening bracket
+        Frame& top = frames.back();
+        const bool isFirstItem = cast<long>(i) == top.openerIdx + 1l && !startsLine && token.tokenType != TokenType::LINE_COMMENT;
+        if top.kind == FrameKind::LIST && isFirstItem {
+            top.alignCol = cast<long>(col);
+        }
+
+        // The token itself
+        if isComment(token.tokenType) && token.endLine > token.startLine {
+            col = appendMultiLineComment(output, token, col);
+        } else {
+            output += token.text;
+            col = advanceColumn(col, token.text);
+        }
+        if isComment(token.tokenType) {
+            continue;
+        }
+
+        // Remember the indentation of the line, where the current statement started. Blocks, that are opened by the
+        // statement, are indented relative to it, even if the opening brace is on a continuation line
+        if top.kind == FrameKind::BLOCK && this.startsUnit(i, top) {
+            top.unitCol = lineIndentCol;
+        }
+
+        // Open and close bracket pairs
+        const TokenType tokenType = token.tokenType;
+        if tokenType == TokenType::LBRACE && isBlockBrace(token) {
+            const unsigned long closerCol = top.kind == FrameKind::BLOCK ? top.unitCol : lineIndentCol;
+            frames.pushBack(createFrame(FrameKind::BLOCK, cast<long>(i), closerCol));
+        } else if isOpener(tokenType) {
+            frames.pushBack(createFrame(FrameKind::LIST, cast<long>(i), lineIndentCol));
+        } else if isCloser(tokenType) && frames.getSize() > 1l {
+            frames.popBack();
+        }
+    }
+
+    // End the file with a line break
+    if tokenCount > 0l {
+        output += '\n';
+    }
+    return output;
+}
+
+/**
+ * Create a frame for a bracket pair
+ *
+ * @param kind Kind of the bracket pair
+ * @param openerIdx Index of the opening token
+ * @param closerCol Indentation of a line, that starts with the closing token
+ * @return Frame
+ */
+f<Frame> createFrame(FrameKind kind, long openerIdx, unsigned long closerCol) {
+    Frame frame;
+    frame.kind = kind;
+    frame.openerIdx = openerIdx;
+    frame.closerCol = closerCol;
+    frame.baseCol = closerCol + INDENT_WIDTH;
+    frame.unitCol = closerCol + INDENT_WIDTH;
+    frame.alignCol = -1l;
+    frame.alignDecided = false;
+    frame.isAligned = false;
+    return frame;
+}
+
+/**
+ * Get the indentation of the items of the given bracket pair
+ *
+ * @param frame Bracket pair
+ * @return Indentation
+ */
+f<unsigned long> getContentCol(const Frame& frame) {
+    return frame.alignCol >= 0l && frame.isAligned ? cast<unsigned long>(frame.alignCol) : frame.baseCol;
+}
+
+/**
+ * Compute the indentation of a line, that starts with the given token
+ *
+ * @param idx Index of the first token of the line
+ * @param top Innermost open bracket pair
+ * @return Indentation
+ */
+f<unsigned long> SourceFormatter.computeLineIndentCol(unsigned long idx, Frame& top) {
+    const FmtToken& token = this.tokens.get(idx);
+    const bool isCommentLine = isComment(token.tokenType);
+
+    // A comment is indented like the code after it
+    long codeIdx = cast<long>(idx);
+    if isCommentLine {
+        codeIdx = this.findNextCodeToken(cast<long>(idx));
+        if codeIdx < 0l {
+            return getContentCol(top);
+        }
+    }
+
+    // A closing bracket is indented like the line of the opening bracket
+    const bool isCloserLine = !isCommentLine && isCloser(this.tokens.get(cast<unsigned long>(codeIdx)).tokenType);
+    if isCloserLine {
+        return top.closerCol;
+    }
+
+    // The first line with items of a list decides, whether the items are aligned to the first one, which is on the line of the
+    // opening bracket. They are, if they are aligned in the original code. Only the code items count, comments do not
+    const FmtToken& code = this.tokens.get(cast<unsigned long>(codeIdx));
+    if top.alignCol >= 0l && !top.alignDecided && !isCloser(code.tokenType) {
+        const FmtToken& firstItem = this.tokens.get(cast<unsigned long>(top.openerIdx + 1l));
+        const FmtToken& lineStart = this.tokens.get(this.findOrigLineStart(cast<unsigned long>(codeIdx)));
+        top.isAligned = lineStart.origStartCol == firstItem.origStartCol;
+        top.alignDecided = true;
+    }
+
+    // A comment before a closing bracket belongs to the content
+    if isCloser(this.tokens.get(cast<unsigned long>(codeIdx)).tokenType) {
+        return getContentCol(top);
+    }
+
+    // All items of a list are indented alike. Within blocks, continuation lines of a statement get one more level
+    if top.kind == FrameKind::LIST {
+        return getContentCol(top);
+    }
+    return this.startsUnit(cast<unsigned long>(codeIdx), top) ? top.baseCol : top.baseCol + INDENT_WIDTH;
+}
+
+/**
+ * Find the first token on the original line of the given token, e.g. an inline comment before it
+ *
+ * @param idx Index of the token
+ * @return Index of the first token on the line
+ */
+f<unsigned long> SourceFormatter.findOrigLineStart(unsigned long idx) {
+    const unsigned long line = this.tokens.get(idx).startLine;
+    unsigned long startIdx = idx;
+    while startIdx > 0l && this.tokens.get(startIdx - 1l).startLine == line {
+        startIdx--;
+    }
+    return startIdx;
+}
+
+/**
+ * Check if the given token starts a statement or a similar unit within a block, opposed to continuing the previous one
+ *
+ * @param idx Index of the token to check. Must be no comment
+ * @param top Innermost open bracket pair
+ * @return Starts a unit or not
+ */
+f<bool> SourceFormatter.startsUnit(unsigned long idx, const Frame& top) {
+    if this.tokens.get(idx).isUnitStart {
+        return true;
+    }
+    const long prevIdx = this.findPrevCodeToken(cast<long>(idx));
+    if prevIdx < 0l || prevIdx == top.openerIdx {
+        return true;
+    }
+    const FmtToken& prev = this.tokens.get(cast<unsigned long>(prevIdx));
+    if prev.tokenType == TokenType::RBRACE {
+        return isBlockBrace(prev);
+    }
+    return prev.tokenType == TokenType::SEMICOLON;
+}
+
+/**
+ * Get the column after the given text, if it is appended at the given column. The text can contain line breaks, e.g. a
+ * string literal with an escaped line break
+ *
+ * @param col Column, where the text starts
+ * @param text Text
+ * @return Column after the text
+ */
+f<unsigned long> advanceColumn(unsigned long col, const String& text) {
+    const unsigned long length = text.getLength();
+    long lastLineBreak = -1l;
+    for unsigned long i = 0l; i < length; i++ {
+        if text[i] == '\n' {
+            lastLineBreak = cast<long>(i);
+        }
+    }
+    if lastLineBreak < 0l {
+        return col + getCodePointCount(text);
+    }
+    return getCodePointCount(text.getSubstring(cast<unsigned long>(lastLineBreak + 1l)));
+}
+
+/**
+ * Append the given number of spaces to the output
+ *
+ * @param output Output to append to
+ * @param count Number of spaces
+ */
+p appendSpaces(String& output, unsigned long count) {
+    for unsigned long i = 0l; i < count; i++ {
+        output += ' ';
+    }
+}
+
+/**
+ * Append a block comment, that spans multiple lines. The lines after the first one are shifted by the same number of columns
+ * as the first one, so that e.g. the asterisks of a doc comment stay aligned
+ *
+ * @param output Output to append to
+ * @param token Comment token
+ * @param startCol Column of the comment in the output
+ * @return Column after the comment in the output
+ */
+f<unsigned long> appendMultiLineComment(String& output, const FmtToken& token, unsigned long startCol) {
+    const long shift = cast<long>(startCol) - cast<long>(token.origStartCol);
+    const String& text = token.text;
+    const unsigned long length = text.getLength();
+    unsigned long col = startCol;
+    unsigned long lineStart = 0l;
+    bool isFirstLine = true;
+    while lineStart <= length {
+        // Find the end of the line
+        unsigned long lineEnd = lineStart;
+        while lineEnd < length && text[lineEnd] != '\n' {
+            lineEnd++;
+        }
+        const String line = trimEnd(text.getSubstring(lineStart, cast<long>(lineEnd - lineStart)));
+
+        if isFirstLine {
+            output += line;
+            col += getCodePointCount(line);
+            isFirstLine = false;
+        } else {
+            output += '\n';
+            col = 0l;
+            if !line.isEmpty() {
+                // Shift the line by removing or adding leading spaces
+                unsigned long skip = 0l;
+                if shift < 0l {
+                    const unsigned long maxSkip = cast<unsigned long>(-shift);
+                    while skip < maxSkip && skip < line.getLength() && line[skip] == ' ' {
+                        skip++;
+                    }
+                } else {
+                    appendSpaces(output, cast<unsigned long>(shift));
+                    col += cast<unsigned long>(shift);
+                }
+                const String shiftedLine = line.getSubstring(skip);
+                output += shiftedLine;
+                col += getCodePointCount(shiftedLine);
+            }
+        }
+
+        lineStart = lineEnd + 1l;
+    }
+    return col;
+}
+
+/**
+ * Compute the number of spaces between the given token and the previous one, which are on the same line
+ *
+ * @param idx Index of the token
+ * @param col Column after the previous token in the output
+ * @return Number of spaces
+ */
+f<unsigned long> SourceFormatter.getSpacesBefore(unsigned long idx, unsigned long col) {
+    const FmtToken& prev = this.tokens.get(idx - 1l);
+    const FmtToken& token = this.tokens.get(idx);
+
+    // Spaces between the tokens in the original source code. Tokens, that were joined from multiple lines, count as one space
+    long origGap = 1l;
+    if prev.endLine == token.startLine {
+        origGap = cast<long>(token.origStartCol) - cast<long>(prev.origEndCol);
+    }
+
+    // Comments keep the original spacing. Comments at the end of a line keep their original column, if it can be reached, so
+    // that the comments of consecutive lines stay aligned
+    if isComment(token.tokenType) {
+        const bool endsLine = idx + 1l == this.tokens.getSize() || this.tokens.get(idx + 1l).lineBreaksBefore > 0l;
+        if endsLine || token.tokenType == TokenType::LINE_COMMENT {
+            return getAlignedSpaces(col, token.origStartCol, origGap);
+        }
+        return origGap > 0l ? 1l : 0l;
+    }
+    if isComment(prev.tokenType) {
+        return origGap > 0l ? 1l : 0l;
+    }
+
+    if !this.needsSpace(prev, token) {
+        return 0l;
+    }
+    // Aligned declarations, e.g. the names of consecutive fields or the '=' of consecutive constants, stay aligned
+    if origGap > 1l && isAlignable(prev, token) {
+        return getAlignedSpaces(col, token.origStartCol, origGap);
+    }
+    return 1l;
+}
+
+/**
+ * Get the number of spaces, that move a token to its original column. If that is not possible, it gets a single space
+ *
+ * @param col Current column in the output
+ * @param origCol Original column of the token
+ * @param origGap Number of spaces before the token in the original source code
+ * @return Number of spaces
+ */
+f<unsigned long> getAlignedSpaces(unsigned long col, unsigned long origCol, long origGap) {
+    if origGap > 1l && origCol > col + 1l {
+        return origCol - col;
+    }
+    return 1l;
+}
+
+/**
+ * Check if the given token can be aligned with the same kind of token in the lines around it. This applies to the names of
+ * fields and type aliases, the '=' of declarations and the values after it, the items of tables and the bodies of one-line
+ * definitions
+ *
+ * @param prev Previous token
+ * @param token Token to check
+ * @return Alignable or not
+ */
+f<bool> isAlignable(const FmtToken& prev, const FmtToken& token) {
+    if token.tokenType == TokenType::ASSIGN || prev.tokenType == TokenType::ASSIGN || prev.tokenType == TokenType::COMMA {
+        return true;
+    }
+    if token.tokenType == TokenType::IDENTIFIER && token.ownerKind == ASTNodeKind::FIELD {
+        return true;
+    }
+    if token.tokenType == TokenType::LBRACE && isBlockBrace(token) {
+        return true;
+    }
+    const bool isTypeDefName = prev.ownerKind == ASTNodeKind::GENERIC_TYPE_DEF || prev.ownerKind == ASTNodeKind::ALIAS_DEF;
+    return prev.tokenType == TokenType::TYPE_IDENTIFIER && isTypeDefName;
+}
+
+/**
+ * Check if there has to be a space between the two given tokens, which are no comments and are on the same line
+ *
+ * @param left Left token
+ * @param right Right token
+ * @return Space needed or not
+ */
+f<bool> SourceFormatter.needsSpace(const FmtToken& left, const FmtToken& right) {
+    const TokenType lt = left.tokenType;
+    const TokenType rt = right.tokenType;
+
+    // Tokens, that would be read as a different token without whitespace in between, have to stay apart
+    if mustSeparate(left, right) {
+        return true;
+    }
+
+    // Function names, including operator names like 'operator==', are directly followed by their template types or params
+    if left.ownerKind == ASTNodeKind::FCT_NAME {
+        return false;
+    }
+
+    // Punctuation
+    if rt == TokenType::COMMA || rt == TokenType::SEMICOLON || rt == TokenType::RPAREN || rt == TokenType::RBRACKET {
+        return false;
+    }
+    if rt == TokenType::DOT || rt == TokenType::SCOPE_ACCESS || lt == TokenType::DOT || lt == TokenType::SCOPE_ACCESS {
+        return false;
+    }
+    if lt == TokenType::LPAREN || lt == TokenType::LBRACKET {
+        return false;
+    }
+    if lt == TokenType::FCT_ATTR_PREAMBLE || lt == TokenType::MOD_ATTR_PREAMBLE {
+        return false;
+    }
+
+    // Generic type lists, e.g. 'Vector<int>', 'f<bool>' or 'cast<long>(x)'
+    if isGenericOpen(left) || isGenericOpen(right) || isGenericClose(right) {
+        return false;
+    }
+
+    // Unary operators, e.g. '-x', '!x', '*ptr', '&x', '++i' and 'i++'
+    if isPrefixOp(left) || isPostfixOp(right) {
+        return false;
+    }
+
+    // Type modifiers, e.g. 'int*', 'T&' or 'int[3]'
+    if isTypeModifier(right) {
+        return false;
+    }
+
+    // Colon of a case branch
+    if rt == TokenType::COLON && (right.ownerKind == ASTNodeKind::CASE_BRANCH || right.ownerKind == ASTNodeKind::DEFAULT_BRANCH) {
+        return false;
+    }
+
+    // Type alternatives, e.g. 'int|long'
+    if (lt == TokenType::BITWISE_OR && left.ownerKind == ASTNodeKind::TYPE_ALTS_LST) || (rt == TokenType::BITWISE_OR && right.ownerKind == ASTNodeKind::TYPE_ALTS_LST) {
+        return false;
+    }
+
+    // Opening brackets. Subscripts and attributes have no space before, array initializations and lambda attributes have one
+    if rt == TokenType::LBRACKET {
+        return right.ownerKind == ASTNodeKind::ARRAY_INITIALIZATION || right.ownerKind == ASTNodeKind::LAMBDA_ATTR;
+    }
+
+    // Opening parentheses. Calls, definitions and function types have no space before, e.g. 'foo(', 'p(' or 'f<int>('
+    if rt == TokenType::LPAREN {
+        const bool isCallOrDef = lt == TokenType::IDENTIFIER || lt == TokenType::TYPE_IDENTIFIER || lt == TokenType::MAIN || lt == TokenType::P;
+        return !isCallOrDef && !isGenericClose(left) && lt != TokenType::RPAREN && lt != TokenType::RBRACKET;
+    }
+
+    // Braces. Blocks have spaces around their content, struct instantiations like 'Pair{1, 2}' not
+    if rt == TokenType::LBRACE {
+        return right.ownerKind != ASTNodeKind::STRUCT_INSTANTIATION;
+    }
+    if lt == TokenType::LBRACE {
+        return left.ownerKind != ASTNodeKind::STRUCT_INSTANTIATION && rt != TokenType::RBRACE;
+    }
+    if rt == TokenType::RBRACE {
+        return right.ownerKind != ASTNodeKind::STRUCT_INSTANTIATION;
+    }
+
+    // Everything else, e.g. keywords, identifiers and binary operators, is separated by a space
+    return true;
+}
+
+/**
+ * Check if the two given tokens would be read as different tokens, if there was no whitespace between them
+ *
+ * @param left Left token
+ * @param right Right token
+ * @return Have to be separated or not
+ */
+f<bool> mustSeparate(const FmtToken& left, const FmtToken& right) {
+    return mustSeparateTexts(left.text, right.text, isNumberLiteral(left.tokenType));
+}
+
+/**
+ * Check if the two given token texts would be read as different tokens, if there was no whitespace between them
+ *
+ * @param left Text of the left token
+ * @param right Text of the right token
+ * @param leftIsNumber Whether the left token is a number literal
+ * @return Have to be separated or not
+ */
+f<bool> mustSeparateTexts(const String& left, const String& right, bool leftIsNumber) {
+    if left.isEmpty() || right.isEmpty() {
+        return false;
+    }
+    const char l = left[left.getLength() - 1l];
+    const char r = right[0ul];
+
+    // Identifiers, keywords and number literals
+    if isWordChar(l) && isWordChar(r) {
+        return true;
+    }
+    // A dot next to a number would be read as part of a double literal
+    if (leftIsNumber && r == '.') || (l == '.' && isDigit(r)) {
+        return true;
+    }
+    // Operators, that would be read as a longer operator or as the start of a comment. The lexer reads the longest operator,
+    // so e.g. '>>' followed by '>' is read as '>>' and '>' again
+    switch l {
+        case '|': { return r == '|' || r == '='; }
+        case '&': { return r == '&' || r == '='; }
+        case '+': { return r == '+' || r == '='; }
+        case '-': { return r == '-' || r == '=' || r == '>'; }
+        case '/': { return r == '/' || r == '*' || r == '='; }
+        case '<': { return r == '=' || (r == '<' && left != "<<"); }
+        case '>': { return r == '=' || (r == '>' && left != ">>"); }
+        case ':': { return r == ':'; }
+        case '.': { return r == '.'; }
+        case '#': { return r == '!'; }
+        case '^', '!', '*', '%', '=': { return r == '='; }
+    }
+    return false;
+}
+
+/**
+ * Check if the given token type is a number literal
+ *
+ * @param tokenType Token type to check
+ * @return Number literal or not
+ */
+f<bool> isNumberLiteral(TokenType tokenType) {
+    switch tokenType {
+        case TokenType::DOUBLE_LIT, TokenType::INT_LIT, TokenType::SHORT_LIT, TokenType::LONG_LIT: {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the given char can be part of an identifier, a keyword or a number literal
+ *
+ * @param c Char to check
+ * @return Word char or not
+ */
+f<bool> isWordChar(char c) {
+    return isAlphaNum(c) || c == '_';
+}
+
+/**
+ * Check if the given token type is a comment
+ *
+ * @param tokenType Token type to check
+ * @return Comment or not
+ */
+f<bool> isComment(TokenType tokenType) {
+    return tokenType == TokenType::LINE_COMMENT || tokenType == TokenType::BLOCK_COMMENT || tokenType == TokenType::DOC_COMMENT;
+}
+
+/**
+ * Check if the given token type is an opening bracket
+ *
+ * @param tokenType Token type to check
+ * @return Opening bracket or not
+ */
+f<bool> isOpener(TokenType tokenType) {
+    return tokenType == TokenType::LBRACE || tokenType == TokenType::LPAREN || tokenType == TokenType::LBRACKET;
+}
+
+/**
+ * Check if the given token type is a closing bracket
+ *
+ * @param tokenType Token type to check
+ * @return Closing bracket or not
+ */
+f<bool> isCloser(TokenType tokenType) {
+    return tokenType == TokenType::RBRACE || tokenType == TokenType::RPAREN || tokenType == TokenType::RBRACKET;
+}
+
+/**
+ * Check if the given token is a brace of a block or a type body, opposed to a struct instantiation
+ *
+ * @param token Token to check
+ * @return Block brace or not
+ */
+f<bool> isBlockBrace(const FmtToken& token) {
+    if token.tokenType != TokenType::LBRACE && token.tokenType != TokenType::RBRACE {
+        return false;
+    }
+    switch token.ownerKind {
+        case ASTNodeKind::STMT_LST, ASTNodeKind::STRUCT_DEF, ASTNodeKind::INTERFACE_DEF, ASTNodeKind::UNION_DEF, ASTNodeKind::ENUM_DEF, ASTNodeKind::SWITCH_STMT: {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the given token is an operator of a binary expression, whose token can be a generic bracket as well
+ *
+ * @param token Token to check
+ * @return Binary operator or not
+ */
+f<bool> isBinaryExprToken(const FmtToken& token) {
+    return token.ownerKind == ASTNodeKind::RELATIONAL_EXPR || token.ownerKind == ASTNodeKind::SHIFT_EXPR;
+}
+
+/**
+ * Check if the given token opens a generic type list
+ *
+ * @param token Token to check
+ * @return Generic opening bracket or not
+ */
+f<bool> isGenericOpen(const FmtToken& token) {
+    return token.tokenType == TokenType::LESS && !isBinaryExprToken(token) && token.ownerKind != ASTNodeKind::FCT_NAME;
+}
+
+/**
+ * Check if the given token closes a generic type list. Two nested lists can be closed by a single '>>' token
+ *
+ * @param token Token to check
+ * @return Generic closing bracket or not
+ */
+f<bool> isGenericClose(const FmtToken& token) {
+    const bool isGreater = token.tokenType == TokenType::GREATER || token.tokenType == TokenType::SHR;
+    return isGreater && !isBinaryExprToken(token) && token.ownerKind != ASTNodeKind::FCT_NAME;
+}
+
+/**
+ * Check if the given token is a type modifier: a pointer, a reference or an array
+ *
+ * @param token Token to check
+ * @return Type modifier or not
+ */
+f<bool> isTypeModifier(const FmtToken& token) {
+    if token.ownerKind != ASTNodeKind::DATA_TYPE {
+        return false;
+    }
+    const TokenType tokenType = token.tokenType;
+    return tokenType == TokenType::MUL || tokenType == TokenType::BITWISE_AND || tokenType == TokenType::LBRACKET;
+}
+
+/**
+ * Check if the given token is a prefix operator, e.g. the '-' of '-x' or the '&' of '&x'
+ *
+ * @param token Token to check
+ * @return Prefix operator or not
+ */
+f<bool> isPrefixOp(const FmtToken& token) {
+    const TokenType tokenType = token.tokenType;
+    // The minus of a negative number literal belongs to the constant
+    if token.ownerKind == ASTNodeKind::CONSTANT {
+        return tokenType == TokenType::MINUS;
+    }
+    if token.ownerKind != ASTNodeKind::PREFIX_UNARY_EXPR {
+        return false;
+    }
+    switch tokenType {
+        case TokenType::MINUS, TokenType::PLUS_PLUS, TokenType::MINUS_MINUS, TokenType::NOT, TokenType::BITWISE_NOT, TokenType::MUL, TokenType::BITWISE_AND: {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the given token is a postfix operator, e.g. the '++' of 'i++' or the '!' of 'getResult()!'
+ *
+ * @param token Token to check
+ * @return Postfix operator or not
+ */
+f<bool> isPostfixOp(const FmtToken& token) {
+    if token.ownerKind != ASTNodeKind::POSTFIX_UNARY_EXPR {
+        return false;
+    }
+    const TokenType tokenType = token.tokenType;
+    return tokenType == TokenType::PLUS_PLUS || tokenType == TokenType::MINUS_MINUS || tokenType == TokenType::NOT;
+}
+
+// ============================================================ Entry point ============================================================
+
+/**
+ * Format the given Spice source code. The code has to be syntactically valid. Otherwise, the compilation is aborted with the
+ * parser error.
+ *
+ * @param resourceManager Global resource manager, that owns the syntax tree
+ * @param sourceCode Source code to format
+ * @param filePath Path of the source file, which errors refer to. Has to stay valid, until the formatting is done
+ * @return Formatted source code
+ */
+public f<String> formatSourceCode(GlobalResourceManager& resourceManager, const String& sourceCode, const FilePath& filePath) {
+    // The formatted code is assembled from strings, which end at a NUL char. So source code with NUL chars cannot be formatted
+    if containsNulChar(sourceCode) {
+        const String message = "Source file '" + String(filePath.toString()) + "' contains a NUL char and cannot be formatted";
+        const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+
+    Lexer lexer = Lexer(sourceCode, filePath);
+    Parser parser = Parser(resourceManager, nil<SourceFile*>, lexer);
+    ASTEntryNode* ast = parser.parse();
+
+    SourceFormatter formatter = SourceFormatter(sourceCode, lexer.getTokens());
+    formatter.analyzeSyntaxTree(cast<ASTNode*>(ast));
+    const String formattedCode = formatter.format();
+
+    // The formatter only changes whitespace. Make sure that the formatted code consists of the same tokens, before anyone
+    // replaces the original code with it
+    Lexer formattedLexer = Lexer(formattedCode, filePath);
+    if !haveSameTokens(lexer.getTokens(), sourceCode, formattedLexer.getTokens(), formattedCode) {
+        const String message = "Formatting changed the tokens of '" + String(filePath.toString()) + "'. Please report this as a bug";
+        const CompilerError error = CompilerError(CompilerErrorType::INTERNAL_ERROR, message.getRaw());
+        abortWithError(error.getMessage());
+    }
+    return formattedCode;
+}
+
+/**
+ * Check if the given text contains a NUL char
+ *
+ * @param text Text to check
+ * @return Contains a NUL char or not
+ */
+f<bool> containsNulChar(const String& text) {
+    const unsigned long length = text.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        if text[i] == '\0' {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the two given token streams consist of the same tokens. Only the whitespace within comments does not count, because
+ * comments may be reindented
+ *
+ * @param origTokens Tokens of the original source code
+ * @param origCode Original source code
+ * @param newTokens Tokens of the formatted source code
+ * @param newCode Formatted source code
+ * @return Same tokens or not
+ */
+f<bool> haveSameTokens(const Vector<Token>& origTokens, const String& origCode, const Vector<Token>& newTokens, const String& newCode) {
+    const unsigned long tokenCount = origTokens.getSize();
+    if newTokens.getSize() != tokenCount {
+        return false;
+    }
+    for unsigned long i = 0l; i < tokenCount; i++ {
+        const Token& origToken = origTokens.get(i);
+        const Token& newToken = newTokens.get(i);
+        if origToken.tokenType != newToken.tokenType {
+            return false;
+        }
+        const String origText = getTokenSource(origCode, origToken);
+        const String newText = getTokenSource(newCode, newToken);
+        if isComment(origToken.tokenType) {
+            if removeWhitespace(origText) != removeWhitespace(newText) {
+                return false;
+            }
+        } else if origText != newText {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Get the source code of the given token
+ *
+ * @param sourceCode Source code, that contains the token
+ * @param token Token
+ * @return Source code of the token
+ */
+f<String> getTokenSource(const String& sourceCode, const Token& token) {
+    return sourceCode.getSubstring(token.startOffset, cast<long>(token.endOffset - token.startOffset));
+}
+
+/**
+ * Remove all whitespace from the given text
+ *
+ * @param text Text
+ * @return Text without whitespace
+ */
+f<String> removeWhitespace(const String& text) {
+    String textWithoutWhitespace;
+    const unsigned long length = text.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = text[i];
+        if !isWhitespace(c) {
+            textWithoutWhitespace += c;
+        }
+    }
+    return textWithoutWhitespace;
+}
+
+// ============================================================== Tests ==============================================================
+
+/**
+ * Format the given source code with a fresh resource manager
+ *
+ * @param sourceCode Source code to format
+ * @return Formatted source code
+ */
+f<String> formatForTest(string sourceCode) {
+    String formattedCode;
+    {
+        CliOptions cliOptions;
+        GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+        const FilePath filePath = FilePath("test.spice");
+        formattedCode = formatSourceCode(resourceManager, String(sourceCode), filePath);
+    }
+    return formattedCode;
+}
+
+#[test]
+f<bool> testFormatterSpacing() {
+    const String formatted = formatForTest("f<int>main(){int x=-1+2*3;int* ptr=&x;Vector<Vector<int>>v;return cast<int>(*ptr)<x?x:-x;}");
+    assert formatted == "f<int> main() { int x = -1 + 2 * 3; int* ptr = &x; Vector<Vector<int>> v; return cast<int>(*ptr) < x ? x : -x; }\n";
+    return true;
+}
+
+#[test]
+f<bool> testFormatterIndentation() {
+    const String formatted = formatForTest("p foo()\n{\n  if true\n  {\n  bar(1,\n  2);\n  }\n  else {\n    baz();\n  }\n}\n");
+    assert formatted == "p foo() {\n    if true {\n        bar(1,\n            2);\n    } else {\n        baz();\n    }\n}\n";
+    return true;
+}
+
+#[test]
+f<bool> testFormatterBlankLinesAndComments() {
+    const String formatted = formatForTest("// Header\n\n\n\nimport \"std/io/file\";\n\nf<int> main() {\n\n    int a = 1;   // One\n    int bb = 2;  // Two\n\n}\n");
+    assert formatted == "// Header\n\nimport \"std/io/file\";\n\nf<int> main() {\n    int a = 1;   // One\n    int bb = 2;  // Two\n}\n";
+    return true;
+}
+
+#[test]
+f<bool> testFormatterComparesTokensExactly() {
+    const FilePath filePath = FilePath("test.spice");
+    const String original = String("string s = \"a b\"; // A  comment\n");
+    const String changedLiteral = String("string s = \"ab\"; // A  comment\n");
+    const String reindentedComment = String("string s = \"a b\";   //  A comment\n");
+    Lexer originalLexer = Lexer(original, filePath);
+    Lexer changedLiteralLexer = Lexer(changedLiteral, filePath);
+    Lexer reindentedCommentLexer = Lexer(reindentedComment, filePath);
+    assert !haveSameTokens(originalLexer.getTokens(), original, changedLiteralLexer.getTokens(), changedLiteral);
+    assert haveSameTokens(originalLexer.getTokens(), original, reindentedCommentLexer.getTokens(), reindentedComment);
+    return true;
+}
+
+#[test]
+f<bool> testFormatterKeepsTokensApart() {
+    assert mustSeparateTexts(String("-"), String("-"), false);
+    assert mustSeparateTexts(String("/"), String("/"), false);
+    assert mustSeparateTexts(String("int"), String("x"), false);
+    assert mustSeparateTexts(String(">"), String(">"), false);
+    assert mustSeparateTexts(String("1"), String("."), true);
+    assert !mustSeparateTexts(String("v1"), String("."), false);
+    assert !mustSeparateTexts(String(">>"), String(">"), false);
+    assert !mustSeparateTexts(String("("), String("x"), false);
+    assert !mustSeparateTexts(String("x"), String(")"), false);
+    return true;
+}

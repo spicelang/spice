@@ -309,8 +309,10 @@ f<String> Parser.getIdentifier(bool isTypeIdentifier) {
         this.throwParserError(token.codeLoc, ParserErrorType::RESERVED_KEYWORD, message.getRaw());
     }
 
-    // Check if the identifier is a type identifier and is reserved
-    if isTypeIdentifier && !this.sourceFile.isStdFile && isReservedTypeName(identifier) {
+    // Check if the identifier is a type identifier and is reserved. The std may use reserved type names. Without a source file,
+    // e.g. when the formatter parses the code, it is unknown whether the code belongs to the std, so the check is left out
+    const bool mayUseReservedTypeNames = this.sourceFile == nil<SourceFile*> || this.sourceFile.isStdFile;
+    if isTypeIdentifier && !mayUseReservedTypeNames && isReservedTypeName(identifier) {
         const String message = "'" + identifier + "' is a reserved type name. Please use another one instead";
         this.throwParserError(token.codeLoc, ParserErrorType::RESERVED_TYPENAME, message.getRaw());
     }
