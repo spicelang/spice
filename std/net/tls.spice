@@ -192,9 +192,9 @@ public f<Result<TlsSocket>> openTlsClientSocket(string host, unsigned short port
  * Performs a TLS server handshake on the connection `sock` most recently accepted via
  * `Socket.acceptConnection`.
  *
- * This is a free function rather than a method on `Socket` because `Socket` is defined per-platform
- * (see "std/net/socket_linux" and friends) and Spice does not support adding methods to a struct
- * from outside the file that defines it.
+ * This is a free function rather than a method on `Socket` because `Socket` is defined in
+ * "std/net/socket" and Spice does not support adding methods to a struct from outside the file that
+ * defines it.
  *
  * @param sock Socket whose current connection to handshake
  * @param context Server context that supplies the certificate and private key
