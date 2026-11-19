@@ -1,0 +1,36 @@
+#![core.compiler.requiresOs]
+
+// File operations for file.spice on Linux. macOS and Windows have their own file_native_darwin.spice and
+// file_native_windows.spice, picked by the OS suffix, because the flags of open() differ. The files must offer the same
+// symbols.
+
+// Flags for open() on Linux (the same on x86_64 and aarch64)
+const int O_WRONLY  = 0o1;       // Write only
+const int O_CREAT   = 0o100;     // Create the file, if it does not exist
+const int O_EXCL    = 0o200;     // With O_CREAT: Fail, if the path exists, even as a symbolic link
+const int O_CLOEXEC = 0o2000000; // Close the file descriptor in child processes
+
+// Link external functions
+ext f<int> open(string /*path*/, int /*flags*/, ...);
+ext f<byte*> fdopen(int /*fd*/, string /*mode*/);
+ext f<int> close(int /*fd*/);
+
+/**
+ * Create a new file and open it for writing. Fails, if the path exists already.
+ *
+ * @param path Path of the new file
+ * @param permissions Permissions of the new file, without the bits, that the umask of the process clears
+ * @return File pointer, or nil if the file could not be created
+ */
+public f<byte*> openNewNativeFile(string path, short permissions) {
+    // The permissions are a variadic argument of open(), so they are passed as int
+    const int fd = open(path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, cast<int>(permissions));
+    if fd < 0 {
+        return nil<byte*>;
+    }
+    byte* filePtr = fdopen(fd, "w");
+    if filePtr == nil<byte*> {
+        close(fd);
+    }
+    return filePtr;
+}

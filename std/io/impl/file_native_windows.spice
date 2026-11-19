@@ -1,0 +1,40 @@
+#![core.compiler.requiresOs]
+
+// Windows version of file_native.spice, picked by the OS suffix. The files must offer the same symbols.
+
+// Flags for _open() on Windows
+const int O_WRONLY    = 0x1;   // Write only
+const int O_NOINHERIT = 0x80;  // Do not pass the file descriptor to child processes
+const int O_CREAT     = 0x100; // Create the file, if it does not exist
+const int O_EXCL      = 0x400; // With O_CREAT: Fail, if the path exists
+
+// Permissions, that Windows knows. They have the same values as S_IRUSR and S_IWUSR
+const short S_IREAD  = 0x100s; // Read permission
+const short S_IWRITE = 0x80s;  // Write permission. Without it, the file is read-only
+
+// Link external functions
+ext f<int> _open(string /*path*/, int /*flags*/, ...);
+ext f<byte*> _fdopen(int /*fd*/, string /*mode*/);
+ext f<int> _close(int /*fd*/);
+
+/**
+ * Create a new file and open it for writing. Fails, if the path exists already.
+ *
+ * @param path Path of the new file
+ * @param permissions Permissions of the new file. Windows only knows the read and write permissions. The other access rights
+ *                    come from the directory of the file
+ * @return File pointer, or nil if the file could not be created
+ */
+public f<byte*> openNewNativeFile(string path, short permissions) {
+    // _open() rejects other permission bits. They are a variadic argument, so they are passed as int
+    const short windowsPermissions = permissions & (S_IREAD | S_IWRITE);
+    const int fd = _open(path, O_WRONLY | O_CREAT | O_EXCL | O_NOINHERIT, cast<int>(windowsPermissions));
+    if fd < 0 {
+        return nil<byte*>;
+    }
+    byte* filePtr = _fdopen(fd, "w");
+    if filePtr == nil<byte*> {
+        _close(fd);
+    }
+    return filePtr;
+}

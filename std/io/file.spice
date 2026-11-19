@@ -1,5 +1,8 @@
 #![core.compiler.requiresOs]
 
+// Std imports
+import "std/io/impl/file_native";
+
 // File open modes
 public const string MODE_READ                 = "r";
 public const string MODE_WRITE                = "w";
@@ -327,6 +330,35 @@ public f<Result<File>> openFile(string path, string mode = MODE_READ) {
  */
 public f<Result<File>> openFile(String path, string mode = MODE_READ) {
     return openFile(path.getRaw(), mode);
+}
+
+/**
+ * Creates a new file at the given path and opens it for writing. Unlike openFile, this fails, if the path exists already,
+ * even as a symbolic link. So it never overwrites an existing file and never writes through a link.
+ *
+ * On Linux and macOS, the file gets the given permissions, without the bits, that the umask of the process clears. Windows
+ * only knows the read and write permissions, the other access rights come from the directory of the file.
+ *
+ * @param path Path of the new file
+ * @param permissions Permissions of the new file, e.g. S_IRUSR | S_IWUSR, so that only its owner can read and write it
+ * @return Result holding the opened file, or an error if the path exists already or the file cannot be created
+ */
+public f<Result<File>> openNewFile(string path, short permissions) {
+    FilePtr fp = openNewNativeFile(path, permissions);
+    File file = File{fp, false};
+    return fp != nil<FilePtr> ? ok(file) : err<File>(Error("Failed to create file"));
+}
+
+/**
+ * Creates a new file at the given path and opens it for writing. Fails, if the path exists already.
+ * See openNewFile(string, short) for details.
+ *
+ * @param path Path of the new file
+ * @param permissions Permissions of the new file, e.g. S_IRUSR | S_IWUSR, so that only its owner can read and write it
+ * @return Result holding the opened file, or an error if the path exists already or the file cannot be created
+ */
+public f<Result<File>> openNewFile(const String& path, short permissions) {
+    return openNewFile(path.getRaw(), permissions);
 }
 
 /**
