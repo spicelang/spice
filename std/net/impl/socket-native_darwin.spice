@@ -139,7 +139,7 @@ public f<Result<int>> openNativeServerSocket(const IpAddress& address, unsigned 
  * Accepts an incoming connection on the given listening socket. Blocks until a client connects.
  *
  * @param sockFd File descriptor of the listening socket
- * @return File descriptor of the connection, a negative value on error
+ * @return File descriptor of the connection, -1 on error
  */
 public f<int> acceptNativeConnection(int sockFd) {
     const int connFd = accept(sockFd, nil<byte*>, nil<unsigned int*>);
