@@ -2,5 +2,5 @@
 # GitHub picks this file up automatically. Locally, enable it with:
 #   git config blame.ignoreRevsFile .git-blame-ignore-revs
 
-# Format the compiler and the standard library with the formatter
-7b8e6f50033069a214815fc2cb6a6ea1633127dc
+# Format the compiler and the standard library (#1774)
+b5c199cf1c4a3d0b252ea1a0f6d58c4c251ecd19
