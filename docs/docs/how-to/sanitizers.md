@@ -43,10 +43,11 @@ A few things to keep in mind:
 - **Some options are implied.** AddressSanitizer and MemorySanitizer turn on `--use-lifetime-markers`, so that they know
   when a local variable goes out of scope. TypeSanitizer turns on `--use-tbaa-metadata`, since this metadata tells it the
   type of every memory access.
-- **Instrument with few optimizations.** Without `-O` options, Spice builds with `-O0`, which is the best fit for
+- **Instrument with few optimizations.** Debug builds, the default build mode, use `-O0`, which is the best fit for
   sanitizer runs: the reports point to the right source locations, and the optimizer cannot remove the bug before the
-  sanitizer gets to see it. `-O1` is fine as well, if the instrumented program is too slow. See the
-  [MemorySanitizer](#memorysanitizer) section for an example of a bug that `-O2` hides.
+  sanitizer gets to see it. `-O1` is fine as well, if the instrumented program is too slow. Release builds default to
+  `-O2`, so pass `-O0` or `-O1` explicitly, if you instrument one. See the [MemorySanitizer](#memorysanitizer) section
+  for an example of a bug that `-O2` hides.
 - **The runtime comes from your C toolchain.** The compiler links the program with `-fsanitize=<sanitizer>`, so the
   sanitizer runtime is the one of the Clang or GCC installation, that Spice uses as linker invoker. Spice prefers Clang
   and falls back to GCC. GCC does not implement MemorySanitizer and TypeSanitizer, so those two need Clang.
@@ -357,7 +358,7 @@ MSan comes with a few restrictions:
   yourself.
 - **Mind the optimization level.** Built with `-O2`, the example above passes without a report. The optimizer is
   allowed to assume any value for the uninitialized elements, so it removes the check, before MSan instruments the
-  code. Clang behaves the same way for the equivalent C program. Stay at the default `-O0` or at `-O1` for MSan runs.
+  code. Clang behaves the same way for the equivalent C program. Stay at `-O0`, the default of debug builds, or at `-O1` for MSan runs.
 
 ## TypeSanitizer
 

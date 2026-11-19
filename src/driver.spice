@@ -267,6 +267,9 @@ public type Driver struct {
     // Whether the user named a debug info level themselves. DebugInfoLevel::NONE is also the default, so without this
     // an explicit '--debug-info=none' would be indistinguishable from not passing the option at all.
     bool debugInfoLevelSetExplicitly = false
+    // Whether the user named an opt level themselves. OptLevel::O0 is also the default, so without this an explicit '-O0' in
+    // release mode would be indistinguishable from not passing an opt level at all.
+    bool optLevelSetExplicitly = false
 }
 
 public p Driver.ctor() {
@@ -371,6 +374,12 @@ public p Driver.enrich() {
     // Always preserve IR values names when dumping IR
     if this.cliOptions.dump.dumpIR {
         this.cliOptions.namesForIRValues = true;
+    }
+
+    // Release builds are optimized with -O2, unless an opt level was given explicitly. The TPDE backend does not optimize, so it
+    // stays at -O0 there
+    if this.cliOptions.buildMode == BuildMode::RELEASE && !this.optLevelSetExplicitly && this.cliOptions.backend != Backend::TPDE {
+        this.cliOptions.optLevel = OptLevel::O2;
     }
 
     // Enable test mode when test mode was selected
@@ -999,12 +1008,12 @@ p Driver.addCodeGenOptions(CliSubcommand& subCmd) {
     subCmd.addFlag("--test-mode", testModeCallback, "Compile like the test runner does (test mode, comparable output). For internal use");
 
     // Opt levels
-    subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; }, "Disable optimization.");
-    subCmd.addFlag("-O1", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O1; }, "Only basic optimization is applied.");
-    subCmd.addFlag("-O2", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O2; }, "More advanced optimization is applied.");
-    subCmd.addFlag("-O3", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O3; }, "Aggressive optimization for best performance.");
-    subCmd.addFlag("-Os", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Os; }, "Size optimization for output executable.");
-    subCmd.addFlag("-Oz", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Oz; }, "Aggressive optimization for best size.");
+    subCmd.addFlag("-O0", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O0; this.optLevelSetExplicitly = true; }, "Disable optimization.");
+    subCmd.addFlag("-O1", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O1; this.optLevelSetExplicitly = true; }, "Only basic optimization is applied.");
+    subCmd.addFlag("-O2", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O2; this.optLevelSetExplicitly = true; }, "More advanced optimization is applied.");
+    subCmd.addFlag("-O3", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::O3; this.optLevelSetExplicitly = true; }, "Aggressive optimization for best performance.");
+    subCmd.addFlag("-Os", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Os; this.optLevelSetExplicitly = true; }, "Size optimization for output executable.");
+    subCmd.addFlag("-Oz", p(const bool& _v) { this.cliOptions.optLevel = OptLevel::Oz; this.optLevelSetExplicitly = true; }, "Aggressive optimization for best size.");
     subCmd.addFlag("-lto", this.cliOptions.useLTO, "Enable link time optimization (LTO)");
 
     // --backend
@@ -1226,6 +1235,49 @@ f<bool> testBuildAndRunSubcommands() {
     assert runComplex.cliOptions.optLevel == OptLevel::O2;
     assert runComplex.cliOptions.compileJobCount == 8;
     assert runComplex.cliOptions.dump.dumpAST;
+    return true;
+}
+
+#[test]
+f<bool> testDefaultOptLevel() {
+    // Debug builds are not optimized per default
+    Driver debug;
+    string[3] debugArgs = ["spice", "build", "main-file.spice"];
+    assert parseAndEnrich(debug, 3, debugArgs);
+    assert debug.cliOptions.buildMode == BuildMode::DEBUG;
+    assert debug.cliOptions.optLevel == OptLevel::O0;
+
+    // Release builds are optimized with -O2 per default
+    Driver release;
+    string[5] releaseArgs = ["spice", "build", "-m", "release", "main-file.spice"];
+    assert parseAndEnrich(release, 5, releaseArgs);
+    assert release.cliOptions.optLevel == OptLevel::O2;
+    Driver releaseRun;
+    string[4] releaseRunArgs = ["spice", "run", "--build-mode=release", "main-file.spice"];
+    assert parseAndEnrich(releaseRun, 4, releaseRunArgs);
+    assert releaseRun.cliOptions.optLevel == OptLevel::O2;
+
+    // An explicit opt level wins over the default of the build mode, also if it is -O0
+    Driver releaseO0;
+    string[6] releaseO0Args = ["spice", "build", "-m", "release", "-O0", "main-file.spice"];
+    assert parseAndEnrich(releaseO0, 6, releaseO0Args);
+    assert releaseO0.cliOptions.optLevel == OptLevel::O0;
+    Driver releaseO3;
+    string[6] releaseO3Args = ["spice", "build", "-O3", "-m", "release", "main-file.spice"];
+    assert parseAndEnrich(releaseO3, 6, releaseO3Args);
+    assert releaseO3.cliOptions.optLevel == OptLevel::O3;
+    Driver debugO1;
+    string[4] debugO1Args = ["spice", "build", "-O1", "main-file.spice"];
+    assert parseAndEnrich(debugO1, 4, debugO1Args);
+    assert debugO1.cliOptions.optLevel == OptLevel::O1;
+
+    // The TPDE backend does not optimize, so release builds stay at -O0 there
+    if tpde::isAvailable() {
+        Driver releaseTpde;
+        string[9] releaseTpdeArgs = ["spice", "build", "-m", "release", "--backend", "tpde", "--target", "x86_64-unknown-linux-gnu", "main-file.spice"];
+        assert parseAndEnrich(releaseTpde, 9, releaseTpdeArgs);
+        assert releaseTpde.cliOptions.optLevel == OptLevel::O0;
+    }
     return true;
 }
 
