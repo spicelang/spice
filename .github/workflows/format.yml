@@ -10,7 +10,7 @@ jobs:
   check-format:
     name: Check formatting
     runs-on: ubuntu-26.04
-    # The job builds and runs the compiler, which needs no write access and no git credentials
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
     permissions:
       contents: read
 
@@ -18,7 +18,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          submodules: recursive
           persist-credentials: false
           # The merge commit of the pull request and its first parent, the tip of the base branch
           fetch-depth: 2
@@ -35,36 +34,11 @@ jobs:
             echo "any=true" >> "$GITHUB_OUTPUT"
           fi
 
-      # The stage0 compiler has no format command yet, so the compiler is built from src/ first. Once the pinned stage0
-      # compiler has it, the steps up to "Build compiler" can be replaced by "Fetch stage0 compiler" alone
-      - name: Setup Linux toolchain
-        if: steps.changed.outputs.any == 'true'
-        uses: ./.github/actions/setup-linux-toolchain
-        with:
-          # The test-only packages graphviz and qemu-system-arm are not needed to build the compiler
-          packages: ccache ninja-build uuid-dev libssl-dev clang lld
-
-      - name: Setup LLVM
-        if: steps.changed.outputs.any == 'true'
-        uses: ./.github/actions/setup-llvm
-        with:
-          # Shares the LLVM cache of the Linux/x86_64 CI job
-          cache-key-suffix: linux-x64
-          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
-
-      - name: Download Libs
-        if: steps.changed.outputs.any == 'true'
-        run: python setup-deps.py
-
       - name: Fetch stage0 compiler
         if: steps.changed.outputs.any == 'true'
-        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
+        # The released compiler, pinned in .github/stage0-version, whose format command checks the files. It is statically
+        # linked, so the job needs no toolchain. Changes to the formatter in src/ take effect here with the next stage0 bump
         run: python fetch-stage0.py
-
-      - name: Build compiler
-        if: steps.changed.outputs.any == 'true'
-        # Debug builds without LTO and is the fastest to build
-        run: python build.py --build-type Debug
 
       - name: Check formatting
         if: steps.changed.outputs.any == 'true'
@@ -73,11 +47,11 @@ jobs:
           while IFS= read -r file; do
             # The check prints the path of an unformatted file, or the error, if the file cannot be formatted, e.g. as it does
             # not parse
-            if ! output="$(build/spice format --check "$file" 2>&1)"; then
+            if ! output="$(build/stage0/spice format --check "$file" 2>&1)"; then
               status=1
               if [ "$output" = "$file" ]; then
                 echo "::error file=$file::File is not formatted. Run 'spice format $file' to format it"
-                build/spice format --stdout "$file" > "$RUNNER_TEMP/formatted.spice"
+                build/stage0/spice format --stdout "$file" > "$RUNNER_TEMP/formatted.spice"
                 diff -u --label "$file" --label "$file (formatted)" "$file" "$RUNNER_TEMP/formatted.spice" || true
               else
                 echo "::error file=$file::File cannot be formatted"
