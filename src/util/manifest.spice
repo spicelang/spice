@@ -1,0 +1,377 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/io/dir";
+import "std/io/file";
+import "std/io/filepath";
+import "std/os/filesystem";
+import "std/text/toml/toml-parser";
+import "std/text/toml/toml-value";
+import "std/type/type-conversion";
+
+// Own imports
+import "@/exception/compiler-error";
+import "@/exception/fatal-error";
+import "@/formatter/format-config";
+import "@/linter/lint-config";
+import "@/linter/lint-finding";
+import "@/util/test-util";
+
+// Constants
+public const string MANIFEST_FILE_NAME = "spice.toml";
+const string LINT_TABLE_NAME = "lint";
+const string LINT_RULES_TABLE_NAME = "rules";
+const string FORMAT_TABLE_NAME = "format";
+const long NO_UPPER_BOUND = -1l; // For ManifestReader.readInteger
+
+/*
+ * The manifest (spice.toml) of a project describes the package for Spice Shaker and configures the tooling of the compiler:
+ *
+ * [lint.rules]
+ * naming-convention = { enabled = false }
+ * too-many-parameters = { max = 8, severity = "error" }
+ *
+ * [format]
+ * indent-width = 2
+ * max-blank-lines = 2
+ *
+ * The compiler only reads the [lint] and [format] tables and leaves the other tables to Spice Shaker. Within its own tables,
+ * it rejects unknown keys, so that a typo does not silently fall back to the default.
+ */
+
+/**
+ * Make the given path absolute by prepending the working dir, if it is relative, and normalize it lexically
+ *
+ * @param path Path to make absolute
+ * @return Absolute path
+ */
+f<FilePath> makeAbsolute(const FilePath& path) {
+    if path.isAbsolute() {
+        return path.lexicallyNormal();
+    }
+    const FilePath absolutePath = FilePath(getCurrentWorkingDir()) / path;
+    return absolutePath.lexicallyNormal();
+}
+
+/**
+ * Get the parent dir of the given absolute and lexically normal path. Unlike FilePath.getParentDir, the parent of an entry
+ * directly below the root is the root, e.g. '/' for '/home' or 'C:/' for 'C:/Users'
+ *
+ * @param path Absolute and lexically normal path
+ * @return Parent dir or an empty path, if the given path is the root
+ */
+f<FilePath> getAbsoluteParentDir(const FilePath& path) {
+    FilePath pathCopy = path;
+    String parentDir = pathCopy.getParentDir();
+    // The separator of the root is cut off together with the last component
+    if parentDir.isEmpty() || parentDir.endsWith(":") {
+        parentDir += "/";
+    }
+    const FilePath parentPath = FilePath(parentDir);
+    return parentPath == pathCopy ? FilePath() : parentPath;
+}
+
+/**
+ * Reads the values of a manifest and reports the errors in it
+ */
+type ManifestReader struct {
+    FilePath path
+    String displayPath // Path of the manifest in error messages
+}
+
+/**
+ * @param path Path of the manifest
+ * @param displayBaseDir Dir, that the path of the manifest is printed relative to in error messages
+ */
+p ManifestReader.ctor(const FilePath& path, const FilePath& displayBaseDir) {
+    this.path = path;
+    // Like the code locations of the compiler: './' for paths within the base dir and the absolute path, if there is no relative one
+    const FilePath relativePath = makeAbsolute(path).lexicallyRelative(makeAbsolute(displayBaseDir));
+    const String relativePathStr = String(relativePath.toGenericString());
+    if relativePath.isEmpty() {
+        this.displayPath = String(path.toGenericString());
+    } else if relativePathStr.startsWith("../") {
+        this.displayPath = relativePathStr;
+    } else {
+        this.displayPath = "./" + relativePathStr;
+    }
+}
+
+/**
+ * Read and parse the manifest. Aborts, if it cannot be read or is no valid TOML.
+ *
+ * @return Root table of the manifest, which the caller has to release with deleteTomlValue
+ */
+f<TomlValue*> ManifestReader.parse() {
+    Result<String> readResult = readFile(this.path.toString());
+    if !readResult.isOk() {
+        this.raiseError(String("The manifest cannot be read"));
+    }
+    Result<TomlValue*> parseResult = parseToml(readResult.unwrap());
+    if !parseResult.isOk() {
+        this.raiseError(String("The manifest is no valid TOML: ") + parseResult.getErr().getMessage());
+    }
+    return parseResult.unwrap();
+}
+
+/**
+ * Read the configuration of the individual lint rules from the [lint.rules] table
+ *
+ * @param rulesTable Value of the [lint.rules] table
+ * @param config Configuration to update
+ */
+p ManifestReader.readLintRulesTable(TomlValue* rulesTable, LintConfig& config) {
+    const String rulesTableName = String(LINT_TABLE_NAME) + "." + LINT_RULES_TABLE_NAME;
+    this.expectTable(rulesTable, rulesTableName);
+    for unsigned long i = 0l; i < rulesTable.getTableSize(); i++ {
+        const String& ruleId = rulesTable.getTableKey(i);
+        LintRuleConfig* ruleConfig = config.getRuleConfig(ruleId);
+        if ruleConfig == nil<LintRuleConfig*> {
+            this.raiseError("Unknown lint rule '" + ruleId + "'");
+        }
+        const String ruleTableName = rulesTableName + "." + ruleId;
+        TomlValue* ruleTable = rulesTable.getTableValue(i);
+        this.expectTable(ruleTable, ruleTableName);
+        for unsigned long j = 0l; j < ruleTable.getTableSize(); j++ {
+            const String& key = ruleTable.getTableKey(j);
+            TomlValue* value = ruleTable.getTableValue(j);
+            const String keyName = ruleTableName + "." + key;
+            if key == "enabled" {
+                if !value.isBool() {
+                    this.raiseError("'" + keyName + "' has to be a boolean");
+                }
+                ruleConfig.enabled = value.getBool();
+            } else if key == "severity" {
+                ruleConfig.severity = this.readLintSeverity(value, keyName);
+            } else if key == "max" && hasRuleThreshold(ruleId) {
+                ruleConfig.max = this.readInteger(value, keyName, 1l, NO_UPPER_BOUND);
+            } else {
+                this.raiseUnknownKey(keyName);
+            }
+        }
+    }
+}
+
+/**
+ * Read a lint severity ("info", "warning" or "error")
+ *
+ * @param value Value to read
+ * @param keyName Full name of the key, which errors refer to
+ * @return Lint severity
+ */
+f<LintSeverity> ManifestReader.readLintSeverity(TomlValue* value, const String& keyName) {
+    if value.isString() {
+        const String& severity = value.getString();
+        if severity == "info" {
+            return LintSeverity::INFO;
+        }
+        if severity == "warning" {
+            return LintSeverity::WARNING;
+        }
+        if severity == "error" {
+            return LintSeverity::ERROR;
+        }
+    }
+    this.raiseError("'" + keyName + "' has to be one of \"info\", \"warning\" or \"error\"");
+}
+
+/**
+ * Read an integer within the given bounds
+ *
+ * @param value Value to read
+ * @param keyName Full name of the key, which errors refer to
+ * @param min Minimum value
+ * @param max Maximum value or NO_UPPER_BOUND
+ * @return Integer
+ */
+f<long> ManifestReader.readInteger(TomlValue* value, const String& keyName, long min, long max) {
+    if !value.isInteger() || value.getInteger() < min || (max != NO_UPPER_BOUND && value.getInteger() > max) {
+        String message = "'" + keyName + "' has to be an integer";
+        if max == NO_UPPER_BOUND {
+            message += " of at least " + toString(min);
+        } else {
+            message += " from " + toString(min) + " to " + toString(max);
+        }
+        this.raiseError(message);
+    }
+    return value.getInteger();
+}
+
+/**
+ * Abort, if the given value is no table
+ *
+ * @param value Value to check
+ * @param keyName Full name of the key, which errors refer to
+ */
+p ManifestReader.expectTable(TomlValue* value, const String& keyName) {
+    if !value.isTable() {
+        this.raiseError("'" + keyName + "' has to be a table");
+    }
+}
+
+/**
+ * Abort with an error about an unknown key
+ *
+ * @param keyName Full name of the key
+ */
+#[core.compiler.noReturn]
+p ManifestReader.raiseUnknownKey(const String& keyName) {
+    this.raiseError("Unknown key '" + keyName + "'");
+}
+
+/**
+ * Abort with an error about the manifest
+ *
+ * @param message Error message
+ */
+#[core.compiler.noReturn]
+p ManifestReader.raiseError(const String& message) {
+    const String fullMessage = this.displayPath + ": " + message;
+    const CompilerError error = CompilerError(CompilerErrorType::INVALID_MANIFEST, fullMessage.getRaw());
+    abortWithError(error.getMessage());
+}
+
+/**
+ * Find the manifest of the project, that the given source file or dir belongs to: the spice.toml file in the dir of the given
+ * path or in the nearest of its parent dirs. The parent dirs are determined lexically, like a shell does it for 'cd ..', so that
+ * a symlinked dir is searched from the location, where it is linked, rather than from its target.
+ *
+ * @param path Path of a source file or dir
+ * @return Absolute path of the manifest or an empty path, if there is none
+ */
+public f<FilePath> findManifest(const FilePath& path) {
+    // Make the path absolute, so that the search can continue above the working dir up to the root
+    FilePath dir = makeAbsolute(path);
+    if !dirExists(dir.toString()) {
+        dir = getAbsoluteParentDir(dir);
+    }
+    while !dir.isEmpty() {
+        const FilePath candidate = dir / MANIFEST_FILE_NAME;
+        if fileExists(candidate.toString()) && !dirExists(candidate.toString()) {
+            return candidate;
+        }
+        dir = getAbsoluteParentDir(dir);
+    }
+    return FilePath();
+}
+
+/**
+ * Read the configuration of the lint rules from the given manifest. Rules, that the manifest does not configure, keep their
+ * default configuration. Aborts the compilation, if the configuration is invalid.
+ *
+ * @param manifestPath Path of the manifest. Empty for the default configuration
+ * @param displayBaseDir Dir, that the path of the manifest is printed relative to in error messages
+ * @return Configuration of the lint rules
+ */
+public f<LintConfig> readLintConfig(const FilePath& manifestPath, const FilePath& displayBaseDir) {
+    LintConfig config;
+    if manifestPath.isEmpty() {
+        return config;
+    }
+    ManifestReader reader = ManifestReader(manifestPath, displayBaseDir);
+    TomlValue* root = reader.parse();
+    TomlValue* lintTable = root.getFieldOrNil(LINT_TABLE_NAME);
+    if lintTable != nil<TomlValue*> {
+        reader.expectTable(lintTable, String(LINT_TABLE_NAME));
+        for unsigned long i = 0l; i < lintTable.getTableSize(); i++ {
+            const String& key = lintTable.getTableKey(i);
+            if key != LINT_RULES_TABLE_NAME {
+                reader.raiseUnknownKey(String(LINT_TABLE_NAME) + "." + key);
+            }
+            reader.readLintRulesTable(lintTable.getTableValue(i), config);
+        }
+    }
+    deleteTomlValue(root);
+    return config;
+}
+
+/**
+ * Read the configuration of the source formatter from the given manifest. Options, that the manifest does not set, keep their
+ * default value. Aborts, if the configuration is invalid.
+ *
+ * @param manifestPath Path of the manifest. Empty for the default configuration
+ * @param displayBaseDir Dir, that the path of the manifest is printed relative to in error messages
+ * @return Configuration of the source formatter
+ */
+public f<FormatConfig> readFormatConfig(const FilePath& manifestPath, const FilePath& displayBaseDir) {
+    FormatConfig config;
+    if manifestPath.isEmpty() {
+        return config;
+    }
+    ManifestReader reader = ManifestReader(manifestPath, displayBaseDir);
+    TomlValue* root = reader.parse();
+    TomlValue* formatTable = root.getFieldOrNil(FORMAT_TABLE_NAME);
+    if formatTable != nil<TomlValue*> {
+        reader.expectTable(formatTable, String(FORMAT_TABLE_NAME));
+        for unsigned long i = 0l; i < formatTable.getTableSize(); i++ {
+            const String& key = formatTable.getTableKey(i);
+            TomlValue* value = formatTable.getTableValue(i);
+            const String keyName = String(FORMAT_TABLE_NAME) + "." + key;
+            if key == "indent-width" {
+                config.indentWidth = cast<unsigned long>(reader.readInteger(value, keyName, MIN_INDENT_WIDTH, MAX_INDENT_WIDTH));
+            } else if key == "max-blank-lines" {
+                config.maxBlankLines = cast<unsigned long>(reader.readInteger(value, keyName, 0l, MAX_MAX_BLANK_LINES));
+            } else {
+                reader.raiseUnknownKey(keyName);
+            }
+        }
+    }
+    deleteTomlValue(root);
+    return config;
+}
+
+// ============================================================== Tests ==============================================================
+
+#[test]
+f<bool> testManifestConfig() {
+    const FilePath testDir = makeUniqueTestDir("spice-manifest-test");
+    const FilePath subDir = testDir / "src" / "sub";
+    createTestDirs(subDir);
+    writeTestFile(subDir / "main.spice", "f<int> main() {}\n");
+
+    // Without manifest, the default configuration applies
+    const FilePath noManifest = findManifest(subDir / "main.spice");
+    const LintConfig defaultLintConfig = readLintConfig(noManifest, subDir);
+    const FormatConfig defaultFormatConfig = readFormatConfig(noManifest, subDir);
+
+    // The manifest in a parent dir is found. The tables of Spice Shaker are left alone
+    writeTestFile(testDir / MANIFEST_FILE_NAME, "[package]\nname = \"test\"\n\n[lint.rules]\nnaming-convention = { enabled = false }\ntoo-many-parameters = { max = 3, severity = \"error\" }\n\n[format]\nindent-width = 2\nmax-blank-lines = 0\n");
+    const FilePath manifestFromFile = findManifest(subDir / "main.spice");
+    const FilePath manifestFromDir = findManifest(subDir);
+    const LintConfig lintConfig = readLintConfig(manifestFromFile, subDir);
+    const FormatConfig formatConfig = readFormatConfig(manifestFromFile, subDir);
+
+    // The path of the manifest in error messages
+    const ManifestReader readerFromSubDir = ManifestReader(manifestFromFile, subDir);
+    const ManifestReader readerFromTestDir = ManifestReader(manifestFromFile, testDir);
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert noManifest.isEmpty();
+    assert defaultLintConfig.namingConvention.enabled && defaultLintConfig.namingConvention.severity == LintSeverity::WARNING;
+    assert defaultLintConfig.tooManyParameters.max == 6l && defaultLintConfig.cyclomaticComplexity.max == 10l;
+    assert defaultFormatConfig.indentWidth == 4l && defaultFormatConfig.maxBlankLines == 1l;
+    assert manifestFromFile.toGenericString() == manifestFromDir.toGenericString();
+    assert String(manifestFromFile.toGenericString()).endsWith("/spice.toml");
+    assert !lintConfig.namingConvention.enabled;
+    assert lintConfig.tooManyParameters.enabled && lintConfig.tooManyParameters.max == 3l;
+    assert lintConfig.tooManyParameters.severity == LintSeverity::ERROR;
+    assert lintConfig.cyclomaticComplexity.enabled && lintConfig.cyclomaticComplexity.max == 10l;
+    assert formatConfig.indentWidth == 2l && formatConfig.maxBlankLines == 0l;
+    assert readerFromSubDir.displayPath == "../../spice.toml";
+    assert readerFromTestDir.displayPath == "./spice.toml";
+    return true;
+}
+
+#[test]
+f<bool> testManifestParentDirs() {
+    assert getAbsoluteParentDir(FilePath("/home/user")).toGenericString() == "/home";
+    assert getAbsoluteParentDir(FilePath("/home")).toGenericString() == "/";
+    assert getAbsoluteParentDir(FilePath("/")).isEmpty();
+    assert getAbsoluteParentDir(FilePath("C:/Users")).toGenericString() == "C:/";
+    assert getAbsoluteParentDir(FilePath("C:/")).isEmpty();
+    // The search starts at the root for a source file in the root
+    assert makeAbsolute(FilePath("/main.spice")).toGenericString() == "/main.spice";
+    assert makeAbsolute(FilePath("/")).toGenericString() == "/";
+    return true;
+}

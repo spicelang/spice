@@ -6,6 +6,7 @@ import "std/io/dir";
 import "std/io/file";
 import "std/io/filepath";
 import "std/os/cmd";
+import "std/os/filesystem";
 import "std/os/os";
 import "std/type/type-conversion";
 
@@ -14,9 +15,11 @@ import "@/driver";
 import "@/exception/cli-error";
 import "@/exception/compiler-error";
 import "@/exception/fatal-error";
+import "@/formatter/format-config";
 import "@/formatter/formatter";
 import "@/global/global-resource-manager";
 import "@/util/common-util";
+import "@/util/manifest";
 import "@/util/test-util";
 
 // External functions
@@ -34,7 +37,9 @@ const string BACKUP_FILE_SUFFIX = ".format-backup";
 /**
  * Run the 'format' subcommand: format the given source file, all source files in the given directory or the source code from
  * stdin. Reformatted files are written back and their paths are printed. In check mode, the files are left as they are and
- * the paths of the files, that are not formatted, are printed instead.
+ * the paths of the files, that are not formatted, are printed instead. Each file is formatted with the configuration of the
+ * manifest (spice.toml) of its project, i.e. the nearest one in its dir or a parent dir. The source code from stdin is
+ * formatted with the one of the working dir.
  *
  * @param cliOptions Command line options
  * @param formatOptions Options of the format subcommand
@@ -47,7 +52,9 @@ public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& form
     if pathStr == STDIN_PATH {
         const String sourceCode = readStdin();
         const FilePath displayPath = FilePath(STDIN_DISPLAY_NAME);
-        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, displayPath);
+        const FilePath workingDir = FilePath(getCurrentWorkingDir());
+        const FormatConfig config = readFormatConfig(findManifest(workingDir), workingDir);
+        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, displayPath, config);
         if formatOptions.check {
             if formattedCode != sourceCode {
                 printf("%s\n", STDIN_DISPLAY_NAME);
@@ -82,9 +89,17 @@ public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& form
 
     // Format them one after another. Check mode takes precedence over printing the formatted code
     unsigned long unformattedCount = 0l;
+    const FilePath workingDir = FilePath(getCurrentWorkingDir()); // The paths of the manifests are printed relative to it
+    FilePath configManifestPath; // Manifest, that the current configuration comes from. Neighboring files mostly share it
+    FormatConfig config;
     foreach const FilePath& sourceFile : sourceFiles {
+        const FilePath manifestPath = findManifest(sourceFile);
+        if manifestPath != configManifestPath {
+            config = readFormatConfig(manifestPath, workingDir);
+            configManifestPath = manifestPath;
+        }
         const String sourceCode = readSourceFile(sourceFile);
-        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, sourceFile);
+        const String formattedCode = formatWithOwnResourceManager(cliOptions, sourceCode, sourceFile, config);
         const bool isFormatted = formattedCode == sourceCode;
         if !isFormatted {
             unformattedCount++;
@@ -111,11 +126,12 @@ public f<int> runFormatCommand(CliOptions& cliOptions, const FormatOptions& form
  * @param cliOptions Command line options
  * @param sourceCode Source code to format
  * @param filePath Path of the source file, which errors refer to
+ * @param config Formatter configuration
  * @return Formatted source code
  */
-f<String> formatWithOwnResourceManager(CliOptions& cliOptions, const String& sourceCode, const FilePath& filePath) {
+f<String> formatWithOwnResourceManager(CliOptions& cliOptions, const String& sourceCode, const FilePath& filePath, const FormatConfig& config) {
     GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
-    return formatSourceCode(resourceManager, sourceCode, filePath);
+    return formatSourceCode(resourceManager, sourceCode, filePath, config);
 }
 
 /**

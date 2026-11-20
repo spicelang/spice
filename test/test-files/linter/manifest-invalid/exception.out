@@ -1,0 +1,2 @@
+[Error|Compiler]:
+Invalid manifest: ./spice.toml: Unknown lint rule 'unknown-rule'

@@ -6,16 +6,13 @@ import "std/data/vector";
 
 // Own imports
 import "@/ast/ast-nodes";
+import "@/linter/lint-config";
 import "@/linter/lint-finding";
 
 // Flags functions/procedures whose body has grown too many independent branches to review or test with
 // confidence in one piece. McCabe cyclomatic complexity: starts at 1 for the single straight-line path through
 // the body, +1 for every `if`, loop, and `case` branch. A style/maintainability check, not a correctness one,
 // so it lives in `spice lint` rather than as a compiler warning.
-const string CYCLOMATIC_COMPLEXITY_RULE_ID = "cyclomatic-complexity";
-
-// McCabe's original recommendation for the complexity ceiling of a single routine.
-const long MAX_CYCLOMATIC_COMPLEXITY = 10l;
 
 /**
  * Count the decision points in a subtree (each if/loop/case branch counts as 1). Walks into every descendant,
@@ -38,27 +35,29 @@ f<long> countDecisionPoints(ASTNode* node) {
 }
 
 /**
- * Emit a finding if the given function/procedure body's cyclomatic complexity exceeds MAX_CYCLOMATIC_COMPLEXITY.
+ * Emit a finding if the given function/procedure body's cyclomatic complexity exceeds the configured maximum.
  *
  * @param fctDefBase Function/procedure base node
  * @param kindLabel "Function" or "Procedure", for the finding message
+ * @param config Configuration of the rule
  * @param findings Findings vector to append to
  */
-p checkComplexity(ASTFctDefBaseNode& fctDefBase, const string kindLabel, Vector<LintFinding>& findings) {
+p checkComplexity(ASTFctDefBaseNode& fctDefBase, const string kindLabel, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     // No body (e.g. declarations without a body) means nothing to measure
     if fctDefBase.body == nil<IVisitable*> { return; }
     const long complexity = 1l + countDecisionPoints(getASTNode(fctDefBase.body));
-    if complexity > MAX_CYCLOMATIC_COMPLEXITY {
+    if complexity > config.max {
         const String message = String(kindLabel) + " '" + fctDefBase.name.name + "' has a cyclomatic complexity of " +
-            toString(complexity) + " (max " + toString(MAX_CYCLOMATIC_COMPLEXITY) + "); consider splitting it up";
-        findings.pushBack(LintFinding(fctDefBase.codeLoc, CYCLOMATIC_COMPLEXITY_RULE_ID, LintSeverity::WARNING, message));
+            toString(complexity) + " (max " + toString(config.max) + "); consider splitting it up";
+        findings.pushBack(LintFinding(fctDefBase.codeLoc, CYCLOMATIC_COMPLEXITY_RULE_ID, config.severity, message));
     }
 }
 
-public p checkComplexityFctDef(ASTFctDefNode* node, Vector<LintFinding>& findings) {
-    checkComplexity(node.node, "Function", findings);
+public p checkComplexityFctDef(ASTFctDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    checkComplexity(node.node, "Function", config, findings);
 }
 
-public p checkComplexityProcDef(ASTProcDefNode* node, Vector<LintFinding>& findings) {
-    checkComplexity(node.node, "Procedure", findings);
+public p checkComplexityProcDef(ASTProcDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    checkComplexity(node.node, "Procedure", config, findings);
 }

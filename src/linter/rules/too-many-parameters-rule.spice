@@ -6,40 +6,39 @@ import "std/data/vector";
 
 // Own imports
 import "@/ast/ast-nodes";
+import "@/linter/lint-config";
 import "@/linter/lint-finding";
 
 // Flags functions/procedures with more parameters than a caller can reasonably keep straight at a call site.
 // A style/maintainability check (grouping related parameters into a struct is usually the fix), not a
 // correctness one, so it lives in `spice lint` rather than as a compiler warning.
-const string TOO_MANY_PARAMETERS_RULE_ID = "too-many-parameters";
-
-// A caller has to hold this many arguments in mind (and their order) at every call site.
-const long MAX_PARAM_COUNT = 6l;
 
 /**
- * Emit a finding if the given function/procedure has more parameters than MAX_PARAM_COUNT.
+ * Emit a finding if the given function/procedure has more parameters than the configured maximum.
  *
  * @param fctDefBase Function/procedure base node
  * @param kindLabel "Function" or "Procedure", for the finding message
+ * @param config Configuration of the rule
  * @param findings Findings vector to append to
  */
-p checkParamCount(ASTFctDefBaseNode& fctDefBase, const string kindLabel, Vector<LintFinding>& findings) {
+p checkParamCount(ASTFctDefBaseNode& fctDefBase, const string kindLabel, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     long paramCount = 0l;
     if fctDefBase.hasParams {
         const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(fctDefBase.paramLst);
         paramCount = paramLst.params.getSize();
     }
-    if paramCount > MAX_PARAM_COUNT {
+    if paramCount > config.max {
         const String message = String(kindLabel) + " '" + fctDefBase.name.name + "' has " + toString(paramCount) +
-            " parameters (max " + toString(MAX_PARAM_COUNT) + "); consider grouping related parameters into a struct";
-        findings.pushBack(LintFinding(fctDefBase.codeLoc, TOO_MANY_PARAMETERS_RULE_ID, LintSeverity::WARNING, message));
+            " parameters (max " + toString(config.max) + "); consider grouping related parameters into a struct";
+        findings.pushBack(LintFinding(fctDefBase.codeLoc, TOO_MANY_PARAMETERS_RULE_ID, config.severity, message));
     }
 }
 
-public p checkParamCountFctDef(ASTFctDefNode* node, Vector<LintFinding>& findings) {
-    checkParamCount(node.node, "Function", findings);
+public p checkParamCountFctDef(ASTFctDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    checkParamCount(node.node, "Function", config, findings);
 }
 
-public p checkParamCountProcDef(ASTProcDefNode* node, Vector<LintFinding>& findings) {
-    checkParamCount(node.node, "Procedure", findings);
+public p checkParamCountProcDef(ASTProcDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    checkParamCount(node.node, "Procedure", config, findings);
 }

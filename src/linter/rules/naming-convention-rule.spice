@@ -6,6 +6,7 @@ import "std/data/vector";
 
 // Own imports
 import "@/ast/ast-nodes";
+import "@/linter/lint-config";
 import "@/linter/lint-finding";
 
 // Flags Spice-source identifiers that violate the naming conventions documented in STYLE_GUIDE.md
@@ -14,7 +15,6 @@ import "@/linter/lint-finding";
 // This is deliberately a style rule, not a semantic one: unlike unused-symbol or shadowing checks (which stay
 // compiler warnings), naming conventions are opinionated and belong to the opt-in `spice lint` command rather
 // than every `build`/`run`/`test` invocation.
-const string NAMING_CONVENTION_RULE_ID = "naming-convention";
 
 /**
  * Get the first char of a non-empty string
@@ -52,48 +52,54 @@ f<bool> isSnakeCase(const String& input) {
     return true;
 }
 
-public p checkNamingFctDef(ASTFctDefNode* node, Vector<LintFinding>& findings) {
+public p checkNamingFctDef(ASTFctDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     // Operator overloads (e.g. "op.plus") intentionally do not follow camelCase
     if node.node.name.name.startsWith(OP_FCT_PREFIX) { return; }
     if !isCamelCase(node.node.name.name) {
         const String message = String("Function name '") + node.node.name.name + "' should be camelCase";
-        findings.pushBack(LintFinding(node.node.name.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+        findings.pushBack(LintFinding(node.node.name.codeLoc, NAMING_CONVENTION_RULE_ID, config.severity, message));
     }
 }
 
-public p checkNamingProcDef(ASTProcDefNode* node, Vector<LintFinding>& findings) {
+public p checkNamingProcDef(ASTProcDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     // Constructors are always named "ctor" by language convention
     if node.isCtor { return; }
     if !isCamelCase(node.node.name.name) {
         const String message = String("Procedure name '") + node.node.name.name + "' should be camelCase";
-        findings.pushBack(LintFinding(node.node.name.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+        findings.pushBack(LintFinding(node.node.name.codeLoc, NAMING_CONVENTION_RULE_ID, config.severity, message));
     }
 }
 
-public p checkNamingStructDef(ASTStructDefNode* node, Vector<LintFinding>& findings) {
+public p checkNamingStructDef(ASTStructDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     if !isPascalCase(node.structName) {
         const String message = String("Struct name '") + node.structName + "' should be PascalCase";
-        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, config.severity, message));
     }
 }
 
-public p checkNamingInterfaceDef(ASTInterfaceDefNode* node, Vector<LintFinding>& findings) {
+public p checkNamingInterfaceDef(ASTInterfaceDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     if !isPascalCase(node.interfaceName) {
         const String message = String("Interface name '") + node.interfaceName + "' should be PascalCase";
-        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, config.severity, message));
     }
 }
 
-public p checkNamingUnionDef(ASTUnionDefNode* node, Vector<LintFinding>& findings) {
+public p checkNamingUnionDef(ASTUnionDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     if !isPascalCase(node.unionName) {
         const String message = String("Union name '") + node.unionName + "' should be PascalCase";
-        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, config.severity, message));
     }
 }
 
-public p checkNamingGlobalVarDef(ASTGlobalVarDefNode* node, Vector<LintFinding>& findings) {
+public p checkNamingGlobalVarDef(ASTGlobalVarDefNode* node, const LintRuleConfig& config, Vector<LintFinding>& findings) {
+    if !config.enabled { return; }
     if !isSnakeCase(node.varName) {
         const String message = String("Global variable name '") + node.varName + "' should be SNAKE_CASE";
-        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, LintSeverity::WARNING, message));
+        findings.pushBack(LintFinding(node.codeLoc, NAMING_CONVENTION_RULE_ID, config.severity, message));
     }
 }

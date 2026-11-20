@@ -52,9 +52,10 @@ Every finding is printed on its own line with the location of the code, the id o
 [Lint] ./main.spice:12:1: naming-convention: Global variable name 'MaxRetries' should be SNAKE_CASE
 ```
 
-The findings do not fail the subcommand: it exits with code 0, as long as the program compiles. If there is a compile error,
-it reports the error and exits with code 1. The regular compiler warnings, e.g. for unused variables, are not printed by
-the `lint` subcommand. You get them with the [`build`](build.md) subcommand.
+The findings do not fail the subcommand: it exits with code 0, as long as the program compiles. Findings with the `error`
+severity (see [Configuration](#configuration)) are the exception: they are printed as `[Lint error]` and make the subcommand
+exit with code 1. If there is a compile error, it reports the error and exits with code 1. The regular compiler warnings,
+e.g. for unused variables, are not printed by the `lint` subcommand. You get them with the [`build`](build.md) subcommand.
 
 ## Rules
 The linter currently comes with the following rules:
@@ -66,6 +67,30 @@ The linter currently comes with the following rules:
 | `cyclomatic-complexity` | Functions and procedures have a cyclomatic complexity of at most 10. It starts at 1 and every `if`, loop and `case` branch adds 1, including the ones in lambdas within the function. Consider splitting the function up           |
 
 The naming conventions follow the [coding style guide](https://github.com/spicelang/spice/blob/main/STYLE_GUIDE.md).
+
+## Configuration
+You can configure the rules in the `[lint.rules]` table of the manifest of your project, the `spice.toml` file, that also
+describes your package for [Spice Shaker](https://github.com/spicelang/spice-shaker). The `lint` subcommand uses the manifest
+in the directory of the main source file or the nearest one in its parent directories. Without a manifest, all rules apply
+with their default configuration.
+
+```toml
+[lint.rules]
+naming-convention = { enabled = false }
+too-many-parameters = { max = 8, severity = "error" }
+cyclomatic-complexity = { max = 15, severity = "info" }
+```
+
+Each rule accepts the following keys. Rules and keys, that you leave out, keep their default:
+
+| Key        | Default     | Description                                                                                                         |
+|------------|-------------|---------------------------------------------------------------------------------------------------------------------|
+| `enabled`  | `true`      | Whether the rule runs at all                                                                                        |
+| `severity` | `"warning"` | Severity of the findings: `"info"`, `"warning"` or `"error"`. Findings with `"error"` fail the subcommand           |
+| `max`      | see rules   | Threshold of `too-many-parameters` (default: 6) and `cyclomatic-complexity` (default: 10). An integer of at least 1 |
+
+The compiler rejects unknown rules and keys, so that a typo does not go unnoticed. It only reads the `[lint]` and `[format]`
+tables of the manifest and leaves the other ones to Spice Shaker.
 
 ## Suppressing findings
 To suppress all findings for a source file, add the `core.compiler.warnings.ignore` attribute to it. It also suppresses the

@@ -89,6 +89,7 @@ GDB_INFERIOR_MESSAGE = "[Inferior"
 
 ERROR_HEADER = "[Error|"
 PANIC_HEADER = "Program panicked at "
+LINT_ERROR_HEADER = "[Lint error] "
 WARNING_REGEX = re.compile(r"\x1B\[33m(\[Warning\] [^\n]*?)\x1B\[0m")
 ANSI_ESCAPE_REGEX = re.compile(r"\x1B\[[0-9;]*m")
 SANITIZER_REPORT_REGEX = re.compile(r"==\d+==ERROR: (AddressSanitizer|LeakSanitizer)")
@@ -785,6 +786,8 @@ def exec_linter_test_case(result: TestResult, test_case: TestCase) -> None:
     """
     Run a lint test case: invoke the 'lint' subcommand and compare the emitted findings against lint.out. The compiler
     colorizes its findings, so the captured output is de-colorized before being matched against the plain-text reference.
+    The lint rules are configured by the manifest (spice.toml) next to the source file, if there is one. Findings with the
+    error severity fail the subcommand with exit code 1.
     """
     output, exit_code = run_compiler(result, ["lint", test_case.file(REF_NAME_SOURCE)])
 
@@ -795,12 +798,14 @@ def exec_linter_test_case(result: TestResult, test_case: TestCase) -> None:
             result.fail(f"Expected no error, but got: {error_message}")
         check_ref_match(result, error_ref_path, lambda: error_message)
         return
-    if exit_code != 0:
-        result.fail(f"Compiler exited with code {exit_code}:\n{output}")
+    findings = ANSI_ESCAPE_REGEX.sub("", output)
+    expected_exit_code = 1 if any(line.startswith(LINT_ERROR_HEADER) for line in findings.splitlines()) else 0
+    if exit_code != expected_exit_code:
+        result.fail(f"Compiler exited with code {exit_code} instead of {expected_exit_code}:\n{output}")
     if does_ref_exist(error_ref_path):
         result.fail("Expected error, but got no error")
 
-    check_ref_match(result, test_case.file(REF_NAME_LINT_OUTPUT), lambda: ANSI_ESCAPE_REGEX.sub("", output))
+    check_ref_match(result, test_case.file(REF_NAME_LINT_OUTPUT), lambda: findings)
 
 
 def exec_formatter_test_case(result: TestResult, test_case: TestCase) -> None:

@@ -58,20 +58,39 @@ f<int> main() { return 0; }
 The formatter brings the code into the layout of the
 [coding style guide](https://github.com/spicelang/spice/blob/main/STYLE_GUIDE.md):
 
-- **Indentation:** Four spaces per level. Continuation lines of a statement get one more level. The items of a list, e.g. the
-  arguments of a call, whose first item is on the line of the opening bracket, stay aligned to the first item, if they are
-  aligned already. Otherwise, they get one more level as well.
+- **Indentation:** Four spaces per level (configurable). Continuation lines of a statement get one more level. The items of
+  a list, e.g. the arguments of a call, whose first item is on the line of the opening bracket, stay aligned to the first
+  item, if they are aligned already. Otherwise, they get one more level as well.
 - **Braces:** The opening brace of a block goes on the line of its construct (K&R style). `else` and the `while` of a
   do-while loop go on the line of the preceding closing brace.
 - **Spaces:** One space around binary operators, after commas, after keywords and before the opening brace of a block. No
   space between a function name and its arguments, within generic type lists like `Vector<int>`, after unary operators like
   `-x` or `&x`, before type modifiers like `int*` or `T&` and within struct instantiations like `Pair{1, 2}`.
-- **Blank lines:** At most one blank line in a row and no blank lines at the start or end of a block. The file ends with a
-  single line break.
+- **Blank lines:** At most one blank line in a row (configurable) and no blank lines at the start or end of a block. The
+  file ends with a single line break.
 - **Alignment:** Comments at the end of a line, the names of consecutive fields, the `=` of consecutive declarations and the
   items of tables keep their column, if they are aligned with extra spaces and the column can still be reached.
 
 The formatter keeps the line breaks within statements as they are, so you decide where long lines are wrapped.
+
+## Configuration
+You can adjust the formatting rules in the `[format]` table of the manifest of your project, the `spice.toml` file, that also
+describes your package for [Spice Shaker](https://github.com/spicelang/spice-shaker). Each source file is formatted with the
+manifest in its directory or the nearest one in its parent directories. Source code from stdin is formatted with the one of
+the working directory. Without a manifest, the defaults apply.
+
+```toml
+[format]
+indent-width = 2
+max-blank-lines = 2
+```
+
+| Key               | Default | Description                                          |
+|-------------------|---------|------------------------------------------------------|
+| `indent-width`    | `4`     | Number of spaces per indentation level, from 1 to 16 |
+| `max-blank-lines` | `1`     | Maximum number of blank lines in a row, from 0 to 16 |
+
+The compiler rejects unknown keys, so that a typo does not go unnoticed.
 
 !!! note
     The formatter only formats syntactically valid code. If the code cannot be parsed, it reports the error and leaves the

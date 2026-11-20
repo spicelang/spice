@@ -1,0 +1,66 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Own imports
+import "@/linter/lint-finding";
+
+// Ids of the lint rules. They are the keys of the rules in the [lint.rules] table of the manifest
+public const string NAMING_CONVENTION_RULE_ID = "naming-convention";
+public const string TOO_MANY_PARAMETERS_RULE_ID = "too-many-parameters";
+public const string CYCLOMATIC_COMPLEXITY_RULE_ID = "cyclomatic-complexity";
+
+// A caller has to hold this many arguments in mind (and their order) at every call site
+const long DEFAULT_MAX_PARAM_COUNT = 6l;
+// McCabe's original recommendation for the complexity ceiling of a single routine
+const long DEFAULT_MAX_CYCLOMATIC_COMPLEXITY = 10l;
+
+/**
+ * Configuration of a single lint rule. It can be adjusted in the [lint.rules] table of the manifest (spice.toml)
+ */
+public type LintRuleConfig struct {
+    public bool enabled = true
+    public LintSeverity severity = LintSeverity::WARNING
+    public long max = 0l // Threshold of the rules, that have one, e.g. the maximum number of parameters. Unused otherwise
+}
+
+/**
+ * Configuration of all lint rules. Defaults to the built-in configuration, if the manifest does not adjust it
+ */
+public type LintConfig struct {
+    public LintRuleConfig namingConvention
+    public LintRuleConfig tooManyParameters
+    public LintRuleConfig cyclomaticComplexity
+}
+
+public p LintConfig.ctor() {
+    this.tooManyParameters.max = DEFAULT_MAX_PARAM_COUNT;
+    this.cyclomaticComplexity.max = DEFAULT_MAX_CYCLOMATIC_COMPLEXITY;
+}
+
+/**
+ * Get the configuration of the rule with the given id
+ *
+ * @param ruleId Id of the rule
+ * @return Configuration of the rule or nil, if there is no rule with the given id
+ */
+public f<LintRuleConfig*> LintConfig.getRuleConfig(const String& ruleId) {
+    if ruleId == NAMING_CONVENTION_RULE_ID {
+        return &this.namingConvention;
+    }
+    if ruleId == TOO_MANY_PARAMETERS_RULE_ID {
+        return &this.tooManyParameters;
+    }
+    if ruleId == CYCLOMATIC_COMPLEXITY_RULE_ID {
+        return &this.cyclomaticComplexity;
+    }
+    return nil<LintRuleConfig*>;
+}
+
+/**
+ * Check if the rule with the given id has a threshold, that can be adjusted with the 'max' key
+ *
+ * @param ruleId Id of the rule
+ * @return Has a threshold or not
+ */
+public f<bool> hasRuleThreshold(const String& ruleId) {
+    return ruleId == TOO_MANY_PARAMETERS_RULE_ID || ruleId == CYCLOMATIC_COMPLEXITY_RULE_ID;
+}

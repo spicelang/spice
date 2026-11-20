@@ -10,6 +10,7 @@ import "@/ast/abstract-ast-visitor-intf";
 import "@/ast/ast-nodes";
 import "@/global/global-resource-manager";
 import "@/source-file";
+import "@/linter/lint-config";
 import "@/linter/lint-finding";
 import "@/linter/rules/naming-convention-rule";
 import "@/linter/rules/too-many-parameters-rule";
@@ -21,11 +22,13 @@ import "@/linter/rules/cyclomatic-complexity-rule";
  * Modeled on PostTypeCheckingVerifier: each overridden visit method fans out to every rule interested in that
  * node kind, so adding a new rule only requires adding its call to the matching visit method, never a new AST
  * walk. Spice has no heap-allocated polymorphic collections, so the rules live in linter/rules/ as free functions that this
- * pass dispatches to.
+ * pass dispatches to. Each rule gets its configuration from the manifest (see LintConfig), which can disable it, change the
+ * severity of its findings or adjust its threshold.
  */
 public type LintPass struct : IAbstractAstVisitor {
     compose public CompilerPass compilerPass
     public Vector<LintFinding> findings
+    const LintConfig* config
 }
 
 /**
@@ -36,6 +39,7 @@ public type LintPass struct : IAbstractAstVisitor {
  */
 public p LintPass.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
     this.compilerPass = CompilerPass(resourceManager, sourceFile);
+    this.config = &resourceManager.lintConfig;
 }
 
 /**
@@ -52,35 +56,35 @@ public f<Vector<LintFinding>> LintPass.lint(ASTEntryNode* ast) {
 // ========================================================== Lint rules =========================================================
 
 public f<Any> LintPass.visitFctDef(ASTFctDefNode* node) {
-    checkNamingFctDef(node, this.findings);
-    checkParamCountFctDef(node, this.findings);
-    checkComplexityFctDef(node, this.findings);
+    checkNamingFctDef(node, this.config.namingConvention, this.findings);
+    checkParamCountFctDef(node, this.config.tooManyParameters, this.findings);
+    checkComplexityFctDef(node, this.config.cyclomaticComplexity, this.findings);
     return this.visitChildren(cast<ASTNode*>(node));
 }
 
 public f<Any> LintPass.visitProcDef(ASTProcDefNode* node) {
-    checkNamingProcDef(node, this.findings);
-    checkParamCountProcDef(node, this.findings);
-    checkComplexityProcDef(node, this.findings);
+    checkNamingProcDef(node, this.config.namingConvention, this.findings);
+    checkParamCountProcDef(node, this.config.tooManyParameters, this.findings);
+    checkComplexityProcDef(node, this.config.cyclomaticComplexity, this.findings);
     return this.visitChildren(cast<ASTNode*>(node));
 }
 
 public f<Any> LintPass.visitStructDef(ASTStructDefNode* node) {
-    checkNamingStructDef(node, this.findings);
+    checkNamingStructDef(node, this.config.namingConvention, this.findings);
     return this.visitChildren(cast<ASTNode*>(node));
 }
 
 public f<Any> LintPass.visitInterfaceDef(ASTInterfaceDefNode* node) {
-    checkNamingInterfaceDef(node, this.findings);
+    checkNamingInterfaceDef(node, this.config.namingConvention, this.findings);
     return this.visitChildren(cast<ASTNode*>(node));
 }
 
 public f<Any> LintPass.visitUnionDef(ASTUnionDefNode* node) {
-    checkNamingUnionDef(node, this.findings);
+    checkNamingUnionDef(node, this.config.namingConvention, this.findings);
     return this.visitChildren(cast<ASTNode*>(node));
 }
 
 public f<Any> LintPass.visitGlobalVarDef(ASTGlobalVarDefNode* node) {
-    checkNamingGlobalVarDef(node, this.findings);
+    checkNamingGlobalVarDef(node, this.config.namingConvention, this.findings);
     return this.visitChildren(cast<ASTNode*>(node));
 }

@@ -1,0 +1,9 @@
+# The lint rules of this test case are configured by this manifest
+[package]
+name = "manifest-config"
+version = "0.1.0"
+
+[lint.rules]
+naming-convention = { severity = "info" }
+too-many-parameters = { max = 3, severity = "error" }
+cyclomatic-complexity.enabled = false
