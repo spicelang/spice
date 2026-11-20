@@ -48,10 +48,8 @@ builds:
       post:
         - "mv ./bin/spice-{{ .Os }}-{{ .Arch }}/spice-shaker{{ .Ext }} {{ .Path }}"
 
-upx:
-  - enabled: true
-    compress: best
-    lzma: true
+# The binaries are not packed with UPX on purpose: a packed binary decompresses itself on every run, which took about 2.7 s
+# per call of the compiler, even for 'spice --version'. The archives and packages compress them anyway
 
 dockers_v2:
   - images:
