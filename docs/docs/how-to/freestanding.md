@@ -145,11 +145,11 @@ these files, that exists:
 
 The modules of the standard library fall into three tiers:
 
-| Tier  | Requirement             | Examples                                                                                     |
-|-------|-------------------------|----------------------------------------------------------------------------------------------|
-| Core  | none                    | primitive types, `Result` and `Error`, iterators, `std/text/analysis`, `std/os/volatile`     |
-| Alloc | allocator functions     | `String`, `Vector`, `Map`, `UnorderedMap`, `Queue` and the other types of `std/data`         |
-| OS    | hosted operating system | `std/io`, `std/net`, `std/time`, `std/os/thread`, `std/os/env`, `std/type/type-conversion`   |
+| Tier  | Requirement             | Examples                                                                                            |
+|-------|-------------------------|-----------------------------------------------------------------------------------------------------|
+| Core  | none                    | primitive types, `Result` and `Error`, iterators, `std/text/analysis`, `std/os/volatile`            |
+| Alloc | allocator functions     | `String`, `Vector`, `Map` and the other types of `std/data`, `std/type/type-conversion`, `std/text` |
+| OS    | hosted operating system | `std/io`, `std/net`, `std/time`, `std/os/thread`, `std/os/env`, `std/os/atomic`                     |
 
 The modules of the OS tier, that call into the operating system or the C standard library, have the
 `#![core.compiler.requiresOs]` module attribute. Importing one of them in freestanding mode is a compile error, as well as
@@ -164,10 +164,10 @@ Your own modules can have the attribute as well, e.g. the hosted part of a libra
 module is rejected anyway, its own imports are not resolved in freestanding mode.
 
 !!! note
-    Some modules outside of `std/io`, `std/net`, `std/os` and `std/time` belong to the OS tier as well, since they depend
-    on `std/type/type-conversion`, which uses `snprintf`, `strtoll` and `strtod` of the C standard library. These are
-    `std/text/format`, the JSON, TOML and YAML modules of `std/text`, `std/math/fct`, `std/math/rand` and
-    `std/data/graph`. `std/os/atomic` is built on `std/os/mutex` and belongs to the OS tier as well.
+    The conversions between numbers and text in `std/type/type-conversion` (e.g. `toString(1.5)` or `toDouble("1e-3")`) are
+    written in Spice and do not call `snprintf`, `strtoll` or `strtod` of the C standard library. So they, and the modules on
+    top of them like `std/text/format` and the JSON, TOML and YAML modules of `std/text`, work in freestanding mode. They
+    give the same results as glibc, rounded exactly. `std/os/atomic` is built on `std/os/mutex` and belongs to the OS tier.
 
 ## Compiler runtime builtins
 

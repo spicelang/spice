@@ -1,9 +1,5 @@
-#![core.compiler.requiresOs]
-
-// External functions
-ext f<int> snprintf(char*, unsigned long, string, ...);
-ext f<long> strtoll(string, char**, int);
-ext f<double> strtod(string, char**);
+// Std imports
+import "std/type/impl/number-conversion";
 
 // ----------------------------------------------- Conversions to double -----------------------------------------------
 
@@ -64,7 +60,7 @@ public f<double> toDouble(char input) {
  * @return Double value
  */
 public f<double> toDouble(string input) {
-    return strtod(input, nil<char**>);
+    return parseDoubleText(input);
 }
 
 /**
@@ -136,7 +132,7 @@ public f<int> toInt(char input) {
  * @return Int value
  */
 public f<int> toInt(string input, int base = 10) {
-    return cast<int>(strtoll(input, nil<char**>, base));
+    return cast<int>(parseIntegerText(input, base));
 }
 
 /**
@@ -208,7 +204,7 @@ public f<short> toShort(char input) {
  * @return Short value
  */
 public f<short> toShort(string input, int base = 10) {
-    return cast<short>(strtoll(input, nil<char**>, base));
+    return cast<short>(parseIntegerText(input, base));
 }
 
 /**
@@ -280,7 +276,7 @@ public f<long> toLong(char input) {
  * @return Long value
  */
 public f<long> toLong(string input, int base = 10) {
-    return strtoll(input, nil<char**>, base);
+    return parseIntegerText(input, base);
 }
 
 /**
@@ -342,7 +338,7 @@ public f<byte> toByte(char input) {
  * @return Byte value
  */
 public f<byte> toByte(string input, int base = 10) {
-    return cast<byte>(cast<int>(strtoll(input, nil<char**>, base)));
+    return cast<byte>(cast<int>(parseIntegerText(input, base)));
 }
 
 /**
@@ -416,9 +412,7 @@ public f<char> toChar(string input) {
  * @return String value
  */
 public f<String> toString(double input) {
-    const int length = snprintf(nil<char*>, 0l, "%f", input);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%f", input);
+    return formatFixedDouble(input, 6);
 }
 
 /**
@@ -429,11 +423,7 @@ public f<String> toString(double input) {
  * @return String value
  */
 public f<String> toString(double input, int precision) {
-    const int length = snprintf(nil<char*>, 0l, "%.*f", precision, input);
-    // snprintf fails if the formatted result does not fit into an int
-    if length < 0 { panic(Error("Formatted double exceeds the maximum string length")); }
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%.*f", precision, input);
+    return formatFixedDouble(input, precision);
 }
 
 /**
@@ -443,9 +433,7 @@ public f<String> toString(double input, int precision) {
  * @return String value
  */
 public f<String> toString(int input) {
-    const int length = snprintf(nil<char*>, 0l, "%d", input);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%d", input);
+    return formatSignedInteger(cast<long>(input));
 }
 
 /**
@@ -455,9 +443,7 @@ public f<String> toString(int input) {
  * @return String value
  */
 public f<String> toString(short input) {
-    const int length = snprintf(nil<char*>, 0l, "%hd", input);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%hd", input);
+    return formatSignedInteger(cast<long>(input));
 }
 
 /**
@@ -467,10 +453,7 @@ public f<String> toString(short input) {
  * @return String value
  */
 public f<String> toString(long input) {
-    // Use %lld, because a Spice long is always 64 bit, but a C long is only 32 bit on Windows
-    const int length = snprintf(nil<char*>, 0l, "%lld", input);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%lld", input);
+    return formatSignedInteger(input);
 }
 
 /**
@@ -480,9 +463,7 @@ public f<String> toString(long input) {
  * @return String value
  */
 public f<String> toString(byte input) {
-    const int length = snprintf(nil<char*>, 0l, "%hhu", input);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), length + 1l, "%hhu", input);
+    return formatUnsignedInteger(cast<unsigned long>(cast<int>(input)));
 }
 
 /**

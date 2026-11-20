@@ -1,8 +1,7 @@
 import "std/text/json/json-value";
 import "std/text/stringstream";
 import "std/type/type-conversion";
-
-ext f<int> snprintf(char*, unsigned long, string, ...);
+import "std/type/impl/number-conversion";
 
 /**
  * Serializer for JSON output.
@@ -146,14 +145,10 @@ f<String> serializeJsonNumber(double value) {
     if cast<double>(asLong) == value {
         return toString(asLong);
     }
-    const int length = snprintf(nil<char*>, 0l, "%.17g", value);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.17g", value);
+    return formatSignificantDouble(value, 17);
 }
 
-// Serialize an unsigned integer exactly. %llu, because a Spice long is always 64 bit, but a C long is only 32 bit on Windows
+// Serialize an unsigned integer exactly
 f<String> serializeJsonUnsignedInteger(unsigned long value) {
-    const int length = snprintf(nil<char*>, 0l, "%llu", value);
-    result = String(length);
-    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%llu", value);
+    return formatUnsignedInteger(value);
 }

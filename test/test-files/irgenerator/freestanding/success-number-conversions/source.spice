@@ -1,0 +1,38 @@
+// TEST: --freestanding
+
+// The number conversions of the std are written in Spice, so that std/type/type-conversion and the modules on top of it
+// (here the TOML parser and serializer) work without a C library. Not optimized: on x86_64, the stack is not 16 byte aligned
+// in the functions called by a user-defined _start, which breaks the aligned SSE stores, that the optimizer emits
+
+import "std/text/toml/toml-parser";
+import "std/text/toml/toml-value";
+import "std/text/toml/toml-serializer";
+import "std/type/type-conversion";
+import "io";
+import "allocator";
+
+p writeLine(const String& text) {
+    writeToStdout(text.getRaw());
+    writeToStdout("\n");
+}
+
+#[core.compiler.mangle = false, core.compiler.noReturn]
+public p _start() {
+    // Text to numbers and back
+    writeLine(toString(toLong("-9223372036854775808")));
+    writeLine(toString(toInt("ff", 16)));
+    writeLine(toString(toDouble("0.1"), 20));
+    writeLine(toString(2.5, 0));
+
+    // TOML, which parses and serializes numbers with type-conversion
+    Result<TomlValue*> parsed = parseToml(String("ratio = 1.5e-3\ncount = 42\n"));
+    TomlValue* root = parsed.unwrap();
+    TomlValue* ratio = root.getFieldOrNil("ratio");
+    TomlValue* count = root.getFieldOrNil("count");
+    writeLine(toString(ratio.getFloat(), 4));
+    writeLine(toString(count.getInteger()));
+    TomlSerializer serializer;
+    writeToStdout(serializer.serialize(root).getRaw());
+
+    exitProcess(0);
+}

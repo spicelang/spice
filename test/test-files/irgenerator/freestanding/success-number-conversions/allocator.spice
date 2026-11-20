@@ -1,0 +1,54 @@
+import "syscalls";
+
+// A bump allocator over an arena, that is mapped from the kernel. Each block starts with a header of 8 bytes, that stores
+// the size of the block, so that realloc knows how many bytes to copy. Memory is never given back.
+
+const unsigned long ARENA_SIZE = 1048576l;
+const unsigned long HEADER_SIZE = 8l;
+
+unsigned long ARENA_NEXT = 0l; // Address of the next free byte
+unsigned long ARENA_END = 0l;
+
+#[core.compiler.allocFunction]
+f<heap byte*> arenaAlloc(unsigned long size) {
+    // Map the arena on the first allocation: PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS
+    if ARENA_NEXT == 0l {
+        unsafe {
+            ARENA_NEXT = cast<unsigned long>(syscall(SYSCALL_MMAP, 0l, cast<long>(ARENA_SIZE), 3l, 34l, -1l, 0l));
+        }
+        ARENA_END = ARENA_NEXT + ARENA_SIZE;
+    }
+    // Keep the blocks 8 byte aligned
+    const unsigned long blockSize = HEADER_SIZE + (size + 7l) / 8l * 8l;
+    if ARENA_NEXT + blockSize > ARENA_END {
+        return nil<heap byte*>;
+    }
+    const unsigned long blockAddress = ARENA_NEXT;
+    ARENA_NEXT += blockSize;
+    unsafe {
+        unsigned long* header = cast<unsigned long*>(blockAddress);
+        *header = size;
+        return cast<heap byte*>(blockAddress + HEADER_SIZE);
+    }
+}
+
+#[core.compiler.reallocFunction]
+f<heap byte*> arenaRealloc(heap byte* ptr, unsigned long size) {
+    heap byte* newPtr = arenaAlloc(size);
+    if ptr == nil<heap byte*> || newPtr == nil<heap byte*> {
+        return newPtr;
+    }
+    unsafe {
+        const unsigned long* header = cast<unsigned long*>(cast<unsigned long>(ptr) - HEADER_SIZE);
+        const unsigned long copySize = *header < size ? *header : size;
+        for unsigned long i = 0l; i < copySize; i++ {
+            newPtr[i] = ptr[i];
+        }
+    }
+    return newPtr;
+}
+
+#[core.compiler.deallocFunction]
+p arenaDealloc(heap byte* _ptr) {
+    // A bump allocator does not free single blocks
+}

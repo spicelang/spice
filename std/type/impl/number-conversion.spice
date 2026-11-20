@@ -1,0 +1,664 @@
+// Std imports
+import "std/math/big-int";
+
+// Conversions between numbers and their text, written in Spice instead of calling strtoll, strtod and snprintf of the C
+// standard library, so that they work in freestanding mode as well. They behave like the C functions of glibc:
+// - parseIntegerText and parseDoubleText read the longest valid prefix of the input, like strtoll and strtod
+// - formatSignedInteger and formatUnsignedInteger format like "%lld" and "%llu"
+// - formatFixedDouble formats like "%.*f" and formatSignificantDouble like "%.*g"
+// Floating point values are rounded exactly, to the nearest value and ties to even, like glibc does, with BigInt arithmetic. Unlike glibc,
+// parseDoubleText ignores the payload of "nan(...)" and returns the default quiet NaN.
+
+// Constants
+const unsigned long MANTISSA_BITS = 52ul;
+const unsigned long MANTISSA_MASK = 0x000FFFFFFFFFFFFFul;
+const unsigned long HIDDEN_BIT = 0x0010000000000000ul;
+const unsigned long EXPONENT_MASK = 0x7FFul;
+const unsigned long SIGN_BIT = 0x8000000000000000ul;
+const unsigned long INFINITY_BITS = 0x7FF0000000000000ul;
+const unsigned long QUIET_NAN_BITS = 0x7FF8000000000000ul;
+const long EXPONENT_BIAS = 1023l;
+const long MIN_SUBNORMAL_EXPONENT = -1074l; // Exponent of the least significant bit of the smallest subnormal double
+const long MAX_DOUBLE_EXPONENT = 1023l;
+const unsigned long MAX_SIGNIFICANT_DIGITS = 800ul; // Decimal digits, that decide the rounding of a parsed double
+// Limit of the exponent part, far above the adjustment by the digits of the mantissa, which is bounded by the length of the input,
+// so that e.g. "0.<999999 zeros>1e1000000" is still 1. The sums stay far from the limits of long
+const long MAX_PARSED_EXPONENT = 1000000000000000l;
+const long MAX_EXACT_POWER_OF_TEN = 22l; // 10^22 is the largest power of ten, that a double holds exactly
+const unsigned long MAX_FAST_PATH_DIGITS = 15ul; // Up to 15 decimal digits fit exactly into the mantissa of a double
+const int MAX_SIGNIFICANT_FORMAT_DIGITS = 17; // Enough to tell every two doubles apart
+const long LIMB_POWER_OF_TEN = 1000000000l; // 10^9, the largest power of ten, that fits into 32 bits
+const int NO_DIGIT = 99;
+
+// ------------------------------------------------------- BigInt helpers -------------------------------------------------------
+
+p multiplyByPowerOfTen(BigInt& value, unsigned long exponent) {
+    unsigned long rest = exponent;
+    while rest >= 9ul {
+        value.multiply(LIMB_POWER_OF_TEN);
+        rest -= 9ul;
+    }
+    long factor = 1l;
+    while rest > 0ul {
+        factor *= 10l;
+        rest--;
+    }
+    if factor != 1l { value.multiply(factor); }
+}
+
+/**
+ * Check if any bit of the value below the given index is set
+ */
+f<bool> hasSetBitsBelow(const BigInt& value, unsigned long index) {
+    const long lowestSetBit = value.getLowestSetBit();
+    return lowestSetBit >= 0l && cast<unsigned long>(lowestSetBit) < index;
+}
+
+/**
+ * Divide the numerator by the denominator, where the quotient has to fit into 64 bits. The numerator becomes the remainder.
+ *
+ * @return Quotient
+ */
+f<unsigned long> divideWithSmallQuotient(BigInt& numerator, const BigInt& denominator) {
+    BigInt remainder;
+    numerator.divideWithRemainder(denominator, remainder);
+    const unsigned long quotient = numerator.getAbsoluteLowBits();
+    numerator = remainder;
+    return quotient;
+}
+
+// ------------------------------------------------------- Bits of doubles -------------------------------------------------------
+
+f<unsigned long> getDoubleBits(double value) {
+    double copy = value;
+    unsafe {
+        unsigned long* bitsPtr = cast<unsigned long*>(&copy);
+        return *bitsPtr;
+    }
+}
+
+f<double> getDoubleFromBits(unsigned long bits) {
+    unsigned long copy = bits;
+    unsafe {
+        double* valuePtr = cast<double*>(&copy);
+        return *valuePtr;
+    }
+}
+
+f<double> getSignedZero(bool negative) {
+    return getDoubleFromBits(negative ? SIGN_BIT : 0ul);
+}
+
+f<double> getSignedInfinity(bool negative) {
+    return getDoubleFromBits(negative ? INFINITY_BITS | SIGN_BIT : INFINITY_BITS);
+}
+
+f<unsigned long> getBitLength(unsigned long value) {
+    unsigned long bits = 0ul;
+    unsigned long rest = value;
+    while rest != 0ul {
+        bits++;
+        rest = rest >> 1ul;
+    }
+    return bits;
+}
+
+/**
+ * Round (significand + fraction) * 2^exponent to the nearest double, ties to even
+ *
+ * @param negative Sign of the value
+ * @param significand Significand. If inexact is set, it has to have more than 53 bits
+ * @param inexact Whether there is a nonzero fraction below the least significant bit of the significand
+ * @param exponent Exponent of the least significant bit of the significand
+ * @return Nearest double
+ */
+f<double> composeDouble(bool negative, unsigned long significand, bool inexact, long exponent) {
+    if significand == 0ul { return getSignedZero(negative); }
+    const long bitLength = cast<long>(getBitLength(significand));
+    if bitLength - 1l + exponent > MAX_DOUBLE_EXPONENT { return getSignedInfinity(negative); }
+
+    // Number of low bits, that do not fit into the mantissa of a normal or subnormal double
+    long droppedBits = bitLength - cast<long>(MANTISSA_BITS) - 1l;
+    if MIN_SUBNORMAL_EXPONENT - exponent > droppedBits { droppedBits = MIN_SUBNORMAL_EXPONENT - exponent; }
+    unsigned long mantissa = significand;
+    long lsbExponent = exponent;
+    if droppedBits > 64l {
+        // Less than half of the smallest subnormal
+        return getSignedZero(negative);
+    } else if droppedBits > 0l {
+        const unsigned long dropped = cast<unsigned long>(droppedBits);
+        mantissa = dropped == 64ul ? 0ul : significand >> dropped;
+        const bool halfBit = ((significand >> (dropped - 1ul)) & 1ul) == 1ul;
+        const unsigned long lowerMask = dropped == 1ul ? 0ul : (1ul << (dropped - 1ul)) - 1ul;
+        const bool belowHalf = (significand & lowerMask) != 0ul || inexact;
+        if halfBit && (belowHalf || (mantissa & 1ul) == 1ul) { mantissa++; }
+        lsbExponent = exponent + droppedBits;
+    }
+    if mantissa == 0ul { return getSignedZero(negative); }
+
+    // Normalize, after a carry of the rounding or for small exact significands
+    if mantissa == HIDDEN_BIT << 1ul {
+        mantissa = mantissa >> 1ul;
+        lsbExponent++;
+    }
+    while mantissa < HIDDEN_BIT && lsbExponent > MIN_SUBNORMAL_EXPONENT {
+        mantissa = mantissa << 1ul;
+        lsbExponent--;
+    }
+
+    unsigned long bits = mantissa; // Subnormal, if the hidden bit is not set
+    if mantissa >= HIDDEN_BIT {
+        const long biasedExponent = lsbExponent + cast<long>(MANTISSA_BITS) + EXPONENT_BIAS;
+        if biasedExponent >= 2047l { return getSignedInfinity(negative); }
+        bits = (cast<unsigned long>(biasedExponent) << MANTISSA_BITS) | (mantissa & MANTISSA_MASK);
+    }
+    if negative { bits = bits | SIGN_BIT; }
+    return getDoubleFromBits(bits);
+}
+
+/**
+ * Split a finite double into significand * 2^exponent
+ */
+p decomposeDouble(double value, unsigned long& significand, long& exponent) {
+    const unsigned long bits = getDoubleBits(value);
+    const unsigned long biasedExponent = (bits >> MANTISSA_BITS) & EXPONENT_MASK;
+    significand = bits & MANTISSA_MASK;
+    if biasedExponent == 0ul {
+        exponent = MIN_SUBNORMAL_EXPONENT;
+    } else {
+        significand = significand | HIDDEN_BIT;
+        exponent = cast<long>(biasedExponent) - EXPONENT_BIAS - cast<long>(MANTISSA_BITS);
+    }
+}
+
+/**
+ * Text of infinity or NaN, like glibc prints them. Empty for finite values
+ */
+f<String> formatNonFiniteDouble(double value) {
+    const unsigned long bits = getDoubleBits(value);
+    const bool negative = (bits & SIGN_BIT) != 0ul;
+    if (bits & INFINITY_BITS) != INFINITY_BITS { return String(); }
+    if (bits & MANTISSA_MASK) == 0ul { return String(negative ? "-inf" : "inf"); }
+    return String(negative ? "-nan" : "nan");
+}
+
+// ------------------------------------------------------- Parsing -------------------------------------------------------
+
+f<char> getCharAt(string input, unsigned long length, unsigned long index) {
+    return index < length ? input[index] : '\0';
+}
+
+f<bool> isSpaceChar(char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == cast<char>(11) || c == cast<char>(12);
+}
+
+f<bool> isDecimalDigitChar(char c) {
+    return c >= '0' && c <= '9';
+}
+
+/**
+ * Value of a digit in the bases up to 36, NO_DIGIT if the char is no digit
+ */
+f<int> getDigitValue(char c) {
+    if c >= '0' && c <= '9' { return cast<int>(c) - cast<int>('0'); }
+    if c >= 'a' && c <= 'z' { return cast<int>(c) - cast<int>('a') + 10; }
+    if c >= 'A' && c <= 'Z' { return cast<int>(c) - cast<int>('A') + 10; }
+    return NO_DIGIT;
+}
+
+/**
+ * Check if the input continues with the given lower case word, ignoring the case
+ */
+f<bool> continuesWithWord(string input, unsigned long length, unsigned long index, string word) {
+    const unsigned long wordLength = getRawLength(word);
+    for unsigned long i = 0ul; i < wordLength; i++ {
+        char c = getCharAt(input, length, index + i);
+        if c >= 'A' && c <= 'Z' { c = cast<char>(cast<int>(c) - cast<int>('A') + cast<int>('a')); }
+        if c != word[i] { return false; }
+    }
+    return true;
+}
+
+/**
+ * Parse the longest prefix of the input, that is an integer in the given base, like strtoll. Leading whitespace and a sign
+ * are allowed. Base 16 allows a 0x prefix and base 0 detects the base from the prefix (0x: 16, 0: 8, else 10). A value out of
+ * the range of long is clamped to the range.
+ *
+ * @param input Input text
+ * @param base Base from 2 to 36 or 0
+ * @return Parsed value or 0, if the input starts with no integer or the base is invalid
+ */
+public f<long> parseIntegerText(string input, int base) {
+    if base < 0 || base == 1 || base > 36 { return 0l; }
+    const unsigned long length = getRawLength(input);
+    unsigned long pos = 0ul;
+    while isSpaceChar(getCharAt(input, length, pos)) { pos++; }
+    bool negative = false;
+    const char signChar = getCharAt(input, length, pos);
+    if signChar == '-' || signChar == '+' {
+        negative = signChar == '-';
+        pos++;
+    }
+
+    int actualBase = base;
+    const char prefixChar = getCharAt(input, length, pos + 1ul);
+    const bool hexPrefix = getCharAt(input, length, pos) == '0' && (prefixChar == 'x' || prefixChar == 'X') &&
+        getDigitValue(getCharAt(input, length, pos + 2ul)) < 16;
+    if (base == 0 || base == 16) && hexPrefix {
+        actualBase = 16;
+        pos += 2ul;
+    } else if base == 0 {
+        actualBase = getCharAt(input, length, pos) == '0' ? 8 : 10;
+    }
+
+    const unsigned long limit = negative ? 0x8000000000000000ul : 0x7FFFFFFFFFFFFFFFul;
+    const unsigned long unsignedBase = cast<unsigned long>(actualBase);
+    unsigned long magnitude = 0ul;
+    bool overflow = false;
+    int digit = getDigitValue(getCharAt(input, length, pos));
+    while digit < actualBase {
+        const unsigned long digitValue = cast<unsigned long>(digit);
+        if !overflow {
+            if magnitude > (limit - digitValue) / unsignedBase {
+                overflow = true;
+            } else {
+                magnitude = magnitude * unsignedBase + digitValue;
+            }
+        }
+        pos++;
+        digit = getDigitValue(getCharAt(input, length, pos));
+    }
+
+    if overflow { magnitude = limit; }
+    if !negative { return cast<long>(magnitude); }
+    if magnitude == 0x8000000000000000ul { return cast<long>(magnitude); } // The minimum of long
+    const long positiveValue = cast<long>(magnitude);
+    return -positiveValue;
+}
+
+/**
+ * Parse an optional exponent part (e.g. "e-12" or "p+3"), that follows the mantissa of a floating point number
+ *
+ * @return Value of the exponent, clamped to +/-MAX_PARSED_EXPONENT, or 0 if there is no valid exponent part
+ */
+f<long> parseExponentPart(string input, unsigned long length, unsigned long pos, char marker) {
+    const char c = getCharAt(input, length, pos);
+    if c != marker && c != cast<char>(cast<int>(marker) - cast<int>('a') + cast<int>('A')) { return 0l; }
+    unsigned long digitPos = pos + 1ul;
+    bool negative = false;
+    const char signChar = getCharAt(input, length, digitPos);
+    if signChar == '-' || signChar == '+' {
+        negative = signChar == '-';
+        digitPos++;
+    }
+    if !isDecimalDigitChar(getCharAt(input, length, digitPos)) { return 0l; }
+    long exponent = 0l;
+    while isDecimalDigitChar(getCharAt(input, length, digitPos)) {
+        if exponent < MAX_PARSED_EXPONENT {
+            exponent = exponent * 10l + cast<long>(cast<int>(getCharAt(input, length, digitPos)) - cast<int>('0'));
+        }
+        digitPos++;
+    }
+    return negative ? -exponent : exponent;
+}
+
+/**
+ * Parse a hexadecimal floating point number like 0x1.8p3, starting after the 0x prefix
+ */
+f<double> parseHexDouble(string input, unsigned long length, unsigned long start, bool negative) {
+    unsigned long pos = start;
+    unsigned long significand = 0ul;
+    bool inexact = false;
+    long exponent = 0l;
+    bool inFraction = false;
+    while true {
+        const char c = getCharAt(input, length, pos);
+        if c == '.' && !inFraction {
+            inFraction = true;
+            pos++;
+            continue;
+        }
+        const int digit = getDigitValue(c);
+        if digit >= 16 { break; }
+        if significand < 0x0100000000000000ul {
+            significand = significand * 16ul + cast<unsigned long>(digit);
+            if inFraction { exponent -= 4l; }
+        } else {
+            if digit != 0 { inexact = true; }
+            if !inFraction { exponent += 4l; }
+        }
+        pos++;
+    }
+    exponent += parseExponentPart(input, length, pos, 'p');
+    return composeDouble(negative, significand, inexact, exponent);
+}
+
+/**
+ * Parse the longest prefix of the input, that is a floating point number, like strtod. Leading whitespace and a sign are
+ * allowed. Besides decimal numbers like 1.5e-3, hexadecimal ones like 0x1.8p3, inf, infinity and nan are accepted, ignoring
+ * the case. The result is rounded exactly to the nearest double, ties to even.
+ *
+ * @param input Input text
+ * @return Parsed value or 0, if the input starts with no number
+ */
+public f<double> parseDoubleText(string input) {
+    const unsigned long length = getRawLength(input);
+    unsigned long pos = 0ul;
+    while isSpaceChar(getCharAt(input, length, pos)) { pos++; }
+    bool negative = false;
+    const char signChar = getCharAt(input, length, pos);
+    if signChar == '-' || signChar == '+' {
+        negative = signChar == '-';
+        pos++;
+    }
+
+    // Special values and hexadecimal numbers
+    if continuesWithWord(input, length, pos, "inf") { return getSignedInfinity(negative); }
+    if continuesWithWord(input, length, pos, "nan") {
+        return getDoubleFromBits(negative ? QUIET_NAN_BITS | SIGN_BIT : QUIET_NAN_BITS);
+    }
+    const char prefixChar = getCharAt(input, length, pos + 1ul);
+    if getCharAt(input, length, pos) == '0' && (prefixChar == 'x' || prefixChar == 'X') {
+        const char afterPrefix = getCharAt(input, length, pos + 2ul);
+        const bool hexDigitFollows = getDigitValue(afterPrefix) < 16 ||
+            (afterPrefix == '.' && getDigitValue(getCharAt(input, length, pos + 3ul)) < 16);
+        if hexDigitFollows { return parseHexDouble(input, length, pos + 2ul, negative); }
+    }
+
+    // The value is digits * 10^exponent. Only the first MAX_SIGNIFICANT_DIGITS significant digits are kept, the following ones
+    // only matter for the rounding, if they are not zero
+    String digits;
+    long exponent = 0l;
+    bool sawDigit = false;
+    bool droppedNonZero = false;
+    bool inFraction = false;
+    while true {
+        const char c = getCharAt(input, length, pos);
+        if c == '.' && !inFraction {
+            inFraction = true;
+            pos++;
+            continue;
+        }
+        if !isDecimalDigitChar(c) { break; }
+        sawDigit = true;
+        if digits.isEmpty() && c == '0' {
+            if inFraction { exponent--; } // Leading zero
+        } else if digits.getLength() < MAX_SIGNIFICANT_DIGITS {
+            digits += c;
+            if inFraction { exponent--; }
+        } else {
+            if c != '0' { droppedNonZero = true; }
+            if !inFraction { exponent++; }
+        }
+        pos++;
+    }
+    if !sawDigit { return 0.0; }
+    exponent += parseExponentPart(input, length, pos, 'e');
+    if droppedNonZero {
+        digits += '1';
+        exponent--;
+    }
+    unsigned long digitLength = digits.getLength(); // Without trailing zeros
+    while digitLength > 0ul && digits[digitLength - 1ul] == '0' {
+        digitLength--;
+        exponent++;
+    }
+    if digitLength == 0ul { return getSignedZero(negative); }
+
+    // Out of range
+    const long digitCount = cast<long>(digitLength);
+    const long leadingExponent = exponent + digitCount - 1l;
+    if leadingExponent > 309l { return getSignedInfinity(negative); }
+    if leadingExponent < -325l { return getSignedZero(negative); }
+
+    // Fast path: the digits and the power of ten are exact doubles, so a single, correctly rounded operation is enough
+    if digitLength <= MAX_FAST_PATH_DIGITS && exponent >= -MAX_EXACT_POWER_OF_TEN &&
+        exponent <= MAX_EXACT_POWER_OF_TEN {
+        unsigned long digitsValue = 0ul;
+        for unsigned long i = 0ul; i < digitLength; i++ {
+            digitsValue = digitsValue * 10ul + cast<unsigned long>(cast<int>(digits[i]) - cast<int>('0'));
+        }
+        double powerOfTen = 1.0;
+        const long absExponent = exponent < 0l ? -exponent : exponent;
+        for long i = 0l; i < absExponent; i++ {
+            powerOfTen *= 10.0;
+        }
+        double value = cast<double>(cast<long>(digitsValue));
+        value = exponent < 0l ? value / powerOfTen : value * powerOfTen;
+        return negative ? -value : value;
+    }
+
+    // Exact path: the quotient of numerator * 2^shift and denominator gets 55 or 56 bits, the rest decides the rounding
+    BigInt numerator;
+    long chunk = 0l; // Up to nine digits at once
+    long chunkFactor = 1l;
+    for unsigned long i = 0ul; i < digitLength; i++ {
+        chunk = chunk * 10l + cast<long>(cast<int>(digits[i]) - cast<int>('0'));
+        chunkFactor *= 10l;
+        if chunkFactor == LIMB_POWER_OF_TEN || i + 1ul == digitLength {
+            numerator.multiply(chunkFactor);
+            numerator.add(chunk);
+            chunk = 0l;
+            chunkFactor = 1l;
+        }
+    }
+    BigInt denominator = BigInt(1l);
+    if exponent >= 0l {
+        multiplyByPowerOfTen(numerator, cast<unsigned long>(exponent));
+    } else {
+        multiplyByPowerOfTen(denominator, cast<unsigned long>(-exponent));
+    }
+    const long shift = 55l - (cast<long>(numerator.getBitLength()) - cast<long>(denominator.getBitLength()));
+    if shift >= 0l {
+        numerator.shiftLeft(cast<unsigned long>(shift));
+    } else {
+        denominator.shiftLeft(cast<unsigned long>(-shift));
+    }
+    const unsigned long quotient = divideWithSmallQuotient(numerator, denominator);
+    return composeDouble(negative, quotient, !numerator.isZero(), -shift);
+}
+
+// ------------------------------------------------------- Formatting -------------------------------------------------------
+
+/**
+ * Format an unsigned integer in decimal, like "%llu"
+ *
+ * @param value Value
+ * @return Decimal text
+ */
+public f<String> formatUnsignedInteger(unsigned long value) {
+    char[20] buffer; // The largest unsigned long has 20 digits
+    unsigned long count = 0ul;
+    unsigned long rest = value;
+    do {
+        buffer[count] = cast<char>(cast<int>('0') + cast<int>(rest % 10ul));
+        count++;
+        rest /= 10ul;
+    } while rest != 0ul;
+    String text;
+    text.reserve(count);
+    while count > 0ul {
+        count--;
+        text += buffer[count];
+    }
+    return text;
+}
+
+/**
+ * Format a signed integer in decimal, like "%lld"
+ *
+ * @param value Value
+ * @return Decimal text
+ */
+public f<String> formatSignedInteger(long value) {
+    if value >= 0l { return formatUnsignedInteger(cast<unsigned long>(value)); }
+    // The magnitude of the minimum of long does not fit into long
+    const unsigned long magnitude = cast<unsigned long>(-(value + 1l)) + 1ul;
+    String text = String('-');
+    text += formatUnsignedInteger(magnitude);
+    return text;
+}
+
+/**
+ * Format a double with a fixed number of decimal places, like "%.*f". The value is rounded exactly, ties to even.
+ *
+ * @param value Value
+ * @param precision Number of decimal places. A negative one means 6, like in C
+ * @return Formatted text
+ */
+public f<String> formatFixedDouble(double value, int precision) {
+    const String nonFinite = formatNonFiniteDouble(value);
+    if !nonFinite.isEmpty() { return nonFinite; }
+    const unsigned long decimalPlaces = precision < 0 ? 6ul : cast<unsigned long>(precision);
+    unsigned long significand = 0ul;
+    long exponent = 0l;
+    decomposeDouble(value, significand, exponent);
+
+    // scaled = value * 10^exactPlaces, rounded to an integer. A double has at most -exponent decimal places, so the places
+    // after these are zeros
+    BigInt scaled = getBigIntFromUnsigned(significand);
+    unsigned long exactPlaces = 0ul;
+    if exponent >= 0l {
+        scaled.shiftLeft(cast<unsigned long>(exponent));
+    } else {
+        const unsigned long fractionBits = cast<unsigned long>(-exponent);
+        exactPlaces = decimalPlaces < fractionBits ? decimalPlaces : fractionBits;
+        multiplyByPowerOfTen(scaled, exactPlaces);
+        const bool halfBit = scaled.testBit(fractionBits - 1ul);
+        const bool belowHalf = hasSetBitsBelow(scaled, fractionBits - 1ul);
+        scaled.shiftRight(fractionBits);
+        if halfBit && (belowHalf || scaled.isOdd()) { scaled.add(1l); }
+    }
+
+    String digits = scaled.toString();
+    while digits.getLength() <= exactPlaces { digits.insert(0ul, '0'); }
+    const unsigned long integerLength = digits.getLength() - exactPlaces;
+    String text;
+    if (getDoubleBits(value) & SIGN_BIT) != 0ul { text += '-'; }
+    text += digits.getSubstring(0ul, cast<long>(integerLength));
+    if decimalPlaces > 0ul {
+        text += '.';
+        text += digits.getSubstring(integerLength);
+        for unsigned long i = exactPlaces; i < decimalPlaces; i++ {
+            text += '0';
+        }
+    }
+    return text;
+}
+
+f<String> stripTrailingZeros(const String& text) {
+    unsigned long end = text.getLength();
+    while end > 0ul && text[end - 1ul] == '0' { end--; }
+    return text.getSubstring(0ul, cast<long>(end));
+}
+
+/**
+ * Format a double with the given number of significant digits, like "%.*g": in exponential notation (1.5e+20) for
+ * exponents below -4 or from the number of digits on, in decimal notation otherwise, without trailing zeros. The value is
+ * rounded exactly, ties to even. 17 digits are enough to read back the same double.
+ *
+ * @param value Value
+ * @param significantDigits Number of significant digits, from 1 to 17. Other values are clamped to this range
+ * @return Formatted text
+ */
+public f<String> formatSignificantDouble(double value, int significantDigits) {
+    const String nonFinite = formatNonFiniteDouble(value);
+    if !nonFinite.isEmpty() { return nonFinite; }
+    int digitCount = significantDigits;
+    if digitCount < 1 { digitCount = 1; }
+    if digitCount > MAX_SIGNIFICANT_FORMAT_DIGITS { digitCount = MAX_SIGNIFICANT_FORMAT_DIGITS; }
+    String text;
+    if (getDoubleBits(value) & SIGN_BIT) != 0ul { text += '-'; }
+    unsigned long significand = 0ul;
+    long exponent = 0l;
+    decomposeDouble(value, significand, exponent);
+    if significand == 0ul {
+        text += '0';
+        return text;
+    }
+
+    unsigned long lowerBound = 1ul; // 10^(digitCount - 1)
+    for int i = 1; i < digitCount; i++ {
+        lowerBound *= 10ul;
+    }
+    const unsigned long upperBound = lowerBound * 10ul;
+
+    // Find the decimal exponent of the leading digit: estimate it from the binary exponent (log10(2) ~ 78913 / 2^18), then
+    // correct it, until the rounded digits have the right length
+    const long binaryExponent = cast<long>(getBitLength(significand)) - 1l + exponent;
+    long scaledEstimate = binaryExponent * 78913l;
+    long decimalExponent = scaledEstimate >= 0l ? scaledEstimate / 262144l : -((-scaledEstimate + 262143l) / 262144l);
+    unsigned long roundedDigits = 0ul;
+    while true {
+        const long scale = cast<long>(digitCount) - 1l - decimalExponent;
+        BigInt numerator = getBigIntFromUnsigned(significand);
+        if exponent >= 0l { numerator.shiftLeft(cast<unsigned long>(exponent)); }
+        if scale >= 0l {
+            multiplyByPowerOfTen(numerator, cast<unsigned long>(scale));
+            if exponent >= 0l {
+                roundedDigits = numerator.getAbsoluteLowBits(); // Exact
+            } else {
+                // The denominator is a power of two, so the division is a shift
+                const unsigned long fractionBits = cast<unsigned long>(-exponent);
+                const bool halfBit = numerator.testBit(fractionBits - 1ul);
+                const bool belowHalf = hasSetBitsBelow(numerator, fractionBits - 1ul);
+                numerator.shiftRight(fractionBits);
+                roundedDigits = numerator.getAbsoluteLowBits();
+                if halfBit && (belowHalf || (roundedDigits & 1ul) == 1ul) { roundedDigits++; }
+            }
+        } else {
+            BigInt denominator = BigInt(1l);
+            if exponent < 0l { denominator.shiftLeft(cast<unsigned long>(-exponent)); }
+            multiplyByPowerOfTen(denominator, cast<unsigned long>(-scale));
+            roundedDigits = divideWithSmallQuotient(numerator, denominator);
+            numerator.shiftLeft(1ul); // Twice the remainder, to compare it with half of the denominator
+            const int half = numerator.compare(denominator);
+            if half > 0 || (half == 0 && (roundedDigits & 1ul) == 1ul) { roundedDigits++; }
+        }
+        if roundedDigits >= upperBound {
+            decimalExponent++;
+        } else if roundedDigits < lowerBound {
+            decimalExponent--;
+        } else {
+            break;
+        }
+    }
+
+    const String digits = formatUnsignedInteger(roundedDigits);
+    if decimalExponent < -4l || decimalExponent >= cast<long>(digitCount) {
+        // Exponential notation
+        text += digits[0ul];
+        const String fraction = stripTrailingZeros(digits.getSubstring(1ul));
+        if !fraction.isEmpty() {
+            text += '.';
+            text += fraction;
+        }
+        text += decimalExponent < 0l ? "e-" : "e+";
+        const long absExponent = decimalExponent < 0l ? -decimalExponent : decimalExponent;
+        if absExponent < 10l { text += '0'; }
+        text += formatSignedInteger(absExponent);
+        return text;
+    }
+
+    // Decimal notation
+    String integerPart;
+    String fraction;
+    if decimalExponent >= 0l {
+        const unsigned long integerLength = cast<unsigned long>(decimalExponent) + 1ul;
+        integerPart = digits.getSubstring(0ul, cast<long>(integerLength));
+        fraction = digits.getSubstring(integerLength);
+    } else {
+        integerPart = String('0');
+        for long i = decimalExponent + 1l; i < 0l; i++ {
+            fraction += '0';
+        }
+        fraction += digits;
+    }
+    fraction = stripTrailingZeros(fraction);
+    text += integerPart;
+    if !fraction.isEmpty() {
+        text += '.';
+        text += fraction;
+    }
+    return text;
+}

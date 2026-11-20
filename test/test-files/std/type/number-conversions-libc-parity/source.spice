@@ -1,0 +1,172 @@
+import "std/iterator/array-iterator";
+import "std/type/impl/number-conversion";
+
+// Compares the number conversions of the std, that are written in Spice, with the C functions of glibc, that they replace:
+// strtoll, strtod and snprintf with "%lld", "%llu", "%.*f" and "%.*g". Random and hand-picked values have to give exactly
+// the same results. Only on Linux, because the C libraries of macOS and Windows format some special values differently
+
+ext f<int> snprintf(char*, unsigned long, string, ...);
+ext f<long> strtoll(string, char**, int);
+ext f<double> strtod(string, char**);
+
+f<String> cFixed(double value, int precision) {
+    const int length = snprintf(nil<char*>, 0l, "%.*f", precision, value);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.*f", precision, value);
+}
+
+f<String> cSignificant(double value, int digits) {
+    const int length = snprintf(nil<char*>, 0l, "%.*g", digits, value);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%.*g", digits, value);
+}
+
+f<String> cSigned(long value) {
+    const int length = snprintf(nil<char*>, 0l, "%lld", value);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%lld", value);
+}
+
+f<String> cUnsigned(unsigned long value) {
+    const int length = snprintf(nil<char*>, 0l, "%llu", value);
+    result = String(length);
+    snprintf(cast<char*>(result.getRaw()), cast<unsigned long>(length + 1), "%llu", value);
+}
+
+// xorshift64*, so that the values are the same in every run
+unsigned long RNG_STATE = 0x9E3779B97F4A7C15ul;
+
+f<unsigned long> nextRandom() {
+    RNG_STATE ^= RNG_STATE >> 12ul;
+    RNG_STATE ^= RNG_STATE << 25ul;
+    RNG_STATE ^= RNG_STATE >> 27ul;
+    return RNG_STATE * 0x2545F4914F6CDD1Dul;
+}
+
+f<unsigned long> bitsOf(double value) {
+    double copy = value;
+    unsafe {
+        unsigned long* ptr = cast<unsigned long*>(&copy);
+        return *ptr;
+    }
+}
+
+f<double> fromBits(unsigned long bits) {
+    unsigned long copy = bits;
+    unsafe {
+        double* ptr = cast<double*>(&copy);
+        return *ptr;
+    }
+}
+
+int FAILURES = 0;
+
+p checkDouble(double value) {
+    const int[5] precisions = [0, 1, 6, 17, 30];
+    foreach const int precision : precisions {
+        const String expected = cFixed(value, precision);
+        const String actual = formatFixedDouble(value, precision);
+        if expected != actual {
+            FAILURES++;
+            if FAILURES < 20 { printf("fixed %.17g p=%d: expected %s, got %s\n", value, precision, expected.getRaw(), actual.getRaw()); }
+        }
+    }
+    for int digits = 1; digits <= 17; digits++ {
+        const String expected = cSignificant(value, digits);
+        const String actual = formatSignificantDouble(value, digits);
+        if expected != actual {
+            FAILURES++;
+            if FAILURES < 20 { printf("significant %.17g d=%d: expected %s, got %s\n", value, digits, expected.getRaw(), actual.getRaw()); }
+        }
+    }
+    // Round trip through the text with 17 digits and with a long fixed representation
+    const String texts = cSignificant(value, 17);
+    const double parsed = parseDoubleText(texts.getRaw());
+    const double cParsed = strtod(texts.getRaw(), nil<char**>);
+    if bitsOf(parsed) != bitsOf(cParsed) {
+        FAILURES++;
+        if FAILURES < 20 { printf("parse %s: expected %.17g, got %.17g\n", texts.getRaw(), cParsed, parsed); }
+    }
+}
+
+p checkParse(string text) {
+    const double expected = strtod(text, nil<char**>);
+    const double actual = parseDoubleText(text);
+    if bitsOf(expected) != bitsOf(actual) {
+        FAILURES++;
+        if FAILURES < 40 { printf("parse '%s': expected %.17g, got %.17g\n", text, expected, actual); }
+    }
+}
+
+p checkInteger(string text, int base) {
+    const long expected = strtoll(text, nil<char**>, base);
+    const long actual = parseIntegerText(text, base);
+    if expected != actual {
+        FAILURES++;
+        if FAILURES < 40 { printf("int '%s' base %d: expected %lld, got %lld\n", text, base, expected, actual); }
+    }
+}
+
+f<int> main() {
+    // Integers
+    const long[8] longs = [0l, 1l, -1l, 9223372036854775807l, -9223372036854775807l - 1l, 1234567890l, -42l, 1000000000000l];
+    foreach const long v : longs {
+        if cSigned(v) != formatSignedInteger(v) { FAILURES++; printf("signed %lld\n", v); }
+    }
+    for int i = 0; i < 20000; i++ {
+        const unsigned long r = nextRandom() >> (nextRandom() % 64ul);
+        if cUnsigned(r) != formatUnsignedInteger(r) { FAILURES++; printf("unsigned %llu\n", r); }
+        if cSigned(cast<long>(r)) != formatSignedInteger(cast<long>(r)) { FAILURES++; printf("signed %lld\n", cast<long>(r)); }
+    }
+    const string[30] intTexts = ["0", "42", "  -17", "+8", "0x1F", "0X1f", "0x", "0xg", "077", "08", "-0x10", "9223372036854775807",
+        "9223372036854775808", "-9223372036854775808", "-9223372036854775809", "99999999999999999999999", "zz", "Zz", "",
+        " \t\n+", "12abc", "1_000", "0b101", "-", "  0x7fffffffffffffff", "0x8000000000000000", "-0x8000000000000001", "z", "10", "777"];
+    const int[6] bases = [0, 2, 8, 10, 16, 36];
+    foreach const string t : intTexts {
+        foreach const int b : bases { checkInteger(t, b); }
+    }
+
+    // Special doubles
+    const double[24] specials = [0.0, -0.0, 1.0, -1.0, 0.5, 1.5, 2.5, -2.5, 0.125, 0.375, 1.0e300, -1.0e300, 1.7976931348623157e308,
+        2.2250738585072014e-308, 4.9406564584124654e-324, 2.2250738585072009e-308, 123456789.0, 0.1, 0.3, 1.0e22, 1.0e23, 9.5, 99.5, 1.0e-5];
+    foreach const double d : specials { checkDouble(d); }
+    checkDouble(fromBits(0x7FF0000000000000ul));
+    checkDouble(fromBits(0xFFF0000000000000ul));
+    checkDouble(fromBits(0x7FF8000000000000ul));
+    checkDouble(fromBits(0xFFF8000000000000ul));
+
+    // Random doubles: random bit patterns and random "nice" decimals
+    for int i = 0; i < 3000; i++ {
+        const double d = fromBits(nextRandom());
+        if d == d { checkDouble(d); }
+        const double small = cast<double>(cast<long>(nextRandom() % 2000001ul) - 1000000l) / 1000.0;
+        checkDouble(small);
+    }
+
+    // Parsing
+    const string[43] parseTexts = ["0", "-0", "1", "1.5", ".5", "5.", ".", "-.", "1e10", "1e", "1e+", "1e-5x", "  +3.25",
+        "inf", "-INF", "Infinity", "nan", "-nan", "nanx", "0x1p3", "0x1.8p1", "0X.8P-1", "0x", "0x.p1", "0xG",
+        "1e400", "-1e400", "1e-400", "2.4703282292062327e-324", "2.4703282292062328e-324", "4.9406564584124654e-324",
+        "1.7976931348623158e308", "1.7976931348623159e308", "2.2250738585072011e-308", "0.1", "0.30000000000000004",
+        "123456789012345678901234567890", "9007199254740993", "9007199254740992.5", "1e23", "8.98846567431158e307",
+        "0x1.fffffffffffff8p1023", "0x0.0000000000001p-1022"];
+    foreach const string t : parseTexts { checkParse(t); }
+    // Halfway cases with many digits: 2^-1074 * odd / 2 boundaries, long mantissas
+    checkParse("9007199254740993.00000000000000000000000000000000000000000000000000000000000000000000000000000000001");
+    checkParse("2.47032822920623272088284396434110686182529901307162382212792841250337753635104375932649918180817996189898282347722858865463328355177969898199387398005390939063150356595155702263922908583924491051844359318028499365361525003193704576782492193656236698636584807570015857692699037063119282795585513329278343384093519780155312465972635795746227664652728272200563740064854999770965994704540208281662262378573934507363390079677619305775067401763246736009689513405355374585166611342237666786041621596804619144672918403005300575308490487653917113865916462395249126236538818796362393732804238910186723484976682350898633885879256283027559956575244555072551893136908362547791869486679949683240497058210285131854513962138377228261454376934125320985913276672363281255e-324");
+    for int i = 0; i < 3000; i++ {
+        const double d = fromBits(nextRandom());
+        if !(d == d) { continue; }
+        const String fixedText = cFixed(d, 40);
+        checkParse(fixedText.getRaw());
+        const String shortText = cSignificant(d, 12);
+        checkParse(shortText.getRaw());
+    }
+
+    if FAILURES == 0 {
+        printf("All conversions match the C library");
+        return 0;
+    }
+    printf("%d conversions differ from the C library", FAILURES);
+    return 1;
+}

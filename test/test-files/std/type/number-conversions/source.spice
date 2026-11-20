@@ -1,0 +1,86 @@
+import "std/type/type-conversion";
+import "std/type/impl/number-conversion";
+
+f<int> main() {
+    // Integers to text, including the extremes
+    assert toString(0) == "0";
+    assert toString(-2147483647 - 1) == "-2147483648";
+    assert toString(32767s) == "32767";
+    assert toString(-9223372036854775807l - 1l) == "-9223372036854775808";
+    assert toString(cast<byte>(255)) == "255";
+    assert formatUnsignedInteger(18446744073709551615ul) == "18446744073709551615";
+
+    // Text to integers, like strtoll: whitespace, signs, prefixes, the longest valid prefix and clamping
+    assert toLong("  -17") == -17l;
+    assert toLong("+8") == 8l;
+    assert toLong("12abc") == 12l;
+    assert toLong("abc") == 0l;
+    assert toLong("0x1f", 16) == 31l;
+    assert toLong("0x", 16) == 0l;
+    assert toLong("0x1f", 0) == 31l;
+    assert toLong("017", 0) == 15l;
+    assert toLong("17", 0) == 17l;
+    assert toLong("zz", 36) == 1295l;
+    assert toLong("10", 1) == 0l;
+    assert toLong("9223372036854775807") == 9223372036854775807l;
+    assert toLong("9223372036854775808") == 9223372036854775807l;
+    assert toLong("-9223372036854775808") == -9223372036854775807l - 1l;
+    assert toLong("-99999999999999999999") == -9223372036854775807l - 1l;
+
+    // Doubles with a fixed number of decimal places, rounded exactly with ties to even
+    assert toString(0.5, 0) == "0";
+    assert toString(1.5, 0) == "2";
+    assert toString(2.5, 0) == "2";
+    assert toString(-2.5, 0) == "-2";
+    assert toString(0.125, 2) == "0.12";
+    assert toString(0.375, 2) == "0.38";
+    assert toString(2.675, 2) == "2.67"; // 2.675 is slightly below 2.675 as a double
+    assert toString(123.456) == "123.456000";
+    assert toString(-0.0, 3) == "-0.000";
+    assert toString(-0.0000000001, 4) == "-0.0000";
+    assert toString(0.1, 20) == "0.10000000000000000555";
+    assert toString(1.0e22, 0) == "10000000000000000000000";
+    assert toString(1.0e23, 0) == "99999999999999991611392";
+    assert toString(4.9406564584124654e-324) == "0.000000";
+    assert toString(toDouble("inf")) == "inf";
+    assert toString(toDouble("-inf")) == "-inf";
+    assert toString(toDouble("nan")) == "nan";
+    assert toString(toDouble("-nan")) == "-nan";
+
+    // Doubles with significant digits, like "%.*g"
+    assert formatSignificantDouble(0.1, 17) == "0.10000000000000001";
+    assert formatSignificantDouble(1.0e21, 17) == "1e+21";
+    assert formatSignificantDouble(1.0e16, 17) == "10000000000000000";
+    assert formatSignificantDouble(1.0e17, 17) == "1e+17";
+    assert formatSignificantDouble(0.0001, 17) == "0.0001";
+    assert formatSignificantDouble(0.00001234, 17) == "1.234e-05";
+    assert formatSignificantDouble(4.9406564584124654e-324, 17) == "4.9406564584124654e-324";
+    assert formatSignificantDouble(1.7976931348623157e308, 17) == "1.7976931348623157e+308";
+    assert formatSignificantDouble(-0.0, 17) == "-0";
+    assert formatSignificantDouble(100.0, 17) == "100";
+    assert formatSignificantDouble(1234.5, 3) == "1.23e+03";
+    assert formatSignificantDouble(9.9999, 3) == "10";
+    assert formatSignificantDouble(2.5, 1) == "2";
+
+    // Text to doubles, rounded exactly with ties to even
+    assert toDouble("1e23") == 1.0e23;
+    assert toDouble("  -1.5e-3xyz") == -0.0015;
+    assert toDouble(".5") == 0.5;
+    assert toDouble("5.") == 5.0;
+    assert toDouble("1e") == 1.0;
+    assert toDouble("abc") == 0.0;
+    assert toDouble("0x1.8p1") == 3.0;
+    assert toDouble("9007199254740993") == 9007199254740992.0; // Halfway between two doubles, ties to even
+    assert toDouble("9007199254740993.0000000000000000000000001") == 9007199254740994.0;
+    assert toDouble("2.4703282292062328e-324") == 4.9406564584124654e-324; // Just above half of the smallest subnormal
+    assert toDouble("2.4703282292062327e-324") == 0.0; // Just below it
+    assert toString(toDouble("2.4703282292062327e-324"), 0) == "0"; // Positive zero
+    assert toDouble("0.000000000000000000001e21") == 1.0; // The digits and the exponent part cancel out
+    assert toDouble("0x0.0000000000001p52") == 1.0;
+    assert toString(toDouble("1.7976931348623159e308")) == "inf";
+    assert toString(toDouble("-1e400")) == "-inf";
+    assert toString(toDouble("-1e-400"), 1) == "-0.0";
+    assert toDouble("8.98846567431158e307") == 8.98846567431158e307;
+
+    printf("All assertions succeeded");
+}
