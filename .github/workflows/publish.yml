@@ -372,12 +372,6 @@ jobs:
           username: chillibits
           password: ${{ secrets.DOCKER_HUB_SECRET }}
 
-      - name: Setup UPX
-        # GoReleaser compresses the compiler binaries with UPX. The latest UPX release, not the distribution's (see the script)
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bash .github/scripts/install-upx.sh
-
       - name: Download all artifacts of compiler build
         uses: actions/download-artifact@v8
         with:
