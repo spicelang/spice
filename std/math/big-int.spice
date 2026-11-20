@@ -561,7 +561,11 @@ public f<String> BigInt.toString(int base = 10) {
         chunkDivisor *= unsignedBase;
         chunkDigits++;
     }
-    Vector<unsigned int> rest = this.magnitude;
+    Vector<unsigned int> rest; // Only the limbs, without the spare capacity of the magnitude
+    rest.reserve(this.magnitude.getSize());
+    for unsigned long i = 0ul; i < this.magnitude.getSize(); i++ {
+        rest.pushBack(this.magnitude.get(i));
+    }
     String reversedDigits;
     while !rest.isEmpty() {
         unsigned int chunk = divideBigIntMagnitudeSmall(rest, chunkDivisor);
@@ -693,13 +697,15 @@ public p BigInt.pow(unsigned long exponent) {
 
 /**
  * Divide this BigInt by another one, rounding towards zero like the division of long, and get the remainder, which has the
- * sign of the dividend. Panics, if the divisor is zero.
+ * sign of the dividend. Panics, if the divisor is zero or the remainder is to be stored in this BigInt, which gets the
+ * quotient.
  *
  * @param divisor Divisor
- * @param remainder Gets the remainder
+ * @param remainder Gets the remainder. Has to be another BigInt than this one
  */
 public p BigInt.divideWithRemainder(const BigInt& divisor, BigInt& remainder) {
     if divisor.magnitude.isEmpty() { panic(Error("Division by zero")); }
+    if &remainder == this { panic(Error("The remainder has to be stored in another BigInt than the quotient")); }
     const bool dividendNegative = this.negative;
     const bool divisorNegative = divisor.negative;
     Vector<unsigned int> quotientMagnitude;
@@ -790,18 +796,33 @@ public f<bool> BigInt.shiftRight(unsigned long bits) {
 
 // ------------------------------------------------------- Operators -------------------------------------------------------
 
+/**
+ * Add two BigInts
+ *
+ * @return New BigInt with the sum
+ */
 public f<BigInt> operator+(const BigInt& lhs, const BigInt& rhs) {
     BigInt sum = lhs;
     sum.add(rhs);
     return sum;
 }
 
+/**
+ * Subtract a BigInt from another one
+ *
+ * @return New BigInt with the difference
+ */
 public f<BigInt> operator-(const BigInt& lhs, const BigInt& rhs) {
     BigInt difference = lhs;
     difference.subtract(rhs);
     return difference;
 }
 
+/**
+ * Multiply two BigInts
+ *
+ * @return New BigInt with the product
+ */
 public f<BigInt> operator*(const BigInt& lhs, const BigInt& rhs) {
     BigInt product = lhs;
     product.multiply(rhs);
@@ -809,7 +830,9 @@ public f<BigInt> operator*(const BigInt& lhs, const BigInt& rhs) {
 }
 
 /**
- * Division, rounding towards zero like the division of long. Panics, if the divisor is zero.
+ * Divide a BigInt by another one, rounding towards zero like the division of long. Panics, if the divisor is zero.
+ *
+ * @return New BigInt with the quotient
  */
 public f<BigInt> operator/(const BigInt& lhs, const BigInt& rhs) {
     BigInt quotient = lhs;
@@ -817,6 +840,11 @@ public f<BigInt> operator/(const BigInt& lhs, const BigInt& rhs) {
     return quotient;
 }
 
+/**
+ * Shift a BigInt to the left, which multiplies it by 2^bits
+ *
+ * @return New, shifted BigInt
+ */
 public f<BigInt> operator<<(const BigInt& lhs, unsigned long bits) {
     BigInt shifted = lhs;
     shifted.shiftLeft(bits);
@@ -824,7 +852,9 @@ public f<BigInt> operator<<(const BigInt& lhs, unsigned long bits) {
 }
 
 /**
- * Shift to the right, rounding towards negative infinity like the shift of long
+ * Shift a BigInt to the right, which divides it by 2^bits, rounding towards negative infinity like the shift of long
+ *
+ * @return New, shifted BigInt
  */
 public f<BigInt> operator>>(const BigInt& lhs, unsigned long bits) {
     BigInt shifted = lhs;
@@ -832,42 +862,72 @@ public f<BigInt> operator>>(const BigInt& lhs, unsigned long bits) {
     return shifted;
 }
 
+/**
+ * Add a BigInt to lhs, in place
+ */
 public p operator+=(BigInt& lhs, const BigInt& rhs) {
     lhs.add(rhs);
 }
 
+/**
+ * Subtract a BigInt from lhs, in place
+ */
 public p operator-=(BigInt& lhs, const BigInt& rhs) {
     lhs.subtract(rhs);
 }
 
+/**
+ * Multiply lhs with a BigInt, in place
+ */
 public p operator*=(BigInt& lhs, const BigInt& rhs) {
     lhs.multiply(rhs);
 }
 
+/**
+ * Divide lhs by a BigInt, in place, rounding towards zero like the division of long. Panics, if the divisor is zero.
+ */
 public p operator/=(BigInt& lhs, const BigInt& rhs) {
     lhs.divide(rhs);
 }
 
+/**
+ * @return Whether both BigInts have the same value
+ */
 public f<bool> operator==(const BigInt& lhs, const BigInt& rhs) {
     return lhs.compare(rhs) == 0;
 }
 
+/**
+ * @return Whether the BigInts have different values
+ */
 public f<bool> operator!=(const BigInt& lhs, const BigInt& rhs) {
     return lhs.compare(rhs) != 0;
 }
 
+/**
+ * @return Whether lhs is less than rhs
+ */
 public f<bool> operator<(const BigInt& lhs, const BigInt& rhs) {
     return lhs.compare(rhs) < 0;
 }
 
+/**
+ * @return Whether lhs is less than or equal to rhs
+ */
 public f<bool> operator<=(const BigInt& lhs, const BigInt& rhs) {
     return lhs.compare(rhs) <= 0;
 }
 
+/**
+ * @return Whether lhs is greater than rhs
+ */
 public f<bool> operator>(const BigInt& lhs, const BigInt& rhs) {
     return lhs.compare(rhs) > 0;
 }
 
+/**
+ * @return Whether lhs is greater than or equal to rhs
+ */
 public f<bool> operator>=(const BigInt& lhs, const BigInt& rhs) {
     return lhs.compare(rhs) >= 0;
 }

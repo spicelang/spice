@@ -265,6 +265,15 @@ f<int> main() {
     negatedZero.negate();
     assert !negatedZero.isNegative();
     assert hasText(big("-5") >> 1ul, "-3") && hasText(big("-4") >> 1ul, "-2") && hasText(big("-1") >> 70ul, "-1");
+    // shiftRight also tells, whether any of the shifted out bits of the absolute value was set
+    BigInt minusFive = big("-5");
+    assert minusFive.shiftRight(1ul) && hasText(minusFive, "-3");
+    BigInt minusFour = big("-4");
+    assert !minusFour.shiftRight(1ul) && hasText(minusFour, "-2");
+    BigInt minusOne = big("-1");
+    assert minusOne.shiftRight(70ul) && hasText(minusOne, "-1"); // All limbs are shifted out
+    BigInt twoTo64 = big("18446744073709551616");
+    assert !twoTo64.shiftRight(64ul) && hasText(twoTo64, "1");
 
     // Text in other bases
     assert (BigInt(1l) << 100ul).toString(16) == "10000000000000000000000000";
