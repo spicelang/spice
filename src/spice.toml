@@ -15,4 +15,5 @@ entry = "main.spice"
 
 [dependencies]
 llvm = "^0.1.0"
+manifest = "^0.1.1"
 tpde = "^0.1.0"

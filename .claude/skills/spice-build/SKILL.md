@@ -11,8 +11,9 @@ for the current platform into `build/stage0/spice`.
 
 ## Prerequisites
 
-The compiler builds on two official packages ([spicelang/packages](https://github.com/spicelang/packages)): the LLVM C API
-bindings (`llvm`) and the TPDE bindings (`tpde`). They are declared in `src/spice.toml` and pinned with their checksums in
+The compiler builds on official packages ([spicelang/packages](https://github.com/spicelang/packages)): the LLVM C API
+bindings (`llvm`), the TPDE bindings (`tpde`) and `manifest`, which finds and describes `spice.toml` (with `semver` as its
+dependency). They are declared in `src/spice.toml` and pinned with their checksums in
 `src/spice.lock`. Spice Shaker installs them into `src/spice_packages` (ignored by git) with `spice-shaker sync` in `src/`;
 `build.py`, `bootstrap.py`, `test/run-tests.py` and the benchmark runner do that on their own, and so does
 `python fetch-stage0.py --sync-packages`. They use the latest Spice Shaker release, that

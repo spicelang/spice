@@ -5,6 +5,9 @@ import "std/io/filepath";
 import "std/os/os";
 import "std/time/timer";
 
+// Package imports
+import "@/spice_packages/manifest/manifest-file";
+
 // Own imports
 import "@/source-file";
 import "@/driver";

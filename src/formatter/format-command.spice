@@ -10,6 +10,9 @@ import "std/os/filesystem";
 import "std/os/os";
 import "std/type/type-conversion";
 
+// Package imports
+import "@/spice_packages/manifest/manifest-file";
+
 // Own imports
 import "@/driver";
 import "@/exception/cli-error";
