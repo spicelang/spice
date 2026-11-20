@@ -77,7 +77,7 @@ The formatter keeps the line breaks within statements as they are, so you decide
 You can adjust the formatting rules in the `[format]` table of the manifest of your project, the `spice.toml` file, that also
 describes your package for [Spice Shaker](https://github.com/spicelang/spice-shaker). Each source file is formatted with the
 manifest in its directory or the nearest one in its parent directories. Source code from stdin is formatted with the one of
-the working directory. Without a manifest, the defaults apply.
+the working directory. Without a manifest, the defaults apply. The [format of the manifest](https://github.com/spicelang/packages/blob/main/packages/manifest/README.md#the-format) is specified by the `manifest` package.
 
 ```toml
 [format]

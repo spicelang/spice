@@ -72,7 +72,7 @@ The naming conventions follow the [coding style guide](https://github.com/spicel
 You can configure the rules in the `[lint.rules]` table of the manifest of your project, the `spice.toml` file, that also
 describes your package for [Spice Shaker](https://github.com/spicelang/spice-shaker). The `lint` subcommand uses the manifest
 in the directory of the main source file or the nearest one in its parent directories. Without a manifest, all rules apply
-with their default configuration.
+with their default configuration. The [format of the manifest](https://github.com/spicelang/packages/blob/main/packages/manifest/README.md#the-format) is specified by the `manifest` package.
 
 ```toml
 [lint.rules]

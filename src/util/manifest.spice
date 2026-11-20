@@ -1,13 +1,15 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Std imports
-import "std/io/dir";
 import "std/io/file";
 import "std/io/filepath";
-import "std/os/filesystem";
 import "std/text/toml/toml-parser";
 import "std/text/toml/toml-value";
 import "std/type/type-conversion";
+
+// Package imports
+import "@/spice_packages/manifest/manifest";
+import "@/spice_packages/manifest/manifest-file";
 
 // Own imports
 import "@/exception/compiler-error";
@@ -18,14 +20,13 @@ import "@/linter/lint-finding";
 import "@/util/test-util";
 
 // Constants
-public const string MANIFEST_FILE_NAME = "spice.toml";
-const string LINT_TABLE_NAME = "lint";
 const string LINT_RULES_TABLE_NAME = "rules";
-const string FORMAT_TABLE_NAME = "format";
 const long NO_UPPER_BOUND = -1l; // For ManifestReader.readInteger
 
 /*
- * The manifest (spice.toml) of a project describes the package for Spice Shaker and configures the tooling of the compiler:
+ * The manifest (spice.toml) of a project describes the package for Spice Shaker and configures the tooling of the compiler. Its
+ * format is specified by the manifest package (https://github.com/spicelang/packages/tree/main/packages/manifest), which also
+ * finds the manifest of a source file (findManifest in manifest-file) for the compiler:
  *
  * [lint.rules]
  * naming-convention = { enabled = false }
@@ -35,41 +36,10 @@ const long NO_UPPER_BOUND = -1l; // For ManifestReader.readInteger
  * indent-width = 2
  * max-blank-lines = 2
  *
- * The compiler only reads the [lint] and [format] tables and leaves the other tables to Spice Shaker. Within its own tables,
- * it rejects unknown keys, so that a typo does not silently fall back to the default.
+ * The compiler only reads the [lint] and [format] tables and leaves the other tables to Spice Shaker. The manifest package
+ * leaves the contents of [lint] and [format] to the compiler. Within them, the compiler rejects unknown keys, so that a typo
+ * does not silently fall back to the default.
  */
-
-/**
- * Make the given path absolute by prepending the working dir, if it is relative, and normalize it lexically
- *
- * @param path Path to make absolute
- * @return Absolute path
- */
-f<FilePath> makeAbsolute(const FilePath& path) {
-    if path.isAbsolute() {
-        return path.lexicallyNormal();
-    }
-    const FilePath absolutePath = FilePath(getCurrentWorkingDir()) / path;
-    return absolutePath.lexicallyNormal();
-}
-
-/**
- * Get the parent dir of the given absolute and lexically normal path. Unlike FilePath.getParentDir, the parent of an entry
- * directly below the root is the root, e.g. '/' for '/home' or 'C:/' for 'C:/Users'
- *
- * @param path Absolute and lexically normal path
- * @return Parent dir or an empty path, if the given path is the root
- */
-f<FilePath> getAbsoluteParentDir(const FilePath& path) {
-    FilePath pathCopy = path;
-    String parentDir = pathCopy.getParentDir();
-    // The separator of the root is cut off together with the last component
-    if parentDir.isEmpty() || parentDir.endsWith(":") {
-        parentDir += "/";
-    }
-    const FilePath parentPath = FilePath(parentDir);
-    return parentPath == pathCopy ? FilePath() : parentPath;
-}
 
 /**
  * Reads the values of a manifest and reports the errors in it
@@ -86,15 +56,7 @@ type ManifestReader struct {
 p ManifestReader.ctor(const FilePath& path, const FilePath& displayBaseDir) {
     this.path = path;
     // Like the code locations of the compiler: './' for paths within the base dir and the absolute path, if there is no relative one
-    const FilePath relativePath = makeAbsolute(path).lexicallyRelative(makeAbsolute(displayBaseDir));
-    const String relativePathStr = String(relativePath.toGenericString());
-    if relativePath.isEmpty() {
-        this.displayPath = String(path.toGenericString());
-    } else if relativePathStr.startsWith("../") {
-        this.displayPath = relativePathStr;
-    } else {
-        this.displayPath = "./" + relativePathStr;
-    }
+    this.displayPath = manifestDisplayPath(path, displayBaseDir);
 }
 
 /**
@@ -121,7 +83,7 @@ f<TomlValue*> ManifestReader.parse() {
  * @param config Configuration to update
  */
 p ManifestReader.readLintRulesTable(TomlValue* rulesTable, LintConfig& config) {
-    const String rulesTableName = String(LINT_TABLE_NAME) + "." + LINT_RULES_TABLE_NAME;
+    const String rulesTableName = String(TABLE_LINT) + "." + LINT_RULES_TABLE_NAME;
     this.expectTable(rulesTable, rulesTableName);
     for unsigned long i = 0l; i < rulesTable.getTableSize(); i++ {
         const String& ruleId = rulesTable.getTableKey(i);
@@ -232,30 +194,6 @@ p ManifestReader.raiseError(const String& message) {
 }
 
 /**
- * Find the manifest of the project, that the given source file or dir belongs to: the spice.toml file in the dir of the given
- * path or in the nearest of its parent dirs. The parent dirs are determined lexically, like a shell does it for 'cd ..', so that
- * a symlinked dir is searched from the location, where it is linked, rather than from its target.
- *
- * @param path Path of a source file or dir
- * @return Absolute path of the manifest or an empty path, if there is none
- */
-public f<FilePath> findManifest(const FilePath& path) {
-    // Make the path absolute, so that the search can continue above the working dir up to the root
-    FilePath dir = makeAbsolute(path);
-    if !dirExists(dir.toString()) {
-        dir = getAbsoluteParentDir(dir);
-    }
-    while !dir.isEmpty() {
-        const FilePath candidate = dir / MANIFEST_FILE_NAME;
-        if fileExists(candidate.toString()) && !dirExists(candidate.toString()) {
-            return candidate;
-        }
-        dir = getAbsoluteParentDir(dir);
-    }
-    return FilePath();
-}
-
-/**
  * Read the configuration of the lint rules from the given manifest. Rules, that the manifest does not configure, keep their
  * default configuration. Aborts the compilation, if the configuration is invalid.
  *
@@ -270,13 +208,13 @@ public f<LintConfig> readLintConfig(const FilePath& manifestPath, const FilePath
     }
     ManifestReader reader = ManifestReader(manifestPath, displayBaseDir);
     TomlValue* root = reader.parse();
-    TomlValue* lintTable = root.getFieldOrNil(LINT_TABLE_NAME);
+    TomlValue* lintTable = root.getFieldOrNil(TABLE_LINT);
     if lintTable != nil<TomlValue*> {
-        reader.expectTable(lintTable, String(LINT_TABLE_NAME));
+        reader.expectTable(lintTable, String(TABLE_LINT));
         for unsigned long i = 0l; i < lintTable.getTableSize(); i++ {
             const String& key = lintTable.getTableKey(i);
             if key != LINT_RULES_TABLE_NAME {
-                reader.raiseUnknownKey(String(LINT_TABLE_NAME) + "." + key);
+                reader.raiseUnknownKey(String(TABLE_LINT) + "." + key);
             }
             reader.readLintRulesTable(lintTable.getTableValue(i), config);
         }
@@ -300,13 +238,13 @@ public f<FormatConfig> readFormatConfig(const FilePath& manifestPath, const File
     }
     ManifestReader reader = ManifestReader(manifestPath, displayBaseDir);
     TomlValue* root = reader.parse();
-    TomlValue* formatTable = root.getFieldOrNil(FORMAT_TABLE_NAME);
+    TomlValue* formatTable = root.getFieldOrNil(TABLE_FORMAT);
     if formatTable != nil<TomlValue*> {
-        reader.expectTable(formatTable, String(FORMAT_TABLE_NAME));
+        reader.expectTable(formatTable, String(TABLE_FORMAT));
         for unsigned long i = 0l; i < formatTable.getTableSize(); i++ {
             const String& key = formatTable.getTableKey(i);
             TomlValue* value = formatTable.getTableValue(i);
-            const String keyName = String(FORMAT_TABLE_NAME) + "." + key;
+            const String keyName = String(TABLE_FORMAT) + "." + key;
             if key == "indent-width" {
                 config.indentWidth = cast<unsigned long>(reader.readInteger(value, keyName, MIN_INDENT_WIDTH, MAX_INDENT_WIDTH));
             } else if key == "max-blank-lines" {
@@ -335,7 +273,7 @@ f<bool> testManifestConfig() {
     const FormatConfig defaultFormatConfig = readFormatConfig(noManifest, subDir);
 
     // The manifest in a parent dir is found. The tables of Spice Shaker are left alone
-    writeTestFile(testDir / MANIFEST_FILE_NAME, "[package]\nname = \"test\"\n\n[lint.rules]\nnaming-convention = { enabled = false }\ntoo-many-parameters = { max = 3, severity = \"error\" }\n\n[format]\nindent-width = 2\nmax-blank-lines = 0\n");
+    writeTestFile(testDir / MANIFEST_FILE, "[package]\nname = \"test\"\n\n[lint.rules]\nnaming-convention = { enabled = false }\ntoo-many-parameters = { max = 3, severity = \"error\" }\n\n[format]\nindent-width = 2\nmax-blank-lines = 0\n");
     const FilePath manifestFromFile = findManifest(subDir / "main.spice");
     const FilePath manifestFromDir = findManifest(subDir);
     const LintConfig lintConfig = readLintConfig(manifestFromFile, subDir);
@@ -360,18 +298,5 @@ f<bool> testManifestConfig() {
     assert formatConfig.indentWidth == 2l && formatConfig.maxBlankLines == 0l;
     assert readerFromSubDir.displayPath == "../../spice.toml";
     assert readerFromTestDir.displayPath == "./spice.toml";
-    return true;
-}
-
-#[test]
-f<bool> testManifestParentDirs() {
-    assert getAbsoluteParentDir(FilePath("/home/user")).toGenericString() == "/home";
-    assert getAbsoluteParentDir(FilePath("/home")).toGenericString() == "/";
-    assert getAbsoluteParentDir(FilePath("/")).isEmpty();
-    assert getAbsoluteParentDir(FilePath("C:/Users")).toGenericString() == "C:/";
-    assert getAbsoluteParentDir(FilePath("C:/")).isEmpty();
-    // The search starts at the root for a source file in the root
-    assert makeAbsolute(FilePath("/main.spice")).toGenericString() == "/main.spice";
-    assert makeAbsolute(FilePath("/")).toGenericString() == "/";
     return true;
 }
