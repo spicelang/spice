@@ -1,0 +1,1 @@
+The mmap flags (34 = MAP_PRIVATE | MAP_ANONYMOUS) are the ones of Linux

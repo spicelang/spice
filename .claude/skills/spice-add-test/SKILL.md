@@ -63,7 +63,9 @@ Examples: `assembly-linux-amd64.asm`, `assembly-linux-aarch64.asm`,
 `ir-code-windows.ll`, `cout-macos.out`. (os ∈ linux/windows/macos, arch ∈ amd64/aarch64).
 IR refs without a platform suffix are only compared on x86_64.
 
-## 5. Control / skip marker files (empty files in the case dir)
+## 5. Control / skip marker files (in the case dir)
+
+Only the existence of a skip marker counts. Write the reason for the skip into it, so it can be re-checked later.
 
 - `disabled` — skip the case entirely
 - `skip-gh-actions` — skip on CI

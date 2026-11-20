@@ -1,0 +1,1 @@
+libbacktrace can put a Spice name on a frame in a system DLL, so the native frames are not recognized reliably
