@@ -23,6 +23,7 @@ import "@/global/type-name-disambiguator";
 import "@/global/type-registry";
 import "@/exception/error-manager";
 import "@/linker/external-linker-interface";
+import "@/linter/lint-config";
 import "@/model/function" as model; // Aliased, because Function clashes with llvm::Function
 import "@/model/interface";
 import "@/model/struct";
@@ -85,6 +86,7 @@ public type GlobalResourceManager struct {
     public Vector<Timer*> runningStageTimers
     public ErrorManager errorManager
     public CompileProgress compileProgress // Progress bar on the console, if enabled (see compileProject)
+    public LintConfig lintConfig // Configuration of the lint rules from the manifest of the project (lint subcommand only)
     // Lookup caches of the managers
     public LookupCache<model::Function> functionLookupCache
     public LookupCache<Struct> structLookupCache

@@ -1533,23 +1533,29 @@ public p SourceFile.collectAndPrintWarnings() {
     }
 }
 
-public p SourceFile.collectAndPrintLintFindings() {
+/**
+ * Collect and print the lint findings of this source file and its dependencies
+ *
+ * @return Number of findings with the error severity
+ */
+public f<unsigned long> SourceFile.collectAndPrintLintFindings() {
     // Skip if already visited. This keeps circular imports from recursing infinitely, since the dependency graph may contain
     // cycles.
     if this.lintFindingsCollected {
-        return;
+        return 0l;
     }
     this.lintFindingsCollected = true;
     // Collect lint findings for all dependencies
+    unsigned long errorCount = 0l;
     foreach dyn dependency : this.dependencies {
         SourceFile* sourceFile = dependency.getSecond();
         if !sourceFile.isStdFile {
-            sourceFile.collectAndPrintLintFindings();
+            errorCount += sourceFile.collectAndPrintLintFindings();
         }
     }
     // Lint findings of external packages are no concern of the user
     if this.isPackageFile {
-        return;
+        return errorCount;
     }
     // Collect lint findings for this file
     if !this.ignoreWarnings {
@@ -1559,7 +1565,11 @@ public p SourceFile.collectAndPrintLintFindings() {
     // Print lint findings for this file
     foreach dyn finding : this.compilerOutput.lintFindings {
         finding.print();
+        if finding.severity == LintSeverity::ERROR {
+            errorCount++;
+        }
     }
+    return errorCount;
 }
 
 public f<const SourceFile*> SourceFile.getRootSourceFile() {

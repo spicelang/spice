@@ -1,0 +1,24 @@
+import "std/data/vector";
+
+
+
+type Point struct {
+        int x
+        int y
+}
+
+f<int> main() {
+    Vector<Point> points;
+    if points.isEmpty() {
+            points.pushBack(Point{1,
+                                  2});
+    }
+
+
+
+    foreach const Point& point : points {
+        printf("%d, %d\n", point.x,
+            point.y);
+    }
+    return 0;
+}

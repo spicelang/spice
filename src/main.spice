@@ -1,6 +1,7 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
 // Std imports
+import "std/io/filepath";
 import "std/os/os";
 import "std/time/timer";
 
@@ -10,6 +11,7 @@ import "@/driver";
 import "@/formatter/format-command";
 import "@/global/global-resource-manager";
 import "@/global/compile-stats";
+import "@/util/manifest";
 import "@/util/system-util";
 import "@/util/compile-progress";
 
@@ -17,7 +19,7 @@ import "@/util/compile-progress";
  * Compile main source file. All files, that are included by the main source file will be resolved recursively.
  *
  * @param cliOptions Command line options
- * @return Successful or not
+ * @return Successful or not. Linting fails, if there are findings with the error severity
  */
 f<bool> compileProject(CliOptions& cliOptions) {
     // Measure the wall time of the whole compilation for the compile statistics
@@ -26,6 +28,13 @@ f<bool> compileProject(CliOptions& cliOptions) {
 
     // Instantiate GlobalResourceManager
     GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
+
+    // The manifest of the project configures the lint rules. Read it upfront, so that an invalid manifest fails fast. Its path
+    // is printed relative to the dir of the main source file, like the code locations
+    if cliOptions.lintOnly {
+        const FilePath mainSourceDir = FilePath(cliOptions.mainSourceFile.getParentDir());
+        resourceManager.lintConfig = readLintConfig(findManifest(cliOptions.mainSourceFile), mainSourceDir);
+    }
 
     // Show the progress on the console. Enable it before the first source file is created, so that it is counted
     if shouldShowCompileProgress(cliOptions) {
@@ -49,9 +58,9 @@ f<bool> compileProject(CliOptions& cliOptions) {
     // Lint-only mode stops here and reports findings without generating any code
     if cliOptions.lintOnly {
         resourceManager.compileProgress.clear();
-        mainSourceFile.collectAndPrintLintFindings();
+        const unsigned long lintErrorCount = mainSourceFile.collectAndPrintLintFindings();
         writeCompileStatsIfRequested(resourceManager, totalTimer);
-        return true;
+        return lintErrorCount == 0l;
     }
 
     // Compile additional C/C++ sources in the background, while the back end is running

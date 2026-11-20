@@ -1,0 +1,3 @@
+[lint.rules]
+naming-convention = { enabled = false }
+unknown-rule = { enabled = false }

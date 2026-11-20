@@ -1,0 +1,14 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Limits of the values, that the manifest can set
+public const long MIN_INDENT_WIDTH = 1l;
+public const long MAX_INDENT_WIDTH = 16l;
+public const long MAX_MAX_BLANK_LINES = 16l;
+
+/**
+ * Configuration of the source formatter. It can be adjusted in the [format] table of the manifest (spice.toml)
+ */
+public type FormatConfig struct {
+    public unsigned long indentWidth = 4l // Number of spaces per indentation level
+    public unsigned long maxBlankLines = 1l // Maximum number of blank lines in a row
+}

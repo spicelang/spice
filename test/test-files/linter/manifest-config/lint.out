@@ -1,0 +1,2 @@
+[Info] ./source.spice:2:3: naming-convention: Procedure name 'bad_name' should be camelCase
+[Lint error] ./source.spice:5:1: too-many-parameters: Function 'sumOfFour' has 4 parameters (max 3); consider grouping related parameters into a struct

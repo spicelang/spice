@@ -1,0 +1,4 @@
+// The manifest names a lint rule, that does not exist, so linting fails before the source file is compiled
+f<int> main() {
+    return 0;
+}

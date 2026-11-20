@@ -10,16 +10,12 @@ import "@/ast/ast-nodes";
 import "@/driver";
 import "@/exception/compiler-error";
 import "@/exception/fatal-error";
+import "@/formatter/format-config";
 import "@/global/global-resource-manager";
 import "@/lexer/lexer";
 import "@/lexer/token";
 import "@/parser/parser";
 import "@/source-file";
-
-// Constants
-const unsigned long INDENT_WIDTH = 4l;
-// Maximum number of line breaks between two tokens. Two line breaks make one blank line
-const unsigned long MAX_LINE_BREAKS = 2l;
 
 /**
  * Kind of a bracket pair. The formatter tracks the open bracket pairs to compute the indentation of the lines
@@ -65,12 +61,12 @@ type FmtToken struct {
 /**
  * The source formatter brings Spice source code into the canonical layout. It only changes whitespace:
  *
- * - Indentation with four spaces per level, computed from the bracket pairs. Continuation lines of a statement get one more
+ * - Indentation with four spaces per level (configurable), computed from the bracket pairs. Continuation lines of a statement get one more
  *   level. The items of a list, whose first item is on the line of the opening bracket, stay aligned to the first item, if they
  *   are aligned in the original code. Otherwise, they are indented by one level as well
  * - Canonical spacing between the tokens of a line, e.g. around binary operators, after commas and keywords
  * - Opening braces of blocks on the line of their construct (K&R style), 'else' on the line of the preceding '}'
- * - At most one blank line in a row, no blank lines at the start or end of a bracket pair
+ * - At most one blank line in a row (configurable), no blank lines at the start or end of a bracket pair
  * - Comments at the end of a line and aligned declarations, e.g. the names of consecutive fields, keep their original column,
  *   if it can be reached, so that they stay aligned
  *
@@ -79,6 +75,7 @@ type FmtToken struct {
  * comparison, '*' as pointer type modifier or as multiplication and '{' as block or as struct instantiation.
  */
 type SourceFormatter struct {
+    FormatConfig config
     Vector<FmtToken> tokens // All tokens, except for the EOF token
     Vector<long> nextCodeIdx // For each token: Index of the next token, that is no comment. -1 if there is none
     Vector<long> prevCodeIdx // For each token: Index of the previous token, that is no comment. -1 if there is none
@@ -89,8 +86,10 @@ type SourceFormatter struct {
  *
  * @param sourceCode Source code, that was lexed
  * @param lexerTokens Tokens of the source code, including the comments and the terminating EOF token
+ * @param config Formatter configuration, e.g. from the manifest
  */
-p SourceFormatter.ctor(const String& sourceCode, const Vector<Token>& lexerTokens) {
+p SourceFormatter.ctor(const String& sourceCode, const Vector<Token>& lexerTokens, const FormatConfig& config) {
+    this.config = config;
     // Walk through the source code once to compute the line and column of each token
     unsigned long offset = 0l;
     unsigned long line = 1l;
@@ -353,9 +352,10 @@ p SourceFormatter.computeLineBreaks() {
         if lineBreaks > 0l && !isComment(prev.tokenType) && this.isJoinedWithPrevLine(i) {
             lineBreaks = 0l;
         }
-        // Collapse multiple blank lines to one
-        if lineBreaks > MAX_LINE_BREAKS {
-            lineBreaks = MAX_LINE_BREAKS;
+        // Collapse multiple blank lines to the maximum number of blank lines. One line break more makes the last blank line
+        const unsigned long maxLineBreaks = this.config.maxBlankLines + 1l;
+        if lineBreaks > maxLineBreaks {
+            lineBreaks = maxLineBreaks;
         }
         // No blank lines at the start or end of a bracket pair
         if lineBreaks > 1l && (isOpener(prev.tokenType) || isCloser(token.tokenType)) {
@@ -400,7 +400,8 @@ f<bool> SourceFormatter.isJoinedWithPrevLine(unsigned long idx) {
  */
 f<String> SourceFormatter.render() {
     Vector<Frame> frames;
-    Frame fileFrame = createFrame(FrameKind::BLOCK, -1l, 0l);
+    const unsigned long indentWidth = this.config.indentWidth;
+    Frame fileFrame = createFrame(FrameKind::BLOCK, -1l, 0l, indentWidth);
     fileFrame.baseCol = 0l;
     fileFrame.unitCol = 0l;
     frames.pushBack(fileFrame);
@@ -455,9 +456,9 @@ f<String> SourceFormatter.render() {
         const TokenType tokenType = token.tokenType;
         if tokenType == TokenType::LBRACE && isBlockBrace(token) {
             const unsigned long closerCol = top.kind == FrameKind::BLOCK ? top.unitCol : lineIndentCol;
-            frames.pushBack(createFrame(FrameKind::BLOCK, cast<long>(i), closerCol));
+            frames.pushBack(createFrame(FrameKind::BLOCK, cast<long>(i), closerCol, indentWidth));
         } else if isOpener(tokenType) {
-            frames.pushBack(createFrame(FrameKind::LIST, cast<long>(i), lineIndentCol));
+            frames.pushBack(createFrame(FrameKind::LIST, cast<long>(i), lineIndentCol, indentWidth));
         } else if isCloser(tokenType) && frames.getSize() > 1l {
             frames.popBack();
         }
@@ -476,15 +477,16 @@ f<String> SourceFormatter.render() {
  * @param kind Kind of the bracket pair
  * @param openerIdx Index of the opening token
  * @param closerCol Indentation of a line, that starts with the closing token
+ * @param indentWidth Number of spaces per indentation level
  * @return Frame
  */
-f<Frame> createFrame(FrameKind kind, long openerIdx, unsigned long closerCol) {
+f<Frame> createFrame(FrameKind kind, long openerIdx, unsigned long closerCol, unsigned long indentWidth) {
     Frame frame;
     frame.kind = kind;
     frame.openerIdx = openerIdx;
     frame.closerCol = closerCol;
-    frame.baseCol = closerCol + INDENT_WIDTH;
-    frame.unitCol = closerCol + INDENT_WIDTH;
+    frame.baseCol = closerCol + indentWidth;
+    frame.unitCol = closerCol + indentWidth;
     frame.alignCol = -1l;
     frame.alignDecided = false;
     frame.isAligned = false;
@@ -546,7 +548,7 @@ f<unsigned long> SourceFormatter.computeLineIndentCol(unsigned long idx, Frame& 
     if top.kind == FrameKind::LIST {
         return getContentCol(top);
     }
-    return this.startsUnit(cast<unsigned long>(codeIdx), top) ? top.baseCol : top.baseCol + INDENT_WIDTH;
+    return this.startsUnit(cast<unsigned long>(codeIdx), top) ? top.baseCol : top.baseCol + this.config.indentWidth;
 }
 
 /**
@@ -1054,9 +1056,10 @@ f<bool> isPostfixOp(const FmtToken& token) {
  * @param resourceManager Global resource manager, that owns the syntax tree
  * @param sourceCode Source code to format
  * @param filePath Path of the source file, which errors refer to. Has to stay valid, until the formatting is done
+ * @param config Formatter configuration, e.g. from the manifest
  * @return Formatted source code
  */
-public f<String> formatSourceCode(GlobalResourceManager& resourceManager, const String& sourceCode, const FilePath& filePath) {
+public f<String> formatSourceCode(GlobalResourceManager& resourceManager, const String& sourceCode, const FilePath& filePath, const FormatConfig& config) {
     // The formatted code is assembled from strings, which end at a NUL char. So source code with NUL chars cannot be formatted
     if containsNulChar(sourceCode) {
         const String message = "Source file '" + String(filePath.toString()) + "' contains a NUL char and cannot be formatted";
@@ -1068,7 +1071,7 @@ public f<String> formatSourceCode(GlobalResourceManager& resourceManager, const 
     Parser parser = Parser(resourceManager, nil<SourceFile*>, lexer);
     ASTEntryNode* ast = parser.parse();
 
-    SourceFormatter formatter = SourceFormatter(sourceCode, lexer.getTokens());
+    SourceFormatter formatter = SourceFormatter(sourceCode, lexer.getTokens(), config);
     formatter.analyzeSyntaxTree(cast<ASTNode*>(ast));
     const String formattedCode = formatter.format();
 
@@ -1168,17 +1171,29 @@ f<String> removeWhitespace(const String& text) {
  * Format the given source code with a fresh resource manager
  *
  * @param sourceCode Source code to format
+ * @param config Formatter configuration
  * @return Formatted source code
  */
-f<String> formatForTest(string sourceCode) {
+f<String> formatForTest(string sourceCode, const FormatConfig& config) {
     String formattedCode;
     {
         CliOptions cliOptions;
         GlobalResourceManager resourceManager = GlobalResourceManager(cliOptions);
         const FilePath filePath = FilePath("test.spice");
-        formattedCode = formatSourceCode(resourceManager, String(sourceCode), filePath);
+        formattedCode = formatSourceCode(resourceManager, String(sourceCode), filePath, config);
     }
     return formattedCode;
+}
+
+/**
+ * Format the given source code with a fresh resource manager and the default configuration
+ *
+ * @param sourceCode Source code to format
+ * @return Formatted source code
+ */
+f<String> formatForTest(string sourceCode) {
+    const FormatConfig config;
+    return formatForTest(sourceCode, config);
 }
 
 #[test]
@@ -1199,6 +1214,23 @@ f<bool> testFormatterIndentation() {
 f<bool> testFormatterBlankLinesAndComments() {
     const String formatted = formatForTest("// Header\n\n\n\nimport \"std/io/file\";\n\nf<int> main() {\n\n    int a = 1;   // One\n    int bb = 2;  // Two\n\n}\n");
     assert formatted == "// Header\n\nimport \"std/io/file\";\n\nf<int> main() {\n    int a = 1;   // One\n    int bb = 2;  // Two\n}\n";
+    return true;
+}
+
+#[test]
+f<bool> testFormatterConfig() {
+    const string sourceCode = "p foo() {\n    if true {\n        a();\n\n\n\n        b();\n    }\n}\n";
+    // Two spaces per level and no blank lines
+    FormatConfig compactConfig;
+    compactConfig.indentWidth = 2l;
+    compactConfig.maxBlankLines = 0l;
+    const String compact = formatForTest(sourceCode, compactConfig);
+    // Two blank lines in a row
+    FormatConfig looseConfig;
+    looseConfig.maxBlankLines = 2l;
+    const String loose = formatForTest(sourceCode, looseConfig);
+    assert compact == "p foo() {\n  if true {\n    a();\n    b();\n  }\n}\n";
+    assert loose == "p foo() {\n    if true {\n        a();\n\n\n        b();\n    }\n}\n";
     return true;
 }
 

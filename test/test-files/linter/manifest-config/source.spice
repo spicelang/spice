@@ -1,0 +1,32 @@
+// Naming violation, reported with the info severity
+p bad_name() {}
+
+// Exceeds the configured maximum of 3 parameters, reported with the error severity, which fails the lint subcommand
+f<int> sumOfFour(int a, int b, int c, int d) {
+    return a + b + c + d;
+}
+
+// Within the configured maximum of 3 parameters
+f<int> sumOfThree(int a, int b, int c) {
+    return a + b + c;
+}
+
+// Would exceed the default maximum cyclomatic complexity of 10, but the rule is disabled
+f<int> classify(int x) {
+    if x == 1 { return 1; }
+    if x == 2 { return 2; }
+    if x == 3 { return 3; }
+    if x == 4 { return 4; }
+    if x == 5 { return 5; }
+    if x == 6 { return 6; }
+    if x == 7 { return 7; }
+    if x == 8 { return 8; }
+    if x == 9 { return 9; }
+    if x == 10 { return 10; }
+    return 0;
+}
+
+f<int> main() {
+    bad_name();
+    return sumOfFour(1, 2, 3, 4) + sumOfThree(1, 2, 3) + classify(5);
+}

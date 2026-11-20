@@ -1,0 +1,2 @@
+[Error|Compiler]:
+Invalid manifest: ./test-files/formatter/manifest-invalid/spice.toml: 'format.indent-width' has to be an integer from 1 to 16

@@ -1,0 +1,4 @@
+// The manifest sets an indentation width, that is out of range, so the source file is not formatted
+f<int> main() {
+    return 0;
+}

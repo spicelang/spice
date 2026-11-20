@@ -1,0 +1,4 @@
+# The formatter options of this test case are configured by this manifest
+[format]
+indent-width = 2
+max-blank-lines = 2
