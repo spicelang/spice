@@ -20,13 +20,13 @@ spice
 # LLVM
 /llvm
 
-# Vendored libbacktrace: its out-of-tree build dir, and the archive and license setup-deps.py puts in the std tree
-/deps/libbacktrace-build
+# Vendored libbacktrace: the archive and license setup-deps.py puts in the std tree. Its build dir (deps/libbacktrace/build)
+# is excluded in the submodule
 /std/runtime/lib
 /std/runtime/LICENSES
 
-# Vendored TPDE: its out-of-tree build dir, and the libraries, headers and licenses setup-deps.py --tpde puts in the std tree
-/deps/tpde-build
+# Vendored TPDE: the libraries, headers and licenses setup-deps.py --tpde puts in the std tree. Its build dir (deps/tpde/build)
+# is ignored by the submodule
 /std/bindings/tpde/lib
 /std/bindings/tpde/include
 /std/bindings/tpde/LICENSES

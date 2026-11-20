@@ -11,7 +11,7 @@ from pathlib import Path
 # '-lbacktrace' (see std/runtime/impl/stack_trace_native.spice), and the compiler looks for it in the std tree, so the
 # archive is written to std/runtime/lib - where it is packaged and installed along with the rest of the std.
 LIBBACKTRACE_SRC = Path("deps/libbacktrace")
-LIBBACKTRACE_BUILD = Path("deps/libbacktrace-build")
+LIBBACKTRACE_BUILD = LIBBACKTRACE_SRC / "build"
 LIBBACKTRACE_ARCHIVE = Path("std/runtime/lib/libbacktrace.a")
 # Its BSD license requires the notice to accompany binary redistributions, so it goes into the std tree as well, like the
 # licenses of TPDE do
@@ -24,7 +24,7 @@ LIBBACKTRACE_STAMP = LIBBACKTRACE_BUILD / "built-from-revision"
 # packages ship, so the compiler derives TPDE_FLAGS from it (see getStdTPDEFlags in src/util/system-util.spice). TPDE only
 # emits ELF objects, so it is only built on Linux.
 TPDE_SRC = Path("deps/tpde")
-TPDE_BUILD = Path("deps/tpde-build")
+TPDE_BUILD = TPDE_SRC / "build"
 TPDE_STD_DIR = Path("std/bindings/tpde")
 # Records the submodule commit and the LLVM the libraries were built from and against, so a change rebuilds them
 TPDE_STAMP = TPDE_BUILD / "built-from-revision"
@@ -82,6 +82,19 @@ def find_build_tools() -> tuple[str, str]:
     raise SystemExit("No POSIX shell found to configure libbacktrace with.\n" + MISSING_TOOLS_HINT)
 
 
+def exclude_build_dir_from_submodule(src: Path, build: Path) -> None:
+    """Keep the build dir inside a submodule checkout out of its 'git status', so the submodule does not show up as dirty"""
+    exclude = Path(subprocess.run(
+        ["git", "-C", str(src), "rev-parse", "--path-format=absolute", "--git-path", "info/exclude"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip())
+    pattern = f"/{build.relative_to(src).as_posix()}/"
+    lines = exclude.read_text().splitlines() if exclude.exists() else []
+    if pattern not in lines:
+        exclude.parent.mkdir(parents=True, exist_ok=True)
+        exclude.write_text("\n".join(lines + [pattern]) + "\n")
+
+
 def install_libbacktrace_license() -> None:
     """Install the license of the vendored libbacktrace into the std tree, next to its archive."""
     LIBBACKTRACE_LICENSE.parent.mkdir(parents=True, exist_ok=True)
@@ -105,8 +118,10 @@ def build_libbacktrace() -> None:
     shell, make = find_build_tools()
 
     print(f"Building libbacktrace ({revision[:9]}) ...")
-    # Out of tree, so the submodule checkout stays pristine. From scratch every time, so that a submodule bump
-    # re-runs configure rather than reusing decisions cached for the previous commit.
+    # Out of tree, so the submodule checkout stays pristine apart from the build dir, which its upstream .gitignore does not
+    # cover. From scratch every time, so that a submodule bump re-runs configure rather than reusing decisions cached for
+    # the previous commit.
+    exclude_build_dir_from_submodule(LIBBACKTRACE_SRC, LIBBACKTRACE_BUILD)
     shutil.rmtree(LIBBACKTRACE_BUILD, ignore_errors=True)
     LIBBACKTRACE_BUILD.mkdir(parents=True, exist_ok=True)
     # Relative, and with forward slashes: the shell may be MSYS2's, which reads an absolute Windows path like
