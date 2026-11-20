@@ -425,7 +425,7 @@ jobs:
   deploy-nexus:
     name: Deploy to Nexus
     needs: build-artifacts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     if: contains(github.ref, 'rc') == false
     strategy:
       matrix:
@@ -527,7 +527,7 @@ jobs:
   deploy-winget:
     name: Deploy to WinGet
     needs: build-win-installers
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     # Release candidates would become the newest version of the package for every WinGet user
     if: contains(github.ref, 'rc') == false
     # Komac only reads the release from GitHub and submits the manifest PR with the token, the checkout needs no more
