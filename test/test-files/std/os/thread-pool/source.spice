@@ -1,46 +1,49 @@
 import "std/os/thread-pool";
 import "std/time/delay";
 
+// A single worker thread runs the jobs one after another, in the order they were enqueued. The earlier jobs sleep longer, so
+// the output would be out of order, if a job started before the previous one has finished. Running jobs in parallel is
+// covered by thread-pool-concurrent, without depending on the timing
 f<int> main() {
-    ThreadPool tp = ThreadPool(3s);
+    ThreadPool tp = ThreadPool(1s);
     tp.enqueue(p() {
-        delay(10);
+        delay(100);
         printf("Hello from task 1\n");
     });
     tp.enqueue(p() {
-        delay(20);
+        delay(90);
         printf("Hello from task 2\n");
     });
     tp.enqueue(p() {
-        delay(30);
+        delay(80);
         printf("Hello from task 3\n");
     });
     tp.enqueue(p() {
-        delay(40);
+        delay(70);
         printf("Hello from task 4\n");
     });
     tp.enqueue(p() {
-        delay(50);
+        delay(60);
         printf("Hello from task 5\n");
     });
     tp.enqueue(p() {
-        delay(60);
+        delay(50);
         printf("Hello from task 6\n");
     });
     tp.enqueue(p() {
-        delay(70);
+        delay(40);
         printf("Hello from task 7\n");
     });
     tp.enqueue(p() {
-        delay(80);
+        delay(30);
         printf("Hello from task 8\n");
     });
     tp.enqueue(p() {
-        delay(90);
+        delay(20);
         printf("Hello from task 9\n");
     });
     tp.enqueue(p() {
-        delay(100);
+        delay(10);
         printf("Hello from task 10\n");
     });
     tp.start();
