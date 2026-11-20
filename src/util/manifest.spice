@@ -54,6 +54,24 @@ f<FilePath> makeAbsolute(const FilePath& path) {
 }
 
 /**
+ * Get the parent dir of the given absolute and lexically normal path. Unlike FilePath.getParentDir, the parent of an entry
+ * directly below the root is the root, e.g. '/' for '/home' or 'C:/' for 'C:/Users'
+ *
+ * @param path Absolute and lexically normal path
+ * @return Parent dir or an empty path, if the given path is the root
+ */
+f<FilePath> getAbsoluteParentDir(const FilePath& path) {
+    FilePath pathCopy = path;
+    String parentDir = pathCopy.getParentDir();
+    // The separator of the root is cut off together with the last component
+    if parentDir.isEmpty() || parentDir.endsWith(":") {
+        parentDir += "/";
+    }
+    const FilePath parentPath = FilePath(parentDir);
+    return parentPath == pathCopy ? FilePath() : parentPath;
+}
+
+/**
  * Reads the values of a manifest and reports the errors in it
  */
 type ManifestReader struct {
@@ -222,18 +240,17 @@ p ManifestReader.raiseError(const String& message) {
  * @return Absolute path of the manifest or an empty path, if there is none
  */
 public f<FilePath> findManifest(const FilePath& path) {
-    FilePath dir = path;
+    // Make the path absolute, so that the search can continue above the working dir up to the root
+    FilePath dir = makeAbsolute(path);
     if !dirExists(dir.toString()) {
-        dir = FilePath(dir.getParentDir());
+        dir = getAbsoluteParentDir(dir);
     }
-    // Make the path absolute, so that the search can continue above the working dir
-    dir = makeAbsolute(dir);
     while !dir.isEmpty() {
         const FilePath candidate = dir / MANIFEST_FILE_NAME;
         if fileExists(candidate.toString()) && !dirExists(candidate.toString()) {
             return candidate;
         }
-        dir = FilePath(dir.getParentDir());
+        dir = getAbsoluteParentDir(dir);
     }
     return FilePath();
 }
@@ -343,5 +360,18 @@ f<bool> testManifestConfig() {
     assert formatConfig.indentWidth == 2l && formatConfig.maxBlankLines == 0l;
     assert readerFromSubDir.displayPath == "../../spice.toml";
     assert readerFromTestDir.displayPath == "./spice.toml";
+    return true;
+}
+
+#[test]
+f<bool> testManifestParentDirs() {
+    assert getAbsoluteParentDir(FilePath("/home/user")).toGenericString() == "/home";
+    assert getAbsoluteParentDir(FilePath("/home")).toGenericString() == "/";
+    assert getAbsoluteParentDir(FilePath("/")).isEmpty();
+    assert getAbsoluteParentDir(FilePath("C:/Users")).toGenericString() == "C:/";
+    assert getAbsoluteParentDir(FilePath("C:/")).isEmpty();
+    // The search starts at the root for a source file in the root
+    assert makeAbsolute(FilePath("/main.spice")).toGenericString() == "/main.spice";
+    assert makeAbsolute(FilePath("/")).toGenericString() == "/";
     return true;
 }
