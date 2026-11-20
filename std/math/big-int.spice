@@ -31,6 +31,30 @@ p trimBigIntMagnitude(Vector<unsigned int>& magnitude) {
     }
 }
 
+/**
+ * Set the magnitude of a zero BigInt to the given value
+ */
+p initBigIntMagnitude(Vector<unsigned int>& magnitude, unsigned long value) {
+    unsigned long rest = value;
+    while rest != 0ul {
+        magnitude.pushBack(cast<unsigned int>(rest & LIMB_MASK));
+        rest = rest >> LIMB_BITS;
+    }
+}
+
+/**
+ * @return Number of bits of the limb, without leading zeros. 0 for zero
+ */
+f<unsigned long> getLimbBitLength(unsigned int limb) {
+    unsigned long bitLength = 0ul;
+    unsigned int rest = limb;
+    while rest != 0u {
+        bitLength++;
+        rest = rest >> 1u;
+    }
+    return bitLength;
+}
+
 f<int> compareBigIntMagnitudes(const Vector<unsigned int>& lhs, const Vector<unsigned int>& rhs) {
     const unsigned long size = lhs.getSize();
     const unsigned long otherSize = rhs.getSize();
@@ -38,8 +62,8 @@ f<int> compareBigIntMagnitudes(const Vector<unsigned int>& lhs, const Vector<uns
     unsigned long i = size;
     while i > 0ul {
         i--;
-        const unsigned int limb = lhs.get(i);
-        const unsigned int otherLimb = rhs.get(i);
+        const unsigned int limb = lhs[i];
+        const unsigned int otherLimb = rhs[i];
         if limb != otherLimb { return limb < otherLimb ? -1 : 1; }
     }
     return 0;
@@ -55,8 +79,8 @@ p addBigIntMagnitudes(Vector<unsigned int>& lhs, const Vector<unsigned int>& rhs
     unsigned long carry = 0ul;
     for unsigned long i = 0ul; i < lhs.getSize(); i++ {
         if i >= rhs.getSize() && carry == 0ul { break; }
-        unsigned long sum = cast<unsigned long>(lhs.get(i)) + carry;
-        if i < rhs.getSize() { sum += cast<unsigned long>(rhs.get(i)); }
+        unsigned long sum = cast<unsigned long>(lhs[i]) + carry;
+        if i < rhs.getSize() { sum += cast<unsigned long>(rhs[i]); }
         lhs[i] = cast<unsigned int>(sum & LIMB_MASK);
         carry = sum >> LIMB_BITS;
     }
@@ -71,8 +95,8 @@ p subtractBigIntMagnitudes(Vector<unsigned int>& lhs, const Vector<unsigned int>
     for unsigned long i = 0ul; i < lhs.getSize(); i++ {
         if i >= rhs.getSize() && borrow == 0ul { break; }
         unsigned long subtracted = borrow;
-        if i < rhs.getSize() { subtracted += cast<unsigned long>(rhs.get(i)); }
-        const unsigned long limb = cast<unsigned long>(lhs.get(i));
+        if i < rhs.getSize() { subtracted += cast<unsigned long>(rhs[i]); }
+        const unsigned long limb = cast<unsigned long>(lhs[i]);
         if limb >= subtracted {
             lhs[i] = cast<unsigned int>(limb - subtracted);
             borrow = 0ul;
@@ -94,7 +118,7 @@ p multiplyBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsigned int fac
     }
     unsigned long carry = 0ul;
     for unsigned long i = 0ul; i < magnitude.getSize(); i++ {
-        const unsigned long product = cast<unsigned long>(magnitude.get(i)) * cast<unsigned long>(factor) + carry;
+        const unsigned long product = cast<unsigned long>(magnitude[i]) * cast<unsigned long>(factor) + carry;
         magnitude[i] = cast<unsigned int>(product & LIMB_MASK);
         carry = product >> LIMB_BITS;
     }
@@ -107,7 +131,7 @@ p multiplyBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsigned int fac
 p addBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsigned int summand) {
     unsigned long carry = cast<unsigned long>(summand);
     for unsigned long i = 0ul; i < magnitude.getSize() && carry != 0ul; i++ {
-        const unsigned long sum = cast<unsigned long>(magnitude.get(i)) + carry;
+        const unsigned long sum = cast<unsigned long>(magnitude[i]) + carry;
         magnitude[i] = cast<unsigned int>(sum & LIMB_MASK);
         carry = sum >> LIMB_BITS;
     }
@@ -124,7 +148,7 @@ f<unsigned int> divideBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsi
     unsigned long i = magnitude.getSize();
     while i > 0ul {
         i--;
-        const unsigned long current = (remainder << LIMB_BITS) | cast<unsigned long>(magnitude.get(i));
+        const unsigned long current = (remainder << LIMB_BITS) | cast<unsigned long>(magnitude[i]);
         magnitude[i] = cast<unsigned int>(current / cast<unsigned long>(divisor));
         remainder = current % cast<unsigned long>(divisor);
     }
@@ -133,19 +157,14 @@ f<unsigned int> divideBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsi
 }
 
 f<Vector<unsigned int>> multiplyBigIntMagnitudes(const Vector<unsigned int>& lhs, const Vector<unsigned int>& rhs) {
-    Vector<unsigned int> product;
-    if lhs.isEmpty() || rhs.isEmpty() { return product; }
-    const unsigned long productSize = lhs.getSize() + rhs.getSize();
-    product.reserve(productSize);
-    for unsigned long i = 0ul; i < productSize; i++ {
-        product.pushBack(0u);
-    }
+    if lhs.isEmpty() || rhs.isEmpty() { return Vector<unsigned int>(); }
+    Vector<unsigned int> product = Vector<unsigned int>(lhs.getSize() + rhs.getSize(), 0u);
     for unsigned long i = 0ul; i < lhs.getSize(); i++ {
-        const unsigned long factor = cast<unsigned long>(lhs.get(i));
+        const unsigned long factor = cast<unsigned long>(lhs[i]);
         if factor == 0ul { continue; }
         unsigned long carry = 0ul;
         for unsigned long j = 0ul; j < rhs.getSize(); j++ {
-            const unsigned long sum = factor * cast<unsigned long>(rhs.get(j)) + cast<unsigned long>(product.get(i + j)) + carry;
+            const unsigned long sum = factor * cast<unsigned long>(rhs[j]) + cast<unsigned long>(product[i + j]) + carry;
             product[i + j] = cast<unsigned int>(sum & LIMB_MASK);
             carry = sum >> LIMB_BITS;
         }
@@ -167,8 +186,8 @@ p shiftBigIntMagnitudeLeft(Vector<unsigned int>& magnitude, unsigned long bits) 
     unsigned long i = oldSize;
     while i > 0ul {
         i--;
-        const unsigned long shifted = cast<unsigned long>(magnitude.get(i)) << bitShift;
-        magnitude[i + limbShift + 1ul] = magnitude.get(i + limbShift + 1ul) | cast<unsigned int>(shifted >> LIMB_BITS);
+        const unsigned long shifted = cast<unsigned long>(magnitude[i]) << bitShift;
+        magnitude[i + limbShift + 1ul] = magnitude[i + limbShift + 1ul] | cast<unsigned int>(shifted >> LIMB_BITS);
         magnitude[i + limbShift] = cast<unsigned int>(shifted & LIMB_MASK);
     }
     for unsigned long j = 0ul; j < limbShift; j++ {
@@ -182,25 +201,26 @@ p shiftBigIntMagnitudeLeft(Vector<unsigned int>& magnitude, unsigned long bits) 
  *
  * @return Whether any of the dropped bits was set
  */
+#[ignoreUnusedReturnValue]
 f<bool> shiftBigIntMagnitudeRight(Vector<unsigned int>& magnitude, unsigned long bits) {
     const unsigned long limbShift = bits / LIMB_BITS;
     const unsigned long bitShift = bits % LIMB_BITS;
     bool droppedSetBits = false;
     for unsigned long i = 0ul; i < limbShift && i < magnitude.getSize(); i++ {
-        if magnitude.get(i) != 0u { droppedSetBits = true; }
+        if magnitude[i] != 0u { droppedSetBits = true; }
     }
     if limbShift >= magnitude.getSize() {
         magnitude.clear();
         return droppedSetBits;
     }
-    if bitShift != 0ul && (cast<unsigned long>(magnitude.get(limbShift)) & ((1ul << bitShift) - 1ul)) != 0ul {
+    if bitShift != 0ul && (cast<unsigned long>(magnitude[limbShift]) & ((1ul << bitShift) - 1ul)) != 0ul {
         droppedSetBits = true;
     }
     const unsigned long newSize = magnitude.getSize() - limbShift;
     for unsigned long i = 0ul; i < newSize; i++ {
-        unsigned long combined = cast<unsigned long>(magnitude.get(i + limbShift));
+        unsigned long combined = cast<unsigned long>(magnitude[i + limbShift]);
         if i + limbShift + 1ul < magnitude.getSize() {
-            combined = combined | (cast<unsigned long>(magnitude.get(i + limbShift + 1ul)) << LIMB_BITS);
+            combined = combined | (cast<unsigned long>(magnitude[i + limbShift + 1ul]) << LIMB_BITS);
         }
         magnitude[i] = cast<unsigned int>((combined >> bitShift) & LIMB_MASK);
     }
@@ -220,8 +240,7 @@ f<bool> shiftBigIntMagnitudeRight(Vector<unsigned int>& magnitude, unsigned long
  * @param quotient Gets the quotient
  * @param remainder Gets the remainder
  */
-p divideBigIntMagnitudes(const Vector<unsigned int>& dividend, const Vector<unsigned int>& divisor, Vector<unsigned int>& quotient,
-                         Vector<unsigned int>& remainder) {
+p divideBigIntMagnitudes(const Vector<unsigned int>& dividend, const Vector<unsigned int>& divisor, Vector<unsigned int>& quotient, Vector<unsigned int>& remainder) {
     quotient.clear();
     if compareBigIntMagnitudes(dividend, divisor) < 0 {
         remainder = dividend;
@@ -231,41 +250,35 @@ p divideBigIntMagnitudes(const Vector<unsigned int>& dividend, const Vector<unsi
     if divisorLength == 1ul {
         // A single limb divisor needs no normalization
         quotient = dividend;
-        const unsigned int smallRemainder = divideBigIntMagnitudeSmall(quotient, divisor.get(0ul));
+        const unsigned int smallRemainder = divideBigIntMagnitudeSmall(quotient, divisor[0ul]);
         remainder.clear();
         if smallRemainder != 0u { remainder.pushBack(smallRemainder); }
         return;
     }
 
     // Normalize, so that the most significant limb of the divisor has its top bit set
-    unsigned long normalizeShift = 0ul;
-    unsigned int topLimb = divisor.get(divisorLength - 1ul);
-    while (topLimb & 0x80000000u) == 0u {
-        topLimb = topLimb << 1u;
-        normalizeShift++;
-    }
+    const unsigned long normalizeShift = LIMB_BITS - getLimbBitLength(divisor[divisorLength - 1ul]);
     Vector<unsigned int> normalizedDivisor = divisor;
     shiftBigIntMagnitudeLeft(normalizedDivisor, normalizeShift);
     Vector<unsigned int> rest = dividend;
     shiftBigIntMagnitudeLeft(rest, normalizeShift);
-    rest.pushBack(0u); // The algorithm needs one more limb than the dividend has
+    // The algorithm needs one more limb than the dividend has, unless the normalization already added one
+    if rest.getSize() == dividend.getSize() { rest.pushBack(0u); }
     const unsigned long quotientLength = rest.getSize() - divisorLength;
-    for unsigned long i = 0ul; i < quotientLength; i++ {
-        quotient.pushBack(0u);
-    }
-    const unsigned long divisorTop = cast<unsigned long>(normalizedDivisor.get(divisorLength - 1ul));
-    const unsigned long divisorSecond = cast<unsigned long>(normalizedDivisor.get(divisorLength - 2ul));
+    quotient = Vector<unsigned int>(quotientLength, 0u);
+    const unsigned long divisorTop = cast<unsigned long>(normalizedDivisor[divisorLength - 1ul]);
+    const unsigned long divisorSecond = cast<unsigned long>(normalizedDivisor[divisorLength - 2ul]);
 
     unsigned long j = quotientLength;
     while j > 0ul {
         j--;
         // Estimate the quotient limb from the two top limbs of the rest and correct it with the third one
-        const unsigned long topTwo = (cast<unsigned long>(rest.get(j + divisorLength)) << LIMB_BITS) |
-            cast<unsigned long>(rest.get(j + divisorLength - 1ul));
+        const unsigned long topTwo = (cast<unsigned long>(rest[j + divisorLength]) << LIMB_BITS) |
+            cast<unsigned long>(rest[j + divisorLength - 1ul]);
         unsigned long digit = topTwo / divisorTop;
         unsigned long remainderEstimate = topTwo % divisorTop;
         while digit > LIMB_MASK ||
-            digit * divisorSecond > ((remainderEstimate << LIMB_BITS) | cast<unsigned long>(rest.get(j + divisorLength - 2ul))) {
+            digit * divisorSecond > ((remainderEstimate << LIMB_BITS) | cast<unsigned long>(rest[j + divisorLength - 2ul])) {
             digit--;
             remainderEstimate += divisorTop;
             if remainderEstimate > LIMB_MASK { break; }
@@ -275,13 +288,13 @@ p divideBigIntMagnitudes(const Vector<unsigned int>& dividend, const Vector<unsi
         long borrow = 0l;
         unsigned long carry = 0ul;
         for unsigned long i = 0ul; i < divisorLength; i++ {
-            const unsigned long product = digit * cast<unsigned long>(normalizedDivisor.get(i)) + carry;
+            const unsigned long product = digit * cast<unsigned long>(normalizedDivisor[i]) + carry;
             carry = product >> LIMB_BITS;
-            const long difference = cast<long>(rest.get(i + j)) - cast<long>(product & LIMB_MASK) - borrow;
+            const long difference = cast<long>(rest[i + j]) - cast<long>(product & LIMB_MASK) - borrow;
             rest[i + j] = cast<unsigned int>(difference & 0xFFFFFFFFl);
             borrow = difference < 0l ? 1l : 0l;
         }
-        const long top = cast<long>(rest.get(j + divisorLength)) - cast<long>(carry) - borrow;
+        const long top = cast<long>(rest[j + divisorLength]) - cast<long>(carry) - borrow;
         rest[j + divisorLength] = cast<unsigned int>(top & 0xFFFFFFFFl);
 
         // The estimate was one too large in rare cases: add the divisor back
@@ -289,44 +302,33 @@ p divideBigIntMagnitudes(const Vector<unsigned int>& dividend, const Vector<unsi
             digit--;
             unsigned long addCarry = 0ul;
             for unsigned long i = 0ul; i < divisorLength; i++ {
-                const unsigned long sum = cast<unsigned long>(rest.get(i + j)) + cast<unsigned long>(normalizedDivisor.get(i)) + addCarry;
+                const unsigned long sum = cast<unsigned long>(rest[i + j]) + cast<unsigned long>(normalizedDivisor[i]) + addCarry;
                 rest[i + j] = cast<unsigned int>(sum & LIMB_MASK);
                 addCarry = sum >> LIMB_BITS;
             }
-            rest[j + divisorLength] = cast<unsigned int>((cast<unsigned long>(rest.get(j + divisorLength)) + addCarry) & LIMB_MASK);
+            rest[j + divisorLength] = cast<unsigned int>((cast<unsigned long>(rest[j + divisorLength]) + addCarry) & LIMB_MASK);
         }
         quotient[j] = cast<unsigned int>(digit);
     }
     trimBigIntMagnitude(quotient);
 
     // The rest is the remainder, still normalized
-    trimBigIntMagnitude(rest);
-    const bool _ = shiftBigIntMagnitudeRight(rest, normalizeShift);
+    shiftBigIntMagnitudeRight(rest, normalizeShift);
     remainder = rest;
 }
 
 // ------------------------------------------------------- Construction -------------------------------------------------------
 
 /**
- * Create a BigInt with the value zero
- */
-public p BigInt.ctor() {}
-
-/**
  * Create a BigInt with the given value
  *
  * @param value Value
  */
-public p BigInt.ctor(long value) {
-    unsigned long rest = cast<unsigned long>(value);
-    if value < 0l {
-        this.negative = true;
-        rest = cast<unsigned long>(-(value + 1l)) + 1ul; // The magnitude of the minimum of long does not fit into long
-    }
-    while rest != 0ul {
-        this.magnitude.pushBack(cast<unsigned int>(rest & LIMB_MASK));
-        rest = rest >> LIMB_BITS;
-    }
+public p BigInt.ctor(long value = 0l) {
+    this.negative = value < 0l;
+    // Negate unsigned, where it wraps, because the magnitude of the minimum of long does not fit into long
+    const unsigned long absolute = cast<unsigned long>(value);
+    initBigIntMagnitude(this.magnitude, this.negative ? ~absolute + 1ul : absolute);
 }
 
 /**
@@ -335,12 +337,7 @@ public p BigInt.ctor(long value) {
  * @param value Value
  */
 public p BigInt.ctor(int value) {
-    long rest = cast<long>(value);
-    if rest < 0l {
-        this.negative = true;
-        rest = -rest;
-    }
-    if rest != 0l { this.magnitude.pushBack(cast<unsigned int>(rest)); }
+    this.ctor(cast<long>(value));
 }
 
 /**
@@ -351,11 +348,7 @@ public p BigInt.ctor(int value) {
  */
 public f<BigInt> getBigIntFromUnsigned(unsigned long value) {
     BigInt bigInt;
-    unsigned long rest = value;
-    while rest != 0ul {
-        bigInt.magnitude.pushBack(cast<unsigned int>(rest & LIMB_MASK));
-        rest = rest >> LIMB_BITS;
-    }
+    initBigIntMagnitude(bigInt.magnitude, value);
     return bigInt;
 }
 
@@ -407,7 +400,6 @@ public f<Result<BigInt>> parseBigInt(const String& text, int base = 10) {
         }
         pos++;
     }
-    trimBigIntMagnitude(value.magnitude);
     value.negative = negative && !value.magnitude.isEmpty();
     return ok(value);
 }
@@ -417,21 +409,21 @@ public f<Result<BigInt>> parseBigInt(const String& text, int base = 10) {
 /**
  * @return Whether the value is zero
  */
-public f<bool> BigInt.isZero() {
+public inline f<bool> BigInt.isZero() {
     return this.magnitude.isEmpty();
 }
 
 /**
  * @return Whether the value is less than zero
  */
-public f<bool> BigInt.isNegative() {
+public inline f<bool> BigInt.isNegative() {
     return this.negative;
 }
 
 /**
  * @return -1, 0 or 1 for a negative value, zero and a positive value
  */
-public f<int> BigInt.getSignum() {
+public inline f<int> BigInt.getSignum() {
     if this.magnitude.isEmpty() { return 0; }
     return this.negative ? -1 : 1;
 }
@@ -439,8 +431,8 @@ public f<int> BigInt.getSignum() {
 /**
  * @return Whether the value is odd
  */
-public f<bool> BigInt.isOdd() {
-    return !this.magnitude.isEmpty() && (this.magnitude.get(0ul) & 1u) == 1u;
+public inline f<bool> BigInt.isOdd() {
+    return !this.magnitude.isEmpty() && (this.magnitude[0ul] & 1u) == 1u;
 }
 
 /**
@@ -449,13 +441,7 @@ public f<bool> BigInt.isOdd() {
 public f<unsigned long> BigInt.getBitLength() {
     const unsigned long limbCount = this.magnitude.getSize();
     if limbCount == 0ul { return 0ul; }
-    unsigned int top = this.magnitude.get(limbCount - 1ul);
-    unsigned long topBits = 0ul;
-    while top != 0u {
-        topBits++;
-        top = top >> 1u;
-    }
-    return (limbCount - 1ul) * LIMB_BITS + topBits;
+    return (limbCount - 1ul) * LIMB_BITS + getLimbBitLength(this.magnitude[limbCount - 1ul]);
 }
 
 /**
@@ -468,7 +454,7 @@ public f<bool> BigInt.testBit(unsigned long index) {
     const unsigned long limbIndex = index / LIMB_BITS;
     if limbIndex >= this.magnitude.getSize() { return false; }
     const unsigned int bit = cast<unsigned int>(index % LIMB_BITS);
-    return ((this.magnitude.get(limbIndex) >> bit) & 1u) == 1u;
+    return ((this.magnitude[limbIndex] >> bit) & 1u) == 1u;
 }
 
 /**
@@ -476,7 +462,7 @@ public f<bool> BigInt.testBit(unsigned long index) {
  */
 public f<long> BigInt.getLowestSetBit() {
     for unsigned long i = 0ul; i < this.magnitude.getSize(); i++ {
-        unsigned int limb = this.magnitude.get(i);
+        unsigned int limb = this.magnitude[i];
         if limb == 0u { continue; }
         long index = cast<long>(i * LIMB_BITS);
         while (limb & 1u) == 0u {
@@ -503,8 +489,8 @@ public f<bool> BigInt.fitsInLong() {
 public f<unsigned long> BigInt.getAbsoluteLowBits() {
     unsigned long value = 0ul;
     const unsigned long limbCount = this.magnitude.getSize();
-    if limbCount > 0ul { value = cast<unsigned long>(this.magnitude.get(0ul)); }
-    if limbCount > 1ul { value = value | (cast<unsigned long>(this.magnitude.get(1ul)) << LIMB_BITS); }
+    if limbCount > 0ul { value = cast<unsigned long>(this.magnitude[0ul]); }
+    if limbCount > 1ul { value = value | (cast<unsigned long>(this.magnitude[1ul]) << LIMB_BITS); }
     return value;
 }
 
@@ -517,8 +503,7 @@ public f<unsigned long> BigInt.getAbsoluteLowBits() {
 public f<long> BigInt.toLong() {
     const unsigned long lowBits = this.getAbsoluteLowBits();
     if !this.negative { return cast<long>(lowBits); }
-    // Two's complement of the low bits, computed unsigned, so that nothing overflows
-    if lowBits == 0ul { return 0l; }
+    // Two's complement of the low bits, computed unsigned, where it wraps
     return cast<long>(~lowBits + 1ul);
 }
 
@@ -537,7 +522,7 @@ public f<int> BigInt.compare(const BigInt& other) {
 /**
  * @return Absolute value
  */
-public f<BigInt> BigInt.getAbsolute() {
+public inline f<BigInt> BigInt.getAbsolute() {
     BigInt absolute = *this;
     absolute.negative = false;
     return absolute;
@@ -564,7 +549,7 @@ public f<String> BigInt.toString(int base = 10) {
     Vector<unsigned int> rest; // Only the limbs, without the spare capacity of the magnitude
     rest.reserve(this.magnitude.getSize());
     for unsigned long i = 0ul; i < this.magnitude.getSize(); i++ {
-        rest.pushBack(this.magnitude.get(i));
+        rest.pushBack(this.magnitude[i]);
     }
     String reversedDigits;
     while !rest.isEmpty() {
@@ -613,7 +598,7 @@ p BigInt.addSigned(const Vector<unsigned int>& otherMagnitude, bool otherNegativ
  *
  * @param summand Summand
  */
-public p BigInt.add(const BigInt& summand) {
+public inline p BigInt.add(const BigInt& summand) {
     this.addSigned(summand.magnitude, summand.negative);
 }
 
@@ -636,8 +621,8 @@ public p BigInt.add(long summand) {
  *
  * @param subtrahend Subtrahend
  */
-public p BigInt.subtract(const BigInt& subtrahend) {
-    this.addSigned(subtrahend.magnitude, !subtrahend.negative && !subtrahend.magnitude.isEmpty());
+public inline p BigInt.subtract(const BigInt& subtrahend) {
+    this.addSigned(subtrahend.magnitude, !subtrahend.negative);
 }
 
 /**
@@ -764,7 +749,7 @@ public p BigInt.remainder(const BigInt& divisor) {
 /**
  * Negate this BigInt
  */
-public p BigInt.negate() {
+public inline p BigInt.negate() {
     this.negative = !this.negative && !this.magnitude.isEmpty();
 }
 
@@ -773,7 +758,7 @@ public p BigInt.negate() {
  *
  * @param bits Number of bits
  */
-public p BigInt.shiftLeft(unsigned long bits) {
+public inline p BigInt.shiftLeft(unsigned long bits) {
     shiftBigIntMagnitudeLeft(this.magnitude, bits);
 }
 
