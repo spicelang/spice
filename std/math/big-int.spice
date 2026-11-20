@@ -1,0 +1,918 @@
+// Std imports
+import "std/data/vector";
+
+// Arbitrary precision integers. A BigInt stores its sign and its absolute value (magnitude) separately, like Java's BigInteger
+// and Python's int: the magnitude is a list of 32 bit digits (limbs), least significant first, without leading zero limbs, so
+// zero has no limbs and is never negative. Arithmetic with small operands (up to 32 bits) takes fast paths, the division is
+// Knuth's Algorithm D.
+
+// Constants
+const unsigned long LIMB_MASK = 0xFFFFFFFFul;
+const unsigned long LIMB_BITS = 32ul;
+const unsigned long LIMB_RADIX = 0x100000000ul;
+const long MAX_SMALL_OPERAND = 4294967295l; // Operands up to this absolute value take the fast paths
+const unsigned long MIN_LONG_MAGNITUDE = 0x8000000000000000ul; // Magnitude of the minimum of long
+const int MIN_BIG_INT_BASE = 2;
+const int MAX_BIG_INT_BASE = 36;
+
+/**
+ * Integer of arbitrary size
+ */
+public type BigInt struct {
+    Vector<unsigned int> magnitude // Absolute value, least significant limb first, without leading zero limbs
+    bool negative = false // Never set for zero
+}
+
+// ------------------------------------------------------- Magnitudes -------------------------------------------------------
+
+p trimBigIntMagnitude(Vector<unsigned int>& magnitude) {
+    while !magnitude.isEmpty() && magnitude.back() == 0u {
+        magnitude.popBack();
+    }
+}
+
+/**
+ * Set the magnitude of a zero BigInt to the given value
+ */
+p initBigIntMagnitude(Vector<unsigned int>& magnitude, unsigned long value) {
+    unsigned long rest = value;
+    while rest != 0ul {
+        magnitude.pushBack(cast<unsigned int>(rest & LIMB_MASK));
+        rest = rest >> LIMB_BITS;
+    }
+}
+
+/**
+ * @return Number of bits of the limb, without leading zeros. 0 for zero
+ */
+f<unsigned long> getLimbBitLength(unsigned int limb) {
+    unsigned long bitLength = 0ul;
+    unsigned int rest = limb;
+    while rest != 0u {
+        bitLength++;
+        rest = rest >> 1u;
+    }
+    return bitLength;
+}
+
+f<int> compareBigIntMagnitudes(const Vector<unsigned int>& lhs, const Vector<unsigned int>& rhs) {
+    const unsigned long size = lhs.getSize();
+    const unsigned long otherSize = rhs.getSize();
+    if size != otherSize { return size < otherSize ? -1 : 1; }
+    unsigned long i = size;
+    while i > 0ul {
+        i--;
+        const unsigned int limb = lhs[i];
+        const unsigned int otherLimb = rhs[i];
+        if limb != otherLimb { return limb < otherLimb ? -1 : 1; }
+    }
+    return 0;
+}
+
+/**
+ * lhs += rhs
+ */
+p addBigIntMagnitudes(Vector<unsigned int>& lhs, const Vector<unsigned int>& rhs) {
+    while lhs.getSize() < rhs.getSize() {
+        lhs.pushBack(0u);
+    }
+    unsigned long carry = 0ul;
+    for unsigned long i = 0ul; i < lhs.getSize(); i++ {
+        if i >= rhs.getSize() && carry == 0ul { break; }
+        unsigned long sum = cast<unsigned long>(lhs[i]) + carry;
+        if i < rhs.getSize() { sum += cast<unsigned long>(rhs[i]); }
+        lhs[i] = cast<unsigned int>(sum & LIMB_MASK);
+        carry = sum >> LIMB_BITS;
+    }
+    if carry != 0ul { lhs.pushBack(cast<unsigned int>(carry)); }
+}
+
+/**
+ * lhs -= rhs, where rhs must not be greater than lhs
+ */
+p subtractBigIntMagnitudes(Vector<unsigned int>& lhs, const Vector<unsigned int>& rhs) {
+    unsigned long borrow = 0ul;
+    for unsigned long i = 0ul; i < lhs.getSize(); i++ {
+        if i >= rhs.getSize() && borrow == 0ul { break; }
+        unsigned long subtracted = borrow;
+        if i < rhs.getSize() { subtracted += cast<unsigned long>(rhs[i]); }
+        const unsigned long limb = cast<unsigned long>(lhs[i]);
+        if limb >= subtracted {
+            lhs[i] = cast<unsigned int>(limb - subtracted);
+            borrow = 0ul;
+        } else {
+            lhs[i] = cast<unsigned int>(limb + LIMB_RADIX - subtracted);
+            borrow = 1ul;
+        }
+    }
+    trimBigIntMagnitude(lhs);
+}
+
+/**
+ * magnitude *= factor
+ */
+p multiplyBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsigned int factor) {
+    if factor == 0u {
+        magnitude.clear();
+        return;
+    }
+    unsigned long carry = 0ul;
+    for unsigned long i = 0ul; i < magnitude.getSize(); i++ {
+        const unsigned long product = cast<unsigned long>(magnitude[i]) * cast<unsigned long>(factor) + carry;
+        magnitude[i] = cast<unsigned int>(product & LIMB_MASK);
+        carry = product >> LIMB_BITS;
+    }
+    if carry != 0ul { magnitude.pushBack(cast<unsigned int>(carry)); }
+}
+
+/**
+ * magnitude += summand
+ */
+p addBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsigned int summand) {
+    unsigned long carry = cast<unsigned long>(summand);
+    for unsigned long i = 0ul; i < magnitude.getSize() && carry != 0ul; i++ {
+        const unsigned long sum = cast<unsigned long>(magnitude[i]) + carry;
+        magnitude[i] = cast<unsigned int>(sum & LIMB_MASK);
+        carry = sum >> LIMB_BITS;
+    }
+    if carry != 0ul { magnitude.pushBack(cast<unsigned int>(carry)); }
+}
+
+/**
+ * magnitude /= divisor, where the divisor must not be zero
+ *
+ * @return Remainder
+ */
+f<unsigned int> divideBigIntMagnitudeSmall(Vector<unsigned int>& magnitude, unsigned int divisor) {
+    unsigned long remainder = 0ul;
+    unsigned long i = magnitude.getSize();
+    while i > 0ul {
+        i--;
+        const unsigned long current = (remainder << LIMB_BITS) | cast<unsigned long>(magnitude[i]);
+        magnitude[i] = cast<unsigned int>(current / cast<unsigned long>(divisor));
+        remainder = current % cast<unsigned long>(divisor);
+    }
+    trimBigIntMagnitude(magnitude);
+    return cast<unsigned int>(remainder);
+}
+
+f<Vector<unsigned int>> multiplyBigIntMagnitudes(const Vector<unsigned int>& lhs, const Vector<unsigned int>& rhs) {
+    if lhs.isEmpty() || rhs.isEmpty() { return Vector<unsigned int>(); }
+    Vector<unsigned int> product = Vector<unsigned int>(lhs.getSize() + rhs.getSize(), 0u);
+    for unsigned long i = 0ul; i < lhs.getSize(); i++ {
+        const unsigned long factor = cast<unsigned long>(lhs[i]);
+        if factor == 0ul { continue; }
+        unsigned long carry = 0ul;
+        for unsigned long j = 0ul; j < rhs.getSize(); j++ {
+            const unsigned long sum = factor * cast<unsigned long>(rhs[j]) + cast<unsigned long>(product[i + j]) + carry;
+            product[i + j] = cast<unsigned int>(sum & LIMB_MASK);
+            carry = sum >> LIMB_BITS;
+        }
+        product[i + rhs.getSize()] = cast<unsigned int>(carry);
+    }
+    trimBigIntMagnitude(product);
+    return product;
+}
+
+p shiftBigIntMagnitudeLeft(Vector<unsigned int>& magnitude, unsigned long bits) {
+    if magnitude.isEmpty() || bits == 0ul { return; }
+    const unsigned long limbShift = bits / LIMB_BITS;
+    const unsigned long bitShift = bits % LIMB_BITS;
+    const unsigned long oldSize = magnitude.getSize();
+    // Make room for the new limbs and move the old ones up, starting with the most significant one
+    for unsigned long i = 0ul; i <= limbShift; i++ {
+        magnitude.pushBack(0u);
+    }
+    unsigned long i = oldSize;
+    while i > 0ul {
+        i--;
+        const unsigned long shifted = cast<unsigned long>(magnitude[i]) << bitShift;
+        magnitude[i + limbShift + 1ul] = magnitude[i + limbShift + 1ul] | cast<unsigned int>(shifted >> LIMB_BITS);
+        magnitude[i + limbShift] = cast<unsigned int>(shifted & LIMB_MASK);
+    }
+    for unsigned long j = 0ul; j < limbShift; j++ {
+        magnitude[j] = 0u;
+    }
+    trimBigIntMagnitude(magnitude);
+}
+
+/**
+ * Shift the magnitude to the right, dropping the shifted out bits
+ *
+ * @return Whether any of the dropped bits was set
+ */
+#[ignoreUnusedReturnValue]
+f<bool> shiftBigIntMagnitudeRight(Vector<unsigned int>& magnitude, unsigned long bits) {
+    const unsigned long limbShift = bits / LIMB_BITS;
+    const unsigned long bitShift = bits % LIMB_BITS;
+    bool droppedSetBits = false;
+    for unsigned long i = 0ul; i < limbShift && i < magnitude.getSize(); i++ {
+        if magnitude[i] != 0u { droppedSetBits = true; }
+    }
+    if limbShift >= magnitude.getSize() {
+        magnitude.clear();
+        return droppedSetBits;
+    }
+    if bitShift != 0ul && (cast<unsigned long>(magnitude[limbShift]) & ((1ul << bitShift) - 1ul)) != 0ul {
+        droppedSetBits = true;
+    }
+    const unsigned long newSize = magnitude.getSize() - limbShift;
+    for unsigned long i = 0ul; i < newSize; i++ {
+        unsigned long combined = cast<unsigned long>(magnitude[i + limbShift]);
+        if i + limbShift + 1ul < magnitude.getSize() {
+            combined = combined | (cast<unsigned long>(magnitude[i + limbShift + 1ul]) << LIMB_BITS);
+        }
+        magnitude[i] = cast<unsigned int>((combined >> bitShift) & LIMB_MASK);
+    }
+    while magnitude.getSize() > newSize {
+        magnitude.popBack();
+    }
+    trimBigIntMagnitude(magnitude);
+    return droppedSetBits;
+}
+
+/**
+ * Divide the magnitudes with Knuth's Algorithm D (The Art of Computer Programming, Vol. 2, 4.3.1). The divisor must not be
+ * zero.
+ *
+ * @param dividend Dividend
+ * @param divisor Divisor
+ * @param quotient Gets the quotient
+ * @param remainder Gets the remainder
+ */
+p divideBigIntMagnitudes(const Vector<unsigned int>& dividend, const Vector<unsigned int>& divisor, Vector<unsigned int>& quotient, Vector<unsigned int>& remainder) {
+    quotient.clear();
+    if compareBigIntMagnitudes(dividend, divisor) < 0 {
+        remainder = dividend;
+        return;
+    }
+    const unsigned long divisorLength = divisor.getSize();
+    if divisorLength == 1ul {
+        // A single limb divisor needs no normalization
+        quotient = dividend;
+        const unsigned int smallRemainder = divideBigIntMagnitudeSmall(quotient, divisor[0ul]);
+        remainder.clear();
+        if smallRemainder != 0u { remainder.pushBack(smallRemainder); }
+        return;
+    }
+
+    // Normalize, so that the most significant limb of the divisor has its top bit set
+    const unsigned long normalizeShift = LIMB_BITS - getLimbBitLength(divisor[divisorLength - 1ul]);
+    Vector<unsigned int> normalizedDivisor = divisor;
+    shiftBigIntMagnitudeLeft(normalizedDivisor, normalizeShift);
+    Vector<unsigned int> rest = dividend;
+    shiftBigIntMagnitudeLeft(rest, normalizeShift);
+    // The algorithm needs one more limb than the dividend has, unless the normalization already added one
+    if rest.getSize() == dividend.getSize() { rest.pushBack(0u); }
+    const unsigned long quotientLength = rest.getSize() - divisorLength;
+    quotient = Vector<unsigned int>(quotientLength, 0u);
+    const unsigned long divisorTop = cast<unsigned long>(normalizedDivisor[divisorLength - 1ul]);
+    const unsigned long divisorSecond = cast<unsigned long>(normalizedDivisor[divisorLength - 2ul]);
+
+    unsigned long j = quotientLength;
+    while j > 0ul {
+        j--;
+        // Estimate the quotient limb from the two top limbs of the rest and correct it with the third one
+        const unsigned long topTwo = (cast<unsigned long>(rest[j + divisorLength]) << LIMB_BITS) |
+            cast<unsigned long>(rest[j + divisorLength - 1ul]);
+        unsigned long digit = topTwo / divisorTop;
+        unsigned long remainderEstimate = topTwo % divisorTop;
+        while digit > LIMB_MASK ||
+            digit * divisorSecond > ((remainderEstimate << LIMB_BITS) | cast<unsigned long>(rest[j + divisorLength - 2ul])) {
+            digit--;
+            remainderEstimate += divisorTop;
+            if remainderEstimate > LIMB_MASK { break; }
+        }
+
+        // Subtract digit * divisor from the rest
+        long borrow = 0l;
+        unsigned long carry = 0ul;
+        for unsigned long i = 0ul; i < divisorLength; i++ {
+            const unsigned long product = digit * cast<unsigned long>(normalizedDivisor[i]) + carry;
+            carry = product >> LIMB_BITS;
+            const long difference = cast<long>(rest[i + j]) - cast<long>(product & LIMB_MASK) - borrow;
+            rest[i + j] = cast<unsigned int>(difference & 0xFFFFFFFFl);
+            borrow = difference < 0l ? 1l : 0l;
+        }
+        const long top = cast<long>(rest[j + divisorLength]) - cast<long>(carry) - borrow;
+        rest[j + divisorLength] = cast<unsigned int>(top & 0xFFFFFFFFl);
+
+        // The estimate was one too large in rare cases: add the divisor back
+        if top < 0l {
+            digit--;
+            unsigned long addCarry = 0ul;
+            for unsigned long i = 0ul; i < divisorLength; i++ {
+                const unsigned long sum = cast<unsigned long>(rest[i + j]) + cast<unsigned long>(normalizedDivisor[i]) + addCarry;
+                rest[i + j] = cast<unsigned int>(sum & LIMB_MASK);
+                addCarry = sum >> LIMB_BITS;
+            }
+            rest[j + divisorLength] = cast<unsigned int>((cast<unsigned long>(rest[j + divisorLength]) + addCarry) & LIMB_MASK);
+        }
+        quotient[j] = cast<unsigned int>(digit);
+    }
+    trimBigIntMagnitude(quotient);
+
+    // The rest is the remainder, still normalized
+    shiftBigIntMagnitudeRight(rest, normalizeShift);
+    remainder = rest;
+}
+
+// ------------------------------------------------------- Construction -------------------------------------------------------
+
+/**
+ * Create a BigInt with the given value
+ *
+ * @param value Value
+ */
+public p BigInt.ctor(long value = 0l) {
+    this.negative = value < 0l;
+    // Negate unsigned, where it wraps, because the magnitude of the minimum of long does not fit into long
+    const unsigned long absolute = cast<unsigned long>(value);
+    initBigIntMagnitude(this.magnitude, this.negative ? ~absolute + 1ul : absolute);
+}
+
+/**
+ * Create a BigInt with the given value
+ *
+ * @param value Value
+ */
+public p BigInt.ctor(int value) {
+    this.ctor(cast<long>(value));
+}
+
+/**
+ * Create a BigInt with the value of an unsigned long. A constructor would be ambiguous with the one for long
+ *
+ * @param value Value
+ * @return BigInt with the value
+ */
+public f<BigInt> getBigIntFromUnsigned(unsigned long value) {
+    BigInt bigInt;
+    initBigIntMagnitude(bigInt.magnitude, value);
+    return bigInt;
+}
+
+f<int> getBigIntDigitValue(char c) {
+    if c >= '0' && c <= '9' { return cast<int>(c) - cast<int>('0'); }
+    if c >= 'a' && c <= 'z' { return cast<int>(c) - cast<int>('a') + 10; }
+    if c >= 'A' && c <= 'Z' { return cast<int>(c) - cast<int>('A') + 10; }
+    return MAX_BIG_INT_BASE;
+}
+
+/**
+ * Parse a BigInt from text: an optional sign followed by at least one digit in the given base. Letters are digits from 10 on,
+ * ignoring the case. Other chars, also whitespace, are not allowed.
+ *
+ * @param text Text
+ * @param base Base from 2 to 36
+ * @return Parsed BigInt or an error, if the text is no integer in the base
+ */
+public f<Result<BigInt>> parseBigInt(const String& text, int base = 10) {
+    if base < MIN_BIG_INT_BASE || base > MAX_BIG_INT_BASE { return err<BigInt>(Error("The base has to be from 2 to 36")); }
+    const unsigned long length = text.getLength();
+    unsigned long pos = 0ul;
+    bool negative = false;
+    if pos < length && (text[pos] == '-' || text[pos] == '+') {
+        negative = text[pos] == '-';
+        pos++;
+    }
+    if pos == length { return err<BigInt>(Error("The text has no digits")); }
+
+    // Collect as many digits at once, as fit into a limb
+    const unsigned int unsignedBase = cast<unsigned int>(base);
+    unsigned int chunkLimit = unsignedBase;
+    while cast<unsigned long>(chunkLimit) * cast<unsigned long>(unsignedBase) <= LIMB_MASK {
+        chunkLimit *= unsignedBase;
+    }
+    BigInt value;
+    unsigned int chunk = 0u;
+    unsigned int chunkFactor = 1u;
+    while pos < length {
+        const int digit = getBigIntDigitValue(text[pos]);
+        if digit >= base { return err<BigInt>(Error("The text contains a char, that is no digit in the base")); }
+        chunk = chunk * unsignedBase + cast<unsigned int>(digit);
+        chunkFactor *= unsignedBase;
+        if chunkFactor == chunkLimit || pos + 1ul == length {
+            multiplyBigIntMagnitudeSmall(value.magnitude, chunkFactor);
+            addBigIntMagnitudeSmall(value.magnitude, chunk);
+            chunk = 0u;
+            chunkFactor = 1u;
+        }
+        pos++;
+    }
+    value.negative = negative && !value.magnitude.isEmpty();
+    return ok(value);
+}
+
+// ------------------------------------------------------- Queries -------------------------------------------------------
+
+/**
+ * @return Whether the value is zero
+ */
+public inline f<bool> BigInt.isZero() {
+    return this.magnitude.isEmpty();
+}
+
+/**
+ * @return Whether the value is less than zero
+ */
+public inline f<bool> BigInt.isNegative() {
+    return this.negative;
+}
+
+/**
+ * @return -1, 0 or 1 for a negative value, zero and a positive value
+ */
+public inline f<int> BigInt.getSignum() {
+    if this.magnitude.isEmpty() { return 0; }
+    return this.negative ? -1 : 1;
+}
+
+/**
+ * @return Whether the value is odd
+ */
+public inline f<bool> BigInt.isOdd() {
+    return !this.magnitude.isEmpty() && (this.magnitude[0ul] & 1u) == 1u;
+}
+
+/**
+ * @return Number of bits of the absolute value, without leading zeros. 0 for zero
+ */
+public f<unsigned long> BigInt.getBitLength() {
+    const unsigned long limbCount = this.magnitude.getSize();
+    if limbCount == 0ul { return 0ul; }
+    return (limbCount - 1ul) * LIMB_BITS + getLimbBitLength(this.magnitude[limbCount - 1ul]);
+}
+
+/**
+ * Check a bit of the absolute value
+ *
+ * @param index Index of the bit, 0 is the least significant one
+ * @return Whether the bit is set
+ */
+public f<bool> BigInt.testBit(unsigned long index) {
+    const unsigned long limbIndex = index / LIMB_BITS;
+    if limbIndex >= this.magnitude.getSize() { return false; }
+    const unsigned int bit = cast<unsigned int>(index % LIMB_BITS);
+    return ((this.magnitude[limbIndex] >> bit) & 1u) == 1u;
+}
+
+/**
+ * @return Index of the least significant set bit of the absolute value, -1 for zero
+ */
+public f<long> BigInt.getLowestSetBit() {
+    for unsigned long i = 0ul; i < this.magnitude.getSize(); i++ {
+        unsigned int limb = this.magnitude[i];
+        if limb == 0u { continue; }
+        long index = cast<long>(i * LIMB_BITS);
+        while (limb & 1u) == 0u {
+            limb = limb >> 1u;
+            index++;
+        }
+        return index;
+    }
+    return -1l;
+}
+
+/**
+ * @return Whether the value is in the range of long
+ */
+public f<bool> BigInt.fitsInLong() {
+    if this.magnitude.getSize() > 2ul { return false; }
+    const unsigned long absolute = this.getAbsoluteLowBits();
+    return this.negative ? absolute <= MIN_LONG_MAGNITUDE : absolute < MIN_LONG_MAGNITUDE;
+}
+
+/**
+ * @return The lowest 64 bits of the absolute value
+ */
+public f<unsigned long> BigInt.getAbsoluteLowBits() {
+    unsigned long value = 0ul;
+    const unsigned long limbCount = this.magnitude.getSize();
+    if limbCount > 0ul { value = cast<unsigned long>(this.magnitude[0ul]); }
+    if limbCount > 1ul { value = value | (cast<unsigned long>(this.magnitude[1ul]) << LIMB_BITS); }
+    return value;
+}
+
+/**
+ * Convert to long. Values outside of the range of long wrap around, like in a cast: the result has the lowest 64 bits of the
+ * two's complement of the value
+ *
+ * @return Value as long
+ */
+public f<long> BigInt.toLong() {
+    const unsigned long lowBits = this.getAbsoluteLowBits();
+    if !this.negative { return cast<long>(lowBits); }
+    // Two's complement of the low bits, computed unsigned, where it wraps
+    return cast<long>(~lowBits + 1ul);
+}
+
+/**
+ * Compare with another BigInt
+ *
+ * @param other Other BigInt
+ * @return -1, 0 or 1, if this value is less than, equal to or greater than the other one
+ */
+public f<int> BigInt.compare(const BigInt& other) {
+    if this.negative != other.negative { return this.negative ? -1 : 1; }
+    const int magnitudeOrder = compareBigIntMagnitudes(this.magnitude, other.magnitude);
+    return this.negative ? -magnitudeOrder : magnitudeOrder;
+}
+
+/**
+ * @return Absolute value
+ */
+public inline f<BigInt> BigInt.getAbsolute() {
+    BigInt absolute = *this;
+    absolute.negative = false;
+    return absolute;
+}
+
+/**
+ * Format in the given base, with lower case letters for the digits from 10 on and a leading '-' for negative values
+ *
+ * @param base Base from 2 to 36
+ * @return Text of the value
+ */
+public f<String> BigInt.toString(int base = 10) {
+    if base < MIN_BIG_INT_BASE || base > MAX_BIG_INT_BASE { panic(Error("The base has to be from 2 to 36")); }
+    if this.magnitude.isEmpty() { return String("0"); }
+    const unsigned int unsignedBase = cast<unsigned int>(base);
+
+    // Divide by the largest power of the base, that fits into a limb, and convert each remainder to a group of digits
+    unsigned int chunkDivisor = unsignedBase;
+    unsigned long chunkDigits = 1ul;
+    while cast<unsigned long>(chunkDivisor) * cast<unsigned long>(unsignedBase) <= LIMB_MASK {
+        chunkDivisor *= unsignedBase;
+        chunkDigits++;
+    }
+    Vector<unsigned int> rest; // Only the limbs, without the spare capacity of the magnitude
+    rest.reserve(this.magnitude.getSize());
+    for unsigned long i = 0ul; i < this.magnitude.getSize(); i++ {
+        rest.pushBack(this.magnitude[i]);
+    }
+    String reversedDigits;
+    while !rest.isEmpty() {
+        unsigned int chunk = divideBigIntMagnitudeSmall(rest, chunkDivisor);
+        for unsigned long i = 0ul; i < chunkDigits; i++ {
+            if rest.isEmpty() && chunk == 0u { break; } // No leading zeros in the most significant group
+            const int digit = cast<int>(chunk % unsignedBase);
+            reversedDigits += cast<char>(digit < 10 ? cast<int>('0') + digit : cast<int>('a') + digit - 10);
+            chunk /= unsignedBase;
+        }
+    }
+    if this.negative { reversedDigits += '-'; }
+    reversedDigits.reverse();
+    return reversedDigits;
+}
+
+// ------------------------------------------------------- Arithmetic -------------------------------------------------------
+
+/**
+ * this += magnitude * (negative ? -1 : 1)
+ */
+p BigInt.addSigned(const Vector<unsigned int>& otherMagnitude, bool otherNegative) {
+    if otherMagnitude.isEmpty() { return; }
+    if this.negative == otherNegative || this.magnitude.isEmpty() {
+        addBigIntMagnitudes(this.magnitude, otherMagnitude);
+        this.negative = otherNegative;
+        return;
+    }
+    // Different signs: subtract the smaller magnitude from the larger one, whose sign the result gets
+    const int order = compareBigIntMagnitudes(this.magnitude, otherMagnitude);
+    if order == 0 {
+        this.magnitude.clear();
+        this.negative = false;
+    } else if order > 0 {
+        subtractBigIntMagnitudes(this.magnitude, otherMagnitude);
+    } else {
+        Vector<unsigned int> difference = otherMagnitude;
+        subtractBigIntMagnitudes(difference, this.magnitude);
+        this.magnitude = difference;
+        this.negative = otherNegative;
+    }
+}
+
+/**
+ * Add another BigInt to this one
+ *
+ * @param summand Summand
+ */
+public inline p BigInt.add(const BigInt& summand) {
+    this.addSigned(summand.magnitude, summand.negative);
+}
+
+/**
+ * Add a long to this BigInt
+ *
+ * @param summand Summand
+ */
+public p BigInt.add(long summand) {
+    if summand >= 0l && summand <= MAX_SMALL_OPERAND && !this.negative {
+        addBigIntMagnitudeSmall(this.magnitude, cast<unsigned int>(summand));
+        return;
+    }
+    const BigInt other = BigInt(summand);
+    this.addSigned(other.magnitude, other.negative);
+}
+
+/**
+ * Subtract another BigInt from this one
+ *
+ * @param subtrahend Subtrahend
+ */
+public inline p BigInt.subtract(const BigInt& subtrahend) {
+    this.addSigned(subtrahend.magnitude, !subtrahend.negative);
+}
+
+/**
+ * Subtract a long from this BigInt
+ *
+ * @param subtrahend Subtrahend
+ */
+public p BigInt.subtract(long subtrahend) {
+    const BigInt other = BigInt(subtrahend);
+    this.subtract(other);
+}
+
+/**
+ * Multiply this BigInt with another one
+ *
+ * @param factor Factor
+ */
+public p BigInt.multiply(const BigInt& factor) {
+    const bool resultNegative = this.negative != factor.negative;
+    this.magnitude = multiplyBigIntMagnitudes(this.magnitude, factor.magnitude);
+    this.negative = resultNegative && !this.magnitude.isEmpty();
+}
+
+/**
+ * Multiply this BigInt with a long
+ *
+ * @param factor Factor
+ */
+public p BigInt.multiply(long factor) {
+    if factor >= -MAX_SMALL_OPERAND && factor <= MAX_SMALL_OPERAND {
+        const bool factorNegative = factor < 0l;
+        const long absoluteFactor = factorNegative ? -factor : factor;
+        multiplyBigIntMagnitudeSmall(this.magnitude, cast<unsigned int>(absoluteFactor));
+        this.negative = (this.negative != factorNegative) && !this.magnitude.isEmpty();
+        return;
+    }
+    const BigInt other = BigInt(factor);
+    this.multiply(other);
+}
+
+/**
+ * Raise this BigInt to the given power
+ *
+ * @param exponent Exponent. 0 gives 1, also for zero
+ */
+public p BigInt.pow(unsigned long exponent) {
+    BigInt base = *this;
+    BigInt power = BigInt(1l);
+    unsigned long rest = exponent;
+    while rest != 0ul {
+        if (rest & 1ul) == 1ul { power.multiply(base); }
+        rest = rest >> 1ul;
+        if rest != 0ul { base.multiply(base); }
+    }
+    *this = power;
+}
+
+/**
+ * Divide this BigInt by another one, rounding towards zero like the division of long, and get the remainder, which has the
+ * sign of the dividend. Panics, if the divisor is zero or the remainder is to be stored in this BigInt, which gets the
+ * quotient.
+ *
+ * @param divisor Divisor
+ * @param remainder Gets the remainder. Has to be another BigInt than this one
+ */
+public p BigInt.divideWithRemainder(const BigInt& divisor, BigInt& remainder) {
+    if divisor.magnitude.isEmpty() { panic(Error("Division by zero")); }
+    if &remainder == this { panic(Error("The remainder has to be stored in another BigInt than the quotient")); }
+    const bool dividendNegative = this.negative;
+    const bool divisorNegative = divisor.negative;
+    Vector<unsigned int> quotientMagnitude;
+    Vector<unsigned int> remainderMagnitude;
+    divideBigIntMagnitudes(this.magnitude, divisor.magnitude, quotientMagnitude, remainderMagnitude);
+    this.magnitude = quotientMagnitude;
+    this.negative = (dividendNegative != divisorNegative) && !this.magnitude.isEmpty();
+    remainder.magnitude = remainderMagnitude;
+    remainder.negative = dividendNegative && !remainder.magnitude.isEmpty();
+}
+
+/**
+ * Divide this BigInt by another one, rounding towards zero like the division of long. Panics, if the divisor is zero.
+ *
+ * @param divisor Divisor
+ */
+public p BigInt.divide(const BigInt& divisor) {
+    BigInt remainder;
+    this.divideWithRemainder(divisor, remainder);
+}
+
+/**
+ * Divide this BigInt by a long, rounding towards zero like the division of long. Panics, if the divisor is zero.
+ *
+ * @param divisor Divisor
+ * @return Remainder, which has the sign of the dividend
+ */
+public f<long> BigInt.divide(long divisor) {
+    if divisor == 0l { panic(Error("Division by zero")); }
+    if divisor >= -MAX_SMALL_OPERAND && divisor <= MAX_SMALL_OPERAND {
+        const bool divisorNegative = divisor < 0l;
+        const long absoluteDivisor = divisorNegative ? -divisor : divisor;
+        const bool dividendNegative = this.negative;
+        const long remainder = cast<long>(divideBigIntMagnitudeSmall(this.magnitude, cast<unsigned int>(absoluteDivisor)));
+        this.negative = (dividendNegative != divisorNegative) && !this.magnitude.isEmpty();
+        return dividendNegative ? -remainder : remainder;
+    }
+    const BigInt other = BigInt(divisor);
+    BigInt remainder;
+    this.divideWithRemainder(other, remainder);
+    return remainder.toLong();
+}
+
+/**
+ * Replace this BigInt by the remainder of its division by another one. The remainder has the sign of the dividend, like the %
+ * operator of long. Panics, if the divisor is zero.
+ *
+ * @param divisor Divisor
+ */
+public p BigInt.remainder(const BigInt& divisor) {
+    BigInt remainder;
+    this.divideWithRemainder(divisor, remainder);
+    *this = remainder;
+}
+
+/**
+ * Negate this BigInt
+ */
+public inline p BigInt.negate() {
+    this.negative = !this.negative && !this.magnitude.isEmpty();
+}
+
+/**
+ * Shift this BigInt to the left, which multiplies it by 2^bits
+ *
+ * @param bits Number of bits
+ */
+public inline p BigInt.shiftLeft(unsigned long bits) {
+    shiftBigIntMagnitudeLeft(this.magnitude, bits);
+}
+
+/**
+ * Shift this BigInt to the right, which divides it by 2^bits, rounding towards negative infinity like the shift of long
+ *
+ * @param bits Number of bits
+ * @return Whether any of the shifted out bits of the absolute value was set
+ */
+#[ignoreUnusedReturnValue]
+public f<bool> BigInt.shiftRight(unsigned long bits) {
+    const bool droppedSetBits = shiftBigIntMagnitudeRight(this.magnitude, bits);
+    if this.negative {
+        // Round towards negative infinity: -5 >> 1 is -3
+        if droppedSetBits { addBigIntMagnitudeSmall(this.magnitude, 1u); }
+        this.negative = !this.magnitude.isEmpty();
+    }
+    return droppedSetBits;
+}
+
+// ------------------------------------------------------- Operators -------------------------------------------------------
+
+/**
+ * Add two BigInts
+ *
+ * @return New BigInt with the sum
+ */
+public f<BigInt> operator+(const BigInt& lhs, const BigInt& rhs) {
+    BigInt sum = lhs;
+    sum.add(rhs);
+    return sum;
+}
+
+/**
+ * Subtract a BigInt from another one
+ *
+ * @return New BigInt with the difference
+ */
+public f<BigInt> operator-(const BigInt& lhs, const BigInt& rhs) {
+    BigInt difference = lhs;
+    difference.subtract(rhs);
+    return difference;
+}
+
+/**
+ * Multiply two BigInts
+ *
+ * @return New BigInt with the product
+ */
+public f<BigInt> operator*(const BigInt& lhs, const BigInt& rhs) {
+    BigInt product = lhs;
+    product.multiply(rhs);
+    return product;
+}
+
+/**
+ * Divide a BigInt by another one, rounding towards zero like the division of long. Panics, if the divisor is zero.
+ *
+ * @return New BigInt with the quotient
+ */
+public f<BigInt> operator/(const BigInt& lhs, const BigInt& rhs) {
+    BigInt quotient = lhs;
+    quotient.divide(rhs);
+    return quotient;
+}
+
+/**
+ * Shift a BigInt to the left, which multiplies it by 2^bits
+ *
+ * @return New, shifted BigInt
+ */
+public f<BigInt> operator<<(const BigInt& lhs, unsigned long bits) {
+    BigInt shifted = lhs;
+    shifted.shiftLeft(bits);
+    return shifted;
+}
+
+/**
+ * Shift a BigInt to the right, which divides it by 2^bits, rounding towards negative infinity like the shift of long
+ *
+ * @return New, shifted BigInt
+ */
+public f<BigInt> operator>>(const BigInt& lhs, unsigned long bits) {
+    BigInt shifted = lhs;
+    shifted.shiftRight(bits);
+    return shifted;
+}
+
+/**
+ * Add a BigInt to lhs, in place
+ */
+public p operator+=(BigInt& lhs, const BigInt& rhs) {
+    lhs.add(rhs);
+}
+
+/**
+ * Subtract a BigInt from lhs, in place
+ */
+public p operator-=(BigInt& lhs, const BigInt& rhs) {
+    lhs.subtract(rhs);
+}
+
+/**
+ * Multiply lhs with a BigInt, in place
+ */
+public p operator*=(BigInt& lhs, const BigInt& rhs) {
+    lhs.multiply(rhs);
+}
+
+/**
+ * Divide lhs by a BigInt, in place, rounding towards zero like the division of long. Panics, if the divisor is zero.
+ */
+public p operator/=(BigInt& lhs, const BigInt& rhs) {
+    lhs.divide(rhs);
+}
+
+/**
+ * @return Whether both BigInts have the same value
+ */
+public f<bool> operator==(const BigInt& lhs, const BigInt& rhs) {
+    return lhs.compare(rhs) == 0;
+}
+
+/**
+ * @return Whether the BigInts have different values
+ */
+public f<bool> operator!=(const BigInt& lhs, const BigInt& rhs) {
+    return lhs.compare(rhs) != 0;
+}
+
+/**
+ * @return Whether lhs is less than rhs
+ */
+public f<bool> operator<(const BigInt& lhs, const BigInt& rhs) {
+    return lhs.compare(rhs) < 0;
+}
+
+/**
+ * @return Whether lhs is less than or equal to rhs
+ */
+public f<bool> operator<=(const BigInt& lhs, const BigInt& rhs) {
+    return lhs.compare(rhs) <= 0;
+}
+
+/**
+ * @return Whether lhs is greater than rhs
+ */
+public f<bool> operator>(const BigInt& lhs, const BigInt& rhs) {
+    return lhs.compare(rhs) > 0;
+}
+
+/**
+ * @return Whether lhs is greater than or equal to rhs
+ */
+public f<bool> operator>=(const BigInt& lhs, const BigInt& rhs) {
+    return lhs.compare(rhs) >= 0;
+}
