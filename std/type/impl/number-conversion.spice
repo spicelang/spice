@@ -1,12 +1,12 @@
 // Std imports
-import "std/data/vector";
+import "std/math/big-int";
 
 // Conversions between numbers and their text, written in Spice instead of calling strtoll, strtod and snprintf of the C
 // standard library, so that they work in freestanding mode as well. They behave like the C functions of glibc:
 // - parseIntegerText and parseDoubleText read the longest valid prefix of the input, like strtoll and strtod
 // - formatSignedInteger and formatUnsignedInteger format like "%lld" and "%llu"
 // - formatFixedDouble formats like "%.*f" and formatSignificantDouble like "%.*g"
-// Floating point values are rounded exactly, to the nearest value and ties to even, like glibc does. Unlike glibc,
+// Floating point values are rounded exactly, to the nearest value and ties to even, like glibc does, with BigInt arithmetic. Unlike glibc,
 // parseDoubleText ignores the payload of "nan(...)" and returns the default quiet NaN.
 
 // Constants
@@ -21,321 +21,49 @@ const long EXPONENT_BIAS = 1023l;
 const long MIN_SUBNORMAL_EXPONENT = -1074l; // Exponent of the least significant bit of the smallest subnormal double
 const long MAX_DOUBLE_EXPONENT = 1023l;
 const unsigned long MAX_SIGNIFICANT_DIGITS = 800ul; // Decimal digits, that decide the rounding of a parsed double
-const long MAX_PARSED_EXPONENT = 100000l; // Larger exponents give infinity or zero anyway
+// Limit of the exponent part, far above the adjustment by the digits of the mantissa, which is bounded by the length of the input,
+// so that e.g. "0.<999999 zeros>1e1000000" is still 1. The sums stay far from the limits of long
+const long MAX_PARSED_EXPONENT = 1000000000000000l;
 const long MAX_EXACT_POWER_OF_TEN = 22l; // 10^22 is the largest power of ten, that a double holds exactly
 const unsigned long MAX_FAST_PATH_DIGITS = 15ul; // Up to 15 decimal digits fit exactly into the mantissa of a double
 const int MAX_SIGNIFICANT_FORMAT_DIGITS = 17; // Enough to tell every two doubles apart
-const unsigned int LIMB_BASE_DECIMAL = 1000000000u; // 10^9, the largest power of ten in a limb
+const long LIMB_POWER_OF_TEN = 1000000000l; // 10^9, the largest power of ten, that fits into 32 bits
 const int NO_DIGIT = 99;
 
-// ------------------------------------------------------- Big naturals -------------------------------------------------------
+// ------------------------------------------------------- BigInt helpers -------------------------------------------------------
 
-/**
- * Arbitrary precision natural number for the exact conversions. The limbs are stored least significant first and the most
- * significant one is never zero, so that zero has no limbs.
- */
-type BigNatural struct {
-    Vector<unsigned int> limbs
-}
-
-f<BigNatural> bigNaturalOf(unsigned long value) {
-    BigNatural number;
-    unsigned long rest = value;
-    while rest != 0ul {
-        number.limbs.pushBack(cast<unsigned int>(rest & 0xFFFFFFFFul));
-        rest = rest >> 32ul;
-    }
-    return number;
-}
-
-p BigNatural.trim() {
-    while !this.limbs.isEmpty() && this.limbs.back() == 0u {
-        this.limbs.popBack();
-    }
-}
-
-f<bool> BigNatural.isZero() {
-    return this.limbs.isEmpty();
-}
-
-f<bool> BigNatural.isOdd() {
-    return !this.limbs.isEmpty() && (this.limbs.get(0ul) & 1u) == 1u;
-}
-
-f<unsigned long> BigNatural.bitLength() {
-    const unsigned long limbCount = this.limbs.getSize();
-    if limbCount == 0ul { return 0ul; }
-    unsigned int top = this.limbs.get(limbCount - 1ul);
-    unsigned long topBits = 0ul;
-    while top != 0u {
-        topBits++;
-        top = top >> 1u;
-    }
-    return (limbCount - 1ul) * 32ul + topBits;
-}
-
-/**
- * Value of the number, which has to fit into 64 bits
- */
-f<unsigned long> BigNatural.toUnsignedLong() {
-    unsigned long value = 0ul;
-    const unsigned long limbCount = this.limbs.getSize();
-    if limbCount > 0ul { value = cast<unsigned long>(this.limbs.get(0ul)); }
-    if limbCount > 1ul { value = value | (cast<unsigned long>(this.limbs.get(1ul)) << 32ul); }
-    return value;
-}
-
-p BigNatural.multiplySmall(unsigned int factor) {
-    unsigned long carry = 0ul;
-    for unsigned long i = 0ul; i < this.limbs.getSize(); i++ {
-        const unsigned long product = cast<unsigned long>(this.limbs.get(i)) * cast<unsigned long>(factor) + carry;
-        this.limbs[i] = cast<unsigned int>(product & 0xFFFFFFFFul);
-        carry = product >> 32ul;
-    }
-    if carry != 0ul { this.limbs.pushBack(cast<unsigned int>(carry)); }
-    this.trim();
-}
-
-p BigNatural.addSmall(unsigned int summand) {
-    unsigned long carry = cast<unsigned long>(summand);
-    for unsigned long i = 0ul; i < this.limbs.getSize() && carry != 0ul; i++ {
-        const unsigned long sum = cast<unsigned long>(this.limbs.get(i)) + carry;
-        this.limbs[i] = cast<unsigned int>(sum & 0xFFFFFFFFul);
-        carry = sum >> 32ul;
-    }
-    if carry != 0ul { this.limbs.pushBack(cast<unsigned int>(carry)); }
-}
-
-p BigNatural.multiplyPowerOfTen(unsigned long exponent) {
+p multiplyByPowerOfTen(BigInt& value, unsigned long exponent) {
     unsigned long rest = exponent;
     while rest >= 9ul {
-        this.multiplySmall(LIMB_BASE_DECIMAL);
+        value.multiply(LIMB_POWER_OF_TEN);
         rest -= 9ul;
     }
-    unsigned int factor = 1u;
+    long factor = 1l;
     while rest > 0ul {
-        factor *= 10u;
+        factor *= 10l;
         rest--;
     }
-    if factor != 1u { this.multiplySmall(factor); }
-}
-
-p BigNatural.shiftLeft(unsigned long bits) {
-    if this.isZero() || bits == 0ul { return; }
-    const unsigned long limbShift = bits / 32ul;
-    const unsigned long bitShift = bits % 32ul;
-    const unsigned long oldSize = this.limbs.getSize();
-    // Make room for the new limbs and move the old ones up, starting with the most significant one
-    for unsigned long i = 0ul; i <= limbShift; i++ {
-        this.limbs.pushBack(0u);
-    }
-    unsigned long i = oldSize;
-    while i > 0ul {
-        i--;
-        const unsigned long shifted = cast<unsigned long>(this.limbs.get(i)) << bitShift;
-        this.limbs[i + limbShift + 1ul] = this.limbs.get(i + limbShift + 1ul) | cast<unsigned int>(shifted >> 32ul);
-        this.limbs[i + limbShift] = cast<unsigned int>(shifted & 0xFFFFFFFFul);
-    }
-    for unsigned long j = 0ul; j < limbShift; j++ {
-        this.limbs[j] = 0u;
-    }
-    this.trim();
-}
-
-p BigNatural.shiftRight(unsigned long bits) {
-    const unsigned long limbShift = bits / 32ul;
-    const unsigned long bitShift = bits % 32ul;
-    if limbShift >= this.limbs.getSize() {
-        this.limbs.clear();
-        return;
-    }
-    const unsigned long newSize = this.limbs.getSize() - limbShift;
-    for unsigned long i = 0ul; i < newSize; i++ {
-        unsigned long combined = cast<unsigned long>(this.limbs.get(i + limbShift));
-        if i + limbShift + 1ul < this.limbs.getSize() {
-            combined = combined | (cast<unsigned long>(this.limbs.get(i + limbShift + 1ul)) << 32ul);
-        }
-        this.limbs[i] = cast<unsigned int>((combined >> bitShift) & 0xFFFFFFFFul);
-    }
-    while this.limbs.getSize() > newSize {
-        this.limbs.popBack();
-    }
-    this.trim();
-}
-
-f<bool> BigNatural.testBit(unsigned long index) {
-    const unsigned long limbIndex = index / 32ul;
-    if limbIndex >= this.limbs.getSize() { return false; }
-    const unsigned int bit = cast<unsigned int>(index % 32ul);
-    return ((this.limbs.get(limbIndex) >> bit) & 1u) == 1u;
+    if factor != 1l { value.multiply(factor); }
 }
 
 /**
- * Check if any of the bits below the given index is set
+ * Check if any bit of the value below the given index is set
  */
-f<bool> BigNatural.hasBitsBelow(unsigned long index) {
-    const unsigned long fullLimbs = index / 32ul;
-    for unsigned long i = 0ul; i < fullLimbs && i < this.limbs.getSize(); i++ {
-        if this.limbs.get(i) != 0u { return true; }
-    }
-    const unsigned long restBits = index % 32ul;
-    if restBits == 0ul || fullLimbs >= this.limbs.getSize() { return false; }
-    const unsigned int mask = cast<unsigned int>((1ul << restBits) - 1ul);
-    return (this.limbs.get(fullLimbs) & mask) != 0u;
-}
-
-f<int> BigNatural.compare(const BigNatural& other) {
-    const unsigned long size = this.limbs.getSize();
-    const unsigned long otherSize = other.limbs.getSize();
-    if size != otherSize { return size < otherSize ? -1 : 1; }
-    unsigned long i = size;
-    while i > 0ul {
-        i--;
-        const unsigned int limb = this.limbs.get(i);
-        const unsigned int otherLimb = other.limbs.get(i);
-        if limb != otherLimb { return limb < otherLimb ? -1 : 1; }
-    }
-    return 0;
-}
-
-/**
- * Subtract a number, that is not greater than this one
- */
-p BigNatural.subtract(const BigNatural& subtrahend) {
-    unsigned long borrow = 0ul;
-    for unsigned long i = 0ul; i < this.limbs.getSize(); i++ {
-        unsigned long subtracted = borrow;
-        if i < subtrahend.limbs.getSize() { subtracted += cast<unsigned long>(subtrahend.limbs.get(i)); }
-        const unsigned long limb = cast<unsigned long>(this.limbs.get(i));
-        if limb >= subtracted {
-            this.limbs[i] = cast<unsigned int>(limb - subtracted);
-            borrow = 0ul;
-        } else {
-            this.limbs[i] = cast<unsigned int>(limb + 0x100000000ul - subtracted);
-            borrow = 1ul;
-        }
-    }
-    this.trim();
-}
-
-/**
- * Divide by a small number in place
- *
- * @return Remainder
- */
-f<unsigned int> BigNatural.divideSmall(unsigned int divisor) {
-    unsigned long remainder = 0ul;
-    unsigned long i = this.limbs.getSize();
-    while i > 0ul {
-        i--;
-        const unsigned long current = (remainder << 32ul) | cast<unsigned long>(this.limbs.get(i));
-        this.limbs[i] = cast<unsigned int>(current / cast<unsigned long>(divisor));
-        remainder = current % cast<unsigned long>(divisor);
-    }
-    this.trim();
-    return cast<unsigned int>(remainder);
-}
-
-f<String> BigNatural.toDecimal() {
-    if this.isZero() { return String("0"); }
-    BigNatural rest = *this;
-    Vector<unsigned int> chunks; // Groups of nine decimal digits, least significant first
-    while !rest.isZero() {
-        chunks.pushBack(rest.divideSmall(LIMB_BASE_DECIMAL));
-    }
-    String text = formatUnsignedInteger(cast<unsigned long>(chunks.back()));
-    unsigned long i = chunks.getSize() - 1ul;
-    while i > 0ul {
-        i--;
-        const String chunk = formatUnsignedInteger(cast<unsigned long>(chunks.get(i)));
-        for unsigned long padding = chunk.getLength(); padding < 9ul; padding++ {
-            text += '0';
-        }
-        text += chunk;
-    }
-    return text;
+f<bool> hasSetBitsBelow(const BigInt& value, unsigned long index) {
+    const long lowestSetBit = value.getLowestSetBit();
+    return lowestSetBit >= 0l && cast<unsigned long>(lowestSetBit) < index;
 }
 
 /**
  * Divide the numerator by the denominator, where the quotient has to fit into 64 bits. The numerator becomes the remainder.
- * Long division with 32 bit digits (Knuth, The Art of Computer Programming, Vol. 2, 4.3.1, Algorithm D)
  *
  * @return Quotient
  */
-f<unsigned long> divideBigNaturals(BigNatural& numerator, const BigNatural& denominator) {
-    if numerator.compare(denominator) < 0 { return 0ul; }
-    const unsigned long divisorLength = denominator.limbs.getSize();
-    if divisorLength == 1ul {
-        // A single digit divisor needs no normalization
-        BigNatural quotient = numerator;
-        const unsigned int remainder = quotient.divideSmall(denominator.limbs.get(0ul));
-        numerator = bigNaturalOf(cast<unsigned long>(remainder));
-        return quotient.toUnsignedLong();
-    }
-
-    // Normalize, so that the most significant digit of the divisor has its top bit set
-    unsigned long normalizeShift = 0ul;
-    unsigned int topDigit = denominator.limbs.get(divisorLength - 1ul);
-    while (topDigit & 0x80000000u) == 0u {
-        topDigit = topDigit << 1u;
-        normalizeShift++;
-    }
-    BigNatural divisor = denominator;
-    divisor.shiftLeft(normalizeShift);
-    BigNatural rest = numerator;
-    rest.shiftLeft(normalizeShift);
-    rest.limbs.pushBack(0u); // The algorithm needs one more digit than the dividend has
-    const unsigned long quotientLength = rest.limbs.getSize() - divisorLength;
-    const unsigned long divisorTop = cast<unsigned long>(divisor.limbs.get(divisorLength - 1ul));
-    const unsigned long divisorSecond = cast<unsigned long>(divisor.limbs.get(divisorLength - 2ul));
-
-    unsigned long quotient = 0ul;
-    unsigned long j = quotientLength;
-    while j > 0ul {
-        j--;
-        // Estimate the quotient digit from the two top digits of the rest and correct it with the third one
-        const unsigned long topTwo = (cast<unsigned long>(rest.limbs.get(j + divisorLength)) << 32ul) |
-            cast<unsigned long>(rest.limbs.get(j + divisorLength - 1ul));
-        unsigned long digit = topTwo / divisorTop;
-        unsigned long remainderEstimate = topTwo % divisorTop;
-        while digit > 0xFFFFFFFFul ||
-            digit * divisorSecond > ((remainderEstimate << 32ul) | cast<unsigned long>(rest.limbs.get(j + divisorLength - 2ul))) {
-            digit--;
-            remainderEstimate += divisorTop;
-            if remainderEstimate > 0xFFFFFFFFul { break; }
-        }
-
-        // Subtract digit * divisor from the rest
-        long borrow = 0l;
-        unsigned long carry = 0ul;
-        for unsigned long i = 0ul; i < divisorLength; i++ {
-            const unsigned long product = digit * cast<unsigned long>(divisor.limbs.get(i)) + carry;
-            carry = product >> 32ul;
-            const long difference = cast<long>(rest.limbs.get(i + j)) - cast<long>(product & 0xFFFFFFFFul) - borrow;
-            rest.limbs[i + j] = cast<unsigned int>(difference & 0xFFFFFFFFl);
-            borrow = difference < 0l ? 1l : 0l;
-        }
-        const long top = cast<long>(rest.limbs.get(j + divisorLength)) - cast<long>(carry) - borrow;
-        rest.limbs[j + divisorLength] = cast<unsigned int>(top & 0xFFFFFFFFl);
-
-        // The estimate was one too large in rare cases: add the divisor back
-        if top < 0l {
-            digit--;
-            unsigned long addCarry = 0ul;
-            for unsigned long i = 0ul; i < divisorLength; i++ {
-                const unsigned long sum = cast<unsigned long>(rest.limbs.get(i + j)) + cast<unsigned long>(divisor.limbs.get(i)) + addCarry;
-                rest.limbs[i + j] = cast<unsigned int>(sum & 0xFFFFFFFFul);
-                addCarry = sum >> 32ul;
-            }
-            rest.limbs[j + divisorLength] = cast<unsigned int>((cast<unsigned long>(rest.limbs.get(j + divisorLength)) + addCarry) & 0xFFFFFFFFul);
-        }
-        if j < 2ul { quotient = quotient | (digit << (32ul * j)); }
-    }
-
-    // The rest is the remainder, still normalized
-    rest.trim();
-    rest.shiftRight(normalizeShift);
-    numerator = rest;
+f<unsigned long> divideWithSmallQuotient(BigInt& numerator, const BigInt& denominator) {
+    BigInt remainder;
+    numerator.divideWithRemainder(denominator, remainder);
+    const unsigned long quotient = numerator.getAbsoluteLowBits();
+    numerator = remainder;
     return quotient;
 }
 
@@ -701,32 +429,32 @@ public f<double> parseDoubleText(string input) {
     }
 
     // Exact path: the quotient of numerator * 2^shift and denominator gets 55 or 56 bits, the rest decides the rounding
-    BigNatural numerator;
-    unsigned int chunk = 0u; // Up to nine digits at once
-    unsigned int chunkFactor = 1u;
+    BigInt numerator;
+    long chunk = 0l; // Up to nine digits at once
+    long chunkFactor = 1l;
     for unsigned long i = 0ul; i < digitLength; i++ {
-        chunk = chunk * 10u + cast<unsigned int>(cast<int>(digits[i]) - cast<int>('0'));
-        chunkFactor *= 10u;
-        if chunkFactor == LIMB_BASE_DECIMAL || i + 1ul == digitLength {
-            numerator.multiplySmall(chunkFactor);
-            numerator.addSmall(chunk);
-            chunk = 0u;
-            chunkFactor = 1u;
+        chunk = chunk * 10l + cast<long>(cast<int>(digits[i]) - cast<int>('0'));
+        chunkFactor *= 10l;
+        if chunkFactor == LIMB_POWER_OF_TEN || i + 1ul == digitLength {
+            numerator.multiply(chunkFactor);
+            numerator.add(chunk);
+            chunk = 0l;
+            chunkFactor = 1l;
         }
     }
-    BigNatural denominator = bigNaturalOf(1ul);
+    BigInt denominator = BigInt(1l);
     if exponent >= 0l {
-        numerator.multiplyPowerOfTen(cast<unsigned long>(exponent));
+        multiplyByPowerOfTen(numerator, cast<unsigned long>(exponent));
     } else {
-        denominator.multiplyPowerOfTen(cast<unsigned long>(-exponent));
+        multiplyByPowerOfTen(denominator, cast<unsigned long>(-exponent));
     }
-    const long shift = 55l - (cast<long>(numerator.bitLength()) - cast<long>(denominator.bitLength()));
+    const long shift = 55l - (cast<long>(numerator.getBitLength()) - cast<long>(denominator.getBitLength()));
     if shift >= 0l {
         numerator.shiftLeft(cast<unsigned long>(shift));
     } else {
         denominator.shiftLeft(cast<unsigned long>(-shift));
     }
-    const unsigned long quotient = divideBigNaturals(numerator, denominator);
+    const unsigned long quotient = divideWithSmallQuotient(numerator, denominator);
     return composeDouble(negative, quotient, !numerator.isZero(), -shift);
 }
 
@@ -788,21 +516,21 @@ public f<String> formatFixedDouble(double value, int precision) {
 
     // scaled = value * 10^exactPlaces, rounded to an integer. A double has at most -exponent decimal places, so the places
     // after these are zeros
-    BigNatural scaled = bigNaturalOf(significand);
+    BigInt scaled = getBigIntFromUnsigned(significand);
     unsigned long exactPlaces = 0ul;
     if exponent >= 0l {
         scaled.shiftLeft(cast<unsigned long>(exponent));
     } else {
         const unsigned long fractionBits = cast<unsigned long>(-exponent);
         exactPlaces = decimalPlaces < fractionBits ? decimalPlaces : fractionBits;
-        scaled.multiplyPowerOfTen(exactPlaces);
+        multiplyByPowerOfTen(scaled, exactPlaces);
         const bool halfBit = scaled.testBit(fractionBits - 1ul);
-        const bool belowHalf = scaled.hasBitsBelow(fractionBits - 1ul);
+        const bool belowHalf = hasSetBitsBelow(scaled, fractionBits - 1ul);
         scaled.shiftRight(fractionBits);
-        if halfBit && (belowHalf || scaled.isOdd()) { scaled.addSmall(1u); }
+        if halfBit && (belowHalf || scaled.isOdd()) { scaled.add(1l); }
     }
 
-    String digits = scaled.toDecimal();
+    String digits = scaled.toString();
     while digits.getLength() <= exactPlaces { digits.insert(0ul, '0'); }
     const unsigned long integerLength = digits.getLength() - exactPlaces;
     String text;
@@ -863,26 +591,26 @@ public f<String> formatSignificantDouble(double value, int significantDigits) {
     unsigned long roundedDigits = 0ul;
     while true {
         const long scale = cast<long>(digitCount) - 1l - decimalExponent;
-        BigNatural numerator = bigNaturalOf(significand);
+        BigInt numerator = getBigIntFromUnsigned(significand);
         if exponent >= 0l { numerator.shiftLeft(cast<unsigned long>(exponent)); }
         if scale >= 0l {
-            numerator.multiplyPowerOfTen(cast<unsigned long>(scale));
+            multiplyByPowerOfTen(numerator, cast<unsigned long>(scale));
             if exponent >= 0l {
-                roundedDigits = numerator.toUnsignedLong(); // Exact
+                roundedDigits = numerator.getAbsoluteLowBits(); // Exact
             } else {
                 // The denominator is a power of two, so the division is a shift
                 const unsigned long fractionBits = cast<unsigned long>(-exponent);
                 const bool halfBit = numerator.testBit(fractionBits - 1ul);
-                const bool belowHalf = numerator.hasBitsBelow(fractionBits - 1ul);
+                const bool belowHalf = hasSetBitsBelow(numerator, fractionBits - 1ul);
                 numerator.shiftRight(fractionBits);
-                roundedDigits = numerator.toUnsignedLong();
+                roundedDigits = numerator.getAbsoluteLowBits();
                 if halfBit && (belowHalf || (roundedDigits & 1ul) == 1ul) { roundedDigits++; }
             }
         } else {
-            BigNatural denominator = bigNaturalOf(1ul);
+            BigInt denominator = BigInt(1l);
             if exponent < 0l { denominator.shiftLeft(cast<unsigned long>(-exponent)); }
-            denominator.multiplyPowerOfTen(cast<unsigned long>(-scale));
-            roundedDigits = divideBigNaturals(numerator, denominator);
+            multiplyByPowerOfTen(denominator, cast<unsigned long>(-scale));
+            roundedDigits = divideWithSmallQuotient(numerator, denominator);
             numerator.shiftLeft(1ul); // Twice the remainder, to compare it with half of the denominator
             const int half = numerator.compare(denominator);
             if half > 0 || (half == 0 && (roundedDigits & 1ul) == 1ul) { roundedDigits++; }

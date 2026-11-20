@@ -165,7 +165,8 @@ f<int> main() {
 
     if FAILURES == 0 {
         printf("All conversions match the C library");
-    } else {
-        printf("%d conversions differ from the C library", FAILURES);
+        return 0;
     }
+    printf("%d conversions differ from the C library", FAILURES);
+    return 1;
 }

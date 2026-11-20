@@ -73,7 +73,10 @@ f<int> main() {
     assert toDouble("9007199254740993") == 9007199254740992.0; // Halfway between two doubles, ties to even
     assert toDouble("9007199254740993.0000000000000000000000001") == 9007199254740994.0;
     assert toDouble("2.4703282292062328e-324") == 4.9406564584124654e-324; // Just above half of the smallest subnormal
-    assert toString(toDouble("2.4703282292062327e-324"), 0) == "0"; // Just below it
+    assert toDouble("2.4703282292062327e-324") == 0.0; // Just below it
+    assert toString(toDouble("2.4703282292062327e-324"), 0) == "0"; // Positive zero
+    assert toDouble("0.000000000000000000001e21") == 1.0; // The digits and the exponent part cancel out
+    assert toDouble("0x0.0000000000001p52") == 1.0;
     assert toString(toDouble("1.7976931348623159e308")) == "inf";
     assert toString(toDouble("-1e400")) == "-inf";
     assert toString(toDouble("-1e-400"), 1) == "-0.0";
