@@ -2,8 +2,7 @@ import "std/text/toml/toml-value";
 import "std/text/analysis";
 import "std/text/stringstream";
 import "std/type/type-conversion";
-
-ext f<int> snprintf(char*, unsigned long, string, ...);
+import "std/type/impl/number-conversion";
 
 /**
  * Serializer for TOML output.
@@ -233,9 +232,7 @@ f<String> serializeTomlFloat(double value) {
         }
     }
 
-    const int length = snprintf(nil<char*>, 0l, "%.17g", value);
-    String out = String(length);
-    snprintf(cast<char*>(out.getRaw()), cast<unsigned long>(length + 1), "%.17g", value);
+    String out = formatSignificantDouble(value, 17);
     // Very large magnitudes may print without a fractional or exponent part
     if out.find('.') < 0l && out.find('e') < 0l && out.find('E') < 0l {
         out += ".0";

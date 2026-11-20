@@ -2,6 +2,7 @@
 // context setup, the client/server handshake, certificate verification and encrypted read/write.
 // See "std/net/tls" for the Spice-facing API built on top of this.
 
+#![core.compiler.requiresOs]
 #![core.compiler.warnings.ignore]
 #![
     core.linux.linker.flag = "`pkg-config --cflags --libs openssl`",
