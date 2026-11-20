@@ -251,10 +251,10 @@ regardless would not help and would actively hurt: lld rejects every member of a
 Upstream builds with autotools, and `setup-deps.py` runs that build rather than reimplementing it: `./configure`
 alone decides which object-format reader to compile (`elf.c`, `macho.c`, `pecoff.c`, `xcoff.c` or `unknown.c`),
 whether `mmap` backs the file reader and allocator, and what goes into `config.h` and `backtrace-supported.h`. A
-submodule bump therefore needs no work on our side. It is built out of tree, into `deps/libbacktrace-build`, so the
-submodule checkout stays pristine, and from scratch each time, so a bump re-runs configure instead of reusing the
-previous commit's cached answers. A stamp file next to the build records the commit it came from, so a repeat run of
-`setup-deps.py` is a no-op.
+submodule bump therefore needs no work on our side. It is built out of tree, into `deps/libbacktrace/build` (which
+`setup-deps.py` excludes in the submodule), so the submodule checkout stays pristine, and from scratch each time, so a
+bump re-runs configure instead of reusing the previous commit's cached answers. A stamp file next to the build records
+the commit it came from, so a repeat run of `setup-deps.py` is a no-op.
 
 Two configure flags are not optional:
 
