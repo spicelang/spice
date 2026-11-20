@@ -8,6 +8,8 @@ f<int> fib(int n) {
 f<int> main() {
     int threadCount = 8;
     Thread[8] threads;
+    // Printed before the threads start, since they may already finish while the others are started
+    printf("Starting all threads ...\n");
     for unsigned int i = 0; i < threadCount; i++ {
         threads[i] = Thread(p() {
             int res = fib(30);
@@ -16,7 +18,6 @@ f<int> main() {
         Thread& thread = threads[i];
         thread.run();
     }
-    printf("Started all threads. Waiting for results ...\n");
     for unsigned int i = 0; i < threadCount; i++ {
         Thread& thread = threads[i];
         thread.join();

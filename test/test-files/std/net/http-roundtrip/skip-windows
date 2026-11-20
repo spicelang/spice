@@ -1,0 +1,1 @@
+Linking fails on the GitHub Actions runner, which has no OpenSSL libraries for x86_64-w64-windows-gnu (-lssl -lcrypto)

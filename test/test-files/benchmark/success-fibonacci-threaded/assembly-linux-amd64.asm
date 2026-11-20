@@ -52,7 +52,7 @@ _Z3fibi:                                # @_Z3fibi
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc
-# %bb.0:                                # %for.body.L11
+# %bb.0:                                # %for.body.L13
 	pushq	%rbp
 	.cfi_def_cfa_offset 16
 	pushq	%r15
@@ -73,11 +73,13 @@ main:                                   # @main
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
-	leaq	96(%rsp), %rbp
-	leaq	144(%rsp), %rbx
-	leaq	192(%rsp), %r12
-	leaq	240(%rsp), %r13
-	leaq	_Z15lambda.L12C29.0v(%rip), %r14
+	leaq	96(%rsp), %rbx
+	leaq	144(%rsp), %r13
+	leaq	192(%rsp), %rbp
+	leaq	240(%rsp), %r12
+	leaq	.Lstr(%rip), %rdi
+	callq	puts@PLT
+	leaq	_Z15lambda.L14C29.0v(%rip), %r14
 	movq	%rsp, %r15
 	movq	%r15, %rdi
 	movq	%r14, %rsi
@@ -85,7 +87,7 @@ main:                                   # @main
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movl	$336, %edx                      # imm = 0x150
-	movq	%rbp, %rdi
+	movq	%rbx, %rdi
 	xorl	%esi, %esi
 	callq	memset@PLT
 	movups	(%rsp), %xmm0
@@ -107,7 +109,7 @@ main:                                   # @main
 	movaps	%xmm2, 128(%rsp)
 	movaps	%xmm1, 112(%rsp)
 	movaps	%xmm0, 96(%rsp)
-	movq	%rbp, %rdi
+	movq	%rbx, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	movq	%r15, %rdi
 	movq	%r14, %rsi
@@ -120,7 +122,7 @@ main:                                   # @main
 	movaps	%xmm2, 176(%rsp)
 	movaps	%xmm1, 160(%rsp)
 	movaps	%xmm0, 144(%rsp)
-	movq	%rbx, %rdi
+	movq	%r13, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	movq	%r15, %rdi
 	movq	%r14, %rsi
@@ -133,7 +135,7 @@ main:                                   # @main
 	movaps	%xmm2, 224(%rsp)
 	movaps	%xmm1, 208(%rsp)
 	movaps	%xmm0, 192(%rsp)
-	movq	%r12, %rdi
+	movq	%rbp, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	movq	%r15, %rdi
 	movq	%r14, %rsi
@@ -146,7 +148,7 @@ main:                                   # @main
 	movaps	%xmm2, 272(%rsp)
 	movaps	%xmm1, 256(%rsp)
 	movaps	%xmm0, 240(%rsp)
-	movq	%r13, %rdi
+	movq	%r12, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	movq	%r15, %rdi
 	movq	%r14, %rsi
@@ -172,7 +174,8 @@ main:                                   # @main
 	movaps	%xmm2, 368(%rsp)
 	movaps	%xmm1, 352(%rsp)
 	movaps	%xmm0, 336(%rsp)
-	leaq	336(%rsp), %rdi
+	leaq	336(%rsp), %r13
+	movq	%r13, %rdi
 	callq	_ZN6Thread3runEv@PLT
 	movq	%r15, %rdi
 	movq	%r14, %rsi
@@ -188,21 +191,19 @@ main:                                   # @main
 	leaq	384(%rsp), %r14
 	movq	%r14, %rdi
 	callq	_ZN6Thread3runEv@PLT
-	leaq	.Lstr(%rip), %rdi
-	callq	puts@PLT
 	leaq	48(%rsp), %rdi
-	callq	_ZN6Thread4joinEv@PLT
-	movq	%rbp, %rdi
 	callq	_ZN6Thread4joinEv@PLT
 	movq	%rbx, %rdi
 	callq	_ZN6Thread4joinEv@PLT
-	movq	%r12, %rdi
+	leaq	144(%rsp), %rdi
 	callq	_ZN6Thread4joinEv@PLT
-	movq	%r13, %rdi
+	movq	%rbp, %rdi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r12, %rdi
 	callq	_ZN6Thread4joinEv@PLT
 	leaq	288(%rsp), %rdi
 	callq	_ZN6Thread4joinEv@PLT
-	leaq	336(%rsp), %rdi
+	movq	%r13, %rdi
 	callq	_ZN6Thread4joinEv@PLT
 	movq	%r14, %rdi
 	callq	_ZN6Thread4joinEv@PLT
@@ -229,31 +230,31 @@ main:                                   # @main
 	.size	main, .Lfunc_end1-main
 	.cfi_endproc
                                         # -- End function
-	.prefalign	4, .Lfunc_end2, nop     # -- Begin function _Z15lambda.L12C29.0v
-	.type	_Z15lambda.L12C29.0v,@function
-_Z15lambda.L12C29.0v:                   # @_Z15lambda.L12C29.0v
+	.prefalign	4, .Lfunc_end2, nop     # -- Begin function _Z15lambda.L14C29.0v
+	.type	_Z15lambda.L14C29.0v,@function
+_Z15lambda.L14C29.0v:                   # @_Z15lambda.L14C29.0v
 	.cfi_startproc
 # %bb.0:
 	pushq	%rax
 	.cfi_def_cfa_offset 16
 	movl	$30, %edi
 	callq	_Z3fibi
-	leaq	.Lprintf.str.0(%rip), %rdi
+	leaq	.Lprintf.str.1(%rip), %rdi
 	movl	%eax, %esi
 	xorl	%eax, %eax
 	popq	%rcx
 	.cfi_def_cfa_offset 8
 	jmp	printf@PLT                      # TAILCALL
 .Lfunc_end2:
-	.size	_Z15lambda.L12C29.0v, .Lfunc_end2-_Z15lambda.L12C29.0v
+	.size	_Z15lambda.L14C29.0v, .Lfunc_end2-_Z15lambda.L14C29.0v
 	.cfi_endproc
                                         # -- End function
-	.type	.Lprintf.str.0,@object          # @printf.str.0
+	.type	.Lprintf.str.1,@object          # @printf.str.1
 	.section	.rodata.str1.4,"aMS",@progbits,1
 	.p2align	2, 0x0
-.Lprintf.str.0:
+.Lprintf.str.1:
 	.asciz	"Thread returned with result: %d\n"
-	.size	.Lprintf.str.0, 33
+	.size	.Lprintf.str.1, 33
 
 	.type	.Lprintf.str.2,@object          # @printf.str.2
 	.p2align	2, 0x0
@@ -264,8 +265,8 @@ _Z15lambda.L12C29.0v:                   # @_Z15lambda.L12C29.0v
 	.type	.Lstr,@object                   # @str
 	.section	.rodata.str1.1,"aMS",@progbits,1
 .Lstr:
-	.asciz	"Started all threads. Waiting for results ..."
-	.size	.Lstr, 45
+	.asciz	"Starting all threads ..."
+	.size	.Lstr, 25
 
 	.ident	"spice version dev (https://github.com/spicelang/spice)"
 	.section	".note.GNU-stack","",@progbits

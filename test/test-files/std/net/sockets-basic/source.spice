@@ -7,7 +7,7 @@ f<int> main() {
     // Server thread
     tp.enqueue(p() {
         printf("Opening server socket ...\n");
-        Result<Socket> socketRes = openServerSocket(8080s);
+        Result<Socket> socketRes = openServerSocket(18089s);
         Socket socket = socketRes.unwrap();
         printf("Server socket open.\n");
     });
@@ -15,7 +15,7 @@ f<int> main() {
     tp.enqueue(p() {
         delay(50); // Wait for server to become available
         printf("Opening client socket ...\n");
-        Result<Socket> socketRes = openClientSocket("127.0.0.1", 8080s);
+        Result<Socket> socketRes = openClientSocket("127.0.0.1", 18089s);
         Socket socket = socketRes.unwrap();
         printf("Client socket open.\n");
     });
