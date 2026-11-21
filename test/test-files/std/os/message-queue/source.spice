@@ -90,9 +90,21 @@ f<int> main() {
     Optional<int> empty = mq.tryPop();
     assert !empty.isPresent();
 
+    // tryPush enqueues like push, as long as the queue is open
+    Result<bool> pushed = mq.tryPush(7);
+    assert pushed.isOk();
+    Optional<int> tryPushed = mq.tryPop();
+    assert tryPushed.isPresent() && tryPushed.get() == 7;
+
     mq.push(42);
     mq.close();
     assert mq.isClosed();
+
+    // tryPush on a closed queue reports an error instead of panicking and does not enqueue
+    Result<bool> pushedAfterClose = mq.tryPush(43);
+    assert pushedAfterClose.isErr();
+    printf("tryPush after close: %s\n", pushedAfterClose.getErr().getMessage());
+    assert mq.getSize() == 1;
 
     // A closed queue still hands out items that were queued before the close...
     Optional<int> afterClose = mq.pop();

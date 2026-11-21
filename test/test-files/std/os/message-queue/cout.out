@@ -1,3 +1,4 @@
+tryPush after close: MessageQueue: cannot push to a closed queue
 Single-threaded smoke tests passed!
 popped count = 20000, popped sum = 50010000
 All assertions passed!

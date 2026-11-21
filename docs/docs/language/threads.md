@@ -325,5 +325,7 @@ f<int> main() {
 `pop()` blocks the calling thread until an item is available. Once `close()` has been called, `pop()` still
 returns any items that were queued before the close, and only reports an empty `Optional` once the queue has
 been fully drained — so consumers never have to guess when producers are done. Pushing to a closed queue panics.
+If a producer may push while another thread closes the queue, use `tryPush()` instead, which returns a `Result<bool>`
+with an error if the queue is closed.
 If you don't want to block, use `tryPop()` instead, which returns immediately with an empty `Optional` if the
 queue has no items right now. `isEmpty()` and `getSize()` report the current state of the queue.
