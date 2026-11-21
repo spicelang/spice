@@ -1,1 +1,3 @@
+getAttributeSafe("missing"): XML element has no such attribute
+getAttributeSafe on a text node: XML node is not an element
 All assertions passed!

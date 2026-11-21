@@ -211,6 +211,20 @@ public f<const String&> XmlNode.getAttribute(string name) {
     return this.attributeValues.get(cast<unsigned long>(idx));
 }
 
+/**
+ * Retrieve a copy of the value of the attribute with the given name as Result. Unlike getAttribute(), this does not panic,
+ * so it suits attributes, that the parsed document may lack.
+ *
+ * @param name Attribute name to look up
+ * @return Attribute value, or an error if the node is not an element or the attribute does not exist
+ */
+public f<Result<String>> XmlNode.getAttributeSafe(string name) {
+    if this.kind != XmlNodeKind::XML_ELEMENT { return err<String>("XML node is not an element"); }
+    const long idx = this.findAttributeIndex(name);
+    if idx < 0l { return err<String>("XML element has no such attribute"); }
+    return ok(this.attributeValues.get(cast<unsigned long>(idx)));
+}
+
 // Index of the attribute with the given name, or -1 if the element has no such attribute.
 // Comparing against the raw name avoids building a String that would have to be cleaned up
 f<long> XmlNode.findAttributeIndex(string name) {

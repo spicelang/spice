@@ -30,6 +30,19 @@ f<int> main() {
     assert msg.getName() == String("msg");
     assert msg.getInnerText() == String("hi <there> A");
 
+    // getAttributeSafe reports missing attributes and non-elements as errors instead of panicking
+    Result<String> safeX = a.getAttributeSafe("x");
+    assert safeX.isOk();
+    assert safeX.unwrap() == String("1");
+    Result<String> safeMissing = a.getAttributeSafe("missing");
+    assert safeMissing.isErr();
+    printf("getAttributeSafe(\"missing\"): %s\n", safeMissing.getErr().getMessage());
+    XmlNode* msgText = msg.getChild(0l);
+    assert msgText.isText();
+    Result<String> safeNonElement = msgText.getAttributeSafe("x");
+    assert safeNonElement.isErr();
+    printf("getAttributeSafe on a text node: %s\n", safeNonElement.getErr().getMessage());
+
     // Nested document with XML declaration, comments, children and CDATA
     String doc = String("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     doc += "<!-- header comment -->\n";
