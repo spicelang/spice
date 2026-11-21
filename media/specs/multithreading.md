@@ -170,8 +170,9 @@ Spice provides a `MessageQueue<T>` type (`std/os/message-queue`) for passing val
 queue, guarded by an internal mutex, so any number of producer and consumer threads can push and pop concurrently.
 `push()` never blocks, `pop()` blocks until a value is available. `tryPop()` is the non-blocking variant.
 
-Producers call `close()` to signal the end of the stream. After that, `push()` panics, while consumers keep draining the
-remaining values and get an empty `Optional` once the queue has run dry.
+Producers call `close()` to signal the end of the stream. After that, `push()` panics and `tryPush()` returns an error
+(`Result<bool>`), while consumers keep draining the remaining values and get an empty `Optional` once the queue has run
+dry.
 
 ```spice
 import "std/os/message-queue";

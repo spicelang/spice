@@ -13,9 +13,10 @@ type T dyn;
  * `pop()` blocks until an item becomes available or the queue is closed, sleeping on a condition
  * variable in the meantime.
  *
- * Once `close()` has been called, `push()` panics and `pop()`/`tryPop()` keep draining any items
- * that are still queued, returning an empty `Optional` only once the queue has run dry. This makes
- * `close()` + drain-until-empty a safe way for producers to signal shutdown to consumers.
+ * Once `close()` has been called, `push()` panics, `tryPush()` returns an error and `pop()`/`tryPop()`
+ * keep draining any items that are still queued, returning an empty `Optional` only once the queue has
+ * run dry. This makes `close()` + drain-until-empty a safe way for producers to signal shutdown to
+ * consumers.
  */
 public type MessageQueue<T> struct {
     Queue<T> queue
@@ -39,6 +40,21 @@ public p MessageQueue.push(const T& item) {
     if this.closed { panic(Error("MessageQueue: cannot push to a closed queue")); }
     this.queue.push(item);
     this.itemAvailable.notifyOne();
+}
+
+/**
+ * Push an item to the back of the queue, unless the queue is closed. Safe to call from multiple threads concurrently.
+ * Unlike `push()`, this does not panic on a closed queue, so a producer can push while another thread may close the queue.
+ *
+ * @param item Item to enqueue
+ * @return Ok, or an error if the queue is closed
+ */
+public f<Result<bool>> MessageQueue.tryPush(const T& item) {
+    LockGuard _ = LockGuard(this.mutex);
+    if this.closed { return err<bool>("MessageQueue: cannot push to a closed queue"); }
+    this.queue.push(item);
+    this.itemAvailable.notifyOne();
+    return ok(true);
 }
 
 /**
@@ -75,8 +91,8 @@ public f<Optional<T>> MessageQueue.tryPop() {
 }
 
 /**
- * Close the queue. After this call, `push()` panics. `pop()` and `tryPop()` keep returning any
- * items that were queued before the close, then start reporting an empty Optional once drained.
+ * Close the queue. After this call, `push()` panics and `tryPush()` returns an error. `pop()` and `tryPop()` keep
+ * returning any items that were queued before the close, then start reporting an empty Optional once drained.
  */
 public p MessageQueue.close() {
     LockGuard _ = LockGuard(this.mutex);
