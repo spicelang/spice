@@ -76,6 +76,17 @@ f<int> main() {
     assert intD.getInteger() == 1000000l;
     TomlValue* intE = intRoot.getField("e");
     assert intE.getInteger() == 0l;
+    // getFieldSafe reports missing entries and non-tables as errors instead of panicking
+    Result<TomlValue*> safeA = intRoot.getFieldSafe("a");
+    assert safeA.isOk();
+    TomlValue* safeAValue = safeA.unwrap();
+    assert safeAValue.getInteger() == 42l;
+    Result<TomlValue*> safeMissing = intRoot.getFieldSafe(String("missing"));
+    assert safeMissing.isErr();
+    printf("getFieldSafe(\"missing\"): %s\n", safeMissing.getErr().getMessage());
+    Result<TomlValue*> safeNonTable = intA.getFieldSafe("a");
+    assert safeNonTable.isErr();
+    printf("getFieldSafe on an integer: %s\n", safeNonTable.getErr().getMessage());
 
     Result<TomlValue*> radixRes = parseToml(String("h = 0xdead_BEEF\no = 0o755\nb = 0b1101\n"));
     TomlValue* radixRoot = radixRes.unwrap();

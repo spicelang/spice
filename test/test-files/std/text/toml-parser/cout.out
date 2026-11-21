@@ -1,1 +1,3 @@
+getFieldSafe("missing"): TOML table has no such entry
+getFieldSafe on an integer: TOML value is not a table
 All assertions passed!

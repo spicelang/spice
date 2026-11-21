@@ -33,6 +33,17 @@ f<int> main() {
     assert !docRoot.hasField("missing");
     YamlValue* missing = docRoot.getFieldOrNil("missing");
     assert missing == nil<YamlValue*>;
+    // getFieldSafe reports missing entries and non-mappings as errors instead of panicking
+    Result<YamlValue*> safeName = docRoot.getFieldSafe("name");
+    assert safeName.isOk();
+    YamlValue* safeNameValue = safeName.unwrap();
+    assert safeNameValue.getString() == String("spice");
+    Result<YamlValue*> safeMissing = docRoot.getFieldSafe(String("missing"));
+    assert safeMissing.isErr();
+    printf("getFieldSafe(\"missing\"): %s\n", safeMissing.getErr().getMessage());
+    Result<YamlValue*> safeNonMapping = name.getFieldSafe("name");
+    assert safeNonMapping.isErr();
+    printf("getFieldSafe on a string: %s\n", safeNonMapping.getErr().getMessage());
 
     // A block sequence may line up with the key it belongs to, and its entries may
     // start a mapping right behind the dash

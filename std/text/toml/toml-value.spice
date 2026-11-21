@@ -414,6 +414,31 @@ public f<TomlValue*> TomlValue.getField(string key) {
 }
 
 /**
+ * Retrieve the value of the table entry with the given key as Result. Unlike getField(), this does not panic, so it suits
+ * entries, that the parsed document may lack.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or an error if the value is not a table or the entry does not exist
+ */
+public f<Result<TomlValue*>> TomlValue.getFieldSafe(const String& key) {
+    if this.kind != TomlValueKind::TOML_TABLE { return err<TomlValue*>("TOML value is not a table"); }
+    TomlValue* value = this.getFieldOrNil(key);
+    if value == nil<TomlValue*> { return err<TomlValue*>("TOML table has no such entry"); }
+    return ok(value);
+}
+
+/**
+ * Retrieve the value of the table entry with the given key as Result. Unlike getField(), this does not panic, so it suits
+ * entries, that the parsed document may lack.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or an error if the value is not a table or the entry does not exist
+ */
+public f<Result<TomlValue*>> TomlValue.getFieldSafe(string key) {
+    return this.getFieldSafe(String(key));
+}
+
+/**
  * Append an entry to the table. Panics if the value is not a table.
  * The table takes ownership of the heap-allocated entry value.
  *
