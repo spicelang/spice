@@ -15,8 +15,8 @@ f<int> main() {
     Thread thread2 = Thread(worker);
     Result<bool> started1 = thread1.run();
     Result<bool> started2 = thread2.run();
-    assert started1.isOk() && started2.isOk();
+    if started1.isErr() || started2.isErr() { return 1; }
     Result<bool> joined1 = thread1.join();
     Result<bool> joined2 = thread2.join();
-    assert joined1.isOk() && joined2.isOk();
+    if joined1.isErr() || joined2.isErr() { return 1; }
 }

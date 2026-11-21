@@ -7,9 +7,6 @@ source_filename = "source.spice"
 %struct.Error = type { i32, ptr }
 
 @COUNTER = internal global i32 0
-@anon.string.0 = private unnamed_addr constant [86 x i8] c"Assertion failed: Condition 'started1.isOk() && started2.isOk()' evaluated to false.\0A\00", align 4
-@stderr = external local_unnamed_addr global ptr, align 8
-@anon.string.1 = private unnamed_addr constant [84 x i8] c"Assertion failed: Condition 'joined1.isOk() && joined2.isOk()' evaluated to false.\0A\00", align 4
 @llvm.used = appending global [1 x ptr] [ptr @tsan.module_ctor], section "llvm.metadata"
 @llvm.global_ctors = appending global [1 x { i32, ptr, ptr }] [{ i32, ptr, ptr } { i32 0, ptr @tsan.module_ctor, ptr null }]
 
@@ -72,46 +69,44 @@ define dso_local noundef i32 @main() #1 {
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread2, { ptr, ptr, i64 } noundef %7)
   call void @_ZN6Thread3runEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %started1, ptr noundef nonnull align 8 dereferenceable(48) %thread1)
   call void @_ZN6Thread3runEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %started2, ptr noundef nonnull align 8 dereferenceable(48) %thread2)
-  %8 = call noundef zeroext i1 @_ZN6ResultIbE4isOkEv(ptr noundef nonnull align 8 dereferenceable(24) %started1)
-  br i1 %8, label %land.1.L18C12, label %land.exit.L18C12
+  %8 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started1)
+  br i1 %8, label %lor.exit.L18C8, label %lor.1.L18C8
 
-land.1.L18C12:                                    ; preds = %0
-  %9 = call noundef zeroext i1 @_ZN6ResultIbE4isOkEv(ptr noundef nonnull align 8 dereferenceable(24) %started2)
-  br label %land.exit.L18C12
+lor.1.L18C8:                                      ; preds = %0
+  %9 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started2)
+  br label %lor.exit.L18C8
 
-land.exit.L18C12:                                 ; preds = %land.1.L18C12, %0
-  %land_phi = phi i1 [ %8, %0 ], [ %9, %land.1.L18C12 ]
-  br i1 %land_phi, label %assert.exit.L18, label %assert.then.L18, !prof !6
+lor.exit.L18C8:                                   ; preds = %lor.1.L18C8, %0
+  %lor_phi = phi i1 [ %8, %0 ], [ %9, %lor.1.L18C8 ]
+  br i1 %lor_phi, label %if.then.L18, label %if.exit.L18
 
-assert.then.L18:                                  ; preds = %land.exit.L18C12
-  call void @__tsan_read8(ptr @stderr)
-  %10 = load ptr, ptr @stderr, align 8
-  %11 = call i32 (ptr, ptr, ...) @fprintf(ptr %10, ptr @anon.string.0)
-  call void @exit(i32 1)
-  unreachable
+if.then.L18:                                      ; preds = %lor.exit.L18C8
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
+  call void @__tsan_func_exit()
+  ret i32 1
 
-assert.exit.L18:                                  ; preds = %land.exit.L18C12
+if.exit.L18:                                      ; preds = %lor.exit.L18C8
   call void @_ZN6Thread4joinEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %joined1, ptr noundef nonnull align 8 dereferenceable(48) %thread1)
   call void @_ZN6Thread4joinEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %joined2, ptr noundef nonnull align 8 dereferenceable(48) %thread2)
-  %12 = call noundef zeroext i1 @_ZN6ResultIbE4isOkEv(ptr noundef nonnull align 8 dereferenceable(24) %joined1)
-  br i1 %12, label %land.1.L21C12, label %land.exit.L21C12
+  %10 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined1)
+  br i1 %10, label %lor.exit.L21C8, label %lor.1.L21C8
 
-land.1.L21C12:                                    ; preds = %assert.exit.L18
-  %13 = call noundef zeroext i1 @_ZN6ResultIbE4isOkEv(ptr noundef nonnull align 8 dereferenceable(24) %joined2)
-  br label %land.exit.L21C12
+lor.1.L21C8:                                      ; preds = %if.exit.L18
+  %11 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined2)
+  br label %lor.exit.L21C8
 
-land.exit.L21C12:                                 ; preds = %land.1.L21C12, %assert.exit.L18
-  %land_phi2 = phi i1 [ %12, %assert.exit.L18 ], [ %13, %land.1.L21C12 ]
-  br i1 %land_phi2, label %assert.exit.L21, label %assert.then.L21, !prof !6
+lor.exit.L21C8:                                   ; preds = %lor.1.L21C8, %if.exit.L18
+  %lor_phi2 = phi i1 [ %10, %if.exit.L18 ], [ %11, %lor.1.L21C8 ]
+  br i1 %lor_phi2, label %if.then.L21, label %if.exit.L21
 
-assert.then.L21:                                  ; preds = %land.exit.L21C12
-  call void @__tsan_read8(ptr @stderr)
-  %14 = load ptr, ptr @stderr, align 8
-  %15 = call i32 (ptr, ptr, ...) @fprintf(ptr %14, ptr @anon.string.1)
-  call void @exit(i32 1)
-  unreachable
+if.then.L21:                                      ; preds = %lor.exit.L21C8
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
+  call void @__tsan_func_exit()
+  ret i32 1
 
-assert.exit.L21:                                  ; preds = %land.exit.L21C12
+if.exit.L21:                                      ; preds = %lor.exit.L21C8
   call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
   call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
   call void @__tsan_func_exit()
@@ -132,370 +127,362 @@ declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 })
 
 declare void @_ZN6Thread3runEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
 
-declare i1 @_ZN6ResultIbE4isOkEv(ptr)
-
-; Function Attrs: nofree
-declare noundef i32 @fprintf(ptr noundef captures(none), ptr noundef readonly captures(none), ...) local_unnamed_addr #3
-
-; Function Attrs: cold noreturn nounwind
-declare void @exit(i32) #4
-
-declare void @_ZN6Thread4joinEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
+declare i1 @_ZN6ResultIbE5isErrEv(ptr)
 
 declare void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48))
+
+declare void @_ZN6Thread4joinEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
 
 declare void @__tsan_init()
 
 ; Function Attrs: nounwind uwtable
-define internal void @tsan.module_ctor() #5 {
+define internal void @tsan.module_ctor() #3 {
   call void @__tsan_init()
   ret void
 }
 
 ; Function Attrs: nounwind
-declare void @__tsan_func_entry(ptr) #6
+declare void @__tsan_func_entry(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_func_exit() #6
+declare void @__tsan_func_exit() #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_ignore_thread_begin() #6
+declare void @__tsan_ignore_thread_begin() #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_ignore_thread_end() #6
+declare void @__tsan_ignore_thread_end() #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read1(ptr) #6
+declare void @__tsan_read1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_write1(ptr) #6
+declare void @__tsan_write1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read1(ptr) #6
+declare void @__tsan_unaligned_read1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_write1(ptr) #6
+declare void @__tsan_unaligned_write1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_read1(ptr) #6
+declare void @__tsan_volatile_read1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_write1(ptr) #6
+declare void @__tsan_volatile_write1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_read1(ptr) #6
+declare void @__tsan_unaligned_volatile_read1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_write1(ptr) #6
+declare void @__tsan_unaligned_volatile_write1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read_write1(ptr) #6
+declare void @__tsan_read_write1(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read_write1(ptr) #6
+declare void @__tsan_unaligned_read_write1(ptr) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_load(ptr, i32) #6
+declare i8 @__tsan_atomic8_load(ptr, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_atomic8_store(ptr, i8, i32) #6
+declare void @__tsan_atomic8_store(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_exchange(ptr, i8, i32) #6
+declare i8 @__tsan_atomic8_exchange(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_fetch_add(ptr, i8, i32) #6
+declare i8 @__tsan_atomic8_fetch_add(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_fetch_sub(ptr, i8, i32) #6
+declare i8 @__tsan_atomic8_fetch_sub(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_fetch_and(ptr, i8, i32) #6
+declare i8 @__tsan_atomic8_fetch_and(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_fetch_nand(ptr, i8, i32) #6
+declare i8 @__tsan_atomic8_fetch_nand(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_fetch_or(ptr, i8, i32) #6
+declare i8 @__tsan_atomic8_fetch_or(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_fetch_xor(ptr, i8, i32) #6
+declare i8 @__tsan_atomic8_fetch_xor(ptr, i8, i32) #4
 
 ; Function Attrs: nounwind
-declare i8 @__tsan_atomic8_compare_exchange_val(ptr, i8, i8, i32, i32) #6
+declare i8 @__tsan_atomic8_compare_exchange_val(ptr, i8, i8, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read2(ptr) #6
+declare void @__tsan_read2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_write2(ptr) #6
+declare void @__tsan_write2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read2(ptr) #6
+declare void @__tsan_unaligned_read2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_write2(ptr) #6
+declare void @__tsan_unaligned_write2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_read2(ptr) #6
+declare void @__tsan_volatile_read2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_write2(ptr) #6
+declare void @__tsan_volatile_write2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_read2(ptr) #6
+declare void @__tsan_unaligned_volatile_read2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_write2(ptr) #6
+declare void @__tsan_unaligned_volatile_write2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read_write2(ptr) #6
+declare void @__tsan_read_write2(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read_write2(ptr) #6
+declare void @__tsan_unaligned_read_write2(ptr) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_load(ptr, i32) #6
+declare i16 @__tsan_atomic16_load(ptr, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_atomic16_store(ptr, i16, i32) #6
+declare void @__tsan_atomic16_store(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_exchange(ptr, i16, i32) #6
+declare i16 @__tsan_atomic16_exchange(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_fetch_add(ptr, i16, i32) #6
+declare i16 @__tsan_atomic16_fetch_add(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_fetch_sub(ptr, i16, i32) #6
+declare i16 @__tsan_atomic16_fetch_sub(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_fetch_and(ptr, i16, i32) #6
+declare i16 @__tsan_atomic16_fetch_and(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_fetch_nand(ptr, i16, i32) #6
+declare i16 @__tsan_atomic16_fetch_nand(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_fetch_or(ptr, i16, i32) #6
+declare i16 @__tsan_atomic16_fetch_or(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_fetch_xor(ptr, i16, i32) #6
+declare i16 @__tsan_atomic16_fetch_xor(ptr, i16, i32) #4
 
 ; Function Attrs: nounwind
-declare i16 @__tsan_atomic16_compare_exchange_val(ptr, i16, i16, i32, i32) #6
+declare i16 @__tsan_atomic16_compare_exchange_val(ptr, i16, i16, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read4(ptr) #6
+declare void @__tsan_read4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_write4(ptr) #6
+declare void @__tsan_write4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read4(ptr) #6
+declare void @__tsan_unaligned_read4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_write4(ptr) #6
+declare void @__tsan_unaligned_write4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_read4(ptr) #6
+declare void @__tsan_volatile_read4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_write4(ptr) #6
+declare void @__tsan_volatile_write4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_read4(ptr) #6
+declare void @__tsan_unaligned_volatile_read4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_write4(ptr) #6
+declare void @__tsan_unaligned_volatile_write4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read_write4(ptr) #6
+declare void @__tsan_read_write4(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read_write4(ptr) #6
+declare void @__tsan_unaligned_read_write4(ptr) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_load(ptr, i32) #6
+declare i32 @__tsan_atomic32_load(ptr, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_atomic32_store(ptr, i32, i32) #6
+declare void @__tsan_atomic32_store(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_exchange(ptr, i32, i32) #6
+declare i32 @__tsan_atomic32_exchange(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_fetch_add(ptr, i32, i32) #6
+declare i32 @__tsan_atomic32_fetch_add(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_fetch_sub(ptr, i32, i32) #6
+declare i32 @__tsan_atomic32_fetch_sub(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_fetch_and(ptr, i32, i32) #6
+declare i32 @__tsan_atomic32_fetch_and(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_fetch_nand(ptr, i32, i32) #6
+declare i32 @__tsan_atomic32_fetch_nand(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_fetch_or(ptr, i32, i32) #6
+declare i32 @__tsan_atomic32_fetch_or(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_fetch_xor(ptr, i32, i32) #6
+declare i32 @__tsan_atomic32_fetch_xor(ptr, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare i32 @__tsan_atomic32_compare_exchange_val(ptr, i32, i32, i32, i32) #6
+declare i32 @__tsan_atomic32_compare_exchange_val(ptr, i32, i32, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read8(ptr) #6
+declare void @__tsan_read8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_write8(ptr) #6
+declare void @__tsan_write8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read8(ptr) #6
+declare void @__tsan_unaligned_read8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_write8(ptr) #6
+declare void @__tsan_unaligned_write8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_read8(ptr) #6
+declare void @__tsan_volatile_read8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_write8(ptr) #6
+declare void @__tsan_volatile_write8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_read8(ptr) #6
+declare void @__tsan_unaligned_volatile_read8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_write8(ptr) #6
+declare void @__tsan_unaligned_volatile_write8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read_write8(ptr) #6
+declare void @__tsan_read_write8(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read_write8(ptr) #6
+declare void @__tsan_unaligned_read_write8(ptr) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_load(ptr, i32) #6
+declare i64 @__tsan_atomic64_load(ptr, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_atomic64_store(ptr, i64, i32) #6
+declare void @__tsan_atomic64_store(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_exchange(ptr, i64, i32) #6
+declare i64 @__tsan_atomic64_exchange(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_fetch_add(ptr, i64, i32) #6
+declare i64 @__tsan_atomic64_fetch_add(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_fetch_sub(ptr, i64, i32) #6
+declare i64 @__tsan_atomic64_fetch_sub(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_fetch_and(ptr, i64, i32) #6
+declare i64 @__tsan_atomic64_fetch_and(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_fetch_nand(ptr, i64, i32) #6
+declare i64 @__tsan_atomic64_fetch_nand(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_fetch_or(ptr, i64, i32) #6
+declare i64 @__tsan_atomic64_fetch_or(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_fetch_xor(ptr, i64, i32) #6
+declare i64 @__tsan_atomic64_fetch_xor(ptr, i64, i32) #4
 
 ; Function Attrs: nounwind
-declare i64 @__tsan_atomic64_compare_exchange_val(ptr, i64, i64, i32, i32) #6
+declare i64 @__tsan_atomic64_compare_exchange_val(ptr, i64, i64, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read16(ptr) #6
+declare void @__tsan_read16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_write16(ptr) #6
+declare void @__tsan_write16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read16(ptr) #6
+declare void @__tsan_unaligned_read16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_write16(ptr) #6
+declare void @__tsan_unaligned_write16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_read16(ptr) #6
+declare void @__tsan_volatile_read16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_volatile_write16(ptr) #6
+declare void @__tsan_volatile_write16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_read16(ptr) #6
+declare void @__tsan_unaligned_volatile_read16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_volatile_write16(ptr) #6
+declare void @__tsan_unaligned_volatile_write16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_read_write16(ptr) #6
+declare void @__tsan_read_write16(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_unaligned_read_write16(ptr) #6
+declare void @__tsan_unaligned_read_write16(ptr) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_load(ptr, i32) #6
+declare i128 @__tsan_atomic128_load(ptr, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_atomic128_store(ptr, i128, i32) #6
+declare void @__tsan_atomic128_store(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_exchange(ptr, i128, i32) #6
+declare i128 @__tsan_atomic128_exchange(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_fetch_add(ptr, i128, i32) #6
+declare i128 @__tsan_atomic128_fetch_add(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_fetch_sub(ptr, i128, i32) #6
+declare i128 @__tsan_atomic128_fetch_sub(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_fetch_and(ptr, i128, i32) #6
+declare i128 @__tsan_atomic128_fetch_and(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_fetch_nand(ptr, i128, i32) #6
+declare i128 @__tsan_atomic128_fetch_nand(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_fetch_or(ptr, i128, i32) #6
+declare i128 @__tsan_atomic128_fetch_or(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_fetch_xor(ptr, i128, i32) #6
+declare i128 @__tsan_atomic128_fetch_xor(ptr, i128, i32) #4
 
 ; Function Attrs: nounwind
-declare i128 @__tsan_atomic128_compare_exchange_val(ptr, i128, i128, i32, i32) #6
+declare i128 @__tsan_atomic128_compare_exchange_val(ptr, i128, i128, i32, i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_vptr_update(ptr, ptr) #6
+declare void @__tsan_vptr_update(ptr, ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_vptr_read(ptr) #6
+declare void @__tsan_vptr_read(ptr) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_atomic_thread_fence(i32) #6
+declare void @__tsan_atomic_thread_fence(i32) #4
 
 ; Function Attrs: nounwind
-declare void @__tsan_atomic_signal_fence(i32) #6
+declare void @__tsan_atomic_signal_fence(i32) #4
 
 ; Function Attrs: nounwind
-declare ptr @__tsan_memmove(ptr, ptr, i64) #6
+declare ptr @__tsan_memmove(ptr, ptr, i64) #4
 
 ; Function Attrs: nounwind
-declare ptr @__tsan_memcpy(ptr, ptr, i64) #6
+declare ptr @__tsan_memcpy(ptr, ptr, i64) #4
 
 ; Function Attrs: nounwind
-declare ptr @__tsan_memset(ptr, i32, i64) #6
+declare ptr @__tsan_memset(ptr, i32, i64) #4
 
 ; Function Attrs: nocallback nofree nosync nounwind willreturn memory(none)
-declare ptr @llvm.returnaddress.p0(i32 immarg) #7
+declare ptr @llvm.returnaddress.p0(i32 immarg) #5
 
 attributes #0 = { noinline nounwind optnone sanitize_thread uwtable }
 attributes #1 = { mustprogress noinline norecurse nounwind optnone sanitize_thread uwtable }
 attributes #2 = { noinline nounwind optnone uwtable }
-attributes #3 = { nofree }
-attributes #4 = { cold noreturn nounwind }
-attributes #5 = { nounwind uwtable }
-attributes #6 = { nounwind }
-attributes #7 = { nocallback nofree nosync nounwind willreturn memory(none) }
+attributes #3 = { nounwind uwtable }
+attributes #4 = { nounwind }
+attributes #5 = { nocallback nofree nosync nounwind willreturn memory(none) }
 
 !llvm.module.flags = !{!0, !1, !2, !3, !4}
 !llvm.ident = !{!5}
@@ -506,4 +493,3 @@ attributes #7 = { nocallback nofree nosync nounwind willreturn memory(none) }
 !3 = !{i32 7, !"frame-pointer", i32 0}
 !4 = !{i32 4, !"nosanitize_thread", i32 1}
 !5 = !{!"spice version dev (https://github.com/spicelang/spice)"}
-!6 = !{!"branch_weights", i32 1048575, i32 1}

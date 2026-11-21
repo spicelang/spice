@@ -17,12 +17,12 @@ f<int> main() {
         });
         Thread& thread = threads[i];
         Result<bool> started = thread.run();
-        assert started.isOk();
+        if started.isErr() { return 1; }
     }
     for unsigned int i = 0; i < threadCount; i++ {
         Thread& thread = threads[i];
         Result<bool> joined = thread.join();
-        assert joined.isOk();
+        if joined.isErr() { return 1; }
     }
     printf("Program finished");
 }
