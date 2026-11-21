@@ -142,7 +142,7 @@ p Any.copyPayloadFrom(const Any& original) {
                 CopyThunk copy = original.copyThunk; // fn-ptr fields must be called via a local
                 copy(cast<byte*>(this.heapStore), cast<const byte*>(original.heapStore));
             } else {
-                sCopy(original.heapStore, this.heapStore, original.size);
+                sCopyUnsafe(original.heapStore, this.heapStore, original.size);
             }
         } else {
             // Inline payloads are always trivially copyable -> bitwise copy

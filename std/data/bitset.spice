@@ -70,7 +70,7 @@ public p BitSet.ctor(const BitSet& original) {
     this.ctor(original.numBits);
     if this.numWords == 0l { return; }
     unsafe {
-        sCopy(cast<heap byte*>(original.words), cast<heap byte*>(this.words), sizeof<unsigned long>() * this.numWords);
+        sCopyUnsafe(cast<heap byte*>(original.words), cast<heap byte*>(this.words), sizeof<unsigned long>() * this.numWords);
     }
 }
 
@@ -100,7 +100,7 @@ public p operator=(BitSet& this, const BitSet& newValue) {
     this.numWords = newValue.numWords;
     if newValue.numWords == 0l { return; }
     unsafe {
-        sCopy(cast<heap byte*>(newValue.words), cast<heap byte*>(this.words), sizeof<unsigned long>() * this.numWords);
+        sCopyUnsafe(cast<heap byte*>(newValue.words), cast<heap byte*>(this.words), sizeof<unsigned long>() * this.numWords);
     }
 }
 
