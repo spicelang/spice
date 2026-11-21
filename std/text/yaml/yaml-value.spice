@@ -423,6 +423,31 @@ public f<YamlValue*> YamlValue.getField(string key) {
 }
 
 /**
+ * Retrieve the value of the mapping entry with the given key as Result. Unlike getField(), this does not panic, so it suits
+ * entries, that the parsed document may lack.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or an error if the value is not a mapping or the entry does not exist
+ */
+public f<Result<YamlValue*>> YamlValue.getFieldSafe(const String& key) {
+    if this.kind != YamlValueKind::YAML_MAPPING { return err<YamlValue*>("YAML value is not a mapping"); }
+    YamlValue* value = this.getFieldOrNil(key);
+    if value == nil<YamlValue*> { return err<YamlValue*>("YAML mapping has no such entry"); }
+    return ok(value);
+}
+
+/**
+ * Retrieve the value of the mapping entry with the given key as Result. Unlike getField(), this does not panic, so it suits
+ * entries, that the parsed document may lack.
+ *
+ * @param key Entry key to look up
+ * @return Pointer to the entry value, or an error if the value is not a mapping or the entry does not exist
+ */
+public f<Result<YamlValue*>> YamlValue.getFieldSafe(string key) {
+    return this.getFieldSafe(String(key));
+}
+
+/**
  * Append an entry to the mapping. Panics if the node is not a mapping.
  * The mapping takes ownership of the heap-allocated entry value.
  *

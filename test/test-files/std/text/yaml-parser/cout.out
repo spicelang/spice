@@ -1,1 +1,3 @@
+getFieldSafe("missing"): YAML mapping has no such entry
+getFieldSafe on a string: YAML value is not a mapping
 All assertions passed!
