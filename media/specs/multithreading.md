@@ -151,10 +151,15 @@ f<int> main() {
         delay(100);
         printf("Hello from task 2\n");
     });
-    tp.start(); // Kicks off the worker threads and returns immediately
-    tp.join();  // Wait for all queued tasks to finish
+    Result<bool> started = tp.start(); // Kicks off the worker threads and returns immediately
+    assert started.isOk();
+    tp.join(); // Wait for all queued tasks to finish
 }
 ```
+
+`start()` returns a `Result<bool>`, that holds an error if a worker thread could not be created. It starts either all
+worker threads or none: if one cannot be started, the ones started before exit again without taking a job, so the queued
+jobs stay queued.
 
 Other `ThreadPool` methods: `pause()`/`resume()` to temporarily stop/continue dispatching new jobs to workers,
 `stop()` to let workers finish their current job and then exit, and `getRunningJobCount()`/`getQueuedJobCount()`/

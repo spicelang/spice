@@ -46,6 +46,7 @@ f<int> main() {
         delay(10);
         printf("Hello from task 10\n");
     });
-    tp.start();
+    Result<bool> started = tp.start();
+    assert started.isOk();
     tp.join();
 }

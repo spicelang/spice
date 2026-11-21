@@ -155,7 +155,8 @@ p incrementConcurrently(GuardedSharedMap* guardedMap) {
             }
         });
     }
-    pool.start();
+    Result<bool> started = pool.start();
+    assert started.isOk();
     pool.join();
 }
 

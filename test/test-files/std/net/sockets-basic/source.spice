@@ -19,6 +19,7 @@ f<int> main() {
         Socket socket = socketRes.unwrap();
         printf("Client socket open.\n");
     });
-    tp.start();
+    Result<bool> started = tp.start();
+    assert started.isOk();
     tp.join();
 }

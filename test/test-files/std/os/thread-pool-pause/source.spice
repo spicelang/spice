@@ -16,7 +16,8 @@ f<int> main() {
     for int i = 0; i < 50; i++ {
         tp.enqueue(p() { counterPtr.value.fetchAdd(1ul); });
     }
-    tp.start();
+    Result<bool> started = tp.start();
+    assert started.isOk();
     delay(50);
     printf("paused: queued=%d done=%d paused=%d\n", tp.getQueuedJobCount(), counter.value.fetchAdd(0ul), tp.isPaused());
     // Resumed pools drain the queue
@@ -24,7 +25,8 @@ f<int> main() {
     tp.join();
     printf("joined: queued=%d done=%d running=%d\n", tp.getQueuedJobCount(), counter.value.fetchAdd(0ul), tp.getRunningJobCount());
     // stop() ends idle workers, even if the queue is empty
-    tp.start();
+    Result<bool> restarted = tp.start();
+    assert restarted.isOk();
     tp.stop();
     printf("stopped: done=%d\n", counter.value.fetchAdd(0ul));
 }
