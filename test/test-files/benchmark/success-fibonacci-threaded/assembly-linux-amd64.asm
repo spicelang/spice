@@ -65,24 +65,19 @@ main:                                   # @main
 	.cfi_def_cfa_offset 48
 	pushq	%rbx
 	.cfi_def_cfa_offset 56
-	subq	$440, %rsp                      # imm = 0x1B8
-	.cfi_def_cfa_offset 496
+	subq	$488, %rsp                      # imm = 0x1E8
+	.cfi_def_cfa_offset 544
 	.cfi_offset %rbx, -56
 	.cfi_offset %r12, -48
 	.cfi_offset %r13, -40
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
-	leaq	96(%rsp), %rbx
-	leaq	144(%rsp), %r13
-	leaq	192(%rsp), %rbp
-	leaq	240(%rsp), %r12
+	leaq	144(%rsp), %rbx
 	leaq	.Lstr(%rip), %rdi
 	callq	puts@PLT
-	leaq	_Z15lambda.L14C29.0v(%rip), %r14
-	movq	%rsp, %r15
-	movq	%r15, %rdi
-	movq	%r14, %rsi
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
@@ -93,125 +88,241 @@ main:                                   # @main
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
-	movaps	%xmm0, 48(%rsp)
-	movaps	%xmm1, 64(%rsp)
-	movaps	%xmm2, 80(%rsp)
-	leaq	48(%rsp), %rdi
-	callq	_ZN6Thread3runEv@PLT
-	movq	%r15, %rdi
-	movq	%r14, %rsi
-	xorl	%edx, %edx
-	xorl	%ecx, %ecx
-	callq	_ZN6Thread4ctorEPFvE@PLT
-	movups	(%rsp), %xmm0
-	movups	16(%rsp), %xmm1
-	movups	32(%rsp), %xmm2
-	movaps	%xmm2, 128(%rsp)
-	movaps	%xmm1, 112(%rsp)
 	movaps	%xmm0, 96(%rsp)
+	movaps	%xmm1, 112(%rsp)
+	movaps	%xmm2, 128(%rsp)
+	leaq	72(%rsp), %rbx
+	leaq	96(%rsp), %rsi
 	movq	%rbx, %rdi
 	callq	_ZN6Thread3runEv@PLT
-	movq	%r15, %rdi
-	movq	%r14, %rsi
+	movq	%rbx, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.1:                                # %for.head.L13
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
-	movaps	%xmm2, 176(%rsp)
-	movaps	%xmm1, 160(%rsp)
-	movaps	%xmm0, 144(%rsp)
-	movq	%r13, %rdi
+	leaq	144(%rsp), %rsi
+	movups	%xmm2, 32(%rsi)
+	movups	%xmm1, 16(%rsi)
+	movups	%xmm0, (%rsi)
+	leaq	72(%rsp), %rbx
+	movq	%rbx, %rdi
 	callq	_ZN6Thread3runEv@PLT
-	movq	%r15, %rdi
-	movq	%r14, %rsi
+	movq	%rbx, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.2:                                # %for.head.L13.1
+	leaq	192(%rsp), %r14
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
-	movaps	%xmm2, 224(%rsp)
-	movaps	%xmm1, 208(%rsp)
-	movaps	%xmm0, 192(%rsp)
-	movq	%rbp, %rdi
+	movups	%xmm2, 32(%r14)
+	movups	%xmm1, 16(%r14)
+	movups	%xmm0, (%r14)
+	leaq	72(%rsp), %rbx
+	movq	%rbx, %rdi
+	movq	%r14, %rsi
 	callq	_ZN6Thread3runEv@PLT
-	movq	%r15, %rdi
-	movq	%r14, %rsi
+	movq	%rbx, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.3:                                # %for.head.L13.2
+	leaq	240(%rsp), %r15
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
-	movaps	%xmm2, 272(%rsp)
-	movaps	%xmm1, 256(%rsp)
-	movaps	%xmm0, 240(%rsp)
-	movq	%r12, %rdi
+	movups	%xmm2, 32(%r15)
+	movups	%xmm1, 16(%r15)
+	movups	%xmm0, (%r15)
+	leaq	72(%rsp), %rbx
+	movq	%rbx, %rdi
+	movq	%r15, %rsi
 	callq	_ZN6Thread3runEv@PLT
-	movq	%r15, %rdi
-	movq	%r14, %rsi
+	movq	%rbx, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.4:                                # %for.head.L13.3
+	leaq	288(%rsp), %r12
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
-	movaps	%xmm2, 320(%rsp)
-	movaps	%xmm1, 304(%rsp)
-	movaps	%xmm0, 288(%rsp)
-	leaq	288(%rsp), %rdi
+	movups	%xmm2, 32(%r12)
+	movups	%xmm1, 16(%r12)
+	movups	%xmm0, (%r12)
+	leaq	72(%rsp), %rbx
+	movq	%rbx, %rdi
+	movq	%r12, %rsi
 	callq	_ZN6Thread3runEv@PLT
-	movq	%r15, %rdi
-	movq	%r14, %rsi
-	xorl	%edx, %edx
-	xorl	%ecx, %ecx
-	callq	_ZN6Thread4ctorEPFvE@PLT
-	movups	(%rsp), %xmm0
-	movups	16(%rsp), %xmm1
-	movups	32(%rsp), %xmm2
-	movaps	%xmm2, 368(%rsp)
-	movaps	%xmm1, 352(%rsp)
-	movaps	%xmm0, 336(%rsp)
+	movq	%rbx, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.5:                                # %for.head.L13.4
 	leaq	336(%rsp), %r13
-	movq	%r13, %rdi
-	callq	_ZN6Thread3runEv@PLT
-	movq	%r15, %rdi
-	movq	%r14, %rsi
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
-	movaps	%xmm2, 416(%rsp)
-	movaps	%xmm1, 400(%rsp)
-	movaps	%xmm0, 384(%rsp)
-	leaq	384(%rsp), %r14
-	movq	%r14, %rdi
-	callq	_ZN6Thread3runEv@PLT
-	leaq	48(%rsp), %rdi
-	callq	_ZN6Thread4joinEv@PLT
+	movups	%xmm2, 32(%r13)
+	movups	%xmm1, 16(%r13)
+	movups	%xmm0, (%r13)
+	leaq	72(%rsp), %rbx
 	movq	%rbx, %rdi
-	callq	_ZN6Thread4joinEv@PLT
-	leaq	144(%rsp), %rdi
-	callq	_ZN6Thread4joinEv@PLT
-	movq	%rbp, %rdi
-	callq	_ZN6Thread4joinEv@PLT
-	movq	%r12, %rdi
-	callq	_ZN6Thread4joinEv@PLT
-	leaq	288(%rsp), %rdi
-	callq	_ZN6Thread4joinEv@PLT
-	movq	%r13, %rdi
-	callq	_ZN6Thread4joinEv@PLT
+	movq	%r13, %rsi
+	callq	_ZN6Thread3runEv@PLT
+	movq	%rbx, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.6:                                # %for.head.L13.5
+	leaq	384(%rsp), %rbp
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
+	xorl	%edx, %edx
+	xorl	%ecx, %ecx
+	callq	_ZN6Thread4ctorEPFvE@PLT
+	movups	(%rsp), %xmm0
+	movups	16(%rsp), %xmm1
+	movups	32(%rsp), %xmm2
+	movups	%xmm2, 32(%rbp)
+	movups	%xmm1, 16(%rbp)
+	movups	%xmm0, (%rbp)
+	leaq	72(%rsp), %rbx
+	movq	%rbx, %rdi
+	movq	%rbp, %rsi
+	callq	_ZN6Thread3runEv@PLT
+	movq	%rbx, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.7:                                # %for.head.L13.6
+	leaq	432(%rsp), %rbx
+	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
+	movq	%rsp, %rdi
+	xorl	%edx, %edx
+	xorl	%ecx, %ecx
+	callq	_ZN6Thread4ctorEPFvE@PLT
+	movups	(%rsp), %xmm0
+	movups	16(%rsp), %xmm1
+	movups	32(%rsp), %xmm2
+	movups	%xmm2, 32(%rbx)
+	movups	%xmm1, 16(%rbx)
+	movups	%xmm0, (%rbx)
+	leaq	72(%rsp), %r14
+	movq	%r14, %rdi
+	movq	%rbx, %rsi
+	callq	_ZN6Thread3runEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_17
+# %bb.8:                                # %for.head.L13.7
+	leaq	48(%rsp), %r14
+	leaq	96(%rsp), %rsi
 	movq	%r14, %rdi
 	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.9:                                # %for.head.L22
+	leaq	48(%rsp), %r14
+	movq	%r14, %rdi
+	leaq	144(%rsp), %rsi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.10:                               # %for.head.L22.1
+	leaq	48(%rsp), %r14
+	movq	%r14, %rdi
+	leaq	192(%rsp), %rsi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.11:                               # %for.head.L22.2
+	leaq	48(%rsp), %r14
+	movq	%r14, %rdi
+	movq	%r15, %rsi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.12:                               # %for.head.L22.3
+	leaq	48(%rsp), %r14
+	movq	%r14, %rdi
+	movq	%r12, %rsi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.13:                               # %for.head.L22.4
+	leaq	48(%rsp), %r14
+	movq	%r14, %rdi
+	movq	%r13, %rsi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.14:                               # %for.head.L22.5
+	leaq	48(%rsp), %r14
+	movq	%r14, %rdi
+	movq	%rbp, %rsi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.15:                               # %for.head.L22.6
+	leaq	48(%rsp), %r14
+	movq	%r14, %rdi
+	movq	%rbx, %rsi
+	callq	_ZN6Thread4joinEv@PLT
+	movq	%r14, %rdi
+	callq	_ZN6ResultIbE4isOkEv@PLT
+	testb	%al, %al
+	je	.LBB1_19
+# %bb.16:                               # %for.head.L22.7
 	leaq	.Lprintf.str.2(%rip), %rdi
 	xorl	%eax, %eax
 	callq	printf@PLT
 	xorl	%eax, %eax
-	addq	$440, %rsp                      # imm = 0x1B8
+	addq	$488, %rsp                      # imm = 0x1E8
 	.cfi_def_cfa_offset 56
 	popq	%rbx
 	.cfi_def_cfa_offset 48
@@ -226,6 +337,25 @@ main:                                   # @main
 	popq	%rbp
 	.cfi_def_cfa_offset 8
 	retq
+.LBB1_17:                               # %assert.then.L20
+	.cfi_def_cfa_offset 544
+	movq	stderr@GOTPCREL(%rip), %rax
+	movq	(%rax), %rcx
+	leaq	.Lanon.string.0(%rip), %rdi
+	movl	$65, %esi
+	movl	$1, %edx
+	callq	fwrite@PLT
+	movl	$1, %edi
+	callq	exit@PLT
+.LBB1_19:                               # %assert.then.L25
+	movq	stderr@GOTPCREL(%rip), %rax
+	movq	(%rax), %rcx
+	leaq	.Lanon.string.1(%rip), %rdi
+	movl	$64, %esi
+	movl	$1, %edx
+	callq	fwrite@PLT
+	movl	$1, %edi
+	callq	exit@PLT
 .Lfunc_end1:
 	.size	main, .Lfunc_end1-main
 	.cfi_endproc
@@ -255,6 +385,18 @@ _Z15lambda.L14C29.0v:                   # @_Z15lambda.L14C29.0v
 .Lprintf.str.1:
 	.asciz	"Thread returned with result: %d\n"
 	.size	.Lprintf.str.1, 33
+
+	.type	.Lanon.string.0,@object         # @anon.string.0
+	.p2align	2, 0x0
+.Lanon.string.0:
+	.asciz	"Assertion failed: Condition 'started.isOk()' evaluated to false.\n"
+	.size	.Lanon.string.0, 66
+
+	.type	.Lanon.string.1,@object         # @anon.string.1
+	.p2align	2, 0x0
+.Lanon.string.1:
+	.asciz	"Assertion failed: Condition 'joined.isOk()' evaluated to false.\n"
+	.size	.Lanon.string.1, 65
 
 	.type	.Lprintf.str.2,@object          # @printf.str.2
 	.p2align	2, 0x0

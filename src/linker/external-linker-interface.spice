@@ -521,7 +521,12 @@ public p ExternalLinkerInterface.startAdditionalSourceCompilation() {
             compilation.result = exec(compilation.linkerInvokerPath, compilation.args, true);
         }));
         Thread& thread = this.additionalSourceCompilationThreads.back();
-        thread.run();
+        Result<bool> started = thread.run();
+        if started.isErr() {
+            // Compile it right away then, so that the linker finds its result anyway
+            this.additionalSourceCompilationThreads.popBack();
+            compilation.result = exec(compilation.linkerInvokerPath, compilation.args, true);
+        }
     }
 }
 
@@ -530,7 +535,11 @@ public p ExternalLinkerInterface.startAdditionalSourceCompilation() {
  */
 p ExternalLinkerInterface.joinAdditionalSourceCompilationThreads() {
     foreach Thread& thread : this.additionalSourceCompilationThreads {
-        thread.join();
+        Result<bool> joined = thread.join();
+        if joined.isErr() {
+            const Error error = joined.getErr();
+            panic(error);
+        }
     }
     this.additionalSourceCompilationThreads.clear();
 }

@@ -29,9 +29,11 @@ p PingPong.run() {
         this.play(false);
     };
     Thread pongThread = Thread(pong);
-    pongThread.run();
+    Result<bool> pongStarted = pongThread.run();
+    assert pongStarted.isOk();
     this.play(true);
-    pongThread.join();
+    Result<bool> pongJoined = pongThread.join();
+    assert pongJoined.isOk();
 }
 
 f<int> main() {

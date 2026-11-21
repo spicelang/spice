@@ -78,6 +78,14 @@
               "name": "for-body:L13C5",
               "symbols": [
                 {
+                  "codeLoc": "L19C9",
+                  "isGlobal": false,
+                  "name": "started",
+                  "orderIndex": 1,
+                  "state": "initialized",
+                  "type": "Result<bool>"
+                },
+                {
                   "codeLoc": "L18C9",
                   "isGlobal": false,
                   "name": "thread",
@@ -106,22 +114,30 @@
             {
               "captures": [],
               "children": [],
-              "name": "expr:L21C29",
+              "name": "expr:L22C29",
               "symbols": []
             },
             {
               "captures": [],
               "children": [],
-              "name": "expr:L21C46",
+              "name": "expr:L22C46",
               "symbols": []
             },
             {
               "captures": [],
               "children": [],
-              "name": "for-body:L21C5",
+              "name": "for-body:L22C5",
               "symbols": [
                 {
-                  "codeLoc": "L22C9",
+                  "codeLoc": "L24C9",
+                  "isGlobal": false,
+                  "name": "joined",
+                  "orderIndex": 1,
+                  "state": "initialized",
+                  "type": "Result<bool>"
+                },
+                {
+                  "codeLoc": "L23C9",
                   "isGlobal": false,
                   "name": "thread",
                   "orderIndex": 0,
@@ -131,10 +147,10 @@
               ]
             }
           ],
-          "name": "for:L21C5",
+          "name": "for:L22C5",
           "symbols": [
             {
-              "codeLoc": "L21C9",
+              "codeLoc": "L22C9",
               "isGlobal": false,
               "name": "i",
               "orderIndex": 0,

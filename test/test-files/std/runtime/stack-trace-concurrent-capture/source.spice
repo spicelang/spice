@@ -29,11 +29,13 @@ f<int> main() {
     }
     for int i = 0; i < THREAD_COUNT; i++ {
         Thread& thread = threads[i];
-        thread.run();
+        Result<bool> started = thread.run();
+        assert started.isOk();
     }
     for int i = 0; i < THREAD_COUNT; i++ {
         Thread& thread = threads[i];
-        thread.join();
+        Result<bool> joined = thread.join();
+        assert joined.isOk();
     }
 
     printf("All assertions passed!\n");

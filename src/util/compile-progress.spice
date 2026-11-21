@@ -279,7 +279,14 @@ p CompileProgress.startHeartbeat() {
         progress.runHeartbeat();
     }));
     Thread& heartbeatThread = this.heartbeatThreads.back();
-    heartbeatThread.run();
+    Result<bool> started = heartbeatThread.run();
+    if started.isErr() {
+        // The heartbeat only keeps the bar up to date, so the compilation goes on without it
+        this.heartbeatThreads.clear();
+        this.mutex.acquire();
+        this.heartbeatRunning = false;
+        this.mutex.release();
+    }
 }
 
 /**
@@ -307,7 +314,11 @@ p CompileProgress.stopHeartbeat() {
     this.heartbeatRunning = false;
     this.mutex.release();
     foreach Thread& thread : this.heartbeatThreads {
-        thread.join();
+        Result<bool> joined = thread.join();
+        if joined.isErr() {
+            const Error error = joined.getErr();
+            panic(error);
+        }
     }
     this.heartbeatThreads.clear();
 }

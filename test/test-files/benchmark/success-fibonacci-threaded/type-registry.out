@@ -24,7 +24,12 @@ Pthread_t
 Result<T>
 Result<T>
 Result<T>
+Result<T>
 Result<T>*
+Result<bool>
+Result<bool>
+Result<bool>&
+Result<bool>*
 Result<byte*>
 Result<byte*>
 Result<byte*>&
@@ -43,6 +48,7 @@ Thread&
 Thread*
 Thread[]
 bool
+bool&
 byte
 byte*
 byte*&
@@ -57,6 +63,7 @@ f<Result<T>>(const Error&)
 f<Result<T>>(const T&)
 f<Result<T>>(int,string)
 f<Result<T>>(string)
+f<Result<bool>>()
 f<Result<byte*>>(heap byte*,heap byte*,unsigned long)
 f<Result<heap byte*>>(heap byte*,unsigned long)
 f<Result<heap byte*>>(unsigned long)

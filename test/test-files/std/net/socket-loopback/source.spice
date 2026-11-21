@@ -50,13 +50,15 @@ f<int> main() {
         }
         assert serverPtr.closeConnection();
     });
-    serverThread.run();
+    Result<bool> serverStarted = serverThread.run();
+    assert serverStarted.isOk();
 
     Socket client = openClientSocket("127.0.0.1", SERVER_PORT).unwrap();
     assert client.setTimeout(IO_TIMEOUT_MS);
     assert client.write("ping") == 4l;
     const String response = readExactly(client, 4l);
-    serverThread.join();
+    Result<bool> serverJoined = serverThread.join();
+    assert serverJoined.isOk();
     printf("Server received: %s\n", request.getRaw());
     printf("Client received: %s\n", response.getRaw());
 

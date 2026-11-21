@@ -41,20 +41,28 @@ p Shared.run() {
     for int i = 0; i < CONSUMER_COUNT; i++ {
         consumers.pushBack(Thread(consumer));
         Thread& consumerThread = consumers.back();
-        consumerThread.run();
+        Result<bool> started = consumerThread.run();
+        assert started.isOk();
     }
     Vector<Thread> producers;
     for int i = 0; i < PRODUCER_COUNT; i++ {
         producers.pushBack(Thread(producer));
         Thread& producerThread = producers.back();
-        producerThread.run();
+        Result<bool> started = producerThread.run();
+        assert started.isOk();
     }
 
     // Once every producer is done, closing the queue lets the blocked consumers drain
     // whatever is left and then return instead of waiting forever.
-    foreach const Thread& t : producers { t.join(); }
+    foreach Thread& t : producers {
+        Result<bool> joined = t.join();
+        assert joined.isOk();
+    }
     this.mq.close();
-    foreach const Thread& t : consumers { t.join(); }
+    foreach Thread& t : consumers {
+        Result<bool> joined = t.join();
+        assert joined.isOk();
+    }
 }
 
 f<int> main() {

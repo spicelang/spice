@@ -15,14 +15,21 @@ f<int> main() {
     Thread thread = Thread(p() {
         // Do something
     });
-    thread.run();
+    Result<bool> started = thread.run();
+    if started.isErr() {
+        printf("Could not start the thread: %s\n", started.getErr().getMessage());
+        return 1;
+    }
 }
 ```
 
-The `run()` method will start the thread. The thread will run until the thread routine returns. State, that the thread
-routine shares with other threads, has to be protected, e.g. with a [mutex](#mutexes) or an `Atomic` from `std/os/atomic`.
+The `run()` method will start the thread. It returns a `Result<bool>`, that holds an error, if the thread could not be
+created, e.g. because the system lacks the resources for another thread. The thread will run until the thread routine
+returns. State, that the thread routine shares with other threads, has to be protected, e.g. with a [mutex](#mutexes) or
+an `Atomic` from `std/os/atomic`.
 
-To join a thread to the main thread, use the `join()` method:
+To join a thread to the main thread, use the `join()` method. It returns a `Result<bool>` as well, that holds an error, if
+the thread could not be joined, e.g. because it was never started:
 
 ```spice
 import "std/os/thread";
@@ -31,14 +38,16 @@ f<int> main() {
     Thread thread1 = Thread(p() {
         // Do something
     });
-    thread1.run();
+    Result<bool> started1 = thread1.run();
     Thread thread2 = Thread(p() {
         // Do something
     });
-    thread2.run();
+    Result<bool> started2 = thread2.run();
+    assert started1.isOk() && started2.isOk();
     // Do something
-    thread1.join();
-    thread2.join();
+    Result<bool> joined1 = thread1.join();
+    Result<bool> joined2 = thread2.join();
+    assert joined1.isOk() && joined2.isOk();
 }
 ```
 
@@ -55,8 +64,9 @@ f<int> main() {
     Thread thread2 = Thread(p() {
         // Do something
     });
-    thread2.run();
-    thread1.run();
+    Result<bool> started2 = thread2.run();
+    Result<bool> started1 = thread1.run();
+    assert started1.isOk() && started2.isOk();
     printf("Thread 1 ID: %d\n", thread1.getId());
     printf("Thread 2 ID: %d\n", thread2.getId());
 }
@@ -177,10 +187,12 @@ p Counter.incrementMany(int n) {
     };
     Thread t1 = Thread(worker);
     Thread t2 = Thread(worker);
-    t1.run();
-    t2.run();
-    t1.join();
-    t2.join();
+    Result<bool> started1 = t1.run();
+    Result<bool> started2 = t2.run();
+    assert started1.isOk() && started2.isOk();
+    Result<bool> joined1 = t1.join();
+    Result<bool> joined2 = t2.join();
+    assert joined1.isOk() && joined2.isOk();
 }
 
 f<int> main() {
@@ -245,13 +257,15 @@ p Signal.run() {
         printf("Ready!\n");
     };
     Thread t = Thread(waiter);
-    t.run();
+    Result<bool> started = t.run();
+    assert started.isOk();
     {
         LockGuard _ = LockGuard(this.m);
         this.ready = true;
         this.changed.notifyAll();
     }
-    t.join();
+    Result<bool> joined = t.join();
+    assert joined.isOk();
 }
 
 f<int> main() {
@@ -282,7 +296,8 @@ f<int> main() {
         }
         mq.close(); // signal that no more items will arrive
     });
-    producer.run();
+    Result<bool> started = producer.run();
+    assert started.isOk();
 
     while true {
         Optional<int> item = mq.pop(); // blocks until an item is available or the queue is closed
@@ -290,7 +305,8 @@ f<int> main() {
         printf("Received: %d\n", item.get());
     }
 
-    producer.join();
+    Result<bool> joined = producer.join();
+    assert joined.isOk();
 }
 ```
 
