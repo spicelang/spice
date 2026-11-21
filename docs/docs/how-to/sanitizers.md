@@ -234,10 +234,12 @@ p increment() {
 f<int> main() {
     Thread first = Thread(increment);
     Thread second = Thread(increment);
-    first.run();
-    second.run();
-    first.join();
-    second.join();
+    Result<bool> firstStarted = first.run();
+    Result<bool> secondStarted = second.run();
+    assert firstStarted.isOk() && secondStarted.isOk();
+    Result<bool> firstJoined = first.join();
+    Result<bool> secondJoined = second.join();
+    assert firstJoined.isOk() && secondJoined.isOk();
     printf("Counter: %d\n", COUNTER);
 }
 ```
@@ -260,13 +262,13 @@ WARNING: ThreadSanitizer: data race (pid=204199)
 
   Thread T2 (tid=204203, running) created by main thread at:
     #0 pthread_create
-    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:54:61 (data-race+0x1499d6)
-    #2 main data-race.spice:15:5 (data-race+0x149c96)
+    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:59:59 (data-race+0x1499d6)
+    #2 main data-race.spice:15:34 (data-race+0x149c96)
 
   Thread T1 (tid=204202, finished) created by main thread at:
     #0 pthread_create
-    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:54:61 (data-race+0x1499d6)
-    #2 main data-race.spice:14:5 (data-race+0x149c8c)
+    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:59:59 (data-race+0x1499d6)
+    #2 main data-race.spice:14:33 (data-race+0x149c8c)
 
 SUMMARY: ThreadSanitizer: data race data-race.spice:7:9 in increment()
 ==================
@@ -297,10 +299,12 @@ f<int> main() {
     Mutex mutex;
     Thread first = Thread(p() { increment(mutex); });
     Thread second = Thread(p() { increment(mutex); });
-    first.run();
-    second.run();
-    first.join();
-    second.join();
+    Result<bool> firstStarted = first.run();
+    Result<bool> secondStarted = second.run();
+    assert firstStarted.isOk() && secondStarted.isOk();
+    Result<bool> firstJoined = first.join();
+    Result<bool> secondJoined = second.join();
+    assert firstJoined.isOk() && secondJoined.isOk();
     printf("Counter: %d\n", COUNTER);
 }
 ```

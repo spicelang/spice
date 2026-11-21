@@ -321,8 +321,10 @@ f<int> main() {
 
     Thread udpThread = Thread(serveUdp);
     Thread tcpThread = Thread(serveTcp);
-    udpThread.run();
-    tcpThread.run();
+    Result<bool> udpStarted = udpThread.run();
+    assert udpStarted.isOk();
+    Result<bool> tcpStarted = tcpThread.run();
+    assert tcpStarted.isOk();
 
     // The numeric names are listed as well, to show that they are rejected before the hosts file is consulted
     const Result<bool> hostsWritten = writeFile(HOSTS_FILE, "10.0.0.5 MyHost.lan myhost\nfe80::5 myhost\n10.9.9.9 127.1 0x7f000001\n::1 v6host.test\n");
@@ -405,7 +407,8 @@ f<int> main() {
     // Shut the fake name server down
     const Result<DnsResponse> stopResponse = resolver.query(String("stop.test"), DNS_TYPE_A);
     assert stopResponse.isOk();
-    udpThread.join();
+    Result<bool> udpJoined = udpThread.join();
+    assert udpJoined.isOk();
     printf("AAAA queries for ipv4first.test: %d\n", IPV4_FIRST_AAAA_QUERIES);
     printf("Queries for overridden names: %d\n", OVERRIDDEN_QUERIES);
     const bool fallbackInOrder = FALLBACK_A_QUERY != -1 && FALLBACK_AAAA_QUERY > FALLBACK_A_QUERY;
@@ -420,7 +423,8 @@ f<int> main() {
         const bool wakeUpClosed = wakeUpResult.unwrap().close();
         assert wakeUpClosed;
     }
-    tcpThread.join();
+    Result<bool> tcpJoined = tcpThread.join();
+    assert tcpJoined.isOk();
     assert TCP_QUERIES_ANSWERED == 2;
     const int udpCloseResult = fakeClose(UDP_SERVER_FD);
     const int tcpCloseResult = fakeClose(TCP_SERVER_FD);

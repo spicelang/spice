@@ -35,8 +35,10 @@ f<int> main() {
     Thread tryThread = Thread(p() {
         tryResultPtr.acquired = tryResultPtr.mutex.tryAcquire();
     });
-    tryThread.run();
-    tryThread.join();
+    Result<bool> tryThreadStarted = tryThread.run();
+    assert tryThreadStarted.isOk();
+    Result<bool> tryThreadJoined = tryThread.join();
+    assert tryThreadJoined.isOk();
     printf("Other thread tryAcquire: %d\n", tryResult.acquired);
     mutex.release();
     mutex.release();
@@ -55,13 +57,15 @@ f<int> main() {
     Thread t4 = Thread(p() {
         for int i = 0; i < 1000; i++ { counterPtr.addRecursive(3); }
     });
-    t1.run();
-    t2.run();
-    t3.run();
-    t4.run();
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
+    Result<bool> started1 = t1.run();
+    Result<bool> started2 = t2.run();
+    Result<bool> started3 = t3.run();
+    Result<bool> started4 = t4.run();
+    assert started1.isOk() && started2.isOk() && started3.isOk() && started4.isOk();
+    Result<bool> joined1 = t1.join();
+    Result<bool> joined2 = t2.join();
+    Result<bool> joined3 = t3.join();
+    Result<bool> joined4 = t4.join();
+    assert joined1.isOk() && joined2.isOk() && joined3.isOk() && joined4.isOk();
     printf("After threads: %d\n", counter.value);
 }

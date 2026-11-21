@@ -18,12 +18,16 @@ p worker() {
 
 f<int> main() {
     Thread first = Thread(worker);
-    first.run();
-    first.join();
+    Result<bool> firstStarted = first.run();
+    assert firstStarted.isOk();
+    Result<bool> firstJoined = first.join();
+    assert firstJoined.isOk();
 
     Thread second = Thread(worker);
-    second.run();
-    second.join();
+    Result<bool> secondStarted = second.run();
+    assert secondStarted.isOk();
+    Result<bool> secondJoined = second.join();
+    assert secondJoined.isOk();
 
     printf("main dumping (expect no trace - main's own thread never called err<T>()):\n");
     Result<int> mainOk = ok<int>(1);

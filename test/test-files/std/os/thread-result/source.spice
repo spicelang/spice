@@ -1,0 +1,21 @@
+import "std/os/thread";
+
+f<int> main() {
+    // A started thread can be joined
+    int value = 0;
+    int* valuePtr = &value;
+    Thread thread = Thread(p() {
+        *valuePtr = 42;
+    });
+    Result<bool> started = thread.run();
+    assert started.isOk();
+    Result<bool> joined = thread.join();
+    assert joined.isOk();
+    printf("Value set by the thread: %d\n", value);
+
+    // Joining a thread, that was never started, fails instead of crashing
+    Thread notStarted = Thread(p() {});
+    Result<bool> notStartedJoined = notStarted.join();
+    assert notStartedJoined.isErr();
+    printf("Join without run: %s\n", notStartedJoined.getErr().getMessage());
+}

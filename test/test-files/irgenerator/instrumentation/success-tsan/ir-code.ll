@@ -3,6 +3,8 @@ source_filename = "source.spice"
 
 %struct.Thread = type { %struct.Lambda, i64 }
 %struct.Lambda = type { { ptr, ptr, i64 }, ptr, i64 }
+%struct.Result = type { i1, %struct.Error }
+%struct.Error = type { i32, ptr }
 
 @COUNTER = internal global i32 0
 @llvm.used = appending global [1 x ptr] [ptr @tsan.module_ctor], section "llvm.metadata"
@@ -47,6 +49,10 @@ define dso_local noundef i32 @main() #1 {
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %thread2 = alloca %struct.Thread, align 8
   %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
+  %started1 = alloca %struct.Result, align 8
+  %started2 = alloca %struct.Result, align 8
+  %joined1 = alloca %struct.Result, align 8
+  %joined2 = alloca %struct.Result, align 8
   store ptr @_Z6workerv.fatthunk, ptr %fat.ptr, align 8
   %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1
   store ptr null, ptr %2, align 8
@@ -61,10 +67,46 @@ define dso_local noundef i32 @main() #1 {
   store i64 0, ptr %6, align 8
   %7 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread2, { ptr, ptr, i64 } noundef %7)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %started1, ptr noundef nonnull align 8 dereferenceable(48) %thread1)
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %started2, ptr noundef nonnull align 8 dereferenceable(48) %thread2)
+  %8 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started1)
+  br i1 %8, label %lor.exit.L18C8, label %lor.1.L18C8
+
+lor.1.L18C8:                                      ; preds = %0
+  %9 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started2)
+  br label %lor.exit.L18C8
+
+lor.exit.L18C8:                                   ; preds = %lor.1.L18C8, %0
+  %lor_phi = phi i1 [ %8, %0 ], [ %9, %lor.1.L18C8 ]
+  br i1 %lor_phi, label %if.then.L18, label %if.exit.L18
+
+if.then.L18:                                      ; preds = %lor.exit.L18C8
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
+  call void @__tsan_func_exit()
+  ret i32 1
+
+if.exit.L18:                                      ; preds = %lor.exit.L18C8
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %joined1, ptr noundef nonnull align 8 dereferenceable(48) %thread1)
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %joined2, ptr noundef nonnull align 8 dereferenceable(48) %thread2)
+  %10 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined1)
+  br i1 %10, label %lor.exit.L21C8, label %lor.1.L21C8
+
+lor.1.L21C8:                                      ; preds = %if.exit.L18
+  %11 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined2)
+  br label %lor.exit.L21C8
+
+lor.exit.L21C8:                                   ; preds = %lor.1.L21C8, %if.exit.L18
+  %lor_phi2 = phi i1 [ %10, %if.exit.L18 ], [ %11, %lor.1.L21C8 ]
+  br i1 %lor_phi2, label %if.then.L21, label %if.exit.L21
+
+if.then.L21:                                      ; preds = %lor.exit.L21C8
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
+  call void @__tsan_func_exit()
+  ret i32 1
+
+if.exit.L21:                                      ; preds = %lor.exit.L21C8
   call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2)
   call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1)
   call void @__tsan_func_exit()
@@ -83,11 +125,13 @@ entry:
 
 declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 })
 
-declare void @_ZN6Thread3runEv(ptr)
+declare void @_ZN6Thread3runEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
 
-declare void @_ZN6Thread4joinEv(ptr)
+declare i1 @_ZN6ResultIbE5isErrEv(ptr)
 
 declare void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48))
+
+declare void @_ZN6Thread4joinEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
 
 declare void @__tsan_init()
 

@@ -3,6 +3,8 @@ source_filename = "source.spice"
 
 %struct.Thread = type { %struct.Lambda, i64 }
 %struct.Lambda = type { { ptr, ptr, i64 }, ptr, i64 }
+%struct.Result = type { i1, %struct.Error }
+%struct.Error = type { i32, ptr }
 
 @COUNTER = internal global i32 0, !dbg !0
 @llvm.used = appending global [1 x ptr] [ptr @tsan.module_ctor], section "llvm.metadata"
@@ -42,55 +44,101 @@ for.exit.L8:                                      ; preds = %for.head.L8
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone sanitize_thread uwtable
 define noundef i32 @main() #1 !dbg !28 {
-  %1 = call ptr @llvm.returnaddress.p0(i32 0), !dbg !53
-  call void @__tsan_func_entry(ptr %1), !dbg !53
+  %1 = call ptr @llvm.returnaddress.p0(i32 0), !dbg !68
+  call void @__tsan_func_entry(ptr %1), !dbg !68
   %thread1 = alloca %struct.Thread, align 8
   %fat.ptr = alloca { ptr, ptr, i64 }, align 8
   %thread2 = alloca %struct.Thread, align 8
   %fat.ptr1 = alloca { ptr, ptr, i64 }, align 8
-  store ptr @_Z6workerv.fatthunk, ptr %fat.ptr, align 8, !dbg !54
-  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1, !dbg !54
-  store ptr null, ptr %2, align 8, !dbg !54
-  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2, !dbg !54
-  store i64 0, ptr %3, align 8, !dbg !54
-  %4 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8, !dbg !54
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread1, { ptr, ptr, i64 } noundef %4), !dbg !54
-    #dbg_declare(ptr %thread1, !32, !DIExpression(), !54)
-  store ptr @_Z6workerv.fatthunk, ptr %fat.ptr1, align 8, !dbg !55
-  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1, !dbg !55
-  store ptr null, ptr %5, align 8, !dbg !55
-  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2, !dbg !55
-  store i64 0, ptr %6, align 8, !dbg !55
-  %7 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8, !dbg !55
-  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread2, { ptr, ptr, i64 } noundef %7), !dbg !55
-    #dbg_declare(ptr %thread2, !52, !DIExpression(), !55)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !56
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !57
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !58
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !59
-  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !60
-  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !60
-  call void @__tsan_func_exit(), !dbg !60
-  ret i32 0, !dbg !60
+  %started1 = alloca %struct.Result, align 8
+  %started2 = alloca %struct.Result, align 8
+  %joined1 = alloca %struct.Result, align 8
+  %joined2 = alloca %struct.Result, align 8
+  store ptr @_Z6workerv.fatthunk, ptr %fat.ptr, align 8, !dbg !69
+  %2 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 1, !dbg !69
+  store ptr null, ptr %2, align 8, !dbg !69
+  %3 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr, i32 0, i32 2, !dbg !69
+  store i64 0, ptr %3, align 8, !dbg !69
+  %4 = load { ptr, ptr, i64 }, ptr %fat.ptr, align 8, !dbg !69
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread1, { ptr, ptr, i64 } noundef %4), !dbg !69
+    #dbg_declare(ptr %thread1, !32, !DIExpression(), !69)
+  store ptr @_Z6workerv.fatthunk, ptr %fat.ptr1, align 8, !dbg !70
+  %5 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 1, !dbg !70
+  store ptr null, ptr %5, align 8, !dbg !70
+  %6 = getelementptr inbounds nuw { ptr, ptr, i64 }, ptr %fat.ptr1, i32 0, i32 2, !dbg !70
+  store i64 0, ptr %6, align 8, !dbg !70
+  %7 = load { ptr, ptr, i64 }, ptr %fat.ptr1, align 8, !dbg !70
+  call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %thread2, { ptr, ptr, i64 } noundef %7), !dbg !70
+    #dbg_declare(ptr %thread2, !52, !DIExpression(), !70)
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %started1, ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !71
+    #dbg_declare(ptr %started1, !53, !DIExpression(), !71)
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %started2, ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !72
+    #dbg_declare(ptr %started2, !65, !DIExpression(), !72)
+  %8 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started1), !dbg !73
+  br i1 %8, label %lor.exit.L18C8, label %lor.1.L18C8, !dbg !73
+
+lor.1.L18C8:                                      ; preds = %0
+  %9 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started2), !dbg !75
+  br label %lor.exit.L18C8, !dbg !75
+
+lor.exit.L18C8:                                   ; preds = %lor.1.L18C8, %0
+  %lor_phi = phi i1 [ %8, %0 ], [ %9, %lor.1.L18C8 ], !dbg !75
+  br i1 %lor_phi, label %if.then.L18, label %if.exit.L18, !dbg !75
+
+if.then.L18:                                      ; preds = %lor.exit.L18C8
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !76
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !76
+  call void @__tsan_func_exit(), !dbg !77
+  ret i32 1, !dbg !77
+
+if.exit.L18:                                      ; preds = %lor.exit.L18C8
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %joined1, ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !78
+    #dbg_declare(ptr %joined1, !66, !DIExpression(), !78)
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind writable sret(%struct.Result) align 8 %joined2, ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !79
+    #dbg_declare(ptr %joined2, !67, !DIExpression(), !79)
+  %10 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined1), !dbg !80
+  br i1 %10, label %lor.exit.L21C8, label %lor.1.L21C8, !dbg !80
+
+lor.1.L21C8:                                      ; preds = %if.exit.L18
+  %11 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined2), !dbg !82
+  br label %lor.exit.L21C8, !dbg !82
+
+lor.exit.L21C8:                                   ; preds = %lor.1.L21C8, %if.exit.L18
+  %lor_phi2 = phi i1 [ %10, %if.exit.L18 ], [ %11, %lor.1.L21C8 ], !dbg !82
+  br i1 %lor_phi2, label %if.then.L21, label %if.exit.L21, !dbg !82
+
+if.then.L21:                                      ; preds = %lor.exit.L21C8
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !83
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !83
+  call void @__tsan_func_exit(), !dbg !84
+  ret i32 1, !dbg !84
+
+if.exit.L21:                                      ; preds = %lor.exit.L21C8
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread2), !dbg !85
+  call void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48) %thread1), !dbg !85
+  call void @__tsan_func_exit(), !dbg !85
+  ret i32 0, !dbg !85
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define private void @_Z6workerv.fatthunk(ptr %0) #2 {
 entry:
-  %1 = call ptr @llvm.returnaddress.p0(i32 0), !dbg !54
-  call void @__tsan_func_entry(ptr %1), !dbg !54
-  call void @_Z6workerv(), !dbg !54
-  call void @__tsan_func_exit(), !dbg !54
-  ret void, !dbg !54
+  %1 = call ptr @llvm.returnaddress.p0(i32 0), !dbg !69
+  call void @__tsan_func_entry(ptr %1), !dbg !69
+  call void @_Z6workerv(), !dbg !69
+  call void @__tsan_func_exit(), !dbg !69
+  ret void, !dbg !69
 }
 
 declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 })
 
-declare void @_ZN6Thread3runEv(ptr)
+declare void @_ZN6Thread3runEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
 
-declare void @_ZN6Thread4joinEv(ptr)
+declare i1 @_ZN6ResultIbE5isErrEv(ptr)
 
 declare void @_ZN6Thread4dtorEv(ptr noundef nonnull align 8 dereferenceable(48))
+
+declare void @_ZN6Thread4joinEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
 
 declare void @__tsan_init()
 
@@ -450,7 +498,7 @@ attributes #5 = { nocallback nofree nosync nounwind willreturn memory(none) }
 !0 = !DIGlobalVariableExpression(var: !1, expr: !DIExpression())
 !1 = distinct !DIGlobalVariable(name: "COUNTER", linkageName: "COUNTER", scope: !2, file: !3, line: 5, type: !5, isLocal: true, isDefinition: true)
 !2 = distinct !DICompileUnit(language: DW_LANG_C_plus_plus_14, file: !3, producer: "spice version dev (https://github.com/spicelang/spice)", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug, globals: !4, splitDebugInlining: false)
-!3 = !DIFile(filename: "source.spice", directory: "./test-files/irgenerator/instrumentation/success-tsan-and-dbg-info")
+!3 = !DIFile(filename: "source.spice", directory: ".")
 !4 = !{!0}
 !5 = !DIBasicType(name: "int", size: 32, encoding: DW_ATE_signed)
 !6 = !{i32 8, !"PIC Level", i32 2}
@@ -478,7 +526,7 @@ attributes #5 = { nocallback nofree nosync nounwind willreturn memory(none) }
 !28 = distinct !DISubprogram(name: "main", linkageName: "_Z4mainv", scope: !3, file: !3, line: 13, type: !29, scopeLine: 13, flags: DIFlagPrototyped, spFlags: DISPFlagDefinition, unit: !2, retainedNodes: !31)
 !29 = !DISubroutineType(types: !30)
 !30 = !{!5}
-!31 = !{!32, !52}
+!31 = !{!32, !52, !53, !65, !66, !67}
 !32 = !DILocalVariable(name: "thread1", scope: !28, file: !3, line: 14, type: !33)
 !33 = !DICompositeType(tag: DW_TAG_structure_type, name: "Thread", scope: !3, file: !3, line: 24, size: 384, align: 64, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !34, identifier: "struct.Thread")
 !34 = !{!35, !50}
@@ -500,11 +548,36 @@ attributes #5 = { nocallback nofree nosync nounwind willreturn memory(none) }
 !50 = !DIDerivedType(tag: DW_TAG_member, name: "threadId", scope: !33, file: !3, line: 26, baseType: !51, size: 64, offset: 320)
 !51 = !DIBasicType(name: "long", size: 64, encoding: DW_ATE_signed)
 !52 = !DILocalVariable(name: "thread2", scope: !28, file: !3, line: 15, type: !33)
-!53 = !DILocation(line: 0, scope: !28)
-!54 = !DILocation(line: 14, column: 29, scope: !28)
-!55 = !DILocation(line: 15, column: 29, scope: !28)
-!56 = !DILocation(line: 16, column: 5, scope: !28)
-!57 = !DILocation(line: 17, column: 5, scope: !28)
-!58 = !DILocation(line: 18, column: 5, scope: !28)
-!59 = !DILocation(line: 19, column: 5, scope: !28)
-!60 = !DILocation(line: 20, column: 1, scope: !28)
+!53 = !DILocalVariable(name: "started1", scope: !28, file: !3, line: 16, type: !54)
+!54 = !DICompositeType(tag: DW_TAG_structure_type, name: "Result<bool>", scope: !3, file: !3, line: 11, size: 192, align: 64, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !55, identifier: "struct.Result")
+!55 = !{!56, !58}
+!56 = !DIDerivedType(tag: DW_TAG_member, name: "data", scope: !54, file: !3, line: 12, baseType: !57, size: 8)
+!57 = !DIBasicType(name: "bool", size: 8, encoding: DW_ATE_boolean)
+!58 = !DIDerivedType(tag: DW_TAG_member, name: "error", scope: !54, file: !3, line: 13, baseType: !59, size: 128, align: 64, offset: 64)
+!59 = !DICompositeType(tag: DW_TAG_structure_type, name: "Error", scope: !3, file: !3, line: 16, size: 128, align: 64, flags: DIFlagTypePassByReference | DIFlagNonTrivial, elements: !60, identifier: "struct.Error")
+!60 = !{!61, !62}
+!61 = !DIDerivedType(tag: DW_TAG_member, name: "code", scope: !59, file: !3, line: 17, baseType: !5, size: 32)
+!62 = !DIDerivedType(tag: DW_TAG_member, name: "message", scope: !59, file: !3, line: 18, baseType: !63, size: 64, offset: 64)
+!63 = !DIDerivedType(tag: DW_TAG_pointer_type, baseType: !64, size: 64, dwarfAddressSpace: 0)
+!64 = !DIBasicType(name: "char", size: 8, encoding: DW_ATE_unsigned_char)
+!65 = !DILocalVariable(name: "started2", scope: !28, file: !3, line: 17, type: !54)
+!66 = !DILocalVariable(name: "joined1", scope: !28, file: !3, line: 19, type: !54)
+!67 = !DILocalVariable(name: "joined2", scope: !28, file: !3, line: 20, type: !54)
+!68 = !DILocation(line: 0, scope: !28)
+!69 = !DILocation(line: 14, column: 29, scope: !28)
+!70 = !DILocation(line: 15, column: 29, scope: !28)
+!71 = !DILocation(line: 16, column: 29, scope: !28)
+!72 = !DILocation(line: 17, column: 29, scope: !28)
+!73 = !DILocation(line: 18, column: 8, scope: !74)
+!74 = distinct !DILexicalBlock(scope: !28, file: !3, line: 18, column: 5)
+!75 = !DILocation(line: 18, column: 28, scope: !74)
+!76 = !DILocation(line: 22, column: 1, scope: !74)
+!77 = !DILocation(line: 18, column: 47, scope: !74)
+!78 = !DILocation(line: 19, column: 28, scope: !28)
+!79 = !DILocation(line: 20, column: 28, scope: !28)
+!80 = !DILocation(line: 21, column: 8, scope: !81)
+!81 = distinct !DILexicalBlock(scope: !28, file: !3, line: 21, column: 5)
+!82 = !DILocation(line: 21, column: 27, scope: !81)
+!83 = !DILocation(line: 22, column: 1, scope: !81)
+!84 = !DILocation(line: 21, column: 45, scope: !81)
+!85 = !DILocation(line: 22, column: 1, scope: !28)

@@ -16,11 +16,13 @@ f<int> main() {
             printf("Thread returned with result: %d\n", res);
         });
         Thread& thread = threads[i];
-        thread.run();
+        Result<bool> started = thread.run();
+        if started.isErr() { return 1; }
     }
     for unsigned int i = 0; i < threadCount; i++ {
         Thread& thread = threads[i];
-        thread.join();
+        Result<bool> joined = thread.join();
+        if joined.isErr() { return 1; }
     }
     printf("Program finished");
 }

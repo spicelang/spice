@@ -13,8 +13,10 @@ p worker() {
 f<int> main() {
     Thread thread1 = Thread(worker);
     Thread thread2 = Thread(worker);
-    thread1.run();
-    thread2.run();
-    thread1.join();
-    thread2.join();
+    Result<bool> started1 = thread1.run();
+    Result<bool> started2 = thread2.run();
+    if started1.isErr() || started2.isErr() { return 1; }
+    Result<bool> joined1 = thread1.join();
+    Result<bool> joined2 = thread2.join();
+    if joined1.isErr() || joined2.isErr() { return 1; }
 }

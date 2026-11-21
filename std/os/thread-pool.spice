@@ -54,7 +54,11 @@ public p ThreadPool.start() {
     for unsigned short i = 0s; i < this.workerThreadCount; i++ {
         this.workerThreads.pushBack(Thread(workerRoutine));
         Thread& workerThread = this.workerThreads.back();
-        workerThread.run();
+        Result<bool> started = workerThread.run();
+        if started.isErr() {
+            const Error error = started.getErr();
+            panic(error);
+        }
     }
 }
 
@@ -155,7 +159,11 @@ public f<unsigned short> ThreadPool.getWorkerThreadCount() {
  */
 p ThreadPool.joinWorkerThreads() {
     foreach Thread& workerThread : this.workerThreads {
-        workerThread.join();
+        Result<bool> joined = workerThread.join();
+        if joined.isErr() {
+            const Error error = joined.getErr();
+            panic(error);
+        }
     }
     // The joined threads must not be joined again, so they are dropped. This way, the pool can be started again.
     this.workerThreads.clear();

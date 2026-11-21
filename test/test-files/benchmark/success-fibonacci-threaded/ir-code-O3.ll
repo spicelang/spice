@@ -3,6 +3,8 @@ source_filename = "source.spice"
 
 %struct.Thread = type { %struct.Lambda, i64 }
 %struct.Lambda = type { { ptr, ptr, i64 }, ptr, i64 }
+%struct.Result = type { i1, %struct.Error }
+%struct.Error = type { i32, ptr }
 
 @printf.str.1 = private unnamed_addr constant [33 x i8] c"Thread returned with result: %d\0A\00", align 4
 @printf.str.2 = private unnamed_addr constant [17 x i8] c"Program finished\00", align 4
@@ -33,10 +35,12 @@ if.exit.L4:                                       ; preds = %1, %if.exit.L4
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind uwtable
-define noundef i32 @main() local_unnamed_addr #1 {
+define noundef range(i32 0, 2) i32 @main() local_unnamed_addr #1 {
 for.body.L13:
   %threads = alloca [8 x %struct.Thread], align 8
   %0 = alloca %struct.Thread, align 8
+  %started = alloca %struct.Result, align 8
+  %joined = alloca %struct.Result, align 8
   %.fca.1.0.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 48
   %.fca.2.0.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 96
   %.fca.3.0.0.0.gep = getelementptr inbounds nuw i8, ptr %threads, i64 144
@@ -49,38 +53,106 @@ for.body.L13:
   %1 = getelementptr inbounds nuw i8, ptr %threads, i64 48
   call void @llvm.memset.p0.i64(ptr noundef nonnull align 8 dereferenceable(336) %1, i8 0, i64 336, i1 false)
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %threads, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %threads) #6
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %threads) #6
+  %2 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %2, label %common.ret, label %for.head.L13
+
+for.head.L13:                                     ; preds = %for.body.L13
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L14C29.0v, ptr null, i64 0 }) #6
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %.fca.1.0.0.0.gep, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.1.0.0.0.gep) #6
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %.fca.1.0.0.0.gep) #6
+  %3 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %3, label %common.ret, label %for.head.L13.1
+
+for.head.L13.1:                                   ; preds = %for.head.L13
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L14C29.0v, ptr null, i64 0 }) #6
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %.fca.2.0.0.0.gep, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.2.0.0.0.gep) #6
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %.fca.2.0.0.0.gep) #6
+  %4 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %4, label %common.ret, label %for.head.L13.2
+
+for.head.L13.2:                                   ; preds = %for.head.L13.1
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L14C29.0v, ptr null, i64 0 }) #6
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %.fca.3.0.0.0.gep, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.3.0.0.0.gep) #6
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %.fca.3.0.0.0.gep) #6
+  %5 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %5, label %common.ret, label %for.head.L13.3
+
+for.head.L13.3:                                   ; preds = %for.head.L13.2
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L14C29.0v, ptr null, i64 0 }) #6
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %.fca.4.0.0.0.gep, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.4.0.0.0.gep) #6
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %.fca.4.0.0.0.gep) #6
+  %6 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %6, label %common.ret, label %for.head.L13.4
+
+for.head.L13.4:                                   ; preds = %for.head.L13.3
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L14C29.0v, ptr null, i64 0 }) #6
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %.fca.5.0.0.0.gep, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.5.0.0.0.gep) #6
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %.fca.5.0.0.0.gep) #6
+  %7 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %7, label %common.ret, label %for.head.L13.5
+
+for.head.L13.5:                                   ; preds = %for.head.L13.4
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L14C29.0v, ptr null, i64 0 }) #6
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %.fca.6.0.0.0.gep, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.6.0.0.0.gep) #6
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %.fca.6.0.0.0.gep) #6
+  %8 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %8, label %common.ret, label %for.head.L13.6
+
+for.head.L13.6:                                   ; preds = %for.head.L13.5
   call void @_ZN6Thread4ctorEPFvE(ptr noundef nonnull align 8 dereferenceable(48) %0, { ptr, ptr, i64 } noundef { ptr @_Z15lambda.L14C29.0v, ptr null, i64 0 }) #6
   call void @llvm.memcpy.p0.p0.i64(ptr noundef nonnull align 8 dereferenceable(48) %.fca.7.0.0.0.gep, ptr noundef nonnull align 8 dereferenceable(48) %0, i64 48, i1 false)
-  call void @_ZN6Thread3runEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.7.0.0.0.gep) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %threads) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.1.0.0.0.gep) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.2.0.0.0.gep) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.3.0.0.0.gep) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.4.0.0.0.gep) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.5.0.0.0.gep) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.6.0.0.0.gep) #6
-  call void @_ZN6Thread4joinEv(ptr noundef nonnull align 8 dereferenceable(48) %.fca.7.0.0.0.gep) #6
-  %2 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
-  ret i32 0
+  call void @_ZN6Thread3runEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %started, ptr noundef nonnull align 8 dereferenceable(48) %.fca.7.0.0.0.gep) #6
+  %9 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %started) #6
+  br i1 %9, label %common.ret, label %for.head.L13.7
+
+for.head.L13.7:                                   ; preds = %for.head.L13.6
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %threads) #6
+  %10 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %10, label %common.ret, label %for.head.L22
+
+common.ret:                                       ; preds = %for.body.L13, %for.head.L13, %for.head.L13.1, %for.head.L13.2, %for.head.L13.3, %for.head.L13.4, %for.head.L13.5, %for.head.L13.6, %for.head.L13.7, %for.head.L22, %for.head.L22.1, %for.head.L22.2, %for.head.L22.3, %for.head.L22.4, %for.head.L22.5, %for.head.L22.6, %for.head.L22.7
+  %common.ret.op = phi i32 [ 0, %for.head.L22.7 ], [ 1, %for.head.L13.7 ], [ 1, %for.head.L22.6 ], [ 1, %for.head.L22.5 ], [ 1, %for.head.L22.4 ], [ 1, %for.head.L22.3 ], [ 1, %for.head.L22.2 ], [ 1, %for.head.L22.1 ], [ 1, %for.head.L22 ], [ 1, %for.head.L13.6 ], [ 1, %for.head.L13.5 ], [ 1, %for.head.L13.4 ], [ 1, %for.head.L13.3 ], [ 1, %for.head.L13.2 ], [ 1, %for.head.L13.1 ], [ 1, %for.head.L13 ], [ 1, %for.body.L13 ]
+  ret i32 %common.ret.op
+
+for.head.L22:                                     ; preds = %for.head.L13.7
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %.fca.1.0.0.0.gep) #6
+  %11 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %11, label %common.ret, label %for.head.L22.1
+
+for.head.L22.1:                                   ; preds = %for.head.L22
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %.fca.2.0.0.0.gep) #6
+  %12 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %12, label %common.ret, label %for.head.L22.2
+
+for.head.L22.2:                                   ; preds = %for.head.L22.1
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %.fca.3.0.0.0.gep) #6
+  %13 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %13, label %common.ret, label %for.head.L22.3
+
+for.head.L22.3:                                   ; preds = %for.head.L22.2
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %.fca.4.0.0.0.gep) #6
+  %14 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %14, label %common.ret, label %for.head.L22.4
+
+for.head.L22.4:                                   ; preds = %for.head.L22.3
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %.fca.5.0.0.0.gep) #6
+  %15 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %15, label %common.ret, label %for.head.L22.5
+
+for.head.L22.5:                                   ; preds = %for.head.L22.4
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %.fca.6.0.0.0.gep) #6
+  %16 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %16, label %common.ret, label %for.head.L22.6
+
+for.head.L22.6:                                   ; preds = %for.head.L22.5
+  call void @_ZN6Thread4joinEv(ptr dead_on_unwind nonnull writable sret(%struct.Result) align 8 %joined, ptr noundef nonnull align 8 dereferenceable(48) %.fca.7.0.0.0.gep) #6
+  %17 = call noundef zeroext i1 @_ZN6ResultIbE5isErrEv(ptr noundef nonnull align 8 dereferenceable(24) %joined) #6
+  br i1 %17, label %common.ret, label %for.head.L22.7
+
+for.head.L22.7:                                   ; preds = %for.head.L22.6
+  %18 = call noundef i32 (ptr, ...) @printf(ptr noundef nonnull dereferenceable(1) @printf.str.2)
+  br label %common.ret
 }
 
 ; Function Attrs: nofree nounwind
@@ -98,9 +170,11 @@ declare void @_ZN6Thread4ctorEPFvE(ptr, { ptr, ptr, i64 }) local_unnamed_addr
 ; Function Attrs: mustprogress nocallback nofree nosync nounwind willreturn memory(argmem: readwrite)
 declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr noalias readonly captures(none), i64, i1 immarg) #4
 
-declare void @_ZN6Thread3runEv(ptr) local_unnamed_addr
+declare void @_ZN6Thread3runEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr) local_unnamed_addr
 
-declare void @_ZN6Thread4joinEv(ptr) local_unnamed_addr
+declare i1 @_ZN6ResultIbE5isErrEv(ptr) local_unnamed_addr
+
+declare void @_ZN6Thread4joinEv(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr) local_unnamed_addr
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @puts(ptr noundef readonly captures(none)) local_unnamed_addr #2
