@@ -1,0 +1,6 @@
+// Passes a reference to an error, held in a local variable, to panic (see #1799)
+f<int> main() {
+    Error error = Error("Error from a reference");
+    Error& errorRef = error;
+    panic(errorRef);
+}

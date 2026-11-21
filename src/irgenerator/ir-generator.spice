@@ -5555,8 +5555,9 @@ f<Any> IRGenerator.visitBuiltinPrintfCall(ASTFctCallNode* node) {
 f<llvm::Value> IRGenerator.getPanicErrorMessage(ASTFctCallNode* node) {
     assert node.hasArgs;
     IVisitable* assignExpr = node.argLst.args.front();
+    // For an error reference (e.g. the result of Result.getErr()), resolveAddress yields the address of the referenced error
     const llvm::Value errorObjPtr = this.resolveAddress(assignExpr);
-    const QualType errorObjType = this.getEvaluatedType(assignExpr);
+    const QualType errorObjType = this.getEvaluatedType(assignExpr).removeReferenceWrapper();
     const llvm::Type errorObjTy = errorObjType.toLLVMType(this.sourceFile);
     const llvm::Value errorMessagePtr = this.insertStructGEP(errorObjTy, errorObjPtr, 1);
     return this.insertLoad(this.builder.getPtrTy(), errorMessagePtr);
