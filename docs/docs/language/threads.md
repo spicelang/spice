@@ -108,7 +108,9 @@ To pause the thread pool, use the `pause()` method. This will pause all worker t
 continue the current task and then exit. You can start the thread pool again by calling the `start()` method at any time.
 
 To wait for all tasks to finish, use the `join()` method. This will block the current thread until all tasks in the thread pool
-are finished. Stop or join the thread pool before it goes out of scope, since its worker threads use it until they exit.
+are finished. A paused thread pool does not run its queued tasks, so resume it before calling `join()`. Otherwise, `join()` blocks
+until another thread resumes the pool. Stop or join the thread pool before it goes out of scope, since its worker threads use it
+until they exit.
 
 ## Mutexes
 
