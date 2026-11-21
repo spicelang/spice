@@ -262,12 +262,12 @@ WARNING: ThreadSanitizer: data race (pid=204199)
 
   Thread T2 (tid=204203, running) created by main thread at:
     #0 pthread_create
-    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:56:61 (data-race+0x1499d6)
+    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:59:59 (data-race+0x1499d6)
     #2 main data-race.spice:15:34 (data-race+0x149c96)
 
   Thread T1 (tid=204202, finished) created by main thread at:
     #0 pthread_create
-    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:56:61 (data-race+0x1499d6)
+    #1 Thread::run() /usr/lib/spice/std/os/thread.spice:59:59 (data-race+0x1499d6)
     #2 main data-race.spice:14:33 (data-race+0x149c8c)
 
 SUMMARY: ThreadSanitizer: data race data-race.spice:7:9 in increment()

@@ -53,9 +53,13 @@ public p Thread.ctor(const Lambda<p()>& threadRoutine) {
  * @return Ok, or an error if the thread could not be created, e.g. because the system lacks the resources for another thread
  */
 public f<Result<bool>> Thread.run() {
-    if pthread_create(&this.threadId, nil<Pthread_attr_t*>, this.threadRoutine.get()) != 0 {
+    // pthread_create may leave a stale id behind, if it fails. It is only stored on success, so that join() sees, that the
+    // thread was not started
+    Pthread_t newThreadId = 0l;
+    if pthread_create(&newThreadId, nil<Pthread_attr_t*>, this.threadRoutine.get()) != 0 {
         return err<bool>("pthread_create failed");
     }
+    this.threadId = newThreadId;
     return ok(true);
 }
 
