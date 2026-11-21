@@ -1,0 +1,3 @@
+Program panicked at ./source.spice:4:5: Error from a reference
+4  panic(res.getErr());
+   ^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,5 @@
+// Passes a reference to an error, returned by a method, to panic (see #1799)
+f<int> main() {
+    Result<int> res = err<int>("Error from a reference");
+    panic(res.getErr());
+}

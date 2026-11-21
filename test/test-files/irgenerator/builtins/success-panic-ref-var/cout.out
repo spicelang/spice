@@ -1,0 +1,3 @@
+Program panicked at ./source.spice:5:5: Error from a reference
+5  panic(errorRef);
+   ^^^^^^^^^^^^^^^
