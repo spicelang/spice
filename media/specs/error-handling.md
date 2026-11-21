@@ -9,8 +9,10 @@ Implemented and shipped, behind two opt-in module attributes (both default `fals
 
 Remaining work:
 
-- [ ] Migrate `std`'s internal `panic()`-on-recoverable-failure call sites to return `Result<T>`.
-- [ ] Update docs, examples, changelog.
+- [x] Migrate `std`'s internal `panic()`-on-recoverable-failure call sites to return `Result<T>` (#1797, #1801, #1803,
+  #1804, #1805). The remaining `panic()` calls in `std` are programming errors (see `panic`'s role below).
+- [x] Update docs and examples (`docs/docs/language/error-handling.md`).
+- [ ] Mention the feature in the release notes.
 - [ ] Flip both attributes' defaults to `true` in a documented major/minor version bump, then remove the gates.
 
 ## Background
@@ -120,8 +122,9 @@ its own message. Both are safe no-ops when nothing was ever recorded. After it, 
 
 `panic(Error)` keeps its existing signature and behavior (now optionally trace-augmented). Its role narrows to
 assertion-like, programmer-error situations — not the default reaction to a recoverable failure such as a
-missing file or a parse error. `std`'s internal recoverable-failure call sites still need migrating to
-`Result<T>` (see Remaining work).
+missing file or a parse error. `std`'s recoverable-failure call sites return `Result<T>`; where a panicking lookup is
+still useful, a `Result<T>`-returning variant with the `Safe` suffix sits next to it (e.g. `getField()`/
+`getFieldSafe()`).
 
 ## Open questions
 

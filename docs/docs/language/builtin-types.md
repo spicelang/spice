@@ -97,7 +97,8 @@ The `String` builtin type overrides the following operators:
 - `bool operator!=(string, const String&)`: Checks if two strings are unequal in value
 
 ## The `Result` data type
-The `Result<T>` builtin type is a generic type, which is used to return a value or an error. It is used to handle errors
+The `Result<T>` builtin type is a generic type, which is used to return a value or an error. It is used to handle errors.
+See [error handling](error-handling.md) for how to return, propagate and handle errors.
 
 ### Constructors
 The `Result<T>` builtin type offers the following constructors:
@@ -108,18 +109,30 @@ The `Result<T>` builtin type offers the following constructors:
 ### Methods
 The `Result<T>` builtin type offers the following methods:
 
-- `T unwrap()`: Returns the value of the Result object. If the Result object contains an error, the program will panic
-- `Error getErr()`: Returns the error of the Result object. If no error is present, an error object with error code 0 is returned.
+- `T& unwrap()`: Returns the value of the Result object. If the Result object contains an error, the program will panic
+- `T& unwrapOr(const T&)`: Returns the value of the Result object, or the given alternative, if it contains an error
+- `T& unwrapOrElse(f<T&>(const Error&))`: Returns the value of the Result object, or the result of the given function,
+  which is called with the error, if it contains an error
+- `T unwrapAndMove()`: Moves the value out of the Result object (see [ownership](#ownership))
+- `Error& getErr()`: Returns the error of the Result object. If no error is present, an error object with error code 0 is returned.
 - `bool isOk()`: Checks if the Result object contains a value
 - `bool isErr()`: Checks if the Result object contains an error
+- `void dumpTrace()`: Prints the error and the recorded [error return trace](error-handling.md#error-return-traces) to
+  stderr, if the Result object contains an error
+
+### Operators
+The `Result<T>` builtin type offers the following operators:
+
+- `result!` (postfix error propagation): Returns the error from the enclosing function, if the Result object contains
+  one, or evaluates to its value otherwise (see [propagating errors](error-handling.md#propagating-errors))
 
 ### Static functions
 The `Result<T>` builtin type offers the following static functions:
 
 - `Result<T> ok(const T&)`: Returns a Result object with a value
-- `Result<T> err(const Error&)`: Returns a Result object with an error
-- `Result<T> err(int, string)`: Returns a Result object with an error, constructed with an error code and an error message
-- `Result<T> err(string)`: Returns a Result object with an error, constructed with an error message
+- `Result<T> err<T>(const Error&)`: Returns a Result object with an error
+- `Result<T> err<T>(int, string)`: Returns a Result object with an error, constructed with an error code and an error message
+- `Result<T> err<T>(string)`: Returns a Result object with an error, constructed with an error message
 
 ### Ownership
 
@@ -143,12 +156,18 @@ The `Error` builtin type is used to represent an error. It can be used e.g. in c
 ### Constructors
 The `Error` builtin type offers the following constructors:
 
-- `void Error()`: Initialize an empty error object. This object has an error code of 0 and the error message `Runtime error`
-- `void Error(int, string)`: Initialize an error object with an error code and an error message
-- `void Error(string)`: Initialize an error object with an error message
+- `void Error()`: Initialize an empty error object. This object has the error code 0 (`ErrorCode::Ok`) and the error message
+  `<no error>`
+- `void Error(ErrorCode, string)`: Initialize an error object with an error code and an error message
+- `void Error(string)`: Initialize an error object with an error message and the error code 1 (`ErrorCode::RuntimeError`)
 
 ### Methods
 The `Error` builtin type offers the following methods:
 
-- `void print()`: Prints the error message to the standard error output
+- `ErrorCode getCode()`: Returns the error code
+- `string getMessage()`: Returns the error message
+- `bool isOk()`: Checks if the error code is 0, which means that there is no error
+- `void print()`: Prints the error code and message to the standard error output
 - `void triggerPanic()`: Triggers a panic with this error
+- `void dumpTrace()`: Prints the error and the recorded [error return trace](error-handling.md#error-return-traces) to
+  stderr, if the error code is not 0
