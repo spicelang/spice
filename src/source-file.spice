@@ -955,6 +955,7 @@ public p SourceFile.runBackEnd() {
     const unsigned long jobCount = compileJobCount < backEndSourceFiles.getSize() ? compileJobCount : backEndSourceFiles.getSize();
     const bool runParallel = jobCount > 1ul && !this.cliOptions.useLTO && !dumpRequested;
 
+    bool ranParallel = false;
     if runParallel {
         ThreadPool threadPool = ThreadPool(cast<unsigned short>(jobCount));
         foreach SourceFile* sourceFile : backEndSourceFiles {
@@ -965,9 +966,14 @@ public p SourceFile.runBackEnd() {
         // Enter the parallel section before the worker threads start and leave it only after all of them were joined. A
         // failing source file aborts the compilation on its worker thread (see abortWithError), which ends the process.
         ParallelSection _;
-        threadPool.start();
-        threadPool.join();
-    } else {
+        Result<bool> started = threadPool.start();
+        if started.isOk() {
+            threadPool.join();
+            ranParallel = true;
+        }
+        // If the worker threads could not be started, none of the jobs ran, so the back end runs serially below
+    }
+    if !ranParallel {
         foreach SourceFile* sourceFile : backEndSourceFiles {
             sourceFile.runBackEndForThisFile();
             if this.resourceManager.abortCompilation { return; }

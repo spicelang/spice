@@ -77,7 +77,8 @@ f<int> main() {
         printf("greet: %d [%s]\n", greetResponse.statusCode, greetResponse.body);
     });
 
-    pool.start();
+    Result<bool> poolStarted = pool.start();
+    assert poolStarted.isOk();
     pool.join();
     return 0;
 }

@@ -98,10 +98,19 @@ f<int> main() {
         delay(150);
         printf("Hello from task 3\n");
     });
-    tp.start(); // This will kick off the worker threads and immediately return
+    // Kick off the worker threads. This returns immediately
+    Result<bool> started = tp.start();
+    if started.isErr() {
+        printf("Could not start the thread pool: %s\n", started.getErr().getMessage());
+        return 1;
+    }
     tp.join(); // Wait for all tasks to finish
 }
 ```
+
+`start()` returns a `Result<bool>`, that holds an error if a worker thread could not be created. Either all worker threads are
+started or none: if one of them cannot be started, the ones started before exit again without taking a task. The tasks stay
+queued then, so that the thread pool can be started again later.
 
 To pause the thread pool, use the `pause()` method. This will pause all worker threads. To resume the thread pool, use the
 `resume()` method. This will resume all worker threads. To stop the thread pool, use the `stop()` method. The worker threads will

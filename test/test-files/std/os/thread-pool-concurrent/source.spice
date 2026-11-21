@@ -15,7 +15,8 @@ f<int> main() {
             counterPtr.value.fetchAdd(1ul);
         });
     }
-    tp.start();
+    Result<bool> started = tp.start();
+    assert started.isOk();
     tp.join();
     // The pool can be started again after it was joined
     for int i = 0; i < 100; i++ {
@@ -23,7 +24,8 @@ f<int> main() {
             counterPtr.value.fetchAdd(1ul);
         });
     }
-    tp.start();
+    Result<bool> restarted = tp.start();
+    assert restarted.isOk();
     tp.join();
     const unsigned long total = counter.value.load();
     printf("total=%d running=%d queued=%d\n", total, tp.getRunningJobCount(), tp.getQueuedJobCount());

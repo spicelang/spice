@@ -25,6 +25,8 @@ public type ThreadPool struct {
     bool stopRequested = false
     bool stopOnEmptyQueueRequested = false
     bool pauseRequested = false
+    // Holds the worker threads back, while start() creates them
+    bool startingWorkers = false
 }
 
 /**
@@ -39,8 +41,14 @@ public p ThreadPool.ctor(unsigned short workerThreadCount = 0s) {
 
 /**
  * Start the thread pool.
+ *
+ * Either all worker threads are started or none: if one of them cannot be started, the ones started before are stopped again,
+ * before they take a job. The queued jobs stay queued then, so that the pool can be started again later.
+ *
+ * @return Ok, or an error if a worker thread could not be created, e.g. because the system lacks the resources for another
+ *         thread
  */
-public p ThreadPool.start() {
+public f<Result<bool>> ThreadPool.start() {
     p() workerRoutine = p() {
         p() task;
         while this.waitForNextJob(task) {
@@ -50,16 +58,23 @@ public p ThreadPool.start() {
     };
 
     // Create worker threads. Reserve the storage upfront, so that running threads are never relocated
+    this.setFlag(this.startingWorkers, true);
     this.workerThreads.reserve(this.workerThreads.getSize() + cast<unsigned long>(this.workerThreadCount));
     for unsigned short i = 0s; i < this.workerThreadCount; i++ {
         this.workerThreads.pushBack(Thread(workerRoutine));
         Thread& workerThread = this.workerThreads.back();
         Result<bool> started = workerThread.run();
         if started.isErr() {
-            const Error error = started.getErr();
-            panic(error);
+            // The worker thread was not started, so it must not be joined
+            this.workerThreads.popBack();
+            // The started worker threads did not take a job yet, so they exit right away
+            this.stop();
+            this.setFlag(this.startingWorkers, false);
+            return err<bool>(started.getErr());
         }
     }
+    this.setFlag(this.startingWorkers, false);
+    return ok(true);
 }
 
 /**
@@ -159,6 +174,8 @@ public f<unsigned short> ThreadPool.getWorkerThreadCount() {
  */
 p ThreadPool.joinWorkerThreads() {
     foreach Thread& workerThread : this.workerThreads {
+        // Joining a started worker thread only fails, if it joins itself, i.e. if a job stops or joins its own pool. This is a
+        // programming error, which would deadlock otherwise
         Result<bool> joined = workerThread.join();
         if joined.isErr() {
             const Error error = joined.getErr();
@@ -190,7 +207,7 @@ f<bool> ThreadPool.waitForNextJob(p()& task) {
     while !decided {
         if this.stopRequested {
             decided = true;
-        } else if !this.pauseRequested {
+        } else if !this.pauseRequested && !this.startingWorkers {
             if this.nextJobIndex < this.queuedJobs.getSize() {
                 // The job stays owned by the queue, which keeps its captures alive while it runs. Relocating the queue
                 // keeps the captures in place, so enqueueing more jobs meanwhile is fine.
