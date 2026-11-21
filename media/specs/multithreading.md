@@ -30,7 +30,8 @@ on top of POSIX threads (pthreads): `std/os/thread` provides the `Thread` struct
 ### Spawning a thread
 This enables the programmer to execute a procedure in another thread that runs in parallel to the original one.
 Construct a `Thread` from a `p()` lambda and call `run()` to start it. `run()` returns immediately; the
-calling thread continues executing the code after it.
+calling thread continues executing the code after it. `run()` returns a `Result<bool>`, that holds an error if the thread
+could not be created.
 
 ```spice
 import "std/os/thread";
@@ -39,13 +40,18 @@ f<int> main() {
     Thread thread = Thread(p() {
         // Do something
     });
-    thread.run();
+    Result<bool> started = thread.run();
+    if started.isErr() {
+        printf("Could not start the thread: %s\n", started.getErr().getMessage());
+        return 1;
+    }
 }
 ```
 
 ### Waiting for a thread to terminate
 To wait for a thread to end its execution, call the `join()` method on the `Thread` instance. The calling thread
-suspends until the target thread has terminated.
+suspends until the target thread has terminated. `join()` returns a `Result<bool>` as well, that holds an error if
+the thread could not be joined, e.g. because it was never started.
 
 ```spice
 import "std/os/thread";
@@ -54,19 +60,21 @@ f<int> main() {
     Thread thread1 = Thread(p() {
         // Do something
     });
-    thread1.run();
+    Result<bool> started1 = thread1.run();
     Thread thread2 = Thread(p() {
         // Do something
     });
-    thread2.run();
+    Result<bool> started2 = thread2.run();
+    assert started1.isOk() && started2.isOk();
     // Do something
-    thread1.join();
-    thread2.join();
+    Result<bool> joined1 = thread1.join();
+    Result<bool> joined2 = thread2.join();
+    assert joined1.isOk() && joined2.isOk();
 }
 ```
 
 ### Thread ids
-To get the id of a thread, call `getId()` on the `Thread` instance (only valid after `run()` was called). To get the
+To get the id of a thread, call `getId()` on the `Thread` instance (only valid after `run()` succeeded). To get the
 id of the current thread from within the thread routine, call the free function `getThreadId()`.
 
 ```spice
@@ -76,9 +84,11 @@ f<int> main() {
     Thread thread1 = Thread(p() {
         printf("Running on thread: %d\n", getThreadId());
     });
-    thread1.run();
+    Result<bool> started = thread1.run();
+    assert started.isOk();
     printf("Thread 1 ID: %d\n", thread1.getId());
-    thread1.join();
+    Result<bool> joined = thread1.join();
+    assert joined.isOk();
 }
 ```
 
