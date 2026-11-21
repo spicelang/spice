@@ -1,1 +1,3 @@
+getFieldSafe("missing"): JSON object has no such field
+getFieldSafe on a string: JSON value is not an object
 All assertions passed!

@@ -105,6 +105,18 @@ f<int> main() {
     JsonValue* cityField = addrField.getField("city");
     assert cityField.getString() == String("NYC");
 
+    // getFieldSafe reports missing fields and non-objects as errors instead of panicking
+    Result<JsonValue*> safeName = obj.getFieldSafe("name");
+    assert safeName.isOk();
+    JsonValue* safeNameField = safeName.unwrap();
+    assert safeNameField.getString() == String("Alice");
+    Result<JsonValue*> safeMissing = obj.getFieldSafe("missing");
+    assert safeMissing.isErr();
+    printf("getFieldSafe(\"missing\"): %s\n", safeMissing.getErr().getMessage());
+    Result<JsonValue*> safeNonObject = nameField.getFieldSafe("name");
+    assert safeNonObject.isErr();
+    printf("getFieldSafe on a string: %s\n", safeNonObject.getErr().getMessage());
+
     // Object fields are enumerable in insertion order
     assert obj.getObjectKey(0l) == String("name");
     assert obj.getObjectKey(5l) == String("address");
