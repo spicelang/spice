@@ -14,6 +14,7 @@ The following table shows how Spice prioritizes the supported operators. The lis
 | 1          | `a[]`          | Subscript operator                   | left to right | no        |
 | 1          | `a++`          | Postfix increment operator           | left to right | yes       |
 | 1          | `a--`          | Postfix decrement operator           | left to right | yes       |
+| 1          | `a!`           | Error propagation operator           | left to right | no        |
 | 2          | `-`            | Unary minus operator                 | right to left | no        |
 | 2          | `++a`          | Prefix increment operator            | right to left | yes       |
 | 2          | `--a`          | Prefix decrement operator            | right to left | yes       |

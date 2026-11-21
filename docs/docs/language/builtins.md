@@ -139,7 +139,8 @@ len(stringArray); // 5
 ## The `panic` builtin
 Panic is used to terminate the program with an error message. The error message will be printed to standard error (stderr),
 followed by the [stack trace](../how-to/stack-traces.md#panics-and-failed-assertions) of the panic, and the program will
-terminate with exit code `1`.
+terminate with exit code `1`. Use it for programming errors. Failures, that the caller can handle, are returned as a
+`Result<T>` instead (see [error handling](error-handling.md)).
 
 ### Signature
 `void panic(const Error& error)`
@@ -148,7 +149,7 @@ terminate with exit code `1`.
 
 ### Usage example
 ```spice
-panic(Error("This is an error message")));
+panic(Error("This is an error message"));
 ```
 
 ## The `syscall` builtin

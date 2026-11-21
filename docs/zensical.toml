@@ -57,6 +57,7 @@ nav = [
     "language/builtins.md",
     "language/primitive-types.md",
     "language/builtin-types.md",
+    "language/error-handling.md",
     "language/casts.md",
     "language/if-statements.md",
     "language/switch-statements.md",
