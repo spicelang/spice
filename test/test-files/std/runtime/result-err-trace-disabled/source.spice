@@ -1,5 +1,7 @@
-// Without #![core.compiler.errorReturnTracing = true], no origin or hop is ever recorded, so dumpTrace() is a
-// true no-op - nothing is printed, regardless of how the error propagated.
+// With #![core.compiler.errorReturnTracing = false], no origin or hop is ever recorded, so dumpTrace() prints the error
+// without a trace, regardless of how the error propagated.
+
+#![core.compiler.errorReturnTracing = false]
 
 f<Result<int>> readIt(bool fail) {
     if fail {
