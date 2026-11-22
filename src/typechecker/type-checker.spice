@@ -3852,6 +3852,204 @@ public f<Any> TypeChecker.visitBitwiseAndExpr(ASTBitwiseAndExprNode* node) {
     return Any(currentOperand);
 }
 
+// Comparison operators, that are checked for a result, which is known from the operand types alone
+type ComparisonOp enum {
+    EQUAL,
+    NOT_EQUAL,
+    LESS,
+    GREATER,
+    LESS_EQUAL,
+    GREATER_EQUAL
+}
+
+// Get the operator, that compares the operands in swapped order with the same result ('a < b' is 'b > a')
+f<ComparisonOp> getMirroredComparisonOp(ComparisonOp op) {
+    switch op {
+        case ComparisonOp::LESS: { return ComparisonOp::GREATER; }
+        case ComparisonOp::GREATER: { return ComparisonOp::LESS; }
+        case ComparisonOp::LESS_EQUAL: { return ComparisonOp::GREATER_EQUAL; }
+        case ComparisonOp::GREATER_EQUAL: { return ComparisonOp::LESS_EQUAL; }
+        default: { return op; }
+    }
+}
+
+// Check if the given type is a primitive integer type
+f<bool> isIntegerType(const QualType& qualType) {
+    const dyn integerTypes = [SuperType::TY_LONG, SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_CHAR, SuperType::TY_BYTE];
+    return qualType.isOneOf(integerTypes, len(integerTypes));
+}
+
+// Get the width in bits of the given integer type
+f<unsigned int> getIntegerTypeWidth(const QualType& integerType) {
+    switch integerType.getSuperType() {
+        case SuperType::TY_LONG: { return 64u; }
+        case SuperType::TY_INT: { return 32u; }
+        case SuperType::TY_SHORT: { return 16u; }
+        default: { return 8u; }
+    }
+}
+
+// Get a mask with the lowest 'width' bits set
+f<unsigned long> getLowBitsMask(unsigned int width) {
+    if width >= 64u {
+        return ~0ul;
+    }
+    return (1ul << cast<unsigned long>(width)) - 1ul;
+}
+
+// Check if lhs is less than rhs, when interpreting both as signed or as unsigned 64 bit integers
+f<bool> isIntegerLess(unsigned long lhs, unsigned long rhs, bool isSigned) {
+    return isSigned ? cast<long>(lhs) < cast<long>(rhs) : lhs < rhs;
+}
+
+/**
+ * Get the integer literal, that the given expression consists of, like '0', '-1l' or '(10s)'
+ *
+ * @param expr Expression
+ * @return Integer literal or nil, if the expression is no integer literal
+ */
+f<const ASTConstantNode*> getIntegerLiteral(IVisitable* expr) {
+    ASTNode* node = getASTNode(expr);
+    // Look through parentheses
+    while node.kind == ASTNodeKind::ATOMIC_EXPR {
+        const ASTAtomicExprNode* atomicExprNode = downcast<ASTAtomicExprNode>(node);
+        if atomicExprNode.constant != nil<ASTConstantNode*> {
+            const ASTConstantNode* constantNode = atomicExprNode.constant;
+            const PrimitiveValueType valueType = constantNode.primitiveValueType;
+            const bool isIntegerLiteral = valueType == PrimitiveValueType::TYPE_LONG || valueType == PrimitiveValueType::TYPE_INT
+                || valueType == PrimitiveValueType::TYPE_SHORT || valueType == PrimitiveValueType::TYPE_CHAR;
+            return isIntegerLiteral ? constantNode : nil<const ASTConstantNode*>;
+        }
+        if atomicExprNode.assignExpr == nil<IVisitable*> {
+            break;
+        }
+        node = getASTNode(atomicExprNode.assignExpr);
+    }
+    return nil<const ASTConstantNode*>;
+}
+
+/**
+ * Get the value of the given integer literal as 64 bit pattern, sign-extended for a signed literal type and zero-extended
+ * for an unsigned one
+ *
+ * @param literal Integer literal
+ * @param literalType Type of the integer literal
+ * @return Extended value of the literal
+ */
+f<unsigned long> getIntegerLiteralValue(const ASTConstantNode* literal, const QualType& literalType) {
+    const CompileTimeValue& value = literal.compileTimeValue;
+    long signExtendedValue = 0l;
+    switch literal.primitiveValueType {
+        case PrimitiveValueType::TYPE_LONG: { signExtendedValue = value.getLongValue(); }
+        case PrimitiveValueType::TYPE_INT: { signExtendedValue = cast<long>(value.getIntValue()); }
+        case PrimitiveValueType::TYPE_SHORT: { signExtendedValue = cast<long>(value.getShortValue()); }
+        default: { signExtendedValue = cast<long>(cast<int>(value.getCharValue())); }
+    }
+    const unsigned long extendedValue = cast<unsigned long>(signExtendedValue);
+    if literalType.isSigned() {
+        return extendedValue;
+    }
+    return extendedValue & getLowBitsMask(getIntegerTypeWidth(literalType));
+}
+
+/**
+ * Warn about a comparison of an integer expression with an integer literal, that always has the same result, because the
+ * literal lies outside of the value range of the expression type or on its boundary (e.g. 'unsignedValue < 0',
+ * 'unsignedValue >= 0' or 'shortValue > 70000')
+ *
+ * @param node Comparison node
+ * @param op Comparison operator
+ * @param lhs Left operand
+ * @param lhsType Type of the left operand
+ * @param rhs Right operand
+ * @param rhsType Type of the right operand
+ */
+p TypeChecker.checkComparisonTypeLimits(const ASTNode* node, ComparisonOp op, IVisitable* lhs, const QualType& lhsType, IVisitable* rhs, const QualType& rhsType) {
+    const QualType lhsSTy = lhsType.removeReferenceWrapper();
+    const QualType rhsSTy = rhsType.removeReferenceWrapper();
+    if !isIntegerType(lhsSTy) || !isIntegerType(rhsSTy) {
+        return;
+    }
+
+    // Exactly one operand has to be an integer literal. A comparison of two literals is evaluated at compile time anyway
+    const ASTConstantNode* lhsLiteral = getIntegerLiteral(lhs);
+    const ASTConstantNode* rhsLiteral = getIntegerLiteral(rhs);
+    const bool isLhsLiteral = lhsLiteral != nil<const ASTConstantNode*>;
+    const bool isRhsLiteral = rhsLiteral != nil<const ASTConstantNode*>;
+    if isLhsLiteral == isRhsLiteral {
+        return;
+    }
+
+    // Normalize the comparison to 'expr <op> literal'
+    const ASTConstantNode* literal = isLhsLiteral ? lhsLiteral : rhsLiteral;
+    const QualType exprType = isLhsLiteral ? rhsSTy : lhsSTy;
+    const QualType literalType = isLhsLiteral ? lhsSTy : rhsSTy;
+    const ComparisonOp normalizedOp = isLhsLiteral ? getMirroredComparisonOp(op) : op;
+
+    // The comparison extends the narrower operand to the width of the wider one, according to its own signedness. It
+    // compares signed, if the wider operand is signed, or both operands are signed for equal widths (see
+    // OpRuleConversionManager.getRelationalInst in the IR generator)
+    const unsigned int exprWidth = getIntegerTypeWidth(exprType);
+    const unsigned int literalWidth = getIntegerTypeWidth(literalType);
+    const unsigned int width = exprWidth > literalWidth ? exprWidth : literalWidth;
+    bool isSignedComparison = exprType.isSigned() && literalType.isSigned();
+    if exprWidth != literalWidth {
+        isSignedComparison = exprWidth > literalWidth ? exprType.isSigned() : literalType.isSigned();
+    }
+
+    // Determine the value range of the expression and the literal value, as the comparison sees them
+    unsigned long literalValue = getIntegerLiteralValue(literal, literalType);
+    unsigned long minValue = 0ul;
+    unsigned long maxValue = getLowBitsMask(exprWidth);
+    if isSignedComparison {
+        if exprType.isSigned() {
+            maxValue = getLowBitsMask(exprWidth - 1u);
+            minValue = ~maxValue; // Sign-extended minimum of the expression type
+        }
+    } else {
+        // Negative values wrap around to the upper end of the unsigned range
+        literalValue &= getLowBitsMask(width);
+        if exprType.isSigned() {
+            maxValue = getLowBitsMask(width);
+        }
+    }
+
+    // Check if the literal lies outside of the value range or on its boundary, so that the result is always the same
+    const bool isBelowMin = isIntegerLess(literalValue, minValue, isSignedComparison);
+    const bool isAboveMax = isIntegerLess(maxValue, literalValue, isSignedComparison);
+    const bool isAtMin = literalValue == minValue;
+    const bool isAtMax = literalValue == maxValue;
+    bool isAlwaysFalse = false;
+    bool isAlwaysTrue = false;
+    switch normalizedOp {
+        case ComparisonOp::EQUAL: { isAlwaysFalse = isBelowMin || isAboveMax; }
+        case ComparisonOp::NOT_EQUAL: { isAlwaysTrue = isBelowMin || isAboveMax; }
+        case ComparisonOp::LESS: {
+            isAlwaysFalse = isBelowMin || isAtMin;
+            isAlwaysTrue = isAboveMax;
+        }
+        case ComparisonOp::GREATER: {
+            isAlwaysFalse = isAboveMax || isAtMax;
+            isAlwaysTrue = isBelowMin;
+        }
+        case ComparisonOp::LESS_EQUAL: {
+            isAlwaysFalse = isBelowMin;
+            isAlwaysTrue = isAboveMax || isAtMax;
+        }
+        case ComparisonOp::GREATER_EQUAL: {
+            isAlwaysFalse = isAboveMax;
+            isAlwaysTrue = isBelowMin || isAtMin;
+        }
+    }
+    if !isAlwaysFalse && !isAlwaysTrue {
+        return;
+    }
+
+    const String result = isAlwaysTrue ? String("true") : String("false");
+    const String message = "This comparison is always " + result + ", because of the value range of the type '" + exprType.getName(false) + "'";
+    this.addWarning(node.codeLoc, CompilerWarningType::CONSTANT_COMPARISON_RESULT, message);
+}
+
 public f<Any> TypeChecker.visitEqualityExpr(ASTEqualityExprNode* node) {
     // Check if at least one equality operator is applied
     if node.operands.getSize() == 1l {
@@ -3879,6 +4077,8 @@ public f<Any> TypeChecker.visitEqualityExpr(ASTEqualityExprNode* node) {
     } else {
         panic(Error("EqualityExpr fall-through"));
     }
+    const ComparisonOp comparisonOp = node.op == EqualityOp::OP_EQUAL ? ComparisonOp::EQUAL : ComparisonOp::NOT_EQUAL;
+    this.checkComparisonTypeLimits(baseNode, comparisonOp, node.operands.get(0), lhs.ty, node.operands.get(1), rhs.ty);
 
     node.node.setEvaluatedSymbolType(equalityResult.ty, this.manIdx);
     return Any(equalityResult);
@@ -3899,17 +4099,22 @@ public f<Any> TypeChecker.visitRelationalExpr(ASTRelationalExprNode* node) {
 
     // Check operator
     ExprResult relationalResult = ExprResult{QualType(SuperType::TY_INVALID), nil<SymbolTableEntry*>};
+    ComparisonOp comparisonOp = ComparisonOp::LESS;
     if node.op == RelationalOp::OP_LESS { // Operator was less
         relationalResult = this.opRuleManager.getLessResultType(baseNode, lhs, rhs);
     } else if node.op == RelationalOp::OP_GREATER { // Operator was greater
         relationalResult = this.opRuleManager.getGreaterResultType(baseNode, lhs, rhs);
+        comparisonOp = ComparisonOp::GREATER;
     } else if node.op == RelationalOp::OP_LESS_EQUAL { // Operator was less equal
         relationalResult = this.opRuleManager.getLessEqualResultType(baseNode, lhs, rhs);
+        comparisonOp = ComparisonOp::LESS_EQUAL;
     } else if node.op == RelationalOp::OP_GREATER_EQUAL { // Operator was greater equal
         relationalResult = this.opRuleManager.getGreaterEqualResultType(baseNode, lhs, rhs);
+        comparisonOp = ComparisonOp::GREATER_EQUAL;
     } else {
         panic(Error("RelationalExpr fall-through"));
     }
+    this.checkComparisonTypeLimits(baseNode, comparisonOp, node.operands.get(0), lhs.ty, node.operands.get(1), rhs.ty);
 
     node.node.setEvaluatedSymbolType(relationalResult.ty, this.manIdx);
     return Any(relationalResult);

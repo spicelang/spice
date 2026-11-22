@@ -25,6 +25,7 @@ public type CompilerWarningType enum {
     SINGLE_GENERIC_TYPE_CONDITION,
     INEFFECTIVE_GENERIC_TYPE_CONDITION,
     BOOL_ASSIGN_AS_CONDITION,
+    CONSTANT_COMPARISON_RESULT,
     NON_TRIVIAL_TYPE_PASSED_BY_VALUE,
     UNINSTALL_FAILED,
     BACKEND_WARNING
@@ -95,6 +96,7 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
         case CompilerWarningType::SINGLE_GENERIC_TYPE_CONDITION: { return "Only one type condition"; }
         case CompilerWarningType::INEFFECTIVE_GENERIC_TYPE_CONDITION: { return "Ineffective type condition"; }
         case CompilerWarningType::BOOL_ASSIGN_AS_CONDITION: { return "Bool assignment as condition"; }
+        case CompilerWarningType::CONSTANT_COMPARISON_RESULT: { return "Constant comparison result"; }
         case CompilerWarningType::NON_TRIVIAL_TYPE_PASSED_BY_VALUE: { return "Non-trivial type passed by value"; }
         case CompilerWarningType::UNINSTALL_FAILED: { return "Uninstall failed"; }
         case CompilerWarningType::BACKEND_WARNING: { return "Backend warning"; }
