@@ -64,12 +64,9 @@ The `!` operator can only be used in a function, that returns a `Result<U>` itse
 if `U` differs from `T`. The `main` function returns `int`, so it has to handle errors explicitly.
 
 ## Mandatory error handling
-By default, the compiler only warns about a discarded return value. With the module attribute
-`core.compiler.explicitErrorHandling`, discarding a `Result<T>`, that a call returned, is a compile error:
+Discarding a `Result<T>`, that a call returned, is a compile error:
 
 ```spice
-#![core.compiler.explicitErrorHandling = true]
-
 import "std/io/file";
 
 f<int> main() {
@@ -81,8 +78,6 @@ To fix this, bind the result to a variable, propagate it with `!` or handle it w
 result, that is ignored on purpose, can be bound to a variable, whose name starts with an underscore:
 
 ```spice
-#![core.compiler.explicitErrorHandling = true]
-
 import "std/io/file";
 
 f<int> main() {
@@ -91,16 +86,15 @@ f<int> main() {
 ```
 
 Unlike the warning about unused return values, this error cannot be suppressed with the `ignoreUnusedReturnValue`
-function attribute. The attribute only applies to the module, that declares it.
+function attribute. To turn it off for a whole module, e.g. while migrating older code, set the module attribute
+`#![core.compiler.explicitErrorHandling = false]`. Discarded results are only a warning in that module then.
 
 ## Error return traces
-To find out, where an error came from and how it got to the place, where it is handled, enable the module attribute
-`core.compiler.errorReturnTracing`. Then every `err<T>()` call records the origin of an error and every `!` records a
-hop on the way up. `dumpTrace()` on an `Error` or `Result<T>` prints the error and the recorded trace to stderr:
+To find out, where an error came from and how it got to the place, where it is handled, Spice records an error return
+trace: every `err<T>()` call records the origin of an error and every `!` records a hop on the way up. `dumpTrace()` on
+an `Error` or `Result<T>` prints the error and the recorded trace to stderr:
 
 ```spice
-#![core.compiler.errorReturnTracing = true]
-
 f<Result<int>> readPort(bool valid) {
     if !valid {
         return err<int>("Invalid port");
@@ -127,12 +121,13 @@ Output:
 ```text
 Error code 1: Invalid port
 Recorded error trace:
-  #0  f<Result<int>> readPort(bool) at ./trace.spice:5:16
-  #1  f<Result<int>> loadConfig(bool) at ./trace.spice:11:16
+  #0  f<Result<int>> readPort(bool) at ./trace.spice:3:16
+  #1  f<Result<int>> loadConfig(bool) at ./trace.spice:9:16
 ```
 
-A `panic` prints the recorded trace as well, e.g. when `unwrap()` is called on a failed result. Without the attribute,
-no trace is recorded and nothing is instrumented, so it costs nothing. Some limits apply:
+A `panic` prints the recorded trace as well, e.g. when `unwrap()` is called on a failed result. A module can turn the
+recording off with the module attribute `#![core.compiler.errorReturnTracing = false]`. Its `err<T>()` calls and `!`
+operators are not instrumented then, so they cost nothing extra. Some limits apply:
 
 - The trace belongs to the current thread, not to a specific result. It shows the most recent chain of errors on the
   thread, so `dumpTrace()` on an unrelated result can print the trace of an earlier error.

@@ -27,10 +27,12 @@ Spice offers the option to annotate single function or whole modules via attribu
   is a compile error (see the [freestanding how-to](../how-to/freestanding.md#standard-library-tiers))
 - `core.compiler.warnings.ignore: bool (default: false)`: Suppress the compiler warnings and the
   [lint findings](../cli/lint.md) for the module
-- `core.compiler.explicitErrorHandling: bool (default: false)`: Make discarding a `Result<T>`, that a call returned, a
-  compile error in the module (see [mandatory error handling](error-handling.md#mandatory-error-handling))
-- `core.compiler.errorReturnTracing: bool (default: false)`: Record an error return trace for the errors, that the module
-  creates with `err<T>()` and propagates with `!` (see [error return traces](error-handling.md#error-return-traces))
+- `core.compiler.explicitErrorHandling: bool (default: true)`: Make discarding a `Result<T>`, that a call returned, a
+  compile error in the module. With `false`, it is only a warning (see
+  [mandatory error handling](error-handling.md#mandatory-error-handling))
+- `core.compiler.errorReturnTracing: bool (default: true)`: Record an error return trace for the errors, that the module
+  creates with `err<T>()` and propagates with `!`. Always disabled in freestanding mode (see
+  [error return traces](error-handling.md#error-return-traces))
 
 
 ## Function attributes
