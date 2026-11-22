@@ -61,6 +61,8 @@ public p Trie.ctor(const Trie& original) {
  * @param other Trie to copy from
  */
 public p operator=(Trie& this, const Trie& other) {
+    // Self-assignment: leave the trie as is, freeing the subtrees first would destroy the words to copy
+    if &this == &other { return; }
     // Drop the current node tree, then deep-copy the other trie into the fresh root
     this.freeSubtrees(this.root);
     this.wordCount = other.wordCount;

@@ -154,5 +154,13 @@ f<int> main() {
     assert t5.contains(w49.getRaw());
     assert !t5.contains(w50.getRaw());
 
+    // Self-assignment through a reference must preserve all words and the word count
+    Trie& t5Alias = t5;
+    t5 = t5Alias;
+    assert t5.getSize() == 50l;
+    assert t5.contains(w0.getRaw());
+    assert t5.contains(w49.getRaw());
+    assert !t5.contains(w50.getRaw());
+
     printf("Trie stress tests passed!\n");
 }
