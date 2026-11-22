@@ -86,8 +86,7 @@ f<int> main() {
 ```
 
 Unlike the warning about unused return values, this error cannot be suppressed with the `ignoreUnusedReturnValue`
-function attribute. To turn it off for a whole module, e.g. while migrating older code, set the module attribute
-`#![core.compiler.explicitErrorHandling = false]`. Discarded results are only a warning in that module then.
+function attribute.
 
 ## Error return traces
 To find out, where an error came from and how it got to the place, where it is handled, Spice records an error return
@@ -125,9 +124,7 @@ Recorded error trace:
   #1  f<Result<int>> loadConfig(bool) at ./trace.spice:9:16
 ```
 
-A `panic` prints the recorded trace as well, e.g. when `unwrap()` is called on a failed result. A module can turn the
-recording off with the module attribute `#![core.compiler.errorReturnTracing = false]`. Its `err<T>()` calls and `!`
-operators are not instrumented then, so they cost nothing extra. Some limits apply:
+A `panic` prints the recorded trace as well, e.g. when `unwrap()` is called on a failed result. Some limits apply:
 
 - The trace belongs to the current thread, not to a specific result. It shows the most recent chain of errors on the
   thread, so `dumpTrace()` on an unrelated result can print the trace of an earlier error.

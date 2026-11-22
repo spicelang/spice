@@ -2,11 +2,10 @@
 
 ## Status
 
-Implemented and shipped, enabled by default. A module can opt out with two module attributes:
-
-- `#![core.compiler.explicitErrorHandling = false]` — no mandatory handling of discarded `Result<T>` values.
-- `#![core.compiler.errorReturnTracing = false]` — no error return trace instrumentation. In freestanding mode, tracing is
-  always disabled.
+Implemented and shipped, always enabled: discarding a `Result<T>` is a compile error, and error return traces are
+recorded everywhere except in freestanding mode. The module attributes `core.compiler.explicitErrorHandling` and
+`core.compiler.errorReturnTracing`, that gated both features while they were opt-in, are removed; using them is an
+`UNKNOWN_ATTR` error.
 
 Remaining work:
 
@@ -14,7 +13,7 @@ Remaining work:
   #1804, #1805). The remaining `panic()` calls in `std` are programming errors (see `panic`'s role below).
 - [x] Update docs and examples (`docs/docs/language/error-handling.md`).
 - [x] Flip both attributes' defaults to `true`.
-- [ ] Remove the gates.
+- [x] Remove the gates.
 
 ## Background
 
@@ -22,8 +21,8 @@ Remaining work:
 library types before this feature: `Result<T>` wraps a `T data` and an `Error error`; `Error` is `int code` +
 `string message`; `panic(Error)` is a builtin that prints to stderr and calls `exit(EXIT_FAILURE)`. Nothing
 stopped a caller from dropping a `Result<T>` on the floor or ignoring `.isErr()`. This feature adds a one-token
-way to propagate an error up the call stack, makes discarding a `Result<T>` an opt-in hard error, and adds an
-optional debug aid (error return traces) — all without new syntax beyond a single reused token (postfix `!`).
+way to propagate an error up the call stack, makes discarding a `Result<T>` a hard error, and adds a debug aid
+(error return traces) — all without new syntax beyond a single reused token (postfix `!`).
 
 ## Postfix `!`: propagate or unwrap
 
@@ -68,9 +67,7 @@ Config cfg2 = loadConfig(path).unwrapOr(Config.default());
 
 ## Mandatory handling
 
-Enabled by default, disabled per module by `#![core.compiler.explicitErrorHandling = false]`. When enabled, a bare,
-receiver-less call statement
-whose type is `Result<T>` is a hard error (`DISCARDED_RESULT_VALUE`,
+A bare, receiver-less call statement whose type is `Result<T>` is a hard error (`DISCARDED_RESULT_VALUE`,
 `src/typechecker/type-checker.spice`) instead of the generic `UNUSED_RETURN_VALUE` warning, and is **not** suppressible
 by `#[core.compiler.ignoreUnusedReturnValue]` (which keeps its weaker meaning for ordinary return values).
 
@@ -84,9 +81,8 @@ Tests: `test/test-files/typechecker/error-handling/`.
 
 ## Error return traces
 
-Enabled by default, disabled per module by `#![core.compiler.errorReturnTracing = false]` and always in freestanding
-mode. A debugging aid, not a correctness mechanism — genuinely zero-cost when disabled (no instrumentation calls emitted
-at all).
+Always enabled, except in freestanding mode. A debugging aid, not a correctness mechanism — in freestanding mode, no
+instrumentation calls are emitted at all.
 
 **Storage.** `ErrorTraceBuffer` (`std/runtime/error_trace_rt.spice`) holds a fixed-capacity array of
 `ErrorTraceFrame { file, signature, line, column }` (`ERR_TRACE_CAPACITY = 16`) plus a frame count — a plain
@@ -95,7 +91,7 @@ below). `signature` is the enclosing function/procedure's full signature (fully-
 return types, e.g. `f<Result<double>> TestStruct.frame0(bool)`), produced via `Function.getSignature()` for the
 manifestation that is actually being generated — not just its bare name. It is *not* part of
 `Result<T>`'s LLVM layout — that layout is shared across every file that instantiates `Result<T>` for a given
-`T`, so a hidden field gated by a per-file attribute would risk two files silently disagreeing on the type's
+`T`, so a hidden field, that only exists while tracing is enabled, would risk two files silently disagreeing on the type's
 size (an ABI mismatch, not a compile error). Instead, a compiler builtin, `__err_trace_buffer()`, hands back a
 reference to a thread-local instance (a genuine LLVM `thread_local` global, lazily created per module). It is
 not attached to any specific `Result<T>` value.
@@ -123,7 +119,7 @@ its own message. Both are safe no-ops when nothing was ever recorded. After it, 
 
 ## `panic`'s role
 
-`panic(Error)` keeps its existing signature and behavior (now optionally trace-augmented). Its role narrows to
+`panic(Error)` keeps its existing signature and behavior (now trace-augmented, except in freestanding mode). Its role narrows to
 assertion-like, programmer-error situations — not the default reaction to a recoverable failure such as a
 missing file or a parse error. `std`'s recoverable-failure call sites return `Result<T>`; where a panicking lookup is
 still useful, a `Result<T>`-returning variant with the `Safe` suffix sits next to it (e.g. `getField()`/
@@ -140,5 +136,5 @@ still useful, a `Result<T>`-returning variant with the `Safe` suffix sits next t
 - **OQ-3**: Does mandatory handling produce annoying boilerplate at call sites that already fully handle the
   error through some other means? Worth revisiting once `std`'s internals are migrated (real-world call sites
   to check against).
-- **OQ-4**: `errorReturnTracing` now defaults to `true` in all build modes. Should release builds turn it off by
-  default (mirroring Zig's Debug/ReleaseSafe-on split)?
+- **OQ-4**: Error return tracing is enabled in all build modes. Should release builds disable it (mirroring Zig's
+  Debug/ReleaseSafe-on split)?

@@ -27,12 +27,6 @@ Spice offers the option to annotate single function or whole modules via attribu
   is a compile error (see the [freestanding how-to](../how-to/freestanding.md#standard-library-tiers))
 - `core.compiler.warnings.ignore: bool (default: false)`: Suppress the compiler warnings and the
   [lint findings](../cli/lint.md) for the module
-- `core.compiler.explicitErrorHandling: bool (default: true)`: Make discarding a `Result<T>`, that a call returned, a
-  compile error in the module. With `false`, it is only a warning (see
-  [mandatory error handling](error-handling.md#mandatory-error-handling))
-- `core.compiler.errorReturnTracing: bool (default: true)`: Record an error return trace for the errors, that the module
-  creates with `err<T>()` and propagates with `!`. Always disabled in freestanding mode (see
-  [error return traces](error-handling.md#error-return-traces))
 
 
 ## Function attributes
@@ -71,8 +65,8 @@ f<int> test(long input) {
 - `core.compiler.noBuiltins: bool`: Keep the optimizer from replacing code of the annotated function with calls to C
   functions, e.g. a copy loop with a call to `memcpy`. Needed for implementations of these functions themselves
 - `ignoreUnusedReturnValue: bool`: Suppress the warning about an unused return value at the call sites of the annotated
-  function. It does not apply to a discarded `Result<T>`, if [mandatory error handling](error-handling.md#mandatory-error-handling)
-  is enabled
+  function. It does not apply to a discarded `Result<T>`, which is always an error (see
+  [mandatory error handling](error-handling.md#mandatory-error-handling))
 - `test: bool`: Mark the annotated function as test
 - `test.name: string`: Set the name of the test (only functions or procedures with the `test` attribute are considered as tests)
 - `test.skip: bool`: Skip the annotated function (only functions or procedures with the `test` attribute are considered as tests)

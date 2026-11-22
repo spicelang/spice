@@ -1,5 +1,3 @@
-#![core.compiler.explicitErrorHandling = true]
-
 f<Result<int>> mightFail() {
     return ok<int>(1);
 }

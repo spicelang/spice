@@ -1,8 +1,6 @@
-// With explicitErrorHandling enabled, a discarded Result<T> is a hard error, but every existing way of handling
-// one still compiles cleanly: binding it to a variable, propagating it with '!', consuming it via unwrapOr(...),
+// A discarded Result<T> is a hard error, but every existing way of handling one still compiles cleanly:
+// binding it to a variable, propagating it with '!', consuming it via unwrapOr(...),
 // or explicitly acknowledging the discard by binding to a variable name starting with '_'.
-
-#![core.compiler.explicitErrorHandling = true]
 
 f<Result<int>> mightFail() {
     return ok<int>(1);

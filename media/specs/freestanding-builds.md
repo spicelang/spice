@@ -72,8 +72,7 @@ These are the hosted dependencies of a regular build and how the freestanding mo
 - Runtime modules are resolved the same way (`RuntimeModuleManager.loadModule`), so `_freestanding` variants win.
   `std/runtime/error_rt_freestanding.spice` is `Error` without the printing methods and with a no-op `dumpTrace()`, so that
   `result_rt` compiles unchanged.
-- Error return tracing is disabled in freestanding mode (the `errorReturnTracing` module attribute is ignored), since the
-  trace is stored thread-local and printed to stderr.
+- Error return tracing is disabled in freestanding mode, since the trace is stored thread-local and printed to stderr.
 
 ## Panic handler
 

@@ -1,8 +1,6 @@
 // ignoreUnusedReturnValue only ever weakens the generic UNUSED_RETURN_VALUE warning. It must not suppress the
-// hard error for a discarded Result<T> once explicitErrorHandling is enabled - there is no escape hatch except
+// hard error for a discarded Result<T> - there is no escape hatch except
 // actually handling the result.
-
-#![core.compiler.explicitErrorHandling = true]
 
 #[ignoreUnusedReturnValue]
 f<Result<int>> mightFail() {
