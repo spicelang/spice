@@ -1,0 +1,34 @@
+f<int> main() {
+    unsigned long ul = 3l;
+    unsigned int ui = 4u;
+    unsigned short us = 5us;
+    short s = 6s;
+    int i = 7;
+    char c = 'a';
+
+    // Always false or always true, because of the value range of the operand type
+    printf("%d\n", ul < 0l);
+    printf("%d\n", ul >= 0l);
+    printf("%d\n", 0 > ui);
+    printf("%d\n", 0u <= ui);
+    printf("%d\n", us < 0);
+    printf("%d\n", s > 70000);
+    printf("%d\n", s <= 70000);
+    printf("%d\n", s == -70000);
+    printf("%d\n", s != 70000);
+    printf("%d\n", i > 2147483647);
+    printf("%d\n", s >= -32768s);
+    printf("%d\n", c < '\0');
+    printf("%d\n", (ul) < (0l));
+    printf("%d\n", ul + 1l < 0l);
+
+    // Results depend on the value, so no warning is expected
+    printf("%d\n", ul <= 0l);
+    printf("%d\n", ul == 0l);
+    printf("%d\n", ul < -1); // -1 is extended to the maximum unsigned long value
+    printf("%d\n", ui == -1);
+    printf("%d\n", i < 0);
+    printf("%d\n", i < 0l);
+    printf("%d\n", s > 32766s);
+    printf("%d\n", 1 < 2);
+}
