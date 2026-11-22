@@ -19,6 +19,21 @@ The `run` subcommand can be used to compile your Spice project to an executable 
     $ spice r [options] <main-source-file>
     ```
 
+## Exit code
+`spice run` exits with the exit code of the program, so scripts can check it like for the program itself. If the program
+exits with a non-zero exit code, the compiler reports it, e.g.:
+```text
+[Error|CLI] Non-zero exit code: Your Spice executable exited with non-zero exit code 3
+```
+
+If the program is terminated by a signal (Linux and macOS), the compiler reports the signal by number and name and, like a
+shell, exits with 128 + signal number, e.g. 139 for a segmentation fault:
+```text
+[Error|CLI] Terminated by signal: Your Spice executable was terminated by signal 11 (SIGSEGV)
+```
+
+If compiling the program fails, `spice run` exits with 1.
+
 ## Options
 You can apply following options to the `run` subcommand:
 

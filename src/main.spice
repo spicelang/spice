@@ -146,9 +146,9 @@ f<int> main(int argc, string[] argv) {
         return EXIT_CODE_ERROR;
     }
 
-    // Execute
+    // Execute and pass on the exit code of the executable
     if driver.cliOptions.execute {
-        driver.runBinary();
+        return driver.runBinary();
     }
 
     return EXIT_CODE_SUCCESS;

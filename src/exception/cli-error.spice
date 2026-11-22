@@ -6,6 +6,7 @@ import "std/text/stringstream";
 public type CliErrorType enum {
     INCOMPATIBLE_OPTIONS,
     NON_ZERO_EXIT_CODE,
+    TERMINATED_BY_SIGNAL,
     FEATURE_NOT_SUPPORTED_FOR_TARGET,
     FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED,
     INVALID_BUILD_MODE,
@@ -54,6 +55,7 @@ f<string> CliError.getMessagePrefix(const CliErrorType errorType) {
     switch errorType {
         case CliErrorType::INCOMPATIBLE_OPTIONS: { return "Incompatible options"; }
         case CliErrorType::NON_ZERO_EXIT_CODE: { return "Non-zero exit code"; }
+        case CliErrorType::TERMINATED_BY_SIGNAL: { return "Terminated by signal"; }
         case CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET: { return "Feature is not supported for this target"; }
         case CliErrorType::FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED: { return "Feature not supported when dockerized"; }
         case CliErrorType::INVALID_BUILD_MODE: { return "Invalid build mode"; }
@@ -94,5 +96,6 @@ f<bool> testCliErrorMessages() {
     assert hasMessage(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "Memory sanitizer is only supported for Linux targets", "[Error|CLI] Feature is not supported for this target: Memory sanitizer is only supported for Linux targets");
     assert hasMessage(CliErrorType::FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED, "message", "[Error|CLI] Feature not supported when dockerized: message");
     assert hasMessage(CliErrorType::NON_ZERO_EXIT_CODE, "1", "[Error|CLI] Non-zero exit code: 1");
+    assert hasMessage(CliErrorType::TERMINATED_BY_SIGNAL, "11", "[Error|CLI] Terminated by signal: 11");
     return true;
 }

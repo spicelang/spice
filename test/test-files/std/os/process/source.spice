@@ -21,6 +21,20 @@ f<int> main() {
     Result<int> exitResult = runProcess(String("sh"), exitArgs);
     printf("exit code: %d\n", exitResult.unwrap());
 
+    // A program, that exits with 128 + signal number, is not reported as terminated by a signal
+    Result<ProcessStatus> exitStatusResult = runProcessWithStatus(String("sh"), exitArgs);
+    ProcessStatus& exitStatus = exitStatusResult.unwrap();
+    printf("exit status: exit=%d signal=%d\n", exitStatus.exitCode, exitStatus.termSignal);
+
+    // A program, that is terminated by a signal, reports the signal and 128 + signal number as exit code
+    Vector<String> killArgs;
+    killArgs.pushBack(String("-c"));
+    killArgs.pushBack(String("kill -TERM $$"));
+    Result<ProcessStatus> killStatusResult = runProcessWithStatus(String("sh"), killArgs);
+    ProcessStatus& killStatus = killStatusResult.unwrap();
+    printf("killed: exit=%d signal=%d name=%s\n", killStatus.exitCode, killStatus.termSignal, getSignalName(killStatus.termSignal));
+    printf("signal names: %s %s %s '%s'\n", getSignalName(6), getSignalName(8), getSignalName(11), getSignalName(99));
+
     // The standard error stream is only captured on request
     Vector<String> stdErrArgs;
     stdErrArgs.pushBack(String("-c"));

@@ -95,9 +95,11 @@ const unsigned int WAIT_FAILED = 4294967295u; // 0xFFFFFFFF
  * @param captureOutput Capture the standard output of the program
  * @param includeStdErr Capture the standard error stream as well (only if captureOutput is set)
  * @param output Captured output (output)
+ * @param termSignal Number of the signal, that terminated the program. Always 0, since Windows has no signals (output)
  * @return Exit code of the program, or PROCESS_SPAWN_FAILED if it could not be started
  */
-public f<int> spawnProcessAndWait(const String& program, const Vector<String>& args, bool captureOutput, bool includeStdErr, String& output) {
+public f<int> spawnProcessAndWait(const String& program, const Vector<String>& args, bool captureOutput, bool includeStdErr, String& output, int& termSignal) {
+    termSignal = 0;
     // Assemble the null-terminated argument vector of quoted arguments. The quoted strings have to outlive the spawn call
     Vector<String> quotedArgs;
     quotedArgs.reserve(args.getSize() + 1l);

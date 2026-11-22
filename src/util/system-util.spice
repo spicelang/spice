@@ -61,17 +61,17 @@ public f<ExecResult> exec(const String& program, const Vector<String>& args, boo
  * so the program behaves as if invoked from the terminal.
  *
  * @param executablePath Path to the executable to run
- * @return Exit code of the executed binary
+ * @return Termination status (exit code and terminating signal) of the executed binary
  */
-public f<int> run(const String& executablePath) {
+public f<ProcessStatus> run(const String& executablePath) {
     const Vector<String> noArgs;
-    Result<int> exitCode = runProcess(executablePath, noArgs);
-    if exitCode.isErr() {
+    Result<ProcessStatus> status = runProcessWithStatus(executablePath, noArgs);
+    if status.isErr() {
         const String message = "Failed to execute: " + executablePath;
         const CompilerError error = CompilerError(CompilerErrorType::IO_ERROR, message.getRaw());
         abortWithError(error.getMessage());
     }
-    return exitCode.unwrap();
+    return status.unwrap();
 }
 
 /**
