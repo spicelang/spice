@@ -31,7 +31,7 @@ f<int> main() {
     for int i = 0; i < 10; i++ {
         numbers.pushBack(i);
         ratios.pushBack(i / 3.0);
-        points.pushBack(Point{ i, i * 2 });
+        points.pushBack(Point{i, i * 2});
         names.pushBack(String("name-") + toString(i));
     }
 
