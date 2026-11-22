@@ -26,6 +26,12 @@ f<int*> getDecayedArray() {
     return items;
 }
 
+f<int*> getRefVarAddress() {
+    int local = 42;
+    int& ref = local;
+    return &ref;
+}
+
 f<Inner*> getTernaryAddress(bool condition, Inner* other) {
     Inner local;
     return condition ? other : &local;

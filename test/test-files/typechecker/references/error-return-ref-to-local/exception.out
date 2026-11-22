@@ -37,14 +37,26 @@ Return of reference to local variable: The returned reference would dangle, beca
 37  return condition ? other : local;
            ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-[Error|Semantic] ./source.spice:47:16:
+[Error|Semantic] ./source.spice:43:12:
 Return of reference to local variable: The returned reference would dangle, because the local variable 'local' does not outlive the function. Return by value instead.
 
-47  return local;
+43  return ref;
+           ^^^
+
+[Error|Semantic] ./source.spice:48:12:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'local' does not outlive the function. Return by value instead.
+
+48  return (condition ? other : local).value;
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:58:16:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'local' does not outlive the function. Return by value instead.
+
+58  return local;
            ^^^^^
 
-[Error|Semantic] ./source.spice:41:12:
+[Error|Semantic] ./source.spice:52:12:
 Return of reference to local variable: The returned reference would dangle, because the parameter 'param' does not outlive the function. Return by value instead.
 
-41  return param;
+52  return param;
            ^^^^^

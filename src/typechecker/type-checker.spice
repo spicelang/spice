@@ -3537,9 +3537,10 @@ p TypeChecker.checkReturnValueOutlivesFunction(ASTNode* returnValueNode, const Q
 
 /**
  * Get the local variable or by-value parameter of the current function/procedure/lambda, that an expression refers to.
- * This is the variable itself, a field or an array item that is stored in it, or one of the operands of a ternary
- * expression with a reference result. Values that are reached through a pointer or a reference, as well as globals and
- * captured variables, are stored outside the frame of the function.
+ * This is the variable itself, a field or an array item that is stored in it, a reference variable that is bound to it,
+ * or one of the operands of a ternary expression with a reference result. Values that are reached through a pointer, a
+ * reference parameter or field or an array parameter, as well as globals and captured variables, are stored outside the
+ * frame of the function.
  *
  * @param node Expression
  * @return Entry of the local variable or nil, if the expression does not refer to the storage of a local variable
@@ -3557,11 +3558,27 @@ f<const SymbolTableEntry*> TypeChecker.getReferencedLocal(ASTNode* node) {
         }
         const VarAccessData& accessData = atomicExpr.data.get(this.manIdx);
         const SymbolTableEntry* entry = accessData.entry;
-        // A reference variable refers to a value, that is stored somewhere else
-        if entry == nil<const SymbolTableEntry*> || entry.getQualType().isRef() || !this.isDeclaredInCurrentFunction(entry) {
+        if entry == nil<const SymbolTableEntry*> || !this.isDeclaredInCurrentFunction(entry) {
             return nil<const SymbolTableEntry*>;
         }
-        return entry;
+        const QualType entryType = entry.getQualType();
+        // Reference parameters and array parameters, which decay to a pointer to the array of the caller, refer to values
+        // of the caller
+        if entry.isParam {
+            return entryType.isRef() || entryType.isArray() ? nil<const SymbolTableEntry*> : entry;
+        }
+        if !entryType.isRef() {
+            return entry;
+        }
+        // A reference variable is bound to its referent once and for all at its declaration, so follow its initializer
+        if entry.declNode.kind != ASTNodeKind::DECL_STMT {
+            return nil<const SymbolTableEntry*>;
+        }
+        const ASTDeclStmtNode* declStmt = downcast<ASTDeclStmtNode>(entry.declNode);
+        if !declStmt.hasAssignment {
+            return nil<const SymbolTableEntry*>;
+        }
+        return this.getReferencedLocal(getASTNode(declStmt.assignExpr));
     }
 
     // Field of a struct or union value, or item of an array value
@@ -3580,8 +3597,9 @@ f<const SymbolTableEntry*> TypeChecker.getReferencedLocal(ASTNode* node) {
         if operandEntry == nil<const SymbolTableEntry*> {
             return nil<const SymbolTableEntry*>;
         }
-        // Member access and subscript on a pointer (e.g. 'this') access the memory the pointer points to
-        const QualType operandType = asExprNode(operandNode).getEvaluatedSymbolType(this.manIdx);
+        // Member access and subscript on a pointer (e.g. 'this') access the memory the pointer points to. A reference operand
+        // (e.g. a ternary expression with a reference result) refers to the local variable, that was found above
+        const QualType operandType = asExprNode(operandNode).getEvaluatedSymbolType(this.manIdx).removeReferenceWrapper();
         const dyn compositeOptions = [SuperType::TY_STRUCT, SuperType::TY_UNION];
         const bool storedInOperand = isMemberAccess ? operandType.isOneOf(compositeOptions, len(compositeOptions)) : operandType.isArray();
         return storedInOperand ? operandEntry : nil<const SymbolTableEntry*>;

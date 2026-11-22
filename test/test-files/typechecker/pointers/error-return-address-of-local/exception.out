@@ -31,8 +31,14 @@ Return of address of local variable: The returned pointer would dangle, because 
 26  return items;
            ^^^^^
 
-[Error|Semantic] ./source.spice:31:12:
+[Error|Semantic] ./source.spice:32:12:
 Return of address of local variable: The returned pointer would dangle, because the local variable 'local' does not outlive the function. Use unsafe blocks if you know what you are doing.
 
-31  return condition ? other : &local;
+32  return &ref;
+           ^^^^
+
+[Error|Semantic] ./source.spice:37:12:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'local' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+37  return condition ? other : &local;
            ^^^^^^^^^^^^^^^^^^^^^^^^^^

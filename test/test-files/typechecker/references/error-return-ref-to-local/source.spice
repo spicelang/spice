@@ -37,6 +37,17 @@ f<int&> getTernaryOperand(bool condition, int& other) {
     return condition ? other : local;
 }
 
+f<int&> getRefVarBoundToLocal() {
+    int local = 42;
+    int& ref = local;
+    return ref;
+}
+
+f<int&> getFieldAfterTernary(bool condition, Inner& other) {
+    Inner local;
+    return (condition ? other : local).value;
+}
+
 f<T&> getGenericParam<T>(T param) {
     return param;
 }

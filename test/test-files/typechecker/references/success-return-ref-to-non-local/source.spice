@@ -98,6 +98,20 @@ f<int&> arrayItemOfRefParam(int[3]& items) {
     return items[0];
 }
 
+f<int&> itemOfArrayParam(int[3] items) {
+    return items[1]; // Array parameters refer to the array of the caller
+}
+
+f<int*> itemAddressOfArrayParam(int[3] items) {
+    return &items[2];
+}
+
+f<int&> refVarBoundToRefParam(int& value) {
+    int& other = value;
+    int& otherOther = other;
+    return otherOther;
+}
+
 f<T&> Box.get() {
     return this.content;
 }
@@ -136,6 +150,8 @@ f<int> main() {
     printf("%d\n", byValue());
     int[3] items = [4, 5, 6];
     printf("%d\n", arrayItemOfRefParam(items));
+    printf("%d %d\n", itemOfArrayParam(items), *itemAddressOfArrayParam(items));
+    printf("%d\n", refVarBoundToRefParam(value));
     // A lambda may return a reference to a variable of the enclosing function
     int captured = 9;
     f<int&>() lambda = f<int&>() { return captured; };
