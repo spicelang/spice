@@ -3,9 +3,9 @@
 ## Status
 
 Implemented and shipped, always enabled: discarding a `Result<T>` is a compile error, and error return traces are
-recorded everywhere except in freestanding mode. The module attributes `core.compiler.explicitErrorHandling` and
-`core.compiler.errorReturnTracing`, that gated both features while they were opt-in, are removed; using them is an
-`UNKNOWN_ATTR` error.
+recorded everywhere except in release builds and in freestanding mode. The module attributes
+`core.compiler.explicitErrorHandling` and `core.compiler.errorReturnTracing`, that gated both features while they were
+opt-in, are removed; using them is an `UNKNOWN_ATTR` error.
 
 Remaining work:
 
@@ -81,8 +81,9 @@ Tests: `test/test-files/typechecker/error-handling/`.
 
 ## Error return traces
 
-Always enabled, except in freestanding mode. A debugging aid, not a correctness mechanism — in freestanding mode, no
-instrumentation calls are emitted at all.
+Enabled in debug and test builds, disabled in release builds (`--build-mode=release`) and in freestanding mode. A
+debugging aid, not a correctness mechanism — where it is disabled, no instrumentation calls are emitted at all, and
+`panic()` does not dump a trace either.
 
 **Storage.** `ErrorTraceBuffer` (`std/runtime/error_trace_rt.spice`) holds a fixed-capacity array of
 `ErrorTraceFrame { file, signature, line, column }` (`ERR_TRACE_CAPACITY = 16`) plus a frame count — a plain
@@ -105,8 +106,8 @@ are silently dropped, keeping the origin and earliest hops rather than the most 
 **Consumption.** `Error.dumpTrace()`/`Result.dumpTrace()` print every recorded frame to stderr via
 `fprintf(__stderr(), ...)` — `__stderr()` is a niladic builtin exposing the real libc `stderr` `FILE*`, since
 Spice has no syntax for declaring an external variable. `panic()` calls the same dump automatically right after
-its own message. Both are safe no-ops when nothing was ever recorded. After it, `panic()` prints the stack trace too
-(see `media/specs/stack-traces.md`).
+its own message, unless tracing is disabled. Both are safe no-ops when nothing was ever recorded. After it, `panic()`
+prints the stack trace too (see `media/specs/stack-traces.md`).
 
 **Known trade-offs:**
 
@@ -119,11 +120,11 @@ its own message. Both are safe no-ops when nothing was ever recorded. After it, 
 
 ## `panic`'s role
 
-`panic(Error)` keeps its existing signature and behavior (now trace-augmented, except in freestanding mode). Its role narrows to
-assertion-like, programmer-error situations — not the default reaction to a recoverable failure such as a
-missing file or a parse error. `std`'s recoverable-failure call sites return `Result<T>`; where a panicking lookup is
-still useful, a `Result<T>`-returning variant with the `Safe` suffix sits next to it (e.g. `getField()`/
-`getFieldSafe()`).
+`panic(Error)` keeps its existing signature and behavior (now trace-augmented, except in release builds and in
+freestanding mode). Its role narrows to assertion-like, programmer-error situations — not the default reaction to a
+recoverable failure such as a missing file or a parse error. `std`'s recoverable-failure call sites return
+`Result<T>`; where a panicking lookup is still useful, a `Result<T>`-returning variant with the `Safe` suffix sits next
+to it (e.g. `getField()`/`getFieldSafe()`).
 
 ## Open questions
 
@@ -136,5 +137,5 @@ still useful, a `Result<T>`-returning variant with the `Safe` suffix sits next t
 - **OQ-3**: Does mandatory handling produce annoying boilerplate at call sites that already fully handle the
   error through some other means? Worth revisiting once `std`'s internals are migrated (real-world call sites
   to check against).
-- **OQ-4**: Error return tracing is enabled in all build modes. Should release builds disable it (mirroring Zig's
-  Debug/ReleaseSafe-on split)?
+- **OQ-4** (resolved): Release builds disable error return tracing, like Zig does in ReleaseFast and ReleaseSmall.
+  Debug and test builds keep it.

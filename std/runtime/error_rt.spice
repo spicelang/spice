@@ -91,7 +91,7 @@ public inline p Error.triggerPanic() {
 
 /**
  * Prints the error message and the recorded error return trace to stderr. Only the error message is printed, if no trace
- * was recorded, e.g. in freestanding mode, where error return tracing is disabled.
+ * was recorded, e.g. in release builds or in freestanding mode, where error return tracing is disabled.
  */
 public inline p Error.dumpTrace() {
     if this.code != ErrorCode::Ok {

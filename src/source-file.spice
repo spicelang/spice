@@ -189,7 +189,7 @@ public type SourceFile struct {
     public bool isMainFile = true
     public bool alwaysKeepSymbolsOnNameCollision = false
     public bool ignoreWarnings = false
-    public bool errorReturnTracing = true // Disabled in freestanding mode
+    public bool errorReturnTracing = true // Disabled in release builds and in freestanding mode
     public bool requiresOs = false // Set by the 'core.compiler.requiresOs' module attribute. Rejected in freestanding mode
     public bool reVisitRequested = true
     public CompileStageType previousStage = CompileStageType::NONE
@@ -237,8 +237,9 @@ public p SourceFile.ctor(GlobalResourceManager& resourceManager, SourceFile* par
     this.builder = llvm::IRBuilder(resourceManager.cliOptions.useLTO ? resourceManager.ltoContext : this.context);
     this.resourceManager = resourceManager;
     this.cliOptions = resourceManager.cliOptions;
-    // The error return trace is stored thread-local and printed to stderr, so it is disabled in freestanding mode
-    this.errorReturnTracing = !this.cliOptions.freestanding;
+    // The error return trace is a debugging aid, so it is disabled in release builds. It is stored thread-local and printed
+    // to stderr, so it is disabled in freestanding mode as well
+    this.errorReturnTracing = this.cliOptions.buildMode != BuildMode::RELEASE && !this.cliOptions.freestanding;
 
     // Deduce fileName and fileDir
     const FilePath path = FilePath(filePath);

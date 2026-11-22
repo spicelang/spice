@@ -130,7 +130,8 @@ A `panic` prints the recorded trace as well, e.g. when `unwrap()` is called on a
   thread, so `dumpTrace()` on an unrelated result can print the trace of an earlier error.
 - Only `err<T>()` calls are recorded as an origin. Constructing a result with `Result<T>(error)` records nothing.
 - A trace holds up to 16 frames. Further hops are dropped, keeping the origin and the earliest hops.
-- Error return tracing is disabled in [freestanding mode](../how-to/freestanding.md).
+- Error return tracing is disabled in release builds (`--build-mode=release`) and in
+  [freestanding mode](../how-to/freestanding.md).
 
 ## Result or panic
 The standard library returns a `Result<T>` for failures, that depend on the input or the environment, and panics for
