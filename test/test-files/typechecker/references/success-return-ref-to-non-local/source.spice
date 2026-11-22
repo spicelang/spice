@@ -120,6 +120,10 @@ f<T&> passThroughGeneric<T>(T& value) {
     return value;
 }
 
+f<int*> callWithRef(f<int*>(int&) fct, int& value) {
+    return fct(value);
+}
+
 f<T> readThroughLambda<T>(T value) {
     // The lambda returns a reference to a parameter of the enclosing function, which outlives the lambda call
     f<T&>() lambda = f<T&>() { return value; };
@@ -162,4 +166,6 @@ f<int> main() {
     double doubleValue = 12.5;
     printf("%d %f\n", passThroughGeneric(value), passThroughGeneric(doubleValue));
     printf("%d %f\n", readThroughLambda(13), readThroughLambda(14.5));
+    // An expression lambda may return the address of a reference parameter
+    printf("%d\n", *callWithRef((int& param) -> &param, value));
 }

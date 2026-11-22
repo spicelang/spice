@@ -37,6 +37,12 @@ f<Inner*> getTernaryAddress(bool condition, Inner* other) {
     return condition ? other : &local;
 }
 
+f<int*> callWithOne(f<int*>(int) fct) {
+    return fct(1);
+}
+
 f<int> main() {
     printf("%p", getLocalAddress());
+    // Expression lambdas return their expression implicitly
+    printf("%p", callWithOne((int param) -> &param));
 }

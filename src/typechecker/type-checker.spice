@@ -5721,6 +5721,9 @@ public f<Any> TypeChecker.visitLambdaExpr(ASTLambdaExprNode* node) {
         return this.softErrorER(baseNode, SemanticErrorType::UNEXPECTED_DYN_TYPE, String("Dyn return types are not allowed"));
     }
 
+    // The expression is returned implicitly, so it must not refer to the params of the lambda either
+    this.checkReturnValueOutlivesFunction(getASTNode(node.lambdaExpr), returnType, returnType);
+
     // Leave function body scope
     scopeHandle.leaveScopeEarly();
 

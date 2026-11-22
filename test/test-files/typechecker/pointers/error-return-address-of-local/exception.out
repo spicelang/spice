@@ -42,3 +42,9 @@ Return of address of local variable: The returned pointer would dangle, because 
 
 37  return condition ? other : &local;
            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:47:45:
+Return of address of local variable: The returned pointer would dangle, because the parameter 'param' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+47  callWithOne((int param) -> &param));
+                               ^^^^^^
