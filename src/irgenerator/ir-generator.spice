@@ -5643,10 +5643,12 @@ f<Any> IRGenerator.visitBuiltinPanicCall(ASTFctCallNode* node) {
     fprintfArgs.pushBack(errorMessage);
     this.builder.createCall(fprintfFct, fprintfArgs);
 
-    // Print the recorded error return trace to stderr. A no-op unless error return tracing was enabled somewhere
-    // along the propagation chain that produced this error - see error_trace_rt.spice.
-    const Vector<llvm::Value> noArgs;
-    this.builder.createCall(this.stdFunctionManager.getErrTraceDumpFct(), noArgs);
+    // Print the recorded error return trace to stderr - see error_trace_rt.spice. Without error return tracing, there is
+    // nothing recorded to print
+    if this.sourceFile.errorReturnTracing {
+        const Vector<llvm::Value> noArgs;
+        this.builder.createCall(this.stdFunctionManager.getErrTraceDumpFct(), noArgs);
+    }
 
     // Print the stack trace of the panic. Emitted ahead of the scope cleanup, which is not part of what led to the panic.
     if this.cliOptions.printsStackTraceOnAbort() {
