@@ -11,6 +11,10 @@ source_filename = "source.spice"
 @0 = private unnamed_addr constant [1 x i8] zeroinitializer, align 4
 @anon.string.3 = private unnamed_addr constant [5 x i8] c"item\00", align 4
 @anon.string.4 = private unnamed_addr constant [7 x i8] c"failed\00", align 4
+@errtrace.origin.sig.0 = private unnamed_addr constant [31 x i8] c"f<Result<int>> mightFail(bool)\00", align 4
+@errtrace.origin.file.0 = private unnamed_addr constant [15 x i8] c"./source.spice\00", align 4
+@errtrace.hop.sig.0 = private unnamed_addr constant [31 x i8] c"f<Result<int>> propagate(bool)\00", align 4
+@errtrace.hop.file.0 = private unnamed_addr constant [15 x i8] c"./source.spice\00", align 4
 @anon.string.5 = private unnamed_addr constant [15 x i8] c"limit too high\00", align 4
 @anon.string.6 = private unnamed_addr constant [116 x i8] c"Program panicked at ./source.spice:46:9: %s\0A46  panic(Error(message.getRaw()));\0A    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\0A\00", align 4
 @printf.str.0 = private unnamed_addr constant [11 x i8] c"Color: %s\0A\00", align 4
@@ -117,6 +121,7 @@ define internal void @_Z9mightFailb(ptr dead_on_unwind noalias writable sret(%st
 
 if.then.L32:                                      ; preds = %2
   call void @_Z3errIiE6ResultIiEiPKc(ptr dead_on_unwind writable sret(%struct.Result) align 8 %3, i32 noundef 1, ptr noundef @anon.string.4), !dbg !37
+  call void @_Z14sErrTraceResetPKcPKcjj(ptr @errtrace.origin.sig.0, ptr @errtrace.origin.file.0, i32 33, i32 16), !dbg !37
   %7 = load %struct.Result, ptr %3, align 8, !dbg !37
   store %struct.Result %7, ptr %0, align 8, !dbg !38
   ret void, !dbg !38
@@ -130,6 +135,8 @@ if.exit.L32:                                      ; preds = %2
 }
 
 declare void @_Z3errIiE6ResultIiEiPKc(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, i32, ptr)
+
+declare void @_Z14sErrTraceResetPKcPKcjj(ptr, ptr, i32, i32)
 
 declare void @_Z2okIiE6ResultIiERKi(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
 
@@ -149,6 +156,7 @@ define internal void @_Z9propagateb(ptr dead_on_unwind noalias writable sret(%st
 err.prop.then.L39:                                ; preds = %2
   %8 = call ptr @_ZN6ResultIiE6getErrEv(ptr %3), !dbg !43
   call void @_Z3errIiE6ResultIiERK5Error(ptr dead_on_unwind writable sret(%struct.Result) align 8 %0, ptr %8), !dbg !43
+  call void @_Z13sErrTracePushPKcPKcjj(ptr @errtrace.hop.sig.0, ptr @errtrace.hop.file.0, i32 39, i32 17), !dbg !43
   ret void, !dbg !45
 
 err.prop.exit.L39:                                ; preds = %2
@@ -169,6 +177,8 @@ declare i1 @_ZN6ResultIiE5isErrEv(ptr)
 declare ptr @_ZN6ResultIiE6getErrEv(ptr)
 
 declare void @_Z3errIiE6ResultIiERK5Error(ptr dead_on_unwind noalias writable sret(%struct.Result) align 8, ptr)
+
+declare void @_Z13sErrTracePushPKcPKcjj(ptr, ptr, i32, i32)
 
 declare ptr @_ZN6ResultIiE6unwrapEv(ptr)
 
