@@ -54,7 +54,7 @@ f<T> identity<T>(T val) {
 }
 
 f<int> main() {
-    dyn result = identity<int>(42);
+    dyn value = identity<int>(42);
 }
 ```
 
@@ -97,7 +97,7 @@ for those parameters in its declaration:
 type T dyn;
 
 type Comparable<T> interface {
-    f<int> compareTo<T>(const T& other);
+    f<int> compareTo<T>(const T&);
 }
 
 type Score struct : Comparable<int> {

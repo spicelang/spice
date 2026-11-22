@@ -147,7 +147,7 @@ Result<heap byte*> allocResult = sAlloc(16l);
 heap byte* buffer = allocResult.unwrapAndMove(); // the caller owns the block from here on
 ```
 
-Unwrapping a heap payload without `sMove` yields a borrowed pointer that stays owned by the result. Storing such a
+Unwrapping a heap payload without `unwrapAndMove` yields a borrowed pointer that stays owned by the result. Storing such a
 pointer somewhere that outlives the result, or freeing it manually, results in a double free.
 
 ## The `Error` data type

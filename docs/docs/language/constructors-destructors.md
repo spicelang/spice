@@ -17,7 +17,7 @@ type ExampleStruct struct {
 
 p ExampleStruct.ctor() {
 	this.message = "Hello world!";
-	showMessage = false;
+	this.showMessage = false;
 }
 
 f<int> main() {
@@ -34,7 +34,7 @@ Constructors can also have arguments to pass some information from the caller to
 
 p ExampleStruct.ctor(string msg = "Hello World!") {
 	this.message = msg;
-	showMessage = false;
+	this.showMessage = false;
 }
 
 f<int> main() {

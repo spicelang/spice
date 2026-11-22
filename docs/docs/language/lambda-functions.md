@@ -25,7 +25,7 @@ lambda(5, 3.14);
 ```spice
 // Definition
 f<int>(const String&, bool) lambda = f<int>(const String& str, bool b) {
-    if (b) {
+    if b {
         return str.getLength();
     } else {
         return -1;

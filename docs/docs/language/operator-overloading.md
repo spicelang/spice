@@ -67,8 +67,8 @@ f<Flags> operator^(const Flags f1, const Flags f2) {
     return Flags{f1.bits ^ f2.bits};
 }
 
-f<Flags> operator~(const Flags f) {
-    return Flags{~f.bits};
+f<Flags> operator~(const Flags flags) {
+    return Flags{~flags.bits};
 }
 
 f<int> main() {

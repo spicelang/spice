@@ -13,7 +13,7 @@ implementation at runtime via a vtable, without carrying any type information ov
 
 ```spice
 type Driveable interface {
-    p drive(int speed);
+    p drive(int);
     f<bool> isDriving();
 }
 ```
@@ -85,6 +85,9 @@ through the interface could only return the interface part of the struct, withou
 an error instead:
 
 ```spice
+import "std/data/vector";
+import "std/iterator/iterable";
+
 f<int> main() {
     Vector<int> v;
     IIterable<int>& iterable = v;
@@ -190,7 +193,7 @@ Interfaces can have generic type parameters, just like [generic structs](generic
 type T dyn;
 
 type Comparable<T> interface {
-    f<int> compareTo<T>(const T& other);
+    f<int> compareTo<T>(const T&);
 }
 
 type Temperature struct : Comparable<Temperature> {
