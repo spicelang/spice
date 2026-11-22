@@ -68,6 +68,7 @@ if `U` differs from `T`. The `main` function returns `int`, so it has to handle 
 ## Mandatory error handling
 Discarding a `Result<T>`, that a call returned, is a compile error:
 
+<!-- doc-test: expect-error Discarded Result value -->
 ```spice
 import "std/io/file";
 
