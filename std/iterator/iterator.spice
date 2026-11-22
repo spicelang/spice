@@ -2,6 +2,7 @@ import "std/data/pair";
 
 // Generic type definitions
 type T dyn;
+type Numeric int|long|short;
 
 /**
  * The IIterator interface must be implemented in order to be handled as an iterator by Spice. For instance,
@@ -13,4 +14,28 @@ public type IIterator<T> interface {
     public f<Pair<unsigned long, T&>> getIdx<T>(); // Get the current index and item
     public f<bool> isValid();                      // Check if the iterator is still valid
     public p next();                               // Advance the cursor by one
+}
+
+/**
+ * Get the position of an iterator cursor after moving it by the given offset, which may be negative. Panics if the new
+ * position is out of the bounds of the iterated items.
+ *
+ * @param cursor Current cursor position
+ * @param offset Offset to move the cursor by
+ * @param forward Move the cursor forward (true) or backward (false) by the offset
+ * @param size Number of iterated items
+ * @return New cursor position
+ */
+public f<unsigned long> getMovedIteratorCursor<Numeric>(unsigned long cursor, Numeric offset, bool forward, unsigned long size) {
+    // Split the offset into the direction and the distance. The distance is calculated with unsigned arithmetic, so that it
+    // is correct for the minimum value of the offset type as well
+    const bool isNegative = offset < 0;
+    const unsigned long offsetBits = cast<unsigned long>(offset);
+    const unsigned long distance = isNegative ? 0ul - offsetBits : offsetBits;
+    if forward != isNegative {
+        if distance >= size || cursor >= size - distance { panic(Error("Iterator out of bounds")); }
+        return cursor + distance;
+    }
+    if distance > cursor || cursor - distance >= size { panic(Error("Iterator out of bounds")); }
+    return cursor - distance;
 }

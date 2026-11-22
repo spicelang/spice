@@ -870,9 +870,9 @@ inline f<bool> isBareKeyChar(char c) {
 
 // Checks if the given character is a control character that TOML never allows unescaped.
 // Tab is excluded, since it is legal in strings and comments alike. Bytes of multi-byte
-// UTF-8 sequences are excluded as well, no matter whether char is signed or not.
+// UTF-8 sequences are excluded as well, since char is unsigned.
 inline f<bool> isTomlDisallowedChar(char c) {
-    return (c >= '\0' && c < ' ' && c != '\t') || cast<int>(c) == 0x7F;
+    return (c < ' ' && c != '\t') || cast<int>(c) == 0x7F;
 }
 
 inline f<bool> isDigitForBase(char c, int base) {

@@ -1,0 +1,11 @@
+// TEST: --build-mode=release
+// A negative offset, that would move the cursor before the first item, is out of bounds
+import "std/iterator/array-iterator";
+
+f<int> main() {
+    int[3] a = [1, 2, 3];
+    dyn it = iterate(a, len(a));
+    it.next();
+    it += -2;
+    printf("Unreachable\n");
+}

@@ -49,6 +49,15 @@ f<int> main() {
     assert it.get() == 123l;
     it += 4;
     assert it.get() == -99l;
+    // Negative offsets move the cursor in the opposite direction
+    it += -3;
+    assert it.get() == 4321l;
+    it -= -2s;
+    assert it.get() == 321l;
+    it += -1l;
+    assert it.get() == 9876l;
+    it -= -2l;
+    assert it.get() == -99l;
     it.next();
     assert !it.isValid();
 

@@ -106,7 +106,7 @@ public p DoublyLinkedList.pushFront(const T& value) {
  */
 public p DoublyLinkedList.insertAt(unsigned long idx, const T& value) {
     // Abort if the index is out of bounds
-    if idx < 0 || idx > this.size { panic(Error("Access index out of bound")); }
+    if idx > this.size { panic(Error("Access index out of bound")); }
 
     if idx == 0 {
         this.pushFront(value);
@@ -176,7 +176,7 @@ public p DoublyLinkedList.remove(const T& valueToRemove) {
  */
 public p DoublyLinkedList.removeAt(unsigned long idx) {
     // Abort if the index is out of bounds
-    if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
+    if idx >= this.size { panic(Error("Access index out of bound")); }
 
     Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx; i++ {
@@ -249,7 +249,7 @@ public inline f<bool> DoublyLinkedList.isEmpty() {
  */
 public f<T&> DoublyLinkedList.get(unsigned long idx) {
     // Abort if the index is out of bounds
-    if idx < 0 || idx >= this.size { panic(Error("Access index out of bound")); }
+    if idx >= this.size { panic(Error("Access index out of bound")); }
 
     Node<T>* curr = this.tail;
     for unsigned long i = 0l; i < idx; i++ {

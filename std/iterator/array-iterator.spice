@@ -91,8 +91,7 @@ public inline p operator--<I>(ArrayIterator<I>& it) {
  * @param offset Offset
  */
 public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
-    if it.cursor + offset >= it.size || it.cursor + offset < 0l { panic(Error("Iterator out of bounds")); }
-    it.cursor += offset;
+    it.cursor = getMovedIteratorCursor(it.cursor, offset, true, it.size);
 }
 
 /**
@@ -102,8 +101,7 @@ public inline p operator+=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
  * @param offset Offset
  */
 public inline p operator-=<I, Numeric>(ArrayIterator<I>& it, Numeric offset) {
-    if it.cursor - offset >= it.size || it.cursor - offset < 0l { panic(Error("Iterator out of bounds")); }
-    it.cursor -= offset;
+    it.cursor = getMovedIteratorCursor(it.cursor, offset, false, it.size);
 }
 
 /**

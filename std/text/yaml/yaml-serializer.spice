@@ -229,8 +229,8 @@ f<bool> isPlainSafe(const String& text) {
     for unsigned long i = 0l; i < length; i++ {
         const char c = text[i];
         // Control characters, line breaks included, have no plain representation. Bytes of
-        // multi-byte UTF-8 sequences are excluded, no matter whether char is signed or not.
-        if (c >= '\0' && c < ' ') || cast<int>(c) == 0x7F { return false; }
+        // multi-byte UTF-8 sequences are excluded, since char is unsigned.
+        if c < ' ' || cast<int>(c) == 0x7F { return false; }
         // A ':' that is followed by whitespace would open a mapping entry
         if c == ':' && (i + 1l == length || isBlankChar(text[i + 1l])) { return false; }
         // A '#' that follows whitespace would open a comment
@@ -278,7 +278,7 @@ p serializeYamlQuotedScalar(String& out, const String& text) {
             out += "\\f";
         } else if c == '\0' {
             out += "\\0";
-        } else if (c >= '\0' && c < ' ') || cast<int>(c) == 0x7F {
+        } else if c < ' ' || cast<int>(c) == 0x7F {
             // All other control characters are emitted as \u00XX escapes.
             // Bytes of multi-byte UTF-8 sequences are passed through unchanged.
             string hexDigits = "0123456789ABCDEF";
