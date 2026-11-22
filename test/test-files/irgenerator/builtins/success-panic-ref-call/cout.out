@@ -1,3 +1,5 @@
 Program panicked at ./source.spice:4:5: Error from a reference
 4  panic(res.getErr());
    ^^^^^^^^^^^^^^^^^^^
+Recorded error trace:
+  #0  f<int> main() at ./source.spice:3:23

@@ -2,18 +2,19 @@
 
 ## Status
 
-Implemented and shipped, behind two opt-in module attributes (both default `false`):
+Implemented and shipped, enabled by default. A module can opt out with two module attributes:
 
-- `#![core.compiler.explicitErrorHandling = true]` — mandatory handling of discarded `Result<T>` values.
-- `#![core.compiler.errorReturnTracing = true]` — error return trace instrumentation.
+- `#![core.compiler.explicitErrorHandling = false]` — no mandatory handling of discarded `Result<T>` values.
+- `#![core.compiler.errorReturnTracing = false]` — no error return trace instrumentation. In freestanding mode, tracing is
+  always disabled.
 
 Remaining work:
 
 - [x] Migrate `std`'s internal `panic()`-on-recoverable-failure call sites to return `Result<T>` (#1797, #1801, #1803,
   #1804, #1805). The remaining `panic()` calls in `std` are programming errors (see `panic`'s role below).
 - [x] Update docs and examples (`docs/docs/language/error-handling.md`).
-- [ ] Mention the feature in the release notes.
-- [ ] Flip both attributes' defaults to `true` in a documented major/minor version bump, then remove the gates.
+- [x] Flip both attributes' defaults to `true`.
+- [ ] Remove the gates.
 
 ## Background
 
@@ -67,7 +68,8 @@ Config cfg2 = loadConfig(path).unwrapOr(Config.default());
 
 ## Mandatory handling
 
-Gated by `#![core.compiler.explicitErrorHandling = true]`. When enabled, a bare, receiver-less call statement
+Enabled by default, disabled per module by `#![core.compiler.explicitErrorHandling = false]`. When enabled, a bare,
+receiver-less call statement
 whose type is `Result<T>` is a hard error (`DISCARDED_RESULT_VALUE`,
 `src/typechecker/type-checker.spice`) instead of the generic `UNUSED_RETURN_VALUE` warning, and is **not** suppressible
 by `#[core.compiler.ignoreUnusedReturnValue]` (which keeps its weaker meaning for ordinary return values).
@@ -82,8 +84,9 @@ Tests: `test/test-files/typechecker/error-handling/`.
 
 ## Error return traces
 
-Gated by `#![core.compiler.errorReturnTracing = true]`. A debugging aid, not a correctness mechanism — genuinely
-zero-cost when the attribute is off (no instrumentation calls emitted at all).
+Enabled by default, disabled per module by `#![core.compiler.errorReturnTracing = false]` and always in freestanding
+mode. A debugging aid, not a correctness mechanism — genuinely zero-cost when disabled (no instrumentation calls emitted
+at all).
 
 **Storage.** `ErrorTraceBuffer` (`std/runtime/error_trace_rt.spice`) holds a fixed-capacity array of
 `ErrorTraceFrame { file, signature, line, column }` (`ERR_TRACE_CAPACITY = 16`) plus a frame count — a plain
@@ -137,5 +140,5 @@ still useful, a `Result<T>`-returning variant with the `Safe` suffix sits next t
 - **OQ-3**: Does mandatory handling produce annoying boilerplate at call sites that already fully handle the
   error through some other means? Worth revisiting once `std`'s internals are migrated (real-world call sites
   to check against).
-- **OQ-4**: Should `errorReturnTracing` default to `true` in debug builds specifically (mirroring Zig's
-  Debug/ReleaseSafe-on split), rather than always defaulting to `false` until a user opts in?
+- **OQ-4**: `errorReturnTracing` now defaults to `true` in all build modes. Should release builds turn it off by
+  default (mirroring Zig's Debug/ReleaseSafe-on split)?

@@ -99,8 +99,8 @@ Stack trace:
 
 Both the message and the trace go to stderr, the message first. The first frame is the function that contains the panic
 or the assertion. The trace depends on symbols and debug info in the same way as the ones above, so `-g` adds the file
-and line of every frame and `--strip-symbols` leaves the names out. If error return tracing was enabled with
-`#![core.compiler.errorReturnTracing = true]`, the recorded error return trace is printed before the stack trace.
+and line of every frame and `--strip-symbols` leaves the names out. If an [error return trace](../language/error-handling.md#error-return-traces)
+was recorded, it is printed before the stack trace.
 
 A few cases print no trace:
 
