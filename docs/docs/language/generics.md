@@ -81,6 +81,7 @@ so you do not have to define the method above with following signature: `Vector<
 
 When instantiating a generic struct, provide the concrete type in angle brackets:
 
+<!-- doc-test: skip uses the Vector struct of the code block above -->
 ```spice
 f<int> main() {
     Vector<short> v;     // T = short

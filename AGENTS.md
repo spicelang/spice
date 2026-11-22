@@ -68,6 +68,10 @@ The helper scripts are Python-based and cross-platform.
 - Build the compiler under test with AddressSanitizer, failing every test case that produces a sanitizer report:
     - `python test/run-tests.py --instrument asan`
 - See `python test/run-tests.py --help` for all options.
+- Compile all complete programs in the docs (`spice` code blocks with `f<int> main(`) with a built compiler. A
+  `<!-- doc-test: skip <reason> -->` or `<!-- doc-test: expect-error <message> -->` comment in front of a code block
+  skips it or expects a compile error:
+    - `python tools/check_doc_examples.py --compiler build/spice`
 
 ## Running Spice programs
 

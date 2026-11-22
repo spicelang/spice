@@ -32,6 +32,7 @@ public p visibleProcedure() {
 
 Source file b (`b.spice`):
 
+<!-- doc-test: skip imports a.spice of the code block above -->
 ```spice
 import "a" as a;
 
@@ -90,6 +91,7 @@ This qualifier can be used to make variables immutable after the first assignmen
 
 ### Example
 
+<!-- doc-test: expect-error Cannot re-assign constant variable -->
 ```spice
 const int THIS_IS_A_CONSTANT = 101;
 

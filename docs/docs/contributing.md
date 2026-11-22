@@ -12,3 +12,17 @@ Please do **not** open issues regrading security on GitHub! Please read our [Sec
 
 ## Feature request and bugs
 If you want to contribute by reporting a bug (except a security issue) or you want to send in a feature request, please navigate to the [issues section](https://github.com/spicelang/spice/issues). Issues that are easy to work on and appropriate for beginners are marked as 'good first issue'. Feel free to claim one of those issues by commenting that you want to do so. After we assign you to the issue, you can start working on the problem / feature request. Please open a pull request when you're done with the work and please only work on one issue at once.
+## Documentation examples
+The CI compiles every complete program (every `spice` code block with a `f<int> main(` function) in the documentation
+with the compiler under test. To check the examples locally, run:
+
+```sh
+python tools/check_doc_examples.py --compiler build/spice
+```
+
+If an example is not meant to compile on its own, put a marker comment in front of its code block:
+
+- `<!-- doc-test: skip <reason> -->` skips the code block, e.g. because it continues an earlier snippet or imports the
+  source file of another code block.
+- `<!-- doc-test: expect-error <message> -->` expects the compilation to fail with an output, that contains the message,
+  e.g. because the code block demonstrates a compile error.

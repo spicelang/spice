@@ -51,6 +51,7 @@ The method definitions live outside the struct body, exactly like any other [met
 To call methods through an interface, take a pointer to the concrete value and assign it to a pointer of the
 interface type. Calling a method on the interface pointer dispatches to the correct implementation at runtime.
 
+<!-- doc-test: skip uses the Car struct of the code blocks above -->
 ```spice
 f<int> main() {
     Car car = Car();
@@ -62,6 +63,7 @@ f<int> main() {
 
 You can also take an interface reference and pass it to a function that only knows about the interface:
 
+<!-- doc-test: skip uses the Car struct of the code blocks above -->
 ```spice
 p startDriving(Driveable& vehicle) {
     vehicle.drive(30);
@@ -84,6 +86,7 @@ Such a method can only be called on the struct itself, not through an interface 
 through the interface could only return the interface part of the struct, without its fields, so the compiler reports
 an error instead:
 
+<!-- doc-test: expect-error Interface returned by value -->
 ```spice
 import "std/data/vector";
 import "std/iterator/iterable";
@@ -231,6 +234,7 @@ public type Shape interface {
 ```
 
 **`main.spice`:**
+<!-- doc-test: skip imports shapes.spice of the code block above -->
 ```spice
 import "shapes";
 
