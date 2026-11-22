@@ -1,0 +1,7 @@
+headers:
+Location: /home  Set-Cookie: session=stolen
+X-Line-Feed: a b
+X-Nul: a b
+X-Token_Chars.1!#$%&'*+^`|~: kept
+request line: GET /search?q=a%20b%0D%0AX-Injected:%201 HTTP/1.1  X-Other: 2
+status line: HTTP/1.1 200 OK  Set-Cookie: session=stolen

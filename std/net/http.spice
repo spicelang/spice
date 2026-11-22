@@ -83,6 +83,7 @@ public const string HEADER_DATE = "Date";
 public const string HEADER_AUTHORIZATION = "Authorization";
 
 const string CRLF = "\r\n";
+const long MAX_LONG_VALUE = 9223372036854775807l; // Upper bound for the Content-Length of a message
 
 // ===================================================== HttpMethod ====================================================
 
@@ -367,6 +368,9 @@ public p operator=(HttpHeader& this, const HttpHeader& original) {
  * Fields keep the order in which they were added and their names keep the case they were given in,
  * while all lookups are case-insensitive, as required by RFC 9110 section 5.1. A name may appear
  * more than once - use `add` for that and `set` when a field is meant to be unique.
+ *
+ * Names and values are stored as they are given, but `serialize` never lets them break the message
+ * apart, so untrusted input in a field cannot inject further fields or messages.
  */
 public type HttpHeaders struct {
     public Vector<HttpHeader> entries
@@ -512,36 +516,83 @@ public p HttpHeaders.clear() {
 
 /**
  * Serializes all fields into the wire format, including the terminating CRLF of the last field but
- * without the empty line that ends the header block
+ * without the empty line that ends the header block.
+ *
+ * A field, whose name is no token (RFC 9110 section 5.6.2), is left out, since it cannot be written
+ * without corrupting the message. CR, LF and NUL in field values are replaced with SP (RFC 9110
+ * section 5.5), see `appendLineText`.
  *
  * @return Serialized header block
  */
 public f<String> HttpHeaders.serialize() {
     result = String();
-    const unsigned long entryCount = cast<unsigned long>(this.entries.getSize());
+    const unsigned long entryCount = this.entries.getSize();
     for unsigned long i = 0l; i < entryCount; i++ {
         HttpHeader& entry = this.entries.get(i);
-        result.append(entry.name);
-        result.append(": ");
-        result.append(entry.value);
-        result.append(CRLF);
+        if isValidFieldName(entry.name) {
+            result.append(entry.name);
+            result.append(": ");
+            appendLineText(result, entry.value);
+            result.append(CRLF);
+        }
     }
 }
 
 /**
  * Returns the body length announced by the Content-Length field
  *
- * @return Announced body length, or -1 if the field is absent or malformed
+ * @return Announced body length, or -1 if the field is absent, malformed or announces different lengths
  */
 public f<long> HttpHeaders.getContentLength() {
-    result = -1l;
-    const long index = this.indexOf(HEADER_CONTENT_LENGTH);
-    if index != -1l {
-        HttpHeader& entry = this.entries.get(cast<unsigned long>(index));
-        if isDecimalNumber(entry.value) {
-            result = toLong(entry.value.getRaw());
+    const Result<long> contentLength = this.parseContentLength();
+    return contentLength.isOk() ? contentLength.unwrap() : -1l;
+}
+
+/**
+ * Determines the body length, that the Content-Length fields announce (RFC 9112 section 6.3). The
+ * field may appear more than once and hold a comma-separated list, as long as all of its values are
+ * the same decimal number. Anything else is an error, since recipients could disagree on where the
+ * body ends: one of them would take the rest of the body for the next message, which is the root of
+ * request smuggling.
+ *
+ * @return Announced body length, -1 if there is no Content-Length field, or an error if a value is
+ *         malformed or the values differ
+ */
+f<Result<long>> HttpHeaders.parseContentLength() {
+    long contentLength = -1l;
+    string errorMessage = "";
+    const unsigned long entryCount = this.entries.getSize();
+    for unsigned long i = 0l; i < entryCount && errorMessage == ""; i++ {
+        HttpHeader& entry = this.entries.get(i);
+        if equalsIgnoreCase(entry.name.getRaw(), HEADER_CONTENT_LENGTH) {
+            const String& value = entry.value;
+            const unsigned long valueLength = value.getLength();
+            bool hasElement = false;
+            unsigned long elementStart = 0l;
+            while elementStart <= valueLength && errorMessage == "" {
+                const long commaIndex = value.find(',', elementStart);
+                const unsigned long elementEnd = commaIndex == -1l ? valueLength : cast<unsigned long>(commaIndex);
+                const String element = value.getSubstring(elementStart, cast<long>(elementEnd - elementStart)).trim();
+                // Empty list elements are ignored (RFC 9110 section 5.6.1)
+                if !element.isEmpty() {
+                    hasElement = true;
+                    const long elementValue = parseContentLengthValue(element);
+                    if elementValue == -1l {
+                        errorMessage = "Malformed Content-Length field";
+                    } else if contentLength != -1l && elementValue != contentLength {
+                        errorMessage = "Conflicting Content-Length fields";
+                    } else {
+                        contentLength = elementValue;
+                    }
+                }
+                elementStart = elementEnd + 1l;
+            }
+            if !hasElement && errorMessage == "" {
+                errorMessage = "Malformed Content-Length field";
+            }
         }
     }
+    return errorMessage == "" ? ok(contentLength) : err<long>(Error(errorMessage));
 }
 
 /**
@@ -565,6 +616,96 @@ f<bool> isDecimalNumber(const String& text) {
         if !isDigit(text[i]) { return false; }
     }
     return true;
+}
+
+/**
+ * Parses a single value of a Content-Length field
+ *
+ * @param text Value to parse, without surrounding whitespace
+ * @return The parsed value, or -1 if the text is empty, carries a non-digit or exceeds the range of long
+ */
+f<long> parseContentLengthValue(const String& text) {
+    const unsigned long length = text.getLength();
+    if length == 0l { return -1l; }
+    long value = 0l;
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = text[i];
+        if !isDigit(c) { return -1l; }
+        const long digit = cast<long>(cast<int>(c) - cast<int>('0'));
+        // A value beyond the range of long is rejected instead of wrapping around
+        if value > (MAX_LONG_VALUE - digit) / 10l { return -1l; }
+        value = value * 10l + digit;
+    }
+    return value;
+}
+
+/**
+ * Checks whether the given text is a valid field name, i.e. a token (RFC 9110 section 5.6.2)
+ *
+ * @param name Field name to check
+ * @return true if the name is a non-empty sequence of token characters
+ */
+f<bool> isValidFieldName(const String& name) {
+    const unsigned long length = name.getLength();
+    if length == 0l { return false; }
+    for unsigned long i = 0l; i < length; i++ {
+        if !isTokenChar(name[i]) { return false; }
+    }
+    return true;
+}
+
+/**
+ * Checks whether the given character may appear in a token (RFC 9110 section 5.6.2)
+ *
+ * @param c Character to check
+ * @return true if the character is a letter, a digit or one of the special characters of a token
+ */
+f<bool> isTokenChar(char c) {
+    if isAlphaNum(c) { return true; }
+    switch c {
+        case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~': { return true; }
+    }
+    return false;
+}
+
+/**
+ * Appends text to a start line or a field line of a message. CR, LF and NUL are replaced with SP,
+ * as RFC 9110 section 5.5 demands it from recipients: a CR or LF would end the line early and let
+ * the rest of the text pass for further header fields or even for a further message, and NUL is
+ * interpreted differently by different recipients.
+ *
+ * @param line Line to append to
+ * @param text Text to append
+ */
+p appendLineText(String& line, const String& text) {
+    const unsigned long length = text.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = text[i];
+        line.append(c == '\r' || c == '\n' || c == '\0' ? ' ' : c);
+    }
+}
+
+/**
+ * Appends the request target to a request line. SP and control characters would split the request
+ * line or end it early, so they are percent-encoded, like a browser does it with the URL in its
+ * address bar.
+ *
+ * @param line Request line to append to
+ * @param target Request target to append
+ */
+p appendRequestTarget(String& line, const String& target) {
+    const unsigned long length = target.getLength();
+    for unsigned long i = 0l; i < length; i++ {
+        const char c = target[i];
+        const int code = cast<int>(c) & 0xFF;
+        if code <= 0x20 || code == 0x7F {
+            line.append('%');
+            line.append(getHexDigit(code >> 4));
+            line.append(getHexDigit(code & 0xF));
+        } else {
+            line.append(c);
+        }
+    }
 }
 
 // ======================================================== Url ========================================================
@@ -884,7 +1025,9 @@ public p HttpRequest.setBody(const String& body, string contentType = CONTENT_TY
 }
 
 /**
- * Serializes the request into the wire format
+ * Serializes the request into the wire format. SP and control characters in the request target are
+ * percent-encoded, and CR, LF and NUL in the version are replaced with SP, so that neither of them
+ * can break the request line apart.
  *
  * @return Serialized request, ready to be written to a socket
  */
@@ -892,9 +1035,13 @@ public f<String> HttpRequest.serialize() {
     result = String();
     result.append(getMethodName(this.method));
     result.append(' ');
-    result.append(this.target.isEmpty() ? "/" : this.target.getRaw());
+    if this.target.isEmpty() {
+        result.append('/');
+    } else {
+        appendRequestTarget(result, this.target);
+    }
     result.append(' ');
-    result.append(this.version);
+    appendLineText(result, this.version);
     result.append(CRLF);
     const String headerBlock = this.headers.serialize();
     result.append(headerBlock);
@@ -1009,18 +1156,19 @@ public f<bool> HttpResponse.isServerError() {
 }
 
 /**
- * Serializes the response into the wire format
+ * Serializes the response into the wire format. CR, LF and NUL in the version and the reason phrase
+ * are replaced with SP, so that neither of them can break the status line apart.
  *
  * @return Serialized response, ready to be written to a socket
  */
 public f<String> HttpResponse.serialize() {
     result = String();
-    result.append(this.version);
+    appendLineText(result, this.version);
     result.append(' ');
     const String statusText = toString(cast<long>(this.statusCode));
     result.append(statusText);
     result.append(' ');
-    result.append(this.reason);
+    appendLineText(result, this.reason);
     result.append(CRLF);
     const String headerBlock = this.headers.serialize();
     result.append(headerBlock);
@@ -1336,7 +1484,7 @@ public f<bool> sendResponse<C>(C& socket, const HttpResponse& response) {
  *
  * The body is framed by the Content-Length field, or by the chunked transfer coding. A request that
  * announces neither carries no body, since a server may not wait for the connection to close to
- * find the end of a request.
+ * find the end of a request. A malformed Content-Length, or several ones that disagree, is an error.
  *
  * @param socket Socket to read from
  * @param maxSize Maximum number of bytes to accept for head and body each
@@ -1378,7 +1526,8 @@ public f<Result<HttpRequest>> receiveRequest<C>(C& socket, unsigned long maxSize
  * Reads a complete response off the socket.
  *
  * The body is framed by the Content-Length field or by the chunked transfer coding. A response that
- * announces neither runs until the peer closes the connection, as HTTP/1.0 servers do.
+ * announces neither runs until the peer closes the connection, as HTTP/1.0 servers do. A malformed
+ * Content-Length, or several ones that disagree, is an error.
  *
  * @param socket Socket to read from
  * @param expectBody Whether the response carries a body at all - a response to HEAD never does
@@ -1522,32 +1671,40 @@ f<Result<String>> readBody<C>(C& socket, HttpHeaders& headers, String& buffer, u
             body = decoded;
         }
     } else {
-        const long contentLength = headers.getContentLength();
-        if contentLength > 0l {
-            if cast<unsigned long>(contentLength) > maxSize {
-                errorMessage = "Message body exceeds the maximum message size";
-            } else {
-                // Keep reading until the announced number of bytes has arrived
+        const Result<long> contentLengthResult = headers.parseContentLength();
+        if contentLengthResult.isErr() {
+            // A malformed or ambiguous Content-Length leaves the end of the body unknown, which RFC 9112 section 6.3
+            // makes an unrecoverable error. Guessing would let the sender smuggle a message into the rest of the body.
+            const Error& error = contentLengthResult.getErr();
+            errorMessage = error.getMessage();
+        } else {
+            const long contentLength = contentLengthResult.unwrap();
+            if contentLength > 0l {
+                if cast<unsigned long>(contentLength) > maxSize {
+                    errorMessage = "Message body exceeds the maximum message size";
+                } else {
+                    // Keep reading until the announced number of bytes has arrived
+                    bool connectionAlive = true;
+                    while buffer.getLength() < cast<unsigned long>(contentLength) && connectionAlive {
+                        connectionAlive = readChunkInto(socket, buffer);
+                    }
+                    if buffer.getLength() < cast<unsigned long>(contentLength) {
+                        errorMessage = "Connection closed before the announced body was complete";
+                    } else {
+                        body = buffer.getSubstring(0l, contentLength);
+                    }
+                }
+            } else if contentLength == -1l && readUntilClose {
+                // No framing at all, so the body ends with the connection
                 bool connectionAlive = true;
-                while buffer.getLength() < cast<unsigned long>(contentLength) && connectionAlive {
+                while connectionAlive && buffer.getLength() <= maxSize {
                     connectionAlive = readChunkInto(socket, buffer);
                 }
-                if buffer.getLength() < cast<unsigned long>(contentLength) {
-                    errorMessage = "Connection closed before the announced body was complete";
+                if buffer.getLength() > maxSize {
+                    errorMessage = "Message body exceeds the maximum message size";
                 } else {
-                    body = buffer.getSubstring(0l, contentLength);
+                    body = buffer;
                 }
-            }
-        } else if contentLength == -1l && readUntilClose {
-            // No framing at all, so the body ends with the connection
-            bool connectionAlive = true;
-            while connectionAlive && buffer.getLength() <= maxSize {
-                connectionAlive = readChunkInto(socket, buffer);
-            }
-            if buffer.getLength() > maxSize {
-                errorMessage = "Message body exceeds the maximum message size";
-            } else {
-                body = buffer;
             }
         }
     }

@@ -5,3 +5,4 @@ moved: 200 [hi redirected]
 missing: 404 Not Found
 wrong method: 405 Method Not Allowed allow=GET
 head: 200 body-length=0 announced=14
+ambiguous length: 400 Bad Request [Conflicting Content-Length fields]
