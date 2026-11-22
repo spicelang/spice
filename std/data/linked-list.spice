@@ -193,7 +193,7 @@ public p LinkedList.remove(const T& valueToRemove) {
  */
 public p LinkedList.removeAt(unsigned long idx) {
     // Abort if the index is out of bounds
-    if idx < 0l || idx >= this.size { return; }
+    if idx >= this.size { return; }
 
     if idx == 0l {
         Node<T>* temp = this.tail;
@@ -459,8 +459,7 @@ public inline p operator--<T>(LinkedListIterator<T>& it) {
  * @param offset Offset
  */
 public inline p operator+=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
-    if it.cursor + offset >= it.list.getSize() || it.cursor + offset < 0l { panic(Error("Iterator out of bounds")); }
-    it.seek(it.cursor + offset);
+    it.seek(getMovedIteratorCursor(it.cursor, offset, true, it.list.getSize()));
 }
 
 /**
@@ -470,8 +469,7 @@ public inline p operator+=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset
  * @param offset Offset
  */
 public inline p operator-=<T, Numeric>(LinkedListIterator<T>& it, Numeric offset) {
-    if it.cursor - offset >= it.list.getSize() || it.cursor - offset < 0l { panic(Error("Iterator out of bounds")); }
-    it.seek(it.cursor - offset);
+    it.seek(getMovedIteratorCursor(it.cursor, offset, false, it.list.getSize()));
 }
 
 /**

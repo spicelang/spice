@@ -1,0 +1,3 @@
+Program panicked at ../../../../../std/iterator/iterator.spice:39:57: Iterator out of bounds
+39  distance >= size { panic(Error("Iterator out of bounds")); }
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

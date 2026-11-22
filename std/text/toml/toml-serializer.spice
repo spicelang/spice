@@ -200,7 +200,7 @@ p serializeTomlString(StringStream& out, const String& value) {
             out << "\\b";
         } else if c == '\f' {
             out << "\\f";
-        } else if (c >= '\0' && c < ' ') || cast<int>(c) == 0x7F {
+        } else if c < ' ' || cast<int>(c) == 0x7F {
             // All other control characters are emitted as \u00XX escapes.
             // Bytes of multi-byte UTF-8 sequences are passed through unchanged.
             string hexDigits = "0123456789ABCDEF";
