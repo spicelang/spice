@@ -162,6 +162,9 @@ public p LinkedList.remove(const T& valueToRemove) {
         Node<T>* temp = this.tail;
         this.tail = sMove(this.tail.next);
         sDelete(temp);
+        if this.tail == nil<heap Node<T>*> {
+            this.head = nil<Node<T>*>; // The list is empty now
+        }
         this.size--;
         return;
     }
@@ -176,13 +179,17 @@ public p LinkedList.remove(const T& valueToRemove) {
     curr.next = sMove(curr.next.next);
     sDelete(temp);
 
+    if curr.next == nil<heap Node<T>*> {
+        this.head = curr; // Update head when removing the last node
+    }
+
     this.size--;
 }
 
 /**
- * Removes the first occurrence of the given value
+ * Removes the item at the given index
  *
- * @param valueToRemove Value to remove
+ * @param idx Index to remove
  */
 public p LinkedList.removeAt(unsigned long idx) {
     // Abort if the index is out of bounds
@@ -192,6 +199,9 @@ public p LinkedList.removeAt(unsigned long idx) {
         Node<T>* temp = this.tail;
         this.tail = sMove(this.tail.next);
         sDelete(temp);
+        if this.tail == nil<heap Node<T>*> {
+            this.head = nil<Node<T>*>; // The list is empty now
+        }
         this.size--;
         return;
     }
@@ -213,7 +223,7 @@ public p LinkedList.removeAt(unsigned long idx) {
 }
 
 /**
- * Removes the first occurrence of the given value
+ * Removes the item at the given index
  *
  * @param idx Index to remove
  */
