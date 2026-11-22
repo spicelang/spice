@@ -7,6 +7,7 @@ import "std/text/format";
 import "std/os/env";
 import "std/os/os";
 import "std/os/filesystem";
+import "std/os/process";
 import "std/io/cli-parser";
 import "std/io/cli-subcommand";
 import "std/io/cli-option";
@@ -240,6 +241,17 @@ public const f<bool> CliOptions.isPositionIndependent() {
 p raiseCliError(const CliErrorType errorType, const string message) {
     const CliError cliError = CliError(errorType, message);
     abortWithError(cliError.getMessage());
+}
+
+/**
+ * Print a cli error without aborting
+ *
+ * @param errorType Type of the error
+ * @param message Error message suffix
+ */
+p printCliError(const CliErrorType errorType, const string message) {
+    const CliError cliError = CliError(errorType, message);
+    printf("%s\n", cliError.getMessage().getRaw());
 }
 
 /**
@@ -570,8 +582,11 @@ f<string> getCodeModelName(const CodeModel codeModel) {
 
 /**
  * Executes the built executable
+ *
+ * @return Exit code of the executable, so that the compiler can pass it on. 128 + signal number, if it was terminated by a
+ *         signal (like a shell reports it)
  */
-public p Driver.runBinary() {
+public f<int> Driver.runBinary() {
     // Print status message
     if this.cliOptions.printDebugOutput {
         print("Running executable ...\n\n");
@@ -580,11 +595,29 @@ public p Driver.runBinary() {
     // Run executable, inheriting our standard streams so its output goes straight to the terminal
     FilePath executablePath = this.cliOptions.outputPath;
     executablePath.makeNative();
-    const int exitCode = run(String(executablePath.toString()));
-    if exitCode != EXIT_CODE_SUCCESS {
-        const String message = "Your Spice executable exited with non-zero exit code " + toString(exitCode);
-        raiseCliError(CliErrorType::NON_ZERO_EXIT_CODE, message.getRaw());
+    const ProcessStatus status = run(String(executablePath.toString()));
+    if status.termSignal != 0 {
+        printCliError(CliErrorType::TERMINATED_BY_SIGNAL, getTerminationMessage(status.termSignal).getRaw());
+    } else if status.exitCode != EXIT_CODE_SUCCESS {
+        const String message = "Your Spice executable exited with non-zero exit code " + toString(status.exitCode);
+        printCliError(CliErrorType::NON_ZERO_EXIT_CODE, message.getRaw());
     }
+    return status.exitCode;
+}
+
+/**
+ * Get the message for an executable, that was terminated by the given signal
+ *
+ * @param termSignal Number of the signal
+ * @return Message, e.g. "Your Spice executable was terminated by signal 11 (SIGSEGV)"
+ */
+f<String> getTerminationMessage(int termSignal) {
+    String message = "Your Spice executable was terminated by signal " + toString(termSignal);
+    const String signalName = String(getSignalName(termSignal));
+    if !signalName.isEmpty() {
+        message += " (" + signalName + ")";
+    }
+    return message;
 }
 
 /**
@@ -1716,5 +1749,15 @@ f<bool> testDumpStats() {
     string[4] attachedArgs = ["spice", "run", "--dump-stats=out/stats.json", "main-file.spice"];
     assert parseAndEnrich(attached, 4, attachedArgs);
     assert attached.cliOptions.dump.statsFile.toGenericString() == "out/stats.json";
+    return true;
+}
+
+#[test]
+f<bool> testTerminationMessage() {
+    // Known signals are reported by name
+    assert getTerminationMessage(11) == "Your Spice executable was terminated by signal 11 (SIGSEGV)";
+    assert getTerminationMessage(8) == "Your Spice executable was terminated by signal 8 (SIGFPE)";
+    // Unknown signals are reported by number only
+    assert getTerminationMessage(99) == "Your Spice executable was terminated by signal 99";
     return true;
 }

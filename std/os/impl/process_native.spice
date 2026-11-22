@@ -39,9 +39,11 @@ const unsigned long READ_BUFFER_SIZE = 4096ul;
  * @param captureOutput Capture the standard output of the program
  * @param includeStdErr Capture the standard error stream as well (only if captureOutput is set)
  * @param output Captured output (output)
+ * @param termSignal Number of the signal, that terminated the program, or 0 if it exited by itself (output)
  * @return Exit code of the program, or PROCESS_SPAWN_FAILED if it could not be started
  */
-public f<int> spawnProcessAndWait(const String& program, const Vector<String>& args, bool captureOutput, bool includeStdErr, String& output) {
+public f<int> spawnProcessAndWait(const String& program, const Vector<String>& args, bool captureOutput, bool includeStdErr, String& output, int& termSignal) {
+    termSignal = 0;
     // Assemble the null-terminated argument vector before forking, so that the child does not have to allocate
     Vector<string> argv;
     argv.reserve(args.getSize() + 2l);
@@ -113,17 +115,18 @@ public f<int> spawnProcessAndWait(const String& program, const Vector<String>& a
     if waitpid(pid, &status, 0) != pid {
         return PROCESS_SPAWN_FAILED;
     }
-    return statusToExitCode(status);
+    return statusToExitCode(status, termSignal);
 }
 
 /**
  * Transform the wait status of a child process into its exit code
  *
  * @param status Wait status
+ * @param termSignal Number of the signal, that terminated the process, or 0 if it exited by itself (output)
  * @return Exit code. 128 + signal number, if the process was terminated by a signal (like a shell reports it)
  */
-f<int> statusToExitCode(int status) {
-    const int termSignal = status & 0x7f;
+f<int> statusToExitCode(int status, int& termSignal) {
+    termSignal = status & 0x7f;
     if termSignal == 0 {
         return (status >> 8) & 0xff;
     }

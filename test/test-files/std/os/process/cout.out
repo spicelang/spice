@@ -1,5 +1,8 @@
 echo: exit=0 output=plain with spaces $HOME `id` ; echo injected
 exit code: 3
+exit status: exit=3 signal=0
+killed: exit=143 signal=15 name=SIGTERM
+signal names: SIGABRT SIGFPE SIGSEGV ''
 with stderr: out
 err
 missing program is error: 1
