@@ -133,25 +133,21 @@ type GuardedSharedMap struct {
     RecursiveMutex* mutex
 }
 
-// Increment the counter of the given key, guarded by a ConditionalLock
-p incrementGuarded(GuardedSharedMap* guardedMap, unsigned long key) {
-    ConditionalLock _ = ConditionalLock(guardedMap.mutex);
-    UnorderedMap<unsigned long, unsigned long>* sharedMap = guardedMap.sharedMap;
-    if sharedMap.contains(key) {
-        sharedMap.upsert(key, sharedMap.get(key) + 1l);
-    } else {
-        sharedMap.upsert(key, 1l);
-    }
-}
-
-// Increment the counters of the given map from multiple threads. The lock is taken in a separate function, because a ctor call
-// within a lambda body captures the struct symbol, which crashes the IR generator
+// Increment the counters of the given map from multiple threads. The lock is constructed in the lambda body, so this also
+// covers ctor calls in capturing lambdas, which must not capture the struct type itself
 p incrementConcurrently(GuardedSharedMap* guardedMap) {
     ThreadPool pool = ThreadPool(4s);
     for unsigned int i = 0; i < 4; i++ {
         pool.enqueue(p() {
             for unsigned long key = 0l; key < 10000l; key++ {
-                incrementGuarded(guardedMap, key % 500l);
+                ConditionalLock _ = ConditionalLock(guardedMap.mutex);
+                UnorderedMap<unsigned long, unsigned long>* sharedMap = guardedMap.sharedMap;
+                unsigned long mapKey = key % 500l;
+                if sharedMap.contains(mapKey) {
+                    sharedMap.upsert(mapKey, sharedMap.get(mapKey) + 1l);
+                } else {
+                    sharedMap.upsert(mapKey, 1l);
+                }
             }
         });
     }
