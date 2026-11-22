@@ -1,0 +1,23 @@
+// A Result<T> constructed via its error ctor, i.e. Result<T>(error), records its own call site as the trace's origin
+// frame, like err<T>(...) does. A Result<T> constructed via its data ctor records nothing, so it leaves the trace of the
+// earlier error untouched.
+
+f<Result<int>> readIt(bool fail) {
+    if fail {
+        return Result<int>(Error("it failed"));
+    }
+    return Result<int>(7);
+}
+
+f<Result<int>> compute(bool fail) {
+    int value = readIt(fail)!;
+    return ok<int>(value * 2);
+}
+
+f<int> main() {
+    Result<int> errResult = compute(true);
+    Result<int> okResult = readIt(false);
+    errResult.dumpTrace();
+    printf("ok: %d\n", okResult.unwrap());
+    printf("done\n");
+}

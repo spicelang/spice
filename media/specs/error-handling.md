@@ -98,7 +98,9 @@ reference to a thread-local instance (a genuine LLVM `thread_local` global, lazi
 not attached to any specific `Result<T>` value.
 
 **Population.** `sErrTraceReset()`/`sErrTracePush()` are compiler-injected calls: the former at every
-`err<T>(...)` call site (origin, frame 0), the latter at every propagating postfix `!` (hop). Both keep normal
+`err<T>(...)` and `Result<T>(error)` call site (origin, frame 0), the latter at every propagating postfix `!` (hop).
+The delegations of `err<T>` to the error ctor inside `result_rt.spice` are not origins, so that the origin is the call
+site of `err<T>`, not the one inside of it. Both keep normal
 name mangling — `StdFunctionManager` reconstructs their mangled names the same way it does for
 `sAllocUnsafe`/`sDealloc`, rather than declaring them unmangled. Once the buffer is at capacity, further hops
 are silently dropped, keeping the origin and earliest hops rather than the most recent ones.
@@ -115,8 +117,6 @@ prints the stack trace too (see `media/specs/stack-traces.md`).
   calling `dumpTrace()` on an unrelated, successful `Result` can print a stale trace from an earlier failure on
   the same thread (test: `result-err-trace-global-not-per-value`). Different threads never see each other's
   traces (test: `result-err-trace-thread-isolated`).
-- Only `err<T>(...)` calls are recognized as an origin; constructing a `Result<T>` directly via
-  `Result<T>(someError)` records no origin at all.
 
 ## `panic`'s role
 

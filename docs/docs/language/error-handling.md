@@ -90,8 +90,8 @@ function attribute.
 
 ## Error return traces
 To find out, where an error came from and how it got to the place, where it is handled, Spice records an error return
-trace: every `err<T>()` call records the origin of an error and every `!` records a hop on the way up. `dumpTrace()` on
-an `Error` or `Result<T>` prints the error and the recorded trace to stderr:
+trace: every `err<T>()` or `Result<T>(error)` call records the origin of an error and every `!` records a hop on the way
+up. `dumpTrace()` on an `Error` or `Result<T>` prints the error and the recorded trace to stderr:
 
 ```spice
 f<Result<int>> readPort(bool valid) {
@@ -128,7 +128,6 @@ A `panic` prints the recorded trace as well, e.g. when `unwrap()` is called on a
 
 - The trace belongs to the current thread, not to a specific result. It shows the most recent chain of errors on the
   thread, so `dumpTrace()` on an unrelated result can print the trace of an earlier error.
-- Only `err<T>()` calls are recorded as an origin. Constructing a result with `Result<T>(error)` records nothing.
 - A trace holds up to 16 frames. Further hops are dropped, keeping the origin and the earliest hops.
 - Error return tracing is disabled in release builds (`--build-mode=release`) and in
   [freestanding mode](../how-to/freestanding.md).
