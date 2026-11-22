@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:2:5:
+Declaration of the implicit result variable: 'result' is the implicit return variable of functions and cannot be declared here. Assign to it directly or choose another name
+
+2  int result = 5;
+   ^^^^^^^^^^^^^^

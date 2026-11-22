@@ -128,7 +128,8 @@ public type SemanticErrorType enum {
     MULTIPLE_ALLOCATOR_FUNCTIONS,
     MISSING_ALLOCATOR_FUNCTIONS,
     IMPORT_REQUIRES_OS,
-    INVALID_CTOR_DELEGATION
+    INVALID_CTOR_DELEGATION,
+    RESULT_VARIABLE_DECLARED
 }
 
 public type SemanticError struct {
@@ -302,6 +303,7 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::MISSING_ALLOCATOR_FUNCTIONS: { return "Missing allocator functions"; }
         case SemanticErrorType::IMPORT_REQUIRES_OS: { return "Import requires an operating system"; }
         case SemanticErrorType::INVALID_CTOR_DELEGATION: { return "Invalid ctor delegation"; }
+        case SemanticErrorType::RESULT_VARIABLE_DECLARED: { return "Declaration of the implicit result variable"; }
         default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }
