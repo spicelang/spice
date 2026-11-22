@@ -127,8 +127,9 @@ public f<byte*> memcpy(byte* dest, const byte* src, unsigned long size) {
 The `core.compiler.noBuiltins` attribute keeps LLVM from turning the loop of such an implementation into a call to the
 function itself.
 
-Error return tracing (`#![core.compiler.errorReturnTracing]`) is disabled in freestanding mode, since the trace is stored
-thread-local and printed to stderr. `Error.dumpTrace()` and `Result.dumpTrace()` do nothing in freestanding mode.
+[Error return tracing](../language/error-handling.md#error-return-traces) is disabled in freestanding mode, since the
+trace is stored thread-local and printed to stderr. `Error.dumpTrace()` and `Result.dumpTrace()` do nothing in freestanding
+mode.
 
 ## Platform specific source files
 

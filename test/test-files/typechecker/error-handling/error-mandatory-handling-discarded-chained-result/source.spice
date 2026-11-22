@@ -1,5 +1,3 @@
-#![core.compiler.explicitErrorHandling = true]
-
 type Connection struct {
     int id
 }

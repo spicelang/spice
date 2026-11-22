@@ -90,9 +90,8 @@ public inline p Error.triggerPanic() {
 }
 
 /**
- * Prints the error message and the recorded error return trace to stderr. A no-op if no trace was ever recorded, which
- * is always the case unless #![core.compiler.errorReturnTracing = true] was set somewhere along the propagation chain -
- * so this is always safe to call regardless of that attribute's state.
+ * Prints the error message and the recorded error return trace to stderr. Only the error message is printed, if no trace
+ * was recorded, e.g. in freestanding mode, where error return tracing is disabled.
  */
 public inline p Error.dumpTrace() {
     if this.code != ErrorCode::Ok {

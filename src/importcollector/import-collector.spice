@@ -174,21 +174,6 @@ public f<Any> ImportCollector.visitModAttr(ASTModAttrNode* node) {
         this.sourceFile.setIgnoreWarnings(ignoreWarnings);
     }
 
-    // core.compiler.explicitErrorHandling
-    if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING)) {
-        const CompileTimeValue explicitErrorHandlingAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_EXPLICIT_ERROR_HANDLING));
-        const bool explicitErrorHandling = explicitErrorHandlingAttrValue.getBoolValue();
-        this.sourceFile.setExplicitErrorHandling(explicitErrorHandling);
-    }
-
-    // core.compiler.errorReturnTracing
-    if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING)) {
-        const CompileTimeValue errorReturnTracingAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_ERROR_RETURN_TRACING));
-        // The error return trace is stored thread-local and printed to stderr, so it is disabled in freestanding mode
-        const bool errorReturnTracing = errorReturnTracingAttrValue.getBoolValue() && !this.cliOptions.freestanding;
-        this.sourceFile.setErrorReturnTracing(errorReturnTracing);
-    }
-
     // core.compiler.requiresOs
     if node.attrLst.hasAttr(String(ATTR_CORE_COMPILER_REQUIRES_OS)) {
         const CompileTimeValue requiresOsAttrValue = node.attrLst.getAttrValueByName(String(ATTR_CORE_COMPILER_REQUIRES_OS));

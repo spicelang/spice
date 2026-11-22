@@ -1,6 +1,4 @@
-// With explicitErrorHandling enabled, a Result<T>, that is the receiver of a chained method call, counts as handled
-
-#![core.compiler.explicitErrorHandling = true]
+// A Result<T>, that is the receiver of a chained method call, counts as handled
 
 type Counter struct {
     int count

@@ -3,8 +3,6 @@
 // at all). Threads are run one at a time (start, then join) purely to keep this test's output deterministic -
 // the property under test is per-thread isolation, not concurrency.
 
-#![core.compiler.errorReturnTracing = true]
-
 import "std/os/thread";
 
 f<Result<int>> mightFail() {

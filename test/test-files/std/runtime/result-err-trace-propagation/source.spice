@@ -1,8 +1,6 @@
 // Each propagating postfix '!' appends its own call site to the trace as a hop, on top of the origin recorded at
 // err<T>(...). dumpTrace() then shows the whole origin-to-caller chain.
 
-#![core.compiler.errorReturnTracing = true]
-
 f<Result<int>> readIt(bool fail) {
     if fail {
         return err<int>(42, "it failed");

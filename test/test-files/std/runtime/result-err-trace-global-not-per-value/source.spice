@@ -3,8 +3,6 @@
 // the most recently active origin-to-caller chain, even when called on an unrelated, successful Result. See
 // result-err-trace-thread-isolated for the (better) behavior across different threads.
 
-#![core.compiler.errorReturnTracing = true]
-
 f<Result<int>> readIt(bool fail) {
     if fail {
         return err<int>(42, "it failed");

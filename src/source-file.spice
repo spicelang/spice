@@ -189,8 +189,7 @@ public type SourceFile struct {
     public bool isMainFile = true
     public bool alwaysKeepSymbolsOnNameCollision = false
     public bool ignoreWarnings = false
-    public bool explicitErrorHandling = true // Set by the 'core.compiler.explicitErrorHandling' module attribute
-    public bool errorReturnTracing = true // Set by the 'core.compiler.errorReturnTracing' module attribute
+    public bool errorReturnTracing = true // Disabled in freestanding mode
     public bool requiresOs = false // Set by the 'core.compiler.requiresOs' module attribute. Rejected in freestanding mode
     public bool reVisitRequested = true
     public CompileStageType previousStage = CompileStageType::NONE
@@ -1035,8 +1034,6 @@ public f<bool> SourceFile.hasNameRegistryTarget(const String& symbolName, const 
 
 public p SourceFile.setAlwaysKeepSymbolsOnNameCollision(bool value) { this.alwaysKeepSymbolsOnNameCollision = value; }
 public p SourceFile.setIgnoreWarnings(bool value) { this.ignoreWarnings = value; }
-public p SourceFile.setExplicitErrorHandling(bool value) { this.explicitErrorHandling = value; }
-public p SourceFile.setErrorReturnTracing(bool value) { this.errorReturnTracing = value; }
 public p SourceFile.setRequiresOs(bool value) { this.requiresOs = value; }
 
 public f<bool> SourceFile.imports(const SourceFile* sourceFile) {
