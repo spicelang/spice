@@ -6379,8 +6379,9 @@ p IRGenerator.generateCtorOrDtorCall(const SymbolTableEntry* entry, const model:
     // Retrieve address of the struct variable. For fields this is the 'this' variable, otherwise use the normal address
     llvm::Value structAddr;
     if entry.isField() {
-        // Take 'this' var as base pointer
-        const SymbolTableEntry* thisVar = this.currentScope.lookupStrict(String(THIS_VARIABLE_NAME));
+        // Take 'this' var as base pointer. At a return in a nested block of a dtor, the fields get cleaned up from within the
+        // scope of that block, which does not contain 'this' itself, so the parent scopes have to be searched as well
+        const SymbolTableEntry* thisVar = this.currentScope.lookup(String(THIS_VARIABLE_NAME));
         assert thisVar != nil<const SymbolTableEntry*>;
         const QualType& thisVarType = thisVar.getQualType();
         assert thisVarType.isPtr();

@@ -1,0 +1,43 @@
+// A return in a nested block of a dtor cleans up the fields of the struct as well, before leaving the dtor. Regression test
+// for https://github.com/spicelang/spice/issues/1813: the compiler crashed, when it generated the dtor call of a field there.
+
+type Inner struct {
+    int id
+}
+
+p Inner.dtor() {
+    printf("Inner.dtor %d\n", this.id);
+}
+
+type Outer struct {
+    Inner inner
+    bool active
+}
+
+p Outer.dtor() {
+    if !this.active {
+        printf("Outer.dtor %d: inactive\n", this.inner.id);
+        return;
+    }
+    for int i = 0; i < 3; i++ {
+        if i == 1 {
+            printf("Outer.dtor %d: active, left at %d\n", this.inner.id, i);
+            return;
+        }
+    }
+    printf("Outer.dtor %d: unreachable\n", this.inner.id);
+}
+
+f<int> main() {
+    {
+        Outer outer;
+        outer.inner.id = 1;
+        outer.active = true;
+    }
+    {
+        Outer outer;
+        outer.inner.id = 2;
+        outer.active = false;
+    }
+    printf("done\n");
+}
