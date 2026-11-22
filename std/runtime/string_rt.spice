@@ -110,6 +110,8 @@ public p String.ctor(const String& original) {
  * @param newValue String to copy from
  */
 public p operator=(String& this, const String& newValue) {
+    // Self-assignment: leave the string as is, instead of reallocating and copying the buffer onto itself
+    if &this == &newValue { return; }
     this.length = newValue.length;
     this.capacity = newValue.capacity;
 

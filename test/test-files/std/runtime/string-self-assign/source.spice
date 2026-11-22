@@ -1,0 +1,19 @@
+// TEST: --sanitizer=address
+
+f<int> main() {
+    // Self-assignment through a reference must keep the contents of an allocated string
+    String s1 = String("Hello World!");
+    String& s1Alias = s1;
+    s1 = s1Alias;
+    printf("Result: %s (%d)\n", s1, s1.getLength());
+
+    // The string must stay usable afterwards
+    s1 += " Hi!";
+    printf("Result: %s (%d)\n", s1, s1.getLength());
+
+    // Self-assignment of an unallocated string must keep it empty
+    String s2;
+    String& s2Alias = s2;
+    s2 = s2Alias;
+    printf("Length: %d\n", s2.getLength());
+}
