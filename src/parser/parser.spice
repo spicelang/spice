@@ -4,8 +4,10 @@
 import "std/data/stack";
 import "std/data/vector";
 import "std/data/pair";
+import "std/text/analysis";
 import "std/text/format";
 import "std/type/type-conversion";
+import "std/type/types";
 
 // Own imports
 import "@/exception/fatal-error";
@@ -21,9 +23,6 @@ import "@/symboltablebuilder/qual-type";
 import "@/symboltablebuilder/super-type";
 import "@/symboltablebuilder/type-qualifiers";
 import "@/exception/parser-error";
-
-// External functions
-ext f<unsigned long> strtoull(string, char**, int);
 
 /**
  * Check if the given identifier is a reserved keyword
@@ -2686,8 +2685,26 @@ f<long> Parser.parseNumeric(const Token& token, bool isNegative, unsigned int bi
         }
     }
 
-    // Parse the magnitude as unsigned, so that values like 2^63 (the absolute value of the min long) fit
-    const unsigned long magnitude = strtoull(digits.getRaw(), nil<char**>, base);
+    // Parse the magnitude as unsigned, so that values like 2^63 (the absolute value of the min long) fit. Values above the max
+    // unsigned long are out of range for every target type
+    const unsigned long unsignedBase = cast<unsigned long>(base);
+    unsigned long magnitude = 0ul;
+    for unsigned long i = 0ul; i < digits.getLength(); i++ {
+        const char digitChar = toLower(digits[i]);
+        unsigned long digitValue = unsignedBase; // Invalid digit
+        if isDigit(digitChar) {
+            digitValue = cast<unsigned long>(cast<int>(digitChar) - cast<int>('0'));
+        } else if digitChar >= 'a' && digitChar <= 'f' {
+            digitValue = cast<unsigned long>(cast<int>(digitChar) - cast<int>('a') + 10);
+        }
+        if digitValue >= unsignedBase {
+            break; // Stop at the first invalid digit, like strtoull
+        }
+        if magnitude > (ULONG_MAX_VALUE - digitValue) / unsignedBase {
+            this.throwParserError(token.codeLoc, ParserErrorType::NUMBER_OUT_OF_RANGE, "The provided number is out of range");
+        }
+        magnitude = magnitude * unsignedBase + digitValue;
+    }
 
     // Check the limits of the target type
     if bitWidth == 64 {
