@@ -152,7 +152,7 @@ public p Reader.advance() {
  * @param c Char to check
  * @return Continuation byte or not
  */
-inline f<bool> Reader.isUtf8ContinuationByte(char c) {
+public inline f<bool> Reader.isUtf8ContinuationByte(char c) {
     const int byteValue = cast<int>(cast<byte>(c));
     return (byteValue & 0xC0) == 0x80;
 }

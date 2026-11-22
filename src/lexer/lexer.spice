@@ -466,18 +466,62 @@ f<Token> Lexer.consumeCharLiteral(const CodeLoc& codeLoc) {
     // Parse the following regex: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\''
     String charStr;
     this.reader.expect('\''); // Consume '\''
+    // A char literal must not be empty and must be terminated in the same line
+    if this.reader.getChar() == '\'' || this.isAtLineEnd() {
+        this.throwCharLiteralError(codeLoc, charStr);
+    }
     if this.reader.getChar() == '\\' { // Escape sequence
         // Keep the escape sequence as is. It gets resolved by the parser
         charStr += '\\';
         this.reader.advance(); // Consume '\\'
-        charStr += this.reader.getChar();
-        this.reader.advance(); // Consume escaped character
-    } else { // Normal character
-        charStr += this.reader.getChar();
-        this.reader.advance(); // Consume character
+        if this.reader.isEOF() {
+            this.throwCharLiteralError(codeLoc, charStr);
+        }
+    }
+    this.consumeCodePoint(charStr); // Consume (escaped) character
+    // A char literal must contain exactly one character or escape sequence
+    if this.reader.getChar() != '\'' {
+        this.throwCharLiteralError(codeLoc, charStr);
     }
     this.reader.expect('\''); // Consume '\''
     return Token(TokenType::CHAR_LIT, charStr, codeLoc);
+}
+
+/**
+ * Check if the reader is at the end of the current line or of the input
+ *
+ * @return At the line end or not
+ */
+f<bool> Lexer.isAtLineEnd() {
+    return this.reader.isEOF() || this.reader.getChar() == '\n' || this.reader.getChar() == '\r';
+}
+
+/**
+ * Consume the current code point, which spans multiple chars if it is a multibyte UTF-8 sequence
+ *
+ * @param text Text to append the code point to
+ */
+p Lexer.consumeCodePoint(String& text) {
+    do {
+        text += this.reader.getChar();
+        this.reader.advance();
+    } while !this.reader.isEOF() && this.reader.isUtf8ContinuationByte(this.reader.getChar());
+}
+
+/**
+ * Abort lexing with a lexer error for a malformed char literal. The message shows the literal up to and including the
+ * offending character
+ *
+ * @param codeLoc Code location of the char literal
+ * @param charStr Content of the char literal, that was consumed so far
+ */
+#[core.compiler.noReturn]
+p Lexer.throwCharLiteralError(const CodeLoc& codeLoc, String& charStr) {
+    if !this.isAtLineEnd() {
+        this.consumeCodePoint(charStr);
+    }
+    const String message = "token recognition error at: ''" + charStr + "'";
+    this.throwLexerError(codeLoc, message.getRaw());
 }
 
 f<Token> Lexer.consumeStringLiteral(const CodeLoc& codeLoc) {
