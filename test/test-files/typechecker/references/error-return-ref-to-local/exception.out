@@ -1,0 +1,50 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:14:12:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'local' does not outlive the function. Return by value instead.
+
+14  return local;
+           ^^^^^
+
+[Error|Semantic] ./source.spice:18:12:
+Return of reference to local variable: The returned reference would dangle, because the parameter 'param' does not outlive the function. Return by value instead.
+
+18  return param;
+           ^^^^^
+
+[Error|Semantic] ./source.spice:23:12:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'local' does not outlive the function. Return by value instead.
+
+23  return (local);
+           ^^^^^^^
+
+[Error|Semantic] ./source.spice:28:12:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'outer' does not outlive the function. Return by value instead.
+
+28  return outer.inner.value;
+           ^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:32:12:
+Return of reference to local variable: The returned reference would dangle, because the parameter 'outer' does not outlive the function. Return by value instead.
+
+32  return outer.items[1];
+           ^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:37:12:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'local' does not outlive the function. Return by value instead.
+
+37  return condition ? other : local;
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:47:16:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'local' does not outlive the function. Return by value instead.
+
+47  return local;
+           ^^^^^
+
+[Error|Semantic] ./source.spice:41:12:
+Return of reference to local variable: The returned reference would dangle, because the parameter 'param' does not outlive the function. Return by value instead.
+
+41  return param;
+           ^^^^^

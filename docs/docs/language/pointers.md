@@ -35,6 +35,25 @@ f<int> main() {
 }
 ```
 
+## Returning pointers
+
+A local variable or a by-value parameter only lives until the function returns, so its address would dangle in the
+caller. Therefore, returning the address of a local variable, a by-value parameter or a field or array item, that is
+stored in one of them, is a compile error. This also applies to a local array, that decays to a pointer. Within an
+`unsafe` block, the compiler only emits a warning instead:
+
+<!-- doc-test: expect-error Return of address of local variable -->
+```spice
+f<int*> getValue() {
+    int value = 42;
+    return &value; // Error: The returned pointer would dangle
+}
+
+f<int> main() {
+    printf("%d", *getValue());
+}
+```
+
 ## Global pointers
 
 Global variables can also be of pointer type, e.g. to hold a singleton instance. They are implicitly initialized with

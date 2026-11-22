@@ -26,6 +26,7 @@ public type CompilerWarningType enum {
     INEFFECTIVE_GENERIC_TYPE_CONDITION,
     BOOL_ASSIGN_AS_CONDITION,
     NON_TRIVIAL_TYPE_PASSED_BY_VALUE,
+    RETURN_OF_LOCAL_ADDRESS,
     UNINSTALL_FAILED,
     BACKEND_WARNING
 }
@@ -96,6 +97,7 @@ f<string> CompilerWarning.getMessagePrefix(const CompilerWarningType warningType
         case CompilerWarningType::INEFFECTIVE_GENERIC_TYPE_CONDITION: { return "Ineffective type condition"; }
         case CompilerWarningType::BOOL_ASSIGN_AS_CONDITION: { return "Bool assignment as condition"; }
         case CompilerWarningType::NON_TRIVIAL_TYPE_PASSED_BY_VALUE: { return "Non-trivial type passed by value"; }
+        case CompilerWarningType::RETURN_OF_LOCAL_ADDRESS: { return "Return of address of local variable"; }
         case CompilerWarningType::UNINSTALL_FAILED: { return "Uninstall failed"; }
         case CompilerWarningType::BACKEND_WARNING: { return "Backend warning"; }
         default: { panic(Error("Unknown warning")); } // LCOV_EXCL_LINE

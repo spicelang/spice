@@ -1,0 +1,11 @@
+f<int*> getLocalAddress() {
+    int local = 42;
+    unsafe {
+        return &local;
+    }
+}
+
+f<int> main() {
+    int* address = getLocalAddress();
+    printf("%d", address != nil<int*>);
+}

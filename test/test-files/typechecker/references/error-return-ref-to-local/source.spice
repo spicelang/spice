@@ -1,0 +1,50 @@
+type Inner struct {
+    int value
+}
+
+type Outer struct {
+    Inner inner
+    int[3] items
+}
+
+type T int|double;
+
+f<int&> getLocal() {
+    int local = 42;
+    return local;
+}
+
+f<int&> getParam(int param) {
+    return param;
+}
+
+f<const int&> getConstLocal() {
+    const int local = 42;
+    return (local);
+}
+
+f<int&> getFieldOfLocal() {
+    Outer outer;
+    return outer.inner.value;
+}
+
+f<int&> getItemOfParam(Outer outer) {
+    return outer.items[1];
+}
+
+f<int&> getTernaryOperand(bool condition, int& other) {
+    int local = 42;
+    return condition ? other : local;
+}
+
+f<T&> getGenericParam<T>(T param) {
+    return param;
+}
+
+f<int> main() {
+    f<int&>() lambda = f<int&>() {
+        int local = 42;
+        return local;
+    };
+    printf("%d", getGenericParam(1));
+}

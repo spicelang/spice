@@ -2880,6 +2880,11 @@ public f<Any> TypeChecker.visitReturnStmt(ASTReturnStmtNode* node) {
     ReturnStmtData& data = node.data.get(this.manIdx);
     data.calledCopyCtor = assignResult.getSecond();
 
+    // A reference to a local variable or its address would dangle, as soon as the function returns
+    if !assignResult.getFirst().is(SuperType::TY_UNRESOLVED) {
+        this.checkReturnValueOutlivesFunction(getASTNode(node.assignExpr), returnType, rhs.ty);
+    }
+
     // Check if the dtor call on the return value can be skipped
     SymbolTableEntry*& returnedLocal = node.returnedLocals.get(this.manIdx);
     returnedLocal = nil<SymbolTableEntry*>;
@@ -3466,6 +3471,190 @@ public f<bool> TypeChecker.isReturnValueOptimizable(const ExprResult& returnValu
         scope = scope.parent;
     }
     return false;
+}
+
+/**
+ * Check if a variable is declared in the current function/procedure/lambda, either as local variable or as parameter.
+ * Globals and variables, that a lambda captures from its enclosing function, are declared elsewhere. The scope of the
+ * entry cannot tell this, because the entries of a generic manifestation are copies, that still point to the scopes of
+ * the generic function. So the entry is searched in the scopes from the current one up to the function scope instead.
+ *
+ * @param entry Variable entry
+ * @return Declared in the current function or not
+ */
+f<bool> TypeChecker.isDeclaredInCurrentFunction(const SymbolTableEntry* entry) {
+    Scope* scope = this.currentScope;
+    while scope != nil<Scope*> {
+        // A lookup of a captured variable yields the entry of the enclosing function
+        SymbolTable& symbolTable = scope.symbolTable;
+        if symbolTable.lookupCaptureStrict(entry.name) == nil<Capture*> && symbolTable.lookupStrict(entry.name) == entry {
+            return true;
+        }
+        if scope.scopeType == ScopeType::FUNC_PROC_BODY || scope.scopeType == ScopeType::LAMBDA_BODY {
+            return false;
+        }
+        scope = scope.parent;
+    }
+    return false;
+}
+
+/**
+ * Check if the value of a return statement outlives the function/procedure/lambda. Local variables and by-value parameters
+ * live in the frame of the function, so a reference to them or their address would dangle, as soon as the function
+ * returns. Returning such a reference is an error. Returning such an address is an error as well, except in unsafe blocks,
+ * where it is a warning.
+ *
+ * @param returnValueNode Value of the return statement
+ * @param returnType Return type of the function
+ * @param returnValueType Type of the return value
+ */
+p TypeChecker.checkReturnValueOutlivesFunction(ASTNode* returnValueNode, const QualType& returnType, const QualType& returnValueType) {
+    if returnType.isRef() {
+        const SymbolTableEntry* localEntry = this.getReferencedLocal(returnValueNode);
+        if localEntry != nil<const SymbolTableEntry*> {
+            const String message = String("The returned reference would dangle, because ") + describeLocal(localEntry) + " does not outlive the function. Return by value instead.";
+            this.softError(returnValueNode, SemanticErrorType::RETURN_OF_LOCAL_REFERENCE, message);
+        }
+        return;
+    }
+
+    if !returnType.isPtr() {
+        return;
+    }
+    // An array decays to the pointer to its first item
+    const QualType returnValueNonRefType = returnValueType.removeReferenceWrapper();
+    const SymbolTableEntry* localEntry = returnValueNonRefType.isArray() ? this.getReferencedLocal(returnValueNode) : this.getAddressedLocal(returnValueNode);
+    if localEntry == nil<const SymbolTableEntry*> {
+        return;
+    }
+    const String message = String("The returned pointer would dangle, because ") + describeLocal(localEntry) + " does not outlive the function";
+    if this.currentScope.doesAllowUnsafeOperations() {
+        this.addWarning(returnValueNode.codeLoc, CompilerWarningType::RETURN_OF_LOCAL_ADDRESS, message);
+    } else {
+        this.softError(returnValueNode, SemanticErrorType::RETURN_OF_LOCAL_ADDRESS, message + ". Use unsafe blocks if you know what you are doing.");
+    }
+}
+
+/**
+ * Get the local variable or by-value parameter of the current function/procedure/lambda, that an expression refers to.
+ * This is the variable itself, a field or an array item that is stored in it, or one of the operands of a ternary
+ * expression with a reference result. Values that are reached through a pointer or a reference, as well as globals and
+ * captured variables, are stored outside the frame of the function.
+ *
+ * @param node Expression
+ * @return Entry of the local variable or nil, if the expression does not refer to the storage of a local variable
+ */
+f<const SymbolTableEntry*> TypeChecker.getReferencedLocal(ASTNode* node) {
+    // Variable or expression in parentheses
+    if node.kind == ASTNodeKind::ATOMIC_EXPR {
+        ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(node);
+        if atomicExpr.assignExpr != nil<IVisitable*> {
+            return this.getReferencedLocal(getASTNode(atomicExpr.assignExpr));
+        }
+        // Constants and values (e.g. function calls) are no variables
+        if atomicExpr.fqIdentifier.isEmpty() {
+            return nil<const SymbolTableEntry*>;
+        }
+        const VarAccessData& accessData = atomicExpr.data.get(this.manIdx);
+        const SymbolTableEntry* entry = accessData.entry;
+        // A reference variable refers to a value, that is stored somewhere else
+        if entry == nil<const SymbolTableEntry*> || entry.getQualType().isRef() || !this.isDeclaredInCurrentFunction(entry) {
+            return nil<const SymbolTableEntry*>;
+        }
+        return entry;
+    }
+
+    // Field of a struct or union value, or item of an array value
+    if node.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
+        const ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(node);
+        const bool isMemberAccess = postfixUnaryExpr.op == PostfixUnaryOp::OP_MEMBER_ACCESS;
+        if !isMemberAccess && postfixUnaryExpr.op != PostfixUnaryOp::OP_SUBSCRIPT {
+            return nil<const SymbolTableEntry*>;
+        }
+        // A reference field refers to a value, that is stored somewhere else
+        if asExprNode(node).getEvaluatedSymbolType(this.manIdx).isRef() {
+            return nil<const SymbolTableEntry*>;
+        }
+        ASTNode* operandNode = getASTNode(postfixUnaryExpr.postfixUnaryExpr);
+        const SymbolTableEntry* operandEntry = this.getReferencedLocal(operandNode);
+        if operandEntry == nil<const SymbolTableEntry*> {
+            return nil<const SymbolTableEntry*>;
+        }
+        // Member access and subscript on a pointer (e.g. 'this') access the memory the pointer points to
+        const QualType operandType = asExprNode(operandNode).getEvaluatedSymbolType(this.manIdx);
+        const dyn compositeOptions = [SuperType::TY_STRUCT, SuperType::TY_UNION];
+        const bool storedInOperand = isMemberAccess ? operandType.isOneOf(compositeOptions, len(compositeOptions)) : operandType.isArray();
+        return storedInOperand ? operandEntry : nil<const SymbolTableEntry*>;
+    }
+
+    // A ternary expression with a reference result refers to one of its operands
+    if node.kind == ASTNodeKind::TERNARY_EXPR {
+        const ASTTernaryExprNode* ternaryExpr = downcast<ASTTernaryExprNode>(node);
+        if ternaryExpr.falseExpr == nil<IVisitable*> || !asExprNode(node).getEvaluatedSymbolType(this.manIdx).isRef() {
+            return nil<const SymbolTableEntry*>;
+        }
+        IVisitable* trueExpr = ternaryExpr.isShortened ? ternaryExpr.condition : ternaryExpr.trueExpr;
+        const SymbolTableEntry* trueEntry = this.getReferencedLocal(getASTNode(trueExpr));
+        if trueEntry != nil<const SymbolTableEntry*> {
+            return trueEntry;
+        }
+        return this.getReferencedLocal(getASTNode(ternaryExpr.falseExpr));
+    }
+
+    return nil<const SymbolTableEntry*>;
+}
+
+/**
+ * Get the local variable or by-value parameter of the current function/procedure/lambda, whose address a pointer
+ * expression takes with the address-of operator (see getReferencedLocal)
+ *
+ * @param node Pointer expression
+ * @return Entry of the local variable or nil, if the expression does not take the address of a local variable
+ */
+f<const SymbolTableEntry*> TypeChecker.getAddressedLocal(ASTNode* node) {
+    // Expression in parentheses
+    if node.kind == ASTNodeKind::ATOMIC_EXPR {
+        const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(node);
+        if atomicExpr.assignExpr != nil<IVisitable*> {
+            return this.getAddressedLocal(getASTNode(atomicExpr.assignExpr));
+        }
+        return nil<const SymbolTableEntry*>;
+    }
+
+    // Address-of operator
+    if node.kind == ASTNodeKind::PREFIX_UNARY_EXPR {
+        const ASTPrefixUnaryExprNode* prefixUnaryExpr = downcast<ASTPrefixUnaryExprNode>(node);
+        if prefixUnaryExpr.op != PrefixUnaryOp::OP_ADDRESS_OF {
+            return nil<const SymbolTableEntry*>;
+        }
+        return this.getReferencedLocal(getASTNode(prefixUnaryExpr.prefixUnaryExpr));
+    }
+
+    // Ternary expression, that selects one of two addresses
+    if node.kind == ASTNodeKind::TERNARY_EXPR {
+        const ASTTernaryExprNode* ternaryExpr = downcast<ASTTernaryExprNode>(node);
+        if ternaryExpr.falseExpr == nil<IVisitable*> || ternaryExpr.isShortened {
+            return nil<const SymbolTableEntry*>;
+        }
+        const SymbolTableEntry* trueEntry = this.getAddressedLocal(getASTNode(ternaryExpr.trueExpr));
+        if trueEntry != nil<const SymbolTableEntry*> {
+            return trueEntry;
+        }
+        return this.getAddressedLocal(getASTNode(ternaryExpr.falseExpr));
+    }
+
+    return nil<const SymbolTableEntry*>;
+}
+
+/**
+ * Describe a local variable or parameter for a diagnostic, e.g. "the local variable 'value'"
+ *
+ * @param entry Variable entry
+ * @return Description
+ */
+f<String> describeLocal(const SymbolTableEntry* entry) {
+    const String kind = entry.isParam ? String("the parameter '") : String("the local variable '");
+    return kind + entry.name + "'";
 }
 
 public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {

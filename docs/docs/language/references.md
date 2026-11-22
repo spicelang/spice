@@ -35,6 +35,22 @@ f<int> main() {
 }
 ```
 
+A local variable or a by-value parameter only lives until the function returns, so a reference to it would dangle in
+the caller. Therefore, returning a reference to a local variable, a by-value parameter or a field or array item, that is
+stored in one of them, is a compile error:
+
+<!-- doc-test: expect-error Return of reference to local variable -->
+```spice
+f<int&> getValue() {
+    int value = 42;
+    return value; // Error: The returned reference would dangle
+}
+
+f<int> main() {
+    printf("%d", getValue());
+}
+```
+
 ## Usage - struct fields
 
 Struct fields can also be of type reference:

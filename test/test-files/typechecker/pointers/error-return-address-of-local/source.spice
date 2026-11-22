@@ -1,0 +1,36 @@
+type Inner struct {
+    int value
+}
+
+f<int*> getLocalAddress() {
+    int local = 42;
+    return &local;
+}
+
+f<int*> getParamAddress(int param) {
+    return (&param);
+}
+
+f<int*> getFieldAddress() {
+    Inner inner;
+    return &inner.value;
+}
+
+f<int*> getItemAddress() {
+    int[3] items = [1, 2, 3];
+    return &items[2];
+}
+
+f<int*> getDecayedArray() {
+    int[3] items = [1, 2, 3];
+    return items;
+}
+
+f<Inner*> getTernaryAddress(bool condition, Inner* other) {
+    Inner local;
+    return condition ? other : &local;
+}
+
+f<int> main() {
+    printf("%p", getLocalAddress());
+}
