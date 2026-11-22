@@ -1,0 +1,54 @@
+name: Documentation examples
+
+on:
+  push:
+    paths:
+      - docs/docs/**
+      - src/**
+      - std/**
+      - tools/check_doc_examples.py
+      - .github/stage0-version
+      - .github/workflows/docs-examples.yml
+  workflow_dispatch:
+
+jobs:
+  check-doc-examples:
+    name: Compile documentation examples
+    runs-on: ubuntu-26.04
+    # The job runs the downloaded stage0 compiler, which needs no write access and no git credentials
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Linux toolchain
+        uses: ./.github/actions/setup-linux-toolchain
+        with:
+          # The libcurl example in docs/docs/how-to/cpp-interop.md links against libcurl
+          extra-packages: libcurl4-openssl-dev
+
+      - name: Setup LLVM
+        uses: ./.github/actions/setup-llvm
+        with:
+          # Same LLVM build as in the Linux/x86_64 job of ci.yml, so that both share the cache
+          cache-key-suffix: linux-x64
+          extra-cmake-args: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_FLAGS_RELEASE=-O3
+
+      - name: Download Libs
+        run: python setup-deps.py
+
+      - name: Fetch stage0 compiler
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src/
+        run: python fetch-stage0.py
+
+      - name: Build compiler
+        run: python build.py
+
+      - name: Compile documentation examples
+        # Compiles every complete program in docs/docs with the compiler under test, see the doc-test markers in the docs
+        run: python tools/check_doc_examples.py --compiler build/spice

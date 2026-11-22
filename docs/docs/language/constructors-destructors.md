@@ -29,6 +29,7 @@ f<int> main() {
 
 Constructors can also have arguments to pass some information from the caller to the constructor of the struct:
 
+<!-- doc-test: skip continues the struct definition above -->
 ```spice
 // Struct definition ...
 
@@ -175,6 +176,7 @@ p S.ctor(const S& original) { // Non-public copy constructor
 }
 ```
 
+<!-- doc-test: skip imports dep.spice of the code block above -->
 ```spice
 // main.spice
 import "dep";

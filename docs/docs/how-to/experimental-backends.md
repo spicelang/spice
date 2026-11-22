@@ -85,6 +85,7 @@ compiles such a module to an ELF object, in a file or in memory. Install it with
 `spice_packages` dir of the project root, and the `tpde` package imports the `llvm` package from the `spice_packages` dir
 next to the main source file, so the main source file has to be in the project root:
 
+<!-- doc-test: skip needs the llvm and tpde packages, installed with Spice Shaker -->
 ```spice
 import "spice_packages/llvm/llvm" as llvm;
 import "spice_packages/tpde/tpde" as tpde;

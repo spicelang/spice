@@ -26,6 +26,7 @@ f<Result<double>> safeDivide(double dividend, double divisor) {
 The caller checks the result with `isOk()` or `isErr()` and retrieves the value with `unwrap()` or the error with
 `getErr()`. `unwrap()` panics, if the result holds an error:
 
+<!-- doc-test: skip uses safeDivide of the code block above -->
 ```spice
 f<int> main() {
     Result<double> quotient = safeDivide(10.0, 0.0);
@@ -40,6 +41,7 @@ f<int> main() {
 If a fallback value is fine, `unwrapOr()` returns the value or the given alternative, and `unwrapOrElse()` calls the
 given function with the error to compute the alternative:
 
+<!-- doc-test: skip uses safeDivide of the code block above -->
 ```spice
 f<int> main() {
     Result<double> quotient = safeDivide(10.0, 0.0);

@@ -17,6 +17,7 @@ public f<int> fib(int n) {
 ```
 
 **Main source file `main.spice`:**
+<!-- doc-test: skip imports utils.spice of the code block above -->
 ```spice
 import "utils" as fibonacci;
 
@@ -42,6 +43,7 @@ import "math" as localMath;      // Imports sub-folder/sub-sub-folder/math.spice
 
 You can also write the source file like this, using anonymous imports:
 
+<!-- doc-test: skip imports utils.spice of the code block above -->
 ```spice
 import "utils";
 
@@ -55,6 +57,7 @@ In the case that two imported source files expose symbols with the same name, Sp
 symbols to prevent the usage of the wrong symbol. Then, you need to specify explicitly, which of the two symbols is meant.
 Using the unqualified name results in an `Ambiguous symbol` error, which names the colliding imports:
 
+<!-- doc-test: skip imports lib-a.spice and lib-b.spice, which are not shown -->
 ```spice
 import "lib-a" as libA;
 import "lib-b" as libB;
@@ -146,6 +149,7 @@ public type B struct {
 ```
 
 **`main.spice`:**
+<!-- doc-test: skip imports a.spice and b.spice of the code blocks above -->
 ```spice
 import "a" as a;
 import "b" as b;
