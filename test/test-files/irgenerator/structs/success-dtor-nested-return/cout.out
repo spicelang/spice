@@ -1,0 +1,5 @@
+Outer.dtor 1: active, left at 1
+Inner.dtor 1
+Outer.dtor 2: inactive
+Inner.dtor 2
+done
