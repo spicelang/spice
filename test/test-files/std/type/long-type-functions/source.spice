@@ -31,6 +31,8 @@ f<int> main() {
     assert asBool1 == true;
     bool asBool2 = toBool(0l);
     assert asBool2 == false;
+    assert toBool(-2l);
+    assert toBool(2l);
 
     // isPowerOfTwo()
     assert isPowerOfTwo(16l);

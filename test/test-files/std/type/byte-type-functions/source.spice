@@ -26,6 +26,8 @@ f<int> main() {
     assert asBool1 == true;
     bool asBool2 = toBool(cast<byte>(0));
     assert asBool2 == false;
+    assert toBool(cast<byte>(2));
+    assert toBool(cast<byte>(255));
 
     printf("All assertions succeeded");
 }
