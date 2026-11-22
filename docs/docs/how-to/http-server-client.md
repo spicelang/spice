@@ -183,6 +183,21 @@ client.maxRedirects = 0u;      // hand 3xx responses back as-is instead of follo
 `defaultHeaders` fields are only added to a request if it does not already carry a field with that name, so a
 one-off request can always override them.
 
+## Header fields and message framing
+
+Header fields often carry untrusted input, e.g. a redirect target taken from a query parameter. When a request or a
+response is written to the wire, such input cannot break the message apart:
+
+- CR, LF and NUL in field values, in the reason phrase and in the HTTP version are replaced with spaces, so a value can
+  never end its line early and inject further header fields or a whole message.
+- A field, whose name is not a valid token (RFC 9110, section 5.6.2), is left out.
+- Spaces and control characters in the request target are percent-encoded.
+
+On the receiving side, a message, whose `Content-Length` fields are malformed or announce different lengths, is rejected,
+since it is ambiguous where its body ends - which is how request smuggling works. `receiveRequest` and `receiveResponse`
+return an error then, and `HttpServer` answers such a request with `400 Bad Request`. Announcing the same length more
+than once, e.g. as `Content-Length: 5, 5`, is fine.
+
 ## TLS / HTTPS
 
 `HttpClient.get` (and the other request methods) transparently use TLS whenever the URL starts with `https://` - no

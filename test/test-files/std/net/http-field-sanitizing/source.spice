@@ -1,0 +1,86 @@
+import "std/net/http";
+
+/**
+ * Returns the given wire format message with its CRLF line endings turned into plain line feeds
+ */
+f<String> normalizeLineEndings(const String& wire) {
+    result = String();
+    result = wire;
+    result.replaceAll("\r\n", "\n");
+}
+
+/**
+ * Returns the first line of the given wire format message, without its line ending
+ */
+f<String> getFirstLine(const String& wire) {
+    return wire.getSubstring(0l, wire.find("\r\n"));
+}
+
+f<int> main() {
+    // ----- Field values -----
+    // A CR or LF in a value would end the field early and let the rest of the value pass for another field
+    HttpHeaders headers;
+    headers.set(HEADER_LOCATION, "/home\r\nSet-Cookie: session=stolen");
+    headers.add("X-Line-Feed", "a\nb");
+    // A NUL can only get into a value through the public fields
+    HttpHeader nulHeader = HttpHeader("X-Nul", "a");
+    nulHeader.value.append('\0');
+    nulHeader.value.append('b');
+    headers.entries.pushBack(nulHeader);
+
+    // ----- Field names -----
+    // A name, that is no token, cannot be written without corrupting the message, so its field is left out
+    headers.add("Bad Name", "space");
+    headers.add("X-Injected: 1\r\nX-Other", "line break");
+    headers.add("", "empty");
+    headers.add("X-Token_Chars.1!#$%&'*+^`|~", "kept");
+
+    const String headerBlock = headers.serialize();
+    assert headerBlock == "Location: /home  Set-Cookie: session=stolen\r\nX-Line-Feed: a b\r\nX-Nul: a b\r\nX-Token_Chars.1!#$%&'*+^`|~: kept\r\n";
+    printf("headers:\n%s", normalizeLineEndings(headerBlock));
+
+    // The recipient sees the injected text as part of the value, not as a field of its own
+    HttpResponse redirect = HttpResponse();
+    redirect.redirectTo("/home\r\nSet-Cookie: session=stolen", STATUS_FOUND);
+    const String redirectWire = redirect.serialize();
+    Result<HttpResponse> parsedRedirect = parseResponse(redirectWire);
+    assert parsedRedirect.isOk();
+    HttpResponse& receivedRedirect = parsedRedirect.unwrap();
+    assert !receivedRedirect.headers.contains("Set-Cookie");
+    const String location = receivedRedirect.headers.get(HEADER_LOCATION);
+    assert location == "/home  Set-Cookie: session=stolen";
+
+    // ----- Request line -----
+    // SP and control characters in the request target are percent-encoded instead of splitting the request line
+    HttpRequest request = HttpRequest(HttpMethod::GET, "/search?q=a b\r\nX-Injected: 1");
+    request.version = String("HTTP/1.1\r\nX-Other: 2");
+    const String requestWire = request.serialize();
+    assert requestWire == "GET /search?q=a%20b%0D%0AX-Injected:%201 HTTP/1.1  X-Other: 2\r\n\r\n";
+    printf("request line: %s\n", getFirstLine(requestWire));
+    Result<HttpRequest> parsedRequest = parseRequest(requestWire);
+    assert parsedRequest.isOk();
+    HttpRequest& receivedRequest = parsedRequest.unwrap();
+    assert receivedRequest.target == "/search?q=a%20b%0D%0AX-Injected:%201";
+    assert !receivedRequest.headers.contains("X-Injected");
+    assert !receivedRequest.headers.contains("X-Other");
+
+    // HttpClient takes the request target from the URL, so a URL with a line break must not break the request line either
+    Result<Url> urlResult = parseUrl(String("http://example.com/a\r\nX-Injected: 1"));
+    assert urlResult.isOk();
+    HttpRequest urlRequest = HttpRequest();
+    urlRequest.target = urlResult.unwrap().getRequestTarget();
+    const String urlRequestWire = urlRequest.serialize();
+    assert urlRequestWire == "GET /a%0D%0AX-Injected:%201 HTTP/1.1\r\n\r\n";
+
+    // ----- Status line -----
+    HttpResponse response = HttpResponse(STATUS_OK);
+    response.reason = String("OK\r\nSet-Cookie: session=stolen");
+    const String responseWire = response.serialize();
+    assert responseWire == "HTTP/1.1 200 OK  Set-Cookie: session=stolen\r\n\r\n";
+    printf("status line: %s\n", getFirstLine(responseWire));
+    Result<HttpResponse> parsedResponse = parseResponse(responseWire);
+    assert parsedResponse.isOk();
+    HttpResponse& receivedResponse = parsedResponse.unwrap();
+    assert !receivedResponse.headers.contains("Set-Cookie");
+    return 0;
+}

@@ -1,0 +1,84 @@
+import "std/iterator/array-iterator";
+import "std/net/http";
+
+/**
+ * Connection, that hands the given bytes to the transport functions of std/net/http in place of a socket
+ */
+public type MemoryConnection struct {
+    String input
+    unsigned long readPos = 0l
+}
+
+public p MemoryConnection.ctor(string input) {
+    this.input = String(input);
+}
+
+public f<long> MemoryConnection.read(byte* buffer, long size) {
+    unsigned long count = this.input.getLength() - this.readPos;
+    if count > cast<unsigned long>(size) { count = cast<unsigned long>(size); }
+    for unsigned long i = 0l; i < count; i++ {
+        unsafe {
+            buffer[i] = cast<byte>(this.input[this.readPos + i]);
+        }
+    }
+    this.readPos += count;
+    return cast<long>(count);
+}
+
+f<int> main() {
+    // ----- Lengths announced by the header fields -----
+    HttpHeaders single;
+    single.add(HEADER_CONTENT_LENGTH, "42");
+    assert single.getContentLength() == 42l;
+
+    // The same length may be announced more than once, in several fields or as a list (RFC 9112 section 6.3)
+    HttpHeaders repeated;
+    repeated.add(HEADER_CONTENT_LENGTH, "42");
+    repeated.add("content-length", " 42 ");
+    repeated.add(HEADER_CONTENT_LENGTH, "42, 42,");
+    assert repeated.getContentLength() == 42l;
+
+    HttpHeaders largest;
+    largest.add(HEADER_CONTENT_LENGTH, "9223372036854775807");
+    assert largest.getContentLength() == 9223372036854775807l;
+
+    // Lengths, that differ, and malformed ones leave the end of the body unknown
+    HttpHeaders conflicting;
+    conflicting.add(HEADER_CONTENT_LENGTH, "42");
+    conflicting.add(HEADER_CONTENT_LENGTH, "43");
+    assert conflicting.getContentLength() == -1l;
+    HttpHeaders conflictingList;
+    conflictingList.add(HEADER_CONTENT_LENGTH, "42, 43");
+    assert conflictingList.getContentLength() == -1l;
+    foreach const string malformedValue : ["", ",", "abc", "-1", "+5", "4 2", "0x10", "9223372036854775808"] {
+        HttpHeaders malformed;
+        malformed.add(HEADER_CONTENT_LENGTH, malformedValue);
+        assert malformed.getContentLength() == -1l;
+    }
+    HttpHeaders absent;
+    assert absent.getContentLength() == -1l;
+
+    // ----- Receiving messages -----
+    MemoryConnection sameLengths = MemoryConnection("POST /a HTTP/1.1\r\nContent-Length: 5\r\nContent-Length: 5\r\n\r\nhello");
+    Result<HttpRequest> sameLengthsResult = receiveRequest(sameLengths);
+    assert sameLengthsResult.isOk();
+    assert sameLengthsResult.unwrap().body == "hello";
+
+    // Taking either of the lengths would let the sender hide a second request in the body
+    MemoryConnection differentLengths = MemoryConnection("POST /a HTTP/1.1\r\nContent-Length: 5\r\nContent-Length: 48\r\n\r\nhelloGET /smuggled HTTP/1.1\r\nHost: localhost\r\n\r\n");
+    Result<HttpRequest> differentLengthsResult = receiveRequest(differentLengths);
+    assert differentLengthsResult.isErr();
+    printf("different lengths: %s\n", differentLengthsResult.getErr().getMessage());
+
+    // A malformed length is not taken for a missing one, which would leave the body for the next request
+    MemoryConnection malformedLength = MemoryConnection("POST /a HTTP/1.1\r\nContent-Length: 5x\r\n\r\nhello");
+    Result<HttpRequest> malformedLengthResult = receiveRequest(malformedLength);
+    assert malformedLengthResult.isErr();
+    printf("malformed length: %s\n", malformedLengthResult.getErr().getMessage());
+
+    MemoryConnection differentResponseLengths = MemoryConnection("HTTP/1.1 200 OK\r\nContent-Length: 2\r\nContent-Length: 4\r\n\r\nhi");
+    Result<HttpResponse> differentResponseLengthsResult = receiveResponse(differentResponseLengths);
+    assert differentResponseLengthsResult.isErr();
+    printf("different response lengths: %s\n", differentResponseLengthsResult.getErr().getMessage());
+    return 0;
+}

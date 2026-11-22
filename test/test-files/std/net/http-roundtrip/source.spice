@@ -1,6 +1,7 @@
 import "std/net/http";
 import "std/net/http-client";
 import "std/net/http-server";
+import "std/net/socket";
 import "std/os/thread-pool";
 import "std/time/delay";
 
@@ -36,8 +37,8 @@ f<int> main() {
         assert started.isOk();
 
         // index, greet, echo, the redirect plus the request it points at, unknown path,
-        // method mismatch and finally the HEAD request
-        for int i = 0; i < 8; i++ {
+        // method mismatch, the HEAD request and finally the request with an ambiguous length
+        for int i = 0; i < 9; i++ {
             Result<bool> handled = server.handleNextRequest();
             assert handled.isOk();
         }
@@ -86,6 +87,21 @@ f<int> main() {
         String headLength = headResponse.headers.get(HEADER_CONTENT_LENGTH);
         printf("head: %d body-length=%d announced=%s\n", headResponse.statusCode,
                headResponse.body.getLength(), headLength);
+
+        // Content-Length fields, that disagree, leave the end of the body unknown, so the server rejects the request.
+        // HttpClient only ever sends a single one, so the request goes over a plain socket.
+        Result<Socket> socketResult = openClientSocket("127.0.0.1", 18085s);
+        Socket& socket = socketResult.unwrap();
+        HttpRequest ambiguous = HttpRequest(HttpMethod::POST, "/echo");
+        ambiguous.headers.set(HEADER_HOST, "127.0.0.1:18085");
+        ambiguous.headers.add(HEADER_CONTENT_LENGTH, "0");
+        ambiguous.headers.add(HEADER_CONTENT_LENGTH, "40");
+        assert sendRequest(socket, ambiguous);
+        Result<HttpResponse> rejected = receiveResponse(socket);
+        HttpResponse& rejectedResponse = rejected.unwrap();
+        printf("ambiguous length: %d %s [%s]\n", rejectedResponse.statusCode, rejectedResponse.reason,
+               rejectedResponse.body);
+        assert socket.close();
     });
 
     Result<bool> poolStarted = pool.start();
