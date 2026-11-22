@@ -18,7 +18,7 @@ type Body struct {
 }
 
 f<Body> createBody(double x, double y, double z, double vx, double vy, double vz, double mass) {
-    return Body{ x, y, z, vx * DAYS_PER_YEAR, vy * DAYS_PER_YEAR, vz * DAYS_PER_YEAR, mass * SOLAR_MASS };
+    return Body{x, y, z, vx * DAYS_PER_YEAR, vy * DAYS_PER_YEAR, vz * DAYS_PER_YEAR, mass * SOLAR_MASS};
 }
 
 p advance(Body[5]& bodies, double dt) {
