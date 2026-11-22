@@ -25,6 +25,10 @@ f<int> main() {
     assert asBool1 == true;
     bool asBool2 = toBool(0.0);
     assert asBool2 == false;
+    assert toBool(-2.0);
+    assert toBool(0.3);
+    assert toBool(-0.3);
+    assert !toBool(-0.0);
 
     printf("All assertions succeeded");
 }

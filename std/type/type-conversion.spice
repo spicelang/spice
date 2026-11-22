@@ -492,50 +492,50 @@ public f<string> toString(bool input) {
  * Convert a double to a bool
  *
  * @param input Double value
- * @return Bool value
+ * @return True if the input is non-zero, false otherwise
  */
 public f<bool> toBool(double input) {
-    return input >= 0.5;
+    return input != 0.0;
 }
 
 /**
  * Convert an int to a bool
  *
  * @param input Int value
- * @return Bool value
+ * @return True if the input is non-zero, false otherwise
  */
 public f<bool> toBool(int input) {
-    return input >= 1;
+    return input != 0;
 }
 
 /**
- * Convert an short to a bool
+ * Convert a short to a bool
  *
  * @param input Short value
- * @return Bool value
+ * @return True if the input is non-zero, false otherwise
  */
 public f<bool> toBool(short input) {
-    return input >= 1;
+    return input != 0s;
 }
 
 /**
- * Convert an long to a bool
+ * Convert a long to a bool
  *
  * @param input Long value
- * @return Bool value
+ * @return True if the input is non-zero, false otherwise
  */
 public f<bool> toBool(long input) {
-    return input >= 1;
+    return input != 0l;
 }
 
 /**
  * Convert a byte to a bool
  *
  * @param input Byte value
- * @return Bool value
+ * @return True if the input is non-zero, false otherwise
  */
 public f<bool> toBool(byte input) {
-    return input == cast<byte>(1);
+    return input != cast<byte>(0);
 }
 
 /**
