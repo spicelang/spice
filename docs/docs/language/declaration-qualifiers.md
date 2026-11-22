@@ -36,7 +36,7 @@ Source file b (`b.spice`):
 import "a" as a;
 
 f<int> main() {
-    a.visibleProcedure(); // This only works if the procedure 'visibleProcedure' is public
+    a::visibleProcedure(); // This only works if the procedure 'visibleProcedure' is public
 }
 ```
 

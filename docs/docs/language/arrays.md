@@ -11,7 +11,7 @@ To initialize an `array` e.g. of type string, you can write:
 string[3] myStringArray = [ "First item", "Second Item", "Third item" ];
 ```
 
-The `3` in the brackets is the size of the array. It must be at least `1`. The initial values can be provided in curly braces after the assign operator and
+The `3` in the brackets is the size of the array. It must be at least `1`. The initial values can be provided in square brackets after the assign operator and
 must be of the same data type. <br>
 You can only initialize an array with the number of items equal the arrays size or no items.
 
@@ -25,7 +25,7 @@ You can only initialize an array with the number of items equal the arrays size 
 
 To access an array item, you can use the index. The indexes are >= 0 per definition:
 ```spice
-string item3Value = myStringArray[3];
+string item3Value = myStringArray[2];
 ```
 
 More complex expressions for initial array values and item indexing are possible. Here's an example:
