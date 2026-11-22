@@ -89,6 +89,8 @@ public p HashTable.ctor(const HashTable<K, V>& original) {
  * @param newValue Hash table to copy from
  */
 public p operator=<K, V>(HashTable<K, V>& this, const HashTable<K, V>& newValue) {
+    // Self-assignment: leave the table as is, clearing it first would destroy the entries to copy
+    if &this == &newValue { return; }
     this.clear();
     this.copyEntriesFrom(newValue);
 }

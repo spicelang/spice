@@ -170,6 +170,8 @@ public p OffsetAllocator.dtor() {
  * @param newValue OffsetAllocator to copy from
  */
 public p operator=(OffsetAllocator& this, const OffsetAllocator& newValue) {
+    // Self-assignment: leave the allocator as is, the ctor would reset the fields to copy from
+    if &this == &newValue { return; }
     unsafe {
         free(cast<heap byte*>(this.nodes));
         free(cast<heap byte*>(this.freeNodes));

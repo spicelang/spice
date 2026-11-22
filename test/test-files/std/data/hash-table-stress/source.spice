@@ -73,5 +73,13 @@ f<int> main() {
     assert sumKeys == 50 * 51 / 2;
     assert sumVals == sumKeys * 10;
 
+    // 5. Self-assignment through a reference must preserve all entries
+    HashTable<int, int> ht5;
+    for int i = 1; i <= 20; i++ { ht5.upsert(i, i * 10); }
+    HashTable<int, int>& ht5Alias = ht5;
+    ht5 = ht5Alias;
+    assert ht5.getSize() == 20l;
+    for int i = 1; i <= 20; i++ { assert ht5.get(i) == i * 10; }
+
     printf("HashTable stress tests passed!\n");
 }

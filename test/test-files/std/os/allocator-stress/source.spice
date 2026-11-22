@@ -83,6 +83,14 @@ f<int> main() {
     assert fresh.offset == 0u;
     alloc.free(fresh);
 
+    // Self-assignment through a reference must keep the bookkeeping intact
+    Allocation beforeSelfAssign = alloc.allocate(100u);
+    OffsetAllocator& allocAlias = alloc;
+    alloc = allocAlias;
+    alloc.free(beforeSelfAssign);
+    StorageReport selfAssignReport = alloc.getStorageReport();
+    assert selfAssignReport.totalFreeSpace == STORAGE_SIZE;
+
     printf("OffsetAllocator stress tests passed! successAllocs=%lu failedAllocs=%lu\n", successAllocs, failedAllocs);
     return 0;
 }
