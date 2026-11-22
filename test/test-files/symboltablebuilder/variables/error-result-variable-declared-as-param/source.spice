@@ -1,0 +1,7 @@
+f<int> test(int result) {
+    return 1;
+}
+
+f<int> main() {
+    test(1);
+}

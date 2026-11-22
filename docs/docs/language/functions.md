@@ -53,6 +53,10 @@ f<int> getAge(bool adult) {
 This is equivalent to using an explicit `return` expression, but can be more readable when the return value is built
 up across multiple branches.
 
+Since every function and lambda function already declares `result`, a parameter or a variable named `result` directly
+in its body is a compile error. Assign to the implicit variable instead, or choose another name. Procedures have no
+`result` variable.
+
 ## Function overloading
 
 Multiple functions may share the same name as long as their parameter lists differ. The compiler picks the best match

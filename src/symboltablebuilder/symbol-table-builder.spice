@@ -785,7 +785,14 @@ public f<Any> SymbolTableBuilder.visitDeclStmt(ASTDeclStmtNode* node) {
     Scope* parentScope = this.currentScope.parent;
     const bool isLoopBody = parentScope != nil<Scope*> && parentScope.scopeType == ScopeType::LOOP_HEAD;
     const bool declaredInLoopHead = isLoopBody && parentScope.lookupStrict(node.varName) != nil<SymbolTableEntry*>;
-    if this.currentScope.lookupStrict(node.varName) != nil<SymbolTableEntry*> || declaredInLoopHead {
+    SymbolTableEntry* existingEntry = this.currentScope.lookupStrict(node.varName);
+    // The implicit result variable of a function or lambda function was not declared by the user, so explain it
+    if existingEntry != nil<SymbolTableEntry*> && node.varName == RETURN_VARIABLE_NAME && existingEntry.declNode.kind != ASTNodeKind::DECL_STMT {
+        const String errorMsg = "'" + node.varName + "' is the implicit return variable of functions and cannot be declared here. Assign to it directly or choose another name";
+        this.reportError(baseNode, SemanticErrorType::RESULT_VARIABLE_DECLARED, errorMsg);
+        return Any();
+    }
+    if existingEntry != nil<SymbolTableEntry*> || declaredInLoopHead {
         this.reportError(baseNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The variable '" + node.varName + "' was declared more than once");
         return Any();
     }
