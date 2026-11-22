@@ -2258,7 +2258,7 @@ public type ASTFctCallNode struct : IVisitable {
     public String fqFunctionName
     public Vector<String> functionNameFragments
     public Vector<FctCallData> data
-    public bool isErrorTraceOrigin = false // Set if this is a direct call to err<T>(...), and error return tracing is enabled
+    public bool isErrorTraceOrigin = false // Set if this is a direct call to err<T>(...) or Result<T>(error), and error return tracing is enabled
 }
 
 public p ASTFctCallNode.ctor(CodeLoc codeLoc) {

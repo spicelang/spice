@@ -4840,13 +4840,13 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
             return this.softErrorER(baseNode, SemanticErrorType::INTERFACE_RETURNED_BY_VALUE, message);
         }
 
-        // Mark direct calls to err<T>(...) as an error-return-trace origin site when tracing is enabled for this file.
-        // err<T>'s own internal delegation to Result<T>'s error ctor is a distinct ctor call and is never matched here,
-        // so this only ever fires for the user's own call site, not for that nested one.
-        if this.sourceFile.errorReturnTracing && callee.bodyScope != nil<Scope*> && callee.name == "err" {
+        // Mark direct calls to err<T>(...) and to the error ctor of Result<T>, i.e. Result<T>(error), as error-return-trace
+        // origin sites when tracing is enabled for this file. The delegations of err<T> to the error ctor inside the result
+        // runtime are not marked, so that the origin is the call site of err<T>, not the one inside of it.
+        if this.sourceFile.errorReturnTracing && !this.sourceFile.isResultRT() && callee.bodyScope != nil<Scope*> {
             Scope* calleeBodyScope = callee.bodyScope;
             SourceFile* calleeSourceFile = calleeBodyScope.sourceFile;
-            if calleeSourceFile.isResultRT() {
+            if calleeSourceFile.isResultRT() && (callee.name == "err" || isResultErrorCtor(callee)) {
                 node.isErrorTraceOrigin = true;
             }
         }
@@ -4967,6 +4967,26 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
     }
 
     return Any(ExprResult{node.node.setEvaluatedSymbolType(returnType, this.manIdx), anonymousSymbol});
+}
+
+/**
+ * Check if the given function is the error ctor of Result<T>, i.e. Result<T>(const Error&)
+ *
+ * @param fct Function to check
+ * @return Error ctor of Result<T> or not
+ */
+f<bool> isResultErrorCtor(const Function* fct) {
+    if fct.name != CTOR_FUNCTION_NAME || fct.paramList.getSize() != 1l {
+        return false;
+    }
+    QualType thisType = fct.thisType;
+    thisType = thisType.removeReferenceWrapper();
+    if !thisType.isResultObj() {
+        return false;
+    }
+    QualType paramType = fct.paramList.front().qualType;
+    paramType = paramType.removeReferenceWrapper();
+    return paramType.isErrorObj();
 }
 
 f<bool> TypeChecker.visitOrdinaryFctCall(ASTFctCallNode* node, const String& origFqFunctionName) {

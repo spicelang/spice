@@ -8,10 +8,10 @@
 // Result<T> value, and not preserved across an unrelated later error on the same thread - both accepted
 // trade-offs for what is explicitly a debugging aid, not a correctness mechanism.
 //
-// sErrTraceReset()/sErrTracePush() are called directly by the compiler (at every err<T>(...) call
-// site and every propagating postfix '!', respectively). Like sAllocUnsafe()/sDealloc() in memory_rt.spice,
-// they keep normal name mangling; the compiler reaches them by reconstructing their mangled name in
-// StdFunctionManager, not by declaring them unmangled.
+// sErrTraceReset()/sErrTracePush() are called directly by the compiler (at every err<T>(...) and
+// Result<T>(error) call site and every propagating postfix '!', respectively). Like sAllocUnsafe()/sDealloc()
+// in memory_rt.spice, they keep normal name mangling; the compiler reaches them by reconstructing their mangled
+// name in StdFunctionManager, not by declaring them unmangled.
 
 ext f<int> fprintf(byte* /*stream*/, string /*format*/, ...);
 
