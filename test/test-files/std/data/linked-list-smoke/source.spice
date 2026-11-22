@@ -43,7 +43,32 @@ f<int> main() {
     l.removeBack();
     assert l.isEmpty();
 
+    // remove(value) of the last item updates the back
+    l.pushBack(1); l.pushBack(2); l.pushBack(3);
+    l.remove(3);
+    assert l.getSize() == 2ul;
+    assert l.back() == 2;
+    l.pushBack(4);
+    assert l.back() == 4;
+    assert l.get(2ul) == 4;
+
+    // remove(value) of the only item empties the list
+    l.clear();
+    l.pushBack(5);
+    l.remove(5);
+    assert l.isEmpty();
+    l.pushBack(6);
+    assert l.front() == 6;
+    assert l.back() == 6;
+
+    // removeAt of the only item empties the list
+    l.removeAt(0ul);
+    assert l.isEmpty();
+    l.pushBack(7);
+    assert l.back() == 7;
+
     // clear
+    l.clear();
     l.pushBack(1); l.pushBack(2); l.pushBack(3);
     l.clear();
     assert l.isEmpty();
