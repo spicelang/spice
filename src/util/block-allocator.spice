@@ -56,10 +56,17 @@ public f<T*> BlockAllocator.reserve<T>() {
     // We do not allow allocating objects that exceed the block size
     const unsigned long objSize = sizeof<T>();
     assert objSize <= this.blockSize;
+    const unsigned long objAlign = alignof<T>();
+    assert objAlign > 0l && (objAlign & (objAlign - 1l)) == 0l;
 
-    // Check if we need a new block
-    if this.offsetInBlock + objSize > this.blockSize {
+    // Place the object at the next address in the current block, that is aligned for T. If the object including the padding
+    // does not fit into the current block anymore, we place it at the first aligned address of a new block
+    unsigned long objOffset = this.getAlignedOffset(objAlign);
+    if objOffset + objSize > this.blockSize {
         this.allocateNewBlock();
+        objOffset = this.getAlignedOffset(objAlign);
+        // The alignment of T exceeds, what the memory manager guarantees for the block, by more than the space left in the block
+        assert objOffset + objSize <= this.blockSize;
     }
 
     // Compute the destination address inside the current block. We deliberately operate on a plain
@@ -68,16 +75,37 @@ public f<T*> BlockAllocator.reserve<T>() {
     T* ptr;
     unsafe {
         byte* destAddr = this.memoryBlocks.back();
-        destAddr += this.offsetInBlock;
+        destAddr += objOffset;
         ptr = cast<T*>(destAddr);
     }
 
     // Track the object so it can be destructed in the allocator's dtor and update the offset to be ready
     // to store the next object. The object is not constructed yet, but its address is already stable.
-    Base* basePtr = cast<Base*>(ptr);
+    // T is not necessarily Base or composes Base, so the cast can be unsafe
+    Base* basePtr;
+    unsafe {
+        basePtr = cast<Base*>(ptr);
+    }
     this.allocatedObjects.pushBack(basePtr);
-    this.offsetInBlock += objSize;
+    this.offsetInBlock = objOffset + objSize;
     return ptr;
+}
+
+/**
+ * Get the offset of the first address in the current block at or after the current offset, that is a multiple of the given
+ * alignment. We align the absolute address instead of the offset, so that we do not rely on the alignment of the block itself.
+ *
+ * @param alignment Alignment in bytes, must be a power of two
+ * @return Aligned offset in the current block
+ */
+f<unsigned long> BlockAllocator.getAlignedOffset(unsigned long alignment) {
+    unsigned long blockAddr;
+    unsafe {
+        blockAddr = cast<unsigned long>(this.memoryBlocks.back());
+    }
+    const unsigned long addr = blockAddr + this.offsetInBlock;
+    const unsigned long alignedAddr = (addr + alignment - 1l) & ~(alignment - 1l);
+    return alignedAddr - blockAddr;
 }
 
 /**
@@ -243,6 +271,48 @@ f<bool> testBlockAllocatorReleaseObjects() {
     }
     unsafe {
         assert DESTRUCTED_DUMMY_NODES == 5l;
+    }
+    return true;
+}
+
+type SmallNode struct {
+    bool value
+}
+
+#[test]
+f<bool> testBlockAllocatorMixedAlignment() {
+    DefaultMemoryManager memoryManager;
+    // The block size is not a multiple of the alignment of DummyNode, so the padding decides whether a node still fits
+    BlockAllocator<DummyNode> alloc = BlockAllocator<DummyNode>(memoryManager, sizeof<DummyNode>() * 2l + 1l);
+    Vector<SmallNode*> smallNodes;
+    Vector<DummyNode*> dummyNodes;
+    for unsigned long i = 0l; i < 100l; i++ {
+        // Reserve a 1 byte object, that leaves the offset in the block unaligned for the next DummyNode
+        SmallNode* smallNode = alloc.reserve<SmallNode>();
+        smallNode.value = i % 3l == 0l;
+        smallNodes.pushBack(smallNode);
+
+        DummyNode* dummyNode = alloc.reserve<DummyNode>();
+        unsafe {
+            assert cast<unsigned long>(dummyNode) % alignof<DummyNode>() == 0l;
+            __placement_new<DummyNode>(dummyNode, i, 2l);
+        }
+        dummyNodes.pushBack(dummyNode);
+    }
+
+    // Check that no object was overwritten by a later one
+    for unsigned long i = 0l; i < 100l; i++ {
+        assert smallNodes.get(i).value == (i % 3l == 0l);
+        assert dummyNodes.get(i).line == i;
+        assert dummyNodes.get(i).col == 2l;
+    }
+    assert alloc.getAllocationCount() == 200l;
+
+    // The allocator can only destruct the objects as DummyNode, so take the small nodes out of its responsibility
+    const Vector<DummyNode*> releasedObjects = alloc.releaseObjects();
+    assert releasedObjects.getSize() == 200l;
+    foreach DummyNode* node : dummyNodes {
+        sDestruct(*node);
     }
     return true;
 }
