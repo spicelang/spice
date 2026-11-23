@@ -101,6 +101,8 @@ public type TypeChecker struct : IAbstractAstVisitor {
     Vector<CompilerWarning>* warnings
     TypeMapping typeMapping
     bool typeCheckedMainFct = false
+    // Reference variable -> local variable it refers to (or nil), cached during the check of one return value
+    Vector<Pair<const SymbolTableEntry*, const SymbolTableEntry*>> referencedLocalCache
 }
 
 public p TypeChecker.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile, TypeCheckerMode typeCheckerMode) {
@@ -3484,6 +3486,7 @@ public f<bool> TypeChecker.isReturnValueOptimizable(const ExprResult& returnValu
  * @param returnValueType Type of the return value
  */
 p TypeChecker.checkReturnValueOutlivesFunction(ASTNode* returnValueNode, const QualType& returnType, const QualType& returnValueType) {
+    this.referencedLocalCache.clear();
     if returnType.isRef() {
         const SymbolTableEntry* localEntry = this.getReferencedLocal(returnValueNode);
         if localEntry != nil<const SymbolTableEntry*> {
@@ -3545,15 +3548,17 @@ f<const SymbolTableEntry*> TypeChecker.getReferencedLocal(ASTNode* node) {
         if !entryType.isRef() {
             return entry;
         }
-        // A reference variable is bound to its referent once and for all at its declaration, so follow its initializer
-        if entry.declNode.kind != ASTNodeKind::DECL_STMT {
-            return nil<const SymbolTableEntry*>;
+        // The result for a reference variable is cached, because ternary expressions could otherwise follow the same
+        // reference variable an exponential number of times
+        for unsigned long i = 0l; i < this.referencedLocalCache.getSize(); i++ {
+            const Pair<const SymbolTableEntry*, const SymbolTableEntry*>& cacheEntry = this.referencedLocalCache.get(i);
+            if cacheEntry.getFirst() == entry {
+                return cacheEntry.getSecond();
+            }
         }
-        const ASTDeclStmtNode* declStmt = downcast<ASTDeclStmtNode>(entry.declNode);
-        if !declStmt.hasAssignment {
-            return nil<const SymbolTableEntry*>;
-        }
-        return this.getReferencedLocal(getASTNode(declStmt.assignExpr));
+        const SymbolTableEntry* referencedLocal = this.getReferencedLocalOfRefVar(entry);
+        this.referencedLocalCache.pushBack(Pair<const SymbolTableEntry*, const SymbolTableEntry*>(entry, referencedLocal));
+        return referencedLocal;
     }
 
     // Field of a struct or union value, or item of an array value
@@ -3595,6 +3600,34 @@ f<const SymbolTableEntry*> TypeChecker.getReferencedLocal(ASTNode* node) {
     }
 
     return nil<const SymbolTableEntry*>;
+}
+
+/**
+ * Get the local variable or by-value parameter of the current function/procedure/lambda, that a local reference variable
+ * refers to (see getReferencedLocal). A reference variable is bound to its referent once and for all at its declaration,
+ * so follow its initializer. A reference item of a foreach loop over an array refers to the items of that array.
+ *
+ * @param entry Entry of the reference variable
+ * @return Entry of the local variable or nil, if the reference variable does not refer to the storage of a local variable
+ */
+f<const SymbolTableEntry*> TypeChecker.getReferencedLocalOfRefVar(const SymbolTableEntry* entry) {
+    if entry.declNode.kind != ASTNodeKind::DECL_STMT {
+        return nil<const SymbolTableEntry*>;
+    }
+    const ASTDeclStmtNode* declStmt = downcast<ASTDeclStmtNode>(entry.declNode);
+    if declStmt.hasAssignment {
+        return this.getReferencedLocal(getASTNode(declStmt.assignExpr));
+    }
+    if !declStmt.isForEachItem {
+        return nil<const SymbolTableEntry*>;
+    }
+    // The items of other iterables are reached through their iterator
+    const ASTForeachLoopNode* foreachLoop = downcast<ASTForeachLoopNode>(entry.declNode.parent);
+    ASTNode* iterableNode = getASTNode(foreachLoop.iteratorAssign);
+    if !asExprNode(iterableNode).getEvaluatedSymbolType(this.manIdx).removeReferenceWrapper().isArray() {
+        return nil<const SymbolTableEntry*>;
+    }
+    return this.getReferencedLocal(iterableNode);
 }
 
 /**

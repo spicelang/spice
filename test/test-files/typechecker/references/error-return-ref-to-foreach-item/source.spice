@@ -1,0 +1,22 @@
+import "std/iterator/array-iterator";
+
+f<int&> getForeachItemOfLocalArray(int& fallback) {
+    int[3] items = [1, 2, 3];
+    foreach int& item : items {
+        return item;
+    }
+    return fallback;
+}
+
+f<int*> getForeachItemAddressOfLocalArray(int* fallback) {
+    int[3] items = [1, 2, 3];
+    foreach int& item : items {
+        return &item;
+    }
+    return fallback;
+}
+
+f<int> main() {
+    int value = 1;
+    printf("%d %d", getForeachItemOfLocalArray(value), *getForeachItemAddressOfLocalArray(&value));
+}

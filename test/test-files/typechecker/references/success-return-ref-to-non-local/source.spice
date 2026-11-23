@@ -1,3 +1,5 @@
+import "std/iterator/array-iterator";
+
 type Inner struct {
     int value
 }
@@ -106,6 +108,20 @@ f<int*> itemAddressOfArrayParam(int[3] items) {
     return &items[2];
 }
 
+f<int&> foreachItemOfArrayParam(int[3] items, int& fallback) {
+    foreach int& item : items {
+        return item;
+    }
+    return fallback;
+}
+
+f<int&> foreachItemOfArrayRefParam(int[3]& items, int& fallback) {
+    foreach int& item : items {
+        return item;
+    }
+    return fallback;
+}
+
 f<int&> refVarBoundToRefParam(int& value) {
     int& other = value;
     int& otherOther = other;
@@ -156,6 +172,7 @@ f<int> main() {
     printf("%d\n", arrayItemOfRefParam(items));
     printf("%d %d\n", itemOfArrayParam(items), *itemAddressOfArrayParam(items));
     printf("%d\n", refVarBoundToRefParam(value));
+    printf("%d %d\n", foreachItemOfArrayParam(items, value), foreachItemOfArrayRefParam(items, value));
     // A lambda may return a reference to a variable of the enclosing function
     int captured = 9;
     f<int&>() lambda = f<int&>() { return captured; };
