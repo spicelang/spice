@@ -3474,31 +3474,6 @@ public f<bool> TypeChecker.isReturnValueOptimizable(const ExprResult& returnValu
 }
 
 /**
- * Check if a variable is declared in the current function/procedure/lambda, either as local variable or as parameter.
- * Globals and variables, that a lambda captures from its enclosing function, are declared elsewhere. The scope of the
- * entry cannot tell this, because the entries of a generic manifestation are copies, that still point to the scopes of
- * the generic function. So the entry is searched in the scopes from the current one up to the function scope instead.
- *
- * @param entry Variable entry
- * @return Declared in the current function or not
- */
-f<bool> TypeChecker.isDeclaredInCurrentFunction(const SymbolTableEntry* entry) {
-    Scope* scope = this.currentScope;
-    while scope != nil<Scope*> {
-        // A lookup of a captured variable yields the entry of the enclosing function
-        SymbolTable& symbolTable = scope.symbolTable;
-        if symbolTable.lookupCaptureStrict(entry.name) == nil<Capture*> && symbolTable.lookupStrict(entry.name) == entry {
-            return true;
-        }
-        if scope.scopeType == ScopeType::FUNC_PROC_BODY || scope.scopeType == ScopeType::LAMBDA_BODY {
-            return false;
-        }
-        scope = scope.parent;
-    }
-    return false;
-}
-
-/**
  * Check if the value of a return statement outlives the function/procedure/lambda. Local variables and by-value parameters
  * live in the frame of the function, so a reference to them or their address would dangle, as soon as the function
  * returns. Returning such a reference is an error. Returning such an address is an error as well, except in unsafe blocks,
@@ -3558,7 +3533,7 @@ f<const SymbolTableEntry*> TypeChecker.getReferencedLocal(ASTNode* node) {
         }
         const VarAccessData& accessData = atomicExpr.data.get(this.manIdx);
         const SymbolTableEntry* entry = accessData.entry;
-        if entry == nil<const SymbolTableEntry*> || !this.isDeclaredInCurrentFunction(entry) {
+        if entry == nil<const SymbolTableEntry*> || !entry.isDeclaredInFunctionOf(this.currentScope) {
             return nil<const SymbolTableEntry*>;
         }
         const QualType entryType = entry.getQualType();
