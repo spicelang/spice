@@ -3487,7 +3487,7 @@ p TypeChecker.checkReturnValueOutlivesFunction(ASTNode* returnValueNode, const Q
     if returnType.isRef() {
         const SymbolTableEntry* localEntry = this.getReferencedLocal(returnValueNode);
         if localEntry != nil<const SymbolTableEntry*> {
-            const String message = String("The returned reference would dangle, because ") + describeLocal(localEntry) + " does not outlive the function. Return by value instead.";
+            const String message = String("The returned reference would dangle, because ") + localEntry.describeLocal() + " does not outlive the function. Return by value instead.";
             this.softError(returnValueNode, SemanticErrorType::RETURN_OF_LOCAL_REFERENCE, message);
         }
         return;
@@ -3502,7 +3502,7 @@ p TypeChecker.checkReturnValueOutlivesFunction(ASTNode* returnValueNode, const Q
     if localEntry == nil<const SymbolTableEntry*> {
         return;
     }
-    const String message = String("The returned pointer would dangle, because ") + describeLocal(localEntry) + " does not outlive the function";
+    const String message = String("The returned pointer would dangle, because ") + localEntry.describeLocal() + " does not outlive the function";
     if this.currentScope.doesAllowUnsafeOperations() {
         this.addWarning(returnValueNode.codeLoc, CompilerWarningType::RETURN_OF_LOCAL_ADDRESS, message);
     } else {
@@ -3637,17 +3637,6 @@ f<const SymbolTableEntry*> TypeChecker.getAddressedLocal(ASTNode* node) {
     }
 
     return nil<const SymbolTableEntry*>;
-}
-
-/**
- * Describe a local variable or parameter for a diagnostic, e.g. "the local variable 'value'"
- *
- * @param entry Variable entry
- * @return Description
- */
-f<String> describeLocal(const SymbolTableEntry* entry) {
-    const String kind = entry.isParam ? String("the parameter '") : String("the local variable '");
-    return kind + entry.name + "'";
 }
 
 public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {

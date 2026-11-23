@@ -157,6 +157,16 @@ public f<bool> SymbolTableEntry.isDeclaredInFunctionOf(Scope* scope) {
 }
 
 /**
+ * Describe this local variable or parameter for a diagnostic, e.g. "the local variable 'value'"
+ *
+ * @return Description
+ */
+public f<String> SymbolTableEntry.describeLocal() {
+    const String kind = this.isParam ? String("the parameter '") : String("the local variable '");
+    return kind + this.name + "'";
+}
+
+/**
  * Check if this symbol names a type, e.g. a struct or an alias, instead of a value
  *
  * @return Type definition or not
