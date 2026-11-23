@@ -1,0 +1,51 @@
+// Each reference variable selects the previous one in both operands of a ternary expression. The return check follows
+// every reference variable only once, otherwise checking this chain would take an exponential amount of time.
+f<int&> chain(bool condition, int& param) {
+    int& ref0 = param;
+    int& ref1 = condition ? ref0 : ref0;
+    int& ref2 = condition ? ref1 : ref1;
+    int& ref3 = condition ? ref2 : ref2;
+    int& ref4 = condition ? ref3 : ref3;
+    int& ref5 = condition ? ref4 : ref4;
+    int& ref6 = condition ? ref5 : ref5;
+    int& ref7 = condition ? ref6 : ref6;
+    int& ref8 = condition ? ref7 : ref7;
+    int& ref9 = condition ? ref8 : ref8;
+    int& ref10 = condition ? ref9 : ref9;
+    int& ref11 = condition ? ref10 : ref10;
+    int& ref12 = condition ? ref11 : ref11;
+    int& ref13 = condition ? ref12 : ref12;
+    int& ref14 = condition ? ref13 : ref13;
+    int& ref15 = condition ? ref14 : ref14;
+    int& ref16 = condition ? ref15 : ref15;
+    int& ref17 = condition ? ref16 : ref16;
+    int& ref18 = condition ? ref17 : ref17;
+    int& ref19 = condition ? ref18 : ref18;
+    int& ref20 = condition ? ref19 : ref19;
+    int& ref21 = condition ? ref20 : ref20;
+    int& ref22 = condition ? ref21 : ref21;
+    int& ref23 = condition ? ref22 : ref22;
+    int& ref24 = condition ? ref23 : ref23;
+    int& ref25 = condition ? ref24 : ref24;
+    int& ref26 = condition ? ref25 : ref25;
+    int& ref27 = condition ? ref26 : ref26;
+    int& ref28 = condition ? ref27 : ref27;
+    int& ref29 = condition ? ref28 : ref28;
+    int& ref30 = condition ? ref29 : ref29;
+    int& ref31 = condition ? ref30 : ref30;
+    int& ref32 = condition ? ref31 : ref31;
+    int& ref33 = condition ? ref32 : ref32;
+    int& ref34 = condition ? ref33 : ref33;
+    int& ref35 = condition ? ref34 : ref34;
+    int& ref36 = condition ? ref35 : ref35;
+    int& ref37 = condition ? ref36 : ref36;
+    int& ref38 = condition ? ref37 : ref37;
+    int& ref39 = condition ? ref38 : ref38;
+    int& ref40 = condition ? ref39 : ref39;
+    return ref40;
+}
+
+f<int> main() {
+    int value = 42;
+    printf("%d", chain(true, value));
+}

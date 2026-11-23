@@ -1,0 +1,48 @@
+type Inner struct {
+    int value
+}
+
+f<int*> getLocalAddress() {
+    int local = 42;
+    return &local;
+}
+
+f<int*> getParamAddress(int param) {
+    return (&param);
+}
+
+f<int*> getFieldAddress() {
+    Inner inner;
+    return &inner.value;
+}
+
+f<int*> getItemAddress() {
+    int[3] items = [1, 2, 3];
+    return &items[2];
+}
+
+f<int*> getDecayedArray() {
+    int[3] items = [1, 2, 3];
+    return items;
+}
+
+f<int*> getRefVarAddress() {
+    int local = 42;
+    int& ref = local;
+    return &ref;
+}
+
+f<Inner*> getTernaryAddress(bool condition, Inner* other) {
+    Inner local;
+    return condition ? other : &local;
+}
+
+f<int*> callWithOne(f<int*>(int) fct) {
+    return fct(1);
+}
+
+f<int> main() {
+    printf("%p", getLocalAddress());
+    // Expression lambdas return their expression implicitly
+    printf("%p", callWithOne((int param) -> &param));
+}

@@ -1,0 +1,188 @@
+import "std/iterator/array-iterator";
+
+type Inner struct {
+    int value
+}
+
+type Outer struct {
+    Inner inner
+    int& ref
+    int* ptr
+    int[3] items
+}
+
+type T int|double;
+
+type Box<T> struct {
+    T content
+}
+
+int GLOBAL = 7;
+
+f<int&> Outer.getRef() {
+    return this.inner.value; // Field of 'this' lives in the caller's object
+}
+
+f<int*> Outer.getPtr() {
+    return &this.items[1]; // Item of a field of 'this'
+}
+
+f<Outer*> Outer.self() {
+    return this;
+}
+
+f<int&> passThroughRef(int& value) {
+    return value;
+}
+
+f<int*> passThroughPtr(int* value) {
+    return value;
+}
+
+f<int&> derefPtr(int* value) {
+    unsafe {
+        return *value;
+    }
+}
+
+f<int*> addressOfRefParam(int& value) {
+    return &value;
+}
+
+f<int&> fieldOfRef(Outer& outer) {
+    return outer.inner.value;
+}
+
+f<int&> fieldOfPtr(Outer* outer) {
+    return outer.inner.value;
+}
+
+f<int&> refField(Outer outer) {
+    return outer.ref; // The reference field refers to storage elsewhere
+}
+
+f<int*> ptrField(Outer outer) {
+    return outer.ptr;
+}
+
+f<int&> global() {
+    return GLOBAL;
+}
+
+f<int*> globalAddress() {
+    return &GLOBAL;
+}
+
+f<int&> localRef(int& value) {
+    int& other = value;
+    return other;
+}
+
+f<int*> localPtr(int* value) {
+    int* copy = value;
+    return copy;
+}
+
+f<int&> ternaryOfRefs(bool cond, int& a, int& b) {
+    return cond ? a : b;
+}
+
+f<int*> ternaryOfPtrs(bool cond, int* a, int* b) {
+    return cond ? a : b;
+}
+
+f<int> byValue() {
+    int local = 3;
+    return local;
+}
+
+f<int&> arrayItemOfRefParam(int[3]& items) {
+    return items[0];
+}
+
+f<int&> itemOfArrayParam(int[3] items) {
+    return items[1]; // Array parameters refer to the array of the caller
+}
+
+f<int*> itemAddressOfArrayParam(int[3] items) {
+    return &items[2];
+}
+
+f<int&> foreachItemOfArrayParam(int[3] items, int& fallback) {
+    foreach int& item : items {
+        return item;
+    }
+    return fallback;
+}
+
+f<int&> foreachItemOfArrayRefParam(int[3]& items, int& fallback) {
+    foreach int& item : items {
+        return item;
+    }
+    return fallback;
+}
+
+f<int&> refVarBoundToRefParam(int& value) {
+    int& other = value;
+    int& otherOther = other;
+    return otherOther;
+}
+
+f<T&> Box.get() {
+    return this.content;
+}
+
+f<T&> passThroughGeneric<T>(T& value) {
+    return value;
+}
+
+f<int*> callWithRef(f<int*>(int&) fct, int& value) {
+    return fct(value);
+}
+
+f<T> readThroughLambda<T>(T value) {
+    // The lambda returns a reference to a parameter of the enclosing function, which outlives the lambda call
+    f<T&>() lambda = f<T&>() { return value; };
+    return lambda();
+}
+
+f<int> main() {
+    int value = 1;
+    Outer outer = Outer{Inner{1}, value, &value, [1, 2, 3]};
+    printf("%d\n", outer.getRef());
+    printf("%d\n", *outer.getPtr());
+    printf("%d\n", outer.self().inner.value);
+    printf("%d\n", passThroughRef(value));
+    printf("%d\n", *passThroughPtr(&value));
+    printf("%d\n", derefPtr(&value));
+    printf("%d\n", *addressOfRefParam(value));
+    printf("%d\n", fieldOfRef(outer));
+    printf("%d\n", fieldOfPtr(&outer));
+    printf("%d\n", refField(outer));
+    printf("%d\n", *ptrField(outer));
+    printf("%d\n", global());
+    printf("%d\n", *globalAddress());
+    printf("%d\n", localRef(value));
+    printf("%d\n", *localPtr(&value));
+    int other = 2;
+    printf("%d\n", ternaryOfRefs(false, value, other));
+    printf("%d\n", *ternaryOfPtrs(true, &value, &other));
+    printf("%d\n", byValue());
+    int[3] items = [4, 5, 6];
+    printf("%d\n", arrayItemOfRefParam(items));
+    printf("%d %d\n", itemOfArrayParam(items), *itemAddressOfArrayParam(items));
+    printf("%d\n", refVarBoundToRefParam(value));
+    printf("%d %d\n", foreachItemOfArrayParam(items, value), foreachItemOfArrayRefParam(items, value));
+    // A lambda may return a reference to a variable of the enclosing function
+    int captured = 9;
+    f<int&>() lambda = f<int&>() { return captured; };
+    printf("%d\n", lambda());
+    Box<int> intBox = Box<int>{10};
+    Box<double> doubleBox = Box<double>{11.5};
+    printf("%d %f\n", intBox.get(), doubleBox.get());
+    double doubleValue = 12.5;
+    printf("%d %f\n", passThroughGeneric(value), passThroughGeneric(doubleValue));
+    printf("%d %f\n", readThroughLambda(13), readThroughLambda(14.5));
+    // An expression lambda may return the address of a reference parameter
+    printf("%d\n", *callWithRef((int& param) -> &param, value));
+}

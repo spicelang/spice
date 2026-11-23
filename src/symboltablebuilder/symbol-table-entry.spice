@@ -6,6 +6,8 @@ import "std/text/json/json-value";
 // Own imports
 import "@/ast/ast-nodes";
 import "@/symboltablebuilder/scope";
+import "@/symboltablebuilder/symbol-table";
+import "@/symboltablebuilder/capture";
 import "@/symboltablebuilder/super-type";
 import "@/symboltablebuilder/qual-type";
 import "@/symboltablebuilder/lifecycle";
@@ -126,6 +128,42 @@ public f<bool> SymbolTableEntry.isInitialized() {
 public f<bool> SymbolTableEntry.isField() {
     const ScopeType scopeType = this.scope.getScopeType();
     return (scopeType == ScopeType::STRUCT || scopeType == ScopeType::UNION) && this.orderIndex < this.scope.getFieldCount() && !this.anonymous;
+}
+
+/**
+ * Check if this symbol is declared in the function/procedure/lambda, that the given scope belongs to, either as local
+ * variable or as parameter. Globals and variables, that a lambda captures from its enclosing function, are declared
+ * elsewhere. The scope of this entry cannot tell this, because the entries of a generic manifestation are copies, that
+ * still point to the scopes of the generic function. So this entry is searched in the scopes from the given one up to the
+ * function scope instead.
+ *
+ * @param scope Scope within the function, e.g. the current scope of the type checker
+ * @return Declared in the function or not
+ */
+public f<bool> SymbolTableEntry.isDeclaredInFunctionOf(Scope* scope) {
+    Scope* currentScope = scope;
+    while currentScope != nil<Scope*> {
+        // A lookup of a captured variable yields the entry of the enclosing function
+        SymbolTable& symbolTable = currentScope.symbolTable;
+        if symbolTable.lookupCaptureStrict(this.name) == nil<Capture*> && symbolTable.lookupStrict(this.name) == this {
+            return true;
+        }
+        if currentScope.scopeType == ScopeType::FUNC_PROC_BODY || currentScope.scopeType == ScopeType::LAMBDA_BODY {
+            return false;
+        }
+        currentScope = currentScope.parent;
+    }
+    return false;
+}
+
+/**
+ * Describe this local variable or parameter for a diagnostic, e.g. "the local variable 'value'"
+ *
+ * @return Description
+ */
+public f<String> SymbolTableEntry.describeLocal() {
+    const String kind = this.isParam ? String("the parameter '") : String("the local variable '");
+    return kind + this.name + "'";
 }
 
 /**

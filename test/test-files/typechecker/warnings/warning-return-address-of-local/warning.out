@@ -1,0 +1,1 @@
+[Warning] ./source.spice:4:16: Return of address of local variable: The returned pointer would dangle, because the local variable 'local' does not outlive the function

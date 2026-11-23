@@ -1,0 +1,14 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:6:16:
+Return of reference to local variable: The returned reference would dangle, because the local variable 'items' does not outlive the function. Return by value instead.
+
+6  return item;
+          ^^^^
+
+[Error|Semantic] ./source.spice:14:16:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'items' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+14  return &item;
+           ^^^^^

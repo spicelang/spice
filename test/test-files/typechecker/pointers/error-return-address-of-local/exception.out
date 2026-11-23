@@ -1,0 +1,50 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:7:12:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'local' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+7  return &local;
+          ^^^^^^
+
+[Error|Semantic] ./source.spice:11:12:
+Return of address of local variable: The returned pointer would dangle, because the parameter 'param' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+11  return (&param);
+           ^^^^^^^^
+
+[Error|Semantic] ./source.spice:16:12:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'inner' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+16  return &inner.value;
+           ^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:21:12:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'items' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+21  return &items[2];
+           ^^^^^^^^^
+
+[Error|Semantic] ./source.spice:26:12:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'items' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+26  return items;
+           ^^^^^
+
+[Error|Semantic] ./source.spice:32:12:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'local' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+32  return &ref;
+           ^^^^
+
+[Error|Semantic] ./source.spice:37:12:
+Return of address of local variable: The returned pointer would dangle, because the local variable 'local' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+37  return condition ? other : &local;
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[Error|Semantic] ./source.spice:47:45:
+Return of address of local variable: The returned pointer would dangle, because the parameter 'param' does not outlive the function. Use unsafe blocks if you know what you are doing.
+
+47  callWithOne((int param) -> &param));
+                               ^^^^^^
