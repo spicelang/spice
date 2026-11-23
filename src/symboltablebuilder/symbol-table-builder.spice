@@ -85,6 +85,30 @@ f<bool> SymbolTableBuilder.buildQualifiers(ASTQualifierLstNode* qualifierLst, Ty
 }
 
 /**
+ * Check that the optional parameter names of a signature or an external declaration are unique. The names do not land in
+ * any scope, so they are checked here.
+ *
+ * @return True if all parameter names are unique. Otherwise, an error was reported
+ */
+f<bool> SymbolTableBuilder.checkParamNamesUnique(const ASTTypeLstNode* paramTypeLst) {
+    const Vector<String>& paramNames = paramTypeLst.paramNames;
+    for unsigned long i = 1ul; i < paramNames.getSize(); i++ {
+        const String& paramName = paramNames[i];
+        if paramName.isEmpty() {
+            continue;
+        }
+        for unsigned long j = 0ul; j < i; j++ {
+            if paramNames[j] == paramName {
+                ASTNode* paramNode = cast<ASTNode*>(paramTypeLst.dataTypes[i]);
+                this.reportError(paramNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The parameter '" + paramName + "' was declared more than once");
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+/**
  * Visit an expression in a scope of its own. That scope holds the temporaries of the expression, which allows destructing
  * them right after the expression was evaluated. This is required for conditions and for operands that are only evaluated
  * conditionally, since a temporary of those must not be destructed if it never was constructed.
@@ -517,6 +541,11 @@ public f<Any> SymbolTableBuilder.visitExtDecl(ASTExtDeclNode* node) {
         return Any();
     }
 
+    // Check if the parameter names are unique
+    if node.hasArgs && !this.checkParamNamesUnique(downcast<ASTTypeLstWithEllipsisNode>(node.argTypeLst).typeLst) {
+        return Any();
+    }
+
     // Create scope for the external function (this is required in case of forceSubstantiation in FunctionManager::matchFunction)
     this.rootScope.createChildScope(node.getScopeId(), ScopeType::FUNC_PROC_BODY, &node.codeLoc);
 
@@ -767,6 +796,11 @@ public f<Any> SymbolTableBuilder.visitField(ASTFieldNode* node) {
 public f<Any> SymbolTableBuilder.visitSignature(ASTSignatureNode* node) {
     // Build signature qualifiers
     if !this.buildQualifiers(node.qualifierLst, node.signatureQualifiers, true, String("Cannot use this qualifier on a signature definition")) {
+        return Any();
+    }
+
+    // Check if the parameter names are unique
+    if node.hasParams && !this.checkParamNamesUnique(node.paramTypeLst) {
         return Any();
     }
 

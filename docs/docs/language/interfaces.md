@@ -13,13 +13,14 @@ implementation at runtime via a vtable, without carrying any type information ov
 
 ```spice
 type Driveable interface {
-    p drive(int);
+    p drive(int speed);
     f<bool> isDriving();
 }
 ```
 
 Method signatures inside an interface body use the same `f`/`p` syntax as regular functions and procedures, but have
-no body.
+no body. Parameter names are optional: `p drive(int);` declares the same method. They document the parameters, have to
+be unique within a signature and do not have to match the parameter names of the implementing methods.
 
 ## Implementing an interface
 
@@ -196,7 +197,7 @@ Interfaces can have generic type parameters, just like [generic structs](generic
 type T dyn;
 
 type Comparable<T> interface {
-    f<int> compareTo<T>(const T&);
+    f<int> compareTo<T>(const T& other);
 }
 
 type Temperature struct : Comparable<Temperature> {

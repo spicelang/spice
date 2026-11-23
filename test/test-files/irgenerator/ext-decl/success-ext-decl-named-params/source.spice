@@ -1,0 +1,14 @@
+// Parameter names in external declarations are optional and can be mixed with unnamed parameters
+ext f<int> abs(int value);
+ext f<byte*> malloc(unsigned long size);
+ext p free(byte*);
+ext f<int> snprintf(char* buffer, unsigned long, string format, ...);
+
+f<int> main() {
+    byte* address = malloc(32ul);
+    unsafe {
+        const int length = snprintf(cast<char*>(address), 32ul, "abs: %d", abs(-42));
+        printf("%s (%d chars)\n", cast<string>(cast<char*>(address)), length);
+    }
+    free(address);
+}

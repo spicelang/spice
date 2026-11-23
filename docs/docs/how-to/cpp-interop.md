@@ -31,6 +31,8 @@ The declaration syntax mirrors normal Spice functions:
 
 - `f<ReturnType>` for functions that return a value
 - `p` for procedures (`void` functions in C)
+- Each parameter is a type with an optional name. The names document the parameters and have to be unique within a
+  declaration, e.g. `ext f<int> abs(int value);` and `ext f<int> abs(int);` declare the same function
 
 To bind `malloc` and `free` from the C standard library:
 
@@ -53,7 +55,7 @@ f<int> main() {
 Variadic C functions (those declared with `...` in C) are supported too:
 
 ```spice
-ext f<int> snprintf(byte*, unsigned long, string, ...);
+ext f<int> snprintf(byte* buffer, unsigned long size, string format, ...);
 ```
 
 ## Renaming an external symbol

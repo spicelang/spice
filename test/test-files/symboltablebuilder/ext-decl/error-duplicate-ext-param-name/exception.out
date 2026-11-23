@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:1:55:
+Multiple declarations of the same variable: The parameter 'buffer' was declared more than once
+
+1  unsigned long size, string buffer, ...);
+                       ^^^^^^
