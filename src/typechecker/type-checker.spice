@@ -481,6 +481,57 @@ p TypeChecker.softError(const ASTNode* node, SemanticErrorType errorType, const 
     errorManager.addSoftError(node, errorType, message);
 }
 
+/**
+ * Add a soft error, if the divisor of an integer division or remainder operation is known to be zero at compile time.
+ * LLVM folds such an operation to poison, whereas a floating point division by zero yields inf or NaN. Operations with a
+ * non-integer operand are skipped, which also skips overloaded operators
+ *
+ * @param dividendType Type of the dividend
+ * @param divisorType Type of the divisor
+ * @param divisorNode AST node of the divisor
+ */
+p TypeChecker.checkIntegerDivisionByZero(const QualType& dividendType, const QualType& divisorType, ASTNode* divisorNode) {
+    const dyn integerTypes = [SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR];
+    const QualType divisor = divisorType.removeReferenceWrapper();
+    if !dividendType.removeReferenceWrapper().isOneOf(integerTypes, len(integerTypes)) || !divisor.isOneOf(integerTypes, len(integerTypes)) {
+        return;
+    }
+    if !divisorNode.hasCompileTimeValue(this.manIdx) || containsDoubleConstant(divisorNode) {
+        return;
+    }
+    // Only look at the bytes, that the divisor type occupies. The compile-time evaluator computes with longs, so this also
+    // catches divisors that wrap around to zero in their type
+    const CompileTimeValue divisorValue = divisorNode.getCompileTimeValue(this.manIdx);
+    bool isZero = false;
+    if divisor.is(SuperType::TY_LONG) {
+        isZero = divisorValue.getLongValue() == 0l;
+    } else if divisor.is(SuperType::TY_INT) {
+        isZero = divisorValue.getIntValue() == 0;
+    } else if divisor.is(SuperType::TY_SHORT) {
+        isZero = divisorValue.getShortValue() == 0s;
+    } else {
+        isZero = divisorValue.getCharValue() == '\0';
+    }
+    if isZero {
+        this.softError(divisorNode, SemanticErrorType::DIVISION_BY_ZERO, String("Dividing by zero is not allowed."));
+    }
+}
+
+// Check if the given subtree contains a double constant. The compile-time evaluator passes casts through without converting
+// the value, so the compile-time value of an integer expression, that contains a double constant, is not reliable
+f<bool> containsDoubleConstant(ASTNode* node) {
+    if node.kind == ASTNodeKind::CONSTANT {
+        const ASTConstantNode* constantNode = downcast<ASTConstantNode>(node);
+        return constantNode.primitiveValueType == PrimitiveValueType::TYPE_DOUBLE;
+    }
+    foreach ASTNode* child : node.children {
+        if containsDoubleConstant(child) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Add a warning to the warning list of the current source file
 p TypeChecker.addWarning(const CodeLoc& codeLoc, CompilerWarningType warningType, const String& message) {
     this.warnings.pushBack(CompilerWarning(codeLoc, warningType, message.getRaw()));
@@ -3811,8 +3862,10 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
     } else if node.op == AssignOp::OP_DIV_EQUAL {
         const ExprResult divEqualResult = this.opRuleManager.getDivEqualResultType(baseNode, lhs, rhs);
         rhsType = divEqualResult.ty;
+        this.checkIntegerDivisionByZero(lhsType, rhs.ty, getASTNode(node.rhs));
     } else if node.op == AssignOp::OP_REM_EQUAL {
         rhsType = this.opRuleManager.getRemEqualResultType(baseNode, lhs, rhs);
+        this.checkIntegerDivisionByZero(lhsType, rhs.ty, getASTNode(node.rhs));
     } else if node.op == AssignOp::OP_SHL_EQUAL {
         rhsType = this.opRuleManager.getSHLEqualResultType(baseNode, lhs, rhs);
     } else if node.op == AssignOp::OP_SHR_EQUAL {
@@ -4259,9 +4312,13 @@ public f<Any> TypeChecker.visitMultiplicativeExpr(ASTMultiplicativeExprNode* nod
         if op == MultiplicativeOp::OP_MUL {
             currentResult = this.opRuleManager.getMulResultType(baseNode, currentResult, operandResult, i);
         } else if op == MultiplicativeOp::OP_DIV {
+            const QualType dividendType = currentResult.ty;
             currentResult = this.opRuleManager.getDivResultType(baseNode, currentResult, operandResult, i);
+            this.checkIntegerDivisionByZero(dividendType, operandResult.ty, getASTNode(node.operands.get(i + 1l)));
         } else if op == MultiplicativeOp::OP_REM {
+            const QualType dividendType = currentResult.ty;
             currentResult = this.opRuleManager.getRemResultType(baseNode, currentResult, operandResult);
+            this.checkIntegerDivisionByZero(dividendType, operandResult.ty, getASTNode(node.operands.get(i + 1l)));
         } else {
             panic(Error("Multiplicative fall-through"));
         }

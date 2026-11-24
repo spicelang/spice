@@ -1,0 +1,10 @@
+f<int> main() {
+    int x = 1 / 0;
+    int y = 7 % 0;
+    long z = 10l / (2l - 2l);
+    short s = 5s;
+    s %= 0s;
+    int w = 3;
+    w /= 4 * 0;
+    printf("%d %d %lld %d %d\n", x, y, z, s, w);
+}
