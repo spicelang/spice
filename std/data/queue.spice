@@ -144,6 +144,8 @@ public p Queue.clear() {
  * Add an item at the end of the queue
  */
 public p Queue.push(const T& item) {
+    // The item may be an element of this queue, so remember its index to find it again after a reallocation
+    const unsigned long itemIdx = this.getElementIndex(item);
     // Check if we need to (re-)allocate memory. Treat an unallocated queue the same as a full one.
     if this.size == this.capacity {
         this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
@@ -151,7 +153,8 @@ public p Queue.push(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        __placement_new<T>(&this.contents[this.idxBack], item);
+        const T* source = itemIdx < this.size ? &this.contents[(this.idxFront + itemIdx) % this.capacity] : &item;
+        __placement_new<T>(&this.contents[this.idxBack], *source);
     }
     this.idxBack++;
     this.idxBack %= this.capacity;
@@ -295,6 +298,28 @@ public f<bool> operator==<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
  */
 public inline f<bool> operator!=<T>(const Queue<T>& lhs, const Queue<T>& rhs) {
     return !(lhs == rhs);
+}
+
+/**
+ * Retrieve the logical index of an item, that is an element of this queue, counted from the front. Inserting methods use it
+ * to find the item again, after they reallocated the buffer
+ *
+ * @param item Item to look up
+ * @return Logical index of the item or the size of the queue, if the item is not an element of this queue
+ */
+f<unsigned long> Queue.getElementIndex(const T& item) {
+    unsafe {
+        const unsigned long itemAddress = cast<unsigned long>(&item);
+        const unsigned long contentsAddress = cast<unsigned long>(this.contents);
+        const unsigned long itemSize = sizeof<T>();
+        if itemAddress < contentsAddress || itemAddress >= contentsAddress + this.capacity * itemSize {
+            return this.size;
+        }
+        // The elements may wrap around the end of the buffer, so count from the front slot
+        const unsigned long slotIdx = (itemAddress - contentsAddress) / itemSize;
+        const unsigned long logicalIdx = (slotIdx + this.capacity - this.idxFront) % this.capacity;
+        return logicalIdx < this.size ? logicalIdx : this.size;
+    }
 }
 
 /**

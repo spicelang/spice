@@ -126,6 +126,8 @@ public p Stack.clear() {
  * Add an item to the stack
  */
 public p Stack.push(const T& item) {
+    // The item may be an element of this stack, so remember its index to find it again after a reallocation
+    const unsigned long itemIdx = this.getElementIndex(item);
     // Check if we need to (re-)allocate memory. Treat an unallocated stack the same as a full one.
     if this.size == this.capacity {
         this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
@@ -133,7 +135,8 @@ public p Stack.push(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        __placement_new<T>(&this.contents[this.size++], item);
+        const T* source = itemIdx < this.size ? &this.contents[itemIdx] : &item;
+        __placement_new<T>(&this.contents[this.size++], *source);
     }
 }
 
@@ -243,6 +246,25 @@ public f<bool> operator==<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
  */
 public inline f<bool> operator!=<T>(const Stack<T>& lhs, const Stack<T>& rhs) {
     return !(lhs == rhs);
+}
+
+/**
+ * Retrieve the index of an item, that is an element of this stack. Inserting methods use it to find the item again, after
+ * they reallocated the buffer
+ *
+ * @param item Item to look up
+ * @return Index of the item or the size of the stack, if the item is not an element of this stack
+ */
+f<unsigned long> Stack.getElementIndex(const T& item) {
+    unsafe {
+        const unsigned long itemAddress = cast<unsigned long>(&item);
+        const unsigned long contentsAddress = cast<unsigned long>(this.contents);
+        const unsigned long itemSize = sizeof<T>();
+        if itemAddress < contentsAddress || itemAddress >= contentsAddress + this.size * itemSize {
+            return this.size;
+        }
+        return (itemAddress - contentsAddress) / itemSize;
+    }
 }
 
 /**

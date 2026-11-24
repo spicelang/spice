@@ -118,6 +118,8 @@ public p PriorityQueue.dtor() {
  * Add an item to the priority queue
  */
 public p PriorityQueue.push(const T& item) {
+    // The item may be an element of this priority queue, so remember its index to find it again after a reallocation
+    const unsigned long itemIdx = this.getElementIndex(item);
     // Check if we need to (re-)allocate memory. Treat an unallocated priority queue the same as a full one.
     if this.size == this.capacity {
         this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
@@ -125,7 +127,8 @@ public p PriorityQueue.push(const T& item) {
 
     // Insert the element at the back and restore the heap property by sifting it up
     unsafe {
-        __placement_new<T>(&this.contents[this.size], item);
+        const T* source = itemIdx < this.size ? &this.contents[itemIdx] : &item;
+        __placement_new<T>(&this.contents[this.size], *source);
     }
     this.size++;
     this.siftUp(this.size - 1l);
@@ -323,6 +326,25 @@ p PriorityQueue.swapItems(unsigned long indexA, unsigned long indexB) {
             itemB[i] ^= itemA[i];
             itemA[i] ^= itemB[i];
         }
+    }
+}
+
+/**
+ * Retrieve the index of an item, that is an element of this priority queue. Inserting methods use it to find the item again, after
+ * they reallocated the buffer
+ *
+ * @param item Item to look up
+ * @return Index of the item or the size of the priority queue, if the item is not an element of this priority queue
+ */
+f<unsigned long> PriorityQueue.getElementIndex(const T& item) {
+    unsafe {
+        const unsigned long itemAddress = cast<unsigned long>(&item);
+        const unsigned long contentsAddress = cast<unsigned long>(this.contents);
+        const unsigned long itemSize = sizeof<T>();
+        if itemAddress < contentsAddress || itemAddress >= contentsAddress + this.size * itemSize {
+            return this.size;
+        }
+        return (itemAddress - contentsAddress) / itemSize;
     }
 }
 

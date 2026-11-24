@@ -1,0 +1,109 @@
+import "std/data/vector";
+import "std/data/stack";
+import "std/data/queue";
+import "std/data/deque";
+import "std/data/priority-queue";
+import "std/type/type-conversion";
+
+// Inserting an element of a container into the same container must copy the element, before the container moves it by
+// reallocating or shifting its buffer
+f<int> main() {
+    // 1. Vector.pushBack with a reallocation
+    Vector<String> v1;
+    for int i = 0; i < 5; i++ { v1.pushBack(String("item") + toString(i)); }
+    assert v1.getSize() == v1.getCapacity();
+    v1.pushBack(v1.get(0));
+    v1.pushBack(v1.get(5));
+    assert v1.getSize() == 7;
+    assert v1.get(5) == String("item0");
+    assert v1.get(6) == String("item0");
+    printf("Vector.pushBack: ok\n");
+
+    // 2. Vector.insertAt without a reallocation, with the item behind, at and in front of the index
+    Vector<int> v2 = Vector<int>(10ul);
+    v2.pushBack(10);
+    v2.pushBack(20);
+    v2.pushBack(30);
+    v2.insertAt(0ul, v2.get(2)); // 30, 10, 20, 30
+    assert v2.get(0) == 30;
+    v2.insertAt(1ul, v2.get(1)); // 30, 10, 10, 20, 30
+    assert v2.get(1) == 10;
+    v2.insertAt(4ul, v2.get(0)); // 30, 10, 10, 20, 30, 30
+    assert v2.get(4) == 30;
+    v2.insertAt(6ul, v2.get(3)); // 30, 10, 10, 20, 30, 30, 20
+    assert v2.getSize() == 7;
+    const int[7] expected = [30, 10, 10, 20, 30, 30, 20];
+    for unsigned long i = 0ul; i < 7ul; i++ { assert v2.get(i) == expected[i]; }
+    printf("Vector.insertAt without reallocation: ok\n");
+
+    // 3. Vector.insertAt with a reallocation
+    Vector<String> v3;
+    for int i = 0; i < 5; i++ { v3.pushBack(String("item") + toString(i)); }
+    assert v3.getSize() == v3.getCapacity();
+    v3.insertAt(1ul, v3.get(3));
+    assert v3.getSize() == 6;
+    assert v3.get(1) == String("item3");
+    assert v3.get(4) == String("item3");
+    printf("Vector.insertAt with reallocation: ok\n");
+
+    // 4. Stack.push with a reallocation
+    Stack<String> s;
+    for int i = 0; i < 5; i++ { s.push(String("item") + toString(i)); }
+    assert s.getSize() == s.getCapacity();
+    s.push(s.top());
+    assert s.getSize() == 6;
+    assert s.pop() == String("item4");
+    assert s.pop() == String("item4");
+    printf("Stack.push: ok\n");
+
+    // 5. Queue.push with a reallocation, while the queue is wrapped
+    Queue<String> q;
+    for int i = 0; i < 5; i++ { q.push(String("item") + toString(i)); }
+    q.pop();
+    q.pop();
+    q.push(String("item5"));
+    q.push(String("item6")); // wrapped and full
+    assert q.getSize() == q.getCapacity();
+    q.push(q.back());
+    q.push(q.front());
+    assert q.getSize() == 7;
+    for int i = 2; i <= 6; i++ { assert q.pop() == String("item") + toString(i); }
+    assert q.pop() == String("item6");
+    assert q.pop() == String("item2");
+    printf("Queue.push: ok\n");
+
+    // 6. Deque.pushBack and Deque.pushFront with a reallocation, while the deque is wrapped
+    Deque<String> d1;
+    for int i = 0; i < 5; i++ { d1.pushBack(String("item") + toString(i)); }
+    d1.popFront();
+    d1.pushBack(String("item5")); // wrapped and full
+    assert d1.getSize() == d1.getCapacity();
+    d1.pushBack(d1.front());
+    assert d1.back() == String("item1");
+    Deque<String> d2;
+    for int i = 0; i < 5; i++ { d2.pushFront(String("item") + toString(i)); }
+    assert d2.getSize() == d2.getCapacity();
+    d2.pushFront(d2.back());
+    assert d2.getSize() == 6;
+    assert d2.front() == String("item0");
+    // Deque.pushFront without a reallocation
+    d2.pushFront(d2.front());
+    d2.pushFront(d2.back());
+    assert d2.getSize() == 8;
+    assert d2.popFront() == String("item0");
+    assert d2.popFront() == String("item0");
+    assert d2.popFront() == String("item0");
+    for int i = 4; i >= 0; i-- { assert d2.popFront() == String("item") + toString(i); }
+    printf("Deque.pushBack and Deque.pushFront: ok\n");
+
+    // 7. PriorityQueue.push with a reallocation
+    PriorityQueue<long> pq;
+    for long i = 0l; i < 5l; i++ { pq.push(i); }
+    assert pq.getSize() == pq.getCapacity();
+    pq.push(pq.peek());
+    assert pq.getSize() == 6;
+    assert pq.pop() == 4l;
+    assert pq.pop() == 4l;
+    assert pq.pop() == 3l;
+    printf("PriorityQueue.push: ok\n");
+}
