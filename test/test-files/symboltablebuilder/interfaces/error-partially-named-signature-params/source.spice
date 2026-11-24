@@ -1,0 +1,5 @@
+type Driveable interface {
+    p drive(int speed, bool, long distance);
+}
+
+f<int> main() {}

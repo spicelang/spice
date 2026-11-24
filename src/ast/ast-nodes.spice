@@ -802,6 +802,10 @@ public f<Any> ASTDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 public type ASTTypeLstNode struct : IVisitable {
     compose public ASTNode node
     public Vector<ASTDataTypeNode*> dataTypes
+    // Optional parameter names of a signature or an external declaration, one per data type. Empty for an unnamed parameter
+    public Vector<String> paramNames
+    // Code locations of the parameters of a signature or an external declaration, covering the data type and the name
+    public Vector<CodeLoc> paramCodeLocs
 }
 
 public p ASTTypeLstNode.ctor(CodeLoc codeLoc) {

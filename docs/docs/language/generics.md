@@ -98,7 +98,7 @@ for those parameters in its declaration:
 type T dyn;
 
 type Comparable<T> interface {
-    f<int> compareTo<T>(const T&);
+    f<int> compareTo<T>(const T& other);
 }
 
 type Score struct : Comparable<int> {

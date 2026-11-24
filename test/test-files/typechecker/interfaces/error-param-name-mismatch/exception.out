@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:9:24:
+Parameter name mismatch: The parameter 'backwards' has to be named 'reverse' or '_reverse', like in the signature 'p Driveable.drive(int,bool)'
+
+9  Car.drive(int speed, bool backwards) {
+                        ^^^^^^^^^^^^^^

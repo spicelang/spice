@@ -14,7 +14,6 @@ import "@/exception/semantic-error";
 import "@/symboltablebuilder/super-type";
 import "@/symboltablebuilder/symbol-table";
 import "@/symboltablebuilder/symbol-table-entry";
-import "@/symboltablebuilder/symbol-table-builder";
 import "@/symboltablebuilder/qual-type";
 import "@/model/function";
 import "@/model/generic-type";

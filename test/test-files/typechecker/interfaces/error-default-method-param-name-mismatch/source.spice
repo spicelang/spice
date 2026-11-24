@@ -1,0 +1,15 @@
+type Greeter interface {
+    p greet(string name);
+}
+
+p Greeter.greet(string person) {
+    printf("Hello %s\n", person);
+}
+
+type Impl struct : Greeter {}
+
+f<int> main() {
+    Impl impl;
+    Greeter* greeter = &impl;
+    greeter.greet("Spice");
+}

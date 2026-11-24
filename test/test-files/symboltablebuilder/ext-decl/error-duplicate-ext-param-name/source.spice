@@ -1,0 +1,3 @@
+ext f<int> snprintf(char* buffer, unsigned long size, string buffer, ...);
+
+f<int> main() {}

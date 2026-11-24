@@ -26,9 +26,9 @@ import "@/symboltablebuilder/super-type";
 import "@/symboltablebuilder/symbol-table-entry";
 import "@/symboltablebuilder/type-qualifiers";
 
-// Reserved names (THIS_VARIABLE_NAME, RETURN_VARIABLE_NAME, CTOR_FUNCTION_NAME and DTOR_FUNCTION_NAME live in symbol-table-entry.spice)
+// Reserved names (THIS_VARIABLE_NAME, RETURN_VARIABLE_NAME, UNUSED_VARIABLE_NAME, CTOR_FUNCTION_NAME and DTOR_FUNCTION_NAME live in
+// symbol-table-entry.spice)
 const string MAIN_FUNCTION_NAME = "main";
-public const string UNUSED_VARIABLE_NAME = "_";
 const string ENUM_SCOPE_PREFIX = "enum:";
 
 /**
@@ -79,6 +79,44 @@ f<bool> SymbolTableBuilder.buildQualifiers(ASTQualifierLstNode* qualifierLst, Ty
         } else {
             this.reportError(cast<ASTNode*>(qualifier), SemanticErrorType::QUALIFIER_AT_ILLEGAL_CONTEXT, illegalMessage);
             return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Check the optional parameter names of a signature or an external declaration: Either all or none of the parameters have
+ * to be named, and the names have to be unique. The names do not land in any scope, so they are checked here.
+ *
+ * @return True if the parameter names are valid. Otherwise, an error was reported
+ */
+f<bool> SymbolTableBuilder.checkParamNames(const ASTTypeLstNode* paramTypeLst) {
+    const Vector<String>& paramNames = paramTypeLst.paramNames;
+
+    // Check if either all or none of the parameters are named. Report the first unnamed parameter otherwise
+    const bool isFirstParamNamed = !paramNames[0ul].isEmpty();
+    for unsigned long i = 1ul; i < paramNames.getSize(); i++ {
+        if paramNames[i].isEmpty() == isFirstParamNamed {
+            ASTNode* unnamedParamNode = cast<ASTNode*>(paramTypeLst.dataTypes[isFirstParamNamed ? i : 0ul]);
+            this.reportError(unnamedParamNode, SemanticErrorType::PARTIALLY_NAMED_PARAMS, String("This parameter has no name, but others have one. Either all or none of the parameters have to be named"));
+            return false;
+        }
+    }
+    if !isFirstParamNamed {
+        return true;
+    }
+
+    // Check if the parameter names are unique
+    for unsigned long i = 1ul; i < paramNames.getSize(); i++ {
+        const String& paramName = paramNames[i];
+        for unsigned long j = 0ul; j < i; j++ {
+            if paramNames[j] == paramName {
+                // A parameter of a signature has no AST node of its own. Report the error at a node, that covers the data type
+                // and the name of the parameter. The error message is built right away, so the node is not needed afterwards
+                const ASTNode paramNode = ASTNode(paramTypeLst.paramCodeLocs[i]);
+                this.reportError(&paramNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The parameter '" + paramName + "' was declared more than once");
+                return false;
+            }
         }
     }
     return true;
@@ -517,6 +555,11 @@ public f<Any> SymbolTableBuilder.visitExtDecl(ASTExtDeclNode* node) {
         return Any();
     }
 
+    // Check the parameter names
+    if node.hasArgs && !this.checkParamNames(downcast<ASTTypeLstWithEllipsisNode>(node.argTypeLst).typeLst) {
+        return Any();
+    }
+
     // Create scope for the external function (this is required in case of forceSubstantiation in FunctionManager::matchFunction)
     this.rootScope.createChildScope(node.getScopeId(), ScopeType::FUNC_PROC_BODY, &node.codeLoc);
 
@@ -767,6 +810,11 @@ public f<Any> SymbolTableBuilder.visitField(ASTFieldNode* node) {
 public f<Any> SymbolTableBuilder.visitSignature(ASTSignatureNode* node) {
     // Build signature qualifiers
     if !this.buildQualifiers(node.qualifierLst, node.signatureQualifiers, true, String("Cannot use this qualifier on a signature definition")) {
+        return Any();
+    }
+
+    // Check the parameter names
+    if node.hasParams && !this.checkParamNames(node.paramTypeLst) {
         return Any();
     }
 

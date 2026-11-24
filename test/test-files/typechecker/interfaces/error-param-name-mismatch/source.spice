@@ -1,0 +1,17 @@
+type Driveable interface {
+    p drive(int speed, bool reverse);
+}
+
+type Car struct : Driveable {
+    int speed
+}
+
+p Car.drive(int speed, bool backwards) {
+    this.speed = backwards ? -speed : speed;
+}
+
+f<int> main() {
+    Car car;
+    Driveable* driveable = &car;
+    driveable.drive(12, false);
+}

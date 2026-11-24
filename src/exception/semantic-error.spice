@@ -131,7 +131,9 @@ public type SemanticErrorType enum {
     INVALID_CTOR_DELEGATION,
     RESULT_VARIABLE_DECLARED,
     RETURN_OF_LOCAL_REFERENCE,
-    RETURN_OF_LOCAL_ADDRESS
+    RETURN_OF_LOCAL_ADDRESS,
+    PARTIALLY_NAMED_PARAMS,
+    PARAM_NAME_MISMATCH
 }
 
 public type SemanticError struct {
@@ -308,6 +310,8 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::RESULT_VARIABLE_DECLARED: { return "Declaration of the implicit result variable"; }
         case SemanticErrorType::RETURN_OF_LOCAL_REFERENCE: { return "Return of reference to local variable"; }
         case SemanticErrorType::RETURN_OF_LOCAL_ADDRESS: { return "Return of address of local variable"; }
+        case SemanticErrorType::PARTIALLY_NAMED_PARAMS: { return "Partially named parameters"; }
+        case SemanticErrorType::PARAM_NAME_MISMATCH: { return "Parameter name mismatch"; }
         default: { panic(Error("Unknown error")); } // LCOV_EXCL_LINE
     }
 }
