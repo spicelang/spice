@@ -35,23 +35,38 @@ The declaration syntax mirrors normal Spice functions:
   the same function. The names document the parameters. Either all or none of the parameters of a declaration have to be
   named, and the names have to be unique within the declaration
 
-To bind `malloc` and `free` from the C standard library:
+To bind `malloc` and `free` from the C standard library and manage the memory manually:
 
 ```spice
-ext f<heap byte*> malloc(unsigned long);
-ext p free(heap byte*);
+ext f<byte*> malloc(unsigned long);
+ext p free(byte*);
 
 f<int> main() {
-    heap byte* buf = malloc(64ul);
+    byte* buf = malloc(64ul);
     // ... use buf ...
     free(buf);
     return 0;
 }
 ```
 
+Alternatively, let the compiler manage the memory by declaring the return type of `malloc` as `heap byte*`:
+
+```spice
+ext f<heap byte*> malloc(unsigned long);
+
+f<int> main() {
+    heap byte* buf = malloc(64ul);
+    // ... use buf ...
+    return 0; // buf is freed here, at the end of its scope
+}
+```
+
 !!! note "The `heap` qualifier"
     `heap` on a pointer return type tells the Spice compiler that the memory was heap-allocated by the callee.
-    It enables the compiler to track the pointer's ownership and lifetime correctly.
+    A `heap` variable owns its memory: the compiler frees it automatically when the variable goes out of scope.
+    Therefore, do not call `free` on a `heap` pointer yourself, otherwise the memory is freed twice. If you need to
+    release the memory earlier, call `free` and then set the variable to `nil<heap byte*>`, so that the compiler does
+    not free it a second time.
 
 Variadic C functions (those declared with `...` in C) are supported too:
 
