@@ -1,0 +1,8 @@
+type Color enum {
+    RED = 0d,
+    GREEN
+}
+
+f<int> main() {
+    Color c = Color::RED;
+}
