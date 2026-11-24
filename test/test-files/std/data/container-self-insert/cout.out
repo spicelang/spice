@@ -1,0 +1,7 @@
+Vector.pushBack: ok
+Vector.insertAt without reallocation: ok
+Vector.insertAt with reallocation: ok
+Stack.push: ok
+Queue.push: ok
+Deque.pushBack and Deque.pushFront: ok
+PriorityQueue.push: ok

@@ -145,6 +145,8 @@ public p Deque.clear() {
  * Add an item at the back of the deque
  */
 public p Deque.pushBack(const T& item) {
+    // The item may be an element of this deque, so remember its index to find it again after a reallocation
+    const unsigned long itemIdx = this.getElementIndex(item);
     // Check if we need to (re-)allocate memory. Treat an unallocated deque the same as a full one.
     if this.size == this.capacity {
         const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
@@ -153,7 +155,8 @@ public p Deque.pushBack(const T& item) {
 
     // Insert the element at the back
     unsafe {
-        __placement_new<T>(&this.contents[this.idxBack], item);
+        const T* source = itemIdx < this.size ? &this.contents[(this.idxFront + itemIdx) % this.capacity] : &item;
+        __placement_new<T>(&this.contents[this.idxBack], *source);
     }
     this.idxBack++;
     this.idxBack %= this.capacity;
@@ -166,17 +169,20 @@ public p Deque.pushBack(const T& item) {
  * Add an item at the front of the deque
  */
 public p Deque.pushFront(const T& item) {
+    // The item may be an element of this deque, so remember its index to find it again after a reallocation
+    const unsigned long itemIdx = this.getElementIndex(item);
     // Check if we need to (re-)allocate memory. Treat an unallocated deque the same as a full one.
     if this.size == this.capacity {
         const unsigned long newCapacity = this.capacity == 0l ? INITIAL_ALLOC_COUNT : this.capacity * RESIZE_FACTOR;
         this.resize(newCapacity);
     }
 
-    // Insert the element at the front
-    this.idxFront = this.idxFront + this.capacity - 1;
-    this.idxFront %= this.capacity;
+    // Insert the element at the front. Look up the item before moving the front index, which shifts the logical indices
     unsafe {
-        __placement_new<T>(&this.contents[this.idxFront], item);
+        const T* source = itemIdx < this.size ? &this.contents[(this.idxFront + itemIdx) % this.capacity] : &item;
+        this.idxFront = this.idxFront + this.capacity - 1;
+        this.idxFront %= this.capacity;
+        __placement_new<T>(&this.contents[this.idxFront], *source);
     }
 
     // Increase size
@@ -347,6 +353,28 @@ public f<bool> operator==<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
  */
 public inline f<bool> operator!=<T>(const Deque<T>& lhs, const Deque<T>& rhs) {
     return !(lhs == rhs);
+}
+
+/**
+ * Retrieve the logical index of an item, that is an element of this deque, counted from the front. Inserting methods use it
+ * to find the item again, after they reallocated the buffer
+ *
+ * @param item Item to look up
+ * @return Logical index of the item or the size of the deque, if the item is not an element of this deque
+ */
+f<unsigned long> Deque.getElementIndex(const T& item) {
+    unsafe {
+        const unsigned long itemAddress = cast<unsigned long>(&item);
+        const unsigned long contentsAddress = cast<unsigned long>(this.contents);
+        const unsigned long itemSize = sizeof<T>();
+        if itemAddress < contentsAddress || itemAddress >= contentsAddress + this.capacity * itemSize {
+            return this.size;
+        }
+        // The elements may wrap around the end of the buffer, so count from the front slot
+        const unsigned long slotIdx = (itemAddress - contentsAddress) / itemSize;
+        const unsigned long logicalIdx = (slotIdx + this.capacity - this.idxFront) % this.capacity;
+        return logicalIdx < this.size ? logicalIdx : this.size;
+    }
 }
 
 /**

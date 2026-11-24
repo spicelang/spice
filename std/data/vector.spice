@@ -142,13 +142,16 @@ public inline f<bool> Vector.isFull() {
  * Add an item at the end of the vector
  */
 public p Vector.pushBack<T>(const T& item) {
+    // The item may be an element of this vector, so remember its index to find it again after a reallocation
+    const unsigned long itemIdx = this.getElementIndex(item);
     // Check if we need to (re-)allocate memory. Treat an unallocated vector the same as a full one.
     if this.size == this.capacity {
         this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
     }
     // Insert the element at the back
     unsafe {
-        __placement_new<T>(&this.contents[this.size++], item);
+        const T* source = itemIdx < this.size ? &this.contents[itemIdx] : &item;
+        __placement_new<T>(&this.contents[this.size++], *source);
     }
 }
 
@@ -215,6 +218,13 @@ public p Vector.insertAt<UIntOrULong>(UIntOrULong index, const T& item) {
     if index > this.size {
         panic(Error("Access index out of bounds"));
     }
+    // The item may be an element of this vector, so remember its index to find it again after a reallocation and the shift
+    // below. The shift moves elements from the index onwards one slot to the back.
+    unsigned long itemIdx = this.getElementIndex(item);
+    const bool isElement = itemIdx < this.size;
+    if isElement && itemIdx >= index {
+        itemIdx++;
+    }
     // Check if we need to (re-)allocate memory. Treat an unallocated vector the same as a full one.
     if this.size == this.capacity {
         this.resize(this.capacity == 0l ? INITIAL_CAPACITY : this.capacity * RESIZE_FACTOR);
@@ -230,7 +240,8 @@ public p Vector.insertAt<UIntOrULong>(UIntOrULong index, const T& item) {
     }
     // Insert the new element at the index
     unsafe {
-        __placement_new<T>(&this.contents[index], item);
+        const T* source = isElement ? &this.contents[itemIdx] : &item;
+        __placement_new<T>(&this.contents[index], *source);
     }
     // Increment the size
     this.size++;
@@ -375,6 +386,25 @@ public f<bool> operator==<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
  */
 public inline f<bool> operator!=<T>(const Vector<T>& lhs, const Vector<T>& rhs) {
     return !(lhs == rhs);
+}
+
+/**
+ * Retrieve the index of an item, that is an element of this vector. Inserting methods use it to find the item again, after
+ * they moved the elements of the vector
+ *
+ * @param item Item to look up
+ * @return Index of the item or the size of the vector, if the item is not an element of this vector
+ */
+f<unsigned long> Vector.getElementIndex(const T& item) {
+    unsafe {
+        const unsigned long itemAddress = cast<unsigned long>(&item);
+        const unsigned long contentsAddress = cast<unsigned long>(this.contents);
+        const unsigned long itemSize = sizeof<T>();
+        if itemAddress < contentsAddress || itemAddress >= contentsAddress + this.size * itemSize {
+            return this.size;
+        }
+        return (itemAddress - contentsAddress) / itemSize;
+    }
 }
 
 /**
