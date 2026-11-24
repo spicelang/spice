@@ -47,9 +47,11 @@ f<Tracked> maybeFirst(bool first) {
 
 // Assignments in a loop overwrite the value of the previous iteration
 f<Tracked> lastOf(int count) {
-    for int i = 0; i < count; i++ {
+    int i = 0;
+    do {
         result = Tracked(10 + i);
-    }
+        i++;
+    } while i < count;
 }
 
 // Both branches assign the result variable first, then it gets overwritten
@@ -75,6 +77,8 @@ f<Tracked> copyThenTemp(const Tracked& a) {
 }
 
 // Generic function
+type T dyn;
+
 f<T> pickGeneric<T>(const T& a, const T& b, bool second) {
     result = a;
     if second {
@@ -109,8 +113,8 @@ f<int> main() {
         const Tracked b = Tracked(41);
         const Tracked c1 = copyTwice(a, b);
         const Tracked c2 = copyThenTemp(a);
-        const Tracked g1 = pickGeneric<Tracked>(a, b, true);
-        const Tracked g2 = pickGeneric<Tracked>(a, b, false);
+        const Tracked g1 = pickGeneric(a, b, true);
+        const Tracked g2 = pickGeneric(a, b, false);
         printf("%d %d %d %d\n", c1.id, c2.id, g1.id, g2.id);
         printf("live objects in scope: %d\n", LIVE);
     }
