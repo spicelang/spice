@@ -1,13 +1,13 @@
 f<int> main() {
     // Integer divisors, that are not zero
-    int a = 17 / 5;
-    int b = 17 % (2 * 3);
-    long c = 100l / (7l - 2l);
-    short d = 9s;
-    d /= 2s;
+    int quotient = 17 / 5;
+    int remainder = 17 % (2 * 3);
+    long longQuotient = 100l / (7l - 2l);
+    short shortQuotient = 9s;
+    shortQuotient /= 2s;
     // A floating point division by zero yields inf and is no error
-    double e = 1.0 / 0.0;
+    double infinity = 1.0 / 0.0;
     // Casts keep the double value at compile time, so the divisor must not be taken for zero
-    int f = 7 / cast<int>(1.5);
-    printf("%d %d %lld %d %f %d\n", a, b, c, d, e, f);
+    int castQuotient = 7 / cast<int>(1.5);
+    printf("%d %d %lld %d %f %d\n", quotient, remainder, longQuotient, shortQuotient, infinity, castQuotient);
 }
