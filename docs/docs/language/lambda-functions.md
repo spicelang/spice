@@ -37,8 +37,17 @@ int result = lambda(String("Hello"), true);
 
 ### Inline lambdas
 
+An inline lambda consists of a parameter list and a single expression after `->`, which the lambda returns. This keeps
+short callbacks compact:
+
 ```spice
-sort((int x, int y) => x < y);
+f<int> pickLarger(int a, int b, f<bool>(int, int) isLess) {
+    return isLess(a, b) ? b : a;
+}
+
+f<int> main() {
+    printf("%d", pickLarger(3, 7, (int x, int y) -> x < y)); // Prints 7
+}
 ```
 
 ## Capturing lambdas and the `Lambda` wrapper
