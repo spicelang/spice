@@ -4,6 +4,10 @@ title: Number formats
 
 Spice supports four different number formats to cover as many use-cases as possible.
 
+!!! note
+    A base prefix (`0d`, `0b`, `0x`/`0h`, `0o`) must be followed by at least one digit. A literal like `0x` or `0bl`
+    without any digits is rejected by the compiler.
+
 ## Decimal format (base 10)
 
 Decimal numbers can be written in two ways in Spice. The implicit way:

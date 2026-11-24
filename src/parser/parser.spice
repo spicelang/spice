@@ -2700,7 +2700,7 @@ f<long> Parser.parseNumeric(const Token& token, bool isNegative, unsigned int bi
     // Detect the base
     int base = 10;
     String digits = input;
-    if input.getLength() >= 3l && input[0l] == '0' {
+    if input.getLength() >= 2l && input[0l] == '0' {
         const char baseChar = toLower(input[1l]);
         if baseChar == 'd' {
             digits = input.getSubstring(2ul);
@@ -2714,6 +2714,11 @@ f<long> Parser.parseNumeric(const Token& token, bool isNegative, unsigned int bi
             base = 8;
             digits = input.getSubstring(2ul);
         }
+    }
+    // A base prefix must be followed by at least one digit
+    if digits.isEmpty() {
+        const String message = "Missing digits after the base prefix '" + input + "'";
+        this.throwParserError(token.codeLoc, ParserErrorType::INVALID_INT_LITERAL, message.getRaw());
     }
 
     // Parse the magnitude as unsigned, so that values like 2^63 (the absolute value of the min long) fit. Values above the max

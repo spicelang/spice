@@ -1,0 +1,1 @@
+[Error|Parser] ./source.spice:2:15: Invalid integer literal: Missing digits after the base prefix '0b'
