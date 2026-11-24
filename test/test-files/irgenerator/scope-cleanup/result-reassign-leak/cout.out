@@ -1,0 +1,10 @@
+2 1 4 4 12 22 22
+live objects in scope: 7
+live objects after scope: 0
+41 30 41 40
+live objects in scope: 6
+live objects after scope: 0
+51 50
+live objects after scope: 0
+long value, that is long enough to be heap-allocated as well
+short value, that is still long enough to be heap-allocated

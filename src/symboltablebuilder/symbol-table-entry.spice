@@ -36,6 +36,8 @@ public type SymbolTableEntry struct {
     public bool anonymous = false
     public bool used = false
     public bool isImplicitField = false
+    // Implicit result variable only: its assignments destruct the old value, if it was assigned before at runtime
+    public bool needsAssignedFlag = false
     // Private fields
     QualType qualType
     Lifecycle lifecycle
@@ -130,6 +132,16 @@ public f<bool> SymbolTableEntry.isInitialized() {
 public f<bool> SymbolTableEntry.isField() {
     const ScopeType scopeType = this.scope.getScopeType();
     return (scopeType == ScopeType::STRUCT || scopeType == ScopeType::UNION) && this.orderIndex < this.scope.getFieldCount() && !this.anonymous;
+}
+
+/**
+ * Check if this symbol is the implicit result variable of a function or lambda function. A local variable, that the user
+ * named 'result' (only possible in procedures), is not
+ *
+ * @return Implicit result variable or not
+ */
+public f<bool> SymbolTableEntry.isImplicitResultVar() {
+    return this.name == RETURN_VARIABLE_NAME && this.declNode.kind != ASTNodeKind::DECL_STMT;
 }
 
 /**

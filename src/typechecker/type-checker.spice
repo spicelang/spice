@@ -3477,9 +3477,10 @@ public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* nod
  * @param node Assign expression node
  * @param rhsType Type of the right side of the assignment
  * @param isRhsTemporary Whether the right side of the assignment is a temporary
+ * @param isResultVarAssign Whether the assignment overwrites the value of the implicit result variable
  * @return Destructible temp steal target or not
  */
-f<bool> TypeChecker.isDestructibleTempStealTarget(ASTAssignExprNode* node, const QualType& rhsType, bool isRhsTemporary) {
+f<bool> TypeChecker.isDestructibleTempStealTarget(ASTAssignExprNode* node, const QualType& rhsType, bool isRhsTemporary, bool isResultVarAssign) {
     // The rhs must be a temporary struct value, that is moved into the lhs, and no assign operator overload may take over
     if rhsType.isRef() || !rhsType.is(SuperType::TY_STRUCT) || !isRhsTemporary {
         return false;
@@ -3488,9 +3489,31 @@ f<bool> TypeChecker.isDestructibleTempStealTarget(ASTAssignExprNode* node, const
     if opFcts.front() != nil<const Function*> {
         return false;
     }
+    // The IR generator checks at runtime, whether the result variable was already assigned before (see isResultVarAssign)
+    if isResultVarAssign {
+        return true;
+    }
     // The initialization state of the lhs entry does not tell, whether the overwritten value was actually constructed at
     // runtime (e.g. for '*ptr = ...', 'array[i] = ...' or 'result.field = ...'), so check the lhs expression itself
     return this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
+}
+
+/**
+ * Check if an assignment overwrites the value of the implicit result variable of a function or lambda function as a whole.
+ * Assignments to its fields and to a reference result, which bind the reference, do not count.
+ * The result variable is only constructed by assigning it, so its first assignment at runtime overwrites nothing. The
+ * lifecycle of its entry cannot tell, which assignment comes first at runtime (e.g. in branches or loops), so the IR
+ * generator tracks this with a runtime flag and only destructs the old value, if the result variable was already assigned.
+ *
+ * @param node Assign expression node
+ * @param lhs Left side of the assignment
+ * @return Result variable assignment or not
+ */
+f<bool> TypeChecker.isResultVarAssign(ASTAssignExprNode* node, const ExprResult& lhs) {
+    if lhs.entry == nil<SymbolTableEntry*> || !lhs.entry.isImplicitResultVar() || lhs.ty.isRef() {
+        return false;
+    }
+    return getASTNode(node.lhs).kind == ASTNodeKind::ATOMIC_EXPR;
 }
 
 /**
@@ -3835,19 +3858,29 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         // initialized field by field).
         // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
         // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
+        // The implicit result variable gets the dtor attached to each of its assignments, because the IR generator only calls
+        // it, if the result variable was assigned before at runtime (see isResultVarAssign).
         bool overwritesValue = lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isInitialized();
         if isDecl {
             const bool isFieldInit = this.currentScope.isInCtorBody() && isDirectFieldOfThis(getASTNode(node.lhs));
             overwritesValue = !isFieldInit && this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
         }
+        const bool isResultVarAssign = this.isResultVarAssign(node, lhs);
+        if isResultVarAssign {
+            overwritesValue = true;
+        }
         if overwritesValue && lhs.entry != nil<SymbolTableEntry*> && !this.currentScope.doesAllowUnsafeOperations() {
             const QualType lhsUnwrappedType = lhs.ty.removeReferenceWrapper();
             const QualType lhsSType = lhsUnwrappedType.toNonConst();
-            if lhsSType.is(SuperType::TY_STRUCT) && !lhsSType.isTriviallyDestructible(baseNode) && (copyCtor != nil<const Function*> || this.isDestructibleTempStealTarget(node, rhs.ty, isRhsTemporary)) {
+            if lhsSType.is(SuperType::TY_STRUCT) && !lhsSType.isTriviallyDestructible(baseNode) && (copyCtor != nil<const Function*> || this.isDestructibleTempStealTarget(node, rhs.ty, isRhsTemporary, isResultVarAssign)) {
                 const ArgList noArgs;
                 const Function*& lhsDtorFct = node.lhsDtorFct.get(this.manIdx);
                 lhsDtorFct = this.implicitlyCallStructMethod(lhsSType, String(DTOR_FUNCTION_NAME), noArgs, baseNode);
                 this.ensureImplicitCallVisibility(lhsDtorFct, baseNode);
+                // Let the IR generator track at runtime, whether the result variable was already assigned
+                if isResultVarAssign {
+                    lhs.entry.needsAssignedFlag = true;
+                }
             }
         }
     } else if node.op == AssignOp::OP_PLUS_EQUAL {

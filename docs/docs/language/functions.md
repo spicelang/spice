@@ -53,6 +53,9 @@ f<int> getAge(bool adult) {
 This is equivalent to using an explicit `return` expression, but can be more readable when the return value is built
 up across multiple branches.
 
+`result` holds no value until it is assigned for the first time. Like for any other variable, assigning it again
+destructs its previous value first, so assigning e.g. a `String` to `result` several times does not leak memory.
+
 Since every function and lambda function already declares `result`, a parameter or a variable named `result` directly
 in its body is a compile error. Assign to the implicit variable instead, or choose another name. Procedures have no
 `result` variable.

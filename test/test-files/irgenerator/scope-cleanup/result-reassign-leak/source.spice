@@ -1,0 +1,136 @@
+// TEST: --sanitizer=address
+
+// The result variable is only constructed by assigning it. Each further assignment overwrites a constructed value, which
+// has to be destructed first. Otherwise, its owning members leak. LeakSanitizer reports them at the program exit.
+// Which assignment comes first is only known at runtime (branches, loops), so the old value must only be destructed, if
+// the result variable was already assigned. Destructing it before would free uninitialized memory.
+
+int LIVE = 0;
+
+// Counts its live instances and owns heap memory
+type Tracked struct {
+    int id
+    String text
+}
+
+p Tracked.ctor(int id) {
+    this.id = id;
+    this.text = String("value, that is long enough to be heap-allocated");
+    LIVE++;
+}
+
+p Tracked.ctor(const Tracked& other) {
+    this.id = other.id;
+    this.text = other.text;
+    LIVE++;
+}
+
+p Tracked.dtor() {
+    LIVE--;
+}
+
+// Reported example: the second assignment overwrites the first value
+f<Tracked> choose(bool second) {
+    result = Tracked(1);
+    if second {
+        result = Tracked(2);
+    }
+}
+
+// The first assignment only happens on one path
+f<Tracked> maybeFirst(bool first) {
+    if first {
+        result = Tracked(3);
+    }
+    result = Tracked(4);
+}
+
+// Assignments in a loop overwrite the value of the previous iteration
+f<Tracked> lastOf(int count) {
+    for int i = 0; i < count; i++ {
+        result = Tracked(10 + i);
+    }
+}
+
+// Both branches assign the result variable first, then it gets overwritten
+f<Tracked> eitherThenOverwrite(bool left) {
+    if left {
+        result = Tracked(20);
+    } else {
+        result = Tracked(21);
+    }
+    result = Tracked(22);
+}
+
+// Copies into the result variable
+f<Tracked> copyTwice(const Tracked& a, const Tracked& b) {
+    result = a;
+    result = b;
+}
+
+// Mixes copies and temporaries
+f<Tracked> copyThenTemp(const Tracked& a) {
+    result = a;
+    result = Tracked(30);
+}
+
+// Generic function
+f<T> pickGeneric<T>(const T& a, const T& b, bool second) {
+    result = a;
+    if second {
+        result = b;
+    }
+}
+
+// A result variable of a type, that is returned via memory
+f<String> describe(bool isLong) {
+    result = String("short value, that is still long enough to be heap-allocated");
+    if isLong {
+        result = String("long value, that is long enough to be heap-allocated as well");
+    }
+}
+
+f<int> main() {
+    {
+        const Tracked t1 = choose(true);
+        const Tracked t2 = choose(false);
+        const Tracked t3 = maybeFirst(true);
+        const Tracked t4 = maybeFirst(false);
+        const Tracked t5 = lastOf(3);
+        const Tracked t6 = eitherThenOverwrite(true);
+        const Tracked t7 = eitherThenOverwrite(false);
+        printf("%d %d %d %d %d %d %d\n", t1.id, t2.id, t3.id, t4.id, t5.id, t6.id, t7.id);
+        printf("live objects in scope: %d\n", LIVE);
+    }
+    printf("live objects after scope: %d\n", LIVE);
+
+    {
+        const Tracked a = Tracked(40);
+        const Tracked b = Tracked(41);
+        const Tracked c1 = copyTwice(a, b);
+        const Tracked c2 = copyThenTemp(a);
+        const Tracked g1 = pickGeneric<Tracked>(a, b, true);
+        const Tracked g2 = pickGeneric<Tracked>(a, b, false);
+        printf("%d %d %d %d\n", c1.id, c2.id, g1.id, g2.id);
+        printf("live objects in scope: %d\n", LIVE);
+    }
+    printf("live objects after scope: %d\n", LIVE);
+
+    // Lambda function
+    {
+        f<Tracked>(bool) lambda = f<Tracked>(bool second) {
+            result = Tracked(50);
+            if second {
+                result = Tracked(51);
+            }
+        };
+        const Tracked l1 = lambda(true);
+        const Tracked l2 = lambda(false);
+        printf("%d %d\n", l1.id, l2.id);
+    }
+    printf("live objects after scope: %d\n", LIVE);
+
+    const String s1 = describe(true);
+    const String s2 = describe(false);
+    printf("%s\n%s\n", s1.getRaw(), s2.getRaw());
+}

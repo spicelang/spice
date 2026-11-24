@@ -136,6 +136,8 @@ public type IRGenerator struct : IAbstractAstVisitor {
     // the symbol table entry / function, since pointers cannot be hashed.
     UnorderedMap<long, Stack<llvm::Value>> addressMap
     UnorderedMap<long, llvm::Function> llvmFunctions
+    // Runtime flags, whether the result variable of a function or lambda function was already assigned, keyed by its entry
+    UnorderedMap<long, llvm::Value> resultAssignedFlags
 }
 
 public p IRGenerator.ctor(GlobalResourceManager& resourceManager, SourceFile* sourceFile) {
@@ -1085,8 +1087,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
             const llvm::Value selfAssign = this.builder.createICmp(llvm::LLVMIntPredicate::EQ, lhsAddress, rhsAddress);
             this.insertCondJump(selfAssign, bCopyEnd, bCopy);
             this.switchToBlock(bCopy);
-            const Vector<llvm::Value> noArgs;
-            this.generateCtorOrDtorCall(lhsAddress, lhsDtor, noArgs);
+            this.generateLhsDtorCall(lhsAddress, lhsEntry, lhsDtor);
         }
 
         const QualType rhsSTypeNonRef = rhsSTypeNoRef.toNonConst();
@@ -1117,6 +1118,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
             this.insertJump(bCopyEnd);
             this.switchToBlock(bCopyEnd);
         }
+        this.markResultAssigned(lhsEntry, lhsDtor);
         LLVMExprResult res;
         res.ptr = lhsAddress;
         res.entry = lhsEntry;
@@ -1126,11 +1128,11 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
     // If a temporary struct is moved into an already initialized lhs (temp stealing), the old value of the lhs must be
     // destructed before it gets overwritten, otherwise its owning members would leak. The typechecker only sets a dtor in
     // exactly those cases. The rhs is already evaluated at this point and, being a temporary, never aliases the lhs.
+    const model::Function* lhsDtor = nil<const model::Function*>;
     if rhsSType.is(SuperType::TY_STRUCT) && rhs.isTemporary() {
-        const model::Function* lhsDtor = this.getLhsDtorFct(node);
+        lhsDtor = this.getLhsDtorFct(node);
         if lhsDtor != nil<const model::Function*> {
-            const Vector<llvm::Value> noArgs;
-            this.generateCtorOrDtorCall(lhsAddress, lhsDtor, noArgs);
+            this.generateLhsDtorCall(lhsAddress, lhsEntry, lhsDtor);
         }
     }
 
@@ -1150,6 +1152,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         // Store the value to the address
         this.insertStore(rhsValue, lhsAddress, rhsSType);
     }
+    this.markResultAssigned(lhsEntry, lhsDtor);
 
     LLVMExprResult res;
     res.value = rhsValue;
@@ -1186,6 +1189,66 @@ f<const model::Function*> IRGenerator.getLhsDtorFct(ASTNode* node) {
     }
     const ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
     return assignNode.lhsDtorFct.get(this.manIdx);
+}
+
+/**
+ * Allocate the runtime flag, whether the result variable was already assigned, if the type checker requested it. It is
+ * stored in the entry block, so that it is initialized on all paths through the function or lambda function.
+ *
+ * @param resultEntry Implicit result variable
+ */
+p IRGenerator.allocateResultAssignedFlag(const SymbolTableEntry* resultEntry) {
+    if !resultEntry.needsAssignedFlag {
+        return;
+    }
+    const llvm::Value flagAddr = this.insertAlloca(this.builder.getInt1Ty(), String(RETURN_VARIABLE_NAME) + ".assigned");
+    this.insertStore(this.builder.getFalse(), flagAddr);
+    this.resultAssignedFlags.upsert(getEntryKey(resultEntry), flagAddr);
+}
+
+// Get the runtime flag, whether the given result variable was already assigned. Returns a null value for other lhs entries
+f<llvm::Value> IRGenerator.getResultAssignedFlag(const SymbolTableEntry* lhsEntry, const model::Function* lhsDtor) {
+    if lhsDtor == nil<const model::Function*> || lhsEntry == nil<const SymbolTableEntry*> || !lhsEntry.isImplicitResultVar() {
+        return llvm::Value();
+    }
+    const long key = getEntryKey(lhsEntry);
+    if !this.resultAssignedFlags.contains(key) {
+        return llvm::Value();
+    }
+    return this.resultAssignedFlags.get(key);
+}
+
+/**
+ * Destruct the old value of the lhs of an assignment. The result variable is only constructed by assigning it, so its old
+ * value only gets destructed, if it was already assigned at runtime.
+ *
+ * @param lhsAddress Address of the lhs
+ * @param lhsEntry Symbol table entry of the lhs
+ * @param lhsDtor Dtor of the lhs
+ */
+p IRGenerator.generateLhsDtorCall(llvm::Value lhsAddress, const SymbolTableEntry* lhsEntry, const model::Function* lhsDtor) {
+    const Vector<llvm::Value> noArgs;
+    const llvm::Value assignedFlagAddr = this.getResultAssignedFlag(lhsEntry, lhsDtor);
+    if assignedFlagAddr.isNull() {
+        this.generateCtorOrDtorCall(lhsAddress, lhsDtor, noArgs);
+        return;
+    }
+    const llvm::BasicBlock bDtor = this.createBlock(String("assign.result.dtor"));
+    const llvm::BasicBlock bDtorEnd = this.createBlock(String("assign.result.dtor.end"));
+    const llvm::Value wasAssigned = this.insertLoad(this.builder.getInt1Ty(), assignedFlagAddr);
+    this.insertCondJump(wasAssigned, bDtor, bDtorEnd);
+    this.switchToBlock(bDtor);
+    this.generateCtorOrDtorCall(lhsAddress, lhsDtor, noArgs);
+    this.insertJump(bDtorEnd);
+    this.switchToBlock(bDtorEnd);
+}
+
+// Remember at runtime, that the result variable was assigned, if its later assignments might destruct its old value
+p IRGenerator.markResultAssigned(const SymbolTableEntry* lhsEntry, const model::Function* lhsDtor) {
+    const llvm::Value assignedFlagAddr = this.getResultAssignedFlag(lhsEntry, lhsDtor);
+    if !assignedFlagAddr.isNull() {
+        this.insertStore(this.builder.getTrue(), assignedFlagAddr);
+    }
 }
 
 p IRGenerator.generateShallowCopy(llvm::Value oldAddress, llvm::Type varType, llvm::Value targetAddress) {
@@ -1960,6 +2023,7 @@ f<Any> IRGenerator.visitFctOrProcDef(ASTNode* baseNode, ASTFctDefBaseNode* node,
                 this.updateAddress(resultEntry, resultAddr);
                 // Generate debug info
                 this.diGenerator.generateLocalVarDebugInfo(String(RETURN_VARIABLE_NAME), resultAddr);
+                this.allocateResultAssignedFlag(resultEntry);
             }
         }
 
@@ -5126,6 +5190,7 @@ f<Any> IRGenerator.visitLambda(ASTNode* node, ASTLambdaBaseNode* lambdaBase, mod
             this.updateAddress(resultEntry, resultAddr);
             // Generate debug info
             this.diGenerator.generateLocalVarDebugInfo(String(RETURN_VARIABLE_NAME), resultAddr);
+            this.allocateResultAssignedFlag(resultEntry);
         }
     }
 
