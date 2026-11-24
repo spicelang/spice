@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:2:24:
+Partially named parameters: This parameter has no name, but others have one. Either all or none of the parameters have to be named
+
+2  p drive(int speed, bool, long distance);
+                      ^^^^

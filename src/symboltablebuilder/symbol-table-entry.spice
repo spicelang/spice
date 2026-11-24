@@ -22,6 +22,8 @@ public const string DTOR_FUNCTION_NAME = "dtor";
 // Reserved variable names
 public const string THIS_VARIABLE_NAME = "this";
 public const string RETURN_VARIABLE_NAME = "result";
+// Prefix of variable names, that are not reported as unused
+public const string UNUSED_VARIABLE_NAME = "_";
 
 public type SymbolTableEntry struct {
     // Public fields

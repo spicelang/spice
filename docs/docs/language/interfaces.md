@@ -19,8 +19,10 @@ type Driveable interface {
 ```
 
 Method signatures inside an interface body use the same `f`/`p` syntax as regular functions and procedures, but have
-no body. Parameter names are optional: `p drive(int);` declares the same method. They document the parameters, have to
-be unique within a signature and do not have to match the parameter names of the implementing methods.
+no body. Parameter names are optional: `p drive(int);` declares the same method. Either all or none of the parameters of
+a signature have to be named, and the names have to be unique within the signature. If a signature names its parameters,
+the implementing methods have to use the same names. A leading underscore marks a parameter, that a method does not use,
+so `p Car.drive(int _speed)` implements `p drive(int speed);` as well.
 
 ## Implementing an interface
 
@@ -182,6 +184,7 @@ implementation of the concrete struct.
 A few rules apply to default methods:
 
 - A default method must implement a method signature of its interface, with exactly the same parameter and return types.
+  If the signature names its parameters, the default method has to use the same names.
 - Default methods cannot be constructors or destructors and cannot have optional parameters.
 - If a struct declares a method with the same name as a default method, but with another signature, it does not inherit
   the default method and has to implement the interface method itself.

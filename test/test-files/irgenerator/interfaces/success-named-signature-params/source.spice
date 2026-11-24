@@ -1,14 +1,27 @@
 type T dyn;
 
-// Parameter names in signatures are optional and can differ from the ones of the implementation
+// A signature with parameter names requires the same names in the implementing methods. A leading underscore is allowed
+// for parameters, that the method does not use
 type Driveable interface {
     p drive(int speed, bool reverse);
-    p park(int, string spot);
+    p park(int duration, string spot);
     f<bool> isDriving();
 }
 
 type Comparable<T> interface {
     f<int> compareTo<T>(const T& other);
+}
+
+// A signature without parameter names allows any names in the implementing methods
+type Greeter interface {
+    p greet(string, int);
+}
+
+// Default methods have to use the parameter names of the signature as well
+p Greeter.greet(string name, int times) {
+    for int i = 0; i < times; i++ {
+        printf("Hello %s\n", name);
+    }
 }
 
 type Car struct : Driveable {
@@ -19,8 +32,8 @@ p Car.ctor() {
     this.speed = 0;
 }
 
-p Car.drive(int newSpeed, bool reverse) {
-    this.speed = reverse ? -newSpeed : newSpeed;
+p Car.drive(int speed, bool reverse) {
+    this.speed = reverse ? -speed : speed;
 }
 
 p Car.park(int _duration, string spot) {
@@ -40,10 +53,18 @@ p Temperature.ctor(double celsius) {
     this.celsius = celsius;
 }
 
-f<int> Temperature.compareTo(const Temperature& temperature) {
-    if this.celsius < temperature.celsius { return -1; }
-    if this.celsius > temperature.celsius { return 1; }
+f<int> Temperature.compareTo(const Temperature& other) {
+    if this.celsius < other.celsius { return -1; }
+    if this.celsius > other.celsius { return 1; }
     return 0;
+}
+
+type DefaultGreeter struct : Greeter {}
+
+type ShortGreeter struct : Greeter {}
+
+p ShortGreeter.greet(string person, int _count) {
+    printf("Hi %s\n", person);
 }
 
 f<int> main() {
@@ -58,4 +79,11 @@ f<int> main() {
     const Temperature cold = Temperature(-5.0);
     Comparable<Temperature>* comparable = &warm;
     printf("Compare: %d\n", comparable.compareTo(cold));
+
+    DefaultGreeter defaultGreeter;
+    Greeter* greeter = &defaultGreeter;
+    greeter.greet("Spice", 2);
+    ShortGreeter shortGreeter;
+    greeter = &shortGreeter;
+    greeter.greet("Spice", 2);
 }

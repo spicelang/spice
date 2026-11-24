@@ -31,8 +31,9 @@ The declaration syntax mirrors normal Spice functions:
 
 - `f<ReturnType>` for functions that return a value
 - `p` for procedures (`void` functions in C)
-- Each parameter is a type with an optional name. The names document the parameters and have to be unique within a
-  declaration, e.g. `ext f<int> abs(int value);` and `ext f<int> abs(int);` declare the same function
+- Each parameter is a type with an optional name, e.g. `ext f<int> abs(int value);` and `ext f<int> abs(int);` declare
+  the same function. The names document the parameters. Either all or none of the parameters of a declaration have to be
+  named, and the names have to be unique within the declaration
 
 To bind `malloc` and `free` from the C standard library:
 

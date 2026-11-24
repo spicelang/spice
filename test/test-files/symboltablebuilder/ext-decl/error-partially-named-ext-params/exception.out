@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:1:21:
+Partially named parameters: This parameter has no name, but others have one. Either all or none of the parameters have to be named
+
+1  ext f<int> snprintf(char*, unsigned long, string
+                       ^^^^^

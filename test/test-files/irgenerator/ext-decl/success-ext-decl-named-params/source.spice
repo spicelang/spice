@@ -1,8 +1,8 @@
-// Parameter names in external declarations are optional and can be mixed with unnamed parameters
+// Parameter names in external declarations are optional. Either all or none of the parameters of a declaration are named
 ext f<int> abs(int value);
 ext f<byte*> malloc(unsigned long size);
 ext p free(byte*);
-ext f<int> snprintf(char* buffer, unsigned long, string format, ...);
+ext f<int> snprintf(char* buffer, unsigned long size, string format, ...);
 
 f<int> main() {
     byte* address = malloc(32ul);

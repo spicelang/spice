@@ -905,10 +905,53 @@ p TypeChecker.checkDefaultMethodImplementsInterfaceMethod(const Function* defaul
     const QualTypeList paramTypes = defaultMethod.getParamTypes();
     foreach const Function* method : spiceInterface.methods {
         if method.name == defaultMethod.name && method.getParamTypes() == paramTypes && method.returnType == defaultMethod.returnType {
+            this.checkParamNamesMatchSignature(method, defaultMethod);
             return;
         }
     }
     throwSemanticError(defaultMethod.declNode, SemanticErrorType::INVALID_DEFAULT_METHOD, "The default method '" + defaultMethod.getSignature() + "' does not implement any method of the interface '" + spiceInterface.structBase.name + "'");
+}
+
+/**
+ * Check if the parameter names of a method match the ones of the interface method signature, that it implements. A
+ * signature without parameter names matches any names. A leading underscore of a parameter name of the method is ignored,
+ * so that the method can mark a parameter, that it does not use.
+ *
+ * @param signature Interface method signature
+ * @param method Method, that implements the signature
+ */
+p TypeChecker.checkParamNamesMatchSignature(const Function* signature, const Function* method) {
+    // Get the parameter names of the signature. Either all or none of them are named, so checking the first one is enough
+    const ASTSignatureNode* signatureNode = downcast<ASTSignatureNode>(signature.declNode);
+    if !signatureNode.hasParams || signatureNode.paramTypeLst.paramNames[0ul].isEmpty() {
+        return;
+    }
+    const Vector<String>& expectedNames = signatureNode.paramTypeLst.paramNames;
+
+    // Get the parameters of the method definition
+    IVisitable* paramLstVisitable = nil<IVisitable*>;
+    const ASTNode* methodDeclNode = method.declNode;
+    if methodDeclNode.kind == ASTNodeKind::FCT_DEF {
+        paramLstVisitable = downcast<ASTFctDefNode>(methodDeclNode).node.paramLst;
+    } else if methodDeclNode.kind == ASTNodeKind::PROC_DEF {
+        paramLstVisitable = downcast<ASTProcDefNode>(methodDeclNode).node.paramLst;
+    }
+    if paramLstVisitable == nil<IVisitable*> {
+        return;
+    }
+    const ASTParamLstNode* paramLst = downcast<ASTParamLstNode>(getASTNode(paramLstVisitable));
+
+    // Compare the names. The method can have additional optional parameters, that the signature does not have
+    for unsigned long i = 0ul; i < expectedNames.getSize() && i < paramLst.params.getSize(); i++ {
+        const ASTDeclStmtNode* param = paramLst.params[i];
+        const String& expectedName = expectedNames[i];
+        const bool isUnusedMarked = param.varName.startsWith(UNUSED_VARIABLE_NAME) && param.varName.getSubstring(1ul) == expectedName;
+        if param.varName != expectedName && !isUnusedMarked {
+            const String message = "The parameter '" + param.varName + "' has to be named '" + expectedName + "' or '" + UNUSED_VARIABLE_NAME + expectedName + "', like in the signature '" + signature.getSignature() + "'";
+            this.softError(cast<const ASTNode*>(param), SemanticErrorType::PARAM_NAME_MISMATCH, message);
+            return;
+        }
+    }
 }
 
 f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
@@ -1003,6 +1046,10 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
                 if spiceFunction.returnType != returnType && !returnType.matchesInterfaceImplementedByStruct(spiceFunction.returnType) {
                     this.softError(baseNode, SemanticErrorType::INTERFACE_METHOD_NOT_IMPLEMENTED, "The struct '" + node.structName + "' does not implement method '" + expMethod.getSignature() + "'. The return type does not match.");
                     continue;
+                }
+                // Check parameter names. An inherited default method was already checked against the signature
+                if !spiceFunction.isInheritedDefaultMethod() {
+                    this.checkParamNamesMatchSignature(expMethod, spiceFunction);
                 }
                 // Set to virtual, since it overrides the interface method
                 spiceFunction.isVirtual = true;
