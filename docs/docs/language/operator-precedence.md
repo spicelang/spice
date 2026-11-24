@@ -54,8 +54,3 @@ The following table shows how Spice prioritizes the supported operators. The lis
 | 15         | `|=`           | Compound bitwise or assign operator  | right to left | yes       |
 | 15         | `^=`           | Compound bitwise xor assign operator | right to left | yes       |
 | 16         | `,`            | Comma                                | left to right | no        |
-
-## Division by zero
-
-An integer division or remainder operation (`/`, `%`, `/=`, `%=`), whose divisor is known to be zero at compile time,
-is a compile error, e.g. `1 / 0` or `x %= 2 - 2`. A floating point division by zero is no error and yields `inf` or `nan`.
