@@ -1416,6 +1416,7 @@ f<ASTTypeLstNode*> Parser.parseParamTypeLst() {
 
 // Parse the data type of a parameter in a signature or an external declaration, followed by its optional name
 p Parser.parseParamType(ASTTypeLstNode* typeLstNode) {
+    CodeLoc paramCodeLoc = this.lexer.getCodeLoc();
     typeLstNode.dataTypes.pushBack(this.parseDataType());
 
     // Parse optional parameter name. An unnamed parameter gets an empty name
@@ -1425,6 +1426,11 @@ p Parser.parseParamType(ASTTypeLstNode* typeLstNode) {
         this.expect(TokenType::IDENTIFIER);
     }
     typeLstNode.paramNames.pushBack(paramName);
+
+    // The parameter ends with its name or, if unnamed, with its data type
+    const Token& stopToken = this.lexer.getPreviousRelevantToken();
+    paramCodeLoc.sourceIntervalStop = cast<long>(stopToken.endOffset) - 1l;
+    typeLstNode.paramCodeLocs.pushBack(paramCodeLoc);
 }
 
 f<ASTTypeAltsLstNode*> Parser.parseTypeAltsLst() {

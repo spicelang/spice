@@ -111,8 +111,10 @@ f<bool> SymbolTableBuilder.checkParamNames(const ASTTypeLstNode* paramTypeLst) {
         const String& paramName = paramNames[i];
         for unsigned long j = 0ul; j < i; j++ {
             if paramNames[j] == paramName {
-                ASTNode* paramNode = cast<ASTNode*>(paramTypeLst.dataTypes[i]);
-                this.reportError(paramNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The parameter '" + paramName + "' was declared more than once");
+                // A parameter of a signature has no AST node of its own. Report the error at a node, that covers the data type
+                // and the name of the parameter. The error message is built right away, so the node is not needed afterwards
+                const ASTNode paramNode = ASTNode(paramTypeLst.paramCodeLocs[i]);
+                this.reportError(&paramNode, SemanticErrorType::VARIABLE_DECLARED_TWICE, "The parameter '" + paramName + "' was declared more than once");
                 return false;
             }
         }

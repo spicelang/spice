@@ -2,4 +2,4 @@
 Multiple declarations of the same variable: The parameter 'buffer' was declared more than once
 
 1  unsigned long size, string buffer, ...);
-                       ^^^^^^
+                       ^^^^^^^^^^^^^
