@@ -2529,6 +2529,20 @@ public f<bool> isDereferencedThis(const ASTNode* node) {
 }
 
 /**
+ * Check if an lvalue expression denotes the value behind a pointer (e.g. '*ptr' or '*this')
+ *
+ * @param node Lvalue expression
+ * @return Dereference or not
+ */
+public f<bool> isDereference(const ASTNode* node) {
+    if node.kind != ASTNodeKind::PREFIX_UNARY_EXPR {
+        return false;
+    }
+    const ASTPrefixUnaryExprNode* prefixUnaryExpr = downcast<ASTPrefixUnaryExprNode>(node);
+    return prefixUnaryExpr.op == PrefixUnaryOp::OP_DEREFERENCE;
+}
+
+/**
  * Check if an AST subtree accesses 'this', e.g. via 'this.field' or 'this.method()'
  *
  * @param node Root of the subtree

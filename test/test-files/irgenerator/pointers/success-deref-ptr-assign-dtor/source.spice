@@ -1,0 +1,30 @@
+// Verifies that assigning through a pointer destructs the previous value of the pointee first, so its owning members do
+// not leak, for a copied value and for a moved temporary. Also verifies that self-assignment stays a safe no-op.
+
+type Holder struct {
+    String s
+}
+
+p Holder.ctor(string val) {
+    this.s = String(val);
+}
+
+p Holder.dtor() {
+    printf("dtor: %s\n", this.s);
+}
+
+f<int> main() {
+    Holder a = Holder("first");
+    Holder b = Holder("second");
+    Holder* aPtr = &a;
+    printf("before copy\n");
+    // Copying into '*aPtr' must destruct the old value of 'a' ("first") first
+    *aPtr = b;
+    printf("a is now %s\n", a.s);
+    // Moving a temporary into '*aPtr' must destruct the old value of 'a' ("second") first
+    *aPtr = Holder("third");
+    printf("a is now %s\n", a.s);
+    // Self-assignment must be a safe no-op (no destruct, no corruption)
+    *aPtr = *aPtr;
+    printf("a is still %s\n", a.s);
+}

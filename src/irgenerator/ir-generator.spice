@@ -1126,13 +1126,13 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
     // If a temporary struct is moved into an already initialized lhs (temp stealing), the old value of the lhs must be
     // destructed before it gets overwritten, otherwise its owning members would leak. The typechecker only sets a dtor in
     // exactly those cases. The rhs is already evaluated at this point and, being a temporary, never aliases the lhs. The
-    // exception is a dereferenced pointer on the rhs, which counts as a temporary here: it can denote the value behind 'this'
-    // (e.g. '*this = *this'), so the destruct + move are skipped for '*this', if both sides share the address.
+    // exception is a dereferenced pointer on the rhs, which counts as a temporary here: it can denote the value behind the
+    // lhs pointer (e.g. '*ptr = *ptr'), so the destruct + move are skipped for '*ptr', if both sides share the address.
     llvm::BasicBlock bMoveEnd;
     if rhsSType.is(SuperType::TY_STRUCT) && rhs.isTemporary() {
         const model::Function* lhsDtor = this.getLhsDtorFct(node);
         if lhsDtor != nil<const model::Function*> {
-            if isAssignToDereferencedThis(node) {
+            if isAssignThroughPointer(node) {
                 const llvm::Value rhsAddress = this.resolveAddress(rhs);
                 assert !rhsAddress.isNull();
                 const llvm::BasicBlock bMove = this.createBlock(String("assign.move"));
@@ -1186,13 +1186,13 @@ f<bool> isAssignToDirectFieldOfThis(const ASTNode* node) {
     return isDirectFieldOfThis(getASTNode(assignNode.lhs));
 }
 
-// Check if the given node is an assignment to the value behind 'this' ('*this = ...')
-f<bool> isAssignToDereferencedThis(const ASTNode* node) {
+// Check if the given node is an assignment to the value behind a pointer (e.g. '*ptr = ...' or '*this = ...')
+f<bool> isAssignThroughPointer(const ASTNode* node) {
     if node.kind != ASTNodeKind::ASSIGN_EXPR {
         return false;
     }
     const ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
-    return isDereferencedThis(getASTNode(assignNode.lhs));
+    return isDereference(getASTNode(assignNode.lhs));
 }
 
 // Check if the type of the given entry is a reference

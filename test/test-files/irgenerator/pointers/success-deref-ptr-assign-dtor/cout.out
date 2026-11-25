@@ -1,0 +1,8 @@
+before copy
+dtor: first
+a is now second
+dtor: second
+a is now third
+a is still third
+dtor: second
+dtor: third
