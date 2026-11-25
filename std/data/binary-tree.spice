@@ -52,16 +52,18 @@ public p BinaryTree.ctor(const BinaryTree<T>& other) {
     this.isBalanced = other.isBalanced;
 }
 
-/**
- * Move-constructs a new tree, taking ownership of another tree's nodes
- *
- * @param other Tree to move from
- */
-public p BinaryTree.ctor(BinaryTree<T>&& other) {
-    this.rootNode = other.rootNode;
-    this.isBalanced = other.isBalanced;
-    other.rootNode = nil<heap Node<T>*>;
-}
+// The stage0 compiler, which builds the compiler and checks the formatting of the std, does not support rvalue references
+// yet. Re-enable the move ctor, once it does. Until then, rvalues are copied.
+// /**
+//  * Move-constructs a new tree, taking ownership of another tree's nodes
+//  *
+//  * @param other Tree to move from
+//  */
+// public p BinaryTree.ctor(BinaryTree<T>&& other) {
+//     this.rootNode = other.rootNode;
+//     this.isBalanced = other.isBalanced;
+//     other.rootNode = nil<heap Node<T>*>;
+// }
 
 /**
  * Destruct the binary tree, freeing all its nodes

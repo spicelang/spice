@@ -109,8 +109,8 @@ public p RedBlackTree.ctor(const RedBlackTree<K, V>& other) {
     this.size = other.size;
 }
 
-// The compiler sources use RedBlackTree (via Map), so this file is compiled by the stage0 compiler as well, which does not
-// support rvalue references yet. Re-enable the move ctor, once the stage0 compiler does. Until then, rvalues are copied.
+// The stage0 compiler, which builds the compiler and checks the formatting of the std, does not support rvalue references
+// yet. Re-enable the move ctor, once it does. Until then, rvalues are copied.
 // /**
 //  * Move-constructs a new tree, taking ownership of another tree's nodes
 //  *

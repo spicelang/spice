@@ -77,7 +77,7 @@ f<int> main() {
     list.clear();
     assert list.isEmpty();
 
-    // Doubly linked list: constructing from a named list copies it, moving it takes over its nodes
+    // Doubly linked list: constructing from a named list copies it. The moved-from list stays valid
     list.pushBack(6);
     list.pushBack(7);
     DoublyLinkedList<int> copiedList = DoublyLinkedList<int>(list);
@@ -86,6 +86,7 @@ f<int> main() {
     DoublyLinkedList<int> movedList = DoublyLinkedList<int>(move(list));
     assert movedList.getSize() == 2ul;
     assert movedList.get(1ul) == 7;
+    list.clear();
     assert list.isEmpty();
 
     // Red-black tree: move construction and indexed iteration. The moved-from tree stays valid
