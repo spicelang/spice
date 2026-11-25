@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:9:5:
+Temporary bound to non-const reference: Temporary values can only be bound to const reference parameters
+
+9  t = Test();
+   ^^^^^^^^^^

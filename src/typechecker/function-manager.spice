@@ -320,7 +320,8 @@ public f<const Function*> lookupFunction(Scope* matchScope, const String& reqNam
             Function candidate = presetFunction;
 
             bool forceSubstantiation = false;
-            const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, candidate.typeMapping, strictQualifierMatching, forceSubstantiation, nil<const ASTNode*>);
+            bool rejectedForTemporaryBinding = false;
+            const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, candidate.typeMapping, strictQualifierMatching, forceSubstantiation, rejectedForTemporaryBinding, nil<const ASTNode*>);
             if matchResult == MatchResult::SKIP_FUNCTION {
                 break; // Leave the whole function
             }
@@ -374,6 +375,7 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
 
     // Loop over function registry to find functions, that match the requirements of the call
     Vector<Function*> matches;
+    bool rejectedForTemporaryBinding = false;
     foreach Pair<const String&, FunctionManifestationList&> defEntry : matchScope.functions {
         const String& fctId = defEntry.getFirst();
         foreach Pair<const String&, Function&> manEntry : defEntry.getSecond() {
@@ -415,7 +417,7 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
             }
 
             bool forceSubstantiation = false;
-            const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, candidate.typeMapping, strictQualifierMatching, forceSubstantiation, callNode);
+            const MatchResult matchResult = matchManifestation(candidate, matchScope, reqName, reqThisType, reqArgs, candidate.typeMapping, strictQualifierMatching, forceSubstantiation, rejectedForTemporaryBinding, callNode);
             if matchResult == MatchResult::SKIP_FUNCTION {
                 break; // Leave the whole function
             }
@@ -494,6 +496,10 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
 
     // If no matches were found, remember that and return a nil
     if matches.isEmpty() {
+        // Report a candidate, that only failed because of binding a temporary to a non-const ref param, as such
+        if rejectedForTemporaryBinding && callNode != nil<const ASTNode*> {
+            throwSemanticError(callNode, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Temporary values can only be bound to const reference parameters"));
+        }
         cache.noMatchCache.upsert(cacheKey, cache.registryVersion);
         return nil<Function*>;
     }
@@ -535,7 +541,7 @@ f<bool> argListHasAnyGenericParts(const ArgList& args) {
     return false;
 }
 
-f<MatchResult> matchManifestation(Function& candidate, Scope*& matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, TypeMapping& typeMapping, bool strictQualifierMatching, bool& forceSubstantiation, const ASTNode* callNode) {
+f<MatchResult> matchManifestation(Function& candidate, Scope*& matchScope, const String& reqName, const QualType& reqThisType, const ArgList& reqArgs, TypeMapping& typeMapping, bool strictQualifierMatching, bool& forceSubstantiation, bool& rejectedForTemporaryBinding, const ASTNode* callNode) {
     // Check name requirement
     if !matchName(candidate, reqName) {
         return MatchResult::SKIP_FUNCTION; // Leave the whole manifestation list, because all have the same name
@@ -547,7 +553,7 @@ f<MatchResult> matchManifestation(Function& candidate, Scope*& matchScope, const
     }
 
     // Check arg types requirement
-    if !matchArgTypes(candidate, reqArgs, typeMapping, strictQualifierMatching, forceSubstantiation, callNode) {
+    if !matchArgTypes(candidate, reqArgs, typeMapping, strictQualifierMatching, forceSubstantiation, rejectedForTemporaryBinding, callNode) {
         return MatchResult::SKIP_MANIFESTATION; // Leave this manifestation and try the next one
     }
 
@@ -609,9 +615,10 @@ f<bool> matchThisType(Function& candidate, const QualType& reqThisType, TypeMapp
 }
 
 /**
- * Checks if the matching candidate fulfills the argument types requirement
+ * Checks if the matching candidate fulfills the argument types requirement. A candidate, whose only mismatch is a temporary
+ * argument for a non-const reference parameter, does not match, but is reported via rejectedForTemporaryBinding.
  */
-f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& typeMapping, bool strictQualifierMatching, bool& needsSubstantiation, const ASTNode* callNode) {
+f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& typeMapping, bool strictQualifierMatching, bool& needsSubstantiation, bool& rejectedForTemporaryBinding, const ASTNode* callNode) {
     // If the number of arguments does not match with the number of params, the matching fails
     if !candidate.isVararg && reqArgs.getSize() != candidate.paramList.getSize() {
         return false;
@@ -622,6 +629,7 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
     }
 
     // Loop over all parameters
+    bool hasUnbindableTemporary = false;
     foreach unsigned long i, const Arg& arg : reqArgs {
         // In the case of a vararg function candidate, we can accept additional arguments, that are not defined in
         // the candidate, but we need to modify the candidate param list to accept them
@@ -648,12 +656,11 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
             substantiateTypeWithTypeMapping(candidateType, typeMapping, callNode);
         }
 
-        // Check if we try to bind a non-ref temporary to a non-const ref parameter
+        // Check if we try to bind a non-ref temporary to a non-const ref parameter. This only rules out this candidate, because
+        // another overload may accept the temporary, e.g. the copy ctor or copy assign operator next to a move one
         if !candidateType.canBind(requestedType, isArgTemporary) {
-            if callNode != nil<ASTNode*> {
-                throwSemanticError(callNode, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Temporary values can only be bound to const reference parameters"));
-            }
-            return false;
+            hasUnbindableTemporary = true;
+            continue;
         }
 
         // If we have a function/procedure type we need to take care of the information, if it takes captures
@@ -665,6 +672,10 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
         }
     }
 
+    if hasUnbindableTemporary {
+        rejectedForTemporaryBinding = true;
+        return false;
+    }
     return true;
 }
 

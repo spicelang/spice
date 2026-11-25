@@ -89,7 +89,9 @@ p TestStruct.ctor(TestStruct& other) {
 When both a copy ctor (`ctor(const T&)`) and a move ctor (`ctor(T&)`) exist on the same struct, overload resolution picks the
 move ctor for non-const lvalue arguments (the candidate that requires no constification of the argument) and picks the copy
 ctor for const arguments (binding a const argument to a non-const reference parameter would require const-loss). Temporaries
-are not bindable to non-const reference parameters, so a temporary argument always selects the copy ctor.
+are not bindable to non-const reference parameters, so a temporary argument always selects the copy ctor. The same applies to a
+copy assign operator (`operator=(T&, const T&)`) next to a move assign operator (`operator=(T&, T&)`): assigning a temporary
+selects the copy assign operator. A temporary only raises an error, if no overload accepts it.
 
 ## Destructors
 

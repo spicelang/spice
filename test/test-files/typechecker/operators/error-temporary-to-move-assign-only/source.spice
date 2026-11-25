@@ -1,0 +1,10 @@
+type Test struct {}
+
+p Test.ctor() {}
+
+p operator=(Test& _1, Test& _2) {}
+
+f<int> main() {
+    Test t;
+    t = Test();
+}
