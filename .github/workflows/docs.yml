@@ -19,11 +19,8 @@ permissions:
   id-token: write
 
 jobs:
-  docs-deploy:
+  docs-build:
     runs-on: ubuntu-slim
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Setup GitHub pages
         uses: actions/configure-pages@v6
@@ -54,6 +51,18 @@ jobs:
         with:
           path: docs/site
 
+  # Deploy in a separate job: deploy-pages looks the uploaded artifact up via the artifacts API, which may not list an
+  # artifact yet when queried right after uploading it in the same job ("No artifacts named github-pages were found").
+  docs-deploy:
+    needs: docs-build
+    runs-on: ubuntu-slim
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
       - name: Deploy
         uses: actions/deploy-pages@v5
-        id: docs
+        id: deployment
