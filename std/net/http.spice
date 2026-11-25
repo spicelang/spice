@@ -544,7 +544,7 @@ public f<String> HttpHeaders.serialize() {
  * @return Announced body length, or -1 if the field is absent, malformed or announces different lengths
  */
 public f<long> HttpHeaders.getContentLength() {
-    const Result<long> contentLength = this.parseContentLength();
+    Result<long> contentLength = this.parseContentLength();
     return contentLength.isOk() ? contentLength.unwrap() : -1l;
 }
 
@@ -825,7 +825,7 @@ f<string> parseAuthorityInto(const String& authority, Url& url) {
             } else {
                 // Only an IPv6 address may stand in brackets. It is kept in its canonical form, so that two spellings
                 // of the same address make the same host (e.g. when deciding whether a redirect stays on the host).
-                const Result<IpAddress> ipv6Address = parseIpv6Address(hostAndPort.getSubstring(1l, hostEnd - 1l));
+                Result<IpAddress> ipv6Address = parseIpv6Address(hostAndPort.getSubstring(1l, hostEnd - 1l));
                 if ipv6Address.isErr() {
                     result = "URL carries a malformed IPv6 address";
                 } else {
@@ -894,7 +894,7 @@ p parseTargetInto(const String& target, Url& url) {
  *
  * @return Request target, e.g. "/a/b?x=1"
  */
-public f<String> Url.getRequestTarget() {
+public const f<String> Url.getRequestTarget() {
     result = String("/");
     if !this.path.isEmpty() { result = this.path; }
     if !this.query.isEmpty() {
@@ -910,7 +910,7 @@ public f<String> Url.getRequestTarget() {
  *
  * @return Authority, e.g. "example.com:8080" or "[::1]:8080"
  */
-public f<String> Url.getAuthority() {
+public const f<String> Url.getAuthority() {
     const bool isIpv6Address = this.host.find(':') != -1l;
     result = isIpv6Address ? String("[") : String();
     result.append(this.host);
@@ -1248,7 +1248,7 @@ public f<Result<HttpRequest>> parseRequestHead(const String& head) {
             errorMessage = "Malformed request line";
         } else {
             const String methodName = requestLine.getSubstring(0l, methodEnd);
-            const Result<HttpMethod> methodResult = parseMethodName(methodName);
+            Result<HttpMethod> methodResult = parseMethodName(methodName);
             if methodResult.isErr() {
                 errorMessage = "Unknown request method";
             } else {
@@ -1495,7 +1495,7 @@ public f<Result<HttpRequest>> receiveRequest<C>(C& socket, unsigned long maxSize
     String buffer = String();
     string errorMessage = "";
 
-    const Result<String> headResult = readHead(socket, buffer, maxSize);
+    Result<String> headResult = readHead(socket, buffer, maxSize);
     if headResult.isErr() {
         const Error& error = headResult.getErr();
         errorMessage = error.getMessage();
@@ -1508,7 +1508,7 @@ public f<Result<HttpRequest>> receiveRequest<C>(C& socket, unsigned long maxSize
         } else {
             HttpRequest& parsedRequest = headParseResult.unwrap();
             request = parsedRequest;
-            const Result<String> bodyResult = readBody(socket, request.headers, buffer, maxSize, false);
+            Result<String> bodyResult = readBody(socket, request.headers, buffer, maxSize, false);
             if bodyResult.isErr() {
                 const Error& error = bodyResult.getErr();
                 errorMessage = error.getMessage();
@@ -1539,7 +1539,7 @@ public f<Result<HttpResponse>> receiveResponse<C>(C& socket, bool expectBody = t
     String buffer = String();
     string errorMessage = "";
 
-    const Result<String> headResult = readHead(socket, buffer, maxSize);
+    Result<String> headResult = readHead(socket, buffer, maxSize);
     if headResult.isErr() {
         const Error& error = headResult.getErr();
         errorMessage = error.getMessage();
@@ -1555,7 +1555,7 @@ public f<Result<HttpResponse>> receiveResponse<C>(C& socket, bool expectBody = t
             // Responses to HEAD and bodyless status codes are complete with their head
             const bool hasBody = expectBody && !isBodylessStatus(response.statusCode);
             if hasBody {
-                const Result<String> bodyResult = readBody(socket, response.headers, buffer, maxSize, true);
+                Result<String> bodyResult = readBody(socket, response.headers, buffer, maxSize, true);
                 if bodyResult.isErr() {
                     const Error& error = bodyResult.getErr();
                     errorMessage = error.getMessage();
@@ -1662,7 +1662,7 @@ f<Result<String>> readBody<C>(C& socket, HttpHeaders& headers, String& buffer, u
     string errorMessage = "";
 
     if headers.isChunked() {
-        const Result<String> chunkedResult = readChunkedBody(socket, buffer, maxSize);
+        Result<String> chunkedResult = readChunkedBody(socket, buffer, maxSize);
         if chunkedResult.isErr() {
             const Error& error = chunkedResult.getErr();
             errorMessage = error.getMessage();
@@ -1671,7 +1671,7 @@ f<Result<String>> readBody<C>(C& socket, HttpHeaders& headers, String& buffer, u
             body = decoded;
         }
     } else {
-        const Result<long> contentLengthResult = headers.parseContentLength();
+        Result<long> contentLengthResult = headers.parseContentLength();
         if contentLengthResult.isErr() {
             // A malformed or ambiguous Content-Length leaves the end of the body unknown, which RFC 9112 section 6.3
             // makes an unrecoverable error. Guessing would let the sender smuggle a message into the rest of the body.

@@ -52,10 +52,10 @@ public type CharClass struct {
  * @param c Character to test
  * @return Whether `c` is matched by this class
  */
-public f<bool> CharClass.matches(char c) {
+public const f<bool> CharClass.matches(char c) {
     bool inRanges = false;
     for unsigned long i = 0l; i < this.ranges.getSize(); i++ {
-        const Pair<char, char>& range = this.ranges.get(i);
+        Pair<char, char>& range = this.ranges.get(i);
         if c >= range.getFirst() && c <= range.getSecond() {
             inRanges = true;
         }

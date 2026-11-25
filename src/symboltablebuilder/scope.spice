@@ -103,7 +103,7 @@ public p Scope.ctor(Scope* parent, SourceFile* sourceFile, ScopeType scopeType, 
 /**
  * Get the source file this scope belongs to
  */
-public f<SourceFile*> Scope.getSourceFile() {
+public const f<SourceFile*> Scope.getSourceFile() {
     return this.sourceFile;
 }
 

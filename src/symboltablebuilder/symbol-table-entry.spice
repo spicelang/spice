@@ -55,7 +55,7 @@ public p SymbolTableEntry.ctor(const String& name, const QualType& qualType, Sco
  *
  * @return Qualified type of this symbol
  */
-public f<const QualType&> SymbolTableEntry.getQualType() {
+public const f<const QualType&> SymbolTableEntry.getQualType() {
     return this.qualType;
 }
 
@@ -100,7 +100,7 @@ public p SymbolTableEntry.updateState(const LifecycleState& newState) {
  *
  * @return Declaration code location
  */
-public f<const CodeLoc&> SymbolTableEntry.getDeclCodeLoc() {
+public const f<const CodeLoc&> SymbolTableEntry.getDeclCodeLoc() {
     return this.declNode.codeLoc;
 }
 
@@ -127,7 +127,7 @@ public f<bool> SymbolTableEntry.isInitialized() {
  *
  * @return Struct field or not
  */
-public f<bool> SymbolTableEntry.isField() {
+public const f<bool> SymbolTableEntry.isField() {
     const ScopeType scopeType = this.scope.getScopeType();
     return (scopeType == ScopeType::STRUCT || scopeType == ScopeType::UNION) && this.orderIndex < this.scope.getFieldCount() && !this.anonymous;
 }

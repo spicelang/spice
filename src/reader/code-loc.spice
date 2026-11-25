@@ -44,7 +44,7 @@ public p CodeLoc.ctor(unsigned long line, unsigned long col, string sourceFilePa
  *
  * @return Code location string
  */
-public f<String> CodeLoc.toString() {
+public const f<String> CodeLoc.toString() {
     return "L" + toString(this.line) + "C" + toString(this.col);
 }
 
@@ -53,7 +53,7 @@ public f<String> CodeLoc.toString() {
  *
  * @return Pretty code location
  */
-public f<String> CodeLoc.toPrettyString() {
+public const f<String> CodeLoc.toPrettyString() {
     const String filePath = this.toPrettyFilePath();
     const String prefix = filePath.isEmpty() ? String() : filePath + ":";
     return prefix + toString(this.line) + ":" + toString(this.col);
@@ -155,7 +155,7 @@ public f<String> CodeLoc.toPrettyLineAndColumn() {
  * @param other Other code location
  * @return Before or not
  */
-public f<bool> CodeLoc.isBefore(const CodeLoc& other) {
+public const f<bool> CodeLoc.isBefore(const CodeLoc& other) {
     return this.line == other.line ? this.col < other.col : this.line < other.line;
 }
 

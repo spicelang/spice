@@ -42,7 +42,8 @@ public p removeTestDir(const FilePath& dir) {
         args.pushBack(String("rmdir"));                                          // LCOV_EXCL_LINE - coverage runs on Linux
         args.pushBack(String("/s"));                                             // LCOV_EXCL_LINE - coverage runs on Linux
         args.pushBack(String("/q"));                                             // LCOV_EXCL_LINE - coverage runs on Linux
-        args.pushBack(String(dir.toNativeString()));                             // LCOV_EXCL_LINE - coverage runs on Linux
+        FilePath nativeDir = dir;                                                // LCOV_EXCL_LINE - coverage runs on Linux
+        args.pushBack(String(nativeDir.toNativeString()));                       // LCOV_EXCL_LINE - coverage runs on Linux
         const Result<ProcessResult> _ = runProcessCaptured(String("cmd"), args); // LCOV_EXCL_LINE - coverage runs on Linux
     } else {                                                                     // LCOV_EXCL_LINE - coverage runs on Linux
         args.pushBack(String("-rf"));

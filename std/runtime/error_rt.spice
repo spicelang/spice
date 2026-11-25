@@ -61,7 +61,7 @@ public inline f<ErrorCode> Error.getCode() {
  *
  * @return Error message
  */
-public inline f<string> Error.getMessage() {
+public inline const f<string> Error.getMessage() {
     return this.message;
 }
 
@@ -70,7 +70,7 @@ public inline f<string> Error.getMessage() {
  *
  * @return Is set to error code 0
  */
-public inline f<bool> Error.isOk() {
+public inline const f<bool> Error.isOk() {
     return this.code == ErrorCode::Ok;
 }
 

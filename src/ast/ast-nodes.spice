@@ -75,7 +75,7 @@ public type CompileTimeValue struct {
 }
 
 // Address of the shared storage, the members are views on
-inline f<byte*> CompileTimeValue.getStorageAddress() {
+inline const f<byte*> CompileTimeValue.getStorageAddress() {
     unsafe {
         return cast<byte*>(&this.storage);
     }
@@ -120,7 +120,7 @@ public p CompileTimeValue.setShortValue(short value) {
     }
 }
 
-public f<long> CompileTimeValue.getLongValue() {
+public const f<long> CompileTimeValue.getLongValue() {
     return this.storage;
 }
 public p CompileTimeValue.setLongValue(long value) {
@@ -155,7 +155,7 @@ public p CompileTimeValue.setStringValueOffset(unsigned long value) {
 }
 
 // A bool occupies one byte, which is interpreted like a C++ bool (any non-zero value is true)
-public f<bool> CompileTimeValue.getBoolValue() {
+public const f<bool> CompileTimeValue.getBoolValue() {
     const byte* valuePtr = this.getStorageAddress();
     return *valuePtr != cast<byte>(0);
 }
@@ -336,7 +336,7 @@ f<long> getIntervalLength(long start, long stop) {
  *
  * @return Error message snippet
  */
-public f<String> ASTNode.getErrorMessage() {
+public const f<String> ASTNode.getErrorMessage() {
     // Without a source interval (e.g. for nodes that were not created by the parser), there is no snippet to show
     if this.codeLoc.sourceIntervalStart < 0l || len(this.codeLoc.sourceFilePath) == 0 {
         return String();
@@ -606,7 +606,7 @@ public f<Any> ASTAttrNode.accept(IAbstractAstVisitor* visitor) {
 
 // Returns the attribute's compile-time value, or nil if it was declared without one (bool attributes
 // default to 'true' when omitted; callers apply that default themselves).
-public f<const CompileTimeValue*> ASTAttrNode.getValue() {
+public const f<const CompileTimeValue*> ASTAttrNode.getValue() {
     if this.value == nil<ASTConstantNode*> {
         return nil<const CompileTimeValue*>;
     }
@@ -1306,10 +1306,10 @@ public p ASTIfStmtNode.ctor(CodeLoc codeLoc) {
     this.node = ASTStmtNode(codeLoc);
     this.kind = ASTNodeKind::IF_STMT;
 }
-public f<bool> ASTIfStmtNode.doCompileThenBranch(unsigned long manIdx) {
+public const f<bool> ASTIfStmtNode.doCompileThenBranch(unsigned long manIdx) {
     return this.compileThenBranch.isEmpty() || this.compileThenBranch.get(manIdx);
 }
-public f<bool> ASTIfStmtNode.doCompileElseBranch(unsigned long manIdx) {
+public const f<bool> ASTIfStmtNode.doCompileElseBranch(unsigned long manIdx) {
     return this.compileElseBranch.isEmpty() || this.compileElseBranch.get(manIdx);
 }
 public f<Any> ASTIfStmtNode.accept(IAbstractAstVisitor* visitor) {
@@ -2248,7 +2248,7 @@ public p FctCallData.setCompileTimeValue(const CompileTimeValue& value) {
     this.compileTimeValueSet = true;
 }
 
-public f<bool> FctCallData.hasCompileTimeValue() { return this.compileTimeValueSet; }
+public const f<bool> FctCallData.hasCompileTimeValue() { return this.compileTimeValueSet; }
 
 public type ASTFctCallNode struct : IVisitable {
     compose public ASTExprNode node
@@ -2280,7 +2280,7 @@ public f<Any> ASTFctCallNode.accept(IAbstractAstVisitor* visitor) {
  *
  * @return Expression-based call or not
  */
-public f<bool> ASTFctCallNode.isExprBasedCall() {
+public const f<bool> ASTFctCallNode.isExprBasedCall() {
     return this.receiverExpr != nil<IVisitable*> || this.calleeExpr != nil<IVisitable*>;
 }
 
@@ -2765,7 +2765,7 @@ public f<Vector<Function*>*> ASTNode.getFctManifestations(const String& fctName)
             manifestations = &concreteNode.extFunctionManifestations;
         }
         case ASTNodeKind::STRUCT_DEF: {
-            const ASTStructDefNode* concreteNode = downcast<ASTStructDefNode>(this);
+            ASTStructDefNode* concreteNode = downcast<ASTStructDefNode>(this);
             if !concreteNode.defaultFctManifestations.contains(fctName) {
                 concreteNode.defaultFctManifestations.upsert(fctName, Vector<Function*>());
             }
@@ -2861,7 +2861,7 @@ f<bool> hasOpFctPointers(ASTNodeKind kind) {
 // Do node-specific work when the AST gets resized to a number of manifestations
 p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
     if node.kind == ASTNodeKind::ASSIGN_EXPR {
-        const ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(node);
+        ASTAssignExprNode* assignExprNode = downcast<ASTAssignExprNode>(node);
         if assignExprNode.lhsDtorFct.isEmpty() {
             assignExprNode.lhsDtorFct.reserve(manifestationCount);
         }
@@ -2882,7 +2882,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::DECL_STMT {
-        const ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
+        ASTDeclStmtNode* declStmtNode = downcast<ASTDeclStmtNode>(node);
         if declStmtNode.entries.isEmpty() {
             declStmtNode.entries.reserve(manifestationCount);
         }
@@ -2897,7 +2897,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::ARG_LST {
-        const ASTArgLstNode* argLstNode = downcast<ASTArgLstNode>(node);
+        ASTArgLstNode* argLstNode = downcast<ASTArgLstNode>(node);
         if argLstNode.argInfos.isEmpty() {
             argLstNode.argInfos.reserve(manifestationCount);
         }
@@ -2906,7 +2906,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::TERNARY_EXPR {
-        const ASTTernaryExprNode* ternaryExprNode = downcast<ASTTernaryExprNode>(node);
+        ASTTernaryExprNode* ternaryExprNode = downcast<ASTTernaryExprNode>(node);
         if ternaryExprNode.data.isEmpty() {
             ternaryExprNode.data.reserve(manifestationCount);
         }
@@ -2915,7 +2915,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
-        const ASTPostfixUnaryExprNode* postfixUnaryExprNode = downcast<ASTPostfixUnaryExprNode>(node);
+        ASTPostfixUnaryExprNode* postfixUnaryExprNode = downcast<ASTPostfixUnaryExprNode>(node);
         if postfixUnaryExprNode.errPropData.isEmpty() {
             postfixUnaryExprNode.errPropData.reserve(manifestationCount);
         }
@@ -2924,7 +2924,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::FCT_CALL {
-        const ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(node);
+        ASTFctCallNode* fctCallNode = downcast<ASTFctCallNode>(node);
         if fctCallNode.data.isEmpty() {
             fctCallNode.data.reserve(manifestationCount);
         }
@@ -2933,7 +2933,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::STRUCT_INSTANTIATION {
-        const ASTStructInstantiationNode* structInstantiationNode = downcast<ASTStructInstantiationNode>(node);
+        ASTStructInstantiationNode* structInstantiationNode = downcast<ASTStructInstantiationNode>(node);
         if structInstantiationNode.instantiatedStructs.isEmpty() {
             structInstantiationNode.instantiatedStructs.reserve(manifestationCount);
         }
@@ -2961,7 +2961,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::STMT_LST {
-        const ASTStmtLstNode* stmtLstNode = downcast<ASTStmtLstNode>(node);
+        ASTStmtLstNode* stmtLstNode = downcast<ASTStmtLstNode>(node);
         if stmtLstNode.resourcesToCleanup.isEmpty() {
             stmtLstNode.resourcesToCleanup.reserve(manifestationCount);
         }
@@ -2970,7 +2970,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::FOR_LOOP {
-        const ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(node);
+        ASTForLoopNode* forLoopNode = downcast<ASTForLoopNode>(node);
         if forLoopNode.headResourcesToCleanup.isEmpty() {
             forLoopNode.headResourcesToCleanup.reserve(manifestationCount);
         }
@@ -2979,7 +2979,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::FOREACH_LOOP {
-        const ASTForeachLoopNode* foreachLoopNode = downcast<ASTForeachLoopNode>(node);
+        ASTForeachLoopNode* foreachLoopNode = downcast<ASTForeachLoopNode>(node);
         if foreachLoopNode.headResourcesToCleanup.isEmpty() {
             foreachLoopNode.headResourcesToCleanup.reserve(manifestationCount);
         }
@@ -2994,7 +2994,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::RETURN_STMT {
-        const ASTReturnStmtNode* returnStmtNode = downcast<ASTReturnStmtNode>(node);
+        ASTReturnStmtNode* returnStmtNode = downcast<ASTReturnStmtNode>(node);
         if returnStmtNode.returnedLocals.isEmpty() {
             returnStmtNode.returnedLocals.reserve(manifestationCount);
         }
@@ -3009,7 +3009,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::ATOMIC_EXPR {
-        const ASTAtomicExprNode* atomicExprNode = downcast<ASTAtomicExprNode>(node);
+        ASTAtomicExprNode* atomicExprNode = downcast<ASTAtomicExprNode>(node);
         if atomicExprNode.data.isEmpty() {
             atomicExprNode.data.reserve(manifestationCount);
         }
@@ -3018,7 +3018,7 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
     }
     if node.kind == ASTNodeKind::IF_STMT {
-        const ASTIfStmtNode* ifStmtNode = downcast<ASTIfStmtNode>(node);
+        ASTIfStmtNode* ifStmtNode = downcast<ASTIfStmtNode>(node);
         if ifStmtNode.compileThenBranch.isEmpty() {
             ifStmtNode.compileThenBranch.reserve(manifestationCount);
         }
@@ -3220,7 +3220,7 @@ f<bool> isAlwaysTrue(IVisitable* node, unsigned long manIdx) {
  *
  * @return Function or procedure definition or not
  */
-public f<bool> ASTNode.isFctOrProcDef() {
+public const f<bool> ASTNode.isFctOrProcDef() {
     return this.kind == ASTNodeKind::MAIN_FCT_DEF || this.kind == ASTNodeKind::FCT_DEF || this.kind == ASTNodeKind::PROC_DEF;
 }
 
@@ -3280,7 +3280,7 @@ public f<String> ASTNode.getEnclosingFunctionSignature(unsigned long manIdx) {
  *
  * @return Struct definition or not
  */
-public f<bool> ASTNode.isStructDef() {
+public const f<bool> ASTNode.isStructDef() {
     return this.kind == ASTNodeKind::STRUCT_DEF;
 }
 
@@ -3289,7 +3289,7 @@ public f<bool> ASTNode.isStructDef() {
  *
  * @return Union definition or not
  */
-public f<bool> ASTNode.isUnionDef() {
+public const f<bool> ASTNode.isUnionDef() {
     return this.kind == ASTNodeKind::UNION_DEF;
 }
 
@@ -3534,7 +3534,7 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 ASTNode* operand = this.children.get(i);
                 assert operand.hasCompileTimeValue(manIdx);
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
-                const Pair<ShiftOp, QualType> opEntry = opQueueCopy.pop();
+                Pair<ShiftOp, QualType> opEntry = opQueueCopy.pop();
                 if opEntry.getFirst() == ShiftOp::OP_SHIFT_LEFT {
                     compileTimeValue.setLongValue(compileTimeValue.getLongValue() << operandValue.getLongValue());
                 } else {
@@ -3555,7 +3555,7 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 ASTNode* operand = this.children.get(i);
                 assert operand.hasCompileTimeValue(manIdx);
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
-                const Pair<AdditiveOp, QualType> opEntry = opQueueCopy.pop();
+                Pair<AdditiveOp, QualType> opEntry = opQueueCopy.pop();
                 if opEntry.getFirst() == AdditiveOp::OP_PLUS {
                     compileTimeValue.setLongValue(compileTimeValue.getLongValue() + operandValue.getLongValue());
                 } else {
@@ -3576,7 +3576,7 @@ public f<CompileTimeValue> ASTNode.getCompileTimeValue(unsigned long manIdx) {
                 ASTNode* operand = this.children.get(i);
                 assert operand.hasCompileTimeValue(manIdx);
                 const CompileTimeValue operandValue = operand.getCompileTimeValue(manIdx);
-                const Pair<MultiplicativeOp, QualType> opEntry = opQueueCopy.pop();
+                Pair<MultiplicativeOp, QualType> opEntry = opQueueCopy.pop();
                 const MultiplicativeOp op = opEntry.getFirst();
                 if op == MultiplicativeOp::OP_MUL {
                     compileTimeValue.setLongValue(compileTimeValue.getLongValue() * operandValue.getLongValue());
@@ -3720,7 +3720,7 @@ public f<bool> ASTNode.getCompileTimeValueOrConstRef(unsigned long manIdx, Compi
  *
  * @return Atomic expression node or nil
  */
-public f<ASTAtomicExprNode*> ASTAssignExprNode.getLhsAtomicNode() {
+public const f<ASTAtomicExprNode*> ASTAssignExprNode.getLhsAtomicNode() {
     ASTNode* lhsNode = getASTNode(this.lhs);
     if lhsNode.kind == ASTNodeKind::ATOMIC_EXPR {
         return downcast<ASTAtomicExprNode>(lhsNode);

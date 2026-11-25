@@ -87,7 +87,7 @@ public f<QualTypeList> Function.getParamTypes() {
  * @param withSize Print array sizes
  * @return String representation as function signature
  */
-public f<String> Function.getSignature(bool withThisType = true, bool withTemplateTypes = true, bool withTypeAliases = true, bool withSize = false) {
+public const f<String> Function.getSignature(bool withThisType = true, bool withTemplateTypes = true, bool withTypeAliases = true, bool withSize = false) {
     QualTypeList concreteTemplateTypes;
     if withTemplateTypes {
         concreteTemplateTypes.reserve(this.templateTypes.getSize());
@@ -180,7 +180,7 @@ public f<String> getFunctionSignature(const String& name, const QualType& thisTy
  *
  * @return Scope name
  */
-public f<String> Function.getScopeName() {
+public const f<String> Function.getScopeName() {
     return this.getSignature(false, true, false, true);
 }
 
@@ -254,7 +254,7 @@ public f<String> getSymbolTableEntryNameDefaultDtor(const CodeLoc& structCodeLoc
  *
  * @return Substantiated params or not
  */
-public f<bool> Function.hasSubstantiatedParams() {
+public const f<bool> Function.hasSubstantiatedParams() {
     foreach const Param& param : this.paramList {
         if param.isOptional {
             return false;
@@ -269,7 +269,7 @@ public f<bool> Function.hasSubstantiatedParams() {
  *
  * @return Substantiated generics or not
  */
-public f<bool> Function.hasSubstantiatedGenerics() {
+public const f<bool> Function.hasSubstantiatedGenerics() {
     foreach const GenericType& genericType : this.templateTypes {
         // A template slot that is not generic (anymore) is already substantiated. This is the case for the default members
         // of an already-concrete struct manifestation (e.g. HashEntry<int, String>.dtor()), whose template type list holds
@@ -290,7 +290,7 @@ public f<bool> Function.hasSubstantiatedGenerics() {
  *
  * @return Fully substantiated or not
  */
-public f<bool> Function.isFullySubstantiated() {
+public const f<bool> Function.isFullySubstantiated() {
     return this.hasSubstantiatedParams() && this.hasSubstantiatedGenerics();
 }
 
@@ -299,7 +299,7 @@ public f<bool> Function.isFullySubstantiated() {
  *
  * @return Generic substantiation or not
  */
-public f<bool> Function.isGenericSubstantiation() {
+public const f<bool> Function.isGenericSubstantiation() {
     return this.genericPreset != nil<Function*>;
 }
 
@@ -317,7 +317,7 @@ public f<CodeLoc&> Function.getDeclCodeLoc() {
  *
  * @return Method or not
  */
-public f<bool> Function.isMethod() {
+public const f<bool> Function.isMethod() {
     return !this.thisType.is(SuperType::TY_DYN);
 }
 
@@ -326,7 +326,7 @@ public f<bool> Function.isMethod() {
  *
  * @return Function or not
  */
-public f<bool> Function.isFunction() {
+public const f<bool> Function.isFunction() {
     return !this.returnType.is(SuperType::TY_DYN);
 }
 
@@ -353,10 +353,10 @@ public f<bool> Function.isNormalFunction() {
  *
  * @return Virtual method or not
  */
-public f<bool> Function.isVirtualMethod() {
+public const f<bool> Function.isVirtualMethod() {
     return this.isMethod() && this.isVirtual;
 }
 
-public f<bool> Function.isInheritedDefaultMethod() {
+public const f<bool> Function.isInheritedDefaultMethod() {
     return this.defaultMethod != nil<Function*>;
 }

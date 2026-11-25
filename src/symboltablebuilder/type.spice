@@ -55,7 +55,7 @@ public p Type.ctor(const Type& other) {
  *
  * @return Super type
  */
-public f<SuperType> Type.getSuperType() {
+public const f<SuperType> Type.getSuperType() {
     assert !this.typeChain.isEmpty();
     return this.typeChain.back().superType;
 }
@@ -65,7 +65,7 @@ public f<SuperType> Type.getSuperType() {
  *
  * @return Sub type
  */
-public f<const String&> Type.getSubType() {
+public const f<const String&> Type.getSubType() {
     assert !this.typeChain.isEmpty();
     const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION, SuperType::TY_ENUM, SuperType::TY_GENERIC];
     assert this.isOneOf(options, len(options));
@@ -77,7 +77,7 @@ public f<const String&> Type.getSubType() {
  *
  * @return Array size
  */
-public f<unsigned int> Type.getArraySize() {
+public const f<unsigned int> Type.getArraySize() {
     assert this.isArray();
     return this.typeChain.back().data.arraySize;
 }
@@ -87,7 +87,7 @@ public f<unsigned int> Type.getArraySize() {
  *
  * @return Body scope
  */
-public f<Scope*> Type.getBodyScope() {
+public const f<Scope*> Type.getBodyScope() {
     const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert this.isOneOf(options, len(options));
     return this.typeChain.back().data.bodyScope;
@@ -98,7 +98,7 @@ public f<Scope*> Type.getBodyScope() {
  *
  * @return Function return type
  */
-public f<QualType> Type.getFunctionReturnType() {
+public const f<QualType> Type.getFunctionReturnType() {
     assert this.is(SuperType::TY_FUNCTION);
     const TypeChainElement& front = this.typeChain.front();
     assert !front.paramTypes.isEmpty();
@@ -110,7 +110,7 @@ public f<QualType> Type.getFunctionReturnType() {
  *
  * @return Function param types
  */
-public f<QualTypeList> Type.getFunctionParamTypes() {
+public const f<QualTypeList> Type.getFunctionParamTypes() {
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     assert this.isOneOf(options, len(options));
     const TypeChainElement& front = this.typeChain.front();
@@ -127,7 +127,7 @@ public f<QualTypeList> Type.getFunctionParamTypes() {
  *
  * @return Function param and return types (first is return type, rest are param types)
  */
-public f<QualTypeList> Type.getFunctionParamAndReturnTypes() {
+public const f<QualTypeList> Type.getFunctionParamAndReturnTypes() {
     const Type* baseType = this.getBase();
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     assert baseType.isOneOf(options, len(options));
@@ -142,7 +142,7 @@ public f<QualTypeList> Type.getFunctionParamAndReturnTypes() {
  *
  * @return Has captures
  */
-public f<bool> Type.hasLambdaCaptures() {
+public const f<bool> Type.hasLambdaCaptures() {
     const Type* baseType = this.getBase();
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     assert baseType.isOneOf(options, len(options));
@@ -154,7 +154,7 @@ public f<bool> Type.hasLambdaCaptures() {
  *
  * @return Vector of template types
  */
-public f<QualTypeList> Type.getTemplateTypes() {
+public const f<QualTypeList> Type.getTemplateTypes() {
     // Copy explicitly: returning the member directly would hand out a list that shares the storage of the type chain
     const TypeChainElement& back = this.typeChain.back();
     QualTypeList templateTypes = back.templateTypes;
@@ -175,7 +175,7 @@ public const f<unsigned long> Type.getTypeChainDepth() {
  *
  * @return Applicable or not
  */
-public f<bool> Type.is(SuperType superType) {
+public const f<bool> Type.is(SuperType superType) {
     return this.getSuperType() == superType;
 }
 
@@ -184,7 +184,7 @@ public f<bool> Type.is(SuperType superType) {
  *
  * @return Applicable or not
  */
-public f<bool> Type.isOneOf(SuperType[] superTypes, unsigned long superTypesSize) {
+public const f<bool> Type.isOneOf(SuperType[] superTypes, unsigned long superTypesSize) {
     const SuperType currentSuperType = this.getSuperType();
     for unsigned long i = 0ul; i < superTypesSize; i++ {
         if currentSuperType == superTypes[i] { return true; }
@@ -198,7 +198,7 @@ public f<bool> Type.isOneOf(SuperType[] superTypes, unsigned long superTypesSize
  * @param superType Super type to check for
  * @return Applicable or not
  */
-public f<bool> Type.isBase(SuperType superType) {
+public const f<bool> Type.isBase(SuperType superType) {
     assert !this.typeChain.isEmpty();
     return this.typeChain.front().superType == superType;
 }
@@ -208,7 +208,7 @@ public f<bool> Type.isBase(SuperType superType) {
  *
  * @return Primitive type or not
  */
-public f<bool> Type.isPrimitive() {
+public const f<bool> Type.isPrimitive() {
     const dyn options = [SuperType::TY_DOUBLE, SuperType::TY_INT, SuperType::TY_SHORT, SuperType::TY_LONG, SuperType::TY_BYTE, SuperType::TY_CHAR, SuperType::TY_STRING, SuperType::TY_BOOL];
     return this.isOneOf(options, len(options));
 }
@@ -222,7 +222,7 @@ public f<bool> Type.isPrimitive() {
  *
  * @return Extended primitive or not
  */
-public f<bool> Type.isExtendedPrimitive() {
+public const f<bool> Type.isExtendedPrimitive() {
     const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION, SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     return this.isPrimitive() || this.isOneOf(options, len(options));
 }
@@ -232,7 +232,7 @@ public f<bool> Type.isExtendedPrimitive() {
  *
  * @return Pointer type or not
  */
-public f<bool> Type.isPtr() {
+public const f<bool> Type.isPtr() {
     return this.getSuperType() == SuperType::TY_PTR;
 }
 
@@ -241,7 +241,7 @@ public f<bool> Type.isPtr() {
  *
  * @return Reference type or not
  */
-public f<bool> Type.isRef() {
+public const f<bool> Type.isRef() {
     return this.getSuperType() == SuperType::TY_REF;
 }
 
@@ -250,7 +250,7 @@ public f<bool> Type.isRef() {
  *
  * @return Array type or not
  */
-public f<bool> Type.isArray() {
+public const f<bool> Type.isArray() {
     return this.getSuperType() == SuperType::TY_ARRAY;
 }
 
@@ -259,7 +259,7 @@ public f<bool> Type.isArray() {
  *
  * @return Contains generic parts or not
  */
-public f<bool> Type.hasAnyGenericParts() {
+public const f<bool> Type.hasAnyGenericParts() {
     const Type* baseType = this.getBase();
 
     // Check if the type itself is generic
@@ -288,7 +288,7 @@ public f<bool> Type.hasAnyGenericParts() {
  * @param other Other symbol type
  * @return Same container type or not
  */
-public f<bool> Type.isSameContainerTypeAs(const Type* other) {
+public const f<bool> Type.isSameContainerTypeAs(const Type* other) {
     const bool bothPtr = this.isPtr() && other.isPtr();
     const bool bothRef = this.isRef() && other.isRef();
     const bool bothArray = this.isArray() && other.isArray();
@@ -303,7 +303,7 @@ public f<bool> Type.isSameContainerTypeAs(const Type* other) {
  * @param ignoreArraySize Ignore array sizes
  * @return Matching or not
  */
-public f<bool> Type.matches(const Type* otherType, bool ignoreArraySize) {
+public const f<bool> Type.matches(const Type* otherType, bool ignoreArraySize) {
     // If the size does not match, it is not equal
     if this.typeChain.getSize() != otherType.typeChain.getSize() { return false; }
 
@@ -333,7 +333,7 @@ public f<bool> Type.matches(const Type* otherType, bool ignoreArraySize) {
  * @param withAliases Print aliases as is and not decompose them
  * @return Symbol type name
  */
-public p Type.getName(StringStream& name, bool withSize, bool ignorePublic, bool withAliases) {
+public const p Type.getName(StringStream& name, bool withSize, bool ignorePublic, bool withAliases) {
     // Loop through all chain elements
     foreach const TypeChainElement& chainElement : this.typeChain {
         chainElement.getName(name, withSize, ignorePublic, withAliases);
@@ -348,7 +348,7 @@ public p Type.getName(StringStream& name, bool withSize, bool ignorePublic, bool
  * @param withAliases Print aliases as is and not decompose them
  * @return Symbol type name
  */
-public f<String> Type.getName(bool withSize, bool ignorePublic, bool withAliases) {
+public const f<String> Type.getName(bool withSize, bool ignorePublic, bool withAliases) {
     StringStream name;
     this.getName(name, withSize, ignorePublic, withAliases);
     return name.str();
@@ -360,7 +360,7 @@ public f<String> Type.getName(bool withSize, bool ignorePublic, bool withAliases
  * @param node AST node for error messages
  * @return Pointer type of the current type
  */
-public f<const Type*> Type.toPtr(const ASTNode* node) {
+public const f<const Type*> Type.toPtr(const ASTNode* node) {
     if this.is(SuperType::TY_DYN) { abortWithSemanticError(node, SemanticErrorType::DYN_POINTERS_NOT_ALLOWED, "Just use the dyn type without '*' instead"); }
     if this.isRef() { abortWithSemanticError(node, SemanticErrorType::REF_POINTERS_ARE_NOT_ALLOWED, "Pointers to references are not allowed. Use pointer instead"); }
 
@@ -378,7 +378,7 @@ public f<const Type*> Type.toPtr(const ASTNode* node) {
  * @param node AST node for error messages
  * @return Reference type of the current type
  */
-public f<const Type*> Type.toRef(const ASTNode* node) {
+public const f<const Type*> Type.toRef(const ASTNode* node) {
     if this.is(SuperType::TY_DYN) { abortWithSemanticError(node, SemanticErrorType::DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead"); }
     if this.isRef() { abortWithSemanticError(node, SemanticErrorType::MULTI_REF_NOT_ALLOWED, "References to references are not allowed"); }
 
@@ -398,7 +398,7 @@ public f<const Type*> Type.toRef(const ASTNode* node) {
  * @param skipDynCheck Skip check if array base type is dyn
  * @return Array type of the current type
  */
-public f<const Type*> Type.toArr(const ASTNode* node, unsigned int size, bool skipDynCheck) {
+public const f<const Type*> Type.toArr(const ASTNode* node, unsigned int size, bool skipDynCheck) {
     if !skipDynCheck && this.typeChain.back().superType == SuperType::TY_DYN {
         abortWithSemanticError(node, SemanticErrorType::DYN_ARRAYS_NOT_ALLOWED, "Just use the dyn type without '[]' instead");
     }
@@ -417,7 +417,7 @@ public f<const Type*> Type.toArr(const ASTNode* node, unsigned int size, bool sk
  *
  * @return Base type
  */
-public f<const Type*> Type.getContained() {
+public const f<const Type*> Type.getContained() {
     if this.is(SuperType::TY_STRING) {
         return this.registry.getOrInsert(SuperType::TY_CHAR);
     }
@@ -437,7 +437,7 @@ public f<const Type*> Type.getContained() {
  * @param newBaseType New base type
  * @return The new type
  */
-public f<const Type*> Type.replaceBase(const Type* newBaseType) {
+public const f<const Type*> Type.replaceBase(const Type* newBaseType) {
     assert !this.typeChain.isEmpty();
 
     // Create new type
@@ -470,7 +470,7 @@ public f<const Type*> Type.removeReferenceWrapper() {
  *
  * @return Base type
  */
-public f<const Type*> Type.getBase() {
+public const f<const Type*> Type.getBase() {
     assert !this.typeChain.isEmpty();
 
     // A type chain with a single element is the base type already. All types are interned in the type registry, so there is
@@ -493,7 +493,7 @@ public f<const Type*> Type.getBase() {
  *
  * @return Type with lambda captures
  */
-public f<const Type*> Type.getWithLambdaCaptures(bool enabled) {
+public const f<const Type*> Type.getWithLambdaCaptures(bool enabled) {
     const Type* baseType = this.getBase();
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     assert baseType.isOneOf(options, len(options));
@@ -511,7 +511,7 @@ public f<const Type*> Type.getWithLambdaCaptures(bool enabled) {
  *
  * @return Type with body scope removed
  */
-public f<const Type*> Type.getWithBodyScope(Scope* bodyScope) {
+public const f<const Type*> Type.getWithBodyScope(Scope* bodyScope) {
     const Type* baseType = this.getBase();
     const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert baseType.isOneOf(options, len(options));
@@ -529,7 +529,7 @@ public f<const Type*> Type.getWithBodyScope(Scope* bodyScope) {
  *
  * @return Type with new base template types
  */
-public f<const Type*> Type.getWithTemplateTypes(const QualTypeList& templateTypes) {
+public const f<const Type*> Type.getWithTemplateTypes(const QualTypeList& templateTypes) {
     const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert this.isOneOf(options, len(options));
     return this.getWithBaseTemplateTypes(templateTypes);
@@ -540,7 +540,7 @@ public f<const Type*> Type.getWithTemplateTypes(const QualTypeList& templateType
  *
  * @return Type with new base template types
  */
-public f<const Type*> Type.getWithBaseTemplateTypes(const QualTypeList& templateTypes) {
+public const f<const Type*> Type.getWithBaseTemplateTypes(const QualTypeList& templateTypes) {
     const Type* baseType = this.getBase();
     const dyn options = [SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert baseType.isOneOf(options, len(options));
@@ -558,7 +558,7 @@ public f<const Type*> Type.getWithBaseTemplateTypes(const QualTypeList& template
  *
  * @return Type with param and return types removed
  */
-public f<const Type*> Type.getWithFunctionParamAndReturnTypes(const QualTypeList& paramAndReturnTypes) {
+public const f<const Type*> Type.getWithFunctionParamAndReturnTypes(const QualTypeList& paramAndReturnTypes) {
     const Type* baseType = this.getBase();
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE];
     assert baseType.isOneOf(options, len(options));

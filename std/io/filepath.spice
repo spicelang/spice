@@ -72,7 +72,7 @@ public inline p FilePath.makeNative() {
  *
  * @return Is the filepath empty
  */
-public inline f<bool> FilePath.isEmpty() {
+public inline const f<bool> FilePath.isEmpty() {
     return this.path.isEmpty();
 }
 
@@ -81,7 +81,7 @@ public inline f<bool> FilePath.isEmpty() {
  *
  * @return The content of the filepath
  */
-public inline f<string> FilePath.toString() {
+public inline const f<string> FilePath.toString() {
     return this.path.getRaw();
 }
 
@@ -299,7 +299,7 @@ public inline f<bool> FilePath.exists() {
  *
  * @return True if the path is absolute
  */
-public f<bool> FilePath.hasRootPath() {
+public const f<bool> FilePath.hasRootPath() {
     if this.path.isEmpty() {
         return false;
     }
@@ -319,7 +319,7 @@ public f<bool> FilePath.hasRootPath() {
  *
  * @return True if the path is absolute
  */
-public inline f<bool> FilePath.isAbsolute() {
+public inline const f<bool> FilePath.isAbsolute() {
     return this.hasRootPath();
 }
 
@@ -331,7 +331,7 @@ public inline f<bool> FilePath.isAbsolute() {
  *
  * @return True if the path has a '..' component
  */
-public f<bool> FilePath.hasParentDirComponent() {
+public const f<bool> FilePath.hasParentDirComponent() {
     String normalized = this.path;
     normalized.replaceAll(PATH_SEPARATOR_WINDOWS, PATH_SEPARATOR_UNIX);
 
@@ -355,7 +355,7 @@ public f<bool> FilePath.hasParentDirComponent() {
  *
  * @return The canonical path, or an empty FilePath if resolution failed (e.g. the path does not exist)
  */
-public f<FilePath> FilePath.canonical() {
+public const f<FilePath> FilePath.canonical() {
     return FilePath(resolveCanonicalPath(this.path));
 }
 
@@ -365,7 +365,7 @@ public f<FilePath> FilePath.canonical() {
  * @param other Other path to compare against
  * @return True if both paths resolve to the same canonical path (and resolution succeeded for both)
  */
-public f<bool> FilePath.equivalent(const FilePath& other) {
+public const f<bool> FilePath.equivalent(const FilePath& other) {
     const FilePath a = this.canonical();
     const FilePath b = other.canonical();
     if a.isEmpty() || b.isEmpty() {
@@ -382,7 +382,7 @@ public f<bool> FilePath.equivalent(const FilePath& other) {
  *
  * @return The normalized path. '.' for an empty result of a relative path
  */
-public f<FilePath> FilePath.lexicallyNormal() {
+public const f<FilePath> FilePath.lexicallyNormal() {
     String root;
     Vector<String> components;
     splitPathComponents(this.path, root, components);
@@ -411,7 +411,7 @@ public f<FilePath> FilePath.lexicallyNormal() {
  * @return The relative path, '.' if both paths are equal, or an empty path if the roots of both paths differ (e.g. one is
  *         absolute and the other is not, or they are on different drives)
  */
-public f<FilePath> FilePath.lexicallyRelative(const FilePath& base) {
+public const f<FilePath> FilePath.lexicallyRelative(const FilePath& base) {
     const FilePath normalizedPath = this.lexicallyNormal();
     const FilePath normalizedBase = base.lexicallyNormal();
     String pathRoot;

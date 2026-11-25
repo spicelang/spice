@@ -51,7 +51,7 @@ public f<bool> operator==<T>(const Vertex<T>& v1, const Vertex<T>& v2) {
  *
  * @return Hash of the vertex
  */
-public f<Hash> Vertex.hash() {
+public const f<Hash> Vertex.hash() {
     return hash(this.value);
 }
 

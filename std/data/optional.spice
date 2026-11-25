@@ -75,7 +75,7 @@ public inline p Optional.clear() {
  *
  * @return Present or not
  */
-public inline f<bool> Optional.isPresent() {
+public inline const f<bool> Optional.isPresent() {
     return this.present;
 }
 

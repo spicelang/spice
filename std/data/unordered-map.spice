@@ -47,7 +47,7 @@ public p UnorderedMap.upsert(const K& key, const V& value) {
  * @param key The key to look up
  * @return The value associated with the key
  */
-public f<V&> UnorderedMap.get(const K& key) {
+public const f<V&> UnorderedMap.get(const K& key) {
     return this.hashTable.get(key);
 }
 
@@ -89,7 +89,7 @@ public p UnorderedMap.remove(const K& key) {
  * @param key The key to check for
  * @return True if the key is found, false otherwise
  */
-public f<bool> UnorderedMap.contains(const K& key) {
+public const f<bool> UnorderedMap.contains(const K& key) {
     return this.hashTable.contains(key);
 }
 
@@ -107,7 +107,7 @@ public f<unsigned long> UnorderedMap.getSize() {
  *
  * @return True if empty, false otherwise
  */
-public f<bool> UnorderedMap.isEmpty() {
+public const f<bool> UnorderedMap.isEmpty() {
     return this.hashTable.isEmpty();
 }
 

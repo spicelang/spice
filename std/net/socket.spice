@@ -184,7 +184,7 @@ public f<bool> Socket.close() {
  */
 public f<Result<InAddrT>> resolveHost(string host) {
     // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
-    const Result<Vector<IpAddress>> addressesResult = resolveHostAddresses(String(host), true, false);
+    Result<Vector<IpAddress>> addressesResult = resolveHostAddresses(String(host), true, false);
     if addressesResult.isErr() { return err<InAddrT>(addressesResult.getErr()); }
     return ok<InAddrT>(addressesResult.unwrap()[0].toInAddr());
 }

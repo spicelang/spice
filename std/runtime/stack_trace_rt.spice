@@ -93,7 +93,7 @@ f<bool> isSpiceFrame(const String& symbolName, const String& demangledName, cons
  * @param includeAddress Whether to print the raw address. Pass false for deterministic output - addresses move
  *                       between runs under ASLR/PIE.
  */
-public p StackTraceEntry.dump(unsigned long frameIndex, bool includeAddress = true) {
+public const p StackTraceEntry.dump(unsigned long frameIndex, bool includeAddress = true) {
     byte* stream = __stderr();
 
     // Left-aligned in a field of three, so the columns behind it line up for every index a trace can reach

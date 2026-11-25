@@ -460,7 +460,7 @@ public f<bool> BigInt.testBit(unsigned long index) {
 /**
  * @return Index of the least significant set bit of the absolute value, -1 for zero
  */
-public f<long> BigInt.getLowestSetBit() {
+public const f<long> BigInt.getLowestSetBit() {
     for unsigned long i = 0ul; i < this.magnitude.getSize(); i++ {
         unsigned int limb = this.magnitude[i];
         if limb == 0u { continue; }
@@ -513,7 +513,7 @@ public f<long> BigInt.toLong() {
  * @param other Other BigInt
  * @return -1, 0 or 1, if this value is less than, equal to or greater than the other one
  */
-public f<int> BigInt.compare(const BigInt& other) {
+public const f<int> BigInt.compare(const BigInt& other) {
     if this.negative != other.negative { return this.negative ? -1 : 1; }
     const int magnitudeOrder = compareBigIntMagnitudes(this.magnitude, other.magnitude);
     return this.negative ? -magnitudeOrder : magnitudeOrder;

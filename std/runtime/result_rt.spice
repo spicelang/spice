@@ -79,14 +79,14 @@ public inline f<Error&> Result.getErr() {
 /**
  * Checks if the result contains any data.
  */
-public inline f<bool> Result.isOk() {
+public inline const f<bool> Result.isOk() {
     return this.error.isOk();
 }
 
 /**
  * Checks if the result contains an error.
  */
-public inline f<bool> Result.isErr() {
+public inline const f<bool> Result.isErr() {
     return !this.error.isOk();
 }
 

@@ -123,7 +123,7 @@ public f<TypeQualifiers> TypeQualifiers.merge(const TypeQualifiers& other) {
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
-public f<bool> TypeQualifiers.match(TypeQualifiers otherQualifiers, bool allowConstify) {
+public const f<bool> TypeQualifiers.match(TypeQualifiers otherQualifiers, bool allowConstify) {
     const TypeQualifiers thisQualifiers = *this;
 
     // If allowConstify is enabled, only allow to match lhs=const and rhs=non-const

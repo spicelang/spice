@@ -43,7 +43,7 @@ public p Atomic.store(const T& value) {
  *
  * @return Reference to the current value
  */
-public const f<const T&> Atomic.load() {
+public f<const T&> Atomic.load() {
     LockGuard _ = LockGuard(this.mutex);
     return this.value;
 }

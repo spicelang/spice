@@ -146,7 +146,7 @@ f<RegexNode*> RegexParser.wrapRepeat(RegexNodeKind kind, RegexNode* atom) {
 // consumed either way: it ends up as the child of the returned REPEAT node, or is released on error.
 f<RegexNode*> RegexParser.parseRepeatBraces(RegexNode* atom) {
     this.pos++; // consume '{'
-    const Optional<long> minOpt = this.parseNumber();
+    Optional<long> minOpt = this.parseNumber();
     if !minOpt.isPresent() {
         this.fail("Invalid repeat count");
         deleteRegexNode(atom);
@@ -159,7 +159,7 @@ f<RegexNode*> RegexParser.parseRepeatBraces(RegexNode* atom) {
         if !this.atEnd() && this.peek() == '}' {
             maxCount = -1l; // unbounded, i.e. '{n,}'
         } else {
-            const Optional<long> maxOpt = this.parseNumber();
+            Optional<long> maxOpt = this.parseNumber();
             if !maxOpt.isPresent() {
                 this.fail("Invalid repeat count");
                 deleteRegexNode(atom);
@@ -276,14 +276,14 @@ f<RegexNode*> RegexParser.parseCharClass() {
         this.pos++;
     }
     while !this.hasError && !this.atEnd() && this.peek() != ']' {
-        const Optional<char> first = this.parseClassAtom(node);
+        Optional<char> first = this.parseClassAtom(node);
         if this.hasError { continue; }
         if !first.isPresent() { continue; } // a shorthand class already added its ranges
         char lo = first.get();
         char hi = lo;
         if this.pos + 1l < this.input.getLength() && this.peek() == '-' && this.input[this.pos + 1l] != ']' {
             this.pos++; // consume '-'
-            const Optional<char> second = this.parseClassAtom(node);
+            Optional<char> second = this.parseClassAtom(node);
             if this.hasError { continue; }
             if !second.isPresent() {
                 this.fail("A shorthand class cannot be the endpoint of a range");

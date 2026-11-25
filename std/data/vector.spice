@@ -123,7 +123,7 @@ public p Vector.dtor() {
  *
  * @return Empty or not empty
  */
-public inline f<bool> Vector.isEmpty() {
+public inline const f<bool> Vector.isEmpty() {
     return this.size == 0;
 }
 
@@ -177,7 +177,7 @@ public f<T> Vector.popBack() {
  *
  * @return item at index
  */
-public f<T&> Vector.get<UIntOrULong>(UIntOrULong index) {
+public const f<T&> Vector.get<UIntOrULong>(UIntOrULong index) {
     if index >= this.size {
         panic(Error("Access index out of bounds"));
     }
@@ -278,7 +278,7 @@ public p Vector.removeAt<UIntOrULong>(UIntOrULong index) {
  *
  * @return item at index 0
  */
-public f<T&> Vector.front() {
+public const f<T&> Vector.front() {
     if this.isEmpty() {
         panic(Error("Access index out of bounds"));
     }
@@ -328,7 +328,7 @@ public p Vector.reserve<UIntOrULong>(UIntOrULong itemCount) {
  *
  * @return Current size of the vector
  */
-public inline f<unsigned long> Vector.getSize() {
+public inline const f<unsigned long> Vector.getSize() {
     return this.size;
 }
 
@@ -344,7 +344,7 @@ public inline f<unsigned long> Vector.getCapacity() {
 /**
  * Retrieve a pointer to the data of the vector
  */
-public inline f<T*> Vector.getDataPtr() {
+public inline const f<T*> Vector.getDataPtr() {
     unsafe {
         return cast<T*>(this.contents);
     }
