@@ -75,12 +75,13 @@ jobs:
           mkdir -p tpde && cp -r ../std/bindings/tpde/lib ../std/bindings/tpde/include ../std/bindings/tpde/LICENSES tpde/
 
       - name: Fetch stage0 compiler
-        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
-        run: python fetch-stage0.py
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'. Along
+        # with it, the latest Spice Shaker release, that is released next to the compiler (see 'Collect Spice Shaker')
+        run: python fetch-stage0.py --release-shaker latest
 
       - name: Install packages
-        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker
-        # release, that fetch-stage0.py downloaded along with the stage0 compiler
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker,
+        # that the stage0 release ships
         run: python fetch-stage0.py --sync-packages
 
       - name: Build compiler
@@ -107,11 +108,12 @@ jobs:
 
       - name: Collect Spice Shaker
         # The package manager, released next to the compiler as 'spice-shaker': the latest Spice Shaker release, that
-        # fetch-stage0.py downloaded and verified against the checksums of the release, and that installed the packages above.
+        # fetch-stage0.py downloaded and verified against the checksums of the release. Not the one of the stage0 release, since
+        # then a new Spice Shaker release would never be shipped.
         # It is linked statically, OpenSSL included
         working-directory: build
         run: |
-          cp stage0/spice-shaker/spice-shaker spice-shaker
+          cp stage0/release-shaker/spice-shaker spice-shaker
           ./spice-shaker --version
 
       - name: Run Checksec
@@ -194,12 +196,13 @@ jobs:
           Copy-Item -Recurse ../std/runtime/LICENSES runtime/LICENSES
 
       - name: Fetch stage0 compiler
-        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
-        run: python fetch-stage0.py
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'. Along
+        # with it, the latest Spice Shaker release, that is released next to the compiler (see 'Collect Spice Shaker')
+        run: python fetch-stage0.py --release-shaker latest
 
       - name: Install packages
-        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker
-        # release, that fetch-stage0.py downloaded along with the stage0 compiler
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker,
+        # that the stage0 release ships
         run: python fetch-stage0.py --sync-packages
 
       - name: Build compiler
@@ -222,11 +225,12 @@ jobs:
 
       - name: Collect Spice Shaker
         # The package manager, released next to the compiler as 'spice-shaker': the latest Spice Shaker release, that
-        # fetch-stage0.py downloaded and verified against the checksums of the release, and that installed the packages above.
+        # fetch-stage0.py downloaded and verified against the checksums of the release. Not the one of the stage0 release, since
+        # then a new Spice Shaker release would never be shipped.
         # It is linked dynamically against OpenSSL, whose DLLs the release ships next to the executable
         working-directory: build
         run: |
-          Copy-Item stage0/spice-shaker/spice-shaker.exe, stage0/spice-shaker/*.dll .
+          Copy-Item stage0/release-shaker/spice-shaker.exe, stage0/release-shaker/*.dll .
           ./spice-shaker.exe --version
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
@@ -284,12 +288,13 @@ jobs:
           mkdir -p runtime && cp -r ../std/runtime/LICENSES runtime/
 
       - name: Fetch stage0 compiler
-        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'
-        run: python fetch-stage0.py
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler, which is released as 'spice'. Along
+        # with it, the latest Spice Shaker release, that is released next to the compiler (see 'Collect Spice Shaker')
+        run: python fetch-stage0.py --release-shaker latest
 
       - name: Install packages
-        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker
-        # release, that fetch-stage0.py downloaded along with the stage0 compiler
+        # The packages, that the compiler sources build on, in the versions of src/spice.lock. Installed by the Spice Shaker,
+        # that the stage0 release ships
         run: python fetch-stage0.py --sync-packages
 
       - name: Build compiler
@@ -313,11 +318,12 @@ jobs:
 
       - name: Collect Spice Shaker
         # The package manager, released next to the compiler as 'spice-shaker': the latest Spice Shaker release, that
-        # fetch-stage0.py downloaded and verified against the checksums of the release, and that installed the packages above.
+        # fetch-stage0.py downloaded and verified against the checksums of the release. Not the one of the stage0 release, since
+        # then a new Spice Shaker release would never be shipped.
         # It is linked dynamically against Homebrew's OpenSSL, that the Homebrew cask depends on
         working-directory: build
         run: |
-          cp stage0/spice-shaker/spice-shaker spice-shaker
+          cp stage0/release-shaker/spice-shaker spice-shaker
           ./spice-shaker --version
           otool -L spice-shaker
 

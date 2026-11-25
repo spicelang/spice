@@ -90,8 +90,8 @@ def find_llvm_include_dirs() -> str | None:
 
 def find_spice_shaker() -> Path | None:
     """
-    Spice Shaker, that installs the packages of the compiler sources: the one of SPICE_SHAKER, or else the latest release, that
-    fetch-stage0.py downloads into build/stage0/spice-shaker/ (and replaces, whenever it runs and a newer one is out)
+    Spice Shaker, that installs the packages of the compiler sources: the one of SPICE_SHAKER, or else the one of the stage0
+    release, that fetch-stage0.py extracts into build/stage0/spice-shaker/
     """
     if custom := os.environ.get("SPICE_SHAKER"):
         return Path(custom)

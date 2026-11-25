@@ -2,16 +2,19 @@
 """Download the released Spice compiler, that builds the compiler sources in src/ (the stage0 compiler).
 
 The release is pinned in .github/stage0-version, so every build starts from the same compiler. Bump it deliberately, e.g. when
-src/ starts to use a language feature the pinned stage0 compiler does not support yet. Only releases from 0.29.0 on are
-supported, since older ones ship a different compiler as 'spice'.
+src/ starts to use a language feature the pinned stage0 compiler does not support yet. Only releases from 0.30.0 on are
+supported, since older ones ship no Spice Shaker.
 
-Along with it, the script downloads the latest Spice Shaker release, that installs the packages of the compiler sources
-(src/spice.toml, src/spice.lock) into src/spice_packages. Spice Shaker is not pinned: every run looks up the latest release and
-replaces an older download, and only uses the one already downloaded if the lookup fails (e.g. offline). The release jobs ship
-the very same Spice Shaker with the compiler. With --sync-packages, the script runs 'spice-shaker sync' in src/ afterwards.
+Spice Shaker, that installs the packages of the compiler sources (src/spice.toml, src/spice.lock) into src/spice_packages, is
+the one, that the stage0 release ships next to the compiler. So it is pinned along with the compiler, and needs no download
+of its own. With --sync-packages, the script runs 'spice-shaker sync' in src/ afterwards.
 
-The stage0 compiler lands in build/stage0/ (see --output-dir), Spice Shaker in build/stage0/spice-shaker/, and the script
+The stage0 compiler lands in build/stage0/ (see --output-dir), its Spice Shaker in build/stage0/spice-shaker/, and the script
 prints the path of the compiler executable.
+
+The release jobs ship another Spice Shaker with the compiler: a release of spicelang/spice-shaker (usually the latest one),
+that --release-shaker downloads into build/stage0/release-shaker/. Otherwise a new Spice Shaker release would never reach the
+Spice releases, since each one would ship the Spice Shaker of its stage0 release.
 """
 import argparse
 import hashlib
@@ -35,6 +38,7 @@ SHAKER_RELEASE_URL = "https://github.com/spicelang/spice-shaker/releases/downloa
 SHAKER_LATEST_RELEASE_URL = "https://github.com/spicelang/spice-shaker/releases/latest"
 IS_WINDOWS = sys.platform == "win32"
 EXE_NAME = "spice.exe" if IS_WINDOWS else "spice"
+SHAKER_EXE_NAME = "spice-shaker.exe" if IS_WINDOWS else "spice-shaker"
 
 
 def fail(msg: str) -> None:
@@ -69,21 +73,31 @@ def download_verified(release_url: str, version: str, asset_name: str, checksums
     return archive
 
 
-def extract_compiler(archive: bytes, asset_name: str, target_dir: Path) -> Path | None:
-    """Extract the compiler executable of the release. The std of the release is not needed"""
+def read_archive(archive: bytes, asset_name: str) -> list:
+    """Regular files of a release archive, as (name, read) pairs"""
     if asset_name.endswith(".zip"):
-        with zipfile.ZipFile(io.BytesIO(archive)) as zip_file:
-            if EXE_NAME not in zip_file.namelist():
-                return None
-            (target_dir / EXE_NAME).write_bytes(zip_file.read(EXE_NAME))
-    else:
-        with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as tar_file:
-            member = next((member for member in tar_file.getmembers() if member.name == EXE_NAME and member.isfile()), None)
-            if member is None:
-                return None
-            (target_dir / EXE_NAME).write_bytes(tar_file.extractfile(member).read())
-            (target_dir / EXE_NAME).chmod(0o755)
-    return target_dir / EXE_NAME
+        zip_file = zipfile.ZipFile(io.BytesIO(archive))
+        return [(info.filename, lambda info=info: zip_file.read(info)) for info in zip_file.infolist() if not info.is_dir()]
+    tar_file = tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz")
+    return [(member.name, lambda member=member: tar_file.extractfile(member).read())
+            for member in tar_file.getmembers() if member.isfile()]
+
+
+def extract_stage0(archive: bytes, asset_name: str, target_dir: Path) -> tuple[Path | None, Path | None]:
+    """
+    Extract the compiler executable of the release, and Spice Shaker into target_dir/spice-shaker/: its executable and, on
+    Windows, the OpenSSL DLLs, that the release ships next to it. The std of the release is not needed. Returns the paths of
+    both executables, each None if the release does not contain it
+    """
+    members = read_archive(archive, asset_name)
+    names = [name for name, _ in members]
+    extract_files([member for member in members if member[0] == EXE_NAME], target_dir)
+    shaker_dir = target_dir / "spice-shaker"
+    extract_files([member for member in members if member[0] == SHAKER_EXE_NAME or
+                   (IS_WINDOWS and "/" not in member[0] and member[0].lower().endswith(".dll"))], shaker_dir)
+    compiler = make_executable(target_dir / EXE_NAME) if EXE_NAME in names else None
+    shaker = make_executable(shaker_dir / SHAKER_EXE_NAME) if SHAKER_EXE_NAME in names else None
+    return compiler, shaker
 
 
 def extract_shaker(archive: bytes, asset_name: str, target_dir: Path) -> Path | None:
@@ -91,21 +105,15 @@ def extract_shaker(archive: bytes, asset_name: str, target_dir: Path) -> Path | 
     Extract the whole Spice Shaker release, since the Windows one ships the OpenSSL DLLs next to the executable. The archive
     was verified against the checksums of the release, and only regular files without absolute or '..' paths are extracted
     """
-    exe_name = "spice-shaker.exe" if IS_WINDOWS else "spice-shaker"
-    if asset_name.endswith(".zip"):
-        with zipfile.ZipFile(io.BytesIO(archive)) as zip_file:
-            members = [(info.filename, lambda info=info: zip_file.read(info)) for info in zip_file.infolist() if not info.is_dir()]
-            extract_files(members, target_dir)
-    else:
-        with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as tar_file:
-            members = [(member.name, lambda member=member: tar_file.extractfile(member).read())
-                       for member in tar_file.getmembers() if member.isfile()]
-            extract_files(members, target_dir)
-    executable = target_dir / exe_name
-    if not executable.is_file():
-        return None
-    executable.chmod(0o755)
-    return executable
+    extract_files(read_archive(archive, asset_name), target_dir)
+    executable = target_dir / SHAKER_EXE_NAME
+    return make_executable(executable) if executable.is_file() else None
+
+
+def make_executable(path: Path) -> Path:
+    if not IS_WINDOWS:
+        path.chmod(0o755)
+    return path
 
 
 def extract_files(members: list, target_dir: Path) -> None:
@@ -131,30 +139,45 @@ def check_runs(executable: Path) -> str | None:
     return None
 
 
-def fetch_compiler(version: str, output_dir: Path) -> Path:
+def fetch_stage0(version: str, output_dir: Path) -> tuple[Path, Path]:
+    """Download the stage0 compiler and the Spice Shaker of its release, unless both of this version are there already"""
     stage0_path = output_dir / EXE_NAME
     stamp_path = output_dir / "version"
-    if stage0_path.is_file() and stamp_path.is_file() and stamp_path.read_text().strip() == version:
-        return stage0_path
+    shaker_dir = output_dir / "spice-shaker"
+    shaker_path = shaker_dir / SHAKER_EXE_NAME
+    # Its own stamp, since Spice Shaker might be missing or from elsewhere (e.g. a download from before Spice Shaker was taken
+    # from the stage0 release)
+    shaker_stamp_path = shaker_dir / "stage0-version"
+    if all(path.is_file() for path in (stage0_path, stamp_path, shaker_path, shaker_stamp_path)) and \
+            stamp_path.read_text().strip() == version and shaker_stamp_path.read_text().strip() == version:
+        return stage0_path, shaker_path
 
     asset_name = get_asset_name()
     print(f"Downloading the stage0 compiler {version} ({asset_name}) ...", file=sys.stderr, flush=True)
     archive = download_verified(RELEASE_URL, version, asset_name, "spice_checksums.txt")
 
-    # Extract the compiler into a temp dir first. Only the stage0 executable and its stamp in the output dir are replaced,
-    # since it might hold other files as well
+    # Extract the release into a temp dir first. Only the stage0 executable, its stamp and the Spice Shaker dir in the output
+    # dir are replaced, since it might hold other files as well
     output_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=output_dir) as extract_dir:
-        stage0 = extract_compiler(archive, asset_name, Path(extract_dir))
+        stage0, shaker = extract_stage0(archive, asset_name, Path(extract_dir))
         if stage0 is None:
             fail(f"The release {version} contains no {EXE_NAME}")
+        if shaker is None:
+            fail(f"The release {version} contains no {SHAKER_EXE_NAME}. Only releases from 0.30.0 on ship Spice Shaker")
         if (reason := check_runs(stage0)) is not None:
             fail(f"The stage0 compiler of {version} does not run here: {reason}")
+        if (reason := check_runs(shaker)) is not None:
+            fail(f"The Spice Shaker of the stage0 release {version} does not run here: {reason}")
+        (shaker.parent / shaker_stamp_path.name).write_text(version + "\n")
         stamp_path.unlink(missing_ok=True)
         os.replace(stage0, stage0_path)
+        # The whole dir is replaced, so that no file of another version is left behind
+        shutil.rmtree(shaker_dir, ignore_errors=True)
+        os.replace(shaker.parent, shaker_dir)
     stamp_path.write_text(version + "\n")
-    print(f"Stage0 compiler: {version}", file=sys.stderr)
-    return stage0_path
+    print(f"Stage0 compiler: {version} (with Spice Shaker)", file=sys.stderr)
+    return stage0_path, shaker_path
 
 
 def get_latest_shaker_version() -> str:
@@ -171,19 +194,25 @@ def get_latest_shaker_version() -> str:
     return urllib.parse.unquote(version)
 
 
-def fetch_shaker(output_dir: Path) -> Path:
-    shaker_dir = output_dir / "spice-shaker"
-    exe_path = shaker_dir / ("spice-shaker.exe" if IS_WINDOWS else "spice-shaker")
+def fetch_release_shaker(requested_version: str, output_dir: Path) -> Path:
+    """
+    Download a release of spicelang/spice-shaker ('latest' for the latest one), that the release jobs ship with the compiler.
+    If the latest release cannot be looked up (e.g. offline), the one downloaded before is used
+    """
+    shaker_dir = output_dir / "release-shaker"
+    exe_path = shaker_dir / SHAKER_EXE_NAME
     stamp_path = shaker_dir / "version"
     installed_version = stamp_path.read_text().strip() if exe_path.is_file() and stamp_path.is_file() else None
-    try:
-        version = get_latest_shaker_version()
-    except (OSError, ValueError) as error:
-        if installed_version is None:
-            fail(f"Could not look up the latest Spice Shaker release: {error}")
-        print(f"Could not look up the latest Spice Shaker release ({error}), using the downloaded {installed_version}",
-              file=sys.stderr, flush=True)
-        return exe_path
+    version = requested_version
+    if requested_version == "latest":
+        try:
+            version = get_latest_shaker_version()
+        except (OSError, ValueError) as error:
+            if installed_version is None:
+                fail(f"Could not look up the latest Spice Shaker release: {error}")
+            print(f"Could not look up the latest Spice Shaker release ({error}), using the downloaded {installed_version}",
+                  file=sys.stderr, flush=True)
+            return exe_path
     if installed_version == version:
         return exe_path
 
@@ -194,7 +223,7 @@ def fetch_shaker(output_dir: Path) -> Path:
     # The release replaces the whole dir, so that no file of another version is left behind
     output_dir.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=output_dir) as extract_dir:
-        new_dir = Path(extract_dir) / "spice-shaker"
+        new_dir = Path(extract_dir) / shaker_dir.name
         executable = extract_shaker(archive, asset_name, new_dir)
         if executable is None:
             fail(f"The Spice Shaker release {version} contains no executable")
@@ -203,23 +232,27 @@ def fetch_shaker(output_dir: Path) -> Path:
         (new_dir / "version").write_text(version + "\n")
         shutil.rmtree(shaker_dir, ignore_errors=True)
         os.replace(new_dir, shaker_dir)
-    print(f"Spice Shaker: {version}", file=sys.stderr)
+    print(f"Spice Shaker for the release: {version}", file=sys.stderr)
     return exe_path
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Download the released Spice compiler, that builds the compiler sources (the stage0 compiler), and the latest Spice Shaker release.")
+    parser = argparse.ArgumentParser(description="Download the released Spice compiler, that builds the compiler sources (the stage0 compiler), and the Spice Shaker of its release.")
     parser.add_argument("--version", default=None,
                         help=f"Release to download (default: the one pinned in {STAGE0_VERSION_FILE.relative_to(ROOT_DIR)})")
     parser.add_argument("--output-dir", type=Path, default=ROOT_DIR / "build" / "stage0",
                         help="Directory for the stage0 compiler and Spice Shaker (default: build/stage0)")
+    parser.add_argument("--release-shaker", metavar="VERSION", default=None,
+                        help="Also download this release of spicelang/spice-shaker ('latest' for the latest one) into "
+                             "<output-dir>/release-shaker/, to ship it with a Spice release")
     parser.add_argument("--sync-packages", action="store_true",
                         help="Install the packages of src/spice.lock into src/spice_packages with Spice Shaker afterwards")
     args = parser.parse_args()
 
     output_dir = args.output_dir.resolve()
-    stage0_path = fetch_compiler(args.version or STAGE0_VERSION_FILE.read_text().strip(), output_dir)
-    shaker_path = fetch_shaker(output_dir)
+    stage0_path, shaker_path = fetch_stage0(args.version or STAGE0_VERSION_FILE.read_text().strip(), output_dir)
+    if args.release_shaker:
+        fetch_release_shaker(args.release_shaker, output_dir)
     if args.sync_packages:
         sys.dont_write_bytecode = True
         import bootstrap
