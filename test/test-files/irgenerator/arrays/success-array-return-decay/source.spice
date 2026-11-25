@@ -24,14 +24,14 @@ f<int*> firstItemViaVariable(int[3] items) {
 }
 
 f<int> main() {
-    Buffer buffer = Buffer{ [ 7, 8, 9 ] };
+    Buffer buffer = Buffer{[7, 8, 9]};
     int* data = buffer.data();
     unsafe {
         printf("%d, %d, %d\n", data[0], data[1], data[2]);
     }
     printf("%d\n", data == &buffer.items[0]);
 
-    int[3] numbers = [ 1, 2, 3 ];
+    int[3] numbers = [1, 2, 3];
     int* first = firstItem(numbers);
     unsafe {
         printf("%d, %d, %d\n", first[0], first[1], first[2]);
