@@ -1,0 +1,17 @@
+Constructed
+Assign temporary
+Constructed
+Copy assigned
+Construct from temporary
+Constructed
+Copied
+Assign non-const lvalue
+Move assigned
+Construct from non-const lvalue
+Moved
+End
+Destructed
+Destructed
+Destructed
+Destructed
+Destructed
