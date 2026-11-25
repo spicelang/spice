@@ -1,0 +1,12 @@
+Direct: 11, 12, 13
+Via First*: 11
+Via Second*: 12, 13
+Via Second&: 12, 14
+Assigned: 12
+Ptr arg: 12
+Ref arg: 15
+Returned ptr: 12
+Returned ref: 12
+Field: 12
+Cast: 12
+Nil: 1

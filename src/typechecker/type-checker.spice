@@ -1074,9 +1074,15 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
 
         // Check if the struct implements all methods of all attached interfaces
         unsigned long vtableIndex = 0l;
+        manifestation.interfaceMethods.clear();
         foreach const QualType& interfaceType : manifestation.interfaceTypes {
             const Interface* spiceInterface = interfaceType.getInterface(baseNode);
             assert spiceInterface != nil<const Interface*>;
+
+            // Collect the implementing methods for the vtable segment of this interface
+            Vector<const Function*> emptyMethodList;
+            manifestation.interfaceMethods.pushBack(emptyMethodList);
+            Vector<const Function*>& implementingMethods = manifestation.interfaceMethods.back();
 
             // Check for all methods, that it is implemented by the struct
             foreach const Function* expMethod : spiceInterface.methods {
@@ -1127,6 +1133,7 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
                 // Set to virtual, since it overrides the interface method
                 spiceFunction.isVirtual = true;
                 spiceFunction.vtableIndex = vtableIndex++;
+                implementingMethods.pushBack(spiceFunction);
             }
         }
 

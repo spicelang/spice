@@ -1,0 +1,87 @@
+type Driveable interface {
+    p drive(int);
+    f<int> getDistance();
+}
+
+// Generic types
+type T dyn;
+
+type Comparable<T> interface {
+    f<int> compareTo<T>(const T*);
+}
+
+type Named interface {
+    f<String> getName();
+    f<bool> isNamed(bool);
+    f<int> getDistance();
+    // Default method, that calls the methods above through the interface
+    p printSummary();
+}
+
+p Named.printSummary() {
+    const String name = this.getName();
+    printf("%s (named: %d, distance: %d)\n", name.getRaw(), this.isNamed(true), this.getDistance());
+}
+
+type Car struct : Driveable, Comparable<Car>, Named {
+    String name
+    int distance
+}
+
+p Car.ctor(const String& name) {
+    this.name = name;
+    this.distance = 0;
+}
+
+p Car.drive(int distance) {
+    this.distance += distance;
+}
+
+// Implements the methods of Driveable and Named
+f<int> Car.getDistance() {
+    return this.distance;
+}
+
+f<int> Car.compareTo(const Car* other) {
+    return this.distance - other.distance;
+}
+
+f<String> Car.getName() {
+    return this.name;
+}
+
+f<bool> Car.isNamed(bool expected) {
+    return !this.name.isEmpty() == expected;
+}
+
+p printDistance(Driveable* driveable) {
+    printf("Distance: %d\n", driveable.getDistance());
+}
+
+f<int> compare(Comparable<Car>* comparable, const Car* other) {
+    return comparable.compareTo(other);
+}
+
+f<int> main() {
+    Car car1 = Car(String("Car 1"));
+    Car car2 = Car(String("Car 2"));
+    Driveable* driveable = &car1;
+    driveable.drive(30);
+    car2.drive(12);
+    printDistance(&car1);
+    printDistance(&car2);
+
+    // Generic interface as second interface
+    printf("Compare: %d\n", compare(&car1, &car2));
+    Comparable<Car>* comparable = &car2;
+    printf("Compare: %d\n", comparable.compareTo(&car1));
+
+    // Third interface with a default method and a method, that also implements a method of the first interface
+    Named* named = &car1;
+    const String name = named.getName();
+    printf("Name: %s\n", name.getRaw());
+    printf("Is named: %d\n", named.isNamed(true));
+    printf("Distance via Named*: %d\n", named.getDistance());
+    named.printSummary();
+    car2.printSummary();
+}

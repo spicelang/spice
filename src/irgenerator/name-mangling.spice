@@ -372,3 +372,16 @@ public f<String> mangleVTable(const StructBase* structBase) {
 public f<String> mangleVTable(const String& typeName) {
     return "_ZTV" + toString(typeName.getLength()) + typeName;
 }
+
+/**
+ * Mangle the name of a thunk, that adjusts the 'this' pointer by a fixed offset before calling a method (non-virtual thunk
+ * in the Itanium ABI, e.g. _ZThn8_N4Impl3twoEv)
+ *
+ * @param methodMangledName Mangled name of the method, that is called by the thunk
+ * @param offset Offset in bytes, that is subtracted from the 'this' pointer
+ * @return Mangled name of the thunk
+ */
+public f<String> mangleThisAdjustingThunk(const String& methodMangledName, unsigned long offset) {
+    const String encoding = methodMangledName.startsWith("_Z") ? methodMangledName.getSubstring(2ul) : methodMangledName;
+    return "_ZThn" + toString(cast<long>(offset)) + "_" + encoding;
+}

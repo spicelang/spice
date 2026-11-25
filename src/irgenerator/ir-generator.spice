@@ -926,21 +926,30 @@ f<LLVMExprResult> IRGenerator.doAssignment(IVisitable* lhsNode, IVisitable* rhsN
     } else {
         lhsAddress = this.resolveAddress(exprResult);
     }
-    return this.doAssignment(lhsAddress, entry, rhsNode, node);
+    const QualType lhsSType = this.getEvaluatedType(lhsNode);
+    return this.doAssignment(lhsAddress, entry, rhsNode, node, false, &lhsSType);
 }
 
 #[ignoreUnusedReturnValue]
-f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolTableEntry* lhsEntry, IVisitable* rhsNode, ASTNode* node, bool isDecl = false) {
+f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolTableEntry* lhsEntry, IVisitable* rhsNode, ASTNode* node, bool isDecl = false, const QualType* lhsSType = nil<const QualType*>) {
     // Get symbol type of right side
     const QualType rhsSType = this.getEvaluatedType(rhsNode);
     LLVMExprResult rhs = this.visitExpr(rhsNode);
-    return this.doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, node, isDecl);
+    return this.doAssignment(lhsAddress, lhsEntry, rhs, rhsSType, node, isDecl, lhsSType);
 }
 
 #[ignoreUnusedReturnValue]
-f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolTableEntry* lhsEntry, LLVMExprResult& rhs, const QualType& rhsSType, ASTNode* node, bool isDecl) {
+f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolTableEntry* lhsEntry, LLVMExprResult& rhs, const QualType& rhsSType, ASTNode* node, bool isDecl, const QualType* lhsSTypeOverride = nil<const QualType*>) {
     // Deduce some information about the assignment
     const bool isRefAssign = lhsEntry != nil<const SymbolTableEntry*> && isRefEntry(lhsEntry);
+    // The type of the left side is needed to convert pointers and references to structs to pointers and references to
+    // interfaces, which they implement
+    QualType lhsSType = QualType(SuperType::TY_INVALID);
+    if lhsSTypeOverride != nil<const QualType*> {
+        lhsSType = *lhsSTypeOverride;
+    } else if lhsEntry != nil<const SymbolTableEntry*> {
+        lhsSType = lhsEntry.getQualType();
+    }
     // A non-temporary struct value assigned by value needs a deep copy. This holds whether the destination is a direct
     // lvalue or the value behind an already-bound reference (assign-through): the binding cases of a reference assignment
     // (declaration/initial field ref/return value) all return early above before this is consumed, so the remaining
@@ -962,7 +971,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
             this.diGenerator.generateLocalVarDebugInfo(lhsEntry.name, refAddress);
 
             // Get address of right side
-            const llvm::Value rhsAddress = this.resolveAddress(rhs);
+            const llvm::Value rhsAddress = this.convertToInterfaceIfRequired(this.resolveAddress(rhs), lhsSType, rhsSType);
             assert !rhsAddress.isNull();
             this.insertStore(rhsAddress, refAddress);
 
@@ -982,7 +991,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         const bool isReturnValAssign = lhsEntry.name == RETURN_VARIABLE_NAME;
         if isInitialFieldRefAssign || isReturnValAssign {
             // Get address of right side
-            const llvm::Value referencedAddress = this.resolveAddress(rhs);
+            const llvm::Value referencedAddress = this.convertToInterfaceIfRequired(this.resolveAddress(rhs), lhsSType, rhsSType);
             assert !referencedAddress.isNull();
 
             // Store the rhs* to the lhs**
@@ -1151,6 +1160,10 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         // We can load the value from the right side and store it to the left side
         // Retrieve value of the right side
         rhsValue = this.resolveValue(rhsSType, rhs);
+        // A pointer to a struct might be stored as pointer to an interface, which the struct implements
+        if rhsSType.removeReferenceWrapper().isPtr() {
+            rhsValue = this.convertToInterfaceIfRequired(rhsValue, lhsSType, rhsSType);
+        }
         // Store the value to the address
         this.insertStore(rhsValue, lhsAddress, rhsSType);
     }
@@ -3127,6 +3140,8 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
             returnValue = this.insertInBoundsGEP(arrayType.toLLVMType(this.sourceFile), arrayAddress, indices);
         } else {
             returnValue = data.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
+            // A pointer or reference to a struct might be returned as pointer or reference to an interface, which it implements
+            returnValue = this.convertToInterfaceIfRequired(returnValue, data.returnType, this.getEvaluatedType(returnExpr));
         }
     } else { // Try to load result variable value
         const SymbolTableEntry* resultEntry = this.currentScope.lookupResultVar();
@@ -4621,9 +4636,14 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
                 } else {
                     argValues.pushBack(this.resolveValue(argNode));
                 }
+                // A pointer or reference to a struct might be passed as pointer or reference to an interface, which it implements
+                if !expectedSTy.isDecayedArray() {
+                    llvm::Value& argValue = argValues.back();
+                    argValue = this.convertToInterfaceIfRequired(argValue, expectedSTy, actualSTy);
+                }
             } else if expectedSTy.isRef() && matchArgType(expectedSTy.getContained(), actualSTy) { // Matches with ref
                 const llvm::Value argAddress = this.resolveAddress(argNode);
-                argValues.pushBack(argAddress);
+                argValues.pushBack(this.convertToInterfaceIfRequired(argAddress, expectedSTy, actualSTy));
             } else if actualSTy.isRef() && matchArgType(expectedSTy, actualSTy.getContained()) { // Matches with ref
                 const llvm::Value argAddress = this.resolveValue(argNode);
                 argValues.pushBack(argAddress);
@@ -4997,6 +5017,8 @@ public f<Any> IRGenerator.visitStructInstantiation(ASTStructInstantiationNode* n
         const model::Function* copyCtor = fieldCopyCtors.get(i);
         if fieldType.isRef() {
             itemValue = this.resolveAddress(exprResult);
+            // A reference to a struct might be bound to a reference to an interface, which the struct implements
+            itemValue = this.convertToInterfaceIfRequired(itemValue, fieldType, this.getEvaluatedType(exprResult.node));
         } else if copyCtor != nil<const model::Function*> {
             // Deep-copy the value into the field via its copy ctor: the source is not consumed/moved here, so the
             // caller keeps its own copy alive and destructs it independently - a raw value copy would alias its
@@ -5010,6 +5032,8 @@ public f<Any> IRGenerator.visitStructInstantiation(ASTStructInstantiationNode* n
             itemValue = this.insertLoad(fieldLLVMType, fieldCopyPtr);
         } else {
             itemValue = this.resolveValue(exprResult.node, exprResult);
+            // A pointer to a struct might be stored as pointer to an interface, which the struct implements
+            itemValue = this.convertToInterfaceIfRequired(itemValue, fieldType, this.getEvaluatedType(exprResult.node));
         }
         // Get field address
         const llvm::Value currentFieldAddress = this.insertStructGEP(structType, structAddr, cast<unsigned int>(spiceStruct.getFieldElementIndex(i)));
@@ -6107,7 +6131,8 @@ public f<llvm::Value> IRGenerator.getUpcastedStructPtr(llvm::Value structPtr, co
     QualType dstPointee = dstType.removeReferenceWrapper();
     QualType srcPointee = srcType.removeReferenceWrapper();
     // Both sides are pointers ('structPtr' is the pointer value itself), so look one level deeper
-    if dstPointee.isPtr() && srcPointee.isPtr() {
+    const bool isPtrConversion = dstPointee.isPtr() && srcPointee.isPtr();
+    if isPtrConversion {
         dstPointee = dstPointee.getContained();
         srcPointee = srcPointee.getContained();
     }
@@ -6119,6 +6144,53 @@ public f<llvm::Value> IRGenerator.getUpcastedStructPtr(llvm::Value structPtr, co
         return structPtr;
     }
 
+    const llvm::Value upcastedPtr = this.walkToStructSubobject(structPtr, dstPointee, srcPointee);
+    // A nil pointer has to stay nil, also if the subobject does not sit at offset 0. References can never be nil
+    if !isPtrConversion || upcastedPtr.isSameAs(structPtr) {
+        return upcastedPtr;
+    }
+    const llvm::Value nullPtr = llvm::getNullValue(this.builder.getPtrTy());
+    const llvm::Value isNull = this.builder.createICmp(llvm::LLVMIntPredicate::EQ, structPtr, nullPtr);
+    return this.builder.createSelect(isNull, nullPtr, upcastedPtr);
+}
+
+/**
+ * Convert a pointer to a struct or the address of a struct, that is implicitly converted to a pointer or reference to an
+ * interface, that the struct implements. The pointer is advanced to the interface subobject of the struct, which
+ * carries the vtable pointer to the vtable segment of this interface. Other values are returned unchanged.
+ *
+ * @param value Pointer value for pointer conversions, address of the struct for reference conversions
+ * @param dstType Destination type, e.g. a pointer or a reference to an interface
+ * @param srcType Source type, e.g. a pointer to a struct or a struct
+ * @return Converted value
+ */
+public f<llvm::Value> IRGenerator.convertToInterfaceIfRequired(llvm::Value value, const QualType& dstType, const QualType& srcType) {
+    QualType dstBaseType = dstType.removeReferenceWrapper();
+    QualType srcBaseType = srcType.removeReferenceWrapper();
+    if dstBaseType.isPtr() && srcBaseType.isPtr() {
+        dstBaseType = dstBaseType.getContained();
+        srcBaseType = srcBaseType.getContained();
+    } else if !dstType.isRef() {
+        // Only references can be bound to the address of a struct
+        return value;
+    }
+    if !dstBaseType.matchesInterfaceImplementedByStruct(srcBaseType) {
+        return value;
+    }
+    const llvm::Type valueType = value.getType();
+    assert valueType.isPointerTy();
+    return this.getUpcastedStructPtr(value, dstType, srcType);
+}
+
+/**
+ * Advance a pointer to a struct instance to the embedded subobject of the given destination type (see getUpcastedStructPtr)
+ *
+ * @param structPtr Pointer to the struct instance
+ * @param dstPointee Interface or composed base
+ * @param srcPointee Struct type
+ * @return Pointer to the subobject
+ */
+f<llvm::Value> IRGenerator.walkToStructSubobject(llvm::Value structPtr, const QualType& dstPointee, const QualType& srcPointee) {
     QualType walkType = srcPointee;
     while !walkType.matches(dstPointee, false, true, true) {
         assert walkType.is(SuperType::TY_STRUCT);
@@ -6657,14 +6729,18 @@ p IRGenerator.generateCtorBodyPreamble(Scope* bodyScope) {
     assert spiceStruct != nil<const Struct*>;
     if !spiceStruct.vTableData.vtable.isNull() {
         assert !spiceStruct.vTableData.vtableType.isNull();
-        // Store VTable to field address at index 0
         thisPtr = this.insertLoad(this.builder.getPtrTy(), thisPtrPtr);
-        Vector<llvm::Value> indices;
-        indices.pushBack(this.getInt64(0l));
-        indices.pushBack(this.getInt32(0l));
-        indices.pushBack(this.getInt32(2l));
-        const llvm::Value gepResult = this.insertInBoundsGEP(spiceStruct.vTableData.vtableType, spiceStruct.vTableData.vtable, indices);
-        this.insertStore(gepResult, thisPtr);
+        if spiceStruct.interfaceTypes.isEmpty() {
+            // Store VTable to the synthesized vtable pointer at index 0
+            this.insertStore(this.getVTableAddressPoint(&spiceStruct.structBase), thisPtr);
+        } else {
+            // Store the VTable segment of each interface to the vtable pointer of its interface subobject
+            for unsigned long i = 0l; i < spiceStruct.interfaceTypes.getSize(); i++ {
+                const unsigned int elementIndex = cast<unsigned int>(spiceStruct.getFieldElementIndex(i));
+                const llvm::Value interfaceAddress = this.insertStructGEP(structType, thisPtr, elementIndex);
+                this.insertStore(this.getVTableAddressPoint(&spiceStruct.structBase, cast<unsigned int>(i)), interfaceAddress);
+            }
+        }
     }
 
     const unsigned long fieldCount = structScope.getFieldCount();
@@ -7413,31 +7489,65 @@ f<llvm::Value> IRGenerator.generateVTable(StructBase* spiceStruct) {
 }
 
 p IRGenerator.generateVTableInitializer(const StructBase* spiceStruct) {
-    // Retrieve virtual method count
     assert spiceStruct.scope != nil<Scope*>;
-    const Vector<const model::Function*> virtualMethods = spiceStruct.scope.getVirtualMethods();
-
-    // Generate VTable type
-    const llvm::Type ptrTy = this.builder.getPtrTy();
     assert !spiceStruct.vTableData.vtableType.isNull();
+    const llvm::Type ptrTy = this.builder.getPtrTy();
 
-    // Generate VTable values
-    Vector<llvm::Value> arrayValues;
-    arrayValues.pushBack(llvm::getNullValue(ptrTy)); // nullptr as safety guard
-    arrayValues.pushBack(spiceStruct.vTableData.typeInfo); // TypeInfo to identify the type for the VTable
-    foreach const model::Function* virtualMethod : virtualMethods {
-        // Methods, that are inherited from an interface default method, are implemented by the default method
-        llvm::Function llvmFunc = virtualMethod.isInheritedDefaultMethod() ? this.getOrDeclareDefaultMethod(virtualMethod.defaultMethod) : this.getLLVMFunction(virtualMethod);
-        assert spiceStruct.scope.scopeType == ScopeType::INTERFACE || !llvmFunc.isNull();
-        // A method may return a struct, where the interface method returns an interface, which the struct implements. Its
-        // return type does not match the one of the interface method, but it is never called through the VTable: the type
-        // checker rejects calls through an interface, that return an interface by value (INTERFACE_RETURNED_BY_VALUE)
-        arrayValues.pushBack(!llvmFunc.isNull() ? llvmFunc.asValue() : llvm::getNullValue(ptrTy));
+    Vector<llvm::Value> fieldValues;
+    const Struct* structWithInterfaces = getStructWithInterfaces(spiceStruct);
+    if structWithInterfaces != nil<const Struct*> {
+        // One VTable segment per interface. A pointer to an interface points to the interface subobject of the struct, so
+        // the methods in the segments of interfaces, whose subobject does not sit at offset 0, are called with a 'this'
+        // pointer, that has to be adjusted to the struct first
+        const QualType& structType = spiceStruct.entry.getQualType();
+        const llvm::Type llvmStructType = structType.toLLVMType(this.sourceFile);
+        foreach unsigned long i, const Vector<const model::Function*>& implementingMethods : structWithInterfaces.interfaceMethods {
+            const unsigned int elementIndex = cast<unsigned int>(structWithInterfaces.getFieldElementIndex(i));
+            const unsigned long offset = this.module.getStructElementOffset(llvmStructType, elementIndex);
+
+            Vector<llvm::Value> arrayValues;
+            arrayValues.pushBack(llvm::getNullValue(ptrTy)); // nullptr as safety guard
+            arrayValues.pushBack(spiceStruct.vTableData.typeInfo); // TypeInfo to identify the type for the VTable
+            foreach const model::Function* method : implementingMethods {
+                assert method != nil<const model::Function*>;
+                // Methods, that are inherited from an interface default method, are implemented by the default method. It
+                // expects a pointer to the interface subobject, so it needs no adjustment of the 'this' pointer
+                if method.isInheritedDefaultMethod() {
+                    const llvm::Function defaultMethod = this.getOrDeclareDefaultMethod(method.defaultMethod);
+                    arrayValues.pushBack(defaultMethod.asValue());
+                    continue;
+                }
+                // A method may return a struct, where the interface method returns an interface, which the struct
+                // implements. Its return type does not match the one of the interface method, but it is never called through
+                // the VTable: the type checker rejects calls through an interface, that return an interface by value
+                // (INTERFACE_RETURNED_BY_VALUE)
+                llvm::Function llvmFunc = this.getLLVMFunction(method);
+                assert !llvmFunc.isNull();
+                if offset != 0l {
+                    llvmFunc = this.getOrGenerateThisAdjustingThunk(method, llvmFunc, offset);
+                }
+                arrayValues.pushBack(llvmFunc.asValue());
+            }
+            fieldValues.pushBack(llvm::getConstArray(ptrTy, arrayValues));
+        }
+    } else {
+        // Retrieve virtual methods
+        const Vector<const model::Function*> virtualMethods = spiceStruct.scope.getVirtualMethods();
+
+        // Generate VTable values
+        Vector<llvm::Value> arrayValues;
+        arrayValues.pushBack(llvm::getNullValue(ptrTy)); // nullptr as safety guard
+        arrayValues.pushBack(spiceStruct.vTableData.typeInfo); // TypeInfo to identify the type for the VTable
+        foreach const model::Function* virtualMethod : virtualMethods {
+            // Methods, that are inherited from an interface default method, are implemented by the default method
+            llvm::Function llvmFunc = virtualMethod.isInheritedDefaultMethod() ? this.getOrDeclareDefaultMethod(virtualMethod.defaultMethod) : this.getLLVMFunction(virtualMethod);
+            assert spiceStruct.scope.scopeType == ScopeType::INTERFACE || !llvmFunc.isNull();
+            arrayValues.pushBack(!llvmFunc.isNull() ? llvmFunc.asValue() : llvm::getNullValue(ptrTy));
+        }
+        fieldValues.pushBack(llvm::getConstArray(ptrTy, arrayValues));
     }
 
     // Generate VTable struct
-    Vector<llvm::Value> fieldValues;
-    fieldValues.pushBack(llvm::getConstArray(ptrTy, arrayValues));
     const llvm::Value initializer = llvm::getConstNamedStruct(spiceStruct.vTableData.vtableType, fieldValues);
 
     const String mangledName = mangleVTable(spiceStruct);
@@ -7540,30 +7650,156 @@ public f<bool> isExportedFunction(const model::Function* function, bool hasTestM
     return testAttrValue.getBoolValue();
 }
 
+/**
+ * Get the LLVM type of the VTable of a struct or interface. The VTable of a struct, that implements interfaces, consists of
+ * one segment per interface. Each segment is an array of a nullptr, the TypeInfo and the methods, that implement the methods
+ * of the interface, in the order of the interface methods. The vtable pointer of each interface subobject of the struct
+ * points behind the TypeInfo of the segment of its interface (address point), so that the VTable index of an interface
+ * method addresses the implementing method
+ *
+ * @param spiceStruct Struct or interface
+ * @return VTable type
+ */
 f<llvm::Type> IRGenerator.getVTableType(const StructBase* spiceStruct) {
-    // Retrieve virtual method count
-    const Vector<const model::Function*> virtualMethods = spiceStruct.scope.getVirtualMethods();
-    const unsigned long arrayElementCount = virtualMethods.getSize() + 2l; // +2 for nullptr and TypeInfo
-
-    const llvm::Type vtableArrayTy = llvm::getArrayType(this.builder.getPtrTy(), arrayElementCount);
+    const llvm::Type ptrTy = this.builder.getPtrTy();
     Vector<llvm::Type> vtableFieldTypes;
-    vtableFieldTypes.pushBack(vtableArrayTy);
+    const Struct* structWithInterfaces = getStructWithInterfaces(spiceStruct);
+    if structWithInterfaces != nil<const Struct*> {
+        foreach const Vector<const model::Function*>& implementingMethods : structWithInterfaces.interfaceMethods {
+            const unsigned long arrayElementCount = implementingMethods.getSize() + 2l; // +2 for nullptr and TypeInfo
+            vtableFieldTypes.pushBack(llvm::getArrayType(ptrTy, arrayElementCount));
+        }
+    } else {
+        // Retrieve virtual method count
+        const Vector<const model::Function*> virtualMethods = spiceStruct.scope.getVirtualMethods();
+        const unsigned long arrayElementCount = virtualMethods.getSize() + 2l; // +2 for nullptr and TypeInfo
+        vtableFieldTypes.pushBack(llvm::getArrayType(ptrTy, arrayElementCount));
+    }
     return llvm::getStructType(*this.context, vtableFieldTypes, false);
 }
 
-f<llvm::Value> IRGenerator.getVTableAddressPoint(const StructBase* spiceStruct) {
+/**
+ * Get the struct, if the given struct base belongs to a struct, that implements interfaces
+ *
+ * @param structBase Struct base of a struct or interface
+ * @return Struct or nil
+ */
+f<const Struct*> getStructWithInterfaces(const StructBase* structBase) {
+    const QualType& entryType = structBase.entry.getQualType();
+    if !entryType.is(SuperType::TY_STRUCT) {
+        return nil<const Struct*>;
+    }
+    const Struct* spiceStruct;
+    unsafe {
+        // StructBase is the first member of Struct, so both share the same address
+        spiceStruct = cast<const Struct*>(structBase);
+    }
+    return spiceStruct.interfaceTypes.isEmpty() ? nil<const Struct*> : spiceStruct;
+}
+
+/**
+ * Get the address point of a VTable segment, which is stored as vtable pointer to the struct instances
+ *
+ * @param spiceStruct Struct or interface
+ * @param segmentIdx Index of the VTable segment, which is the index of the interface for structs, that implement interfaces
+ * @return Address point
+ */
+f<llvm::Value> IRGenerator.getVTableAddressPoint(const StructBase* spiceStruct, unsigned int segmentIdx = 0) {
     // Look up the VTable by name in the current module instead of using vTableData.vtable. The latter belongs to the
     // module of the source file that defines the struct, so for an imported struct a declaration is inserted instead.
     const llvm::Type vtableType = this.getVTableType(spiceStruct);
     const String mangledName = mangleVTable(spiceStruct);
     const llvm::Value vtable = this.module.getOrInsertGlobal(mangledName.getRaw(), vtableType);
 
-    // The address point of the VTable is behind the nullptr and the TypeInfo
+    // The address point of the VTable segment is behind the nullptr and the TypeInfo
     Vector<llvm::Value> indices;
     indices.pushBack(this.getInt64(0l));
-    indices.pushBack(this.getInt32(0l));
+    indices.pushBack(this.getInt32(cast<long>(segmentIdx)));
     indices.pushBack(this.getInt32(2l));
     return llvm::getConstInBoundsGEP(vtableType, vtable, indices);
+}
+
+/**
+ * Get the thunk for calling a method through the VTable segment of an interface, whose subobject does not sit at offset 0 of
+ * the struct, or generate it if it does not exist yet. The thunk is called with a pointer to the interface subobject as
+ * 'this' pointer. It adjusts it to point to the struct and forwards the call to the method
+ *
+ * @param method Method, that implements an interface method
+ * @param llvmFunc LLVM function of the method
+ * @param offset Offset of the interface subobject in the struct in bytes
+ * @return Thunk
+ */
+f<llvm::Function> IRGenerator.getOrGenerateThisAdjustingThunk(const model::Function* method, llvm::Function llvmFunc, unsigned long offset) {
+    const String mangledName = mangleThisAdjustingThunk(llvmFunc.getName(), offset);
+    const llvm::Function existing = this.module.getFunction(mangledName.getRaw());
+    if !existing.isNull() {
+        return existing;
+    }
+
+    // The thunk has the same signature as the method
+    const llvm::Type fctType = llvmFunc.getFunctionType();
+    this.module.getOrInsertFunction(mangledName.getRaw(), fctType);
+    llvm::Function thunk = this.module.getFunction(mangledName.getRaw());
+    thunk.setLinkage(llvm::LLVMLinkage::InternalLinkage);
+    thunk.setUnnamedAddr(llvm::LLVMUnnamedAddr::GlobalUnnamedAddr);
+    this.addCommonFctAttrs(thunk);
+
+    // Set attributes to the parameters and the return value
+    const QualType returnType = method.isProcedure() ? QualType(SuperType::TY_DYN) : method.returnType;
+    const QualTypeList paramTypes = method.getParamTypes();
+    const unsigned int argOffset = this.getArgOffset(returnType);
+    const unsigned int thisArgNo = argOffset;
+    thunk.addParamAttr(thisArgNo, "noundef");
+    thunk.addParamAttr(thisArgNo, "nonnull");
+    foreach unsigned long i, const QualType& paramType : paramTypes {
+        const unsigned int argNo = thisArgNo + 1 + cast<unsigned int>(i);
+        thunk.addParamAttr(argNo, "noundef");
+        const string extAttrKind = this.getExtAttrKindForType(paramType);
+        if extAttrKind != nil<string> {
+            thunk.addParamAttr(argNo, extAttrKind);
+        }
+    }
+    this.setFunctionReturnValAttrs(thunk, returnType);
+
+    // Save the insert point, the thunk has no debug info
+    const llvm::BasicBlock oldInsertBlock = this.builder.getInsertBlock();
+    const llvm::Metadata oldDebugLoc = this.builder.getCurrentDebugLocation();
+    const llvm::Metadata noDebugLoc;
+    this.builder.setCurrentDebugLocation(noDebugLoc);
+    const llvm::BasicBlock bEntry = this.createBlock();
+    this.switchToBlock(bEntry, thunk);
+
+    // Forward all args, but with 'this' pointing to the struct instead of the interface subobject
+    Vector<llvm::Value> args;
+    for unsigned int argNo = 0; argNo < thunk.argSize(); argNo++ {
+        llvm::Value arg = thunk.getArg(argNo);
+        if argNo == thisArgNo {
+            const long negativeOffset = 0l - cast<long>(offset);
+            arg = this.insertInBoundsGEP(this.builder.getInt8Ty(), arg, this.getInt64(negativeOffset), String("this.adjusted"));
+        }
+        args.pushBack(arg);
+    }
+    const llvm::Value callInst = this.builder.createCall(fctType, llvmFunc.asValue(), args);
+    const ReturnABIInfo returnABI = this.getReturnABIInfo(returnType);
+    if returnABI.isIndirect() {
+        this.addSRetCallParamAttrs(callInst, returnABI.memoryType);
+    }
+    this.setCallArgAttrs(callInst, method, paramTypes, argOffset);
+    this.setCallReturnValAttrs(callInst, returnType);
+    const llvm::Type thunkReturnType = fctType.getReturnType();
+    if thunkReturnType.isVoidTy() {
+        this.builder.createRetVoid();
+    } else {
+        this.builder.createRet(callInst);
+    }
+    this.verifyFunction(thunk, method.declNode.codeLoc);
+
+    // Restore the insert point
+    if !oldInsertBlock.isNull() {
+        this.builder.setInsertPoint(oldInsertBlock);
+    }
+    this.builder.setCurrentDebugLocation(oldDebugLoc);
+    return thunk;
 }
 
 // ======================================================= Instrumentation =======================================================
