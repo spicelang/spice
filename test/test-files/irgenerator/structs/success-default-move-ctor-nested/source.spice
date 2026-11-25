@@ -14,7 +14,7 @@ p Inner.ctor() {
 
 // Inner has a user-defined move ctor: increments a counter on move so we can
 // verify the synthesized outer move ctor delegates to it.
-p Inner.ctor(Inner& other) {
+p Inner.ctor(Inner&& other) {
     this.value = other.value;
     this.moveCount = other.moveCount + 1;
     other.value = -1;
@@ -32,8 +32,8 @@ f<int> main() {
     a.tag = 7;
     printf("a: inner.value=%d inner.moveCount=%d tag=%d\n", a.inner.value, a.inner.moveCount, a.tag);
 
-    // Triggers the synthesized Outer move ctor, which delegates to Inner.ctor(Inner&)
-    Outer b = Outer(a);
+    // Triggers the synthesized Outer move ctor, which delegates to Inner.ctor(Inner&&)
+    Outer b = Outer(move(a));
     printf("b: inner.value=%d inner.moveCount=%d tag=%d\n", b.inner.value, b.inner.moveCount, b.tag);
     printf("a after move: inner.value=%d inner.moveCount=%d\n", a.inner.value, a.inner.moveCount);
 }

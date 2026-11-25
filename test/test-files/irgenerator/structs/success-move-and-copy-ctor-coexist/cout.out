@@ -1,3 +1,6 @@
 initial: copies=0 moves=0
+lvalue:      copies=1 moves=0
 after move:  copies=0 moves=1
+temporary:   copies=1 moves=2
 after copy:  copies=1 moves=1
+const move:  copies=1 moves=1

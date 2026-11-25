@@ -272,6 +272,28 @@ f<bool> TypeChecker.coversAllEnumItems(ASTSwitchStmtNode* node) {
 }
 
 /**
+ * Match the move ctor of the given struct type. If there is none, this falls back to the copy ctor, because it accepts rvalues
+ * as well
+ *
+ * @param thisType Struct type
+ * @param node Current AST node
+ * @return Move or copy ctor, or nil if there is none
+ */
+f<Function*> TypeChecker.matchMoveCtor(const QualType& thisType, const ASTNode* node) {
+    Scope* matchScope = thisType.getBodyScope();
+    assert matchScope != nil<Scope*>;
+    const QualType argType = thisType.toRvalueRef(node);
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(argType, true));
+    // The new instance being constructed is never const, regardless of whether the move source (thisType) is const
+    const QualType nonConstThisType = thisType.toNonConst();
+    const QualTypeList noTemplateTypeHints;
+    Function* moveCtor = matchFunction(matchScope, String(CTOR_FUNCTION_NAME), nonConstThisType, args, noTemplateTypeHints, true, node);
+    this.ensureImplicitCallVisibility(moveCtor, node);
+    return moveCtor;
+}
+
+/**
  * Match the copy ctor of the given struct type
  *
  * @param thisType Struct type
@@ -2472,6 +2494,13 @@ public f<Any> TypeChecker.visitDataType(ASTDataTypeNode* node) {
             case TypeModifierType::TYPE_REF: {
                 qualType = qualType.toRef(baseNode);
             }
+            case TypeModifierType::TYPE_RVALUE_REF: {
+                // Rvalue references only make sense for binding arguments, e.g. in move ctors and move assign operators
+                if !node.isParamType {
+                    return this.softErrorQT(baseNode, SemanticErrorType::RVALUE_REF_NOT_ALLOWED, String("Rvalue references are only allowed as parameter types"));
+                }
+                qualType = qualType.toRvalueRef(baseNode);
+            }
             case TypeModifierType::TYPE_ARRAY: {
                 unsigned int hardcodedSize = typeModifier.hardcodedSize;
                 const String& varName = typeModifier.sizeVarName;
@@ -2911,8 +2940,10 @@ public f<Any> TypeChecker.visitDeclStmt(ASTDeclStmtNode* node) {
         }
     }
 
-    // Update the type of the variable
-    localVarEntry.updateType(localVarType, true);
+    // Update the type of the variable. An rvalue reference param binds an rvalue, but has a name within the function body, so it
+    // is an lvalue there: e.g. passing it on to another function copies it, unless it is moved explicitly with move()
+    const QualType localVarEntryType = node.isFctParam ? localVarType.toLvalueRef(baseNode) : localVarType;
+    localVarEntry.updateType(localVarEntryType, true);
     SymbolTableEntry*& entrySlot = node.entries.get(this.manIdx);
     entrySlot = localVarEntry;
 
@@ -3824,6 +3855,12 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhs, rhs, isDeclAssign);
         rhsType = assignResult.getFirst();
         const Function* copyCtor = assignResult.getSecond();
+        // The IR generator calls the copy ctor for struct values on its own, but it needs to know the ctor, that moves an rvalue
+        // reference (the result of move()) into the lhs
+        if rhs.ty.isRvalueRef() {
+            const Function*& rhsMoveCtor = node.rhsMoveCtor.get(this.manIdx);
+            rhsMoveCtor = copyCtor;
+        }
         // If the assignment overwrites an already initialized struct, the old value of the lhs must be destructed first.
         // Otherwise its owning members (heap pointers, strings, ...) would leak. This applies when a new value is copied
         // into the lhs (non-null copy ctor) and when a temporary is moved into it (temp stealing).
@@ -5190,6 +5227,9 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
                     // Move the temporary into the param instead of copying it: the called function takes it over, so the
                     // caller must not destruct it anymore
                     argTemporaryScope.symbolTable.deleteAnonymous(argTemporaryNames.get(argIdx));
+                } else if actualType.isRvalueRef() {
+                    // The result of move() is moved into the param
+                    copyCtor = this.matchMoveCtor(actualValueType, baseNode);
                 } else {
                     copyCtor = this.matchCopyCtor(actualValueType, baseNode);
                     // Insert an anonymous symbol to track the dtor call of the copy for external functions
@@ -5400,6 +5440,12 @@ f<bool> TypeChecker.visitFctPtrCall(ASTFctCallNode* node, const QualType& functi
         if !matchRequestedToCandidateType(expectedType, actualType, tm, noCandidateTemplateTypes, false, false) {
             const String message = String("Expected ") + expectedType.getName(false) + " but got " + actualType.getName(false);
             this.softError(getASTNode(node.argLst.args.get(i)), SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION, message);
+            return false;
+        }
+        // Check if an lvalue is bound to an rvalue ref param
+        if expectedType.isRvalueRef() && !expectedType.canBind(actualType, arg.getSecond()) {
+            const String message = String("Lvalues cannot be bound to rvalue reference parameters. Use move() to move from them");
+            this.softError(getASTNode(node.argLst.args.get(i)), SemanticErrorType::LVALUE_TO_RVALUE_REF, message);
             return false;
         }
     }
@@ -5939,6 +5985,7 @@ f<Any> TypeChecker.visitBuiltinCall(ASTFctCallNode* node) {
     if name == BUILTIN_FCT_NAME_TYPEID { return this.visitBuiltinTypeIdCall(node); }
     if name == BUILTIN_FCT_NAME_TYPENAME { return this.visitBuiltinTypeNameCall(node); }
     if name == BUILTIN_FCT_NAME_LEN { return this.visitBuiltinLenCall(node); }
+    if name == BUILTIN_FCT_NAME_MOVE { return this.visitBuiltinMoveCall(node); }
     if name == BUILTIN_FCT_NAME_PANIC { return this.visitBuiltinPanicCall(node); }
     if name == BUILTIN_FCT_NAME_SYSCALL { return this.visitBuiltinSyscallCall(node); }
     if name == BUILTIN_FCT_NAME_ASM { return this.visitBuiltinAsmCall(node); }
@@ -6291,6 +6338,20 @@ f<Any> TypeChecker.visitBuiltinLenCall(ASTFctCallNode* node) {
     }
 
     return this.builtinResult(node, QualType(SuperType::TY_LONG));
+}
+
+/**
+ * Turns the given value into an rvalue of the type 'T&&', so that it binds to rvalue reference params, e.g. of a move ctor or a
+ * move assign operator. A value, that gets initialized with it, is move constructed, if the type has a move ctor. move()
+ * itself does not move anything. The moved-from value stays valid and gets destructed as usual.
+ */
+f<Any> TypeChecker.visitBuiltinMoveCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_MOVE;
+
+    QualType argType = this.getArgType(node, 0l);
+    argType = argType.removeReferenceWrapper();
+
+    return this.builtinResult(node, argType.toRvalueRef(cast<ASTNode*>(node)));
 }
 
 f<Any> TypeChecker.visitBuiltinPanicCall(ASTFctCallNode* node) {
@@ -7448,20 +7509,18 @@ p createDefaultMoveCtorIfRequired(const Struct& spiceStruct, Scope* structScope)
     }
 
     // Abort if the struct already has a user-defined move constructor.
-    // We can't just call lookupFunction with a non-const ref arg here, since the lookup permits
-    // const-param-to-non-const-arg matching ("constify") and would return the copy ctor (if one exists) as
-    // a false positive. Instead, check the function manifestations directly for a single-self-non-const-ref ctor.
+    // We can't just call lookupFunction with an rvalue arg here, since the lookup permits binding rvalues to
+    // const refs and would return the copy ctor (if one exists) as a false positive. Instead, check the function
+    // manifestations directly for a single-self-non-const-rvalue-ref ctor.
     if hasMoveCtor(structScope) {
         return;
     }
 
-    // Abort if the struct has a user-defined copy ctor. Reason: in Spice the move-vs-copy tie-breaker picks the
-    // non-const-ref (move) candidate for non-const lvalue arguments, so silently auto-generating a move ctor on
-    // top of a user-defined copy ctor would change the behavior of existing `T b = T(a)` call sites (a's heap
-    // contents would be stolen instead of deep-copied). Users that want a default move ctor in addition to their
-    // own copy ctor can write an empty `p T.ctor(T& other) {}` to opt in. We still synthesize the default move
-    // ctor when only the auto-generated copy ctor exists (heap-owning struct with no user ctors) - the user did
-    // not write any binding semantics in that case, so picking move for non-const lvalues is fine.
+    // Abort if the struct has a user-defined copy ctor. Like in C++, a user-defined copy ctor suggests, that copying
+    // the fields one by one is not enough to keep the invariants of the struct, so moving them one by one might not be
+    // enough either. Rvalues of such a struct get copied, unless the struct defines its own `p T.ctor(T&& other)`. We
+    // still synthesize the default move ctor when only the auto-generated copy ctor exists (heap-owning struct with
+    // no user ctors).
     if hasUserCopyCtor(structScope) {
         return;
     }
@@ -7510,7 +7569,7 @@ p createDefaultMoveCtorIfRequired(const Struct& spiceStruct, Scope* structScope)
     const String entryName = getSymbolTableEntryNameDefaultMoveCtor(node.codeLoc);
     const QualType nonConstStructType = structType.toNonConst();
     ParamList paramTypes;
-    paramTypes.pushBack(Param{nonConstStructType.toRef(node), false});
+    paramTypes.pushBack(Param{nonConstStructType.toRvalueRef(node), false});
     createDefaultStructMethod(spiceStruct, entryName, String(CTOR_FUNCTION_NAME), paramTypes);
 }
 
@@ -7836,6 +7895,25 @@ public f<Function*> TypeChecker.implicitlyCallStructMethod(const QualType& origT
     }
     const QualTypeList noTemplateTypeHints;
     return matchFunction(matchScope, methodName, thisType, args, noTemplateTypeHints, true, node);
+}
+
+/**
+ * Prepare the generation of a call to the move ctor of a given struct. If the struct has no move ctor, the copy ctor is used,
+ * because it accepts rvalues as well.
+ *
+ * @param thisType Struct type to call the move ctor on
+ * @param node Current AST node
+ */
+public f<Function*> TypeChecker.implicitlyCallStructMoveCtor(const QualType& thisType, const ASTNode* node) {
+    const QualType unwrappedType = thisType.removeReferenceWrapper();
+    const QualType argType = unwrappedType.toRvalueRef(node);
+    ArgList args;
+    args.pushBack(Pair<QualType, bool>(argType, true));
+    // The new instance being constructed is never const, regardless of whether the move source is const
+    const QualType nonConstThisType = unwrappedType.toNonConst();
+    Function* moveCtor = this.implicitlyCallStructMethod(nonConstThisType, String(CTOR_FUNCTION_NAME), args, node);
+    this.ensureImplicitCallVisibility(moveCtor, node);
+    return moveCtor;
 }
 
 /**

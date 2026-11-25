@@ -77,14 +77,26 @@ f<int> main() {
     list.clear();
     assert list.isEmpty();
 
-    // Red-black tree: move construction and indexed iteration
+    // Doubly linked list: constructing from a named list copies it, moving it takes over its nodes
+    list.pushBack(6);
+    list.pushBack(7);
+    DoublyLinkedList<int> copiedList = DoublyLinkedList<int>(list);
+    assert copiedList.getSize() == 2ul;
+    assert list.getSize() == 2ul;
+    DoublyLinkedList<int> movedList = DoublyLinkedList<int>(move(list));
+    assert movedList.getSize() == 2ul;
+    assert movedList.get(1ul) == 7;
+    assert list.isEmpty();
+
+    // Red-black tree: move construction and indexed iteration. The moved-from tree stays valid
     RedBlackTree<int, int> tree;
     tree.upsert(2, 20);
     tree.upsert(1, 10);
     tree.upsert(3, 30);
-    RedBlackTree<int, int> moved = RedBlackTree<int, int>(tree);
+    RedBlackTree<int, int> moved = RedBlackTree<int, int>(move(tree));
     assert moved.getSize() == 3ul;
     assert moved.find(2) == 20;
+    tree.clear();
     assert tree.isEmpty();
     foreach unsigned long idx, Pair<const int&, int&>& item : moved {
         const int& key = item.getFirst();

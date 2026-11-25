@@ -1,7 +1,7 @@
-// A user-defined move ctor takes a non-const reference to the same struct type.
+// A user-defined move ctor takes an rvalue reference to the same struct type.
 // It transfers state from the source to the destination, and conventionally
-// leaves the source in a valid-but-empty state. Spice differentiates the move
-// ctor from the copy ctor by the const-qualifier on the parameter.
+// leaves the source in a valid-but-empty state. Only rvalues bind to the move
+// ctor: temporaries and values, that are moved explicitly with move().
 
 type Buffer struct {
     int value
@@ -26,7 +26,7 @@ p Buffer.ctor(const Buffer& other) {
 }
 
 // Move ctor: steals the value from the source and resets the source
-p Buffer.ctor(Buffer& other) {
+p Buffer.ctor(Buffer&& other) {
     this.value = other.value;
     this.valid = other.valid;
     other.value = 0;
@@ -44,8 +44,8 @@ f<int> main() {
     printf("b: value=%d valid=%d\n", b.value, b.valid);
     printf("a after copy: value=%d valid=%d\n", a.value, a.valid);
 
-    // Move: non-const ref binds, move ctor is selected
-    Buffer c = Buffer(b);
+    // Move: move() turns b into an rvalue, move ctor is selected
+    Buffer c = Buffer(move(b));
     printf("c: value=%d valid=%d\n", c.value, c.valid);
     printf("b after move: value=%d valid=%d\n", b.value, b.valid);
 }

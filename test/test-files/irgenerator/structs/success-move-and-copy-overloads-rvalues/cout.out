@@ -1,15 +1,20 @@
 Constructed
 Assign temporary
 Constructed
-Copy assigned
+Move assigned
 Construct from temporary
 Constructed
-Copied
+Moved
 Assign non-const lvalue
-Move assigned
+Copy assigned
 Construct from non-const lvalue
+Copied
+Assign moved lvalue
+Move assigned
+Construct from moved lvalue
 Moved
 End
+Destructed
 Destructed
 Destructed
 Destructed

@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:6:5:
+Rvalue reference not allowed: Rvalue references are only allowed as parameter types
+
+6  Test&& test
+   ^^^^^^

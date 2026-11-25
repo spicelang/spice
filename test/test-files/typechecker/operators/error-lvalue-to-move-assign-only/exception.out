@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:10:5:
+Lvalue bound to rvalue reference: Lvalues cannot be bound to rvalue reference parameters. Use move() to move from them
+
+10  t = u;
+    ^^^^^

@@ -18,6 +18,7 @@ public type TypeChainElementData struct {
     public unsigned int arraySize = 0     // TY_ARRAY
     public Scope* bodyScope = nil<Scope*> // TY_STRUCT, TY_INTERFACE, TY_ENUM
     public bool hasCaptures = false       // TY_FUNCTION, TY_PROCEDURE (lambdas)
+    public bool isRvalueRef = false       // TY_REF ('T&&' instead of 'T&')
 }
 
 public type TypeChainElement struct {
@@ -89,6 +90,9 @@ public f<bool> operator==(const TypeChainElement& lhs, const TypeChainElement& r
 
     // Check the super-type-specific data payload
     switch lhs.superType {
+        case SuperType::TY_REF: {
+            return lhs.data.isRvalueRef == rhs.data.isRvalueRef;
+        }
         case SuperType::TY_ARRAY: {
             return lhs.data.arraySize == rhs.data.arraySize;
         }
@@ -137,7 +141,7 @@ public p TypeChainElement.getName(StringStream& name, bool withSize, bool ignore
             name << "*";
         }
         case SuperType::TY_REF: {
-            name << "&";
+            name << (this.data.isRvalueRef ? "&&" : "&");
         }
         case SuperType::TY_ARRAY: {
             name << "[";

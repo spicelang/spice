@@ -57,7 +57,7 @@ public p BinaryTree.ctor(const BinaryTree<T>& other) {
  *
  * @param other Tree to move from
  */
-public p BinaryTree.ctor(BinaryTree<T>& other) {
+public p BinaryTree.ctor(BinaryTree<T>&& other) {
     this.rootNode = other.rootNode;
     this.isBalanced = other.isBalanced;
     other.rootNode = nil<heap Node<T>*>;

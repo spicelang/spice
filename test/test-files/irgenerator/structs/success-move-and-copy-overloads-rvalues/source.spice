@@ -1,5 +1,5 @@
-// When a copy and a move overload of a ctor or assign operator coexist, a temporary argument selects the copy overload,
-// because temporaries can only be bound to const reference parameters. The move overload must not raise an error then.
+// When a copy and a move overload of a ctor or assign operator coexist, an rvalue argument (a temporary or the result of
+// move()) selects the move overload, while an lvalue selects the copy overload.
 
 type Test struct {}
 
@@ -15,11 +15,11 @@ p operator=(Test& _1, const Test& _2) {
     printf("Copy assigned\n");
 }
 
-p Test.ctor(Test& _) {
+p Test.ctor(Test&& _) {
     printf("Moved\n");
 }
 
-p operator=(Test& _1, Test& _2) {
+p operator=(Test& _1, Test&& _2) {
     printf("Move assigned\n");
 }
 
@@ -37,5 +37,9 @@ f<int> main() {
     t = u;
     printf("Construct from non-const lvalue\n");
     Test v = Test(u);
+    printf("Assign moved lvalue\n");
+    t = move(u);
+    printf("Construct from moved lvalue\n");
+    Test w = Test(move(u));
     printf("End\n");
 }

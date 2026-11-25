@@ -641,7 +641,27 @@ public f<Pair<QualType, Function*>> OpRuleManager.getAssignResultType(ASTNode* n
 
     // Skip type compatibility check if the lhs is of type dyn -> perform type inference
     if lhsType.is(SuperType::TY_DYN) {
+        // A variable, that is initialized with an rvalue reference (the result of move()), is no reference, but a value, that
+        // the rhs is moved into
+        if rhsType.isRvalueRef() {
+            const QualType rhsValueType = rhsType.removeReferenceWrapper();
+            if rhsValueType.is(SuperType::TY_STRUCT) {
+                return this.performStructAssign(node, lhs, rhs, rhsValueType, isDecl, isReturn);
+            }
+            return assignResult(rhsValueType);
+        }
         return assignResult(rhsType);
+    }
+
+    // An rvalue reference (the result of move()) can be bound to a const reference, but not to a non-const one. Once bound, it is
+    // a reference to an object with a name, like a reference to an lvalue
+    if (isDecl || isReturn) && lhsType.isRef() && rhsType.isRvalueRef() {
+        if !lhsType.isConstRef() {
+            throwSemanticError(node, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Rvalues can only be bound to const reference variables/fields"));
+            return assignResult(QualType(SuperType::TY_UNRESOLVED));
+        }
+        const ExprResult lvalueRhs = ExprResult{rhsType.toLvalueRef(node), rhs.entry};
+        return this.getAssignResultType(node, lhs, lvalueRhs, isDecl, isReturn, errMsgPrefix);
     }
 
     // Check if we try to assign a constant value
@@ -745,10 +765,13 @@ public f<Pair<QualType, Function*>> OpRuleManager.getFieldAssignResultType(ASTNo
         const QualType rhsContainedType = rhsType.getContained();
         if lhsType.matches(rhsContainedType, false, false, true) {
             // Initializing a field constructs a new value, so we copy via the copy ctor instead of calling an overloaded
-            // assign operator. The rhs may have no entry (e.g. a function call returning a reference), so go by type
+            // assign operator. The rhs may have no entry (e.g. a function call returning a reference), so go by type. An rvalue
+            // reference (the result of move()) is moved instead
             Function* copyCtor = nil<Function*>;
             const QualType rhsContainedNonConstType = rhsContainedType.toNonConst();
-            if rhsContainedNonConstType.is(SuperType::TY_STRUCT) && !rhs.isTemporary() {
+            if rhsContainedNonConstType.is(SuperType::TY_STRUCT) && rhsType.isRvalueRef() {
+                copyCtor = this.typeChecker.implicitlyCallStructMoveCtor(rhsContainedType, node);
+            } else if rhsContainedNonConstType.is(SuperType::TY_STRUCT) && !rhs.isTemporary() {
                 copyCtor = this.typeChecker.implicitlyCallStructCopyCtor(rhsContainedNonConstType, node);
             }
             return assignResult(lhsType, copyCtor);
@@ -858,6 +881,12 @@ f<Pair<QualType, Function*>> OpRuleManager.performStructAssign(ASTNode* node, co
     // If RVO is possible, cancel here
     if isReturn && this.typeChecker.isReturnValueOptimizable(rhs) {
         return assignResult(rhsType);
+    }
+
+    // An rvalue reference (the result of move()) is moved, if the struct has a move ctor. Otherwise, it is copied
+    if rhsType.is(SuperType::TY_STRUCT) && rhs.ty.isRvalueRef() {
+        const QualType rhsValueType = rhs.ty.removeReferenceWrapper();
+        return assignResult(rhsType, this.typeChecker.implicitlyCallStructMoveCtor(rhsValueType, node));
     }
 
     // => We have to copy

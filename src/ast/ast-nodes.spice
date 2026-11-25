@@ -761,6 +761,7 @@ public f<Any> ASTBaseDataTypeNode.accept(IAbstractAstVisitor* visitor) {
 public type TypeModifierType enum {
     TYPE_PTR,
     TYPE_REF,
+    TYPE_RVALUE_REF,
     TYPE_ARRAY
 }
 
@@ -1834,6 +1835,7 @@ public type ASTAssignExprNode struct : IVisitable {
     public AssignOp op = AssignOp::OP_NONE
     public Vector<Vector<const Function*>> opFct // Operator overloading functions
     public Vector<const Function*> lhsDtorFct // Dtor of the lhs, if it gets overwritten
+    public Vector<const Function*> rhsMoveCtor // Ctor, that moves an rvalue reference rhs (the result of move()) into the lhs
 }
 
 public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {
@@ -2867,6 +2869,12 @@ p customItemsInitialization(ASTNode* node, unsigned long manifestationCount) {
         }
         while assignExprNode.lhsDtorFct.getSize() < manifestationCount {
             assignExprNode.lhsDtorFct.pushBack(nil<const Function*>);
+        }
+        if assignExprNode.rhsMoveCtor.isEmpty() {
+            assignExprNode.rhsMoveCtor.reserve(manifestationCount);
+        }
+        while assignExprNode.rhsMoveCtor.getSize() < manifestationCount {
+            assignExprNode.rhsMoveCtor.pushBack(nil<const Function*>);
         }
     }
     if hasOpFctPointers(node.kind) {

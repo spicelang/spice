@@ -10,6 +10,7 @@ type Pair<T> struct {
 }
 
 f<bool> operator==<T>( const Pair<T> &a,const Pair<T> &b ){return a.first==b.first&&a.second==b.second;}
+f<bool> isFirstEqual<T>( Pair<T> &&pair,bool flag ){return flag&&pair.first==pair.second;}
 
 #[test,test.name="spacing"]
 f<bool> testSpacing(){

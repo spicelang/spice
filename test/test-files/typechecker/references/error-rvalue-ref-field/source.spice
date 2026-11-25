@@ -1,0 +1,9 @@
+type Test struct {
+    int value
+}
+
+type Holder struct {
+    Test&& test
+}
+
+f<int> main() {}

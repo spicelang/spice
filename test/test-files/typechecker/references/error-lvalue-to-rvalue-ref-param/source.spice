@@ -1,0 +1,25 @@
+type Test struct {
+    int value
+}
+
+p Test.ctor() {
+    this.value = 0;
+}
+
+p Test.ctor(const Test& other) {
+    this.value = other.value;
+}
+
+p Test.ctor(Test&& other) {
+    this.value = other.value;
+    other.value = 0;
+}
+
+p consume(Test&& test) {
+    printf("%d\n", test.value);
+}
+
+f<int> main() {
+    Test t;
+    consume(t);
+}

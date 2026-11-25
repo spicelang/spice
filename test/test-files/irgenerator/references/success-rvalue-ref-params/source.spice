@@ -1,0 +1,21 @@
+// Rvalue reference params are passed as the address of the bound value, like lvalue reference params. Their mangled names
+// use 'O' instead of 'R'.
+
+type Test struct {
+    int value
+}
+
+p Test.ctor(int value) {
+    this.value = value;
+}
+
+f<int> consume(Test&& test) {
+    return test.value;
+}
+
+f<int> main() {
+    Test t = Test(1);
+    const int fromTemporary = consume(Test(2));
+    const int fromMoved = consume(move(t));
+    printf("%d %d\n", fromTemporary, fromMoved);
+}

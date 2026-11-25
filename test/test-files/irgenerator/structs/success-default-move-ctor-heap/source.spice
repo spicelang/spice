@@ -24,10 +24,10 @@ f<int> main() {
     printf("a holds %d\n", getValue(a));
     printf("a was moved-from: %d\n", isMovedFrom(a));
 
-    // Trigger the synthesized move ctor by an explicit ctor call with a
-    // non-const lvalue argument. Overload resolution picks the move ctor
-    // over the auto-generated copy ctor because the argument is non-const.
-    IntBox b = IntBox(a);
+    // Trigger the synthesized move ctor by an explicit ctor call with an
+    // rvalue argument. Overload resolution picks the move ctor over the
+    // auto-generated copy ctor because move() turns 'a' into an rvalue.
+    IntBox b = IntBox(move(a));
     printf("b holds %d\n", getValue(b));
     printf("a was moved-from: %d\n", isMovedFrom(a));
 }

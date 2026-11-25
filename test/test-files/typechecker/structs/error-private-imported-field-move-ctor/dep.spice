@@ -10,6 +10,6 @@ public p S.ctor(const S& original) {
     this.x = original.x;
 }
 
-p S.ctor(S& original) {
+p S.ctor(S&& original) {
     this.x = original.x;
 }

@@ -1,0 +1,29 @@
+type Test struct {
+    int value
+}
+
+p Test.ctor() {
+    this.value = 0;
+}
+
+p Test.ctor(const Test& other) {
+    this.value = other.value;
+}
+
+p Test.ctor(Test&& other) {
+    this.value = other.value;
+    other.value = 0;
+}
+
+p consume(Test&& test) {
+    printf("%d\n", test.value);
+}
+
+p forward(Test&& test) {
+    // A named rvalue reference is an lvalue, so it has to be moved again to bind to an rvalue reference
+    consume(test);
+}
+
+f<int> main() {
+    forward(Test());
+}
