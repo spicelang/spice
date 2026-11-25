@@ -9,6 +9,10 @@ type Pair<T> struct {
     T second
 }
 
+type Buffer struct {
+    int[2] items
+}
+
 f<bool> operator==<T>(const Pair<T>& a, const Pair<T>& b) { return a.first == b.first && a.second == b.second; }
 f<bool> isFirstEqual<T>(Pair<T>&& pair, bool flag) { return flag && pair.first == pair.second; }
 
@@ -21,6 +25,8 @@ f<bool> testSpacing() {
     Vector<Vector<int>> nested;
     Pair<int> pair = Pair<int>{1, 2};
     int[3] arr = [1, 2, 3];
+    Buffer buffer = Buffer{[1, 2]};
+    int[2][2] matrix = [[1, 2], [3, 4]];
     const bool b = !(x < 3) || x >= 4 && x != 5;
     const long shifted = 1l << 4 >> 2;
     const f<int>(int) square = f<int>(int y) { return y * y; };

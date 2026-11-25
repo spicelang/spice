@@ -814,8 +814,12 @@ f<bool> SourceFormatter.needsSpace(const FmtToken& left, const FmtToken& right) 
         return false;
     }
 
-    // Opening brackets. Subscripts and attributes have no space before, array initializations and lambda attributes have one
+    // Opening brackets. Subscripts and attributes have no space before, array initializations and lambda attributes have one,
+    // except as first item of a struct instantiation, e.g. 'Buffer{[1, 2]}'
     if rt == TokenType::LBRACKET {
+        if lt == TokenType::LBRACE && left.ownerKind == ASTNodeKind::STRUCT_INSTANTIATION {
+            return false;
+        }
         return right.ownerKind == ASTNodeKind::ARRAY_INITIALIZATION || right.ownerKind == ASTNodeKind::LAMBDA_ATTR;
     }
 
