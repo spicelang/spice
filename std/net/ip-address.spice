@@ -23,7 +23,7 @@ public type IpAddress struct {
  *
  * @return IPv4 address or not
  */
-public inline f<bool> IpAddress.isIpv4() {
+public inline const f<bool> IpAddress.isIpv4() {
     return !this.ipv6;
 }
 
@@ -32,7 +32,7 @@ public inline f<bool> IpAddress.isIpv4() {
  *
  * @return IPv6 address or not
  */
-public inline f<bool> IpAddress.isIpv6() {
+public inline const f<bool> IpAddress.isIpv6() {
     return this.ipv6;
 }
 
@@ -41,7 +41,7 @@ public inline f<bool> IpAddress.isIpv6() {
  *
  * @return 4 for an IPv4 address, 16 for an IPv6 address
  */
-public inline f<unsigned int> IpAddress.getLength() {
+public inline const f<unsigned int> IpAddress.getLength() {
     return this.ipv6 ? IPV6_ADDRESS_LENGTH : IPV4_ADDRESS_LENGTH;
 }
 
@@ -51,7 +51,7 @@ public inline f<unsigned int> IpAddress.getLength() {
  * @param index Index of the byte, smaller than getLength()
  * @return Address byte
  */
-public f<unsigned byte> IpAddress.getByte(unsigned int index) {
+public const f<unsigned byte> IpAddress.getByte(unsigned int index) {
     assert index < this.getLength();
     return this.bytes[index];
 }

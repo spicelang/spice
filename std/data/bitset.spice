@@ -146,7 +146,7 @@ public p BitSet.flip(unsigned long index) {
  *
  * @return true if the bit is set, false otherwise
  */
-public f<bool> BitSet.test(unsigned long index) {
+public const f<bool> BitSet.test(unsigned long index) {
     if index >= this.numBits { panic(Error("Access index out of bounds")); }
     unsafe {
         return ((this.words[index / BITS_PER_WORD] >> (index % BITS_PER_WORD)) & 1ul) != 0ul;

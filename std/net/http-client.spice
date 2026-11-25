@@ -159,13 +159,13 @@ public f<Result<HttpResponse>> HttpClient.send(const HttpRequest& request, const
     unsigned int remainingRedirects = this.maxRedirects;
     bool done = false;
     while !done {
-        const Result<Url> urlResult = parseUrl(currentUrl);
+        Result<Url> urlResult = parseUrl(currentUrl);
         if urlResult.isErr() {
             errorMessage = urlResult.getErr().message;
             done = true;
         } else {
             const Url& target = urlResult.unwrap();
-            const Result<HttpResponse> exchangeResult = this.exchange(currentRequest, target);
+            Result<HttpResponse> exchangeResult = this.exchange(currentRequest, target);
             if exchangeResult.isErr() {
                 errorMessage = exchangeResult.getErr().message;
                 done = true;
@@ -178,7 +178,7 @@ public f<Result<HttpResponse>> HttpClient.send(const HttpRequest& request, const
                     done = true;
                 } else {
                     const String nextUrl = resolveLocation(target, location);
-                    const Result<Url> nextUrlResult = parseUrl(nextUrl);
+                    Result<Url> nextUrlResult = parseUrl(nextUrl);
                     if nextUrlResult.isErr() {
                         done = true;
                     } else {
@@ -219,13 +219,13 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
     const bool expectBody = request.method != HttpMethod::HEAD;
 
     if url.scheme == "https" {
-        const Result<TlsContext> contextResult = newClientTlsContext(this.trustedCaFile.getRaw());
+        Result<TlsContext> contextResult = newClientTlsContext(this.trustedCaFile.getRaw());
         if contextResult.isErr() {
             const Error& error = contextResult.getErr();
             errorMessage = error.getMessage();
         } else {
             TlsContext context = contextResult.unwrap();
-            const Result<TlsSocket> socketResult =
+            Result<TlsSocket> socketResult =
                 openTlsClientSocket(url.host.getRaw(), url.port, context, this.timeoutMillis);
             if socketResult.isErr() {
                 const Error& error = socketResult.getErr();
@@ -236,7 +236,7 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
                 if !sendRequest(socket, request) {
                     errorMessage = "Could not send the request";
                 } else {
-                    const Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
+                    Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
                     if responseResult.isErr() {
                         const Error& error = responseResult.getErr();
                         errorMessage = error.getMessage();
@@ -250,7 +250,7 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
             context.close();
         }
     } else {
-        const Result<Socket> socketResult = openClientSocket(url.host.getRaw(), url.port);
+        Result<Socket> socketResult = openClientSocket(url.host.getRaw(), url.port);
         if socketResult.isErr() {
             const Error& error = socketResult.getErr();
             errorMessage = error.getMessage();
@@ -261,7 +261,7 @@ f<Result<HttpResponse>> HttpClient.exchange(HttpRequest& request, const Url& url
             if !sendRequest(socket, request) {
                 errorMessage = "Could not send the request";
             } else {
-                const Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
+                Result<HttpResponse> responseResult = receiveResponse(socket, expectBody, this.maxMessageSize);
                 if responseResult.isErr() {
                     const Error& error = responseResult.getErr();
                     errorMessage = error.getMessage();

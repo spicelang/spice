@@ -95,7 +95,7 @@ public p operator=(QualType& this, const QualType& other) {
  *
  * @return Underlying raw type
  */
-public f<const symboltable::Type*> QualType.getType() {
+public const f<const symboltable::Type*> QualType.getType() {
     return this.rawType;
 }
 
@@ -104,7 +104,7 @@ public f<const symboltable::Type*> QualType.getType() {
  *
  * @return Super type
  */
-public f<SuperType> QualType.getSuperType() {
+public const f<SuperType> QualType.getSuperType() {
     return this.rawType.getSuperType();
 }
 
@@ -113,7 +113,7 @@ public f<SuperType> QualType.getSuperType() {
  *
  * @return Subtype
  */
-public f<const String&> QualType.getSubType() {
+public const f<const String&> QualType.getSubType() {
     return this.rawType.getSubType();
 }
 
@@ -131,7 +131,7 @@ public f<unsigned int> QualType.getArraySize() {
  *
  * @return Body scope
  */
-public f<Scope*> QualType.getBodyScope() {
+public const f<Scope*> QualType.getBodyScope() {
     return this.rawType.getBodyScope();
 }
 
@@ -158,7 +158,7 @@ public f<QualTypeList> QualType.getFunctionParamTypes() {
  *
  * @return Function parameter and return types
  */
-public f<QualTypeList> QualType.getFunctionParamAndReturnTypes() {
+public const f<QualTypeList> QualType.getFunctionParamAndReturnTypes() {
     return this.rawType.getFunctionParamAndReturnTypes();
 }
 
@@ -176,7 +176,7 @@ public f<bool> QualType.hasLambdaCaptures() {
  *
  * @return Template types
  */
-public f<QualTypeList> QualType.getTemplateTypes() {
+public const f<QualTypeList> QualType.getTemplateTypes() {
     return this.rawType.getTemplateTypes();
 }
 
@@ -187,7 +187,7 @@ public f<QualTypeList> QualType.getTemplateTypes() {
  * @param templateTypes Custom set of template types
  * @return Struct instance
  */
-public f<Struct*> QualType.getStruct(const ASTNode* node, const QualTypeList& templateTypes) {
+public const f<Struct*> QualType.getStruct(const ASTNode* node, const QualTypeList& templateTypes) {
     assert this.is(SuperType::TY_STRUCT);
     Scope* bodyScope = this.getBodyScope();
     Scope* structDefScope = bodyScope.parent;
@@ -201,7 +201,7 @@ public f<Struct*> QualType.getStruct(const ASTNode* node, const QualTypeList& te
  * @param node Accessing AST node
  * @return Struct instance
  */
-public f<Struct*> QualType.getStruct(const ASTNode* node) {
+public const f<Struct*> QualType.getStruct(const ASTNode* node) {
     return this.getStruct(node, this.getTemplateTypes());
 }
 
@@ -278,7 +278,7 @@ public f<Union*> QualType.getUnion(const ASTNode* node) {
  * @param superType Super type
  * @return Is of super type or not
  */
-public f<bool> QualType.is(SuperType superType) {
+public const f<bool> QualType.is(SuperType superType) {
     return this.rawType.is(superType);
 }
 
@@ -288,7 +288,7 @@ public f<bool> QualType.is(SuperType superType) {
  * @param superTypes List of super types
  * @return Is one of the super types or not
  */
-public f<bool> QualType.isOneOf(SuperType[] superTypes, unsigned long superTypesSize) {
+public const f<bool> QualType.isOneOf(SuperType[] superTypes, unsigned long superTypesSize) {
     return this.rawType.isOneOf(superTypes, superTypesSize);
 }
 
@@ -308,7 +308,7 @@ public f<bool> QualType.isBase(SuperType superType) {
  *
  * @return Primitive or not
  */
-public f<bool> QualType.isPrimitive() {
+public const f<bool> QualType.isPrimitive() {
     return this.rawType.isPrimitive();
 }
 
@@ -321,7 +321,7 @@ public f<bool> QualType.isPrimitive() {
  *
  * @return Extended primitive or not
  */
-public f<bool> QualType.isExtendedPrimitive() {
+public const f<bool> QualType.isExtendedPrimitive() {
     return this.rawType.isExtendedPrimitive();
 }
 
@@ -330,7 +330,7 @@ public f<bool> QualType.isExtendedPrimitive() {
  *
  * @return Pointer or not
  */
-public f<bool> QualType.isPtr() {
+public const f<bool> QualType.isPtr() {
     return this.rawType.isPtr();
 }
 
@@ -340,7 +340,7 @@ public f<bool> QualType.isPtr() {
  * @param superType Super type
  * @return Pointer to super type or not
  */
-public f<bool> QualType.isPtrTo(SuperType superType) {
+public const f<bool> QualType.isPtrTo(SuperType superType) {
     if !this.isPtr() { return false; }
     const QualType contained = this.getContained();
     return contained.is(superType);
@@ -351,7 +351,7 @@ public f<bool> QualType.isPtrTo(SuperType superType) {
  *
  * @return Reference or not
  */
-public f<bool> QualType.isRef() {
+public const f<bool> QualType.isRef() {
     return this.rawType.isRef();
 }
 
@@ -360,7 +360,7 @@ public f<bool> QualType.isRef() {
  *
  * @return Array or not
  */
-public f<bool> QualType.isArray() {
+public const f<bool> QualType.isArray() {
     return this.rawType.isArray();
 }
 
@@ -381,7 +381,7 @@ public f<bool> QualType.isArrayOf(SuperType superType) {
  *
  * @return Const reference or not
  */
-public f<bool> QualType.isConstRef() {
+public const f<bool> QualType.isConstRef() {
     return this.qualifiers.isConst && this.rawType.isRef();
 }
 
@@ -486,7 +486,7 @@ public f<bool> QualType.isResultObj() {
  *
  * @return Generic parts or not
  */
-public f<bool> QualType.hasAnyGenericParts() {
+public const f<bool> QualType.hasAnyGenericParts() {
     return this.rawType.hasAnyGenericParts();
 }
 
@@ -497,7 +497,7 @@ public f<bool> QualType.hasAnyGenericParts() {
  * @param node Accessing ASTNode
  * @return Trivially constructible or not
  */
-public f<bool> QualType.isTriviallyConstructible(const ASTNode* node) {
+public const f<bool> QualType.isTriviallyConstructible(const ASTNode* node) {
     // References can't be default initialized
     if this.isRef() { return false; }
 
@@ -539,7 +539,7 @@ public f<bool> QualType.isTriviallyConstructible(const ASTNode* node) {
  * @param node Accessing ASTNode
  * @return Trivially copyable or not
  */
-public f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
+public const f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
     // In case of an array, the item type is determining the copy triviality
     if this.isArray() {
         const QualType baseType = this.getBase();
@@ -571,7 +571,7 @@ public f<bool> QualType.isTriviallyCopyable(const ASTNode* node) {
  * @param node Accessing ASTNode
  * @return Owned by the callee or not
  */
-public f<bool> QualType.isOwnedByValueParam(const ASTNode* node) {
+public const f<bool> QualType.isOwnedByValueParam(const ASTNode* node) {
     return this.is(SuperType::TY_STRUCT) && !this.isTriviallyCopyable(node);
 }
 
@@ -582,7 +582,7 @@ public f<bool> QualType.isOwnedByValueParam(const ASTNode* node) {
  * @param node Accessing ASTNode
  * @return Trivially destructible or not
  */
-public f<bool> QualType.isTriviallyDestructible(const ASTNode* node) {
+public const f<bool> QualType.isTriviallyDestructible(const ASTNode* node) {
     // In case of an array, the item type is determining the destructing triviality
     if this.isArray() {
         const QualType baseType = this.getBase();
@@ -643,7 +643,7 @@ public f<bool> QualType.canBind(const QualType& inputType, bool isTemporary) {
  * @param allowConstify Match when the types are the same, but the lhs type is more const restrictive than the rhs type
  * @return Matching or not
  */
-public f<bool> QualType.matches(const QualType& otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) {
+public const f<bool> QualType.matches(const QualType& otherType, bool ignoreArraySize, bool ignoreQualifiers, bool allowConstify) {
     // Special case: string is equivalent to const char*
     if this.is(SuperType::TY_STRING) && otherType.isPtrTo(SuperType::TY_CHAR) && otherType.isConst() { return true; }
     if this.isPtrTo(SuperType::TY_CHAR) && this.isConst() && otherType.is(SuperType::TY_STRING) { return true; }
@@ -713,7 +713,7 @@ public f<bool> QualType.isSameContainerTypeAs(const QualType& other) {
  * @param typeToCompareWith Type to compare with (nil on the first iteration)
  * @return Self-referencing struct type or not
  */
-public f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompareWith) {
+public const f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompareWith) {
     if !this.is(SuperType::TY_STRUCT) { return false; }
 
     // If no type was set by a previous iteration, we set it to the current type
@@ -742,7 +742,7 @@ public f<bool> QualType.isSelfReferencingStructType(const QualType* typeToCompar
  * @param genericTypeList Generic type list
  * @return Has substantiation or not
  */
-public f<bool> QualType.isCoveredByGenericTypeList(Vector<GenericType>& genericTypeList) {
+public const f<bool> QualType.isCoveredByGenericTypeList(Vector<GenericType>& genericTypeList) {
     const QualType baseType = this.getBase();
     // Check if the symbol type itself is generic
     if baseType.is(SuperType::TY_GENERIC) {
@@ -801,7 +801,7 @@ public f<bool> QualType.needsDeAllocation() {
  * @param ignorePublic Ignore any potential public qualifier
  * @param withAliases Print aliases as is and not decompose them
  */
-public p QualType.getName(StringStream& name, bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
+public const p QualType.getName(StringStream& name, bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
     // Append the qualifiers
     const QualType baseType = this.getBase();
     const SuperType baseSuperType = baseType.getSuperType();
@@ -839,7 +839,7 @@ public p QualType.getName(StringStream& name, bool withSize = false, bool ignore
  * @param ignorePublic Ignore any potential public qualifier
  * @param withAliases Print aliases as is and not decompose them
  */
-public p QualType.getTemplateArgName(StringStream& name, bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
+public const p QualType.getTemplateArgName(StringStream& name, bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
     const QualType baseType = this.getBase();
     const TypeQualifiers defaultForSuperType = getTypeQualifiersOf(baseType.getSuperType());
     if this.qualifiers.isConst && !defaultForSuperType.isConst && this.rawType.getTypeChainDepth() == 1 {
@@ -856,7 +856,7 @@ public p QualType.getTemplateArgName(StringStream& name, bool withSize = false, 
  * @param withAliases Print aliases as is and not decompose them
  * @return Symbol type name
  */
-public f<String> QualType.getName(bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
+public const f<String> QualType.getName(bool withSize = false, bool ignorePublic = false, bool withAliases = true) {
     StringStream name;
     this.getName(name, withSize, ignorePublic, withAliases);
     return name.str();
@@ -951,7 +951,7 @@ public f<QualType> QualType.toNonConst() {
  *
  * @return New type
  */
-public f<QualType> QualType.getContained() {
+public const f<QualType> QualType.getContained() {
     const dyn options = [SuperType::TY_PTR, SuperType::TY_REF, SuperType::TY_ARRAY, SuperType::TY_STRING];
     assert this.isOneOf(options, len(options));
     QualType newType = *this;
@@ -964,7 +964,7 @@ public f<QualType> QualType.getContained() {
  *
  * @return New type
  */
-public f<QualType> QualType.getBase() {
+public const f<QualType> QualType.getBase() {
     QualType newType = *this;
     newType.rawType = this.rawType.getBase();
     return newType;
@@ -990,7 +990,7 @@ public f<QualType> QualType.getAliased(const SymbolTableEntry* aliasEntry) {
  *
  * @return New type
  */
-public f<QualType> QualType.removeReferenceWrapper() {
+public const f<QualType> QualType.removeReferenceWrapper() {
     return this.isRef() ? this.getContained() : *this;
 }
 
@@ -1114,7 +1114,7 @@ public f<QualType> QualType.getWithFunctionParamAndReturnTypes(const QualType& r
  *
  * @return Is const or not
  */
-public f<bool> QualType.isConst() {
+public const f<bool> QualType.isConst() {
     return this.isExtendedPrimitive() && this.qualifiers.isConst;
 }
 
@@ -1156,7 +1156,7 @@ public f<bool> QualType.isInline() {
  *
  * @return Is public or not
  */
-public f<bool> QualType.isPublic() {
+public const f<bool> QualType.isPublic() {
     const dyn options = [SuperType::TY_FUNCTION, SuperType::TY_PROCEDURE, SuperType::TY_ENUM, SuperType::TY_STRUCT, SuperType::TY_INTERFACE, SuperType::TY_UNION];
     assert this.isPrimitive() || this.isPtr() /* Global variables */ || this.isOneOf(options, len(options));
     return this.qualifiers.isPublic;
@@ -1176,7 +1176,7 @@ public f<bool> QualType.isHeap() {
  *
  * @return Is composition or not
  */
-public f<bool> QualType.isComposition() {
+public const f<bool> QualType.isComposition() {
     return this.qualifiers.isComposition;
 }
 

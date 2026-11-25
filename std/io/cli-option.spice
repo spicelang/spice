@@ -146,7 +146,7 @@ public const f<bool> CliOption.acceptsMultipleValues() {
  *
  * @param value Value to write
  */
-public p CliOption.setTargetValue(T& value) {
+public const p CliOption.setTargetValue(T& value) {
     if this.mode == CliOptionMode::SET_VALUE {
         this.targetVariable = value;
     }
@@ -157,7 +157,7 @@ public p CliOption.setTargetValue(T& value) {
  *
  * @param value Value to pass to the callback
  */
-public p CliOption.callCallback(const T& value) {
+public const p CliOption.callCallback(const T& value) {
     if this.mode == CliOptionMode::CALL_CALLBACK && !this.callback.isEmpty() {
         p(const T&) cb = this.callback.get();
         cb(value);
@@ -184,7 +184,7 @@ public const f<bool> CliOption.isPositional() {
 /**
  * Print the option's name, aliases and description as a single help entry
  */
-public p CliOption.printHelpItem() {
+public const p CliOption.printHelpItem() {
     // Print name and aliases
     StringStream ss;
     if this.isPositional() {

@@ -155,7 +155,7 @@ public p HashTable.upsert(const K& key, const V& value) {
  * @param key The key to look up
  * @return The value associated with the key
  */
-public f<V&> HashTable.get(const K& key) {
+public const f<V&> HashTable.get(const K& key) {
     const unsigned long idx = this.findSlot(key, this.hashKey(key));
     if idx == this.capacity { panic(Error("The provided key was not found")); }
     unsafe {
@@ -204,7 +204,7 @@ public p HashTable.remove(const K& key) {
  * @param key The key to check for
  * @return True if the key is found, false otherwise
  */
-public f<bool> HashTable.contains(const K& key) {
+public const f<bool> HashTable.contains(const K& key) {
     return this.findSlot(key, this.hashKey(key)) != this.capacity;
 }
 
@@ -222,7 +222,7 @@ public inline f<unsigned long> HashTable.getSize() {
  *
  * @return True if empty, false otherwise.
  */
-public inline f<bool> HashTable.isEmpty() {
+public inline const f<bool> HashTable.isEmpty() {
     return this.size == 0l;
 }
 
@@ -253,7 +253,7 @@ public p HashTable.clear() {
  * @param key The key to hash
  * @return Mixed, non-reserved hash of the key
  */
-inline f<Hash> HashTable.hashKey(const K& key) {
+inline const f<Hash> HashTable.hashKey(const K& key) {
     result = hash(key);
     result ^= result >> 33ul;
     result *= 0xff51afd7ed558ccdul;
@@ -268,7 +268,7 @@ inline f<Hash> HashTable.hashKey(const K& key) {
  * @param keyHash Mixed hash of the key, as returned by hashKey()
  * @return Index of the slot holding the key, or this.capacity if the key is not present
  */
-f<unsigned long> HashTable.findSlot(const K& key, Hash keyHash) {
+const f<unsigned long> HashTable.findSlot(const K& key, Hash keyHash) {
     if this.capacity == 0l { return 0l; }
     const unsigned long mask = this.capacity - 1l;
     unsigned long idx = keyHash & mask;

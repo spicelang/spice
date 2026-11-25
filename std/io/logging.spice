@@ -19,7 +19,8 @@ public type LogFile struct {
  * @param onlyToFile If true, messages are only written to the file and not also to the console
  */
 public p LogFile.ctor(const FilePath& filePath, bool onlyToFile = false) {
-    Result<File> fileResult = openFile(filePath.toNativeString(), "a");
+    FilePath nativePath = filePath;
+    Result<File> fileResult = openFile(nativePath.toNativeString(), "a");
     this.fileHandle = fileResult.unwrap();
     this.onlyToFile = onlyToFile;
 }

@@ -117,7 +117,7 @@ public p UnorderedSetIterator.ctor<V>(UnorderedSet<V>& unorderedSet) {
  * @return Current value
  */
 public inline f<const V&> UnorderedSetIterator.get() {
-    const Pair<const V&, bool&> pair = this.htIterator.get();
+    Pair<const V&, bool&> pair = this.htIterator.get();
     return pair.getFirst();
 }
 

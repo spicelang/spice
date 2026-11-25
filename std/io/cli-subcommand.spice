@@ -131,7 +131,7 @@ public f<int> CliSubcommand.parse(unsigned int argc, string[] argv, int layer = 
         }
 
         // Check for subcommands
-        foreach const CliSubcommand& subcommand : this.subcommands {
+        foreach CliSubcommand& subcommand : this.subcommands {
             if this.nameOrAliasMatches(subcommand.getName(), subcommand.aliases, arg) {
                 return subcommand.parse(argc, argv, layer + 1);
             }
@@ -679,7 +679,7 @@ public f<CliOption<bool>&> CliSubcommand.addFlag<StrOrConstStrObjRef, TargetVarO
 /**
  * Print the subcommand's name, aliases and description as a single help entry
  */
-public p CliSubcommand.printHelpItem() {
+public const p CliSubcommand.printHelpItem() {
     // Print name and aliases
     StringStream ss;
     ss << "  " << this.name;

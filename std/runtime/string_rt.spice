@@ -506,7 +506,7 @@ public f<char> operator[](const String& str, unsigned int idx) {
  *
  * @return Raw immutable string
  */
-public inline f<string> String.getRaw() {
+public inline const f<string> String.getRaw() {
     // Return a canonical empty raw string when the buffer is unallocated
     if this.contents == nil<heap char*> { return ""; }
     unsafe {
@@ -519,7 +519,7 @@ public inline f<string> String.getRaw() {
  *
  * @return Current length of the string
  */
-public inline f<unsigned long> String.getLength() {
+public inline const f<unsigned long> String.getLength() {
     return this.length;
 }
 
@@ -535,7 +535,7 @@ public inline f<unsigned long> String.getCapacity() {
 /**
  * Check if the string is empty
  */
-public inline f<bool> String.isEmpty() {
+public inline const f<bool> String.isEmpty() {
     return this.length == 0;
 }
 
@@ -566,7 +566,7 @@ public p String.clear() {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned long startIndex = 0l) {
+public const f<long> String.find(string needle, unsigned long startIndex = 0l) {
     // Return -1 if the startIndex is out of bounds
     if startIndex >= this.length { return -1l; }
 
@@ -596,7 +596,7 @@ public f<long> String.find(string needle, unsigned long startIndex = 0l) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.find(string needle, unsigned int startIndex) {
+public const f<long> String.find(string needle, unsigned int startIndex) {
     return this.find(needle, cast<unsigned long>(startIndex));
 }
 
@@ -606,7 +606,7 @@ public f<long> String.find(string needle, unsigned int startIndex) {
  * @param startIndex Index where to start the search
  * @return Index, where the char was found / -1
  */
-public f<long> String.find(char needle, unsigned long startIndex = 0l) {
+public const f<long> String.find(char needle, unsigned long startIndex = 0l) {
     if startIndex >= this.length { return -1l; }
     unsafe {
         for unsigned long idx = startIndex; idx < this.length; idx++ {
@@ -622,7 +622,7 @@ public f<long> String.find(char needle, unsigned long startIndex = 0l) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
+public const f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
     // Return -1 if the startIndex is out of bounds
     if startIndex >= this.length { return -1l; }
 
@@ -658,7 +658,7 @@ public f<long> String.rfind(string needle, unsigned long startIndex = 0l) {
  * @param startIndex Index where to start the search
  * @return Index, where the substring was found / -1
  */
-public f<long> String.rfind(string needle, unsigned int startIndex) {
+public const f<long> String.rfind(string needle, unsigned int startIndex) {
     return this.rfind(needle, cast<unsigned long>(startIndex));
 }
 
@@ -668,7 +668,7 @@ public f<long> String.rfind(string needle, unsigned int startIndex) {
  * @param startIndex Index where to start the search
  * @return Index, where the char was found / -1
  */
-public f<long> String.rfind(char needle, unsigned long startIndex = 0l) {
+public const f<long> String.rfind(char needle, unsigned long startIndex = 0l) {
     if startIndex >= this.length { return -1l; }
     if startIndex == 0l { startIndex = this.length - 1l; }
     // Count upwards and derive the index from it, since idx is unsigned and would underflow at 0
@@ -687,7 +687,7 @@ public f<long> String.rfind(char needle, unsigned long startIndex = 0l) {
  * @param needle Substring to search for
  * @return Found or not
  */
-public inline f<bool> String.contains(string needle) {
+public inline const f<bool> String.contains(string needle) {
     return this.find(needle) != -1l;
 }
 
@@ -697,7 +697,7 @@ public inline f<bool> String.contains(string needle) {
  * @param prefix Prefix to check for
  * @return Starts with prefix or not
  */
-public f<bool> String.startsWith(string prefix) {
+public const f<bool> String.startsWith(string prefix) {
     const unsigned long prefixLength = getRawLength(prefix);
     if prefixLength > this.length { return false; }
     if prefixLength == 0l { return this.length > 0l; }
@@ -712,7 +712,7 @@ public f<bool> String.startsWith(string prefix) {
  * @param prefix Suffix to check for
  * @return Ends with suffix or not
  */
-public f<bool> String.endsWith(string suffix) {
+public const f<bool> String.endsWith(string suffix) {
     const unsigned long suffixLength = getRawLength(suffix);
     if suffixLength > this.length { return false; }
     if suffixLength == 0l { return this.length > 0l; }
@@ -843,7 +843,7 @@ public f<unsigned long> String.replaceAll(char needle, char replacement) {
  * @param length Length of substring
  * @return Substring
  */
-public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startIdx, long length = -1l) {
+public const f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startIdx, long length = -1l) {
     // Return empty string if the length is 0 or the startIndex is out of bounds
     if length == 0l || startIdx >= this.length {
         return String();
@@ -878,7 +878,7 @@ public f<String> String.getSubstring<IntLongShort>(unsigned IntLongShort startId
  *
  * @return Trimmed string
  */
-public f<String> String.trim() {
+public const f<String> String.trim() {
     if this.length == 0l {
         return String();
     }

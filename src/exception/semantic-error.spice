@@ -174,7 +174,7 @@ public p abortWithSemanticError(const ASTNode* node, const SemanticErrorType err
  *
  * @return Error message
  */
-public f<const String&> SemanticError.getMessage() {
+public const f<const String&> SemanticError.getMessage() {
     return this.errorMessage;
 }
 

@@ -84,7 +84,7 @@ public f<Optional<Match>> Regex.find(const String& input, unsigned long startInd
     const unsigned long length = input.getLength();
     unsigned long pos = startIndex;
     while pos <= length {
-        const Optional<Vector<long>> saved = runProgram(this.program, input, pos);
+        Optional<Vector<long>> saved = runProgram(this.program, input, pos);
         if saved.isPresent() {
             return Optional<Match>(buildMatch(input, saved.get()));
         }
@@ -104,7 +104,7 @@ public f<Vector<Match>> Regex.findAll(const String& input) {
     const unsigned long length = input.getLength();
     unsigned long pos = 0ul;
     while pos <= length {
-        const Optional<Match> m = this.find(input, pos);
+        Optional<Match> m = this.find(input, pos);
         if m.isPresent() {
             const Match& match = m.get();
             matches.pushBack(match);
@@ -125,7 +125,7 @@ public f<Vector<Match>> Regex.findAll(const String& input) {
  * @return `input` with its first match, if any, replaced
  */
 public f<String> Regex.replace(const String& input, const String& replacement) {
-    const Optional<Match> m = this.find(input);
+    Optional<Match> m = this.find(input);
     if m.isPresent() {
         const Match& match = m.get();
         StringStream output;
@@ -152,7 +152,7 @@ public f<String> Regex.replaceAll(const String& input, const String& replacement
     unsigned long pos = 0ul;
     unsigned long segmentEnd = 0ul;
     while pos <= length {
-        const Optional<Match> m = this.find(input, pos);
+        Optional<Match> m = this.find(input, pos);
         if m.isPresent() {
             const Match& match = m.get();
             output << input.getSubstring(segmentEnd, cast<long>(match.startIndex - segmentEnd));
@@ -180,7 +180,7 @@ public f<Vector<String>> Regex.split(const String& input) {
     unsigned long pos = 0ul;
     unsigned long segmentStart = 0ul;
     while pos <= length {
-        const Optional<Match> m = this.find(input, pos);
+        Optional<Match> m = this.find(input, pos);
         if m.isPresent() && m.get().endIndex > m.get().startIndex {
             const Match& match = m.get();
             parts.pushBack(input.getSubstring(segmentStart, cast<long>(match.startIndex - segmentStart)));
@@ -233,7 +233,7 @@ f<String> expandReplacement(const String& replacement, const Match& match) {
                 } else {
                     const long groupIdx = groupNum - 1l;
                     if groupIdx < cast<long>(match.groups.getSize()) {
-                        const Optional<String>& g = match.groups.get(cast<unsigned long>(groupIdx));
+                        Optional<String>& g = match.groups.get(cast<unsigned long>(groupIdx));
                         if g.isPresent() {
                             output << g.get();
                         }

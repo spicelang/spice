@@ -135,7 +135,7 @@ public f<Result<Vector<IpAddress>>> DnsResolver.resolve(const String& host, bool
     String name = String();
     bool isAbsolute = false;
     // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
-    const Result<Vector<IpAddress>> localResult = this.resolveLocally(host, includeIpv4, includeIpv6, name, isAbsolute);
+    Result<Vector<IpAddress>> localResult = this.resolveLocally(host, includeIpv4, includeIpv6, name, isAbsolute);
     if localResult.isErr() { return err<Vector<IpAddress>>(localResult.getErr()); }
     const Vector<IpAddress>& localAddresses = localResult.unwrap();
     if !localAddresses.isEmpty() { return ok(localAddresses); }
@@ -174,7 +174,7 @@ public f<Result<int>> DnsResolver.connectTcp(const String& host, unsigned short 
     String name = String();
     bool isAbsolute = false;
     // Explicit check instead of '!': the compiler would destruct the uninitialized vector on the error path
-    const Result<Vector<IpAddress>> localResult = this.resolveLocally(host, true, true, name, isAbsolute);
+    Result<Vector<IpAddress>> localResult = this.resolveLocally(host, true, true, name, isAbsolute);
     if localResult.isErr() { return err<int>(localResult.getErr()); }
     const Vector<IpAddress>& localAddresses = localResult.unwrap();
     if !localAddresses.isEmpty() { return connectToAny(localAddresses, port); }
@@ -218,7 +218,7 @@ f<Result<Vector<IpAddress>>> DnsResolver.resolveLocally(const String& host, bool
     if name.getLength() > 2l && name[0] == '[' && name[name.getLength() - 1l] == ']' {
         name = name.getSubstring(1l, cast<long>(name.getLength()) - 2l);
     }
-    const Result<IpAddress> literalResult = parseIpAddress(name);
+    Result<IpAddress> literalResult = parseIpAddress(name);
     if literalResult.isOk() {
         const IpAddress literal = literalResult.unwrap();
         if (literal.isIpv4() && includeIpv4) || (literal.isIpv6() && includeIpv6) {
@@ -239,7 +239,7 @@ f<Result<Vector<IpAddress>>> DnsResolver.resolveLocally(const String& host, bool
 
     // Hosts file
     if !this.hostsFilePath.isEmpty() {
-        const Result<String> hostsContent = readFile(this.hostsFilePath.getRaw());
+        Result<String> hostsContent = readFile(this.hostsFilePath.getRaw());
         if hostsContent.isOk() {
             addresses = orderAddresses(lookupHostsFile(hostsContent.unwrap(), name), includeIpv4, includeIpv6);
             if !addresses.isEmpty() { return ok(addresses); }
@@ -265,7 +265,7 @@ f<Result<Vector<IpAddress>>> DnsResolver.resolveLocally(const String& host, bool
  * @return Addresses, none if the name has none of this type
  */
 f<Vector<IpAddress>> DnsResolver.queryAddresses(const String& name, unsigned short recordType, bool& serverFailed) {
-    const Result<DnsResponse> responseResult = this.query(name, recordType);
+    Result<DnsResponse> responseResult = this.query(name, recordType);
     if responseResult.isErr() {
         serverFailed = true;
         return Vector<IpAddress>();
@@ -300,7 +300,7 @@ public f<Result<DnsResponse>> DnsResolver.query(const String& name, unsigned sho
     for unsigned int attempt = 0u; attempt < this.config.attempts; attempt++ {
         foreach const DnsServer& server : this.config.servers {
             const unsigned short id = generateQueryId()!;
-            const Result<Vector<unsigned byte>> queryResult = buildDnsQuery(id, queryName, recordType);
+            Result<Vector<unsigned byte>> queryResult = buildDnsQuery(id, queryName, recordType);
             if queryResult.isErr() { return err<DnsResponse>(queryResult.getErr()); }
             const Vector<unsigned byte> query = queryResult.unwrap();
 
@@ -418,7 +418,7 @@ f<Result<DnsResponse>> DnsResolver.exchangeTcp(const DnsServer& server, const Ve
  * @return DNS configuration
  */
 public f<DnsConfig> loadDnsConfig() {
-    const Result<String> content = readNativeResolverConfig();
+    Result<String> content = readNativeResolverConfig();
     if content.isErr() { return parseResolvConf(String()); }
     return parseResolvConf(content.unwrap());
 }
@@ -441,7 +441,7 @@ public f<DnsConfig> parseResolvConf(const String& content) {
         const String& keyword = tokens[0];
         if keyword == "nameserver" {
             if config.servers.getSize() >= cast<unsigned long>(RESOLV_CONF_MAX_NAMESERVERS) { continue; }
-            const Result<IpAddress> addressResult = parseIpAddress(tokens[1]);
+            Result<IpAddress> addressResult = parseIpAddress(tokens[1]);
             if addressResult.isOk() { config.servers.pushBack(DnsServer{addressResult.unwrap(), DNS_PORT}); }
         } else if keyword == "search" || keyword == "domain" {
             // The last 'search' or 'domain' line wins
@@ -488,7 +488,7 @@ public f<Vector<IpAddress>> lookupHostsFile(const String& content, const String&
     foreach const String& line : lines {
         const Vector<String> tokens = splitWhitespace(stripComment(line));
         if tokens.getSize() < 2ul { continue; }
-        const Result<IpAddress> addressResult = parseIpAddress(tokens[0]);
+        Result<IpAddress> addressResult = parseIpAddress(tokens[0]);
         if addressResult.isErr() { continue; }
         for unsigned long i = 1ul; i < tokens.getSize(); i++ {
             String hostName = toLower(tokens[i]);

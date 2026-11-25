@@ -57,7 +57,7 @@ public p CompilerError.ctor(const CodeLoc& codeLoc, const CompilerErrorType erro
  *
  * @return Error message
  */
-public f<const String&> CompilerError.getMessage() {
+public const f<const String&> CompilerError.getMessage() {
     return this.errorMessage;
 }
 

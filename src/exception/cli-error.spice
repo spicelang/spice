@@ -41,7 +41,7 @@ public p CliError.ctor(const CliErrorType errorType, const string message) {
  *
  * @return Error message
  */
-public f<const String&> CliError.getMessage() {
+public const f<const String&> CliError.getMessage() {
     return this.errorMessage;
 }
 
