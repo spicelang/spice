@@ -14,9 +14,8 @@
 
 f<int> main() {
     int x = compute(1, 2);
-    string s = "Line break \
-inside";  // Aligned after a string with a line break
-    int y = 3;           // Aligned after a string with a line break
+    string s = "Escaped line break \n inside";  // Aligned after a string with an escape sequence
+    int y = 3;           // Aligned after a string with an escape sequence
     if x > 1 {
         x--;
     }

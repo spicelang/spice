@@ -478,13 +478,42 @@ f<Token> Lexer.consumeCharLiteral(const CodeLoc& codeLoc) {
             this.throwCharLiteralError(codeLoc, charStr);
         }
     }
+    const char firstChar = this.reader.getChar();
     this.consumeCodePoint(charStr); // Consume (escaped) character
+    if charStr.getLength() == 2l && charStr[0l] == '\\' {
+        // Consume the digits of hex (\xHH) and octal (\ooo) escape sequences. Their values are checked by the parser
+        if firstChar == 'x' {
+            this.consumeCharLiteralDigits(charStr, 2l, true);
+        } else if isOctDigit(firstChar) {
+            this.consumeCharLiteralDigits(charStr, 2l, false);
+        }
+    }
     // A char literal must contain exactly one character or escape sequence
     if this.reader.getChar() != '\'' {
         this.throwCharLiteralError(codeLoc, charStr);
     }
     this.reader.expect('\''); // Consume '\''
     return Token(TokenType::CHAR_LIT, charStr, codeLoc);
+}
+
+/**
+ * Consume up to the given number of hex or octal digits of an escape sequence in a char literal
+ *
+ * @param charStr Content of the char literal, that was consumed so far
+ * @param maxDigitCount Maximum number of digits to consume
+ * @param hex Consume hex digits or octal digits
+ */
+p Lexer.consumeCharLiteralDigits(String& charStr, unsigned long maxDigitCount, bool hex) {
+    unsigned long digitCount = 0l;
+    while digitCount < maxDigitCount && !this.reader.isEOF() {
+        const char c = this.reader.getChar();
+        if !(hex ? isHexDigit(c) : isOctDigit(c)) {
+            break;
+        }
+        charStr += c;
+        this.reader.advance();
+        digitCount++;
+    }
 }
 
 /**

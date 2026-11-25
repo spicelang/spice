@@ -201,17 +201,14 @@ variable2 = '.';
 ```
 
 ### Literals
-Char literals are noted either as a single character or a single escape sequence, enclosed in single quotes.
-
-They must match the following regular expression:
-```
-'([^'\\\r\n]|\\.)'
-```
+Char literals are noted either as a single character or a single [escape sequence](#escape-sequences), enclosed in single
+quotes.
 
 Examples:
 ```spice
 'c'
 '\n'
+'\x41'
 ```
 
 ## The `string` data type
@@ -236,18 +233,36 @@ variable2 = "Hello World!";
 ```
 
 ### Literals
-String literals are noted as a sequence of character and/or escape sequences, enclosed in double quotes.
-
-They must match the following regular expression:
-```
-"([^"\\\r\n]|\\.)*"
-```
+String literals are noted as a sequence of characters and/or [escape sequences](#escape-sequences), enclosed in double
+quotes. They must be terminated in the same line.
 
 Examples:
 ```spice
 "this is a test"
 "\n\t\r\"' hello"
+"\x1B[1mbold\033[0m"
 ```
+
+## Escape sequences
+Char and string literals support the same escape sequences:
+
+| Escape sequence | Meaning                                                                      |
+|-----------------|------------------------------------------------------------------------------|
+| `\a`            | Bell (`0x07`)                                                                |
+| `\b`            | Backspace (`0x08`)                                                           |
+| `\f`            | Form feed (`0x0C`)                                                           |
+| `\n`            | Line feed (`0x0A`)                                                           |
+| `\r`            | Carriage return (`0x0D`)                                                     |
+| `\t`            | Horizontal tab (`0x09`)                                                      |
+| `\v`            | Vertical tab (`0x0B`)                                                        |
+| `\\`            | Backslash                                                                    |
+| `\?`            | Question mark                                                                |
+| `\'`            | Single quote                                                                 |
+| `\"`            | Double quote                                                                 |
+| `\ooo`          | Octal value with one to three octal digits, up to `\377` (e.g. `\0`, `\033`) |
+| `\xHH`          | Hex value with exactly two hex digits (e.g. `\x1B`)                          |
+
+Any other escape sequence is a compile error. To write a backslash, escape it as `\\`.
 
 ## The `bool` data type
 Booleans are 1-bit integers and can be assigned with the exactly two values: `true` or `false`.

@@ -1,0 +1,32 @@
+f<int> code(char c) {
+    return cast<int>(cast<byte>(c));
+}
+
+p printCodes(const String& s) {
+    for unsigned long i = 0l; i < s.getLength(); i++ {
+        printf("%d ", code(s[i]));
+    }
+    printf("\n");
+}
+
+f<int> main() {
+    // Simple escape sequences in char literals
+    printf("%d %d %d %d %d %d %d\n", code('\a'), code('\b'), code('\f'), code('\n'), code('\r'), code('\t'), code('\v'));
+    printf("%d %d %d %d\n", code('\\'), code('\?'), code('\''), code('\"'));
+    // Octal escape sequences in char literals
+    printf("%d %d %d %d %d\n", code('\0'), code('\7'), code('\41'), code('\033'), code('\377'));
+    // Hex escape sequences in char literals
+    printf("%d %d %d %d\n", code('\x00'), code('\x41'), code('\x1b'), code('\xFF'));
+
+    // Simple escape sequences in string literals
+    printCodes(String("\a\b\f\n\r\t\v"));
+    printCodes(String("\\\?\'\""));
+    // Octal escape sequences in string literals. They end after three digits or at the first non-octal digit
+    printCodes(String("\7\41\033\377"));
+    printCodes(String("\0412\18"));
+    // Hex escape sequences in string literals. They end after two digits
+    printCodes(String("\x41\x1b\xFF"));
+    printCodes(String("\x414"));
+    // Escape sequences between normal chars
+    printf("%s\n", "a\x41\102c\td");
+}
