@@ -52,7 +52,7 @@ _Z3fibi:                                # @_Z3fibi
 	.type	main,@function
 main:                                   # @main
 	.cfi_startproc
-# %bb.0:                                # %for.body.L13
+# %bb.0:                                # %assign.move.end
 	pushq	%rbp
 	.cfi_def_cfa_offset 16
 	pushq	%r15
@@ -102,7 +102,7 @@ main:                                   # @main
 	movl	$1, %ebx
 	testb	%al, %al
 	jne	.LBB1_17
-# %bb.1:                                # %for.head.L13
+# %bb.1:                                # %assign.move.end.1
 	leaq	144(%rsp), %r14
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
@@ -125,7 +125,7 @@ main:                                   # @main
 	callq	_ZN6ResultIbE5isErrEv@PLT
 	testb	%al, %al
 	jne	.LBB1_17
-# %bb.2:                                # %for.head.L13.1
+# %bb.2:                                # %assign.move.end.2
 	leaq	192(%rsp), %r15
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
@@ -148,7 +148,7 @@ main:                                   # @main
 	callq	_ZN6ResultIbE5isErrEv@PLT
 	testb	%al, %al
 	jne	.LBB1_17
-# %bb.3:                                # %for.head.L13.2
+# %bb.3:                                # %assign.move.end.3
 	leaq	240(%rsp), %r12
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
@@ -171,7 +171,7 @@ main:                                   # @main
 	callq	_ZN6ResultIbE5isErrEv@PLT
 	testb	%al, %al
 	jne	.LBB1_17
-# %bb.4:                                # %for.head.L13.3
+# %bb.4:                                # %assign.move.end.4
 	leaq	288(%rsp), %r13
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
@@ -194,7 +194,7 @@ main:                                   # @main
 	callq	_ZN6ResultIbE5isErrEv@PLT
 	testb	%al, %al
 	jne	.LBB1_17
-# %bb.5:                                # %for.head.L13.4
+# %bb.5:                                # %assign.move.end.5
 	leaq	336(%rsp), %r13
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
@@ -217,7 +217,7 @@ main:                                   # @main
 	callq	_ZN6ResultIbE5isErrEv@PLT
 	testb	%al, %al
 	jne	.LBB1_17
-# %bb.6:                                # %for.head.L13.5
+# %bb.6:                                # %assign.move.end.6
 	leaq	384(%rsp), %r13
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
@@ -240,7 +240,7 @@ main:                                   # @main
 	callq	_ZN6ResultIbE5isErrEv@PLT
 	testb	%al, %al
 	jne	.LBB1_17
-# %bb.7:                                # %for.head.L13.6
+# %bb.7:                                # %assign.move.end.7
 	leaq	432(%rsp), %r13
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi

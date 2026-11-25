@@ -13,6 +13,8 @@ copied owner: src
 == result
 dtor: result-first
 reassigned: result-second
+dtor: src
+dtor: item-third
 == end
 dtor: result-second
 dtor: src

@@ -51,5 +51,10 @@ f<int> main() {
     printf("== result\n");
     Holder reassigned = reassignResult();
     printf("reassigned: %s\n", reassigned.s);
+    // Arrays of structs do not destruct their items at the end of their scope yet, so destruct them by hand
+    unsafe {
+        items[0].dtor();
+        items[1].dtor();
+    }
     printf("== end\n");
 }
