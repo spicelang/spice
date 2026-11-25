@@ -1,6 +1,6 @@
 // A ternary with an operand, that is moved with move(), only moves from that operand. Next to a temporary, the moved operand
 // is move constructed into the result. Next to a named value, it is treated like a reference to its value, so the result is
-// copied from the selected operand. The result is an rvalue reference only if both operands are moved.
+// copied from the selected operand. The result is an RValue reference only if both operands are moved.
 
 type Box struct {
     heap int* data

@@ -1,6 +1,6 @@
-// A user-defined move ctor takes an rvalue reference to the same struct type.
+// A user-defined move ctor takes an RValue reference to the same struct type.
 // It transfers state from the source to the destination, and conventionally
-// leaves the source in a valid-but-empty state. Only rvalues bind to the move
+// leaves the source in a valid-but-empty state. Only RValues bind to the move
 // ctor: temporaries and values, that are moved explicitly with move().
 
 type Buffer struct {
@@ -44,7 +44,7 @@ f<int> main() {
     printf("b: value=%d valid=%d\n", b.value, b.valid);
     printf("a after copy: value=%d valid=%d\n", a.value, a.valid);
 
-    // Move: move() turns b into an rvalue, move ctor is selected
+    // Move: move() turns b into an RValue, move ctor is selected
     Buffer c = Buffer(move(b));
     printf("c: value=%d valid=%d\n", c.value, c.valid);
     printf("b after move: value=%d valid=%d\n", b.value, b.valid);

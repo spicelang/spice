@@ -1,5 +1,5 @@
-// Rvalues (temporaries and values, that are moved with move()) bind to rvalue references ('T&&'), lvalues do not. A value,
-// that is initialized with an rvalue reference, is move constructed.
+// RValues (temporaries and values, that are moved with move()) bind to RValue references ('T&&'), LValues do not. A value,
+// that is initialized with an RValue reference, is move constructed.
 
 type T dyn;
 
@@ -27,13 +27,13 @@ p takeByValue(Counter c) {
     printf("by value: copies=%d moves=%d\n", c.copies, c.moves);
 }
 
-p takeRvalue(Counter&& c) {
-    printf("rvalue ref: copies=%d moves=%d\n", c.copies, c.moves);
-    // A named rvalue reference is an lvalue, so this copies
+p takeRValue(Counter&& c) {
+    printf("RValue ref: copies=%d moves=%d\n", c.copies, c.moves);
+    // A named RValue reference is an LValue, so this copies
     Counter copy = c;
-    printf("copy of named rvalue ref: copies=%d moves=%d\n", copy.copies, copy.moves);
+    printf("copy of named RValue ref: copies=%d moves=%d\n", copy.copies, copy.moves);
     Counter moved = move(c);
-    printf("move of named rvalue ref: copies=%d moves=%d\n", moved.copies, moved.moves);
+    printf("move of named RValue ref: copies=%d moves=%d\n", moved.copies, moved.moves);
 }
 
 p overloaded(const Counter& _) {
@@ -69,8 +69,8 @@ f<int> main() {
     Counter c;
     takeByValue(c);
     takeByValue(move(c));
-    takeRvalue(Counter());
-    takeRvalue(move(c));
+    takeRValue(Counter());
+    takeRValue(move(c));
     overloaded(c);
     overloaded(Counter());
     overloaded(move(c));

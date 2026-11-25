@@ -1,11 +1,11 @@
 by value: copies=1 moves=0
 by value: copies=0 moves=1
-rvalue ref: copies=0 moves=0
-copy of named rvalue ref: copies=1 moves=0
-move of named rvalue ref: copies=0 moves=1
-rvalue ref: copies=0 moves=0
-copy of named rvalue ref: copies=1 moves=0
-move of named rvalue ref: copies=0 moves=1
+RValue ref: copies=0 moves=0
+copy of named RValue ref: copies=1 moves=0
+move of named RValue ref: copies=0 moves=1
+RValue ref: copies=0 moves=0
+copy of named RValue ref: copies=1 moves=0
+move of named RValue ref: copies=0 moves=1
 overloaded: const Counter&
 overloaded: Counter&&
 overloaded: Counter&&

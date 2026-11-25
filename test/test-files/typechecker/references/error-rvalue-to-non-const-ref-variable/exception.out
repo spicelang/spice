@@ -1,5 +1,5 @@
 [Error|Semantic] ./source.spice:20:5:
-Temporary bound to non-const reference: Rvalues can only be bound to const reference variables/fields
+Temporary bound to non-const reference: RValues can only be bound to const reference variables/fields
 
 20  Test& r = move(t);
     ^^^^^^^^^^^^^^^^^

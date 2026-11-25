@@ -1,4 +1,4 @@
-// Rvalue reference params are passed as the address of the bound value, like lvalue reference params. Their mangled names
+// RValue reference params are passed as the address of the bound value, like LValue reference params. Their mangled names
 // use 'O' instead of 'R'.
 
 type Test struct {

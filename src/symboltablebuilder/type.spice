@@ -246,12 +246,12 @@ public const f<bool> Type.isRef() {
 }
 
 /**
- * Check if the current type is an rvalue reference type ('T&&')
+ * Check if the current type is an RValue reference type ('T&&')
  *
- * @return Rvalue reference type or not
+ * @return RValue reference type or not
  */
-public const f<bool> Type.isRvalueRef() {
-    return this.isRef() && this.typeChain.back().data.isRvalueRef;
+public const f<bool> Type.isRValueRef() {
+    return this.isRef() && this.typeChain.back().data.isRValueRef;
 }
 
 /**
@@ -385,17 +385,17 @@ public const f<const Type*> Type.toPtr(const ASTNode* node) {
  * Get the reference type of the current type as a new type
  *
  * @param node AST node for error messages
- * @param isRvalueRef Create an rvalue reference ('T&&') instead of an lvalue reference ('T&')
+ * @param isRValueRef Create an RValue reference ('T&&') instead of an LValue reference ('T&')
  * @return Reference type of the current type
  */
-public const f<const Type*> Type.toRef(const ASTNode* node, bool isRvalueRef = false) {
+public const f<const Type*> Type.toRef(const ASTNode* node, bool isRValueRef = false) {
     if this.is(SuperType::TY_DYN) { abortWithSemanticError(node, SemanticErrorType::DYN_REFERENCES_NOT_ALLOWED, "Just use the dyn type without '&' instead"); }
     if this.isRef() { abortWithSemanticError(node, SemanticErrorType::MULTI_REF_NOT_ALLOWED, "References to references are not allowed"); }
 
     // Create new type chain
     TypeChain newTypeChain = this.typeChain;
     TypeChainElementData data;
-    data.isRvalueRef = isRvalueRef;
+    data.isRValueRef = isRValueRef;
     newTypeChain.pushBack(TypeChainElement(SuperType::TY_REF, data));
 
     // Register new type or return if already registered

@@ -356,12 +356,12 @@ public const f<bool> QualType.isRef() {
 }
 
 /**
- * Check if the underlying type is an rvalue reference ('T&&')
+ * Check if the underlying type is an RValue reference ('T&&')
  *
- * @return Rvalue reference or not
+ * @return RValue reference or not
  */
-public const f<bool> QualType.isRvalueRef() {
-    return this.rawType.isRvalueRef();
+public const f<bool> QualType.isRValueRef() {
+    return this.rawType.isRValueRef();
 }
 
 /**
@@ -632,31 +632,31 @@ public f<bool> QualType.doesImplement(const QualType& implementedInterfaceType, 
 }
 
 /**
- * Check if a certain input type can be bound (assigned) to the current type. An rvalue (a temporary or the result of move())
- * can only be bound to a const reference or an rvalue reference ('T&&'). An lvalue cannot be bound to an rvalue reference.
+ * Check if a certain input type can be bound (assigned) to the current type. An RValue (a temporary or the result of move())
+ * can only be bound to a const reference or an RValue reference ('T&&'). An LValue cannot be bound to an RValue reference.
  *
  * @param inputType Qualified type, which should be bound to the current type
  * @param isTemporary Is the input type a temporary type
  * @return Can be bound or not
  */
 public f<bool> QualType.canBind(const QualType& inputType, bool isTemporary) {
-    const bool isRvalue = isRvalueArg(inputType, isTemporary);
-    if this.isRvalueRef() {
-        return isRvalue;
+    const bool isRValue = isRValueArg(inputType, isTemporary);
+    if this.isRValueRef() {
+        return isRValue;
     }
-    return !isRvalue || !this.isRef() || this.isConstRef();
+    return !isRValue || !this.isRef() || this.isConstRef();
 }
 
 /**
- * Check if a value with the given type is an rvalue: a temporary, that is no reference (e.g. a literal, a struct instantiation
- * or the result of a function call, that returns a value), or the result of move(), which has an rvalue reference type
+ * Check if a value with the given type is an RValue: a temporary, that is no reference (e.g. a literal, a struct instantiation
+ * or the result of a function call, that returns a value), or the result of move(), which has an RValue reference type
  *
  * @param valueType Qualified type of the value
  * @param isTemporary Whether the value is a temporary
- * @return Rvalue or not
+ * @return RValue or not
  */
-public f<bool> isRvalueArg(const QualType& valueType, bool isTemporary) {
-    return valueType.isRvalueRef() || (isTemporary && !valueType.isRef());
+public f<bool> isRValueArg(const QualType& valueType, bool isTemporary) {
+    return valueType.isRValueRef() || (isTemporary && !valueType.isRef());
 }
 
 /**
@@ -935,26 +935,26 @@ public f<QualType> QualType.toRef(const ASTNode* node) {
 }
 
 /**
- * Retrieve the rvalue reference type ('T&&') to this type
+ * Retrieve the RValue reference type ('T&&') to this type
  *
  * @param node ASTNode
  * @return New type
  */
-public f<QualType> QualType.toRvalueRef(const ASTNode* node) {
+public f<QualType> QualType.toRValueRef(const ASTNode* node) {
     QualType newType = *this;
     newType.rawType = this.rawType.toRef(node, true);
     return newType;
 }
 
 /**
- * Turn an rvalue reference ('T&&') into an lvalue reference ('T&') with the same qualifiers. Other types stay unchanged.
- * This is the type, that a named rvalue reference has, when it is used: it refers to an object, that has a name.
+ * Turn an RValue reference ('T&&') into an LValue reference ('T&') with the same qualifiers. Other types stay unchanged.
+ * This is the type, that a named RValue reference has, when it is used: it refers to an object, that has a name.
  *
  * @param node ASTNode
  * @return New type
  */
-public f<QualType> QualType.toLvalueRef(const ASTNode* node) {
-    if !this.isRvalueRef() {
+public f<QualType> QualType.toLValueRef(const ASTNode* node) {
+    if !this.isRValueRef() {
         return *this;
     }
     QualType newType = *this;

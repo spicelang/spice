@@ -137,7 +137,7 @@ len(stringArray); // 5
 ```
 
 ## The `move` builtin
-Move turns a value into an rvalue, so that it binds to [rvalue reference](references.md#rvalue-references) parameters, e.g.
+Move turns a value into an RValue, so that it binds to [RValue reference](references.md#rvalue-references) parameters, e.g.
 of a [move constructor](constructors-destructors.md#move-constructors) or a move assign operator. A value, that is
 initialized with the result, is move constructed. `move` itself does not move anything, the moved-from value stays valid
 and gets destructed as usual.

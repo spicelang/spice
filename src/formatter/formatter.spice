@@ -997,7 +997,7 @@ f<bool> isGenericClose(const FmtToken& token) {
 }
 
 /**
- * Check if the given token is a type modifier: a pointer, a reference, an rvalue reference or an array
+ * Check if the given token is a type modifier: a pointer, a reference, an RValue reference or an array
  *
  * @param token Token to check
  * @return Type modifier or not

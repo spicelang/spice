@@ -116,9 +116,9 @@ If no copy constructor is defined, Spice generates a default one that copies eac
 
 ## Move constructors
 
-A *move constructor* takes an [rvalue reference](references.md#rvalue-references) `T&&` to an instance of the same type.
+A *move constructor* takes an [RValue reference](references.md#rvalue-references) `T&&` to an instance of the same type.
 It transfers the contents of the source to the new instance instead of copying them, and leaves the source in a valid,
-but empty state. The source is still destructed as usual afterwards. Only rvalues bind to the move constructor:
+but empty state. The source is still destructed as usual afterwards. Only RValues bind to the move constructor:
 temporaries and values, that are moved explicitly with the [`move` builtin](builtins.md#the-move-builtin). Values with a
 name are copied, so they are never emptied by accident:
 
@@ -158,8 +158,8 @@ Spice generates a default move constructor. It moves each field and nulls the ow
 
 ### Move assign operators
 
-The [assign operator](operator-overloading.md) can be overloaded for rvalues the same way, to take over the contents of
-the rvalue instead of copying them:
+The [assign operator](operator-overloading.md) can be overloaded for RValues the same way, to take over the contents of
+the RValue instead of copying them:
 
 ```spice
 type Buffer struct {

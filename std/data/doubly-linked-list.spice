@@ -48,8 +48,8 @@ public p DoublyLinkedList.ctor(const DoublyLinkedList<T>& other) {
     }
 }
 
-// The stage0 compiler, which builds the compiler and checks the formatting of the std, does not support rvalue references
-// yet. Re-enable the move ctor, once it does. Until then, rvalues are copied.
+// The stage0 compiler, which builds the compiler and checks the formatting of the std, does not support RValue references
+// yet. Re-enable the move ctor, once it does. Until then, RValues are copied.
 // /**
 //  * Move-constructs a new list, taking ownership of another list's nodes
 //  *

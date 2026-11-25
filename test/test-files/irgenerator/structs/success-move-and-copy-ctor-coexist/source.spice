@@ -1,6 +1,6 @@
 // When both a user-defined copy ctor and a user-defined move ctor exist, the
-// compiler picks the move ctor for rvalue arguments (temporaries and values,
-// that are moved explicitly with move()) and the copy ctor for lvalues.
+// compiler picks the move ctor for RValue arguments (temporaries and values,
+// that are moved explicitly with move()) and the copy ctor for LValues.
 
 type Counter struct {
     int copies
@@ -26,9 +26,9 @@ f<int> main() {
     Counter c;
     printf("initial: copies=%d moves=%d\n", c.copies, c.moves);
 
-    // Non-const lvalue -> only the copy ctor matches (the move ctor requires an rvalue)
+    // Non-const LValue -> only the copy ctor matches (the move ctor requires an RValue)
     Counter c1 = Counter(c);
-    printf("lvalue:      copies=%d moves=%d\n", c1.copies, c1.moves);
+    printf("LValue:      copies=%d moves=%d\n", c1.copies, c1.moves);
 
     // move() -> move ctor preferred (less constification needed)
     Counter c2 = Counter(move(c));

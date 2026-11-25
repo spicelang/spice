@@ -1,6 +1,6 @@
 // A struct that defines only a move ctor (in addition to a no-args ctor) and
 // no copy ctor. Verifies that the move ctor is recognized and selected when
-// the argument is an rvalue. The struct has no heap fields and the only
+// the argument is an RValue. The struct has no heap fields and the only
 // struct-field-with-ctor is itself, so no copy ctor is auto-generated.
 
 type Resource struct {

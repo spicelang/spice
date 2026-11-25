@@ -509,9 +509,9 @@ public f<Function*> matchFunction(Scope* matchScope, const String& reqName, cons
             if bindingRejection == BindingRejection::TEMPORARY_TO_NON_CONST_REF {
                 throwSemanticError(callNode, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Temporary values can only be bound to const reference parameters"));
             } else if bindingRejection == BindingRejection::MOVED_VALUE_TO_NON_CONST_REF {
-                throwSemanticError(callNode, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("Rvalues can only be bound to const or rvalue reference parameters"));
+                throwSemanticError(callNode, SemanticErrorType::TEMP_TO_NON_CONST_REF, String("RValues can only be bound to const or RValue reference parameters"));
             } else if bindingRejection == BindingRejection::LVALUE_TO_RVALUE_REF {
-                throwSemanticError(callNode, SemanticErrorType::LVALUE_TO_RVALUE_REF, String("Lvalues cannot be bound to rvalue reference parameters. Use move() to move from them"));
+                throwSemanticError(callNode, SemanticErrorType::LVALUE_TO_RVALUE_REF, String("LValues cannot be bound to RValue reference parameters. Use move() to move from them"));
             }
         }
         cache.noMatchCache.upsert(cacheKey, cache.registryVersion);
@@ -630,7 +630,7 @@ f<bool> matchThisType(Function& candidate, const QualType& reqThisType, TypeMapp
 
 /**
  * Checks if the matching candidate fulfills the argument types requirement. A candidate, whose only mismatch is an argument,
- * that cannot be bound to its reference param (a temporary to a non-const ref or an lvalue to an rvalue ref), does not match,
+ * that cannot be bound to its reference param (a temporary to a non-const ref or an LValue to an RValue ref), does not match,
  * but is reported via bindingRejection.
  */
 f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& typeMapping, bool strictQualifierMatching, bool& needsSubstantiation, BindingRejection& bindingRejection, const ASTNode* callNode) {
@@ -671,12 +671,12 @@ f<bool> matchArgTypes(Function& candidate, const ArgList& reqArgs, TypeMapping& 
             substantiateTypeWithTypeMapping(candidateType, typeMapping, callNode);
         }
 
-        // Check if we try to bind an rvalue to a non-const ref param or an lvalue to an rvalue ref param. This only rules out this
+        // Check if we try to bind an RValue to a non-const ref param or an LValue to an RValue ref param. This only rules out this
         // candidate, because another overload may accept the argument, e.g. the copy ctor next to the move ctor
         if !candidateType.canBind(requestedType, isArgTemporary) {
-            if candidateType.isRvalueRef() {
+            if candidateType.isRValueRef() {
                 unbindableArg = BindingRejection::LVALUE_TO_RVALUE_REF;
-            } else if requestedType.isRvalueRef() {
+            } else if requestedType.isRValueRef() {
                 unbindableArg = BindingRejection::MOVED_VALUE_TO_NON_CONST_REF;
             } else {
                 unbindableArg = BindingRejection::TEMPORARY_TO_NON_CONST_REF;
@@ -711,10 +711,10 @@ public p substantiateReturnType(Function& candidate, const TypeMapping& typeMapp
 
 /**
  * Narrow a multi-match overload set by preferring the candidate whose parameter qualifiers most closely match
- * the argument qualifiers. E.g. both a `const T&` and a `T&` overload match a non-const lvalue argument - we
+ * the argument qualifiers. E.g. both a `const T&` and a `T&` overload match a non-const LValue argument - we
  * prefer the non-const-ref candidate since it requires no constification. In the same way, the `T&&` overload
- * (e.g. the move ctor) is preferred over the `const T&` overload (e.g. the copy ctor) for an rvalue argument,
- * while it does not match an lvalue argument at all. When the argument is const, we prefer the const-ref
+ * (e.g. the move ctor) is preferred over the `const T&` overload (e.g. the copy ctor) for an RValue argument,
+ * while it does not match an LValue argument at all. When the argument is const, we prefer the const-ref
  * candidate since binding to a non-const ref would require const-loss. As a secondary criterion, an explicitly
  * declared (non-generic) overload is preferred over a generic substitution that matches equally well.
  *
@@ -813,8 +813,8 @@ f<int> scoreSpecificity(const Function& fct, const ArgList& reqArgs, int constif
         } else if !paramIsConst && argIsConst {
             penalty += constLossPenalty;
         }
-        // An rvalue prefers an rvalue reference param over an lvalue reference param (e.g. 'const T&&' over 'const T&')
-        if isRvalueArg(argType, arg.getSecond()) && paramType.isRef() && !paramType.isRvalueRef() {
+        // An RValue prefers an RValue reference param over an LValue reference param (e.g. 'const T&&' over 'const T&')
+        if isRValueArg(argType, arg.getSecond()) && paramType.isRef() && !paramType.isRValueRef() {
             penalty += constifyPenalty;
         }
         // Penalize matches that were only possible through an implicit upcast
@@ -836,7 +836,7 @@ type CtorKind enum {
 }
 
 /**
- * Checks if the given function takes exactly one parameter, which is an lvalue or rvalue reference to its own 'this' type
+ * Checks if the given function takes exactly one parameter, which is an LValue or RValue reference to its own 'this' type
  */
 f<bool> hasSingleSelfRefParam(const Function& function) {
     if function.paramList.getSize() != 1l {
@@ -860,7 +860,7 @@ f<bool> isCopyCtorSignature(const Function& function) {
         return false;
     }
     const QualType& paramType = function.paramList.get(0ul).qualType;
-    return paramType.isConstRef() && !paramType.isRvalueRef();
+    return paramType.isConstRef() && !paramType.isRValueRef();
 }
 
 /**
@@ -871,7 +871,7 @@ f<bool> isMoveCtorSignature(const Function& function) {
         return false;
     }
     const QualType& paramType = function.paramList.get(0ul).qualType;
-    return paramType.isRvalueRef() && !paramType.isConstRef();
+    return paramType.isRValueRef() && !paramType.isConstRef();
 }
 
 f<bool> hasCtor(Scope* matchScope, CtorKind kind) {

@@ -1,5 +1,5 @@
 [Error|Semantic] ./source.spice:24:5:
-Lvalue bound to rvalue reference: Lvalues cannot be bound to rvalue reference parameters. Use move() to move from them
+LValue bound to RValue reference: LValues cannot be bound to RValue reference parameters. Use move() to move from them
 
 24  consume(t);
     ^^^^^^^^^^

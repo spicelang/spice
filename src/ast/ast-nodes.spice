@@ -1835,7 +1835,7 @@ public type ASTAssignExprNode struct : IVisitable {
     public AssignOp op = AssignOp::OP_NONE
     public Vector<Vector<const Function*>> opFct // Operator overloading functions
     public Vector<const Function*> lhsDtorFct // Dtor of the lhs, if it gets overwritten
-    public Vector<const Function*> rhsMoveCtor // Ctor, that moves an rvalue reference rhs (the result of move()) into the lhs
+    public Vector<const Function*> rhsMoveCtor // Ctor, that moves an RValue reference rhs (the result of move()) into the lhs
 }
 
 public p ASTAssignExprNode.ctor(CodeLoc codeLoc) {

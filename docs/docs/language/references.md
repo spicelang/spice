@@ -54,15 +54,15 @@ f<int> main() {
 Array parameters are no copies, but refer to the array of the caller (see [arrays](arrays.md#arrays-as-parameters)), so
 returning a reference to one of their items is allowed.
 
-## Rvalue references
+## RValue references
 
-Values are either *lvalues* or *rvalues*. An lvalue is a value with a name, that can still be used afterwards, e.g. a
-variable, a field or the result of a function, that returns a reference. An rvalue is a value, that nothing can refer to
+Values are either *LValues* or *RValues*. An LValue is a value with a name, that can still be used afterwards, e.g. a
+variable, a field or the result of a function, that returns a reference. An RValue is a value, that nothing can refer to
 afterwards: a temporary like a literal, a struct instantiation or the result of a function, that returns a value, or a
 value, that is moved explicitly with the [`move` builtin](builtins.md#the-move-builtin).
 
-A parameter of the type `T&&` is an *rvalue reference*. It only binds rvalues, while a non-const reference `T&` only
-binds lvalues. A const reference `const T&` binds both. If both a `const T&` and a `T&&` overload exist, rvalues pick the
+A parameter of the type `T&&` is an *RValue reference*. It only binds RValues, while a non-const reference `T&` only
+binds LValues. A const reference `const T&` binds both. If both a `const T&` and a `T&&` overload exist, RValues pick the
 `T&&` overload. This is how [move constructors](constructors-destructors.md#move-constructors) and move assign operators
 are told apart from copy constructors and copy assign operators:
 
@@ -72,28 +72,28 @@ type Buffer struct {
 }
 
 p printKind(const Buffer& _) {
-    printf("lvalue\n");
+    printf("LValue\n");
 }
 
 p printKind(Buffer&& _) {
-    printf("rvalue\n");
+    printf("RValue\n");
 }
 
 f<int> main() {
     Buffer buffer;
-    printKind(buffer);       // Prints "lvalue"
-    printKind(Buffer{42});   // Prints "rvalue"
-    printKind(move(buffer)); // Prints "rvalue"
+    printKind(buffer);       // Prints "LValue"
+    printKind(Buffer{42});   // Prints "RValue"
+    printKind(move(buffer)); // Prints "RValue"
 }
 ```
 
-Within the function, an rvalue reference parameter has a name, so it is an lvalue there. Passing it on to another
+Within the function, an RValue reference parameter has a name, so it is an LValue there. Passing it on to another
 function, that takes a `T&&`, requires another `move()`.
 
-Rvalue references are only allowed as parameter types. Local variables, fields and return types can not be rvalue
+RValue references are only allowed as parameter types. Local variables, fields and return types can not be RValue
 references:
 
-<!-- doc-test: expect-error Rvalue references are only allowed as parameter types -->
+<!-- doc-test: expect-error RValue references are only allowed as parameter types -->
 ```spice
 type Buffer struct {
     int size

@@ -1,5 +1,5 @@
 // The result of move() is moved into struct literal fields, fields that are initialized in a ctor, ternary results and the
-// value fields of generic structs. Rvalue reference params also work for lambdas and interface methods.
+// value fields of generic structs. RValue reference params also work for lambdas and interface methods.
 
 type T dyn;
 

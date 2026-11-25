@@ -20,7 +20,7 @@ p consume(Test&& test) {
 }
 
 p forward(Test&& test) {
-    // A named rvalue reference is an lvalue, so it has to be moved again to bind to an rvalue reference
+    // A named RValue reference is an LValue, so it has to be moved again to bind to an RValue reference
     consume(test);
 }
 

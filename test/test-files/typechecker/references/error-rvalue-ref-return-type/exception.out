@@ -2,7 +2,7 @@
 Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
 
 [Error|Semantic] ./source.spice:5:3:
-Rvalue reference not allowed: Rvalue references are only allowed as parameter types
+RValue reference not allowed: RValue references are only allowed as parameter types
 
 5  f<Test&&> getTest(Test& test
      ^^^^^^

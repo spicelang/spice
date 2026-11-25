@@ -1095,7 +1095,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
             const llvm::Type rhsType = rhsSTypeNonRef.toLLVMType(this.sourceFile);
             this.generateShallowCopy(rhsAddress, rhsType, lhsAddress);
         } else {
-            // An rvalue reference (the result of move()) is moved by the ctor, that the type checker resolved. Otherwise, check if
+            // An RValue reference (the result of move()) is moved by the ctor, that the type checker resolved. Otherwise, check if
             // we have a copy ctor
             const model::Function* copyCtor = this.getRhsMoveCtor(node);
             if copyCtor == nil<const model::Function*> {
@@ -1192,7 +1192,7 @@ f<const model::Function*> IRGenerator.getLhsDtorFct(ASTNode* node) {
     return assignNode.lhsDtorFct.get(this.manIdx);
 }
 
-// Ctor, that moves the rvalue reference rhs (the result of move()) of an assignment into the lhs, or nil if there is none
+// Ctor, that moves the RValue reference rhs (the result of move()) of an assignment into the lhs, or nil if there is none
 f<const model::Function*> IRGenerator.getRhsMoveCtor(ASTNode* node) {
     if node.kind != ASTNodeKind::ASSIGN_EXPR {
         return nil<const model::Function*>;
@@ -4420,9 +4420,9 @@ public f<Any> IRGenerator.visitConstant(ASTConstantNode* node) {
 
 // Check if an argument of the given type matches the expected parameter type
 f<bool> matchArgType(const QualType& origExpectedTy, const QualType& origActualTy) {
-    // Lvalue and rvalue references are passed the same way: as the address of the referenced value
-    const QualType expectedRefTy = origExpectedTy.toLvalueRef(nil<ASTNode*>);
-    const QualType actualRefTy = origActualTy.toLvalueRef(nil<ASTNode*>);
+    // LValue and RValue references are passed the same way: as the address of the referenced value
+    const QualType expectedRefTy = origExpectedTy.toLValueRef(nil<ASTNode*>);
+    const QualType actualRefTy = origActualTy.toLValueRef(nil<ASTNode*>);
     if expectedRefTy.matches(actualRefTy, false, true, true) {
         return true;
     }
