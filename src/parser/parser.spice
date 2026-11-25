@@ -276,10 +276,18 @@ inline f<bool> Parser.isNegativeNumericConstantAhead() {
 // Accounts for SHL ('<<') and SHR ('>>') tokens which open/close two levels at once.
 f<long> Parser.matchAngleGroup(long offset) {
     long depth = 0l;
+    long parenDepth = 0l;
     while true {
         const TokenType tokenType = this.tokenAt(cast<unsigned long>(offset));
-        if !this.isTypeLstToken(tokenType) {
+        // An rvalue reference ('&&') can only be part of a type list within the param types of a function type, e.g. 'p(int&&)'.
+        // Elsewhere, it is a logical and, e.g. in 'a < b && c > d'
+        const bool isRvalueRefInParamTypes = tokenType == TokenType::LOGICAL_AND && parenDepth > 0l;
+        if !this.isTypeLstToken(tokenType) && !isRvalueRefInParamTypes {
             return -1l; // This token can not be part of a type list, so this is no generic type list
+        } else if tokenType == TokenType::LPAREN {
+            parenDepth++;
+        } else if tokenType == TokenType::RPAREN {
+            parenDepth--;
         } else if tokenType == TokenType::LESS {
             depth++;
         } else if tokenType == TokenType::SHL {

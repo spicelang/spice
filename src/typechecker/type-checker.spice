@@ -3659,6 +3659,16 @@ f<const SymbolTableEntry*> TypeChecker.getReferencedLocal(ASTNode* node) {
         if atomicExpr.assignExpr != nil<IVisitable*> {
             return this.getReferencedLocal(getASTNode(atomicExpr.assignExpr));
         }
+        // The result of move() refers to its argument
+        if atomicExpr.value != nil<IVisitable*> {
+            ASTValueNode* valueNode = downcast<ASTValueNode>(getASTNode(atomicExpr.value));
+            if valueNode.fctCall != nil<IVisitable*> {
+                ASTFctCallNode* fctCall = downcast<ASTFctCallNode>(getASTNode(valueNode.fctCall));
+                if !fctCall.isExprBasedCall() && fctCall.fqFunctionName == BUILTIN_FCT_NAME_MOVE {
+                    return this.getReferencedLocal(getASTNode(fctCall.argLst.args.front()));
+                }
+            }
+        }
         // Constants and values (e.g. function calls) are no variables
         if atomicExpr.fqIdentifier.isEmpty() {
             return nil<const SymbolTableEntry*>;
@@ -3952,15 +3962,26 @@ public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
     }
     const ExprResult trueExpr = trueBranch.getFirst();
     Scope* trueScope = trueBranch.getSecond();
-    const QualType trueType = trueExpr.ty;
+    QualType trueType = trueExpr.ty;
     SymbolTableEntry* trueEntry = trueExpr.entry;
     if trueType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
     Pair<ExprResult, Scope*> falseBranch = this.visitTernaryBranch(node.falseExpr);
     const ExprResult falseExpr = falseBranch.getFirst();
     Scope* falseScope = falseBranch.getSecond();
-    const QualType falseType = falseExpr.ty;
+    QualType falseType = falseExpr.ty;
     SymbolTableEntry* falseEntry = falseExpr.entry;
     if falseType.is(SuperType::TY_UNRESOLVED) { return unresolvedER(); }
+
+    // An rvalue reference operand (the result of move()) refers to a value, that has a name. Next to an lvalue, it is treated like
+    // a reference to that value, so that the result never moves from the lvalue. Next to another rvalue, it stays an rvalue
+    const bool trueIsMoved = trueType.isRvalueRef();
+    const bool falseIsMoved = falseType.isRvalueRef();
+    const bool trueIsLvalue = !isRvalueArg(trueType, trueExpr.isTemporary());
+    const bool falseIsLvalue = !isRvalueArg(falseType, falseExpr.isTemporary());
+    if (trueIsMoved && falseIsLvalue) || (falseIsMoved && trueIsLvalue) {
+        trueType = trueType.toLvalueRef(baseNode);
+        falseType = falseType.toLvalueRef(baseNode);
+    }
 
     // Check if the condition evaluates to bool
     if !condition.ty.removeReferenceWrapper().is(SuperType::TY_BOOL) {
@@ -4007,6 +4028,8 @@ public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
     // since the result takes over the ownership of any destructible object.
     // The symbol lives in the scope of its branch, or in the current scope if the branch has no scope of its own.
     bool removedAnonymousSymbols = false;
+    // A reference without an entry (e.g. the result of move() or of a function, that returns a reference) refers to a value,
+    // that is owned elsewhere. So a result, that is no reference, has to get a copy of it as well
     if trueEntry != nil<SymbolTableEntry*> {
         if trueIsTemporary {
             Scope* anonymousSymbolScope = trueScope != nil<Scope*> ? trueScope : this.currentScope;
@@ -4016,6 +4039,8 @@ public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
         } else if !resultType.isRef() && !trueTypeModified.isTriviallyCopyable(baseNode) {
             data.trueSideCallsCopyCtor = true;
         }
+    } else if trueType.isRef() && !resultType.isRef() && !trueTypeModified.isTriviallyCopyable(baseNode) {
+        data.trueSideCallsCopyCtor = true;
     }
     if falseEntry != nil<SymbolTableEntry*> {
         if falseIsTemporary {
@@ -4026,6 +4051,8 @@ public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
         } else if !resultType.isRef() && !falseTypeModified.isTriviallyCopyable(baseNode) {
             data.falseSideCallsCopyCtor = true;
         }
+    } else if falseType.isRef() && !resultType.isRef() && !falseTypeModified.isTriviallyCopyable(baseNode) {
+        data.falseSideCallsCopyCtor = true;
     }
 
     // Create a new anonymous symbol for the result if required
@@ -4035,9 +4062,11 @@ public f<Any> TypeChecker.visitTernaryExpr(ASTTernaryExprNode* node) {
         anonymousSymbol = this.currentScope.symbolTable.insertAnonymous(resultType, baseNode);
     }
 
-    // Look up the copy ctor if at least one side needs it
+    // Look up the copy ctor if at least one side needs it. If only moved values (the results of move()) are copied, they are
+    // moved instead
     if data.trueSideCallsCopyCtor || data.falseSideCallsCopyCtor {
-        data.calledCopyCtor = this.matchCopyCtor(trueTypeModified, baseNode);
+        const bool onlyMovedSides = (!data.trueSideCallsCopyCtor || trueIsMoved) && (!data.falseSideCallsCopyCtor || falseIsMoved);
+        data.calledCopyCtor = onlyMovedSides ? this.matchMoveCtor(trueTypeModified, baseNode) : this.matchCopyCtor(trueTypeModified, baseNode);
     }
 
     // Consider the dtor calls for the temporaries of the branches. A result of reference type may refer to a temporary of its
@@ -5227,11 +5256,9 @@ public f<Any> TypeChecker.visitFctCall(ASTFctCallNode* node) {
                     // Move the temporary into the param instead of copying it: the called function takes it over, so the
                     // caller must not destruct it anymore
                     argTemporaryScope.symbolTable.deleteAnonymous(argTemporaryNames.get(argIdx));
-                } else if actualType.isRvalueRef() {
-                    // The result of move() is moved into the param
-                    copyCtor = this.matchMoveCtor(actualValueType, baseNode);
                 } else {
-                    copyCtor = this.matchCopyCtor(actualValueType, baseNode);
+                    // The result of move() is moved into the param. Any other arg is copied
+                    copyCtor = actualType.isRvalueRef() ? this.matchMoveCtor(actualValueType, baseNode) : this.matchCopyCtor(actualValueType, baseNode);
                     // Insert an anonymous symbol to track the dtor call of the copy for external functions
                     if isExtCallee {
                         ASTNode* argNode = getASTNode(argLst.args.get(argIdx));

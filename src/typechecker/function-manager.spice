@@ -813,6 +813,10 @@ f<int> scoreSpecificity(const Function& fct, const ArgList& reqArgs, int constif
         } else if !paramIsConst && argIsConst {
             penalty += constLossPenalty;
         }
+        // An rvalue prefers an rvalue reference param over an lvalue reference param (e.g. 'const T&&' over 'const T&')
+        if isRvalueArg(argType, arg.getSecond()) && paramType.isRef() && !paramType.isRvalueRef() {
+            penalty += constifyPenalty;
+        }
         // Penalize matches that were only possible through an implicit upcast
         QualType paramBase = paramType;
         QualType argBase = argType;
@@ -839,9 +843,13 @@ f<bool> hasSingleSelfRefParam(const Function& function) {
         return false;
     }
     const QualType& paramType = function.paramList.get(0ul).qualType;
-    const QualType paramBaseType = paramType.getBase();
-    // Compare without qualifiers: getBase() keeps the ref's qualifiers, so e.g. the base of 'const Foo&' is a const Foo
-    return paramType.isRef() && paramBaseType.matches(function.thisType, false, true, true);
+    if !paramType.isRef() {
+        return false;
+    }
+    // Compare the referenced type, so that e.g. 'Foo*&&' does not count. Compare without qualifiers: getContained() keeps the
+    // ref's qualifiers, so e.g. the referenced type of 'const Foo&' is a const Foo
+    const QualType referencedType = paramType.getContained();
+    return referencedType.matches(function.thisType, false, true, true);
 }
 
 /**
@@ -863,7 +871,7 @@ f<bool> isMoveCtorSignature(const Function& function) {
         return false;
     }
     const QualType& paramType = function.paramList.get(0ul).qualType;
-    return paramType.isRvalueRef() && !paramType.isConst();
+    return paramType.isRvalueRef() && !paramType.isConstRef();
 }
 
 f<bool> hasCtor(Scope* matchScope, CtorKind kind) {

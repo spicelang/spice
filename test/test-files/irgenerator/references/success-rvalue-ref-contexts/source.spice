@@ -45,6 +45,10 @@ type Box<T> struct {
     T value
 }
 
+type Callbacks<T> struct {
+    T callback
+}
+
 p Box.ctor(T&& value) {
     this.value = move(value);
 }
@@ -63,6 +67,9 @@ f<int> main() {
     };
     fctPtr(move(c));
     fctPtr(Counter());
+    Callbacks<p(Counter&&)> callbacks;
+    callbacks.callback = fctPtr;
+    callbacks.callback(Counter());
     Sink s;
     ISink* sinkPtr = &s;
     sinkPtr.sink(move(c));

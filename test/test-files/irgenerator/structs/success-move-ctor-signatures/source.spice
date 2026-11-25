@@ -1,0 +1,26 @@
+// Only a ctor with a single non-const rvalue reference to its own struct type is a move ctor. A ctor, that takes an rvalue
+// reference to a pointer or a const rvalue reference, is none, so the compiler still synthesizes the default move ctor.
+
+type Holder struct {
+    heap int* data
+}
+
+p Holder.ctor(int value) {
+    this.data = __new<int>(value);
+}
+
+p Holder.ctor(Holder*&& _) {
+    this.data = __new<int>(0);
+    printf("pointer ctor\n");
+}
+
+p Holder.ctor(const Holder&& _) {
+    this.data = __new<int>(0);
+    printf("const rvalue ctor\n");
+}
+
+f<int> main() {
+    Holder a = Holder(7);
+    Holder b = Holder(move(a));
+    printf("b holds %d, a moved: %d\n", *b.data, a.data == nil<heap int*>);
+}

@@ -44,6 +44,14 @@ p overloaded(Counter&& _) {
     printf("overloaded: Counter&&\n");
 }
 
+p overloadedConst(const Counter& _) {
+    printf("overloadedConst: const Counter&\n");
+}
+
+p overloadedConst(const Counter&& _) {
+    printf("overloadedConst: const Counter&&\n");
+}
+
 f<Counter> makeMoved() {
     Counter local;
     return move(local);
@@ -68,6 +76,9 @@ f<int> main() {
     overloaded(move(c));
     const Counter cc;
     overloaded(move(cc));
+    overloadedConst(cc);
+    overloadedConst(move(cc));
+    overloadedConst(Counter());
     Counter fromConst = move(cc);
     printf("from const: copies=%d moves=%d\n", fromConst.copies, fromConst.moves);
     Counter returned = makeMoved();

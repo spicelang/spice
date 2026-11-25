@@ -1,0 +1,8 @@
+f<const int&> getValue() {
+    const int value = 1;
+    return move(value);
+}
+
+f<int> main() {
+    printf("%d\n", getValue());
+}

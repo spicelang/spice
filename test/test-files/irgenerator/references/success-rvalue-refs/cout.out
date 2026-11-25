@@ -10,6 +10,9 @@ overloaded: const Counter&
 overloaded: Counter&&
 overloaded: Counter&&
 overloaded: const Counter&
+overloadedConst: const Counter&
+overloadedConst: const Counter&&
+overloadedConst: const Counter&&
 from const: copies=1 moves=0
 returned: copies=0 moves=1
 dyn: copies=0 moves=1

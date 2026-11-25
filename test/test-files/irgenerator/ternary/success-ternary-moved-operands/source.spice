@@ -1,0 +1,50 @@
+// A ternary with an operand, that is moved with move(), only moves from that operand. Next to a temporary, the moved operand
+// is move constructed into the result. Next to a named value, it is treated like a reference to its value, so the result is
+// copied from the selected operand. The result is an rvalue reference only if both operands are moved.
+
+type Box struct {
+    heap int* data
+}
+
+p Box.ctor(int value) {
+    this.data = __new<int>(value);
+}
+
+p Box.ctor(const Box& other) {
+    unsafe {
+        this.data = __new<int>(cast<int>(*other.data));
+    }
+    printf("copy\n");
+}
+
+p Box.ctor(Box&& other) {
+    this.data = other.data;
+    other.data = nil<heap int*>;
+    printf("move\n");
+}
+
+f<Box&> getRef(Box& box) {
+    return box;
+}
+
+f<int> main() {
+    bool flag = true;
+
+    Box a = Box(1);
+    Box fromMovedOrTemporary = flag ? move(a) : Box(2);
+    printf("moved or temporary: %d, a moved: %d\n", *fromMovedOrTemporary.data, a.data == nil<heap int*>);
+
+    Box b = Box(3);
+    Box c = Box(4);
+    Box fromMovedOrNamed = !flag ? move(c) : b;
+    printf("moved or named: %d, b intact: %d, c intact: %d\n", *fromMovedOrNamed.data, b.data != nil<heap int*>, c.data != nil<heap int*>);
+
+    Box d = Box(5);
+    Box e = Box(6);
+    Box fromMovedOrMoved = flag ? move(d) : move(e);
+    printf("moved or moved: %d, d moved: %d, e intact: %d\n", *fromMovedOrMoved.data, d.data == nil<heap int*>, e.data != nil<heap int*>);
+
+    Box g = Box(7);
+    Box fromRefOrTemporary = flag ? getRef(g) : Box(8);
+    printf("ref or temporary: %d, g intact: %d\n", *fromRefOrTemporary.data, g.data != nil<heap int*>);
+}
