@@ -3116,6 +3116,15 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
             if sretArg.isNull() {
                 returnValue = this.insertLoad(returnTy, newAddress);
             }
+        } else if data.returnType.isPtr() && this.getEvaluatedType(returnExpr).isDecayedArray() {
+            // A sized array, that is returned as a pointer, decays to the address of its first item
+            QualType arrayType = this.getEvaluatedType(returnExpr);
+            const llvm::Value arrayAddress = this.resolveAddress(returnExpr);
+            assert !arrayAddress.isNull();
+            Vector<llvm::Value> indices;
+            indices.pushBack(this.getInt64(0l));
+            indices.pushBack(this.getInt32(0l));
+            returnValue = this.insertInBoundsGEP(arrayType.toLLVMType(this.sourceFile), arrayAddress, indices);
         } else {
             returnValue = data.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
         }
