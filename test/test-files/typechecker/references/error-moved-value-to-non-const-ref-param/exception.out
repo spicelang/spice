@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:24:5:
+Temporary bound to non-const reference: RValues can only be bound to const or RValue reference parameters
+
+24  modify(move(t));
+    ^^^^^^^^^^^^^^^

@@ -9,6 +9,7 @@ public const string BUILTIN_FCT_NAME_ALIGNOF = "alignof";
 public const string BUILTIN_FCT_NAME_TYPEID = "typeid";
 public const string BUILTIN_FCT_NAME_TYPENAME = "typename";
 public const string BUILTIN_FCT_NAME_LEN = "len";
+public const string BUILTIN_FCT_NAME_MOVE = "move";
 public const string BUILTIN_FCT_NAME_PANIC = "panic";
 public const string BUILTIN_FCT_NAME_SYSCALL = "syscall";
 public const string BUILTIN_FCT_NAME_ASM = "asm";
@@ -70,7 +71,7 @@ public f<bool> lookupBuiltinFunction(const String& name, BuiltinFunctionInfo& in
         info = BuiltinFunctionInfo(0u, 1u, 0u, 1u, true);
     } else if name == BUILTIN_FCT_NAME_OFFSETOF {
         info = BuiltinFunctionInfo(0u, 0u, 2u, 2u);
-    } else if name == BUILTIN_FCT_NAME_LEN {
+    } else if name == BUILTIN_FCT_NAME_LEN || name == BUILTIN_FCT_NAME_MOVE {
         info = BuiltinFunctionInfo(0u, 0u, 1u, 1u);
     } else if name == BUILTIN_FCT_NAME_PANIC {
         info = BuiltinFunctionInfo(0u, 0u, 1u, 1u, false, true);

@@ -997,7 +997,7 @@ f<bool> isGenericClose(const FmtToken& token) {
 }
 
 /**
- * Check if the given token is a type modifier: a pointer, a reference or an array
+ * Check if the given token is a type modifier: a pointer, a reference, an RValue reference or an array
  *
  * @param token Token to check
  * @return Type modifier or not
@@ -1007,7 +1007,7 @@ f<bool> isTypeModifier(const FmtToken& token) {
         return false;
     }
     const TokenType tokenType = token.tokenType;
-    return tokenType == TokenType::MUL || tokenType == TokenType::BITWISE_AND || tokenType == TokenType::LBRACKET;
+    return tokenType == TokenType::MUL || tokenType == TokenType::BITWISE_AND || tokenType == TokenType::LOGICAL_AND || tokenType == TokenType::LBRACKET;
 }
 
 /**

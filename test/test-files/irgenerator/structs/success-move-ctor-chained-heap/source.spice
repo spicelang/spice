@@ -14,11 +14,11 @@ f<int> main() {
     IntBox a = IntBox(123);
     printf("a.storage is null: %d\n", a.storage == nil<heap int*>);
 
-    IntBox b = IntBox(a);
+    IntBox b = IntBox(move(a));
     printf("a.storage is null: %d\n", a.storage == nil<heap int*>);
     printf("b.storage is null: %d\n", b.storage == nil<heap int*>);
 
-    IntBox c = IntBox(b);
+    IntBox c = IntBox(move(b));
     printf("b.storage is null: %d\n", b.storage == nil<heap int*>);
     printf("c.storage is null: %d\n", c.storage == nil<heap int*>);
     printf("c holds %d\n", *c.storage);

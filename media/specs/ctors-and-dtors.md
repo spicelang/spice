@@ -8,6 +8,7 @@
 - [x] Generate default ctor
 - [x] Generate default copy ctor
 - [x] (Generate default move ctor)
+- [x] RValue references (`T&&`) and the `move()` builtin
 - [x] Make the compiler error out when reference fields do not get initialized by all ctors
 
 ## Overview
@@ -63,9 +64,11 @@ p TestStruct.ctor(const TestStruct& other) {
 
 ## Move constructors
 
-A constructor is a move constructor, if it has exactly one parameter that is a non-const reference to the type of the struct.
-The default move constructor is generated for a struct if it has no user-defined move constructor and at least one field needs
-non-trivial moving (either a heap-owning pointer or a struct field that itself has a move ctor).
+A constructor is a move constructor, if it has exactly one parameter that is a non-const RValue reference (`T&&`) to the type
+of the struct. The default move constructor is generated for a struct if it has no user-defined move or copy constructor and at
+least one field needs non-trivial moving (either a heap-owning pointer or a struct field that itself has a move ctor). Like in
+C++, a user-defined copy constructor suppresses the default move constructor, because moving the fields one by one might not
+keep the invariants of the struct either. RValues of such a struct are copied instead.
 
 ### Implicit move ctor actions
 
@@ -79,19 +82,44 @@ following steps:
 - For all other fields, perform a shallow copy from the source.
 
 ```spice
-p TestStruct.ctor(TestStruct& other) {
+p TestStruct.ctor(TestStruct&& other) {
     // Move-construct field-by-field. For heap-owning fields, ownership is transferred and the source is nulled.
 }
 ```
 
+### Value categories
+
+Every value is either an LValue or an RValue:
+
+- LValues are values with a name: variables, fields, array items, dereferenced pointers and the results of functions, that
+  return a reference. A named RValue reference parameter is an LValue as well.
+- RValues are temporaries (literals, struct instantiations, ctor calls and the results of functions, that return a value) and
+  the results of the `move()` builtin. `move(x)` has the type `T&&` and refers to `x`. It does not move anything itself.
+
+Binding rules for references:
+
+| Parameter type | LValue argument | RValue argument |
+|----------------|-----------------|-----------------|
+| `T&`           | yes             | no              |
+| `const T&`     | yes             | yes             |
+| `T&&`          | no              | yes             |
+
+RValue references are only allowed as parameter types (of functions, procedures, methods, lambdas, signatures and function
+types). Within the function body, a `T&&` parameter has the type `T&`.
+
+A value, that is initialized with an RValue reference (`move(x)`), is move constructed: variable declarations (also with
+`dyn`), assignments without an overloaded assign operator, return values, by-value arguments and field initializations call
+the move ctor, if the struct has one, and the copy ctor otherwise. Temporaries are not move constructed, but taken over
+directly (temp stealing).
+
 ### Overload resolution
 
-When both a copy ctor (`ctor(const T&)`) and a move ctor (`ctor(T&)`) exist on the same struct, overload resolution picks the
-move ctor for non-const lvalue arguments (the candidate that requires no constification of the argument) and picks the copy
-ctor for const arguments (binding a const argument to a non-const reference parameter would require const-loss). Temporaries
-are not bindable to non-const reference parameters, so a temporary argument always selects the copy ctor. The same applies to a
-copy assign operator (`operator=(T&, const T&)`) next to a move assign operator (`operator=(T&, T&)`): assigning a temporary
-selects the copy assign operator. A temporary only raises an error, if no overload accepts it.
+When both a copy ctor (`ctor(const T&)`) and a move ctor (`ctor(T&&)`) exist on the same struct, overload resolution picks the
+move ctor for RValue arguments (the candidate that requires no constification of the argument) and the copy ctor for LValue
+arguments (the move ctor does not bind LValues). A const RValue (e.g. `move(x)` of a const `x`) selects the copy ctor, because
+binding it to the non-const RValue reference parameter would require const-loss. The same applies to a copy assign operator
+(`operator=(T&, const T&)`) next to a move assign operator (`operator=(T&, T&&)`). An argument only raises an error, if no
+overload accepts it.
 
 ## Destructors
 

@@ -1,0 +1,9 @@
+type Test struct {
+    int value
+}
+
+f<Test&&> getTest(Test& test) {
+    return move(test);
+}
+
+f<int> main() {}

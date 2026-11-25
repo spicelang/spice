@@ -1,0 +1,78 @@
+// The result of move() is moved into struct literal fields, fields that are initialized in a ctor, ternary results and the
+// value fields of generic structs. RValue reference params also work for lambdas and interface methods.
+
+type T dyn;
+
+type Counter struct {
+    int copies
+    int moves
+}
+
+p Counter.ctor() {
+    this.copies = 0;
+    this.moves = 0;
+}
+
+p Counter.ctor(const Counter& other) {
+    this.copies = other.copies + 1;
+    this.moves = other.moves;
+}
+
+p Counter.ctor(Counter&& other) {
+    this.copies = other.copies;
+    this.moves = other.moves + 1;
+}
+
+type Holder struct {
+    Counter c
+}
+
+p Holder.ctor(Counter&& c) {
+    this.c = move(c);
+}
+
+type ISink interface {
+    p sink(Counter&&);
+}
+
+type Sink struct : ISink {}
+
+p Sink.sink(Counter&& c) {
+    printf("interface sink: copies=%d moves=%d\n", c.copies, c.moves);
+}
+
+type Box<T> struct {
+    T value
+}
+
+type Callbacks<T> struct {
+    T callback
+}
+
+p Box.ctor(T&& value) {
+    this.value = move(value);
+}
+
+f<int> main() {
+    Counter c;
+    Holder literal = Holder{move(c)};
+    printf("literal: copies=%d moves=%d\n", literal.c.copies, literal.c.moves);
+    Holder viaCtor = Holder(move(c));
+    printf("ctor field init: copies=%d moves=%d\n", viaCtor.c.copies, viaCtor.c.moves);
+    bool flag = true;
+    Counter t = flag ? move(c) : Counter();
+    printf("ternary: copies=%d moves=%d\n", t.copies, t.moves);
+    p(Counter&&) fctPtr = p(Counter&& x) {
+        printf("lambda: copies=%d moves=%d\n", x.copies, x.moves);
+    };
+    fctPtr(move(c));
+    fctPtr(Counter());
+    Callbacks<p(Counter&&)> callbacks;
+    callbacks.callback = fctPtr;
+    callbacks.callback(Counter());
+    Sink s;
+    ISink* sinkPtr = &s;
+    sinkPtr.sink(move(c));
+    Box<Counter> box = Box<Counter>(move(c));
+    printf("generic box: copies=%d moves=%d\n", box.value.copies, box.value.moves);
+}

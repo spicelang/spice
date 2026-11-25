@@ -235,6 +235,9 @@ f<Hash> TypeRegistry.hashElement(const TypeChainElement& tce) {
 
     // Hash the super-type-specific data payload
     switch tce.superType {
+        case SuperType::TY_REF: {
+            h = combineHashes(h, hash(tce.data.isRValueRef));
+        }
         case SuperType::TY_ARRAY: {
             h = combineHashes(h, hash(cast<long>(tce.data.arraySize)));
         }

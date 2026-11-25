@@ -34,6 +34,8 @@ f<int> main() {
     // References and sized arrays
     check("_Z10printArrayRA10_i", "printArray(int[10]&)");
     check("_Z11op.divequalR7Counter7Counter", "op.divequal(Counter&, Counter)");
+    check("_Z7consumeO4Test", "consume(Test&&)");
+    check("_ZN4Test4ctorEO4Test", "Test.ctor(Test&&)");
 
     // Function and procedure types - the part a C++ demangler cannot do, since 'PFvE' is not valid Itanium
     check("_ZN6Thread4ctorEPFvE", "Thread.ctor(p())");

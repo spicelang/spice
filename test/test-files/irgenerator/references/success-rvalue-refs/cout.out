@@ -1,0 +1,24 @@
+by value: copies=1 moves=0
+by value: copies=0 moves=1
+RValue ref: copies=0 moves=0
+copy of named RValue ref: copies=1 moves=0
+move of named RValue ref: copies=0 moves=1
+RValue ref: copies=0 moves=0
+copy of named RValue ref: copies=1 moves=0
+move of named RValue ref: copies=0 moves=1
+overloaded: const Counter&
+overloaded: Counter&&
+overloaded: Counter&&
+overloaded: const Counter&
+overloadedConst: const Counter&
+overloadedConst: const Counter&&
+overloadedConst: const Counter&&
+from const: copies=1 moves=0
+returned: copies=0 moves=1
+dyn: copies=0 moves=1
+bound: copies=0 moves=0
+assigned: copies=0 moves=1
+int&&: 42
+int&&: 41
+generic: 7
+generic: 41

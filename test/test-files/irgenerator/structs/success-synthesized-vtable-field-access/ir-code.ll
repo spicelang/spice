@@ -70,7 +70,7 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr no
 declare ptr @_Z12sAllocUnsafem(i64)
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr %1) #0 {
+define void @_ZN5Inner4ctorEO5Inner(ptr noundef nonnull align 8 dereferenceable(32) %0, ptr %1) #0 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8

@@ -270,7 +270,7 @@ p mangleTypeChainElement(StringStream& out, const TypeChainElement& chainElement
             }
         }
         case SuperType::TY_REF: {
-            out << "R";
+            out << (chainElement.data.isRValueRef ? "O" : "R");
         }
         case SuperType::TY_DOUBLE: {
             assert signedness; // Unsigned double types are forbidden

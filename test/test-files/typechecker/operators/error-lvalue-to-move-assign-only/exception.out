@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:10:5:
+LValue bound to RValue reference: LValues cannot be bound to RValue reference parameters. Use move() to move from them
+
+10  t = u;
+    ^^^^^

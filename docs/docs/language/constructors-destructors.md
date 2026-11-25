@@ -114,6 +114,78 @@ f<int> main() {
 
 If no copy constructor is defined, Spice generates a default one that copies each field.
 
+## Move constructors
+
+A *move constructor* takes an [RValue reference](references.md#rvalue-references) `T&&` to an instance of the same type.
+It transfers the contents of the source to the new instance instead of copying them, and leaves the source in a valid,
+but empty state. The source is still destructed as usual afterwards. Only RValues bind to the move constructor:
+temporaries and values, that are moved explicitly with the [`move` builtin](builtins.md#the-move-builtin). Values with a
+name are copied, so they are never emptied by accident:
+
+```spice
+type Buffer struct {
+    int size
+}
+
+p Buffer.ctor(int size) {
+    this.size = size;
+}
+
+p Buffer.ctor(const Buffer& other) {
+    this.size = other.size;
+    printf("copy\n");
+}
+
+p Buffer.ctor(Buffer&& other) {
+    this.size = other.size;
+    other.size = 0;
+    printf("move\n");
+}
+
+f<int> main() {
+    Buffer a = Buffer(42);
+    Buffer b = Buffer(a);       // prints "copy"
+    Buffer c = Buffer(move(a)); // prints "move"
+    Buffer d = move(b);         // prints "move"
+}
+```
+
+A variable, a by-value parameter, a field or a return value, that is initialized with `move(x)`, is move constructed as
+well. If the type has no move constructor, it is copied instead.
+
+If a struct has no user-defined move and copy constructor, but owns heap memory or has fields with move constructors,
+Spice generates a default move constructor. It moves each field and nulls the owning heap pointers of the source.
+
+### Move assign operators
+
+The [assign operator](operator-overloading.md) can be overloaded for RValues the same way, to take over the contents of
+the RValue instead of copying them:
+
+```spice
+type Buffer struct {
+    int size
+}
+
+p operator=(Buffer& this, const Buffer& other) {
+    this.size = other.size;
+    printf("copy assign\n");
+}
+
+p operator=(Buffer& this, Buffer&& other) {
+    this.size = other.size;
+    other.size = 0;
+    printf("move assign\n");
+}
+
+f<int> main() {
+    Buffer a;
+    Buffer b;
+    a = b;          // prints "copy assign"
+    a = Buffer{42}; // prints "move assign"
+    a = move(b);    // prints "move assign"
+}
+```
+
 ## Destructors
 
 You have the option to create a destructor by providing a `dtor` method on a struct. It does not allow any arguments and has no
