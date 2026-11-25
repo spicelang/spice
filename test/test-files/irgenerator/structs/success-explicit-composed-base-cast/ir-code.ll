@@ -147,7 +147,7 @@ define internal noundef i32 @_ZN4Leaf6markerEv(ptr noundef nonnull align 8 deref
 }
 
 ; Function Attrs: mustprogress noinline norecurse nounwind optnone uwtable
-define dso_local noundef i32 @main() #3 {
+define noundef i32 @main() #3 {
   %der = alloca %struct.Derived, align 8
   %b = alloca ptr, align 8
   %leaf = alloca %struct.Leaf, align 8
@@ -156,25 +156,29 @@ define dso_local noundef i32 @main() #3 {
   call void @_ZN7Derived4ctorEv(ptr noundef nonnull align 8 dereferenceable(16) %der)
   call void @_ZN7Derived4initEii(ptr noundef nonnull align 8 dereferenceable(16) %der, i32 noundef 7, i32 noundef 99)
   %1 = getelementptr inbounds nuw %struct.Derived, ptr %der, i32 0, i32 1
-  store ptr %1, ptr %b, align 8
-  %2 = load ptr, ptr %b, align 8
-  %3 = call noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %2)
-  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %3)
+  %2 = icmp eq ptr %der, null
+  %3 = select i1 %2, ptr null, ptr %1
+  store ptr %3, ptr %b, align 8
+  %4 = load ptr, ptr %b, align 8
+  %5 = call noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %4)
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, i32 noundef %5)
   call void @_ZN4Leaf4ctorEv(ptr noundef nonnull align 8 dereferenceable(32) %leaf)
   call void @_ZN4Leaf4initEiii(ptr noundef nonnull align 8 dereferenceable(32) %leaf, i32 noundef 1, i32 noundef 2, i32 noundef 3)
-  %5 = getelementptr inbounds nuw %struct.Leaf, ptr %leaf, i32 0, i32 1
-  %6 = getelementptr inbounds nuw %struct.Derived, ptr %5, i32 0, i32 1
-  store ptr %6, ptr %lb, align 8
-  %7 = load ptr, ptr %lb, align 8
-  %8 = call noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %7)
-  %9 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %8)
+  %7 = getelementptr inbounds nuw %struct.Leaf, ptr %leaf, i32 0, i32 1
+  %8 = getelementptr inbounds nuw %struct.Derived, ptr %7, i32 0, i32 1
+  %9 = icmp eq ptr %leaf, null
+  %10 = select i1 %9, ptr null, ptr %8
+  store ptr %10, ptr %lb, align 8
+  %11 = load ptr, ptr %lb, align 8
+  %12 = call noundef i32 @_ZN4Base3getEv(ptr noundef nonnull align 4 dereferenceable(4) %11)
+  %13 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.1, i32 noundef %12)
   store ptr %der, ptr %m, align 8
-  %10 = load ptr, ptr %m, align 8
-  %vtable.addr = load ptr, ptr %10, align 8
+  %14 = load ptr, ptr %m, align 8
+  %vtable.addr = load ptr, ptr %14, align 8
   %vfct.addr = getelementptr inbounds ptr, ptr %vtable.addr, i64 0
   %fct = load ptr, ptr %vfct.addr, align 8
-  %11 = call noundef i32 %fct(ptr noundef nonnull align 8 dereferenceable(8) %10)
-  %12 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %11)
+  %15 = call noundef i32 %fct(ptr noundef nonnull align 8 dereferenceable(8) %14)
+  %16 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.2, i32 noundef %15)
   ret i32 0
 }
 
