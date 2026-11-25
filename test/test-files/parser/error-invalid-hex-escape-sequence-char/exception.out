@@ -1,0 +1,1 @@
+[Error|Parser] ./source.spice:2:14: Invalid char literal: Invalid escape sequence '/x4', expected two hex digits after '/x'

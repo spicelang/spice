@@ -1,0 +1,1 @@
+[Error|Parser] ./source.spice:2:20: Invalid string literal: Line breaks must not be escaped

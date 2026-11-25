@@ -2370,7 +2370,7 @@ f<ASTConstantNode*> Parser.parseConstant() {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_STRING;
         constantNode.compileTimeValue.setStringValueOffset(this.resourceManager.compileTimeStringValues.getSize());
         // Add the string to the global compile time string list
-        this.resourceManager.compileTimeStringValues.pushBack(parseString(token.text));
+        this.resourceManager.compileTimeStringValues.pushBack(this.parseString(token));
         this.expect(TokenType::STRING_LIT);
     } else if this.currentTokenIs(TokenType::TRUE) {
         constantNode.primitiveValueType = PrimitiveValueType::TYPE_BOOL;
@@ -2783,27 +2783,17 @@ f<long> Parser.parseNumeric(const Token& token, bool isNegative, unsigned int bi
  * @return Char value
  */
 f<char> Parser.parseChar(const Token& token) {
-    String input = token.text;
+    const String& input = token.text;
     if input.getLength() == 1l { // Normal char literals
         return input[0l];
     }
 
-    if input.getLength() == 2l && input[0l] == '\\' { // Char literals with escape sequence
-        const char escapedChar = input[1l];
-        switch escapedChar {
-            case '\'': { return '\''; }
-            case '"': { return '"'; }
-            case '\\': { return '\\'; }
-            case 'n': { return '\n'; }
-            case 'r': { return '\r'; }
-            case 't': { return '\t'; }
-            case 'b': { return '\b'; }
-            case 'f': { return '\f'; }
-            case 'v': { return '\v'; }
-            case '0': { return '\0'; }
+    if input.getLength() >= 2l && input[0l] == '\\' { // Char literals with escape sequence
+        unsigned long index = 0l;
+        const char escapedChar = this.parseEscapeSequence(token, index, ParserErrorType::INVALID_CHAR_LITERAL);
+        if index == input.getLength() {
+            return escapedChar;
         }
-        const String message = "Invalid escape sequence '" + input + "'";
-        this.throwParserError(token.codeLoc, ParserErrorType::INVALID_CHAR_LITERAL, message.getRaw());
     }
 
     const String message = "Invalid char literal '" + input + "'";
@@ -2812,89 +2802,110 @@ f<char> Parser.parseChar(const Token& token) {
 }
 
 /**
- * Resolve the escape sequences of a string literal. The lexer already strips the surrounding quotes.
+ * Parse a string literal token and resolve its escape sequences. The lexer already strips the surrounding quotes.
  *
- * @param input String literal content
+ * @param token String literal token, without the surrounding quotes
  * @return String value
  */
-f<String> parseString(const String& input) {
-    String stringValue = input;
-    replaceEscapeChars(stringValue);
-    return stringValue;
+f<String> Parser.parseString(const Token& token) {
+    const String& input = token.text;
+    const unsigned long length = input.getLength();
+    String output;
+    unsigned long index = 0l;
+    while index < length {
+        if input[index] == '\\' {
+            output += this.parseEscapeSequence(token, index, ParserErrorType::INVALID_STRING_LITERAL);
+        } else {
+            output += input[index];
+            index++;
+        }
+    }
+    return output;
 }
 
 /**
- * Replace escape sequences like \n or octal escape sequences like \033 in the given string with their char values
+ * Resolve the escape sequence, that starts at the given index of a char or string literal. Supported are the simple escape
+ * sequences \a, \b, \f, \n, \r, \t, \v, \\, \?, \' and \", octal escape sequences with one to three digits like \0 or \033
+ * and hex escape sequences with exactly two digits like \x1B. Every other escape sequence is rejected
  *
- * @param input String to resolve the escape sequences in
+ * @param token Char or string literal token
+ * @param index Index of the backslash in the token text. Gets advanced to the first char after the escape sequence
+ * @param errorType Error type to report for invalid escape sequences
+ * @return Char value of the escape sequence
  */
-p replaceEscapeChars(String& input) {
-    String output;
-    unsigned long readIndex = 0l;
+f<char> Parser.parseEscapeSequence(const Token& token, unsigned long& index, ParserErrorType errorType) {
+    const String& input = token.text;
     const unsigned long length = input.getLength();
+    const unsigned long startIndex = index;
+    index++; // Skip the backslash
 
-    while readIndex < length {
-        const char c = input[readIndex];
-        if c == '\\' && readIndex + 1l < length {
-            const char next = input[readIndex + 1l];
-            const char escapedChar = getEscapedChar(next);
-            if escapedChar != '\0' {
-                output += escapedChar;
-                readIndex += 2l;
-                continue;
-            }
-
-            // Handle octal escape sequences (up to 3 digits)
-            if next >= '0' && next <= '7' {
-                int value = 0;
-                unsigned long octalDigits = 0l;
-
-                // Look ahead up to 3 digits
-                for unsigned long i = 1l; i <= 3l && readIndex + i < length; i++ {
-                    const char oc = input[readIndex + i];
-                    if oc < '0' || oc > '7' {
-                        break;
-                    }
-                    value = value << 3 | (cast<int>(oc) - cast<int>('0')); // Multiply by 8 and add digit
-                    octalDigits++;
-                }
-
-                if octalDigits > 0l {
-                    output += cast<char>(value);
-                    readIndex += 1l + octalDigits; // Backslash + octal digits
-                    continue;
-                }
-            }
+    if index < length {
+        const char escapedChar = input[index];
+        index++; // Skip the escaped char
+        switch escapedChar {
+            case 'a': { return cast<char>(7); } // Bell
+            case 'b': { return '\b'; }
+            case 'f': { return '\f'; }
+            case 'n': { return '\n'; }
+            case 'r': { return '\r'; }
+            case 't': { return '\t'; }
+            case 'v': { return '\v'; }
+            case '\\': { return '\\'; }
+            case '?': { return '?'; }
+            case '\'': { return '\''; }
+            case '"': { return '"'; }
         }
 
-        // Copy current character
-        output += c;
-        readIndex++;
+        if escapedChar == 'x' { // Hex escape sequence with exactly two digits
+            int value = 0;
+            unsigned long digitCount = 0l;
+            while digitCount < 2l && index < length && isHexDigit(input[index]) {
+                const char digitChar = toLower(input[index]);
+                if isDigit(digitChar) {
+                    value = value << 4 | (cast<int>(digitChar) - cast<int>('0'));
+                } else {
+                    value = value << 4 | (cast<int>(digitChar) - cast<int>('a') + 10);
+                }
+                digitCount++;
+                index++;
+            }
+            if digitCount == 2l {
+                return cast<char>(value);
+            }
+            const String sequence = input.getSubstring(startIndex, cast<long>(index - startIndex));
+            const String message = "Invalid escape sequence '" + sequence + "', expected two hex digits after '\\x'";
+            this.throwParserError(token.codeLoc, errorType, message.getRaw());
+        }
+
+        if isOctDigit(escapedChar) { // Octal escape sequence with one to three digits
+            int value = cast<int>(escapedChar) - cast<int>('0');
+            unsigned long digitCount = 1l;
+            while digitCount < 3l && index < length && isOctDigit(input[index]) {
+                value = value << 3 | (cast<int>(input[index]) - cast<int>('0'));
+                digitCount++;
+                index++;
+            }
+            if value <= 0xFF {
+                return cast<char>(value);
+            }
+            const String sequence = input.getSubstring(startIndex, cast<long>(index - startIndex));
+            const String message = "Octal escape sequence '" + sequence + "' is out of range";
+            this.throwParserError(token.codeLoc, errorType, message.getRaw());
+        }
+
+        if escapedChar == '\n' || escapedChar == '\r' {
+            this.throwParserError(token.codeLoc, errorType, "Line breaks must not be escaped");
+        }
+
+        // Include the whole code point in the error message, if the escaped char is a multibyte UTF-8 sequence
+        while index < length && (cast<int>(cast<byte>(input[index])) & 0xC0) == 0x80 {
+            index++;
+        }
     }
 
-    input = output;
-}
-
-/**
- * Get the char value of a simple escape sequence like \n
- *
- * @param c Char after the backslash
- * @return Char value or '\0' if this is no simple escape sequence
- */
-f<char> getEscapedChar(char c) {
-    switch c {
-        case 'a': { return cast<char>(7); } // Bell
-        case 'b': { return '\b'; }
-        case 'f': { return '\f'; }
-        case 'n': { return '\n'; }
-        case 'r': { return '\r'; }
-        case 't': { return '\t'; }
-        case 'v': { return '\v'; }
-        case '\\': { return '\\'; }
-        case '?': { return '?'; }
-        case '\'': { return '\''; }
-        case '"': { return '"'; }
-    }
+    const String sequence = input.getSubstring(startIndex, cast<long>(index - startIndex));
+    const String message = "Invalid escape sequence '" + sequence + "'";
+    this.throwParserError(token.codeLoc, errorType, message.getRaw());
     return '\0';
 }
 
