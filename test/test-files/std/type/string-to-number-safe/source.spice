@@ -1,0 +1,116 @@
+import "std/type/type-conversion";
+
+p printIntResult(string input, int base = 10) {
+    Result<int> result = toIntSafe(input, base);
+    if result.isOk() {
+        printf("toIntSafe(\"%s\", %d) = %d\n", input, base, result.unwrap());
+    } else {
+        printf("toIntSafe(\"%s\", %d): %s\n", input, base, result.getErr().getMessage());
+    }
+}
+
+p printDoubleResult(string input) {
+    Result<double> result = toDoubleSafe(input);
+    if result.isOk() {
+        printf("toDoubleSafe(\"%s\") = %g\n", input, result.unwrap());
+    } else {
+        printf("toDoubleSafe(\"%s\"): %s\n", input, result.getErr().getMessage());
+    }
+}
+
+f<int> main() {
+    // Valid integers
+    printIntResult("42");
+    printIntResult("-42");
+    printIntResult("+7");
+    printIntResult("0");
+    printIntResult("ff", 16);
+    printIntResult("0x1A", 16);
+    printIntResult("0x1A", 0);
+    printIntResult("017", 0);
+    printIntResult("-101", 2);
+    printIntResult("2147483647");
+    printIntResult("-2147483648");
+
+    // Invalid integers
+    printIntResult("");
+    printIntResult("abc");
+    printIntResult("-");
+    printIntResult("0x", 16);
+    printIntResult(" 42");
+    printIntResult("42 ");
+    printIntResult("12abc");
+    printIntResult("1.5");
+    printIntResult("2147483648");
+    printIntResult("-2147483649");
+    printIntResult("3000000000");
+    printIntResult("99999999999999999999999");
+    printIntResult("12", 1);
+    printIntResult("12", 37);
+
+    // Short
+    assert toShortSafe("32767").unwrap() == 32767s;
+    assert toShortSafe("-32768").unwrap() == -32768s;
+    assert toShortSafe("-1010", 2).unwrap() == -10s;
+    assert toShortSafe("32768").isErr();
+    assert toShortSafe("-32769").isErr();
+    assert toShortSafe("7f", 10).isErr();
+
+    // Long
+    assert toLongSafe("9223372036854775807").unwrap() == 9223372036854775807l;
+    assert toLongSafe("-9223372036854775808").unwrap() == -9223372036854775807l - 1l;
+    assert toLongSafe("ffffffff", 16).unwrap() == 4294967295l;
+    assert toLongSafe("9223372036854775808").isErr();
+    assert toLongSafe("-9223372036854775809").isErr();
+    assert toLongSafe("").isErr();
+
+    // Byte
+    assert toByteSafe("0").unwrap() == cast<byte>(0);
+    assert toByteSafe("255").unwrap() == cast<byte>(255);
+    assert toByteSafe("1f", 16).unwrap() == cast<byte>(31);
+    assert toByteSafe("256").isErr();
+    assert toByteSafe("300").isErr();
+    assert toByteSafe("-1").isErr();
+
+    // The error message is passed through
+    assert toShortSafe("x").getErr().getMessage() == "Input is no integer";
+    assert toByteSafe("1 ").getErr().getMessage() == "Input has trailing characters";
+    assert toLongSafe("1", 99).getErr().getMessage() == "Invalid base, expected 0 or 2 to 36";
+
+    // Doubles
+    printDoubleResult("1.5");
+    printDoubleResult("-0.25");
+    printDoubleResult("1e-3");
+    printDoubleResult("1.");
+    printDoubleResult(".5");
+    printDoubleResult("0x1.8p3");
+    printDoubleResult("inf");
+    printDoubleResult("-Infinity");
+    printDoubleResult("nan");
+    printDoubleResult("nan(123)");
+    printDoubleResult("0");
+    printDoubleResult("0e999999");
+    printDoubleResult("1.7976931348623157e308");
+    printDoubleResult("4.9e-324");
+    printDoubleResult("");
+    printDoubleResult(".");
+    printDoubleResult("abc");
+    printDoubleResult(" 1.5");
+    printDoubleResult("1.5 ");
+    printDoubleResult("1.5x");
+    printDoubleResult("1e");
+    printDoubleResult("infx");
+    printDoubleResult("nan(");
+    printDoubleResult("1e400");
+    printDoubleResult("-1e400");
+    printDoubleResult("1.8e308");
+    printDoubleResult("1e-400");
+    printDoubleResult("0x1p-1100");
+    printDoubleResult("0x1p1024");
+
+    // The plain variants are unchanged
+    assert toInt("12abc") == 12;
+    assert toInt(" 42") == 42;
+    assert toDouble("1.5x") == 1.5;
+    assert toLong("99999999999999999999999") == 9223372036854775807l;
+}

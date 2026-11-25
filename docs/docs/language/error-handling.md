@@ -148,4 +148,22 @@ Where both are useful, a lookup comes in two variants: the plain one panics, if 
 with the `Safe` suffix returns a `Result<T>`, e.g. `HashTable.get()`/`getSafe()`, `JsonValue.getField()`/`getFieldSafe()`
 and `XmlNode.getAttribute()`/`getAttributeSafe()`.
 
+The conversions from strings to numbers in `std/type/type-conversion` follow the same convention: `toInt()`, `toShort()`,
+`toLong()`, `toByte()` and `toDouble()` parse the longest numeric prefix of the input like `strtoll`/`strtod` and give 0
+for input, that is no number, while `toIntSafe()`, `toShortSafe()`, `toLongSafe()`, `toByteSafe()` and `toDoubleSafe()`
+return an error for empty input, leading whitespace, trailing characters and values out of the range of the target type:
+
+```spice
+import "std/type/type-conversion";
+
+f<int> main() {
+    printf("%d\n", toInt("3000000000")); // -1294967296, wrapped around
+    Result<int> port = toIntSafe("3000000000");
+    if port.isErr() {
+        printf("%s\n", port.getErr().getMessage()); // Value out of range
+    }
+    printf("%d\n", toIntSafe("ff", 16).unwrap()); // 255
+}
+```
+
 When a result holds a heap payload, see [ownership](builtin-types.md#ownership) for how to take it over.

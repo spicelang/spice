@@ -1,0 +1,54 @@
+toIntSafe("42", 10) = 42
+toIntSafe("-42", 10) = -42
+toIntSafe("+7", 10) = 7
+toIntSafe("0", 10) = 0
+toIntSafe("ff", 16) = 255
+toIntSafe("0x1A", 16) = 26
+toIntSafe("0x1A", 0) = 26
+toIntSafe("017", 0) = 15
+toIntSafe("-101", 2) = -5
+toIntSafe("2147483647", 10) = 2147483647
+toIntSafe("-2147483648", 10) = -2147483648
+toIntSafe("", 10): Input is empty
+toIntSafe("abc", 10): Input is no integer
+toIntSafe("-", 10): Input is no integer
+toIntSafe("0x", 16): Input has trailing characters
+toIntSafe(" 42", 10): Input starts with whitespace
+toIntSafe("42 ", 10): Input has trailing characters
+toIntSafe("12abc", 10): Input has trailing characters
+toIntSafe("1.5", 10): Input has trailing characters
+toIntSafe("2147483648", 10): Value out of range
+toIntSafe("-2147483649", 10): Value out of range
+toIntSafe("3000000000", 10): Value out of range
+toIntSafe("99999999999999999999999", 10): Value out of range
+toIntSafe("12", 1): Invalid base, expected 0 or 2 to 36
+toIntSafe("12", 37): Invalid base, expected 0 or 2 to 36
+toDoubleSafe("1.5") = 1.5
+toDoubleSafe("-0.25") = -0.25
+toDoubleSafe("1e-3") = 0.001
+toDoubleSafe("1.") = 1
+toDoubleSafe(".5") = 0.5
+toDoubleSafe("0x1.8p3") = 12
+toDoubleSafe("inf") = inf
+toDoubleSafe("-Infinity") = -inf
+toDoubleSafe("nan") = nan
+toDoubleSafe("nan(123)") = nan
+toDoubleSafe("0") = 0
+toDoubleSafe("0e999999") = 0
+toDoubleSafe("1.7976931348623157e308") = 1.79769e+308
+toDoubleSafe("4.9e-324") = 4.94066e-324
+toDoubleSafe(""): Input is empty
+toDoubleSafe("."): Input is no number
+toDoubleSafe("abc"): Input is no number
+toDoubleSafe(" 1.5"): Input starts with whitespace
+toDoubleSafe("1.5 "): Input has trailing characters
+toDoubleSafe("1.5x"): Input has trailing characters
+toDoubleSafe("1e"): Input has trailing characters
+toDoubleSafe("infx"): Input has trailing characters
+toDoubleSafe("nan("): Input has trailing characters
+toDoubleSafe("1e400"): Value out of range
+toDoubleSafe("-1e400"): Value out of range
+toDoubleSafe("1.8e308"): Value out of range
+toDoubleSafe("1e-400"): Value out of range
+toDoubleSafe("0x1p-1100"): Value out of range
+toDoubleSafe("0x1p1024"): Value out of range

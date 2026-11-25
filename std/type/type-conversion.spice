@@ -1,6 +1,38 @@
 // Std imports
 import "std/type/impl/number-conversion";
 
+// Constants
+const long MIN_INT_VALUE = -2147483648l;
+const long MAX_INT_VALUE = 2147483647l;
+const long MIN_SHORT_VALUE = -32768l;
+const long MAX_SHORT_VALUE = 32767l;
+const long MAX_BYTE_VALUE = 255l;
+
+// ------------------------------------------------------ Helpers ------------------------------------------------------
+
+/**
+ * Parse the whole input as an integer in the given base and check, that it is within the given range
+ *
+ * @param input String value
+ * @param base Base from 2 to 36 or 0
+ * @param minValue Minimum allowed value
+ * @param maxValue Maximum allowed value
+ * @return Parsed value or an error, if the base is invalid, the input is no integer or the value is out of range
+ */
+f<Result<long>> parseIntegerInRange(string input, int base, long minValue, long maxValue) {
+    if !isValidIntegerBase(base) { return err<long>("Invalid base, expected 0 or 2 to 36"); }
+    const unsigned long length = getRawLength(input);
+    if length == 0ul { return err<long>("Input is empty"); }
+    if isSpaceChar(input[0]) { return err<long>("Input starts with whitespace"); }
+    unsigned long end = 0ul;
+    bool overflow = false;
+    const long value = parseIntegerPrefix(input, base, end, overflow);
+    if end == 0ul { return err<long>("Input is no integer"); }
+    if end != length { return err<long>("Input has trailing characters"); }
+    if overflow || value < minValue || value > maxValue { return err<long>("Value out of range"); }
+    return ok(value);
+}
+
 // ----------------------------------------------- Conversions to double -----------------------------------------------
 
 /**
@@ -61,6 +93,26 @@ public f<double> toDouble(char input) {
  */
 public f<double> toDouble(string input) {
     return parseDoubleText(input);
+}
+
+/**
+ * Convert a string to a double. Unlike toDouble, the whole input has to be a number, without leading or trailing
+ * whitespace. Decimal and hexadecimal numbers, inf, infinity and nan are accepted, like by toDouble.
+ *
+ * @param input String value
+ * @return Double value or an error, if the input is no number or the value is too large or too small for a double
+ */
+public f<Result<double>> toDoubleSafe(string input) {
+    const unsigned long length = getRawLength(input);
+    if length == 0ul { return err<double>("Input is empty"); }
+    if isSpaceChar(input[0]) { return err<double>("Input starts with whitespace"); }
+    unsigned long end = 0ul;
+    bool outOfRange = false;
+    const double value = parseDoublePrefix(input, end, outOfRange);
+    if end == 0ul { return err<double>("Input is no number"); }
+    if end != length { return err<double>("Input has trailing characters"); }
+    if outOfRange { return err<double>("Value out of range"); }
+    return ok(value);
 }
 
 /**
@@ -136,6 +188,20 @@ public f<int> toInt(string input, int base = 10) {
 }
 
 /**
+ * Convert a string to an int. Unlike toInt, the whole input has to be an integer, without leading or trailing
+ * whitespace, and values out of the range of int (-2147483648 to 2147483647) are reported instead of wrapped around.
+ *
+ * @param input String value
+ * @param base Base from 2 to 36, or 0 to detect it from the prefix (0x: 16, 0: 8, else 10)
+ * @return Int value or an error, if the base is invalid, the input is no integer or the value is out of range
+ */
+public f<Result<int>> toIntSafe(string input, int base = 10) {
+    Result<long> parsed = parseIntegerInRange(input, base, MIN_INT_VALUE, MAX_INT_VALUE);
+    if parsed.isErr() { return err<int>(parsed.getErr()); }
+    return ok(cast<int>(parsed.unwrap()));
+}
+
+/**
  * Convert a bool to an int
  *
  * @param input Bool value
@@ -205,6 +271,20 @@ public f<short> toShort(char input) {
  */
 public f<short> toShort(string input, int base = 10) {
     return cast<short>(parseIntegerText(input, base));
+}
+
+/**
+ * Convert a string to a short. Unlike toShort, the whole input has to be an integer, without leading or trailing
+ * whitespace, and values out of the range of short (-32768 to 32767) are reported instead of wrapped around.
+ *
+ * @param input String value
+ * @param base Base from 2 to 36, or 0 to detect it from the prefix (0x: 16, 0: 8, else 10)
+ * @return Short value or an error, if the base is invalid, the input is no integer or the value is out of range
+ */
+public f<Result<short>> toShortSafe(string input, int base = 10) {
+    Result<long> parsed = parseIntegerInRange(input, base, MIN_SHORT_VALUE, MAX_SHORT_VALUE);
+    if parsed.isErr() { return err<short>(parsed.getErr()); }
+    return ok(cast<short>(parsed.unwrap()));
 }
 
 /**
@@ -280,6 +360,18 @@ public f<long> toLong(string input, int base = 10) {
 }
 
 /**
+ * Convert a string to a long. Unlike toLong, the whole input has to be an integer, without leading or trailing whitespace,
+ * and values out of the range of long are reported instead of clamped.
+ *
+ * @param input String value
+ * @param base Base from 2 to 36, or 0 to detect it from the prefix (0x: 16, 0: 8, else 10)
+ * @return Long value or an error, if the base is invalid, the input is no integer or the value is out of range
+ */
+public f<Result<long>> toLongSafe(string input, int base = 10) {
+    return parseIntegerInRange(input, base, -9223372036854775807l - 1l, 9223372036854775807l);
+}
+
+/**
  * Convert a bool to a long
  *
  * @param input Bool value
@@ -339,6 +431,20 @@ public f<byte> toByte(char input) {
  */
 public f<byte> toByte(string input, int base = 10) {
     return cast<byte>(cast<int>(parseIntegerText(input, base)));
+}
+
+/**
+ * Convert a string to a byte. Unlike toByte, the whole input has to be an integer, without leading or trailing
+ * whitespace, and values out of the range of byte (0 to 255) are reported instead of wrapped around.
+ *
+ * @param input String value
+ * @param base Base from 2 to 36, or 0 to detect it from the prefix (0x: 16, 0: 8, else 10)
+ * @return Byte value or an error, if the base is invalid, the input is no integer or the value is out of range
+ */
+public f<Result<byte>> toByteSafe(string input, int base = 10) {
+    Result<long> parsed = parseIntegerInRange(input, base, 0l, MAX_BYTE_VALUE);
+    if parsed.isErr() { return err<byte>(parsed.getErr()); }
+    return ok(cast<byte>(cast<int>(parsed.unwrap())));
 }
 
 /**
