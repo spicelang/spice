@@ -3500,11 +3500,17 @@ f<bool> TypeChecker.isDestructibleTempStealTarget(ASTAssignExprNode* node, const
  * declaration: either explicitly, by the no-args ctor or, for trivially constructible structs, by zero-initialization. All
  * other structs require an initial value. Field values of structs with a no-args ctor are constructed in the ctor
  * preamble. Field values of other structs might still be uninitialized memory, e.g. in a ctor body.
+ * The value behind 'this' ('*this') is constructed as well, except in a ctor body, where it is still under construction.
  *
  * @param node Lvalue expression
  * @return Always constructed or not
  */
 f<bool> TypeChecker.isAlwaysConstructedLvalue(ASTNode* node) {
+    // The value behind 'this' was constructed before a method got called on it
+    if isDereferencedThis(node) {
+        return !this.currentScope.isInCtorBody();
+    }
+
     // Check the accessed value itself
     ASTExprNode* exprNode = asExprNode(node);
     const QualType lvalueType = exprNode.getEvaluatedSymbolType(this.manIdx);
@@ -3839,6 +3845,9 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         if isDecl {
             const bool isFieldInit = this.currentScope.isInCtorBody() && isDirectFieldOfThis(getASTNode(node.lhs));
             overwritesValue = !isFieldInit && this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
+        } else if isDereferencedThis(getASTNode(node.lhs)) {
+            // The lhs entry is 'this' itself, whose state does not tell about the value behind it
+            overwritesValue = this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
         }
         if overwritesValue && lhs.entry != nil<SymbolTableEntry*> && !this.currentScope.doesAllowUnsafeOperations() {
             const QualType lhsUnwrappedType = lhs.ty.removeReferenceWrapper();

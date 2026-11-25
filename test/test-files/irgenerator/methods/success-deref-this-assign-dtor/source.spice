@@ -1,0 +1,50 @@
+// Verifies that assigning to '*this' in a method destructs the previous value first, so its owning members do not leak,
+// for a copied value and for a moved temporary. Also verifies that self-assignment stays a safe no-op and that '*this' is
+// not destructed in a ctor body, where it is still under construction.
+
+type Holder struct {
+    String s
+}
+
+p Holder.ctor(string val) {
+    this.s = String(val);
+}
+
+p Holder.ctor(const Holder& original, string suffix) {
+    // The value behind 'this' is still under construction, so it must not be destructed
+    *this = original;
+    this.s += suffix;
+}
+
+p Holder.dtor() {
+    printf("dtor: %s\n", this.s);
+}
+
+p Holder.replaceWithCopy(const Holder& other) {
+    *this = other;
+}
+
+p Holder.replaceWithTemporary(string val) {
+    *this = Holder(val);
+}
+
+p Holder.replaceWithSelf() {
+    *this = *this;
+}
+
+f<int> main() {
+    Holder a = Holder("first");
+    Holder b = Holder("second");
+    printf("before copy\n");
+    // Copying into '*this' must destruct the old value of 'a' ("first") first
+    a.replaceWithCopy(b);
+    printf("a is now %s\n", a.s);
+    // Moving a temporary into '*this' must destruct the old value of 'a' ("second") first
+    a.replaceWithTemporary("third");
+    printf("a is now %s\n", a.s);
+    // Self-assignment must be a safe no-op (no destruct, no corruption)
+    a.replaceWithSelf();
+    printf("a is still %s\n", a.s);
+    Holder c = Holder(a, "-copy");
+    printf("c is %s\n", c.s);
+}

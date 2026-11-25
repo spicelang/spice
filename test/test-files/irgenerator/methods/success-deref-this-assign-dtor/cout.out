@@ -1,0 +1,10 @@
+before copy
+dtor: first
+a is now second
+dtor: second
+a is now third
+a is still third
+c is third-copy
+dtor: third-copy
+dtor: second
+dtor: third

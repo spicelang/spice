@@ -2507,6 +2507,28 @@ public f<bool> isDirectFieldOfThis(const ASTNode* node) {
 }
 
 /**
+ * Check if an lvalue expression denotes the value behind 'this' (e.g. '*this')
+ *
+ * @param node Lvalue expression
+ * @return Dereferenced 'this' or not
+ */
+public f<bool> isDereferencedThis(const ASTNode* node) {
+    if node.kind != ASTNodeKind::PREFIX_UNARY_EXPR {
+        return false;
+    }
+    const ASTPrefixUnaryExprNode* prefixUnaryExpr = downcast<ASTPrefixUnaryExprNode>(node);
+    if prefixUnaryExpr.op != PrefixUnaryOp::OP_DEREFERENCE {
+        return false;
+    }
+    ASTNode* operandNode = getASTNode(prefixUnaryExpr.prefixUnaryExpr);
+    if operandNode.kind != ASTNodeKind::ATOMIC_EXPR {
+        return false;
+    }
+    const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(operandNode);
+    return atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
+}
+
+/**
  * Check if an AST subtree accesses 'this', e.g. via 'this.field' or 'this.method()'
  *
  * @param node Root of the subtree
