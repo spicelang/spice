@@ -3471,86 +3471,124 @@ public f<Any> TypeChecker.visitAnonymousBlockStmt(ASTAnonymousBlockStmtNode* nod
 // ========================================================= Expressions ==========================================================
 
 /**
- * Check if a temporary struct is moved into the lhs of an assignment (temp stealing) and the old value of the lhs can
- * safely be destructed before it gets overwritten.
+ * Check if a temporary struct is moved into the lhs of an assignment (temp stealing), instead of being copied by an assign
+ * operator overload
  *
  * @param node Assign expression node
  * @param rhsType Type of the right side of the assignment
  * @param isRhsTemporary Whether the right side of the assignment is a temporary
- * @return Destructible temp steal target or not
+ * @return Moved temporary or not
  */
-f<bool> TypeChecker.isDestructibleTempStealTarget(ASTAssignExprNode* node, const QualType& rhsType, bool isRhsTemporary) {
-    // The rhs must be a temporary struct value, that is moved into the lhs, and no assign operator overload may take over
+f<bool> TypeChecker.movesTemporaryStruct(ASTAssignExprNode* node, const QualType& rhsType, bool isRhsTemporary) {
     if rhsType.isRef() || !rhsType.is(SuperType::TY_STRUCT) || !isRhsTemporary {
         return false;
     }
     const Vector<const Function*>& opFcts = this.getOpFctPointers(cast<ASTNode*>(node));
-    if opFcts.front() != nil<const Function*> {
-        return false;
-    }
-    // The initialization state of the lhs entry does not tell, whether the overwritten value was actually constructed at
-    // runtime (e.g. for '*ptr = ...', 'array[i] = ...' or 'result.field = ...'), so check the lhs expression itself
-    return this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
+    return opFcts.front() == nil<const Function*>;
 }
 
 /**
- * Check if the value, that an lvalue expression denotes, has always been constructed at runtime, when it is accessed.
- * This is the case for variables (except the result variable) and chains of field accesses on them or on 'this', as long
- * as each involved field value is referenced or its struct has a no-args ctor. Variables are constructed at their
- * declaration: either explicitly, by the no-args ctor or, for trivially constructible structs, by zero-initialization. All
- * other structs require an initial value. Field values of structs with a no-args ctor are constructed in the ctor
- * preamble. Field values of other structs might still be uninitialized memory, e.g. in a ctor body.
- * The value behind a pointer ('*ptr') is constructed as well: safe code can only get a typed pointer to a constructed value,
- * raw memory needs a cast in an unsafe block. The value behind 'this' ('*this') is the exception in a ctor body, where it is
- * still under construction.
+ * Check if an assignment overwrites a value, that has been constructed at runtime. Then the old value has to be destructed
+ * before a new value is copied or a temporary is moved into the lhs, otherwise its owning members would leak.
+ * Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw element shifts in
+ * container implementations) relies on assignments not implicitly destructing the lhs.
+ *
+ * @param node Assign expression node
+ * @param lhs Left side of the assignment
+ * @param isFieldInitAssign Whether the assignment initializes a direct field of 'this' in a ctor body
+ * @return Overwrites a constructed value or not
+ */
+f<bool> TypeChecker.overwritesConstructedValue(ASTAssignExprNode* node, const ExprResult& lhs, bool isFieldInitAssign) {
+    if lhs.entry == nil<SymbolTableEntry*> || this.currentScope.doesAllowUnsafeOperations() {
+        return false;
+    }
+    // A reference field of 'this' is bound by its first assignment in a ctor body and assigned through afterwards
+    if isFieldInitAssign && lhs.ty.isRef() {
+        return lhs.entry.isInitialized();
+    }
+    // The lhs entry of other lvalues is not the overwritten value itself, e.g. the pointer of '*ptr', the field of 'var.field'
+    // (whose state is tracked per struct, not per instance) or the array of 'array[i]', so check the lvalue expression
+    return this.isConstructedLvalue(getASTNode(node.lhs));
+}
+
+/**
+ * Check if the value, that an lvalue expression denotes, has been constructed at runtime, when it is accessed:
+ * - Variables, according to their lifecycle state: they are constructed at their declaration (either explicitly, by the
+ *   no-args ctor or, for trivially constructible structs, by zero-initialization), the result variable by assigning it.
+ *   Moved-from variables are not constructed anymore.
+ * - Fields, if the value they are accessed on is constructed. In a ctor body, the fields of 'this' are still under
+ *   construction: there, a field value is only constructed in the ctor preamble, if it is referenced or its struct has a
+ *   no-args ctor.
+ * - Array items, if their array is constructed. Arrays of structs are zero-initialized at their declaration.
+ * - Not fields and items reached via a pointer other than 'this': they might still be uninitialized memory, e.g. a raw
+ *   allocation, that is initialized field by field or item by item.
+ * - The value behind a pointer ('*ptr'): safe code can only get a typed pointer to a constructed value, raw memory needs a
+ *   cast in an unsafe block. The value behind 'this' ('*this') is the exception in a ctor body, where it is still under
+ *   construction.
  *
  * @param node Lvalue expression
- * @return Always constructed or not
+ * @return Constructed or not
  */
-f<bool> TypeChecker.isAlwaysConstructedLvalue(ASTNode* node) {
-    // The value behind 'this' was constructed before a method got called on it
+f<bool> TypeChecker.isConstructedLvalue(ASTNode* node) {
+    // Value behind a pointer
     if isDereferencedThis(node) {
         return !this.currentScope.isInCtorBody();
     }
-    // The value behind any other pointer was constructed before (assignments in unsafe blocks are not checked for this)
     if isDereference(node) {
         return true;
     }
 
-    // Check the accessed value itself
-    ASTExprNode* exprNode = asExprNode(node);
-    const QualType lvalueType = exprNode.getEvaluatedSymbolType(this.manIdx);
-    ASTAtomicExprNode* atomicExpr = nil<ASTAtomicExprNode*>;
+    // Variables
     if node.kind == ASTNodeKind::ATOMIC_EXPR {
-        atomicExpr = downcast<ASTAtomicExprNode>(node);
-    }
-    const bool isThis = atomicExpr != nil<ASTAtomicExprNode*> && atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
-    if !isThis && !lvalueType.isRef() {
-        if !lvalueType.is(SuperType::TY_STRUCT) {
+        const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(node);
+        // Parenthesized lvalue
+        if atomicExpr.assignExpr != nil<IVisitable*> {
+            return this.isConstructedLvalue(getASTNode(atomicExpr.assignExpr));
+        }
+        // 'this' itself is a pointer, its fields are checked below
+        if atomicExpr.fqIdentifier == THIS_VARIABLE_NAME {
+            return true;
+        }
+        if atomicExpr.fqIdentifier.isEmpty() || this.manIdx >= atomicExpr.data.getSize() {
             return false;
         }
-        // Field values additionally require a no-args ctor (see above)
-        const QualType structType = lvalueType.toNonConst();
-        const ArgList noArgs;
-        if atomicExpr == nil<ASTAtomicExprNode*> && lookupFunction(structType.getBodyScope(), String(CTOR_FUNCTION_NAME), structType, noArgs, false) == nil<const Function*> {
-            return false;
-        }
+        const SymbolTableEntry* entry = atomicExpr.data.get(this.manIdx).entry;
+        return entry != nil<const SymbolTableEntry*> && entry.isInitialized();
     }
 
-    // Variables are constructed, except the result variable, which is only constructed by assigning it
-    if atomicExpr != nil<ASTAtomicExprNode*> {
-        return atomicExpr.fqIdentifier != RETURN_VARIABLE_NAME;
-    }
-
-    // Fields are constructed, if the value they are accessed on is constructed
     if node.kind != ASTNodeKind::POSTFIX_UNARY_EXPR {
         return false;
     }
     const ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(node);
+    ASTNode* operandNode = getASTNode(postfixUnaryExpr.postfixUnaryExpr);
+
+    // Items and fields reached via a pointer other than 'this' might still be uninitialized memory, e.g. a raw allocation, that
+    // is initialized item by item or field by field
+    const QualType operandType = asExprNode(operandNode).getEvaluatedSymbolType(this.manIdx);
+    if operandType.isPtr() && !isThisVariable(operandNode) {
+        return false;
+    }
+
+    // Array items
+    if postfixUnaryExpr.op == PostfixUnaryOp::OP_SUBSCRIPT {
+        return this.isConstructedLvalue(operandNode);
+    }
+
+    // Fields
     if postfixUnaryExpr.op != PostfixUnaryOp::OP_MEMBER_ACCESS {
         return false;
     }
-    return this.isAlwaysConstructedLvalue(getASTNode(postfixUnaryExpr.postfixUnaryExpr));
+    if this.currentScope.isInCtorBody() && isAccessedOnThis(node) {
+        const QualType fieldType = asExprNode(node).getEvaluatedSymbolType(this.manIdx);
+        if !fieldType.isRef() && fieldType.is(SuperType::TY_STRUCT) {
+            const QualType structType = fieldType.toNonConst();
+            const ArgList noArgs;
+            if lookupFunction(structType.getBodyScope(), String(CTOR_FUNCTION_NAME), structType, noArgs, false) == nil<const Function*> {
+                return false;
+            }
+        }
+    }
+    return this.isConstructedLvalue(operandNode);
 }
 
 /**
@@ -3836,29 +3874,13 @@ public f<Any> TypeChecker.visitAssignExpr(ASTAssignExprNode* node) {
         Pair<QualType, Function*> assignResult = this.opRuleManager.getAssignResultType(baseNode, lhs, rhs, isDeclAssign);
         rhsType = assignResult.getFirst();
         const Function* copyCtor = assignResult.getSecond();
-        // If the assignment overwrites an already initialized struct, the old value of the lhs must be destructed first.
-        // Otherwise its owning members (heap pointers, strings, ...) would leak. This applies when a new value is copied
-        // into the lhs (non-null copy ctor) and when a temporary is moved into it (temp stealing).
-        // 'isInitialized()' is false for declarations, uninitialized fields and moved-from values, so those are skipped.
-        // The lifecycle of a field is tracked per struct, not per instance, so the first assignment to a field in the source code
-        // can overwrite the value of a constructed object as well, if the field is reached via a variable or 'this'. Only the
-        // direct fields of 'this' in a ctor body might still be uninitialized. Nested fields were constructed in the ctor
-        // preamble. Fields reached via a pointer might still be uninitialized memory (e.g. a raw allocation, that is
-        // initialized field by field).
-        // Unsafe blocks are excluded on purpose: code that manually manages object lifetimes there (e.g. the raw
-        // element shifts in container implementations) relies on assignments not implicitly destructing the lhs.
-        bool overwritesValue = lhs.entry != nil<SymbolTableEntry*> && lhs.entry.isInitialized();
-        if isDecl {
-            const bool isFieldInit = this.currentScope.isInCtorBody() && isDirectFieldOfThis(getASTNode(node.lhs));
-            overwritesValue = !isFieldInit && this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
-        } else if isDereference(getASTNode(node.lhs)) {
-            // The lhs entry is the pointer (e.g. 'this') itself, whose state does not tell about the value behind it
-            overwritesValue = this.isAlwaysConstructedLvalue(getASTNode(node.lhs));
-        }
-        if overwritesValue && lhs.entry != nil<SymbolTableEntry*> && !this.currentScope.doesAllowUnsafeOperations() {
+        // If the assignment overwrites a constructed struct, the old value of the lhs must be destructed first. Otherwise its owning
+        // members (heap pointers, strings, ...) would leak. This applies when a new value is copied into the lhs (non-null copy
+        // ctor) and when a temporary is moved into it (temp stealing)
+        if this.overwritesConstructedValue(node, lhs, isFieldInitAssign) {
             const QualType lhsUnwrappedType = lhs.ty.removeReferenceWrapper();
             const QualType lhsSType = lhsUnwrappedType.toNonConst();
-            if lhsSType.is(SuperType::TY_STRUCT) && !lhsSType.isTriviallyDestructible(baseNode) && (copyCtor != nil<const Function*> || this.isDestructibleTempStealTarget(node, rhs.ty, isRhsTemporary)) {
+            if lhsSType.is(SuperType::TY_STRUCT) && !lhsSType.isTriviallyDestructible(baseNode) && (copyCtor != nil<const Function*> || this.movesTemporaryStruct(node, rhs.ty, isRhsTemporary)) {
                 const ArgList noArgs;
                 const Function*& lhsDtorFct = node.lhsDtorFct.get(this.manIdx);
                 lhsDtorFct = this.implicitlyCallStructMethod(lhsSType, String(DTOR_FUNCTION_NAME), noArgs, baseNode);

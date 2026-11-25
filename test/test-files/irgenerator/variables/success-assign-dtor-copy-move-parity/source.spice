@@ -1,0 +1,55 @@
+// Verifies that a copied and a moved rhs destruct the old value of the lhs alike, for each kind of lvalue: array items,
+// fields of a struct without no-args ctor and the result variable. Also verifies that a field without no-args ctor, that
+// is assigned in several ctors, is not destructed there, because it is still under construction.
+
+type Holder struct {
+    String s
+}
+
+p Holder.ctor(string val) {
+    this.s = String(val);
+}
+
+p Holder.dtor() {
+    printf("dtor: %s\n", this.s);
+}
+
+type Owner struct {
+    Holder holder
+}
+
+p Owner.ctor(string val) {
+    this.holder = Holder(val);
+}
+
+p Owner.ctor(const Holder& holder) {
+    this.holder = holder;
+}
+
+f<Holder> reassignResult() {
+    result = Holder("result-first");
+    result = Holder("result-second");
+}
+
+f<int> main() {
+    Holder src = Holder("src");
+    printf("== array items\n");
+    Holder[2] items;
+    items[0] = Holder("item-first");
+    items[0] = src;
+    items[1] = Holder("item-second");
+    items[1] = Holder("item-third");
+    printf("items: %s %s\n", items[0].s, items[1].s);
+    printf("== field without no-args ctor\n");
+    Owner owner = Owner("owner-first");
+    owner.holder = Holder("owner-second");
+    owner.holder = src;
+    printf("owner: %s\n", owner.holder.s);
+    printf("== ctor bodies\n");
+    Owner copiedOwner = Owner(src);
+    printf("copied owner: %s\n", copiedOwner.holder.s);
+    printf("== result\n");
+    Holder reassigned = reassignResult();
+    printf("reassigned: %s\n", reassigned.s);
+    printf("== end\n");
+}

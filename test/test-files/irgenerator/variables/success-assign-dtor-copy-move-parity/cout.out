@@ -1,0 +1,20 @@
+== array items
+dtor: (null)
+dtor: item-first
+dtor: (null)
+dtor: item-second
+items: src item-third
+== field without no-args ctor
+dtor: owner-first
+dtor: owner-second
+owner: src
+== ctor bodies
+copied owner: src
+== result
+dtor: result-first
+reassigned: result-second
+== end
+dtor: result-second
+dtor: src
+dtor: src
+dtor: src

@@ -73,7 +73,11 @@ main:                                   # @main
 	.cfi_offset %r14, -32
 	.cfi_offset %r15, -24
 	.cfi_offset %rbp, -16
-	leaq	144(%rsp), %r14
+	leaq	96(%rsp), %rbx
+	movl	$384, %edx                      # imm = 0x180
+	movq	%rbx, %rdi
+	xorl	%esi, %esi
+	callq	memset@PLT
 	leaq	.Lstr(%rip), %rdi
 	callq	puts@PLT
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
@@ -81,31 +85,32 @@ main:                                   # @main
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
-	movl	$336, %edx                      # imm = 0x150
-	movq	%r14, %rdi
-	xorl	%esi, %esi
-	callq	memset@PLT
+	movq	%rbx, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
-	movaps	%xmm0, 96(%rsp)
-	movaps	%xmm1, 112(%rsp)
 	movaps	%xmm2, 128(%rsp)
-	leaq	72(%rsp), %rbx
-	leaq	96(%rsp), %rsi
-	movq	%rbx, %rdi
+	movaps	%xmm1, 112(%rsp)
+	movaps	%xmm0, 96(%rsp)
+	leaq	72(%rsp), %r14
+	movq	%r14, %rdi
+	movq	%rbx, %rsi
 	callq	_ZN6Thread3runEv@PLT
-	movq	%rbx, %rdi
+	movq	%r14, %rdi
 	callq	_ZN6ResultIbE5isErrEv@PLT
 	movl	$1, %ebx
 	testb	%al, %al
 	jne	.LBB1_17
 # %bb.1:                                # %for.head.L13
+	leaq	144(%rsp), %r14
 	leaq	_Z15lambda.L14C29.0v(%rip), %rsi
 	movq	%rsp, %rdi
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
+	movq	%r14, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
@@ -127,6 +132,8 @@ main:                                   # @main
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
+	movq	%r15, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
@@ -148,6 +155,8 @@ main:                                   # @main
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
+	movq	%r12, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
@@ -169,6 +178,8 @@ main:                                   # @main
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
+	movq	%r13, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
@@ -190,6 +201,8 @@ main:                                   # @main
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
+	movq	%r13, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
@@ -211,6 +224,8 @@ main:                                   # @main
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
+	movq	%r13, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2
@@ -232,6 +247,8 @@ main:                                   # @main
 	xorl	%edx, %edx
 	xorl	%ecx, %ecx
 	callq	_ZN6Thread4ctorEPFvE@PLT
+	movq	%r13, %rdi
+	callq	_ZN6Thread4dtorEv@PLT
 	movups	(%rsp), %xmm0
 	movups	16(%rsp), %xmm1
 	movups	32(%rsp), %xmm2

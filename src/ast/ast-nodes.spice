@@ -2507,6 +2507,38 @@ public f<bool> isDirectFieldOfThis(const ASTNode* node) {
 }
 
 /**
+ * Check if an lvalue expression is a chain of field accesses and array subscripts on 'this' (e.g. 'this.field.items[0]')
+ *
+ * @param node Lvalue expression
+ * @return Accessed on 'this' or not
+ */
+public f<bool> isAccessedOnThis(const ASTNode* node) {
+    const ASTNode* current = node;
+    while current.kind == ASTNodeKind::POSTFIX_UNARY_EXPR {
+        const ASTPostfixUnaryExprNode* postfixUnaryExpr = downcast<ASTPostfixUnaryExprNode>(current);
+        if postfixUnaryExpr.op != PostfixUnaryOp::OP_MEMBER_ACCESS && postfixUnaryExpr.op != PostfixUnaryOp::OP_SUBSCRIPT {
+            return false;
+        }
+        current = getASTNode(postfixUnaryExpr.postfixUnaryExpr);
+    }
+    return isThisVariable(current);
+}
+
+/**
+ * Check if an expression is the 'this' variable itself
+ *
+ * @param node Expression
+ * @return 'this' or not
+ */
+public f<bool> isThisVariable(const ASTNode* node) {
+    if node.kind != ASTNodeKind::ATOMIC_EXPR {
+        return false;
+    }
+    const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(node);
+    return atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
+}
+
+/**
  * Check if an lvalue expression denotes the value behind 'this' (e.g. '*this')
  *
  * @param node Lvalue expression
