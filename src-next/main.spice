@@ -1,0 +1,18 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+/**
+ * Entry point to the re-implementation of the Spice compiler. Only prints the version for now
+ *
+ * @param argc Argument count
+ * @param argv Argument vector
+ * @return Return code
+ */
+f<int> main(int argc, string[] argv) {
+    if argc == 2 && (String(argv[1]) == "--version" || String(argv[1]) == "-v") {
+        const string version = __get_build_var<string>("SPICE_VERSION", "dev");
+        printf("Spice (next) version: %s\n", version);
+        return 0;
+    }
+    printf("Usage: spice-next --version\n");
+    return 1;
+}

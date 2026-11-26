@@ -2,6 +2,7 @@
   - changed-files:
       - any-glob-to-any-file:
           - 'src/**/*'
+          - 'src-next/**/*'
 
 'std':
   - changed-files:

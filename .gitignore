@@ -42,3 +42,6 @@ __pycache__/
 
 # Packages of the compiler sources, that Spice Shaker installs from src/spice.lock
 /src/spice_packages/
+
+# Packages of the compiler re-implementation
+/src-next/spice_packages/

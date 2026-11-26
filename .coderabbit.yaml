@@ -27,6 +27,11 @@ reviews:
       instructions: >
         This is the self-hosted compiler written in Spice. Follow the
         Spice-source conventions in STYLE_GUIDE.md.
+    - path: "src-next/**/*.spice"
+      instructions: >
+        Re-implementation of the compiler in Spice, which ports the behavior of src/. Follow the Spice-source
+        conventions in STYLE_GUIDE.md and the rules in media/specs/compiler-reimplementation.md (section 10.2): layers,
+        ported functions carry a '// legacy:' reference comment.
     - path: "std/**/*.spice"
       instructions: >
         Standard library code. Follow the Spice-source conventions in

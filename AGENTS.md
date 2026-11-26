@@ -62,6 +62,8 @@ The helper scripts are Python-based and cross-platform.
     - `python build.py --build-type Debug`
 - Bootstrap the compiler until it reaches a fixed point (the compiler builds itself reproducibly):
     - `python bootstrap.py`
+- Build the compiler re-implementation from `src-next/` to `build/spice-next`:
+    - `python build.py --sources src-next --output-name spice-next`
 
 ## Test and verification
 
@@ -73,6 +75,11 @@ The helper scripts are Python-based and cross-platform.
     - `python test/run-tests.py --compiler build/spice --filter 'TestSuiteName.TestCaseName'`
 - Update the refs of test cases with the actual output:
     - `python test/run-tests.py --compiler build/spice --filter '...' --update-refs`
+- Test the re-implementation: `--variant next` prefers the `<ref>-next.<ext>` variants of the reference files, runs the
+  `next-only` cases and lets `--update-refs` write `-next` variants only. `--ratchet` runs only the cases of
+  `test/next-ratchet.txt`:
+    - `python test/run-tests.py --compiler build/spice-next --variant next --ratchet`
+    - `python test/run-tests.py --build-compiler build/stage0/spice --sources src-next --variant next --filter '...'`
 - Build the compiler under test with AddressSanitizer, failing every test case that produces a sanitizer report:
     - `python test/run-tests.py --instrument asan`
 - See `python test/run-tests.py --help` for all options.

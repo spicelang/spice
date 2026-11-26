@@ -1,0 +1,3 @@
+# Test cases (Suite.Case, one per line), that pass with build/spice-next. The next-ratchet CI job runs exactly these with
+# 'python test/run-tests.py --compiler build/spice-next --variant next --ratchet'. A listed case, that fails, blocks the PR.
+# See media/specs/compiler-reimplementation.md, section 8.2.
