@@ -1007,15 +1007,20 @@ def is_tpde_available() -> bool:
 
 
 def setup_environment() -> None:
-    """Set up the environment, that the compilers need to build the compiler sources and the test cases"""
-    # Always test the std and compiler sources of this checkout
+    """Set up the environment, that the compilers need to build the test cases"""
+    # Always test the std of this checkout
     os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")
-    if "LLVM_LIB_DIR" not in os.environ:
+
+
+def setup_llvm_environment(sources: Path) -> None:
+    """Set up the environment, that the compiler needs to build the compiler sources, if they depend on the llvm package"""
+    llvm_needed = bootstrap.sources_need_llvm(sources)
+    if llvm_needed and "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = bootstrap.find_llvm_lib_dir()
         if llvm_lib_dir is None:
             bootstrap.fail("LLVM library directory not found. Set LLVM_LIB_DIR or LLVM_DIR, or put llvm-config on the PATH")
         os.environ["LLVM_LIB_DIR"] = llvm_lib_dir
-    if "LLVM_INCLUDE_DIRS" not in os.environ:
+    if llvm_needed and "LLVM_INCLUDE_DIRS" not in os.environ:
         llvm_include_dirs = bootstrap.find_llvm_include_dirs()
         if llvm_include_dirs is None:
             bootstrap.fail("LLVM include directories not found. Set LLVM_INCLUDE_DIRS (e.g. '-I<dir1> -I<dir2>') or "
@@ -1139,9 +1144,11 @@ def main() -> None:
             print(test_case.full_name if test_case else BUILTIN_TESTS_NAME)
         return
 
-    # Building the compiler sources (the compiler under test or the builtin tests) needs the packages of src/spice.lock
-    if (OPTS.compiler is None or None in test_cases) and (OPTS.sources / "spice.lock").is_file():
-        bootstrap.install_packages(source_dir=OPTS.sources)
+    # Building the compiler sources (the compiler under test or the builtin tests) needs the packages of its spice.lock and, if it depends on llvm, LLVM
+    if OPTS.compiler is None or None in test_cases:
+        setup_llvm_environment(OPTS.sources)
+        if (OPTS.sources / "spice.lock").is_file():
+            bootstrap.install_packages(source_dir=OPTS.sources)
 
     # Build the compiler under test
     if OPTS.compiler is None:

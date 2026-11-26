@@ -4,7 +4,6 @@ import argparse
 import os
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 
 sys.dont_write_bytecode = True
@@ -63,19 +62,10 @@ if (source_dir / "spice.lock").is_file():
     bootstrap.install_packages(source_dir=source_dir)
 
 
-def needs_llvm() -> bool:
-    """Only source roots, that depend on the llvm package, need the LLVM libraries and headers"""
-    try:
-        manifest = tomllib.loads((source_dir / "spice.toml").read_text(encoding="utf-8"))
-    except (OSError, tomllib.TOMLDecodeError):
-        return True
-    return "llvm" in manifest.get("dependencies", {})
-
-
 # Environment, the compiler needs to build the compiler sources. Always build with the std and compiler sources of this checkout
 os.environ.setdefault("LLVM_DIR", str(ROOT_DIR / "llvm" / "build-release" / "lib" / "cmake" / "llvm"))
 os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")
-llvm_needed = needs_llvm()
+llvm_needed = bootstrap.sources_need_llvm(source_dir)
 if llvm_needed and "LLVM_LIB_DIR" not in os.environ:
     llvm_lib_dir = bootstrap.find_llvm_lib_dir()
     if llvm_lib_dir is None:
