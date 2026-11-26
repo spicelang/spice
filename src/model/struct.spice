@@ -7,6 +7,7 @@ import "std/text/stringstream";
 // Own imports
 import "@/ast/ast-nodes";
 import "@/model/struct-base";
+import "@/model/function";
 import "@/model/generic-type";
 import "@/symboltablebuilder/qual-type";
 import "@/symboltablebuilder/symbol-table-entry";
@@ -21,6 +22,11 @@ public type Struct struct {
     public compose StructBase structBase
     public QualTypeList fieldTypes
     public QualTypeList interfaceTypes
+    // Methods, that implement the methods of the interfaces, one list per interface in the order of interfaceTypes. Each
+    // list is in the order of the methods of the interface. The vtable of the struct holds one segment per interface with
+    // the respective methods, because a pointer to an interface points to the interface subobject of the struct, which
+    // carries the vtable pointer to the segment of this interface
+    public Vector<Vector<const Function*>> interfaceMethods
 }
 
 public p Struct.ctor(const String& name, SymbolTableEntry* entry, Scope* scope, const QualTypeList& fieldTypes, const Vector<GenericType>& templateTypes, const QualTypeList& interfaceTypes, ASTNode* declNode) {

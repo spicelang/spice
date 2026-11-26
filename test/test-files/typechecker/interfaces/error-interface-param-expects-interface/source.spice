@@ -1,0 +1,37 @@
+type First interface {
+    f<int> one();
+}
+
+type Second interface {
+    f<int> two();
+}
+
+type Data struct : First, Second {
+    int value
+}
+
+f<int> Data.one() {
+    return 1;
+}
+
+f<int> Data.two() {
+    return this.value;
+}
+
+type Consumer interface {
+    f<int> consume(Data*);
+}
+
+// The interface method passes a Data*, but the implementation expects a Second*
+type Impl struct : Consumer {}
+
+f<int> Impl.consume(Second* second) {
+    return second.two();
+}
+
+f<int> main() {
+    Impl impl;
+    Data data;
+    Consumer* consumer = &impl;
+    printf("%d\n", consumer.consume(&data));
+}

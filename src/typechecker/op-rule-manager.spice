@@ -842,7 +842,7 @@ f<QualType> OpRuleManager.getAssignResultTypeCommon(const ASTNode* node, const E
         QualType lhsTypeCopy = lhsType;
         QualType rhsTypeCopy = rhsType;
         unwrapBothWithRefWrappers(lhsTypeCopy, rhsTypeCopy);
-        if lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy) {
+        if lhsTypeCopy.matchesInterfaceImplementedByStruct(rhsTypeCopy) && isConvertibleToImplementedInterface(lhsType, lhsTypeCopy, rhsTypeCopy) {
             return lhsType;
         }
     }

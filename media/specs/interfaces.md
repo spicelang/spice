@@ -35,6 +35,41 @@ Interfaces in Spice enable the programmer to define a bunch of methods that a st
 to it. The interface needs to be attached to a struct explicitly to make it clearer for the reader, that the struct is part of the
 collection of structs, implementing this particular interface.
 
+## Memory layout and virtual calls
+A struct holds one implicit field per interface, in the order in which the interfaces are attached, in front of its own
+fields. Each of these interface subobjects only consists of a vtable pointer. A pointer or reference to an interface points to
+the interface subobject of the struct, not to the struct itself. Therefore, the conversion of a pointer or reference to a
+struct to a pointer or reference to one of its interfaces advances the pointer to the respective subobject. This happens for
+implicit conversions (declarations, assignments, arguments, return values, struct instantiations) as well as for explicit
+casts. A nil pointer stays nil. Behind more levels of indirection (e.g. `Second**` from `Impl**`, or a `Second*&` bound to an
+`Impl*`), the pointer cannot be adjusted, so the type checker only allows such conversions for the first interface of a
+struct, whose subobject sits at offset 0.
+
+```spice
+type First interface { f<int> one(); }
+type Second interface { f<int> two(); }
+type Impl struct : First, Second { int value }
+```
+
+```llvm
+%struct.Impl = type { %interface.First, %interface.Second, i32 }
+@_ZTV4Impl = { [3 x ptr], [3 x ptr] } {
+  [3 x ptr] [ptr null, ptr @_ZTI4Impl, ptr @_ZN4Impl3oneEv],      ; segment of First, address point at index 2
+  [3 x ptr] [ptr null, ptr @_ZTI4Impl, ptr @_ZThn8_N4Impl3twoEv]  ; segment of Second, address point at index 2
+}
+```
+
+The vtable of the struct consists of one segment per interface. A segment holds a nullptr, the TypeInfo of the struct and the
+methods, that implement the methods of the interface, in the order of the interface methods. The ctor of the struct stores the
+address point of each segment (behind the TypeInfo) to the vtable pointer of the respective interface subobject. A call
+through an interface loads the vtable pointer from the subobject and uses the index of the method within the interface.
+
+The methods of the struct expect a pointer to the struct as `this`. For the interfaces, whose subobject does not sit at offset
+0 of the struct, the vtable segment therefore refers to a thunk instead of the method itself (`_ZThn<offset>_<method>`, like
+the non-virtual thunks of the Itanium C++ ABI). It subtracts the offset of the subobject from `this` and calls the method.
+Inherited default methods expect a pointer to the interface subobject anyway, so their slots refer to the default method
+directly. A method, that implements a method of multiple interfaces, appears in the segment of each of these interfaces.
+
 ## Default methods
 
 ### Motivation
@@ -107,8 +142,6 @@ implementation of the concrete struct, regardless of whether it is the implement
 
 ### Limitations
 - Default methods of generic interfaces and generic default methods are not supported yet.
-- Virtual calls through an interface, that is not the first interface of a struct, do not work correctly yet. This is
-  independent of default methods, but also affects default methods of such interfaces.
 
 ### Usage in the compiler
 Default methods are implemented in `symbol-table-builder.spice`, `type-checker.spice`, `function-manager.spice` and

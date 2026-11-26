@@ -101,7 +101,7 @@ public f<bool> matchRequestedToCandidateType(const QualType& candidateTypeIn, co
     if !candidateType.hasAnyGenericParts() {
         // Check if the right one is a struct that implements the interface on the left
         if candidateType.matchesInterfaceImplementedByStruct(requestedType) {
-            return true;
+            return isConvertibleToImplementedInterface(candidateTypeIn, candidateType, requestedType);
         }
         // Normal equality check
         return candidateType.matches(requestedType, true, !strictQualifierMatching, true);

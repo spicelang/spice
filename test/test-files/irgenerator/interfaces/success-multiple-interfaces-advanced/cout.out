@@ -1,0 +1,9 @@
+Distance: 30
+Distance: 12
+Compare: 18
+Compare: -18
+Name: Car 1
+Is named: 1
+Distance via Named*: 30
+Car 1 (named: 1, distance: 30)
+Car 2 (named: 1, distance: 12)

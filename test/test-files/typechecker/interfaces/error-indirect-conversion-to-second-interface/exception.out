@@ -1,0 +1,5 @@
+[Error|Semantic] ./source.spice:26:5:
+Wrong data type for operator: Cannot apply '=' operator on types Second** and Impl**
+
+26  Second** secondPtrPtr = implPtrPtr;
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -1,0 +1,102 @@
+type First interface {
+    f<int> one();
+}
+
+type Second interface {
+    f<int> two();
+    f<int> add(int);
+}
+
+type Impl struct : First, Second {
+    int value
+}
+
+p Impl.ctor(int value) {
+    this.value = value;
+}
+
+f<int> Impl.one() {
+    return this.value + 1;
+}
+
+f<int> Impl.two() {
+    return this.value + 2;
+}
+
+f<int> Impl.add(int summand) {
+    return this.value + summand;
+}
+
+type Holder struct {
+    Second* second
+}
+
+type SecondOwner struct {
+    Second* second
+}
+
+p SecondOwner.ctor(Second* second) {
+    this.second = second;
+}
+
+f<Second*> getSecond(Impl* impl) {
+    return impl;
+}
+
+f<Second&> getSecondRef(Impl& impl) {
+    return impl;
+}
+
+f<int> callPtr(Second* second) {
+    return second.two();
+}
+
+f<int> callRef(Second& second) {
+    return second.add(5);
+}
+
+f<int> main() {
+    Impl impl = Impl(10);
+    printf("Direct: %d, %d, %d\n", impl.one(), impl.two(), impl.add(3));
+
+    // Calls through the first interface
+    First* first = &impl;
+    printf("Via First*: %d\n", first.one());
+
+    // Calls through the second interface
+    Second* second = &impl;
+    printf("Via Second*: %d, %d\n", second.two(), second.add(3));
+    Second& secondRef = impl;
+    printf("Via Second&: %d, %d\n", secondRef.two(), secondRef.add(4));
+    Second* assigned = nil<Second*>;
+    assigned = &impl;
+    printf("Assigned: %d\n", assigned.two());
+    printf("Ptr arg: %d\n", callPtr(&impl));
+    printf("Ref arg: %d\n", callRef(impl));
+    printf("Returned ptr: %d\n", getSecond(&impl).two());
+    printf("Returned ref: %d\n", getSecondRef(impl).two());
+    Holder holder = Holder{&impl};
+    printf("Field: %d\n", holder.second.two());
+    Second* casted = cast<Second*>(&impl);
+    printf("Cast: %d\n", casted.two());
+
+    unsafe {
+        SecondOwner* owner = __new<SecondOwner>(&impl);
+        printf("New: %d\n", owner.second.two());
+        owner.second = nil<Second*>;
+        SecondOwner* placed = __placement_new<SecondOwner>(cast<byte*>(owner), &impl);
+        printf("Placement new: %d\n", placed.second.two());
+        heap byte* ownerMemory = cast<heap byte*>(owner);
+        sDealloc(ownerMemory);
+    }
+
+    // A reference to a pointer to an interface aliases the pointer itself, which must not be adjusted
+    Impl* implPtr = &impl;
+    First*& firstPtrRef = implPtr;
+    printf("Pointer ref: %d\n", firstPtrRef.one());
+
+    // A nil pointer stays nil
+    Impl* nilImpl = nil<Impl*>;
+    Second* nilSecond = nilImpl;
+    printf("Nil: %d\n", nilSecond == nil<Second*>);
+}

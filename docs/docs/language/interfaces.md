@@ -49,6 +49,10 @@ f<bool> Car.isDriving() {
 
 The method definitions live outside the struct body, exactly like any other [method](methods.md).
 
+A call through an interface passes its arguments to the implementing method unchanged. Therefore, a parameter of the
+implementing method must not be a pointer or reference to an interface, where the interface method declares a struct, that
+implements this interface. Declare the same struct type instead.
+
 ## Using an interface pointer
 
 To call methods through an interface, take a pointer to the concrete value and assign it to a pointer of the
@@ -82,6 +86,10 @@ f<int> main() {
 !!! note
     Spice does not allow assigning a struct value directly to an interface variable — you must use a pointer or
     reference. The compiler will report an error if you try `Driveable car = Car()`.
+
+A struct can implement multiple interfaces, and its pointers and references convert to each of them. Behind more levels of
+indirection, e.g. from `Car**` to `Driveable**` or when binding a `Driveable*&` to a `Car*`, this only works for the first
+interface of the struct.
 
 An interface method may return another interface by value, as long as each implementation returns a struct that
 implements it. `IIterable<T>.getIterator()` is an example: `Vector<T>` implements it by returning a `VectorIterator<T>`.
