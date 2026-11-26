@@ -41,7 +41,9 @@ fields. Each of these interface subobjects only consists of a vtable pointer. A 
 the interface subobject of the struct, not to the struct itself. Therefore, the conversion of a pointer or reference to a
 struct to a pointer or reference to one of its interfaces advances the pointer to the respective subobject. This happens for
 implicit conversions (declarations, assignments, arguments, return values, struct instantiations) as well as for explicit
-casts. A nil pointer stays nil.
+casts. A nil pointer stays nil. Behind more levels of indirection (e.g. `Second**` from `Impl**`, or a `Second*&` bound to an
+`Impl*`), the pointer cannot be adjusted, so the type checker only allows such conversions for the first interface of a
+struct, whose subobject sits at offset 0.
 
 ```spice
 type First interface { f<int> one(); }

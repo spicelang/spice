@@ -87,6 +87,10 @@ f<int> main() {
     Spice does not allow assigning a struct value directly to an interface variable — you must use a pointer or
     reference. The compiler will report an error if you try `Driveable car = Car()`.
 
+A struct can implement multiple interfaces, and its pointers and references convert to each of them. Behind more levels of
+indirection, e.g. from `Car**` to `Driveable**` or when binding a `Driveable*&` to a `Car*`, this only works for the first
+interface of the struct.
+
 An interface method may return another interface by value, as long as each implementation returns a struct that
 implements it. `IIterable<T>.getIterator()` is an example: `Vector<T>` implements it by returning a `VectorIterator<T>`.
 Such a method can only be called on the struct itself, not through an interface pointer or reference. A call

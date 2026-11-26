@@ -702,6 +702,29 @@ public f<bool> QualType.matchesInterfaceImplementedByStruct(const QualType& stru
 }
 
 /**
+ * Check if a value can be converted to the given destination type, which refers to an interface, that the given struct type
+ * implements. A pointer to a struct is converted to a pointer to an interface by advancing it to the interface part of the
+ * struct. This is only possible for a pointer to an interface and a reference to an interface, that is bound to a struct.
+ * Behind more levels of indirection (e.g. Interface** from Struct** or Interface*& bound to a Struct*), the pointer cannot be
+ * adjusted. This only works for the first interface of the struct, whose interface part sits at offset 0.
+ *
+ * @param dstType Destination type, e.g. Interface* or Interface&
+ * @param interfaceType Unwrapped interface type of the destination type
+ * @param structType Unwrapped struct type of the source type, that implements the interface
+ * @return Convertible or not
+ */
+public f<bool> isConvertibleToImplementedInterface(const QualType& dstType, const QualType& interfaceType, const QualType& structType) {
+    const QualType dstNonRefType = dstType.removeReferenceWrapper();
+    const bool isInterfacePtr = !dstType.isRef() && dstType.isPtr() && dstType.getContained().is(SuperType::TY_INTERFACE);
+    const bool isInterfaceRef = dstType.isRef() && dstNonRefType.is(SuperType::TY_INTERFACE);
+    if isInterfacePtr || isInterfaceRef { return true; }
+    const Struct* spiceStruct = structType.getStruct(nil<const ASTNode*>);
+    assert spiceStruct != nil<Struct*>;
+    if spiceStruct.interfaceTypes.isEmpty() { return false; }
+    return interfaceType.matches(spiceStruct.interfaceTypes.front(), false, false, true);
+}
+
+/**
  * Check if the current (struct) type is a base of the given struct type, embedded via the 'compose'
  * qualifier. Only first-field compositions are considered, because only those sit at offset 0 and can
  * therefore be reached without adjusting the pointer value. The check follows the chain of first-field
