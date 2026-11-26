@@ -23,7 +23,7 @@ components, but the order in which they run, and the output they produce, are ke
 10. [Work packages for AI agents](#10-work-packages-for-ai-agents)
 11. [Risks and mitigations](#11-risks-and-mitigations)
 12. [Alternatives considered](#12-alternatives-considered)
-13. [Open decisions](#13-open-decisions)
+13. [Decisions](#13-decisions)
 14. [Appendix A: legacy to new mapping](#appendix-a-legacy-to-new-mapping)
 15. [Appendix B: TIR node catalogue](#appendix-b-tir-node-catalogue)
 16. [Appendix C: glossary](#appendix-c-glossary)
@@ -240,15 +240,15 @@ There are more checks on top of the reference files:
   must visit constructs in the legacy order and bail out at the same points.
 - The white-box dumps (`syntax-tree.dot`, `symbol-table.json`, `type-registry.out`, `dependency-graph.dot`,
   `cache-stats.out`, 28 cases) are kept by **compatibility serializers** over the new data model. `cache-stats.out` is
-  the exception and needs a decision (see [13](#13-open-decisions)).
+  the exception: it is re-baselined at cutover (decision [D2](#13-decisions)).
 - The 67 builtin unit tests call internal APIs (`Driver`, `SourceFile`, `GlobalResourceManager`, …). They are
   **ported** to the equivalent new APIs, test by test (see [8.5](#85-builtin-unit-tests)). They cannot run unchanged
   against code that no longer exists.
 
 ### 3.2 Constraints from Spice as the implementation language
 
-The compiler is self-hosted and built by the pinned stage0 compiler (0.30.1, `.github/stage0-version`). That leads to
-these constraints:
+The compiler is self-hosted and built by the pinned stage0 compiler (`.github/stage0-version`). It is bumped from 0.30.1
+to 0.30.2 in [#1887](https://github.com/spicelang/spice/pull/1887) (decision [D3](#13-decisions)). That leads to these constraints:
 
 | Constraint                                                                                             | Consequence for the design                                                                                                                                                                 |
 |--------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -262,7 +262,7 @@ these constraints:
 | Default methods of generic interfaces are not supported                                                | Generic interfaces have no default methods. Default traversal is on non-generic visitor interfaces.                                                                                         |
 | `<` cannot be overloaded, no static methods                                                            | Explicit `compare` functions for sorting. Free functions for constructors of ids.                                                                                                          |
 | Reference fields must be bound from a variable                                                         | Prefer pointers or ids for long-lived context fields.                                                                                                                                       |
-| Only stage0 features are available                                                                     | No `T&&` or `move` (added in [#1881](https://github.com/spicelang/spice/pull/1881), after 0.30.1) and no parameter names in interface signatures ([#1864](https://github.com/spicelang/spice/pull/1864)) until stage0 is bumped. See [decision D3](#13-open-decisions).                    |
+| Only stage0 features are available                                                                     | Stage0 0.30.2 supports `T&&` and `move` ([#1881](https://github.com/spicelang/spice/pull/1881)) and parameter names in interface signatures ([#1864](https://github.com/spicelang/spice/pull/1864)). Newer language features need another stage0 bump. See [decision D3](#13-decisions).                    |
 | The bootstrap requires a fixed point                                                                   | No output can depend on pointer values or hash-map iteration order. Iteration order comes from ids or ordered containers.                                                                  |
 | LLVM C API limits                                                                                      | No `dso_local`, no moving of instructions (allocas are hoisted by inserting at a marker), no `createMethod` debug info, no module summary. These stay as they are.                         |
 
@@ -959,7 +959,7 @@ They run in `CompilerTests.BuiltinTests` as today. The test count must not go be
 | `heap`, `unsafe`                                                  | only in `base` (arenas, interner) and the LLVM glue                                                                                                                                  |
 | `std/os/thread-pool`, `recursive-mutex`, `atomic`                 | parallel back end (as today)                                                                                                                                                        |
 | Packages (`spice.toml`, Spice Shaker)                             | the `llvm`, `tpde` and `manifest` packages as today. Later, `syntax` and `sema` can be published as a package for a language server.                                                |
-| `T&&` and `move` (once stage0 has them)                           | moving arenas, vectors and results without copies                                                                                                                                    |
+| `T&&` and `move` (stage0 0.30.2)                                  | moving arenas, vectors and results without copies                                                                                                                                    |
 
 ### 7.2 Language limits and how the design works around them
 
@@ -1053,7 +1053,7 @@ The new codegen reproduces the legacy IR text. To do that, it applies these rule
 **Rule for differences that cannot be avoided.** If a structural IR difference is proven to come from a *bug* in the
 legacy compiler, the new compiler reproduces the bug until cutover and records it in
 `media/specs/compiler-reimplementation-quirks.md`. Each quirk is fixed in a separate PR after cutover, with refs
-updated in that PR. This keeps the test contract intact during the migration (see decision D1).
+updated in that PR. This keeps the test contract intact during the migration (decision [D1](#13-decisions)).
 
 ### 8.4 Diagnostic and warning order
 
@@ -1111,8 +1111,8 @@ The ported test keeps its name and asserts the same facts through the new API.
 | `syntax-tree.dot` (9)                 | The node kinds are unchanged and the printer is ported, so the output is identical. It is verified on the whole corpus.                                                                    |
 | `dependency-graph.dot` (2)            | Printed from `ModuleGraph` with the legacy traversal and path labels.                                                                                                                       |
 | `symbol-table.json` (9)               | `sema/compat/symtab-json`. The checker optionally records a **scope trace**, only with `--dump-symtab`: scope kind, legacy name (`fct:…`, `struct:…`, `if:L22C13`, `expr:L19C20`, …), symbols with `orderIndex`, state, type, `isGlobal`, location, and captures. The serializer rebuilds the legacy JSON from that trace. The legacy expression scopes (ternary branches, logical operands) are syntactic, so the trace can reproduce them. |
-| `type-registry.out` (7)               | The sorted names of all interned types. The new `TypeStore` must intern the same set. Where legacy interns intermediate types, the compat layer registers the same names at the same semantic points. If that is not possible in a few cases: decision D2. |
-| `cache-stats.out` (1)                 | Pins the hit and miss counters of the legacy lookup caches, i.e. their algorithm. It cannot be reproduced meaningfully by a different cache design: decision D2.                          |
+| `type-registry.out` (7)               | The sorted names of all interned types. The new `TypeStore` must intern the same set. Where legacy interns intermediate types, the compat layer registers the same names at the same semantic points (decision D2). A case that provably cannot be emulated is re-baselined at cutover, like `cache-stats.out`. |
+| `cache-stats.out` (1)                 | Pins the hit and miss counters of the legacy lookup caches, i.e. their algorithm. It cannot be reproduced meaningfully by a different cache design, so it is re-baselined at cutover (decision D2).                          |
 
 ### 8.7 The moving target
 
@@ -1123,7 +1123,7 @@ The legacy compiler keeps getting fixes and features during the migration:
 - `media/specs/compiler-reimplementation-port-log.md` lists every legacy commit after the fork point that changes
   compiler behaviour, with the new component it affects. A work package is not done until its port-log entries are
   ported.
-- Recommendation (decision D4): during phases 5 and 6, new language features go into legacy only if they are small, or
+- Decision D4: during phases 5 and 6, new language features go into legacy only if they are small, or
   if they are implemented in both compilers in the same PR. Bug fixes are always welcome. They come with a test, which
   the ratchet then enforces for the new compiler.
 
@@ -1161,7 +1161,7 @@ Sizes are relative: S < 2k lines, M 2-6k, L 6-12k, XL > 12k of new code, includi
 
 | WP   | Content                                                                                                                                                                                                                                                                                            |
 |------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 0.1  | Decide [D1-D6](#13-open-decisions).                                                                                                                                                                                                                                                                |
+| 0.1  | Merge the stage0 bump to 0.30.2 ([#1887](https://github.com/spicelang/spice/pull/1887), decision [D3](#13-decisions)). The other decisions D1, D2 and D4-D6 are taken (section 13).                                                                                                                                                                                                                                                                |
 | 0.2  | Build tooling:<br>• `build.py --sources <dir> --output-name <name>`<br>• `run-tests.py --compiler build/spice-next`, which already works because the runner treats the compiler as a black box<br>• `--build-compiler` with `--sources`<br>• the CI job `next-ratchet`, with an initially empty `test/next-ratchet.txt`<br>• `src/next/main.spice` printing the version |
 | 0.3  | The differential harness `tools/diff_compilers.py` and the IR normalizer `tools/ir_normalize.py` (8.1). Sanity check: legacy vs. legacy shows zero differences on the full corpus.                                                                                                                  |
 | 0.4  | `tools/check_layering.py`, with the allowed-dependency table of 4.3 and the file and function size budgets as warnings. It runs only on `src/next/`.                                                                                                                                                |
@@ -1254,7 +1254,8 @@ The script compares the error output of both compilers. This tests diagnostic pa
 **Exit gate.**
 
 - All `exception.out` (417) and `warning.out` (24) cases pass.
-- All `symbol-table.json` (9) and `type-registry.out` (7) cases pass, or have a decision under D2.
+- All `symbol-table.json` (9) and `type-registry.out` (7) cases pass. A `type-registry.out` case that provably cannot be
+  emulated is listed for re-baselining at cutover (D2).
 - The error output of the corpus and the mutations is identical.
 - `TirVerifier` is clean on the corpus.
 - The sema stage costs no more instructions than legacy PRE + POST on the compiler sources.
@@ -1299,6 +1300,8 @@ performance budget are green.
 1. Freeze legacy for one release cycle. Fixes now land in `src/next/`.
 2. Do the swap in one PR: `git rm` the legacy tree, `git mv src/next/* src/`, and reset the defaults in `build.py`,
    `bootstrap.py`, `run-tests.py` and CI. Delete `test/next-ratchet.txt` and the legacy-only harness options.
+   Re-baseline `cache-stats.out`, and any `type-registry.out` case listed in phase 5, with the output of the new
+   compiler, in the same format, in a separate reviewed commit (D2).
 3. Update the documentation:
    - `media/specs/compile-stages.md` and `parallel-backend.md`;
    - `AGENTS.md` (repository map, build and test commands) and `STYLE_GUIDE.md` (visitor and memory sections);
@@ -1310,7 +1313,6 @@ performance budget are green.
 ### 9.11 Phase 9: improvements enabled by the architecture (after cutover, optional)
 
 - Fix the recorded quirks (8.3), one PR each, with ref updates.
-- Replace `cache-stats.out` with counters of the new caches (if D2 says so).
 - Parallel front end (6.3). Error recovery and a collect-all diagnostic policy behind a flag.
 - A language server package built on `syntax`, `modules` and `sema` with a collect-all policy.
 - Incremental compilation: the stage artifacts are keyed by id and immutable, so they can be cached per module.
@@ -1383,7 +1385,7 @@ definitions are agreed first.
 | 1 | Byte-identical IR is unreachable in corner cases (instance order, names, constant forms)                  | medium    | high   | The recipe port (8.3). The instance-order diff from 5d onwards, before codegen exists. The quirks list. Decision D1.                                                            |
 | 2 | Diagnostic order diverges (which error is "first")                                                       | medium    | high   | Ported visit order and bail-outs. Diagnostic-producing analyses run inline (5.9). The legacy checkpoint schedule (8.4). Mutation-based differential testing (5h).               |
 | 3 | The legacy compiler keeps changing (moving target)                                                       | high      | medium | The port log, the ratchet, decision D4.                                                                                                                                          |
-| 4 | Stage0 cannot compile an idiom or has a bug in it                                                        | medium    | medium | Spikes in phase 1. Stay close to the idioms legacy already uses. Bump stage0 (D3).                                                                                              |
+| 4 | Stage0 cannot compile an idiom or has a bug in it                                                        | medium    | medium | Spikes in phase 1. Stay close to the idioms legacy already uses. Stage0 0.30.2 (D3), bumped again if needed.                                                                                              |
 | 5 | Performance regression from TIR construction and side tables                                            | low       | medium | Per-phase budgets measured against legacy. Arenas per module, TIR freed after emission, compact nodes.                                                                            |
 | 6 | The migration stalls halfway                                                                             | medium    | high   | Legacy stays production until cutover, so stopping at any gate is safe. Phase 0-1 tooling (harness, ratchet, layering checker) is useful on its own. Phase gates make progress measurable. |
 | 7 | Behaviour that no test covers changes unnoticed                                                          | medium    | medium | The corpus diff over the std, the compiler sources, the docs examples and the mutations. The bootstrap fixed point.                                                              |
@@ -1402,18 +1404,18 @@ definitions are agreed first.
 | **Query-based incremental compiler from day one** (salsa-style)                             | Much more infrastructure, and hard to express without capturing closures. Immutable, id-keyed artifacts keep this option open (phase 9).                                                                                                                                               |
 | **Long-lived branch or separate repository**                                                | Merge pain with the legacy fixes that keep coming. Trunk-based development in `src/next/` keeps both compilers in one CI.                                                                                                                                                            |
 
-## 13. Open decisions
+## 13. Decisions
 
-These need a maintainer decision in phase 0. Each one has a recommendation.
+These questions were open in the first version of the plan. The maintainer accepted all recommendations on 2026-11-26.
 
-| #  | Decision                                                                                                                                                                                       | Recommendation                                                                                                                                                                                                                                         |
-|----|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| D1 | **Fidelity policy for refs.** Must every ref stay byte-identical during the migration, including legacy bugs?                                                                                  | **Yes.** All refs are a strict gate until cutover. Legacy bugs are reproduced, recorded as quirks and fixed after cutover in separate PRs with ref updates. This honours "all existing tests pass" literally and keeps the oracle simple.                  |
-| D2 | **White-box dumps.** `cache-stats.out` (1 case) pins the legacy cache algorithm. `type-registry.out` (7) pins the set of interned types.                                                          | Emulate `type-registry.out` through the compat layer. Re-baseline `cache-stats.out` at cutover with the counters of the new caches, in the same format, in one reviewed commit. It is the only ref that cannot be kept meaningfully.                       |
-| D3 | **Bump stage0** to a release that contains [#1864](https://github.com/spicelang/spice/pull/1864) (parameter names in interface signatures) and [#1881](https://github.com/spicelang/spice/pull/1881) (`T&&`, `move`) before phase 1?                                                            | **Yes**, as soon as such a release exists. The new code can then use move semantics from the start. The plan also works without it; the features are not required.                                                                                    |
-| D4 | **Legacy feature policy** during phases 5 and 6.                                                                                                                                               | Bug fixes always. New language features only if small, or if implemented in both compilers in the same PR. Larger features wait for cutover.                                                                                                          |
-| D5 | **Boilerplate generators** in Python (`tools/gen/`).                                                                                                                                           | **Yes**, for the AST, TIR, diagnostics and operator tables, with the output committed (6.6).                                                                                                                                                            |
-| D6 | **Location of the new tree.**                                                                                                                                                                 | `src/next/` on `main` with its own `spice.toml`, built as `build/spice-next`.                                                                                                                                                                         |
+| #  | Question                                                                                                                                                         | Decision                                                                                                                                                                                                                                  |
+|----|------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| D1 | **Fidelity policy for refs.** Must every ref stay byte-identical during the migration, including legacy bugs?                                                    | **Yes.** All refs are a strict gate until cutover. Legacy bugs are reproduced, recorded as quirks and fixed after cutover in separate PRs with ref updates. This honours "all existing tests pass" literally and keeps the oracle simple. |
+| D2 | **White-box dumps.** `cache-stats.out` (1 case) pins the legacy cache algorithm. `type-registry.out` (7) pins the set of interned types.                          | `type-registry.out` is emulated through the compat layer. `cache-stats.out` is re-baselined at cutover with the counters of the new caches, in the same format, in one reviewed commit. It is the only ref that cannot be kept meaningfully. |
+| D3 | **Bump stage0** to a release that contains [#1864](https://github.com/spicelang/spice/pull/1864) (parameter names in interface signatures) and [#1881](https://github.com/spicelang/spice/pull/1881) (`T&&`, `move`) before phase 1? | **Yes.** 0.30.2 contains both. The bump is [#1887](https://github.com/spicelang/spice/pull/1887), which also re-enables the move ctors of the std linked lists and trees. The new code can use move semantics from the start. |
+| D4 | **Legacy feature policy** during phases 5 and 6.                                                                                                                 | Bug fixes always. New language features only if small, or if implemented in both compilers in the same PR. Larger features wait for cutover.                                                                                            |
+| D5 | **Boilerplate generators** in Python (`tools/gen/`).                                                                                                             | **Yes**, for the AST, TIR, diagnostics and operator tables, with the output committed (6.6).                                                                                                                                              |
+| D6 | **Location of the new tree.**                                                                                                                                    | `src/next/` on `main` with its own `spice.toml`, built as `build/spice-next`.                                                                                                                                                             |
 
 ## Appendix A: legacy to new mapping
 
