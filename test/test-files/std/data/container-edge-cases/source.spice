@@ -1,7 +1,9 @@
 import "std/data/vector";
 import "std/data/deque";
 import "std/data/queue";
+import "std/data/linked-list";
 import "std/data/doubly-linked-list";
+import "std/data/binary-tree";
 import "std/data/red-black-tree";
 import "std/data/pair";
 
@@ -77,7 +79,8 @@ f<int> main() {
     list.clear();
     assert list.isEmpty();
 
-    // Doubly linked list: constructing from a named list copies it. The moved-from list stays valid
+    // Doubly linked list: constructing from a named list copies it, constructing from move(list) takes over its nodes. The
+    // moved-from list stays valid
     list.pushBack(6);
     list.pushBack(7);
     DoublyLinkedList<int> copiedList = DoublyLinkedList<int>(list);
@@ -86,6 +89,7 @@ f<int> main() {
     DoublyLinkedList<int> movedList = DoublyLinkedList<int>(move(list));
     assert movedList.getSize() == 2ul;
     assert movedList.get(1ul) == 7;
+    assert list.isEmpty();
     list.clear();
     assert list.isEmpty();
 
@@ -97,6 +101,7 @@ f<int> main() {
     RedBlackTree<int, int> moved = RedBlackTree<int, int>(move(tree));
     assert moved.getSize() == 3ul;
     assert moved.find(2) == 20;
+    assert tree.isEmpty();
     tree.clear();
     assert tree.isEmpty();
     foreach unsigned long idx, Pair<const int&, int&>& item : moved {
@@ -105,6 +110,28 @@ f<int> main() {
         assert key == cast<int>(idx) + 1;
         assert value == key * 10;
     }
+
+    // Linked list: move construction takes over the nodes. The moved-from list stays valid
+    LinkedList<int> linkedList;
+    linkedList.pushBack(1);
+    linkedList.pushBack(2);
+    LinkedList<int> movedLinkedList = LinkedList<int>(move(linkedList));
+    assert movedLinkedList.getSize() == 2ul;
+    assert movedLinkedList.get(1ul) == 2;
+    assert linkedList.isEmpty();
+    linkedList.pushBack(3);
+    assert linkedList.getSize() == 1ul;
+
+    // Binary tree: move construction takes over the nodes. The moved-from tree stays valid
+    BinaryTree<int> binaryTree;
+    binaryTree.insert(5);
+    binaryTree.insert(3);
+    BinaryTree<int> movedBinaryTree = BinaryTree<int>(move(binaryTree));
+    assert movedBinaryTree.contains(3);
+    assert movedBinaryTree.contains(5);
+    assert !binaryTree.contains(5);
+    binaryTree.insert(1);
+    assert binaryTree.contains(1);
 
     printf("All assertions passed!\n");
 }
