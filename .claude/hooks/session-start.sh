@@ -25,12 +25,14 @@ LLVM_BUILD_DIR="$LLVM_SRC_DIR/build"
 #    add-apt-repository itself, which a fresh image may not have yet.
 sudo apt-get update
 sudo apt-get install -y software-properties-common
-sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+# add-apt-repository and llvm.sh (below) use sudo -E, since they reach the network through the HTTPS_PROXY of the
+# session, which plain sudo drops
+sudo -E add-apt-repository -y ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt-get install -y \
   ccache ninja-build graphviz uuid-dev \
-  libssl-dev "gcc-${GCC_VERSION}" "g++-${GCC_VERSION}" clang \
-  wget gnupg lsb-release
+  libssl-dev libzstd-dev "gcc-${GCC_VERSION}" "g++-${GCC_VERSION}" clang \
+  libclang-rt-18-dev wget gnupg lsb-release
 sudo update-alternatives --install /usr/bin/gcc gcc "/usr/bin/gcc-${GCC_VERSION}" "1${GCC_VERSION}"
 sudo update-alternatives --install /usr/bin/g++ g++ "/usr/bin/g++-${GCC_VERSION}" "1${GCC_VERSION}"
 sudo update-alternatives --install /usr/bin/gcov gcov "/usr/bin/gcov-${GCC_VERSION}" "1${GCC_VERSION}"
@@ -45,7 +47,7 @@ if [ ! -f "$LLVM_PKG_CMAKE_DIR/LLVMConfig.cmake" ]; then
   set +e
   wget -O /tmp/llvm.sh https://apt.llvm.org/llvm.sh \
     && chmod +x /tmp/llvm.sh \
-    && sudo /tmp/llvm.sh "$LLVM_MAJOR"
+    && sudo -E /tmp/llvm.sh "$LLVM_MAJOR"
   llvm_pkg_status=$?
   set -e
   rm -f /tmp/llvm.sh
@@ -55,6 +57,12 @@ fi
 
 if [ "$llvm_pkg_status" -eq 0 ] && [ -f "$LLVM_PKG_CMAKE_DIR/LLVMConfig.cmake" ]; then
   LLVM_DIR="$LLVM_PKG_CMAKE_DIR"
+  # The llvm package links LLVMIREmbUtils and LLVMMIREmbUtils, which apt.llvm.org does not ship. Nothing references
+  # them, so empty archives satisfy the linker
+  for lib in IREmbUtils MIREmbUtils; do
+    lib_path="/usr/lib/llvm-${LLVM_MAJOR}/lib/libLLVM${lib}.a"
+    [ -f "$lib_path" ] || sudo ar rcs "$lib_path"
+  done
 else
   echo "apt.llvm.org install of LLVM ${LLVM_MAJOR} unavailable, building from source instead" >&2
 

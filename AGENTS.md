@@ -29,6 +29,14 @@ for the Spice language.
     - `docs/`: documentation site sources
     - `media/specs`: design documents and notes on language features and implementation details
 
+## Compiler re-implementation
+
+The compiler is being re-implemented in `src-next/`, next to the legacy compiler in `src/`. The plan is
+`media/specs/compiler-reimplementation.md`. For any work on `src-next/` or the migration tooling, follow the
+`spice-next-migration` skill. Migration branches are named `<type>/next-<slug>`: on them, a hook keeps `src/` and the
+existing base reference files read-only. The agents `legacy-explorer`, `diff-triager` and `wp-reviewer` in
+`.claude/agents/` support the work packages.
+
 ## Initial setup
 
 The helper scripts are Python-based and cross-platform.
