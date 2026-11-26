@@ -18,8 +18,11 @@ Rules:
   exist yet, say so and stop.
 - Use `tools/ir_normalize.py` to classify IR differences (identical, ordering only, value names only, metadata or
   attribute numbering only, structural).
-- Compare every difference against `media/specs/compiler-reimplementation-deviations.md`. A difference with an entry
-  there is intended. Any other difference is a porting bug.
+- First set aside the differences in white-box dumps (`--dump-ast`, `--dump-symtab`, `--dump-types`,
+  `--dump-dependency-graph`, `--dump-cache-stats`). They may change and do not gate (sections 8.1 and 8.6); report them
+  separately and note, whether a reviewed `-next` ref variant covers them.
+- Compare every other difference against `media/specs/compiler-reimplementation-deviations.md`. A difference with an
+  entry there is intended. Any other difference is a porting bug.
 
 Report:
 
@@ -27,5 +30,6 @@ Report:
 2. The porting bugs, grouped by probable cause. For each group: 1-3 example cases, the first differing lines and the
    construct or component that likely causes them.
 3. The intended deviations you saw, with their issue numbers.
+4. The white-box dump differences, with the `-next` variants that cover them.
 
 Keep examples short. Do not paste whole files.

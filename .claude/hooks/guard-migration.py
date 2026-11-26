@@ -6,8 +6,10 @@
 # - Existing base reference files under test/test-files are not changed. Intended differences of the new compiler go
 #   into '-next' ref variants (sections 8.6 and 8.8).
 # - 'run-tests.py --update-refs' is only used together with '--variant next', so it writes '-next' variants.
+# On every branch, it also blocks force pushes ('--force', '-f', combined short flags with 'f', '+<refspec>'), which
+# would overwrite remote history. '--force-with-lease' stays allowed.
 # Blocks the call with exit code 2 and tells Claude why. Best-effort: writes through arbitrary shell commands are not
-# detected. On all other branches, the hook does nothing.
+# detected.
 import json
 import os
 import re
@@ -56,14 +58,38 @@ def check_edited_path(path, root):
     return None
 
 
-def check_bash_command(command):
-    """Return the reason, why the given command is not allowed, or None"""
+def split_command(command):
+    """Split a shell command into the token lists of its segments. Shell comments are dropped, like the shell does"""
     for segment in re.split(r"&&|\|\||[;|\n]", command):
         try:
-            tokens = shlex.split(segment)
+            yield shlex.split(segment, comments=True)
         except ValueError:
             continue
-        if not any(token.endswith("run-tests.py") for token in tokens) or "--update-refs" not in tokens:
+
+
+def is_update_refs_flag(token):
+    # argparse accepts every unambiguous prefix of '--update-refs', e.g. '--update-ref'
+    return len(token) >= len("--u") and "--update-refs".startswith(token)
+
+
+def check_force_push(command):
+    """Return the reason, why the given command is a force push, or None"""
+    for tokens in split_command(command):
+        if len(tokens) < 2 or tokens[0] != "git" or "push" not in tokens[1:]:
+            continue
+        args = tokens[tokens.index("push") + 1:]
+        forced = any(arg == "--force" or arg.startswith("+") or (re.match(r"^-[a-zA-Z]+$", arg) and "f" in arg)
+                     for arg in args)
+        if forced:
+            return ("Force pushes overwrite remote history and are not allowed. Push normally, or use "
+                    "'--force-with-lease' on your own branch, if a rewrite is really needed.")
+    return None
+
+
+def check_bash_command(command):
+    """Return the reason, why the given command is not allowed on a migration branch, or None"""
+    for tokens in split_command(command):
+        if not any(token.endswith("run-tests.py") for token in tokens) or not any(map(is_update_refs_flag, tokens)):
             continue
         uses_next_variant = "--variant=next" in tokens or any(
             token == "--variant" and i + 1 < len(tokens) and tokens[i + 1] == "next" for i, token in enumerate(tokens))
@@ -79,11 +105,16 @@ def main():
     except Exception:
         return 0
     root = os.environ.get("CLAUDE_PROJECT_DIR") or data.get("cwd") or os.getcwd()
+    tool = data.get("tool_name", "")
+    tool_input = data.get("tool_input", {}) or {}
+    if tool == "Bash":
+        reason = check_force_push(tool_input.get("command", ""))
+        if reason is not None:
+            print(f"Blocked: {reason}", file=sys.stderr)
+            return 2
     if not is_migration_branch(root):
         return 0
 
-    tool = data.get("tool_name", "")
-    tool_input = data.get("tool_input", {}) or {}
     reason = None
     if tool in EDIT_TOOLS:
         path = tool_input.get("file_path") or tool_input.get("notebook_path") or ""

@@ -1,10 +1,4 @@
 {
-  "permissions": {
-    "deny": [
-      "Bash(git push --force *)",
-      "Bash(git push -f *)"
-    ]
-  },
   "enabledPlugins": {
     "commit-commands@claude-plugins-official": true,
     "code-review@claude-plugins-official": true
