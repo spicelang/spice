@@ -847,8 +847,8 @@ def instrumentation_flags(builtin_tests: bool) -> list[str]:
     # Without LTO and with fewer optimizations, the sanitizer reports point to the right source locations
     if OPTS.instrument == "asan":
         return ["-O1", "--sanitizer", "address"]
-    # The builtin tests are built without optimizations, which keeps the build fast
-    return ["-O0"] if builtin_tests else ["-O3", "-lto"]
+    # The compiler builds are done without optimizations, which keeps the build fast
+    return ["-O0"]
 
 
 def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: str, builtin_tests: bool) -> Path:
