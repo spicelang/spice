@@ -1,0 +1,26 @@
+type First interface {
+    f<int> one();
+}
+
+type Second interface {
+    f<int> two();
+}
+
+type Impl struct : First, Second {}
+
+f<int> Impl.one() {
+    return 1;
+}
+
+f<int> Impl.two() {
+    return 2;
+}
+
+f<int> main() {
+    Impl impl;
+    Impl* implPtr = &impl;
+    // Allowed, because First sits at offset 0 of Impl
+    First*& firstPtrRef = implPtr;
+    // Not allowed, because the reference would alias the pointer to Impl, which cannot point to the Second part of Impl
+    Second*& secondPtrRef = implPtr;
+}

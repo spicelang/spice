@@ -22,8 +22,6 @@ f<int> main() {
     Impl** implPtrPtr = &implPtr;
     // Allowed, because First sits at offset 0 of Impl
     First** firstPtrPtr = implPtrPtr;
-    First*& firstPtrRef = implPtr;
     // Not allowed, because the pointer to Impl cannot be adjusted to the Second part of Impl behind another indirection
     Second** secondPtrPtr = implPtrPtr;
-    Second*& secondPtrRef = implPtr;
 }
