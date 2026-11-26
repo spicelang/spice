@@ -1126,6 +1126,13 @@ f<Any> TypeChecker.visitStructDefCheck(ASTStructDefNode* node) {
                     this.softError(baseNode, SemanticErrorType::INTERFACE_METHOD_NOT_IMPLEMENTED, "The struct '" + node.structName + "' does not implement method '" + expMethod.getSignature() + "'. The return type does not match.");
                     continue;
                 }
+                // Check parameter types. A call through the interface passes the arguments to the implementation unchanged, so a
+                // parameter must not expect a pointer or reference to an interface, where the interface method passes a struct,
+                // that implements it: the pointer to the struct would have to be adjusted to the interface part of the struct
+                if !spiceFunction.isInheritedDefaultMethod() && !paramTypesMatchInterfaceMethod(params, spiceFunction) {
+                    this.softError(baseNode, SemanticErrorType::INTERFACE_METHOD_NOT_IMPLEMENTED, "The struct '" + node.structName + "' does not implement method '" + expMethod.getSignature() + "'. The parameter types do not match.");
+                    continue;
+                }
                 // Check parameter names. An inherited default method was already checked against the signature
                 if !spiceFunction.isInheritedDefaultMethod() {
                     this.checkParamNamesMatchSignature(expMethod, spiceFunction);
@@ -7685,6 +7692,31 @@ p createDefaultDtorIfRequired(const Struct& spiceStruct, Scope* structScope) {
     const String entryName = getSymbolTableEntryNameDefaultDtor(node.codeLoc);
     const ParamList noParams;
     createDefaultStructMethod(spiceStruct, entryName, String(DTOR_FUNCTION_NAME), noParams);
+}
+
+/**
+ * Check if the parameter types of a method, that implements an interface method, can take the arguments of a call through
+ * the interface unchanged. This is not the case, if a parameter is a pointer or reference to an interface, where the
+ * interface method has a parameter of a struct type, that implements this interface
+ *
+ * @param interfaceParamTypes Substantiated parameter types of the interface method
+ * @param implementation Method, that implements the interface method
+ * @return Matching or not
+ */
+f<bool> paramTypesMatchInterfaceMethod(const QualTypeList& interfaceParamTypes, const Function* implementation) {
+    const QualTypeList implParamTypes = implementation.getParamTypes();
+    foreach unsigned long i, const QualType& interfaceParamType : interfaceParamTypes {
+        if i >= implParamTypes.getSize() {
+            break;
+        }
+        QualType implParamType = implParamTypes.get(i);
+        QualType passedType = interfaceParamType;
+        unwrapBothWithRefWrappers(implParamType, passedType);
+        if implParamType.matchesInterfaceImplementedByStruct(passedType) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**

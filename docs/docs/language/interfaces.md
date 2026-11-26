@@ -49,6 +49,10 @@ f<bool> Car.isDriving() {
 
 The method definitions live outside the struct body, exactly like any other [method](methods.md).
 
+A call through an interface passes its arguments to the implementing method unchanged. Therefore, a parameter of the
+implementing method must not be a pointer or reference to an interface, where the interface method declares a struct, that
+implements this interface. Declare the same struct type instead.
+
 ## Using an interface pointer
 
 To call methods through an interface, take a pointer to the concrete value and assign it to a pointer of the
