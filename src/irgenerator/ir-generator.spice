@@ -5926,12 +5926,14 @@ f<Any> IRGenerator.visitBuiltinNewCall(ASTFctCallNode* node) {
             for unsigned long i = 0l; i < node.argLst.args.getSize(); i++ {
                 IVisitable* argNode = node.argLst.args.get(i);
                 const QualType& paramType = paramTypes.get(i);
+                // A pointer or reference to a struct might be passed as pointer or reference to an interface, which it implements
+                const QualType argType = this.getEvaluatedType(argNode);
                 if paramType.isRef() {
-                    ctorArgValues.pushBack(this.resolveAddress(argNode));
+                    ctorArgValues.pushBack(this.convertToInterfaceRefIfRequired(this.resolveAddress(argNode), paramType, argType));
                 } else if paramType.isOwnedByValueParam(cast<ASTNode*>(node)) {
                     ctorArgValues.pushBack(this.generateOwnedArgValue(this.resolveAddress(argNode), paramType));
                 } else {
-                    ctorArgValues.pushBack(this.resolveValue(argNode));
+                    ctorArgValues.pushBack(this.convertToInterfacePtrIfRequired(this.resolveValue(argNode), paramType, argType));
                 }
             }
         }
@@ -5965,12 +5967,14 @@ f<Any> IRGenerator.visitBuiltinPlacementNewCall(ASTFctCallNode* node) {
         for unsigned long i = 1l; i < node.argLst.args.getSize(); i++ {
             IVisitable* argNode = node.argLst.args.get(i);
             const QualType& paramType = paramTypes.get(i - 1l);
+            // A pointer or reference to a struct might be passed as pointer or reference to an interface, which it implements
+            const QualType argType = this.getEvaluatedType(argNode);
             if paramType.isRef() {
-                ctorArgValues.pushBack(this.resolveAddress(argNode));
+                ctorArgValues.pushBack(this.convertToInterfaceRefIfRequired(this.resolveAddress(argNode), paramType, argType));
             } else if paramType.isOwnedByValueParam(cast<ASTNode*>(node)) {
                 ctorArgValues.pushBack(this.generateOwnedArgValue(this.resolveAddress(argNode), paramType));
             } else {
-                ctorArgValues.pushBack(this.resolveValue(argNode));
+                ctorArgValues.pushBack(this.convertToInterfacePtrIfRequired(this.resolveValue(argNode), paramType, argType));
             }
         }
         this.generateCtorOrDtorCall(targetPtr, ctor, ctorArgValues);

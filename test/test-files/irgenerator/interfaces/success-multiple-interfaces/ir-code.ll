@@ -4,6 +4,7 @@ source_filename = "source.spice"
 %struct.Impl = type { %interface.First, %interface.Second, i32 }
 %interface.First = type { ptr }
 %interface.Second = type { ptr }
+%struct.SecondOwner = type { ptr }
 %struct.Holder = type { ptr }
 
 @_ZTS5First = private constant [7 x i8] c"5First\00", align 4
@@ -27,8 +28,10 @@ source_filename = "source.spice"
 @printf.str.8 = private unnamed_addr constant [18 x i8] c"Returned ref: %d\0A\00", align 4
 @printf.str.9 = private unnamed_addr constant [11 x i8] c"Field: %d\0A\00", align 4
 @printf.str.10 = private unnamed_addr constant [10 x i8] c"Cast: %d\0A\00", align 4
-@printf.str.11 = private unnamed_addr constant [17 x i8] c"Pointer ref: %d\0A\00", align 4
-@printf.str.12 = private unnamed_addr constant [9 x i8] c"Nil: %d\0A\00", align 4
+@printf.str.11 = private unnamed_addr constant [9 x i8] c"New: %d\0A\00", align 4
+@printf.str.12 = private unnamed_addr constant [19 x i8] c"Placement new: %d\0A\00", align 4
+@printf.str.13 = private unnamed_addr constant [17 x i8] c"Pointer ref: %d\0A\00", align 4
+@printf.str.14 = private unnamed_addr constant [9 x i8] c"Nil: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal void @_ZN4Impl4ctorEi(ptr noundef nonnull align 8 dereferenceable(24) %0, i32 noundef %1) #0 {
@@ -86,6 +89,21 @@ define internal noundef i32 @_ZN4Impl3addEi(ptr noundef nonnull align 8 derefere
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
+define internal void @_ZN11SecondOwner4ctorEP6Second(ptr noundef nonnull align 8 dereferenceable(8) %0, ptr noundef align 8 %1) #0 {
+  %this = alloca ptr, align 8
+  %second = alloca ptr, align 8
+  store ptr %0, ptr %this, align 8
+  store ptr %1, ptr %second, align 8
+  %3 = load ptr, ptr %this, align 8
+  store ptr null, ptr %3, align 8
+  %4 = load ptr, ptr %this, align 8
+  %second.addr = getelementptr inbounds %struct.SecondOwner, ptr %4, i64 0, i32 0
+  %5 = load ptr, ptr %second, align 8
+  store ptr %5, ptr %second.addr, align 8
+  ret void
+}
+
+; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef ptr @_Z9getSecondP4Impl(ptr noundef align 8 %0) #0 {
   %impl = alloca ptr, align 8
   store ptr %0, ptr %impl, align 8
@@ -139,6 +157,9 @@ define noundef i32 @main() #1 {
   %1 = alloca ptr, align 8
   %holder = alloca %struct.Holder, align 8
   %casted = alloca ptr, align 8
+  %owner = alloca ptr, align 8
+  %placed = alloca ptr, align 8
+  %ownerMemory = alloca ptr, align 8
   %implPtr = alloca ptr, align 8
   %firstPtrRef = alloca ptr, align 8
   %nilImpl = alloca ptr, align 8
@@ -236,30 +257,67 @@ define noundef i32 @main() #1 {
   %fct27 = load ptr, ptr %vfct.addr26, align 8
   %54 = call noundef i32 %fct27(ptr noundef nonnull align 8 dereferenceable(8) %53)
   %55 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.10, i32 noundef %54)
-  store ptr %impl, ptr %implPtr, align 8
-  store ptr %implPtr, ptr %firstPtrRef, align 8
-  %56 = load ptr, ptr %firstPtrRef, align 8
-  %57 = load ptr, ptr %56, align 8
-  %vtable.addr28 = load ptr, ptr %57, align 8
+  %56 = call ptr @_Z12sAllocUnsafem(i64 8)
+  %57 = getelementptr inbounds nuw %struct.Impl, ptr %impl, i32 0, i32 1
+  %58 = icmp eq ptr %impl, null
+  %59 = select i1 %58, ptr null, ptr %57
+  call void @_ZN11SecondOwner4ctorEP6Second(ptr noundef nonnull align 8 dereferenceable(8) %56, ptr %59)
+  store ptr %56, ptr %owner, align 8
+  %60 = load ptr, ptr %owner, align 8
+  %61 = load ptr, ptr %60, align 8
+  %vtable.addr28 = load ptr, ptr %61, align 8
   %vfct.addr29 = getelementptr inbounds ptr, ptr %vtable.addr28, i64 0
   %fct30 = load ptr, ptr %vfct.addr29, align 8
-  %58 = call noundef i32 %fct30(ptr noundef nonnull align 8 dereferenceable(8) %57)
-  %59 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i32 noundef %58)
+  %62 = call noundef i32 %fct30(ptr noundef nonnull align 8 dereferenceable(8) %61)
+  %63 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i32 noundef %62)
+  %64 = load ptr, ptr %owner, align 8
+  %second.addr = getelementptr inbounds %struct.SecondOwner, ptr %64, i64 0, i32 0
+  store ptr null, ptr %second.addr, align 8
+  %65 = load ptr, ptr %owner, align 8
+  %66 = getelementptr inbounds nuw %struct.Impl, ptr %impl, i32 0, i32 1
+  %67 = icmp eq ptr %impl, null
+  %68 = select i1 %67, ptr null, ptr %66
+  call void @_ZN11SecondOwner4ctorEP6Second(ptr noundef nonnull align 8 dereferenceable(8) %65, ptr %68)
+  store ptr %65, ptr %placed, align 8
+  %69 = load ptr, ptr %placed, align 8
+  %70 = load ptr, ptr %69, align 8
+  %vtable.addr31 = load ptr, ptr %70, align 8
+  %vfct.addr32 = getelementptr inbounds ptr, ptr %vtable.addr31, i64 0
+  %fct33 = load ptr, ptr %vfct.addr32, align 8
+  %71 = call noundef i32 %fct33(ptr noundef nonnull align 8 dereferenceable(8) %70)
+  %72 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i32 noundef %71)
+  %73 = load ptr, ptr %owner, align 8
+  store ptr %73, ptr %ownerMemory, align 8
+  call void @_Z8sDeallocRPVh(ptr noundef %ownerMemory)
+  call void @_Z8sDeallocRPVh(ptr %ownerMemory)
+  store ptr %impl, ptr %implPtr, align 8
+  store ptr %implPtr, ptr %firstPtrRef, align 8
+  %74 = load ptr, ptr %firstPtrRef, align 8
+  %75 = load ptr, ptr %74, align 8
+  %vtable.addr34 = load ptr, ptr %75, align 8
+  %vfct.addr35 = getelementptr inbounds ptr, ptr %vtable.addr34, i64 0
+  %fct36 = load ptr, ptr %vfct.addr35, align 8
+  %76 = call noundef i32 %fct36(ptr noundef nonnull align 8 dereferenceable(8) %75)
+  %77 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.13, i32 noundef %76)
   store ptr null, ptr %nilImpl, align 8
-  %60 = load ptr, ptr %nilImpl, align 8
-  %61 = getelementptr inbounds nuw %struct.Impl, ptr %60, i32 0, i32 1
-  %62 = icmp eq ptr %60, null
-  %63 = select i1 %62, ptr null, ptr %61
-  store ptr %63, ptr %nilSecond, align 8
-  %64 = load ptr, ptr %nilSecond, align 8
-  %65 = icmp eq ptr %64, null
-  %66 = zext i1 %65 to i32
-  %67 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i32 noundef %66)
+  %78 = load ptr, ptr %nilImpl, align 8
+  %79 = getelementptr inbounds nuw %struct.Impl, ptr %78, i32 0, i32 1
+  %80 = icmp eq ptr %78, null
+  %81 = select i1 %80, ptr null, ptr %79
+  store ptr %81, ptr %nilSecond, align 8
+  %82 = load ptr, ptr %nilSecond, align 8
+  %83 = icmp eq ptr %82, null
+  %84 = zext i1 %83 to i32
+  %85 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.14, i32 noundef %84)
   ret i32 0
 }
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
+
+declare ptr @_Z12sAllocUnsafem(i64)
+
+declare void @_Z8sDeallocRPVh(ptr)
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal noundef i32 @_ZThn8_N4Impl3twoEv(ptr noundef nonnull %0) unnamed_addr #0 {

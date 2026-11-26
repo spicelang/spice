@@ -9,5 +9,7 @@ Returned ptr: 12
 Returned ref: 12
 Field: 12
 Cast: 12
+New: 12
+Placement new: 12
 Pointer ref: 11
 Nil: 1

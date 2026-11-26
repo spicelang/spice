@@ -31,6 +31,14 @@ type Holder struct {
     Second* second
 }
 
+type SecondOwner struct {
+    Second* second
+}
+
+p SecondOwner.ctor(Second* second) {
+    this.second = second;
+}
+
 f<Second*> getSecond(Impl* impl) {
     return impl;
 }
@@ -71,6 +79,16 @@ f<int> main() {
     printf("Field: %d\n", holder.second.two());
     Second* casted = cast<Second*>(&impl);
     printf("Cast: %d\n", casted.two());
+
+    unsafe {
+        SecondOwner* owner = __new<SecondOwner>(&impl);
+        printf("New: %d\n", owner.second.two());
+        owner.second = nil<Second*>;
+        SecondOwner* placed = __placement_new<SecondOwner>(cast<byte*>(owner), &impl);
+        printf("Placement new: %d\n", placed.second.two());
+        heap byte* ownerMemory = cast<heap byte*>(owner);
+        sDealloc(ownerMemory);
+    }
 
     // A reference to a pointer to an interface aliases the pointer itself, which must not be adjusted
     Impl* implPtr = &impl;
