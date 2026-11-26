@@ -840,15 +840,15 @@ def exec_formatter_test_case(result: TestResult, test_case: TestCase) -> None:
 # -------------------- Compiler builds --------------------
 
 
-def instrumentation_flags(builtin_tests: bool) -> list[str]:
+def instrumentation_flags() -> list[str]:
     # Coverage instrumentation does not support LTO. Without optimizations, the coverage counters map best to the source
     if OPTS.instrument == "coverage":
         return ["-O0", "--coverage"]
     # Without LTO and with fewer optimizations, the sanitizer reports point to the right source locations
     if OPTS.instrument == "asan":
         return ["-O1", "--sanitizer", "address"]
-    # The builtin tests are built without optimizations, which keeps the build fast
-    return ["-O0"] if builtin_tests else ["-O3", "-lto"]
+    # The compiler builds are done without optimizations, which keeps the build fast
+    return ["-O0"]
 
 
 def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: str, builtin_tests: bool) -> Path:
@@ -860,7 +860,7 @@ def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: st
     shutil.rmtree(output_dir, ignore_errors=True)
     output_dir.mkdir(parents=True)
     executable_path = output_dir / f"{executable_name}{EXE_SUFFIX}"
-    cmd = [str(compiler), "build", *instrumentation_flags(builtin_tests)]
+    cmd = [str(compiler), "build", *instrumentation_flags()]
     # The test build mode generates a main function, which runs all builtin tests of the source files
     if builtin_tests:
         cmd += ["--build-mode", "test"]
