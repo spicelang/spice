@@ -80,6 +80,9 @@ The helper scripts are Python-based and cross-platform.
   `test/next-ratchet.txt`:
     - `python test/run-tests.py --compiler build/spice-next --variant next --ratchet`
     - `python test/run-tests.py --build-compiler build/stage0/spice --sources src-next --variant next --filter '...'`
+- Compare the legacy compiler and the re-implementation on a corpus (IR of every module, diagnostics, program output),
+  with a classification of the differences (`tools/ir_normalize.py`). Unit tests: `python -m unittest tools/test_diff_tools.py`:
+    - `python tools/diff_compilers.py --legacy build/spice --next build/spice-next --scope ParserTests`
 - Build the compiler under test with AddressSanitizer, failing every test case that produces a sanitizer report:
     - `python test/run-tests.py --instrument asan`
 - See `python test/run-tests.py --help` for all options.
