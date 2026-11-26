@@ -276,10 +276,18 @@ inline f<bool> Parser.isNegativeNumericConstantAhead() {
 // Accounts for SHL ('<<') and SHR ('>>') tokens which open/close two levels at once.
 f<long> Parser.matchAngleGroup(long offset) {
     long depth = 0l;
+    long parenDepth = 0l;
     while true {
         const TokenType tokenType = this.tokenAt(cast<unsigned long>(offset));
-        if !this.isTypeLstToken(tokenType) {
+        // An RValue reference ('&&') can only be part of a type list within the param types of a function type, e.g. 'p(int&&)'.
+        // Elsewhere, it is a logical and, e.g. in 'a < b && c > d'
+        const bool isRValueRefInParamTypes = tokenType == TokenType::LOGICAL_AND && parenDepth > 0l;
+        if !this.isTypeLstToken(tokenType) && !isRValueRefInParamTypes {
             return -1l; // This token can not be part of a type list, so this is no generic type list
+        } else if tokenType == TokenType::LPAREN {
+            parenDepth++;
+        } else if tokenType == TokenType::RPAREN {
+            parenDepth--;
         } else if tokenType == TokenType::LESS {
             depth++;
         } else if tokenType == TokenType::SHL {
@@ -390,10 +398,10 @@ f<long> Parser.matchDataType(long offset) {
     } else {
         return -1l;
     }
-    // Pointer / reference / array suffixes
+    // Pointer / reference / RValue reference / array suffixes
     while true {
         const TokenType suffix = this.tokenAt(cast<unsigned long>(offset));
-        if suffix == TokenType::MUL || suffix == TokenType::BITWISE_AND {
+        if suffix == TokenType::MUL || suffix == TokenType::BITWISE_AND || suffix == TokenType::LOGICAL_AND {
             offset++;
         } else if suffix == TokenType::LBRACKET {
             offset = this.matchBalancedGroup(offset, TokenType::LBRACKET, TokenType::RBRACKET);
@@ -1417,7 +1425,9 @@ f<ASTTypeLstNode*> Parser.parseParamTypeLst() {
 // Parse the data type of a parameter in a signature or an external declaration, followed by its optional name
 p Parser.parseParamType(ASTTypeLstNode* typeLstNode) {
     CodeLoc paramCodeLoc = this.lexer.getCodeLoc();
-    typeLstNode.dataTypes.pushBack(this.parseDataType());
+    ASTDataTypeNode* paramDataType = this.parseDataType();
+    paramDataType.isParamType = true;
+    typeLstNode.dataTypes.pushBack(paramDataType);
 
     // Parse optional parameter name. An unnamed parameter gets an empty name
     String paramName;
@@ -2540,7 +2550,7 @@ f<ASTLambdaExprNode*> Parser.parseLambdaExpr() {
     return this.concludeNode(lambdaExprNode);
 }
 
-// dataType: qualifierLst? baseDataType (MUL | BITWISE_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*;
+// dataType: qualifierLst? baseDataType (MUL | BITWISE_AND | LOGICAL_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*;
 f<ASTDataTypeNode*> Parser.parseDataType() {
     dyn dataTypeNode = this.createNode<ASTDataTypeNode>();
     dataTypeNode.isFieldType = this.isParsingFieldType;
@@ -2559,6 +2569,9 @@ f<ASTDataTypeNode*> Parser.parseDataType() {
         } else if this.currentTokenIs(TokenType::BITWISE_AND) { // Reference
             this.expect(TokenType::BITWISE_AND);
             dataTypeNode.tmQueue.push(TypeModifier(TypeModifierType::TYPE_REF, false, 0, String()));
+        } else if this.currentTokenIs(TokenType::LOGICAL_AND) { // RValue reference. The lexer reads '&&' as one token
+            this.expect(TokenType::LOGICAL_AND);
+            dataTypeNode.tmQueue.push(TypeModifier(TypeModifierType::TYPE_RVALUE_REF, false, 0, String()));
         } else if this.currentTokenIs(TokenType::LBRACKET) { // Array
             this.expect(TokenType::LBRACKET);
             bool hasSize = false;
@@ -2670,6 +2683,9 @@ f<ASTFunctionDataTypeNode*> Parser.parseFunctionDataType() {
     this.expect(TokenType::LPAREN);
     if !this.currentTokenIs(TokenType::RPAREN) {
         functionDataTypeNode.paramTypeLst = this.parseTypeLst();
+        foreach ASTDataTypeNode* paramDataType : functionDataTypeNode.paramTypeLst.dataTypes {
+            paramDataType.isParamType = true;
+        }
     }
     this.expect(TokenType::RPAREN);
 

@@ -43,7 +43,7 @@ declare void @llvm.memcpy.p0.p0.i64(ptr noalias writeonly captures(none), ptr no
 declare ptr @_Z12sAllocUnsafem(i64)
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
+define void @_ZN5Inner4ctorEO5Inner(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
@@ -105,11 +105,11 @@ define void @_ZN6Middle4ctorERK6Middle(ptr noundef nonnull align 8 dereferenceab
 }
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
-define void @_ZN6Middle4ctorER6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
+define void @_ZN6Middle4ctorEO6Middle(ptr noundef nonnull align 8 dereferenceable(16) %0, ptr %1) #1 {
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %3 = load ptr, ptr %this, align 8
-  call void @_ZN5Inner4ctorER5Inner(ptr noundef nonnull align 8 dereferenceable(16) %3, ptr %1)
+  call void @_ZN5Inner4ctorEO5Inner(ptr noundef nonnull align 8 dereferenceable(16) %3, ptr %1)
   ret void
 }
 

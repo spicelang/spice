@@ -1,6 +1,6 @@
 // When both a user-defined copy ctor and a user-defined move ctor exist, the
-// compiler picks the move ctor for non-const lvalue arguments (less
-// constification needed) and the copy ctor for const lvalue arguments.
+// compiler picks the move ctor for RValue arguments (temporaries and values,
+// that are moved explicitly with move()) and the copy ctor for LValues.
 
 type Counter struct {
     int copies
@@ -17,7 +17,7 @@ p Counter.ctor(const Counter& other) {
     this.moves = other.moves;
 }
 
-p Counter.ctor(Counter& other) {
+p Counter.ctor(Counter&& other) {
     this.copies = other.copies;
     this.moves = other.moves + 1;
 }
@@ -26,12 +26,24 @@ f<int> main() {
     Counter c;
     printf("initial: copies=%d moves=%d\n", c.copies, c.moves);
 
-    // Non-const lvalue -> move ctor preferred
-    Counter c2 = Counter(c);
+    // Non-const LValue -> only the copy ctor matches (the move ctor requires an RValue)
+    Counter c1 = Counter(c);
+    printf("LValue:      copies=%d moves=%d\n", c1.copies, c1.moves);
+
+    // move() -> move ctor preferred (less constification needed)
+    Counter c2 = Counter(move(c));
     printf("after move:  copies=%d moves=%d\n", c2.copies, c2.moves);
+
+    // Temporary -> move ctor preferred
+    Counter c3 = Counter(Counter(c2));
+    printf("temporary:   copies=%d moves=%d\n", c3.copies, c3.moves);
 
     // Const ref -> only the copy ctor matches (move ctor requires non-const)
     const Counter& cref = c2;
-    Counter c3 = Counter(cref);
-    printf("after copy:  copies=%d moves=%d\n", c3.copies, c3.moves);
+    Counter c4 = Counter(cref);
+    printf("after copy:  copies=%d moves=%d\n", c4.copies, c4.moves);
+
+    // move() of a const value -> only the copy ctor matches (move ctor requires non-const)
+    Counter c5 = Counter(move(cref));
+    printf("const move:  copies=%d moves=%d\n", c5.copies, c5.moves);
 }

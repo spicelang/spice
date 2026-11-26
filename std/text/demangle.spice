@@ -191,7 +191,7 @@ f<String> Reader.readType() {
         const char c = this.peek();
         // 'PF' introduces a function type, which readBaseType() handles as a whole - only a lone 'P' is a pointer
         if c == 'P' && this.peekNext() == 'F' { break; }
-        if c != 'P' && c != 'R' && c != 'V' && c != 'K' && c != 'A' { break; }
+        if c != 'P' && c != 'R' && c != 'O' && c != 'V' && c != 'K' && c != 'A' { break; }
         if wrapperCount >= cast<unsigned long>(MAX_TYPE_WRAPPERS) {
             this.failed = true;
             return String();
@@ -225,6 +225,8 @@ f<String> Reader.readType() {
             typeName += "*";
         } else if wrapper == 'R' {
             typeName += "&";
+        } else if wrapper == 'O' {
+            typeName += "&&";
         } else if wrapper == 'A' {
             typeName += "[";
             appendNumber(typeName, arraySizes[i - 1l]);

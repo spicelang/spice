@@ -1095,11 +1095,15 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
             const llvm::Type rhsType = rhsSTypeNonRef.toLLVMType(this.sourceFile);
             this.generateShallowCopy(rhsAddress, rhsType, lhsAddress);
         } else {
-            // Check if we have a copy ctor
-            Scope* structScope = rhsSTypeNonRef.getBodyScope();
-            ArgList args;
-            args.pushBack(Pair<QualType, bool>(rhsSTypeNonRef.toConstRef(node), rhs.isTemporary()));
-            const model::Function* copyCtor = lookupFunction(structScope, String(CTOR_FUNCTION_NAME), rhsSTypeNonRef, args, true);
+            // An RValue reference (the result of move()) is moved by the ctor, that the type checker resolved. Otherwise, check if
+            // we have a copy ctor
+            const model::Function* copyCtor = this.getRhsMoveCtor(node);
+            if copyCtor == nil<const model::Function*> {
+                Scope* structScope = rhsSTypeNonRef.getBodyScope();
+                ArgList args;
+                args.pushBack(Pair<QualType, bool>(rhsSTypeNonRef.toConstRef(node), rhs.isTemporary()));
+                copyCtor = lookupFunction(structScope, String(CTOR_FUNCTION_NAME), rhsSTypeNonRef, args, true);
+            }
             if copyCtor != nil<const model::Function*> {
                 // Call copy ctor
                 Vector<llvm::Value> ctorArgs;
@@ -1223,6 +1227,15 @@ f<const model::Function*> IRGenerator.getLhsDtorFct(ASTNode* node) {
     }
     const ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
     return assignNode.lhsDtorFct.get(this.manIdx);
+}
+
+// Ctor, that moves the RValue reference rhs (the result of move()) of an assignment into the lhs, or nil if there is none
+f<const model::Function*> IRGenerator.getRhsMoveCtor(ASTNode* node) {
+    if node.kind != ASTNodeKind::ASSIGN_EXPR {
+        return nil<const model::Function*>;
+    }
+    const ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
+    return assignNode.rhsMoveCtor.get(this.manIdx);
 }
 
 p IRGenerator.generateShallowCopy(llvm::Value oldAddress, llvm::Type varType, llvm::Value targetAddress) {
@@ -3140,6 +3153,15 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
             if sretArg.isNull() {
                 returnValue = this.insertLoad(returnTy, newAddress);
             }
+        } else if data.returnType.isPtr() && this.getEvaluatedType(returnExpr).isDecayedArray() {
+            // A sized array, that is returned as a pointer, decays to the address of its first item
+            QualType arrayType = this.getEvaluatedType(returnExpr);
+            const llvm::Value arrayAddress = this.resolveAddress(returnExpr);
+            assert !arrayAddress.isNull();
+            Vector<llvm::Value> indices;
+            indices.pushBack(this.getInt64(0l));
+            indices.pushBack(this.getInt32(0l));
+            returnValue = this.insertInBoundsGEP(arrayType.toLLVMType(this.sourceFile), arrayAddress, indices);
         } else {
             returnValue = data.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
         }
@@ -4444,13 +4466,16 @@ public f<Any> IRGenerator.visitConstant(ASTConstantNode* node) {
 
 // Check if an argument of the given type matches the expected parameter type
 f<bool> matchArgType(const QualType& origExpectedTy, const QualType& origActualTy) {
-    if origExpectedTy.matches(origActualTy, false, true, true) {
+    // LValue and RValue references are passed the same way: as the address of the referenced value
+    const QualType expectedRefTy = origExpectedTy.toLValueRef(nil<ASTNode*>);
+    const QualType actualRefTy = origActualTy.toLValueRef(nil<ASTNode*>);
+    if expectedRefTy.matches(actualRefTy, false, true, true) {
         return true;
     }
 
     // Unwrap as far as possible and remove reference wrappers if possible
-    QualType expectedTy = origExpectedTy;
-    QualType actualTy = origActualTy;
+    QualType expectedTy = expectedRefTy;
+    QualType actualTy = actualRefTy;
     unwrapBoth(expectedTy, actualTy);
     return expectedTy.matchesInterfaceImplementedByStruct(actualTy);
 }
@@ -5506,6 +5531,7 @@ f<Any> IRGenerator.visitBuiltinCall(ASTFctCallNode* node) {
     const String& name = node.fqFunctionName;
     if name == BUILTIN_FCT_NAME_PRINTF { return this.visitBuiltinPrintfCall(node); }
     if name == BUILTIN_FCT_NAME_LEN { return this.visitBuiltinLenCall(node); }
+    if name == BUILTIN_FCT_NAME_MOVE { return this.visitBuiltinMoveCall(node); }
     if name == BUILTIN_FCT_NAME_PANIC { return this.visitBuiltinPanicCall(node); }
     if name == BUILTIN_FCT_NAME_SYSCALL { return this.visitBuiltinSyscallCall(node); }
     if name == BUILTIN_FCT_NAME_ASM { return this.visitBuiltinAsmCall(node); }
@@ -5640,6 +5666,14 @@ f<Any> IRGenerator.visitBuiltinLenCall(ASTFctCallNode* node) {
     args.pushBack(this.resolveValue(argNode));
     const llvm::Value lengthValue = this.builder.createCall(getRawLengthFct, args);
     return exprResultAny(exprResultWithValue(lengthValue));
+}
+
+f<Any> IRGenerator.visitBuiltinMoveCall(ASTFctCallNode* node) {
+    assert node.fqFunctionName == BUILTIN_FCT_NAME_MOVE;
+
+    // The result is a reference to the argument. The move ctor or move assign operator, that receives it, does the moving
+    IVisitable* argNode = node.argLst.args.front();
+    return exprResultAny(exprResultWithPtr(this.resolveAddress(argNode)));
 }
 
 f<Any> IRGenerator.visitBuiltinPanicCall(ASTFctCallNode* node) {

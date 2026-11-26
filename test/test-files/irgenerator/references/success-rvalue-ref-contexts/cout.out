@@ -1,0 +1,8 @@
+literal: copies=0 moves=1
+ctor field init: copies=0 moves=1
+ternary: copies=0 moves=1
+lambda: copies=0 moves=0
+lambda: copies=0 moves=0
+lambda: copies=0 moves=0
+interface sink: copies=0 moves=0
+generic box: copies=0 moves=1

@@ -1,0 +1,8 @@
+move
+moved or temporary: 1, a moved: 1
+copy
+moved or named: 3, b intact: 1, c intact: 1
+move
+moved or moved: 5, d moved: 1, e intact: 1
+copy
+ref or temporary: 7, g intact: 1

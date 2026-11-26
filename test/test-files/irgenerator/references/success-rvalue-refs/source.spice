@@ -1,0 +1,98 @@
+// RValues (temporaries and values, that are moved with move()) bind to RValue references ('T&&'), LValues do not. A value,
+// that is initialized with an RValue reference, is move constructed.
+
+type T dyn;
+
+type Counter struct {
+    int copies
+    int moves
+}
+
+p Counter.ctor() {
+    this.copies = 0;
+    this.moves = 0;
+}
+
+p Counter.ctor(const Counter& other) {
+    this.copies = other.copies + 1;
+    this.moves = other.moves;
+}
+
+p Counter.ctor(Counter&& other) {
+    this.copies = other.copies;
+    this.moves = other.moves + 1;
+}
+
+p takeByValue(Counter c) {
+    printf("by value: copies=%d moves=%d\n", c.copies, c.moves);
+}
+
+p takeRValue(Counter&& c) {
+    printf("RValue ref: copies=%d moves=%d\n", c.copies, c.moves);
+    // A named RValue reference is an LValue, so this copies
+    Counter copy = c;
+    printf("copy of named RValue ref: copies=%d moves=%d\n", copy.copies, copy.moves);
+    Counter moved = move(c);
+    printf("move of named RValue ref: copies=%d moves=%d\n", moved.copies, moved.moves);
+}
+
+p overloaded(const Counter& _) {
+    printf("overloaded: const Counter&\n");
+}
+
+p overloaded(Counter&& _) {
+    printf("overloaded: Counter&&\n");
+}
+
+p overloadedConst(const Counter& _) {
+    printf("overloadedConst: const Counter&\n");
+}
+
+p overloadedConst(const Counter&& _) {
+    printf("overloadedConst: const Counter&&\n");
+}
+
+f<Counter> makeMoved() {
+    Counter local;
+    return move(local);
+}
+
+p takeInt(int&& i) {
+    printf("int&&: %d\n", i);
+}
+
+p generic<T>(T&& value) {
+    printf("generic: %d\n", value);
+}
+
+f<int> main() {
+    Counter c;
+    takeByValue(c);
+    takeByValue(move(c));
+    takeRValue(Counter());
+    takeRValue(move(c));
+    overloaded(c);
+    overloaded(Counter());
+    overloaded(move(c));
+    const Counter cc;
+    overloaded(move(cc));
+    overloadedConst(cc);
+    overloadedConst(move(cc));
+    overloadedConst(Counter());
+    Counter fromConst = move(cc);
+    printf("from const: copies=%d moves=%d\n", fromConst.copies, fromConst.moves);
+    Counter returned = makeMoved();
+    printf("returned: copies=%d moves=%d\n", returned.copies, returned.moves);
+    dyn inferred = move(c);
+    printf("dyn: copies=%d moves=%d\n", inferred.copies, inferred.moves);
+    const Counter& bound = move(c);
+    printf("bound: copies=%d moves=%d\n", bound.copies, bound.moves);
+    Counter assigned;
+    assigned = move(c);
+    printf("assigned: copies=%d moves=%d\n", assigned.copies, assigned.moves);
+    int i = 41;
+    takeInt(42);
+    takeInt(move(i));
+    generic(7);
+    generic(move(i));
+}

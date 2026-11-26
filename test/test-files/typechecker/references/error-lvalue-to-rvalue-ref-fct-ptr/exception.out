@@ -1,0 +1,8 @@
+[Error|Compiler]:
+Unresolved soft errors: There are unresolved errors. Please fix them and recompile.
+
+[Error|Semantic] ./source.spice:23:13:
+LValue bound to RValue reference: LValues cannot be bound to RValue reference parameters. Use move() to move from them
+
+23  consume(t);
+            ^

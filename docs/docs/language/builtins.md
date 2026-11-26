@@ -136,6 +136,29 @@ string[5] stringArray = ["string1", "string2", "string3"];
 len(stringArray); // 5
 ```
 
+## The `move` builtin
+Move turns a value into an RValue, so that it binds to [RValue reference](references.md#rvalue-references) parameters, e.g.
+of a [move constructor](constructors-destructors.md#move-constructors) or a move assign operator. A value, that is
+initialized with the result, is move constructed. `move` itself does not move anything, the moved-from value stays valid
+and gets destructed as usual.
+
+### Signature
+`T&& move(T& value)`
+
+`value`: Value of any type.
+
+### Usage example
+```spice
+p consume(String&& value) {
+    printf("%s\n", value);
+}
+
+f<int> main() {
+    String message = String("Hello");
+    consume(move(message));
+}
+```
+
 ## The `panic` builtin
 Panic is used to terminate the program with an error message. The error message will be printed to standard error (stderr),
 followed by the [stack trace](../how-to/stack-traces.md#panics-and-failed-assertions) of the panic, and the program will

@@ -1,0 +1,43 @@
+type Buffer struct {
+    int[3] items
+}
+
+f<int*> Buffer.data() {
+    return this.items; // Array field decays to a pointer to its first item
+}
+
+f<int*> firstItem(int[3] items) { // Array parameters refer to the array of the caller
+    return items;
+}
+
+f<int*> firstItemUnsized(int[] items) {
+    return items;
+}
+
+f<int*> firstItemViaResult(int[3] items) {
+    result = items;
+}
+
+f<int*> firstItemViaVariable(int[3] items) {
+    int* first = items;
+    return first;
+}
+
+f<int> main() {
+    Buffer buffer = Buffer{[7, 8, 9]};
+    int* data = buffer.data();
+    unsafe {
+        printf("%d, %d, %d\n", data[0], data[1], data[2]);
+    }
+    printf("%d\n", data == &buffer.items[0]);
+
+    int[3] numbers = [1, 2, 3];
+    int* first = firstItem(numbers);
+    unsafe {
+        printf("%d, %d, %d\n", first[0], first[1], first[2]);
+    }
+    printf("%d\n", first == &numbers[0]);
+    printf("%d\n", *firstItemUnsized(numbers));
+    printf("%d\n", *firstItemViaResult(numbers));
+    printf("%d\n", *firstItemViaVariable(numbers));
+}

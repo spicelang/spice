@@ -89,6 +89,8 @@ public type SemanticErrorType enum {
     DYN_ARRAYS_NOT_ALLOWED,
     REFERENCE_WITHOUT_INITIALIZER,
     TEMP_TO_NON_CONST_REF,
+    LVALUE_TO_RVALUE_REF,
+    RVALUE_REF_NOT_ALLOWED,
     GENERIC_TYPE_NOT_IN_TEMPLATE,
     QUALIFIER_AT_ILLEGAL_CONTEXT,
     INSUFFICIENT_VISIBILITY,
@@ -267,6 +269,8 @@ f<string> SemanticError.getMessagePrefix(const SemanticErrorType errorType) {
         case SemanticErrorType::DYN_ARRAYS_NOT_ALLOWED: { return "Dyn arrays not allowed"; }
         case SemanticErrorType::REFERENCE_WITHOUT_INITIALIZER: { return "Reference without initializer"; }
         case SemanticErrorType::TEMP_TO_NON_CONST_REF: { return "Temporary bound to non-const reference"; }
+        case SemanticErrorType::LVALUE_TO_RVALUE_REF: { return "LValue bound to RValue reference"; }
+        case SemanticErrorType::RVALUE_REF_NOT_ALLOWED: { return "RValue reference not allowed"; }
         case SemanticErrorType::GENERIC_TYPE_NOT_IN_TEMPLATE: { return "Generic type not contained in template"; }
         case SemanticErrorType::QUALIFIER_AT_ILLEGAL_CONTEXT: { return "Qualifier at illegal context"; }
         case SemanticErrorType::INSUFFICIENT_VISIBILITY: { return "Insufficient symbol visibility"; }

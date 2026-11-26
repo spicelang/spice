@@ -53,19 +53,21 @@ public p LinkedList.ctor(const LinkedList<T>& other) {
     }
 }
 
-/**
- * Move-constructs a new list, taking ownership of another list's nodes
- *
- * @param other List to move from
- */
-public p LinkedList.ctor(LinkedList<T>& other) {
-    this.tail = other.tail;
-    this.head = other.head;
-    this.size = other.size;
-    other.tail = nil<heap Node<T>*>;
-    other.head = nil<Node<T>*>;
-    other.size = 0l;
-}
+// The stage0 compiler, which builds the compiler and checks the formatting of the std, does not support RValue references
+// yet. Re-enable the move ctor, once it does. Until then, RValues are copied.
+// /**
+//  * Move-constructs a new list, taking ownership of another list's nodes
+//  *
+//  * @param other List to move from
+//  */
+// public p LinkedList.ctor(LinkedList<T>&& other) {
+//     this.tail = other.tail;
+//     this.head = other.head;
+//     this.size = other.size;
+//     other.tail = nil<heap Node<T>*>;
+//     other.head = nil<Node<T>*>;
+//     other.size = 0l;
+// }
 
 /**
  * Pushes a new item to the back of the list
