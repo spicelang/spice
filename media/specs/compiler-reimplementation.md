@@ -5,7 +5,7 @@ keep correct and to extend: clear components, one place for each semantic decisi
 stages. Compile performance must stay at least as good as today. The new compiler must keep all existing tests green and
 keep all existing functionality.
 
-It is a re-architecture that ports the existing behaviour, not a clean-room rewrite. The test suite pins exact error
+It is a re-architecture that ports the existing behavior, not a clean-room rewrite. The test suite pins exact error
 texts, warning orders and LLVM IR text (see [the test contract](#31-the-test-contract)). So the rules are moved into new
 components, but the order in which they run, and the output they produce, are kept.
 
@@ -25,7 +25,7 @@ components, but the order in which they run, and the output they produce, are ke
 12. [Alternatives considered](#12-alternatives-considered)
 13. [Decisions](#13-decisions)
 14. [Appendix A: legacy to new mapping](#appendix-a-legacy-to-new-mapping)
-15. [Appendix B: TIR node catalogue](#appendix-b-tir-node-catalogue)
+15. [Appendix B: TIR node catalog](#appendix-b-tir-node-catalog)
 16. [Appendix C: glossary](#appendix-c-glossary)
 
 ## 1. Summary
@@ -193,7 +193,7 @@ But the mechanism prevents reuse by a language server or by unit tests, and prev
   is visible in the output.
 - The **parallel back end** and its determinism rules (`media/specs/parallel-backend.md`), including the serial linker
   input order.
-- The **diagnostic catalogue**: the `SemanticErrorType` codes (129), the warning kinds (22), the message prefixes and
+- The **diagnostic catalog**: the `SemanticErrorType` codes (129), the warning kinds (22), the message prefixes and
   the rendering format.
 - The **test runner** (`test/run-tests.py`), which uses the compiler as a black-box process. The
   **benchmark suite** (`benchmark/run-benchmarks.py run --compiler NAME=PATH …`) can already compare several compilers.
@@ -208,10 +208,10 @@ There are 1,029 reference test cases in 11 suites, plus 67 builtin `#[test]` uni
 
 | Reference                                      | Count               | Comparison                                                                                   | What it pins                                                                                                                                                                        |
 |------------------------------------------------|--------------------:|----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `cout.out`                                     | 514                 | exact stdout of the compiled program                                                         | behaviour                                                                                                                                                                           |
+| `cout.out`                                     | 514                 | exact stdout of the compiled program                                                         | behavior                                                                                                                                                                           |
 | `exception.out`                                | 417                 | exact text from the first `[Error\|` header                                                  | error codes, prefixes, messages, code snippet and marker, **which error is reported first**                                                                                         |
 | `ir-code*.ll` (O0 to Oz, OS and arch variants) | ~290 files, 31.9k lines | exact text after removing ` dso_local ` and `!DIFile` lines (debug cases); x86_64 hosts only | value and block names (e.g. `cond.true.L6C14`), instruction and alloca order, function and declaration order, globals (`@anon.string.N`), attribute groups, metadata numbering |
-| `exit-code.out`                                | 36                  | exact                                                                                        | behaviour                                                                                                                                                                           |
+| `exit-code.out`                                | 36                  | exact                                                                                        | behavior                                                                                                                                                                           |
 | `warning.out`                                  | 24                  | exact, ordered, main file only                                                               | warning texts and order                                                                                                                                                             |
 | `assembly-*.asm`                               | 16                  | exact, not on GitHub Actions                                                                 | back end and target                                                                                                                                                                 |
 | `syntax-tree.dot`                              | 9                   | exact                                                                                        | node kinds, child order, node ids `L<line>C<col>_<Kind>`                                                                                                                            |
@@ -309,7 +309,7 @@ to 0.30.2 in [#1887](https://github.com/spicelang/spice/pull/1887) (decision [D3
   their façade files.
 - **P8: legacy outputs through adapters.** Dumps that pin legacy internals are produced by compatibility serializers.
   The core data model does not bend to them.
-- **P9: port behaviour, re-home structure.** The order of checks, the bail-out points and the lowering recipes are
+- **P9: port behavior, re-home structure.** The order of checks, the bail-out points and the lowering recipes are
   ported from the legacy code. The structure around them is new.
 
 ### 4.2 Pipeline
@@ -350,10 +350,10 @@ src/
 ├── base/          L0  arena, interner, ids, id-indexed vectors, hashing, small containers, timer, concurrency,
 │                      process/file-system helpers, manifest (spice.toml) reader
 ├── source/        L1  SourceManager (FileId → buffer + line table), Span, location formatting, snippet extraction
-├── diag/          L1  Diagnostic, DiagnosticEngine (policies), renderers, message catalogues (generated)
+├── diag/          L1  Diagnostic, DiagnosticEngine (policies), renderers, message catalogs (generated)
 ├── syntax/        L2  token, lexer, ast (generated), parser/*, literal decoding, IAstVisitor, AST dot printer
 ├── modules/       L3  import resolution (pure), module loader, ModuleGraph (SCC, orders), module attributes,
-│                      runtime module catalogue
+│                      runtime module catalog
 ├── sema/          L4
 │   ├── types/         TypeStore (interned), QualType, type printer, TypeRelations, ITargetLayout (interface)
 │   ├── model/         declarations (FunctionDecl, StructDecl, …) and instances (FunctionInstance, …)
@@ -502,7 +502,7 @@ violation.
   - temporaries with their destruction points, cleanups attached to scope exits and jumps;
   - folded constants, pruned branches, union tag checks, error propagation and lifetime markers.
 - Each node carries the `Span` of its AST origin. Debug locations, block names and diagnostics come from it.
-- See [Appendix B](#appendix-b-tir-node-catalogue) for the node set.
+- See [Appendix B](#appendix-b-tir-node-catalog) for the node set.
 
 ### 4.5 Ownership and lifetimes
 
@@ -570,7 +570,7 @@ that matter for compatibility or performance. A complete file mapping is in
     - warnings are deduplicated per module.
   - Renderers for the exact legacy texts (`[Error|Semantic] <loc>:\n<prefix>: <message>\n\n<snippet>`, the colored
     `[Warning]` lines, lint findings).
-- **Catalogues.** `SemanticErrorType`, `ParserErrorType`, `CompilerErrorType`, `CliErrorType`, `LinkerErrorType`,
+- **Catalogs.** `SemanticErrorType`, `ParserErrorType`, `CompilerErrorType`, `CliErrorType`, `LinkerErrorType`,
   `LexerErrorType` and `CompilerWarningType`, with their prefixes, are generated from `diag/diagnostics.def`.
 - **Replaces.** `exception/*`, `util/compiler-warning.spice`, and the soft/hard logic in `SourceFile`.
 - **Notes.** Nothing calls `exit()` except `driver/main`. A component that hits a fatal error reports it and returns
@@ -620,7 +620,7 @@ that matter for compatibility or performance. A complete file mapping is in
   - `ModuleGraph` with ordered dependency lists, dependants, Tarjan SCCs computed once, and the legacy traversal orders
     (front end, PRE, POST and back end, see [8.4](#84-diagnostic-and-warning-order)).
   - Module attributes (`core.compiler.alwaysKeepSymbolsOnNameCollision`, `ignoreWarnings`, `requiresOs`, …).
-  - The runtime module catalogue: which type and function names need which `std/runtime/*_rt` module. It is data,
+  - The runtime module catalog: which type and function names need which `std/runtime/*_rt` module. It is data,
     not string lists spread over the type checker.
 - **Replaces.** `importcollector/*`, the graph parts of `SourceFile` (`dependencies`, `dependants`, `dependsOn`, the
   guard flags), and `global/runtime-module-manager.spice`.
@@ -1121,7 +1121,7 @@ The legacy compiler keeps getting fixes and features during the migration:
 - Every legacy PR that adds or changes a test automatically extends the new compiler's backlog: the ratchet job shows
   the case as failing for `spice-next`.
 - `media/specs/compiler-reimplementation-port-log.md` lists every legacy commit after the fork point that changes
-  compiler behaviour, with the new component it affects. A work package is not done until its port-log entries are
+  compiler behavior, with the new component it affects. A work package is not done until its port-log entries are
   ported.
 - Decision D4: during phases 5 and 6, new language features go into legacy only if they are small, or
   if they are implemented in both compilers in the same PR. Bug fixes are always welcome. They come with a test, which
@@ -1203,7 +1203,7 @@ throughput is at least 1.3× legacy (measured with `--dump-stats` on the compile
 |------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | 3.1  | `driver/cli` with **all** legacy subcommands and flags, so the help output is identical. `driver/options` (`OptionResolver`). Port the 13 driver tests.                                                                                                                                         |
 | 3.2  | `CompilerSession`, the `Scheduler` skeleton with checkpoints and observers (timers, `--dump-stats` format v1, progress bar). Port the `compile-progress`, `compile-stats` and `global-resource-manager` tests.                                                                                     |
-| 3.3  | `modules`: the import resolver (with a fake file system in tests), the loader, `ModuleGraph` with SCCs and legacy orders, module attributes, the runtime module catalogue. Port the `import-collector` and `source-file` tests.                                                                    |
+| 3.3  | `modules`: the import resolver (with a fake file system in tests), the loader, `ModuleGraph` with SCCs and legacy orders, module attributes, the runtime module catalog. Port the `import-collector` and `source-file` tests.                                                                    |
 | 3.4  | `tools/viz` dependency graph. Both `dependency-graph.dot` cases pass. The import error cases pass: the `symboltablebuilder` and `typechecker` cases whose `exception.out` comes from import resolution.                                                                                           |
 
 **Exit gate.** The driver unit tests pass. CLI help, the `--dump-dependency-graph` corpus diff and the import error
@@ -1307,7 +1307,7 @@ performance budget are green.
    - `AGENTS.md` (repository map, build and test commands) and `STYLE_GUIDE.md` (visitor and memory sections);
    - the agent skills `spice-architecture`, `spice-language-feature`, `spice-diagnostics`, `spice-dump`,
      `spice-debugging` and `spice-profiling`;
-   - `docs/` for CLI behaviour, which should be unchanged.
+   - `docs/` for CLI behavior, which should be unchanged.
 4. Release. Then bump stage0 to that release, so that the compiler is built by a compiler with the same architecture.
 
 ### 9.11 Phase 9: improvements enabled by the architecture (after cutover, optional)
@@ -1333,7 +1333,7 @@ the WP workflow) and points to this document.
 Goal: <one sentence>
 Legacy sources: <file:line ranges to read first, e.g. src/typechecker/type-checker.spice:5010-5359>
 New files: <paths under src/next/>
-Behaviour to preserve: <test filters, e.g. 'TypeCheckerTests.FunctionCalls*', corpus classes>
+Behavior to preserve: <test filters, e.g. 'TypeCheckerTests.FunctionCalls*', corpus classes>
 Acceptance:
   - python build.py --sources src/next --output-name spice-next
   - python test/run-tests.py --compiler build/spice-next --filter '<filter>'
@@ -1388,7 +1388,7 @@ definitions are agreed first.
 | 4 | Stage0 cannot compile an idiom or has a bug in it                                                        | medium    | medium | Spikes in phase 1. Stay close to the idioms legacy already uses. Stage0 0.30.2 (D3), bumped again if needed.                                                                                              |
 | 5 | Performance regression from TIR construction and side tables                                            | low       | medium | Per-phase budgets measured against legacy. Arenas per module, TIR freed after emission, compact nodes.                                                                            |
 | 6 | The migration stalls halfway                                                                             | medium    | high   | Legacy stays production until cutover, so stopping at any gate is safe. Phase 0-1 tooling (harness, ratchet, layering checker) is useful on its own. Phase gates make progress measurable. |
-| 7 | Behaviour that no test covers changes unnoticed                                                          | medium    | medium | The corpus diff over the std, the compiler sources, the docs examples and the mutations. The bootstrap fixed point.                                                              |
+| 7 | Behavior that no test covers changes unnoticed                                                          | medium    | medium | The corpus diff over the std, the compiler sources, the docs examples and the mutations. The bootstrap fixed point.                                                              |
 | 8 | Determinism regressions break the bootstrap                                                              | low       | high   | Ids and ordered containers only. The bootstrap in phase 7. Type name disambiguation once, after collection.                                                                       |
 | 9 | Double maintenance load during the migration                                                             | high      | medium | Keep phases short. D4 limits new features in legacy during phases 5-6.                                                                                                          |
 | 10 | Generated code makes debugging harder                                                                   | low       | low    | Readable, committed output with source markers. The generators are small and tested.                                                                                             |
@@ -1410,7 +1410,7 @@ These questions were open in the first version of the plan. The maintainer accep
 
 | #  | Question                                                                                                                                                         | Decision                                                                                                                                                                                                                                  |
 |----|------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| D1 | **Fidelity policy for refs.** Must every ref stay byte-identical during the migration, including legacy bugs?                                                    | **Yes.** All refs are a strict gate until cutover. Legacy bugs are reproduced, recorded as quirks and fixed after cutover in separate PRs with ref updates. This honours "all existing tests pass" literally and keeps the oracle simple. |
+| D1 | **Fidelity policy for refs.** Must every ref stay byte-identical during the migration, including legacy bugs?                                                    | **Yes.** All refs are a strict gate until cutover. Legacy bugs are reproduced, recorded as quirks and fixed after cutover in separate PRs with ref updates. This honors "all existing tests pass" literally and keeps the oracle simple. |
 | D2 | **White-box dumps.** `cache-stats.out` (1 case) pins the legacy cache algorithm. `type-registry.out` (7) pins the set of interned types.                          | `type-registry.out` is emulated through the compat layer. `cache-stats.out` is re-baselined at cutover with the counters of the new caches, in the same format, in one reviewed commit. It is the only ref that cannot be kept meaningfully. |
 | D3 | **Bump stage0** to a release that contains [#1864](https://github.com/spicelang/spice/pull/1864) (parameter names in interface signatures) and [#1881](https://github.com/spicelang/spice/pull/1881) (`T&&`, `move`) before phase 1? | **Yes.** 0.30.2 contains both. The bump is [#1887](https://github.com/spicelang/spice/pull/1887), which also re-enables the move ctors of the std linked lists and trees. The new code can use move semantics from the start. |
 | D4 | **Legacy feature policy** during phases 5 and 6.                                                                                                                 | Bug fixes always. New language features only if small, or if implemented in both compilers in the same PR. Larger features wait for cutover.                                                                                            |
@@ -1473,7 +1473,7 @@ the third column.
 | `util/compile-progress.spice`                       | `driver/progress`                            |                                                                                                                               |
 | `util/*` (others)                                   | `base`                                       |                                                                                                                               |
 
-## Appendix B: TIR node catalogue
+## Appendix B: TIR node catalog
 
 Every node has a header `{TirKind kind; QualType type; Span span; flags}`. The children are TIR ids. The complete
 definition lives in `sema/tir/tir.def`.
