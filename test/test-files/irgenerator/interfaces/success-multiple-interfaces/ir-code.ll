@@ -27,7 +27,8 @@ source_filename = "source.spice"
 @printf.str.8 = private unnamed_addr constant [18 x i8] c"Returned ref: %d\0A\00", align 4
 @printf.str.9 = private unnamed_addr constant [11 x i8] c"Field: %d\0A\00", align 4
 @printf.str.10 = private unnamed_addr constant [10 x i8] c"Cast: %d\0A\00", align 4
-@printf.str.11 = private unnamed_addr constant [9 x i8] c"Nil: %d\0A\00", align 4
+@printf.str.11 = private unnamed_addr constant [17 x i8] c"Pointer ref: %d\0A\00", align 4
+@printf.str.12 = private unnamed_addr constant [9 x i8] c"Nil: %d\0A\00", align 4
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define internal void @_ZN4Impl4ctorEi(ptr noundef nonnull align 8 dereferenceable(24) %0, i32 noundef %1) #0 {
@@ -138,6 +139,8 @@ define noundef i32 @main() #1 {
   %1 = alloca ptr, align 8
   %holder = alloca %struct.Holder, align 8
   %casted = alloca ptr, align 8
+  %implPtr = alloca ptr, align 8
+  %firstPtrRef = alloca ptr, align 8
   %nilImpl = alloca ptr, align 8
   %nilSecond = alloca ptr, align 8
   call void @_ZN4Impl4ctorEi(ptr noundef nonnull align 8 dereferenceable(24) %impl, i32 noundef 10)
@@ -233,16 +236,25 @@ define noundef i32 @main() #1 {
   %fct27 = load ptr, ptr %vfct.addr26, align 8
   %54 = call noundef i32 %fct27(ptr noundef nonnull align 8 dereferenceable(8) %53)
   %55 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.10, i32 noundef %54)
+  store ptr %impl, ptr %implPtr, align 8
+  store ptr %implPtr, ptr %firstPtrRef, align 8
+  %56 = load ptr, ptr %firstPtrRef, align 8
+  %57 = load ptr, ptr %56, align 8
+  %vtable.addr28 = load ptr, ptr %57, align 8
+  %vfct.addr29 = getelementptr inbounds ptr, ptr %vtable.addr28, i64 0
+  %fct30 = load ptr, ptr %vfct.addr29, align 8
+  %58 = call noundef i32 %fct30(ptr noundef nonnull align 8 dereferenceable(8) %57)
+  %59 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i32 noundef %58)
   store ptr null, ptr %nilImpl, align 8
-  %56 = load ptr, ptr %nilImpl, align 8
-  %57 = getelementptr inbounds nuw %struct.Impl, ptr %56, i32 0, i32 1
-  %58 = icmp eq ptr %56, null
-  %59 = select i1 %58, ptr null, ptr %57
-  store ptr %59, ptr %nilSecond, align 8
-  %60 = load ptr, ptr %nilSecond, align 8
-  %61 = icmp eq ptr %60, null
-  %62 = zext i1 %61 to i32
-  %63 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.11, i32 noundef %62)
+  %60 = load ptr, ptr %nilImpl, align 8
+  %61 = getelementptr inbounds nuw %struct.Impl, ptr %60, i32 0, i32 1
+  %62 = icmp eq ptr %60, null
+  %63 = select i1 %62, ptr null, ptr %61
+  store ptr %63, ptr %nilSecond, align 8
+  %64 = load ptr, ptr %nilSecond, align 8
+  %65 = icmp eq ptr %64, null
+  %66 = zext i1 %65 to i32
+  %67 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.12, i32 noundef %66)
   ret i32 0
 }
 

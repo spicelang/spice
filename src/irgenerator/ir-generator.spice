@@ -971,7 +971,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
             this.diGenerator.generateLocalVarDebugInfo(lhsEntry.name, refAddress);
 
             // Get address of right side
-            const llvm::Value rhsAddress = this.convertToInterfaceIfRequired(this.resolveAddress(rhs), lhsSType, rhsSType);
+            const llvm::Value rhsAddress = this.convertToInterfaceRefIfRequired(this.resolveAddress(rhs), lhsSType, rhsSType);
             assert !rhsAddress.isNull();
             this.insertStore(rhsAddress, refAddress);
 
@@ -991,7 +991,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         const bool isReturnValAssign = lhsEntry.name == RETURN_VARIABLE_NAME;
         if isInitialFieldRefAssign || isReturnValAssign {
             // Get address of right side
-            const llvm::Value referencedAddress = this.convertToInterfaceIfRequired(this.resolveAddress(rhs), lhsSType, rhsSType);
+            const llvm::Value referencedAddress = this.convertToInterfaceRefIfRequired(this.resolveAddress(rhs), lhsSType, rhsSType);
             assert !referencedAddress.isNull();
 
             // Store the rhs* to the lhs**
@@ -1161,9 +1161,7 @@ f<LLVMExprResult> IRGenerator.doAssignment(llvm::Value lhsAddress, const SymbolT
         // Retrieve value of the right side
         rhsValue = this.resolveValue(rhsSType, rhs);
         // A pointer to a struct might be stored as pointer to an interface, which the struct implements
-        if rhsSType.removeReferenceWrapper().isPtr() {
-            rhsValue = this.convertToInterfaceIfRequired(rhsValue, lhsSType, rhsSType);
-        }
+        rhsValue = this.convertToInterfacePtrIfRequired(rhsValue, lhsSType, rhsSType);
         // Store the value to the address
         this.insertStore(rhsValue, lhsAddress, rhsSType);
     }
@@ -3139,9 +3137,13 @@ public f<Any> IRGenerator.visitReturnStmt(ASTReturnStmtNode* node) {
             indices.pushBack(this.getInt32(0l));
             returnValue = this.insertInBoundsGEP(arrayType.toLLVMType(this.sourceFile), arrayAddress, indices);
         } else {
-            returnValue = data.returnType.isRef() ? this.resolveAddress(returnExpr) : this.resolveValue(returnExpr);
             // A pointer or reference to a struct might be returned as pointer or reference to an interface, which it implements
-            returnValue = this.convertToInterfaceIfRequired(returnValue, data.returnType, this.getEvaluatedType(returnExpr));
+            const QualType returnExprType = this.getEvaluatedType(returnExpr);
+            if data.returnType.isRef() {
+                returnValue = this.convertToInterfaceRefIfRequired(this.resolveAddress(returnExpr), data.returnType, returnExprType);
+            } else {
+                returnValue = this.convertToInterfacePtrIfRequired(this.resolveValue(returnExpr), data.returnType, returnExprType);
+            }
         }
     } else { // Try to load result variable value
         const SymbolTableEntry* resultEntry = this.currentScope.lookupResultVar();
@@ -4639,11 +4641,15 @@ public f<Any> IRGenerator.visitFctCall(ASTFctCallNode* node) {
                 // A pointer or reference to a struct might be passed as pointer or reference to an interface, which it implements
                 if !expectedSTy.isDecayedArray() {
                     llvm::Value& argValue = argValues.back();
-                    argValue = this.convertToInterfaceIfRequired(argValue, expectedSTy, actualSTy);
+                    if expectedSTy.isRef() {
+                        argValue = this.convertToInterfaceRefIfRequired(argValue, expectedSTy, actualSTy);
+                    } else {
+                        argValue = this.convertToInterfacePtrIfRequired(argValue, expectedSTy, actualSTy);
+                    }
                 }
             } else if expectedSTy.isRef() && matchArgType(expectedSTy.getContained(), actualSTy) { // Matches with ref
                 const llvm::Value argAddress = this.resolveAddress(argNode);
-                argValues.pushBack(this.convertToInterfaceIfRequired(argAddress, expectedSTy, actualSTy));
+                argValues.pushBack(this.convertToInterfaceRefIfRequired(argAddress, expectedSTy, actualSTy));
             } else if actualSTy.isRef() && matchArgType(expectedSTy, actualSTy.getContained()) { // Matches with ref
                 const llvm::Value argAddress = this.resolveValue(argNode);
                 argValues.pushBack(argAddress);
@@ -5018,7 +5024,7 @@ public f<Any> IRGenerator.visitStructInstantiation(ASTStructInstantiationNode* n
         if fieldType.isRef() {
             itemValue = this.resolveAddress(exprResult);
             // A reference to a struct might be bound to a reference to an interface, which the struct implements
-            itemValue = this.convertToInterfaceIfRequired(itemValue, fieldType, this.getEvaluatedType(exprResult.node));
+            itemValue = this.convertToInterfaceRefIfRequired(itemValue, fieldType, this.getEvaluatedType(exprResult.node));
         } else if copyCtor != nil<const model::Function*> {
             // Deep-copy the value into the field via its copy ctor: the source is not consumed/moved here, so the
             // caller keeps its own copy alive and destructs it independently - a raw value copy would alias its
@@ -5033,7 +5039,7 @@ public f<Any> IRGenerator.visitStructInstantiation(ASTStructInstantiationNode* n
         } else {
             itemValue = this.resolveValue(exprResult.node, exprResult);
             // A pointer to a struct might be stored as pointer to an interface, which the struct implements
-            itemValue = this.convertToInterfaceIfRequired(itemValue, fieldType, this.getEvaluatedType(exprResult.node));
+            itemValue = this.convertToInterfacePtrIfRequired(itemValue, fieldType, this.getEvaluatedType(exprResult.node));
         }
         // Get field address
         const llvm::Value currentFieldAddress = this.insertStructGEP(structType, structAddr, cast<unsigned int>(spiceStruct.getFieldElementIndex(i)));
@@ -6155,31 +6161,50 @@ public f<llvm::Value> IRGenerator.getUpcastedStructPtr(llvm::Value structPtr, co
 }
 
 /**
- * Convert a pointer to a struct or the address of a struct, that is implicitly converted to a pointer or reference to an
- * interface, that the struct implements. The pointer is advanced to the interface subobject of the struct, which
- * carries the vtable pointer to the vtable segment of this interface. Other values are returned unchanged.
+ * Convert a pointer to a struct, that is implicitly converted to a pointer to an interface, that the struct implements. The
+ * pointer is advanced to the interface subobject of the struct, which carries the vtable pointer to the vtable segment of
+ * this interface. Other values are returned unchanged.
  *
- * @param value Pointer value for pointer conversions, address of the struct for reference conversions
- * @param dstType Destination type, e.g. a pointer or a reference to an interface
- * @param srcType Source type, e.g. a pointer to a struct or a struct
+ * @param value Pointer value
+ * @param dstType Destination type, e.g. a pointer to an interface or a reference to such a pointer
+ * @param srcType Source type, e.g. a pointer to a struct
  * @return Converted value
  */
-public f<llvm::Value> IRGenerator.convertToInterfaceIfRequired(llvm::Value value, const QualType& dstType, const QualType& srcType) {
-    QualType dstBaseType = dstType.removeReferenceWrapper();
-    QualType srcBaseType = srcType.removeReferenceWrapper();
-    if dstBaseType.isPtr() && srcBaseType.isPtr() {
-        dstBaseType = dstBaseType.getContained();
-        srcBaseType = srcBaseType.getContained();
-    } else if !dstType.isRef() {
-        // Only references can be bound to the address of a struct
+public f<llvm::Value> IRGenerator.convertToInterfacePtrIfRequired(llvm::Value value, const QualType& dstType, const QualType& srcType) {
+    const QualType dstPtrType = dstType.removeReferenceWrapper();
+    const QualType srcPtrType = srcType.removeReferenceWrapper();
+    if !dstPtrType.isPtr() || !srcPtrType.isPtr() {
         return value;
     }
-    if !dstBaseType.matchesInterfaceImplementedByStruct(srcBaseType) {
+    const QualType dstBaseType = dstPtrType.getContained();
+    if !dstBaseType.matchesInterfaceImplementedByStruct(srcPtrType.getContained()) {
         return value;
     }
     const llvm::Type valueType = value.getType();
     assert valueType.isPointerTy();
-    return this.getUpcastedStructPtr(value, dstType, srcType);
+    return this.getUpcastedStructPtr(value, dstPtrType, srcPtrType);
+}
+
+/**
+ * Convert the address of a struct, that is bound to a reference to an interface, that the struct implements. The address is
+ * advanced to the interface subobject of the struct (see convertToInterfacePtrIfRequired). Other addresses are returned
+ * unchanged. This includes a reference to a pointer to an interface, that is bound to a pointer to a struct: the address of
+ * the pointer itself is bound there, which must not be adjusted.
+ *
+ * @param address Address of the value, that the reference is bound to
+ * @param dstType Destination type, e.g. a reference to an interface
+ * @param srcType Source type, e.g. a struct
+ * @return Converted address
+ */
+public f<llvm::Value> IRGenerator.convertToInterfaceRefIfRequired(llvm::Value address, const QualType& dstType, const QualType& srcType) {
+    if !dstType.isRef() {
+        return address;
+    }
+    const QualType dstBaseType = dstType.removeReferenceWrapper();
+    if !dstBaseType.matchesInterfaceImplementedByStruct(srcType.removeReferenceWrapper()) {
+        return address;
+    }
+    return this.getUpcastedStructPtr(address, dstType, srcType);
 }
 
 /**

@@ -72,6 +72,11 @@ f<int> main() {
     Second* casted = cast<Second*>(&impl);
     printf("Cast: %d\n", casted.two());
 
+    // A reference to a pointer to an interface aliases the pointer itself, which must not be adjusted
+    Impl* implPtr = &impl;
+    First*& firstPtrRef = implPtr;
+    printf("Pointer ref: %d\n", firstPtrRef.one());
+
     // A nil pointer stays nil
     Impl* nilImpl = nil<Impl*>;
     Second* nilSecond = nilImpl;
