@@ -1,7 +1,7 @@
 == array items
-dtor: (null)
+dtor: (empty)
 dtor: item-first
-dtor: (null)
+dtor: (empty)
 dtor: item-second
 items: src item-third
 == field without no-args ctor

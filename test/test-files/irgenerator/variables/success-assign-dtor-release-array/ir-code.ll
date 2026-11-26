@@ -5,9 +5,10 @@ source_filename = "source.spice"
 %struct.Holder = type { %struct.String }
 
 @printf.str.0 = private unnamed_addr constant [10 x i8] c"dtor: %s\0A\00", align 4
-@anon.string.0 = private unnamed_addr constant [6 x i8] c"first\00", align 4
-@anon.string.1 = private unnamed_addr constant [7 x i8] c"second\00", align 4
-@anon.string.2 = private unnamed_addr constant [6 x i8] c"third\00", align 4
+@anon.string.0 = private unnamed_addr constant [8 x i8] c"(empty)\00", align 4
+@anon.string.1 = private unnamed_addr constant [6 x i8] c"first\00", align 4
+@anon.string.2 = private unnamed_addr constant [7 x i8] c"second\00", align 4
+@anon.string.3 = private unnamed_addr constant [6 x i8] c"third\00", align 4
 @printf.str.1 = private unnamed_addr constant [14 x i8] c"items: %s %s\0A\00", align 4
 
 ; Function Attrs: mustprogress noinline nounwind optnone uwtable
@@ -52,13 +53,28 @@ define internal void @_ZN6Holder4dtorEv(ptr noundef nonnull align 8 dereferencea
   %this = alloca ptr, align 8
   store ptr %0, ptr %this, align 8
   %2 = load ptr, ptr %this, align 8
-  %s.addr = getelementptr inbounds %struct.Holder, ptr %2, i64 0, i32 0
-  %3 = load ptr, ptr %s.addr, align 8
-  %4 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %3)
-  %5 = load ptr, ptr %this, align 8
-  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %5)
+  %3 = call noundef zeroext i1 @_ZN6String7isEmptyEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
+  br i1 %3, label %cond.true.L16C26, label %cond.false.L16C26
+
+cond.true.L16C26:                                 ; preds = %1
+  br label %cond.exit.L16C26
+
+cond.false.L16C26:                                ; preds = %1
+  %4 = load ptr, ptr %this, align 8
+  %5 = call noundef ptr @_ZN6String6getRawEv(ptr noundef nonnull align 8 dereferenceable(24) %4)
+  br label %cond.exit.L16C26
+
+cond.exit.L16C26:                                 ; preds = %cond.false.L16C26, %cond.true.L16C26
+  %cond.result = phi ptr [ @anon.string.0, %cond.true.L16C26 ], [ %5, %cond.false.L16C26 ]
+  %6 = call noundef i32 (ptr, ...) @printf(ptr noundef @printf.str.0, ptr noundef %cond.result)
+  %7 = load ptr, ptr %this, align 8
+  call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %7)
   ret void
 }
+
+declare i1 @_ZN6String7isEmptyEv(ptr)
+
+declare ptr @_ZN6String6getRawEv(ptr)
 
 ; Function Attrs: nofree nounwind
 declare noundef i32 @printf(ptr noundef readonly captures(none), ...) local_unnamed_addr #2
@@ -72,7 +88,7 @@ define noundef i32 @main() #3 {
   %itemPtr = alloca ptr, align 8
   store [2 x %struct.Holder] zeroinitializer, ptr %items, align 8
   %4 = getelementptr inbounds [2 x %struct.Holder], ptr %items, i64 0, i32 0
-  call void @_ZN6Holder4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.0)
+  call void @_ZN6Holder4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %1, ptr noundef @anon.string.1)
   %5 = icmp eq ptr %4, %1
   br i1 %5, label %assign.move.end, label %assign.move
 
@@ -83,7 +99,7 @@ assign.move:                                      ; preds = %0
 
 assign.move.end:                                  ; preds = %assign.move, %0
   %6 = getelementptr inbounds [2 x %struct.Holder], ptr %items, i64 0, i32 1
-  call void @_ZN6Holder4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.1)
+  call void @_ZN6Holder4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %2, ptr noundef @anon.string.2)
   %7 = icmp eq ptr %6, %2
   br i1 %7, label %assign.move.end2, label %assign.move1
 
@@ -94,7 +110,7 @@ assign.move1:                                     ; preds = %assign.move.end
 
 assign.move.end2:                                 ; preds = %assign.move1, %assign.move.end
   %8 = getelementptr inbounds [2 x %struct.Holder], ptr %items, i64 0, i32 0
-  call void @_ZN6Holder4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %3, ptr noundef @anon.string.2)
+  call void @_ZN6Holder4ctorEPKc(ptr noundef nonnull align 8 dereferenceable(24) %3, ptr noundef @anon.string.3)
   %9 = icmp eq ptr %8, %3
   br i1 %9, label %assign.move.end4, label %assign.move3
 

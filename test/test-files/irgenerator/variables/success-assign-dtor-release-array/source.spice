@@ -12,7 +12,8 @@ p Holder.ctor(string val) {
 }
 
 p Holder.dtor() {
-    printf("dtor: %s\n", this.s);
+    // A zero-initialized array item holds an unallocated String
+    printf("dtor: %s\n", this.s.isEmpty() ? "(empty)" : this.s.getRaw());
 }
 
 f<int> main() {
