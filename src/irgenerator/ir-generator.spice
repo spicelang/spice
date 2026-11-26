@@ -1191,6 +1191,15 @@ f<bool> isAssignToDirectFieldOfThis(const ASTNode* node) {
     return isDirectFieldOfThis(getASTNode(assignNode.lhs));
 }
 
+// Check if the given type is an array, whose items have to be destructed
+f<bool> isDestructibleArray(const QualType& qualType, const ASTNode* node) {
+    if !qualType.isArray() {
+        return false;
+    }
+    const QualType baseType = qualType.getBase();
+    return !baseType.isTriviallyDestructible(node);
+}
+
 // Check if the given node is an assignment to the value behind a pointer (e.g. '*ptr = ...' or '*this = ...') or to an array
 // item (e.g. 'array[i] = ...')
 f<bool> isAssignThroughPointerOrIndex(const ASTNode* node) {
@@ -1198,7 +1207,7 @@ f<bool> isAssignThroughPointerOrIndex(const ASTNode* node) {
         return false;
     }
     const ASTAssignExprNode* assignNode = downcast<ASTAssignExprNode>(node);
-    const ASTNode* lhsNode = getASTNode(assignNode.lhs);
+    const ASTNode* lhsNode = unwrapParentheses(getASTNode(assignNode.lhs));
     if isDereference(lhsNode) {
         return true;
     }
@@ -3094,8 +3103,9 @@ public f<Any> IRGenerator.visitDeclStmt(ASTDeclStmtNode* node) {
             this.generateCtorOrDtorCall(varEntry, data.calledInitCtor, noArgs);
             // A union with no default field must start in the "unset" tag state, and a union with a default field must
             // start with that field active. Either way, the tag bits carry real runtime safety meaning (unlike a struct's
-            // all-zero debug-only default), so they must be initialized unconditionally, in every build mode.
-        } else if !node.isForEachItem && (this.cliOptions.buildMode != BuildMode::RELEASE || varSymbolType.is(SuperType::TY_UNION)) {
+            // all-zero debug-only default), so they must be initialized unconditionally, in every build mode. The same holds
+            // for an array of destructible items: assigning an item destructs its old value, which is the zero value first.
+        } else if !node.isForEachItem && (this.cliOptions.buildMode != BuildMode::RELEASE || varSymbolType.is(SuperType::TY_UNION) || isDestructibleArray(varSymbolType, cast<ASTNode*>(node))) {
             assert !data.isCtorCallRequired;
             // Retrieve default value for lhs symbol type and store it
             const llvm::Value defaultValue = this.getDefaultValueForSymbolType(varSymbolType);

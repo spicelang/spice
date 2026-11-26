@@ -1,0 +1,31 @@
+// TEST: --build-mode=release
+// Verifies that a local array of destructible items is zero-initialized in release mode as well, because assigning an item
+// destructs its old value, which is the zero value at first. Also verifies that a parenthesized lhs gets the
+// self-assignment guard like a plain one.
+
+type Holder struct {
+    String s
+}
+
+p Holder.ctor(string val) {
+    this.s = String(val);
+}
+
+p Holder.dtor() {
+    printf("dtor: %s\n", this.s);
+}
+
+f<int> main() {
+    Holder[2] items;
+    items[0] = Holder("first");
+    items[1] = Holder("second");
+    items[0] = Holder("third");
+    Holder* itemPtr = &items[1];
+    (*itemPtr) = *itemPtr;
+    printf("items: %s %s\n", items[0].s, items[1].s);
+    // Arrays of structs do not destruct their items at the end of their scope yet, so destruct them by hand
+    unsafe {
+        items[0].dtor();
+        items[1].dtor();
+    }
+}

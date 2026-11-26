@@ -2533,11 +2533,30 @@ public f<bool> isAccessedOnThis(const ASTNode* node) {
  * @return 'this' or not
  */
 public f<bool> isThisVariable(const ASTNode* node) {
-    if node.kind != ASTNodeKind::ATOMIC_EXPR {
+    const ASTNode* innerNode = unwrapParentheses(node);
+    if innerNode.kind != ASTNodeKind::ATOMIC_EXPR {
         return false;
     }
-    const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(node);
+    const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(innerNode);
     return atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
+}
+
+/**
+ * Look through the parentheses around an expression, e.g. '(*ptr)' or '(this)'
+ *
+ * @param node Expression
+ * @return Expression in the parentheses
+ */
+public f<const ASTNode*> unwrapParentheses(const ASTNode* node) {
+    const ASTNode* current = node;
+    while current.kind == ASTNodeKind::ATOMIC_EXPR {
+        const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(current);
+        if atomicExpr.assignExpr == nil<IVisitable*> {
+            break;
+        }
+        current = getASTNode(atomicExpr.assignExpr);
+    }
+    return current;
 }
 
 /**
@@ -2554,12 +2573,7 @@ public f<bool> isDereferencedThis(const ASTNode* node) {
     if prefixUnaryExpr.op != PrefixUnaryOp::OP_DEREFERENCE {
         return false;
     }
-    ASTNode* operandNode = getASTNode(prefixUnaryExpr.prefixUnaryExpr);
-    if operandNode.kind != ASTNodeKind::ATOMIC_EXPR {
-        return false;
-    }
-    const ASTAtomicExprNode* atomicExpr = downcast<ASTAtomicExprNode>(operandNode);
-    return atomicExpr.fqIdentifier == THIS_VARIABLE_NAME;
+    return isThisVariable(getASTNode(prefixUnaryExpr.prefixUnaryExpr));
 }
 
 /**
