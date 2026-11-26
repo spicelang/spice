@@ -4817,7 +4817,9 @@ p IRGenerator.setCallArgAttrs(llvm::Value callInst, const model::Function* spice
     for unsigned long i = 0l; i < expectedParamCount; i++ {
         QualType paramType = QualType(SuperType::TY_INVALID);
         if i == 0l && isMethod {
-            paramType = spiceFunc.thisType.toPtr(nil<ASTNode*>);
+            // Methods, that are inherited from an interface default method, get a pointer to the interface part of the struct
+            const QualType& thisType = spiceFunc.isInheritedDefaultMethod() ? spiceFunc.defaultMethod.thisType : spiceFunc.thisType;
+            paramType = thisType.toPtr(nil<ASTNode*>);
         } else {
             paramType = paramSTypes.get(isMethod ? i - 1l : i);
         }

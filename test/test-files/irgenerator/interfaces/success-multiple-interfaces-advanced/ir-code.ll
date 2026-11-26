@@ -270,7 +270,7 @@ define noundef i32 @main() #3 {
   %fct15 = load ptr, ptr %vfct.addr14, align 8
   call void %fct15(ptr noundef nonnull align 8 dereferenceable(8) %28)
   %29 = getelementptr inbounds nuw %struct.Car, ptr %car2, i32 0, i32 2
-  call void @_ZN5Named12printSummaryEv(ptr noundef nonnull align 8 dereferenceable(56) %29)
+  call void @_ZN5Named12printSummaryEv(ptr noundef nonnull align 8 dereferenceable(8) %29)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %name)
   call void @_ZN6String4dtorEv(ptr noundef nonnull align 8 dereferenceable(24) %2)
   call void @_ZN3Car4dtorEv(ptr noundef nonnull align 8 dereferenceable(56) %car2)
