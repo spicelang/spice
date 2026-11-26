@@ -70,6 +70,7 @@ Only the existence of a skip marker counts. Write the reason for the skip into i
 - `disabled` — skip the case entirely
 - `skip-gh-actions` — skip on CI
 - `skip-windows`, `skip-macos` — skip on that OS
+- `next-only` — fails with the legacy compiler, runs only with `--variant next` (compiler re-implementation)
 - `skip-without-tpde` — skip when the TPDE libraries are not available (no `TPDE_FLAGS` and no `setup-deps.py --tpde`), e.g. for tests that need a compiler backed by TPDE
 - `run-builtin-tests` — compile with the test entry point and run the file's own tests
 - `debug.gdb` — gdb script (used with `debug.out`)

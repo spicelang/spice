@@ -1,0 +1,12 @@
+# Manifest of the compiler re-implementation (see media/specs/compiler-reimplementation.md). It builds into build/spice-next:
+# python build.py --sources src-next --output-name spice-next
+[package]
+name = "spice-next"
+version = "0.0.0"
+description = "Re-implementation of the compiler for the Spice programming language"
+license = "MIT"
+authors = ["Marc Auberer <marc.auberer@chillibits.com>"]
+repository = "https://github.com/spicelang/spice"
+homepage = "https://www.spicelang.com"
+spice = ">=0.30.2"
+entry = "main.spice"

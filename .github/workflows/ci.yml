@@ -196,3 +196,37 @@ jobs:
         with:
           path: ~/Library/Caches/ccache
           key: ${{ steps.toolchain.outputs.ccache-key }}
+
+  # The compiler re-implementation in src-next/ (media/specs/compiler-reimplementation.md, section 8.2): every test case in
+  # test/next-ratchet.txt must keep passing with build/spice-next
+  next-ratchet:
+    name: Next ratchet
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Setup Linux toolchain
+        id: toolchain
+        uses: ./.github/actions/setup-linux-toolchain
+
+      - name: Download Libs
+        run: python setup-deps.py
+
+      - name: Fetch stage0 compiler
+        # The released compiler, pinned in .github/stage0-version, that builds the compiler from src-next/
+        run: python fetch-stage0.py
+
+      # Setup LLVM is added with the first work package, that makes src-next/ depend on the llvm package
+      - name: Build spice-next
+        run: python build.py --sources src-next --output-name spice-next
+
+      - name: Run the ratchet
+        # The -next variants of the refs win, and the next-only cases run. An empty ratchet runs no test case
+        run: python test/run-tests.py --compiler build/spice-next --variant next --ratchet --is-github-actions

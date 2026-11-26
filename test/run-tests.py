@@ -3,8 +3,8 @@
 
 The compiler under test is invoked like a user would invoke it ('spice build ...'), and its dumps, diagnostics and the
 behavior of the compiled test programs are compared against the reference files of each test case. Either pass an already
-built compiler via --compiler, or let the runner build it from the sources in src/ first via --build-compiler (e.g. with
-the released stage0 compiler from fetch-stage0.py).
+built compiler via --compiler, or let the runner build it from the sources in src/ (or the source root of --sources) first via
+--build-compiler (e.g. with the released stage0 compiler from fetch-stage0.py).
 
 Besides the reference test cases, the runner builds the compiler sources in test build mode and runs their builtin tests
 (#[test] functions), runs the linter test cases against the 'lint' subcommand and the formatter test cases against the
@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Callable
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
+RATCHET_FILE = ROOT_DIR / "test" / "next-ratchet.txt"
 TEST_DIR = ROOT_DIR / "test"
 
 # Reuse the environment detection of the bootstrap script, without leaving a __pycache__ dir in the repo root
@@ -73,6 +74,7 @@ CTL_SKIP_GH = "skip-gh-actions"
 CTL_SKIP_WINDOWS = "skip-windows"
 CTL_SKIP_MACOS = "skip-macos"
 CTL_SKIP_WITHOUT_TPDE = "skip-without-tpde"
+CTL_NEXT_ONLY = "next-only"  # Fails with the legacy compiler. Only runs with --variant next (compiler re-implementation)
 CTL_RUN_BUILTIN_TESTS = "run-builtin-tests"
 CTL_DEBUG_SCRIPT = "debug.gdb"
 
@@ -179,6 +181,8 @@ class Options:
     verbose: bool
     tpde: bool
     timeout: int
+    sources: Path  # Source root of the compiler under test and of the builtin tests
+    variant: str  # "legacy" or "next". With "next", the -next variants of the reference files win
 
 
 OPTS: Options  # Set in main()
@@ -413,13 +417,28 @@ def erase_gdb_header(gdb_output: str) -> str:
     return gdb_output
 
 
+# -------------------- Ratchet --------------------
+
+
+def read_ratchet(path: Path) -> set[str]:
+    """Names of the test cases in the ratchet file, one 'Suite.Case' per line. Empty lines and '#' comments are ignored"""
+    lines = (line.split("#", 1)[0].strip() for line in read_file(path).splitlines())
+    return {line for line in lines if line}
+
+
 # -------------------- Reference files --------------------
 
 
 def expand_ref_paths(ref_path: str) -> list[str]:
     """Get all variants of the given ref file, ordered from the most to the least specific one"""
     stem, ext = os.path.splitext(ref_path)
-    return [f"{stem}-{TARGET_OS}-{TARGET_ARCH}{ext}", f"{stem}-{TARGET_OS}{ext}", ref_path]
+    base_variants = [f"{stem}-{TARGET_OS}-{TARGET_ARCH}{ext}", f"{stem}-{TARGET_OS}{ext}", ref_path]
+    if OPTS.variant != "next":
+        return base_variants
+    # The compiler re-implementation prefers its own variants of the refs, e.g. symbol-table-next.json
+    next_stem = f"{stem}-next"
+    return [f"{next_stem}-{TARGET_OS}-{TARGET_ARCH}{ext}", f"{next_stem}-{TARGET_OS}{ext}", f"{next_stem}{ext}",
+            *base_variants]
 
 
 def does_ref_exist(ref_path: str) -> bool:
@@ -436,6 +455,38 @@ def is_compared_in_current_mode(ref_path: str) -> bool:
     if OPTS.asan:
         return os.path.basename(ref_path) in (REF_NAME_EXECUTION_OUTPUT, REF_NAME_EXIT_CODE)
     return True
+
+
+def update_ref(ref_path: str, original_ref_path: str, actual_output: str,
+               modify_output: Callable[[str, str], tuple[str, str]] | None) -> None:
+    """
+    Write the actual output into the given ref file. With --variant next, the base refs stay unchanged until the cutover:
+    an output, that differs from the base ref, goes into the -next variant instead, and a -next variant, that is equal to
+    the base ref again, is removed. The outputs are compared like check_ref_match does, so modify_output applies
+    """
+    def equals(base_ref_path: str) -> bool:
+        expected_output = read_file(base_ref_path)
+        actual = actual_output
+        if modify_output is not None:
+            expected_output, actual = modify_output(expected_output, actual)
+        return expected_output == actual
+
+    if OPTS.variant != "next":
+        write_file(ref_path, actual_output)
+        return
+    stem, ext = os.path.splitext(original_ref_path)
+    # The -next variant keeps the OS and arch suffix of the matched ref, so it does not shadow the refs of other platforms
+    suffix = os.path.splitext(ref_path)[0][len(stem):]
+    next_ref_path = f"{stem}-next{suffix}{ext}"
+    if "-next" in os.path.basename(ref_path):
+        base_ref_path = next((path for path in expand_ref_paths(original_ref_path)
+                              if os.path.exists(path) and "-next" not in os.path.basename(path)), None)
+        if base_ref_path is not None and equals(base_ref_path):
+            os.remove(ref_path)
+        else:
+            write_file(ref_path, actual_output)
+    elif not equals(ref_path):
+        write_file(next_ref_path, actual_output)
 
 
 def check_ref_match(result: TestResult, original_ref_path: str, get_actual_output: Callable[[], str],
@@ -456,7 +507,7 @@ def check_ref_match(result: TestResult, original_ref_path: str, get_actual_outpu
         if x86_only and not IS_X86_64 and ref_path == original_ref_path:
             return True
         if OPTS.update_refs:
-            write_file(ref_path, actual_output)
+            update_ref(ref_path, original_ref_path, actual_output, modify_output)
         elif is_compared_in_current_mode(original_ref_path):
             expected_output = read_file(ref_path)
             if modify_output is not None:
@@ -516,6 +567,8 @@ def is_disabled(test_case: TestCase) -> bool:
         return os.path.exists(test_case.file(file_name))
 
     if exists(CTL_SKIP_DISABLED):
+        return True
+    if OPTS.variant != "next" and exists(CTL_NEXT_ONLY):
         return True
     if OPTS.is_github_actions and exists(CTL_SKIP_GH):
         return True
@@ -853,7 +906,7 @@ def instrumentation_flags() -> list[str]:
 
 def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: str, builtin_tests: bool) -> Path:
     """
-    Build the compiler sources in src/ with the given compiler into a clean output dir
+    Build the compiler sources of the source root (src/ by default) with the given compiler into a clean output dir
 
     :return: Path of the built executable
     """
@@ -864,7 +917,7 @@ def build_compiler_sources(compiler: Path, output_dir: Path, executable_name: st
     # The test build mode generates a main function, which runs all builtin tests of the source files
     if builtin_tests:
         cmd += ["--build-mode", "test"]
-    cmd += ["--output", str(executable_path), str(ROOT_DIR / "src" / "main.spice")]
+    cmd += ["--output", str(executable_path), str(OPTS.sources / "main.spice")]
     # The coverage instrumentation writes the .gcno files into the working dir of the compiler, so they land next to the executable
     cwd = output_dir if OPTS.instrument == "coverage" else ROOT_DIR
     result = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
@@ -954,15 +1007,20 @@ def is_tpde_available() -> bool:
 
 
 def setup_environment() -> None:
-    """Set up the environment, that the compilers need to build the compiler sources and the test cases"""
-    # Always test the std and compiler sources of this checkout
+    """Set up the environment, that the compilers need to build the test cases"""
+    # Always test the std of this checkout
     os.environ["SPICE_STD_DIR"] = str(ROOT_DIR / "std")
-    if "LLVM_LIB_DIR" not in os.environ:
+
+
+def setup_llvm_environment(sources: Path) -> None:
+    """Set up the environment, that the compiler needs to build the compiler sources, if they depend on the llvm package"""
+    llvm_needed = bootstrap.sources_need_llvm(sources)
+    if llvm_needed and "LLVM_LIB_DIR" not in os.environ:
         llvm_lib_dir = bootstrap.find_llvm_lib_dir()
         if llvm_lib_dir is None:
             bootstrap.fail("LLVM library directory not found. Set LLVM_LIB_DIR or LLVM_DIR, or put llvm-config on the PATH")
         os.environ["LLVM_LIB_DIR"] = llvm_lib_dir
-    if "LLVM_INCLUDE_DIRS" not in os.environ:
+    if llvm_needed and "LLVM_INCLUDE_DIRS" not in os.environ:
         llvm_include_dirs = bootstrap.find_llvm_include_dirs()
         if llvm_include_dirs is None:
             bootstrap.fail("LLVM include directories not found. Set LLVM_INCLUDE_DIRS (e.g. '-I<dir1> -I<dir2>') or "
@@ -979,6 +1037,15 @@ def parse_args() -> argparse.Namespace:
                                 help="Build the compiler under test from src/ with the given compiler first, e.g. the released "
                                      "stage0 compiler or a previously built compiler (default: the stage0 compiler from "
                                      "'fetch-stage0.py' in build/stage0/)")
+    parser.add_argument("--sources", type=Path, default=Path("src"),
+                        help="Source root of the compiler under test and the builtin tests, relative to the repo root "
+                             "(default: src, the compiler re-implementation is in src-next)")
+    parser.add_argument("--variant", choices=["legacy", "next"], default="legacy",
+                        help="next: prefer the -next variants of the reference files, run the next-only test cases, and let "
+                             "--update-refs write -next variants only, instead of changing the base refs (default: legacy)")
+    parser.add_argument("--ratchet", nargs="?", type=Path, const=RATCHET_FILE, default=None,
+                        help="Only run the test cases listed in the given ratchet file, relative to the repo root (default: "
+                             f"{RATCHET_FILE.relative_to(ROOT_DIR)}). With an empty ratchet, no test runs")
     parser.add_argument("--build-only", action="store_true",
                         help="Only build the compiler under test into <work-dir>/compiler, without running any test")
     parser.add_argument("--instrument", choices=["coverage", "asan"], default=None,
@@ -1026,6 +1093,12 @@ def parse_args() -> argparse.Namespace:
         if args.build_compiler is None:
             parser.error("No compiler found to build the compiler under test with. Download the stage0 compiler "
                          "('python fetch-stage0.py'), or pass --build-compiler or --compiler")
+    if not (ROOT_DIR / args.sources / "main.spice").is_file():
+        parser.error(f"No main.spice found in the source root: {args.sources}")
+    if args.ratchet is not None:
+        args.ratchet = ROOT_DIR / args.ratchet
+        if not args.ratchet.is_file():
+            parser.error(f"Ratchet file not found: {args.ratchet}")
     for path in (args.compiler, args.build_compiler):
         if path is not None and not path.is_file():
             parser.error(f"Compiler not found: {path}")
@@ -1051,21 +1124,31 @@ def main() -> None:
         verbose=args.verbose,
         tpde=is_tpde_available(),
         timeout=args.timeout,
+        sources=(ROOT_DIR / args.sources).resolve(),
+        variant=args.variant,
     )
     prepare_work_dir()
+    ratchet = read_ratchet(args.ratchet) if args.ratchet is not None else None
 
     # Collect the selected test cases. None stands for the builtin tests of the compiler sources
     test_cases: list[TestCase | None] = [None] if matches_filter(BUILTIN_TESTS_NAME, args.filter) else []
     for suite in SUITES:
         test_cases += [tc for tc in collect_test_cases(suite) if matches_filter(tc.full_name, args.filter)]
+    if ratchet is not None:
+        known = {BUILTIN_TESTS_NAME} | {tc.full_name for suite in SUITES for tc in collect_test_cases(suite)}
+        if unknown := sorted(ratchet - known):
+            bootstrap.fail("The ratchet lists test cases, that do not exist:\n  " + "\n  ".join(unknown))
+        test_cases = [tc for tc in test_cases if (tc.full_name if tc else BUILTIN_TESTS_NAME) in ratchet]
     if args.list:
         for test_case in test_cases:
             print(test_case.full_name if test_case else BUILTIN_TESTS_NAME)
         return
 
-    # Building the compiler sources (the compiler under test or the builtin tests) needs the packages of src/spice.lock
+    # Building the compiler sources (the compiler under test or the builtin tests) needs the packages of its spice.lock and, if it depends on llvm, LLVM
     if OPTS.compiler is None or None in test_cases:
-        bootstrap.install_packages()
+        setup_llvm_environment(OPTS.sources)
+        if (OPTS.sources / "spice.lock").is_file():
+            bootstrap.install_packages(source_dir=OPTS.sources)
 
     # Build the compiler under test
     if OPTS.compiler is None:
@@ -1078,8 +1161,12 @@ def main() -> None:
         bootstrap.log(f"Built {OPTS.compiler} in {time.monotonic() - start:.1f}s.")
         if args.build_only:
             return
+    if not test_cases and ratchet is not None and not ratchet:
+        bootstrap.log("The ratchet is empty, so there is no test case to run.")
+        return
     if not test_cases:
-        bootstrap.fail(f"No test case matches the filter '{args.filter}'")
+        bootstrap.fail(f"No test case matches the filter '{args.filter}'" +
+                       (" and the ratchet" if ratchet is not None else ""))
 
     # Run the test cases in parallel. The builtin tests take the longest, so they are started first
     bootstrap.log(f"Running {len(test_cases)} test cases against {OPTS.compiler} with {args.jobs} jobs ...")

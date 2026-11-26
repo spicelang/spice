@@ -58,6 +58,16 @@ def find_stage0_compiler() -> Path | None:
     return candidate
 
 
+def sources_need_llvm(source_dir: Path) -> bool:
+    """Only source roots, that depend on the llvm package, need the LLVM libraries and headers"""
+    import tomllib
+    try:
+        manifest = tomllib.loads((source_dir / "spice.toml").read_text(encoding="utf-8"))
+    except (OSError, tomllib.TOMLDecodeError):
+        return True
+    return "llvm" in manifest.get("dependencies", {})
+
+
 def find_llvm_lib_dir() -> str | None:
     # Derive it from LLVM_DIR (<llvm-build>/lib/cmake/llvm), which the TPDE build in setup-deps.py uses as well
     if llvm_dir := os.environ.get("LLVM_DIR"):
