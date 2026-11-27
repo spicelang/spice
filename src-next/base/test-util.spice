@@ -22,6 +22,7 @@ unsigned long CREATED_TEST_DIRS = 0l;
  * @param prefix Prefix of the dir name
  * @return Path of the created dir
  */
+// legacy: util/test-util.spice:25-31
 public f<FilePath> makeUniqueTestDir(const string prefix) {
     unsigned long dirIdx = CREATED_TEST_DIRS++;
     const String dirName = String(prefix) + "-" + toString(getCurrentMicros()) + "-" + toString(cast<long>(dirIdx));
@@ -35,6 +36,7 @@ public f<FilePath> makeUniqueTestDir(const string prefix) {
  *
  * @param dir Dir to remove
  */
+// legacy: util/test-util.spice:38-53
 public p removeTestDir(const FilePath& dir) {
     Vector<String> args;
     if isWindows() {                                                             // LCOV_EXCL_LINE - coverage runs on Linux
@@ -57,6 +59,7 @@ public p removeTestDir(const FilePath& dir) {
  *
  * @param dir Dir to create
  */
+// legacy: util/test-util.spice:60-63
 public p createTestDirs(const FilePath& dir) {
     // Pass the path as is, because toGenericString() would convert the separators of the caller's path in place
     assert mkDirs(dir.toString(), MODE_ALL_RWX) == 0;
@@ -68,6 +71,7 @@ public p createTestDirs(const FilePath& dir) {
  * @param path File path
  * @param content File content
  */
+// legacy: util/test-util.spice:71-74
 public p writeTestFile(const FilePath& path, const string content) {
     const Result<bool> writeResult = writeFile(path.toString(), content);
     assert writeResult.isOk();
@@ -79,6 +83,7 @@ public p writeTestFile(const FilePath& path, const string content) {
  * @param path File path
  * @return File content
  */
+// legacy: util/test-util.spice:82-86
 public f<String> readTestFile(const FilePath& path) {
     const Result<String> readResult = readFile(path.toString());
     assert readResult.isOk();
@@ -92,6 +97,7 @@ public f<String> readTestFile(const FilePath& path) {
  * @param path File path
  * @return Permission string, or an empty string, if it cannot be retrieved
  */
+// legacy: util/test-util.spice:95-109
 public f<String> getTestFilePermissions(const FilePath& path) {
     Vector<String> args;
     args.pushBack(String("-ld"));
@@ -116,6 +122,7 @@ public f<String> getTestFilePermissions(const FilePath& path) {
  * @param link Path of the symlink
  * @return Created or not
  */
+// legacy: util/test-util.spice:119-133
 public f<bool> createTestSymlink(const FilePath& target, const FilePath& link) {
     if isWindows() {
         return false;

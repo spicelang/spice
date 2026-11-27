@@ -37,7 +37,8 @@ public f<bool> operator<<T>(const Id<T>& lhs, const Id<T>& rhs) {
 }
 
 /**
- * Hash an id, so that it can be used as a key of an UnorderedMap
+ * Hash an id for base-layer tables. The std hash table cannot resolve this overload (it calls hash() from the std module), and an
+ * IHashable base would add a vtable pointer to the 4-byte id. A std table keyed by an id therefore uses its index as the key.
  *
  * @param id Id to hash
  * @return Hash of the id

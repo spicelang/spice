@@ -27,6 +27,8 @@ public p IdVec.ctor(unsigned long initialCapacity = 0ul) {
  * @return Id of the stored value
  */
 public f<Id<T>> IdVec.push(const T& value) {
+    // The index has to fit into the 4 bytes of an id
+    assert this.items.getSize() <= 4294967295ul;
     const unsigned int index = cast<unsigned int>(this.items.getSize());
     this.items.pushBack(value);
     return Id<T>(index);

@@ -16,6 +16,7 @@ ext f<int> memcmp(string, string, unsigned long);
  * @param needle String to search
  * @return Last fragment
  */
+// legacy: util/common-util.spice:20-23
 public f<String> getLastFragment(const String& haystack, const string needle) {
     const unsigned long index = haystack.rfind(needle);
     return index != -1l ? haystack.getSubstring(index + getRawLength(needle)) : haystack;
@@ -28,6 +29,7 @@ public f<String> getLastFragment(const String& haystack, const string needle) {
  * @param rhs Second string
  * @return Sorts before or not
  */
+// legacy: util/common-util.spice:53-64
 public f<bool> isStringLess(const String& lhs, const String& rhs) {
     const unsigned long lhsLength = lhs.getLength();
     const unsigned long rhsLength = rhs.getLength();
@@ -49,6 +51,7 @@ public f<bool> isStringLess(const String& lhs, const String& rhs) {
  * @param key Field key
  * @param value Field value
  */
+// legacy: util/common-util.spice:74-82
 public p setJsonField(JsonValue* object, const String& key, JsonValue* value) {
     const unsigned long size = object.getObjectSize();
     unsigned long idx = 0l;
@@ -61,6 +64,7 @@ public p setJsonField(JsonValue* object, const String& key, JsonValue* value) {
 
 // ─── tests ────────────────────────────────────────────────────────────────────
 
+// legacy: util/common-util.spice:87-93
 #[test]
 f<bool> testGetLastFragment() {
     assert getLastFragment(String("This is a test"), " ") == "test";
@@ -70,6 +74,7 @@ f<bool> testGetLastFragment() {
     return true;
 }
 
+// legacy: util/common-util.spice:96-104
 #[test]
 f<bool> testIsStringLess() {
     assert isStringLess(String("a"), String("b"));

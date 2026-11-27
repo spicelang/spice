@@ -24,6 +24,11 @@ public type Arena<T> struct {
     unsigned long offsetInBlock = 0l
 }
 
+/**
+ * @param memoryManager Source of the blocks. Borrowed, it has to outlive the arena
+ * @param blockSize Size of a block in bytes, 0 for the page size
+ */
+// legacy: util/block-allocator.spice:22-29
 public p Arena.ctor(IMemoryManager& memoryManager, unsigned long blockSize = 0l) {
     this.memoryManager = memoryManager;
     this.blockSize = blockSize == 0l ? cast<unsigned long>(getPageSize()) : blockSize;
@@ -33,6 +38,8 @@ public p Arena.ctor(IMemoryManager& memoryManager, unsigned long blockSize = 0l)
     this.allocateNewBlock();
 }
 
+// Destructs all reserved objects in reservation order and returns the blocks to the memory manager
+// legacy: util/block-allocator.spice:31-47
 public p Arena.dtor() {
     // Dereference, so that the destructor of the pointed-to object runs. A pointer type is trivially destructible
     foreach T* ptr : this.allocatedObjects {
@@ -55,6 +62,7 @@ public p Arena.dtor() {
  *
  * @return Pointer to the reserved storage
  */
+// legacy: util/block-allocator.spice:55-92
 public f<T*> Arena.reserve() {
     // We do not allow allocating objects that exceed the block size
     const unsigned long objSize = sizeof<T>();
@@ -92,6 +100,7 @@ public f<T*> Arena.reserve() {
  * @param alignment Alignment in bytes, must be a power of two
  * @return Aligned offset in the current block
  */
+// legacy: util/block-allocator.spice:101-109
 f<unsigned long> Arena.getAlignedOffset(unsigned long alignment) {
     unsigned long blockAddr;
     unsafe {
@@ -107,6 +116,7 @@ f<unsigned long> Arena.getAlignedOffset(unsigned long alignment) {
  *
  * @return Pointers to all objects, which were reserved via this arena
  */
+// legacy: util/block-allocator.spice:118-122
 public f<Vector<T*>> Arena.releaseObjects() {
     Vector<T*> objects = this.allocatedObjects;
     this.allocatedObjects.clear();
@@ -116,6 +126,7 @@ public f<Vector<T*>> Arena.releaseObjects() {
 /**
  * @return Total number of bytes, which were allocated for memory blocks
  */
+// legacy: util/block-allocator.spice:129-131
 public const f<unsigned long> Arena.getTotalAllocatedSize() {
     return this.memoryBlocks.getSize() * this.blockSize;
 }
@@ -123,10 +134,12 @@ public const f<unsigned long> Arena.getTotalAllocatedSize() {
 /**
  * @return Number of objects, which were reserved via this arena
  */
+// legacy: util/block-allocator.spice:138-140
 public const f<unsigned long> Arena.getAllocationCount() {
     return this.allocatedObjects.getSize();
 }
 
+// legacy: util/block-allocator.spice:142-158
 p Arena.allocateNewBlock() {
     // Reinterpret the block as a plain byte* right away. The block is freed manually in the dtor
     byte* rawPtr;
