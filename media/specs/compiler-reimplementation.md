@@ -1020,9 +1020,11 @@ The results are recorded in this document. An idiom that stage0 does not support
   so the inline capacity is a constant. It is meant for trivially copyable elements.
 - `buildVersionInfo()` of `common-util` needs the `llvm` package, so it is not part of `base/strings`. It moves to the
   driver layer (phase 3).
-- `hashQualType` and the other hash functions that depend on legacy types are not ported. Only `hashMix`, `hashCombine64`
-  and `hashPointer` are generic. `hash(Id<T>)` is new. `test-util` has no `#[test]` function of its own (the count of 1 in
-  8.5 is the helper library), so it is ported as is. `SaveAndRestore` is not part of 1.2a.
+- `hashQualType` and the other hash functions that depend on legacy types are not ported. Of the generic ones, only `hashMix`
+  and `hashPointer` are. `hashCombine64` is not ported: the new compiler combines hashes with `combineHashes` of the std, to
+  reuse it. That changes the hash values, so a map order that shows up in a dump differs, which the white-box refs (8.6)
+  allow. `hash(Id<T>)` is new. `test-util` has no `#[test]` function of its own (the count of 1 in 8.5 is the helper
+  library), so it is ported as is. `SaveAndRestore` is not part of 1.2a.
 
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.

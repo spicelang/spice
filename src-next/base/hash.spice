@@ -21,17 +21,6 @@ public f<Hash> hashMix(Hash hash) {
 }
 
 /**
- * Combine a value into the running hash
- *
- * @param hash Running hash, updated in place
- * @param value Value to combine
- */
-// legacy: util/custom-hash-functions.spice, hashCombine64
-public p hashCombine64(Hash& hash, Hash value) {
-    hash ^= hashMix(value + 0x9e3779b97f4a7c15ul + (hash << 6ul) + (hash >> 2ul));
-}
-
-/**
  * Hash the address of a pointer. The low bits are dropped, because allocations are aligned
  *
  * @param value Pointer to hash
@@ -52,14 +41,10 @@ f<bool> testHashMixIsDeterministicAndSpreads() {
     return true;
 }
 
+// Combining hashes is std's combineHashes() (std/math/hash). The legacy hashCombine64 is not ported, on purpose: where the hash
+// order is visible in a dump, the white-box refs of the new compiler differ (plan 8.6)
 #[test]
-f<bool> testHashCombine64DependsOnOrder() {
-    Hash ab = 0ul;
-    hashCombine64(ab, 1ul);
-    hashCombine64(ab, 2ul);
-    Hash ba = 0ul;
-    hashCombine64(ba, 2ul);
-    hashCombine64(ba, 1ul);
-    assert ab != ba;
+f<bool> testCombineHashesDependsOnOrder() {
+    assert combineHashes(hashMix(1ul), hashMix(2ul)) != combineHashes(hashMix(2ul), hashMix(1ul));
     return true;
 }
