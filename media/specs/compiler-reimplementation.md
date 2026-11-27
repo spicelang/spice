@@ -1020,6 +1020,10 @@ The results are recorded in this document. An idiom that stage0 does not support
   so the inline capacity is a constant. It is meant for trivially copyable elements.
 - `buildVersionInfo()` of `common-util` needs the `llvm` package, so it is not part of `base/strings`. It moves to the
   driver layer (phase 3).
+- `Id<T>` cannot be a key of the std `UnorderedMap`: the table calls `hash()` from the std module, which cannot see an
+  overload of the compiler, and `IHashable` would add a vtable pointer to the 4-byte id. `IdMap<K, V>` wraps
+  `UnorderedMap<unsigned int, V>`, takes `Id<K>` and keys the table by the index, so mixed-up ids are still rejected. Hot-path
+  maps use it. The `Interner` of 1.2b brings its own open-addressing table.
 - `hashQualType` and the other hash functions that depend on legacy types are not ported. Of the generic ones, only `hashMix`
   and `hashPointer` are. `hashCombine64` is not ported: the new compiler combines hashes with `combineHashes` of the std, to
   reuse it. That changes the hash values, so a map order that shows up in a dump differs, which the white-box refs (8.6)
