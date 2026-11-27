@@ -1121,8 +1121,10 @@ The results are recorded in this document. An idiom that stage0 does not support
   legacy compiler printed for the same source, and the `dyn*` snippet of the `typechecker` reference files. The quirks stay: byte
   offsets, so a marker below multibyte characters is misaligned, and a multi-line span loses its left context.
 - Intended differences: a source that the manager got from memory has a snippet, where legacy had none, because it read the
-  file from disk again and could not find it. Only the formatter reads stdin (display name `<stdin>`), so this changes the
-  error output of `spice format` on stdin only. A source without a path has no snippet, as in legacy. `SourceManager.addFile` returns an error with a constant message instead of the
+  file from disk again and could not find it. Only the formatter reads stdin (display name `<stdin>`), and it reports lexer and
+  parser errors, which have no snippet, so nothing changes in the output today. The difference is recorded in the
+  [deviations log](compiler-reimplementation-deviations.md) with the approval of the PR reviewer (D1). A source without a path
+  has no snippet, as in legacy. `SourceManager.addFile` returns an error with a constant message instead of the
   `IO_ERROR` abort of the `Reader` ctor; the driver builds the text `Source file at path '<path>' cannot be opened.`. A path is read
   once: `addFile` of a path that it read before returns the known id (a string added with `addString` is never found). `CodeLoc.operator==` (path, line, column) is replaced by the `Span` comparison
   (file and offsets). `isBefore` and `isAfter` of legacy compared only line and column.

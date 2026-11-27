@@ -29,6 +29,7 @@ entry here is a porting bug.**
 
 | Issue | Changed behavior | Affected cases | Work package | Status |
 |-------|------------------|----------------|--------------|--------|
+| none (design of 5.2, found in WP 1.3) | The snippet of a diagnostic is cut from the buffer of the `SourceManager`, so a source that was read from memory has a snippet. Legacy re-read the file from disk, which fails for the `<stdin>` source of `spice format`, so it printed none. The scope is empty today: only `spice format` reads stdin, and it reports lexer and parser errors, which never carry a snippet. The difference shows only if a later phase attaches a snippet to a diagnostic of an in-memory source | None. Unit tests of `getSnippet` use in-memory sources | 1.3 | `landed` |
 | [#1835](https://github.com/spicelang/spice/issues/1835) | A keyword used as a variable name is reported with the reserved-keyword error instead of "unexpected token" | New parser tests. An existing `exception.out` changes only if a case uses a keyword as a name | 2.7, after 2.3 | `planned` |
 | [#1827](https://github.com/spicelang/spice/issues/1827) | `const` is enforced for method calls. A warning while the std or the compiler sources still violate it, then an error | New diagnostics tests | 5j, after 5b | `planned` |
 | [#1825](https://github.com/spicelang/spice/issues/1825) | Assigning `result` twice no longer leaks the first value (the old value is destructed before the copy) | IR and output of cases that assign `result` twice | 5j, after 5c | `planned` |
