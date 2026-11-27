@@ -1,0 +1,255 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/filepath";
+import "std/text/string-ext";
+import "std/os/os";
+import "std/type/type-conversion";
+
+// Own imports
+import "@/base/test-util";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+
+/**
+ * Location of a span as `L<line>C<col>`, without a file. It is used as a key or id, in lambda names and in the manifestation ids
+ * of the symbol table.
+ *
+ * @param sourceManager Manager of the file the span lies in
+ * @param span Span. An invalid span formats like the default CodeLoc of legacy
+ * @return Location string
+ */
+// legacy: reader/code-loc.spice:47-49 (toString), reader/code-loc.spice:148-150 (toPrettyLineAndColumn, which equals toString)
+public f<String> formatLineAndColumn(const SourceManager& sourceManager, const Span& span) {
+    // A span without a file stands for the default CodeLoc of legacy, which formatted as L0C0
+    if !span.isValid() {
+        return String("L0C0");
+    }
+    const LineAndColumn lineAndColumn = sourceManager.getLineAndColumn(span);
+    return "L" + toString(lineAndColumn.line) + "C" + toString(lineAndColumn.col);
+}
+
+/**
+ * Line of a span as `L<line>`, which the block names of the IR contain
+ *
+ * @param sourceManager Manager of the file the span lies in
+ * @param span Span. An invalid span formats like the default CodeLoc of legacy
+ * @return Line string
+ */
+// legacy: reader/code-loc.spice:141-143
+public f<String> formatPrettyLine(const SourceManager& sourceManager, const Span& span) {
+    if !span.isValid() {
+        return String("L0");
+    }
+    return "L" + toString(sourceManager.getLineAndColumn(span).line);
+}
+
+/**
+ * Location of a span as `<pretty file path>:<line>:<col>`, or `<line>:<col>` if the path is empty. This is the location
+ * that all diagnostics, lint findings and panic messages show.
+ *
+ * @param sourceManager Manager of the file the span lies in
+ * @param span Span. An invalid span formats like the default CodeLoc of legacy
+ * @return Pretty location
+ */
+// legacy: reader/code-loc.spice:56-60
+public f<String> formatPrettyLocation(const SourceManager& sourceManager, const Span& span) {
+    // The default CodeLoc has no path, line 0 and column 0
+    if !span.isValid() {
+        return String("0:0");
+    }
+    const String filePath = getPrettyFilePath(sourceManager, span.file);
+    const String prefix = filePath.isEmpty() ? String() : filePath + ":";
+    const LineAndColumn lineAndColumn = sourceManager.getLineAndColumn(span);
+    return prefix + toString(lineAndColumn.line) + ":" + toString(lineAndColumn.col);
+}
+
+/**
+ * Path of a source file relative to the directory of the root source file. Paths inside this directory start with './', e.g.
+ * './main.spice' or './sub/lib.spice'. Without a root source file, or for a source without a path, or if the root source file
+ * does not exist, the path is returned as it is.
+ *
+ * @param sourceManager Manager of the file
+ * @param file Valid id of the file
+ * @return Pretty file path
+ */
+// legacy: reader/code-loc.spice:68-92
+public f<String> getPrettyFilePath(const SourceManager& sourceManager, FileId file) {
+    const String filePath = sourceManager.getFile(file).path;
+    const String rootSourceFilePathString = sourceManager.getRootSourceFilePath();
+    // Without a registered root source file (e.g. in unit tests), the path is returned as is
+    if rootSourceFilePathString.isEmpty() || filePath.isEmpty() {
+        return filePath;
+    }
+    // The root source file path may have no dir component (e.g. 'main.spice'), so its dir is taken from its canonical form
+    const FilePath rootSourceFilePath = FilePath(rootSourceFilePathString);
+    FilePath canonicalRootSourceFilePath = rootSourceFilePath.canonical();
+    if canonicalRootSourceFilePath.isEmpty() {
+        return filePath;
+    }
+    String rootDir = canonicalRootSourceFilePath.getParentDir();
+    if rootDir.isEmpty() {
+        rootDir = String("/"); // The root source file lives in the file system root
+    }
+    String relativePath = getRelativePath(filePath, rootDir);
+    FilePath relativeFilePath = FilePath(relativePath);
+    if relativePath != ".." && !relativePath.startsWith("../") && !relativeFilePath.isAbsolute() {
+        relativePath = "./" + relativePath;
+    }
+    return relativePath;
+}
+
+/**
+ * Make the given path relative to the given base path, like std::filesystem::relative(path, base) in C++. Both paths are
+ * resolved to their canonical form first. If this is not possible, the path is returned as is.
+ *
+ * @param path Path to make relative
+ * @param base Base path
+ * @return Relative path in generic format
+ */
+// legacy: reader/code-loc.spice:99-134
+public f<String> getRelativePath(const String& path, const String& base) {
+    const FilePath originalPath = FilePath(path);
+    const FilePath originalBase = FilePath(base);
+    FilePath canonicalPath = originalPath.canonical();
+    FilePath canonicalBase = originalBase.canonical();
+    if canonicalPath.isEmpty() || canonicalBase.isEmpty() {
+        return path;
+    }
+    const Vector<String> pathFragments = split(String(canonicalPath.toGenericString()), '/');
+    const Vector<String> baseFragments = split(String(canonicalBase.toGenericString()), '/');
+
+    // Skip the common prefix
+    unsigned long commonCount = 0l;
+    while commonCount < pathFragments.getSize() && commonCount < baseFragments.getSize() {
+        if pathFragments.get(commonCount) != baseFragments.get(commonCount) {
+            break;
+        }
+        commonCount++;
+    }
+
+    // Go up for each remaining fragment of the base and then down along the remaining fragments of the path
+    String relativePath;
+    for unsigned long i = commonCount; i < baseFragments.getSize(); i++ {
+        if !relativePath.isEmpty() {
+            relativePath += '/';
+        }
+        relativePath += "..";
+    }
+    for unsigned long i = commonCount; i < pathFragments.getSize(); i++ {
+        if !relativePath.isEmpty() {
+            relativePath += '/';
+        }
+        relativePath += pathFragments.get(i);
+    }
+    return relativePath.isEmpty() ? String(".") : relativePath;
+}
+
+#[test]
+f<bool> testGetRelativePath() {
+    const FilePath testDir = makeUniqueTestDir("spice-location-test");
+    const FilePath realDir = testDir / "real" / "nested";
+    createTestDirs(realDir);
+    const FilePath realFile = realDir / "file.txt";
+    const FilePath otherFile = testDir / "other.txt";
+    writeTestFile(realFile, "content");
+    writeTestFile(otherFile, "content");
+
+    // Like std::filesystem::relative, the base is treated as a dir, even if it is a file
+    const String upwards = getRelativePath(String(otherFile.toString()), String(realFile.toString()));
+    const String downwards = getRelativePath(String(realFile.toString()), String(otherFile.toString()));
+    const String same = getRelativePath(String(otherFile.toString()), String(otherFile.toString()));
+
+    // A path, that can't be resolved, is returned as is
+    const FilePath missingFile = testDir / "non-existing.txt";
+    const FilePath canonicalMissingFile = missingFile.canonical();
+    const String missing = getRelativePath(String(missingFile.toString()), String(otherFile.toString()));
+
+    // Paths are resolved through symlinks. Creating symlinks requires special privileges on Windows, so this part is skipped
+    // there. Through the symlink, the file lives three levels below the test dir, not two
+    const FilePath linkDir = testDir / "link-parent" / "link";
+    createTestDirs(testDir / "link-parent");
+    const bool hasSymlink = createTestSymlink(realDir, linkDir);
+    String upwardsFromLink = String("../../../other.txt");
+    String downwardsToLink = String("../real/nested/file.txt");
+    bool linkResolvesToRealFile = true;
+    if hasSymlink {
+        const FilePath linkFile = linkDir / "file.txt";
+        const FilePath linkFileWithDot = linkDir / "." / "file.txt";
+        const FilePath canonicalRealFile = realFile.canonical();
+        const FilePath canonicalLinkFile = linkFile.canonical();
+        const FilePath canonicalLinkFileWithDot = linkFileWithDot.canonical();
+        linkResolvesToRealFile = canonicalRealFile.isAbsolute() && canonicalRealFile == canonicalLinkFile && canonicalRealFile == canonicalLinkFileWithDot;
+        upwardsFromLink = getRelativePath(String(otherFile.toString()), String(linkFile.toString()));
+        downwardsToLink = getRelativePath(String(linkFile.toString()), String(otherFile.toString()));
+    }
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert upwards == "../../../other.txt";
+    assert downwards == "../real/nested/file.txt";
+    assert same == ".";
+    assert canonicalMissingFile.isEmpty();
+    assert missing == missingFile.toString();
+    assert hasSymlink || isWindows();
+    assert linkResolvesToRealFile;
+    assert upwardsFromLink == "../../../other.txt";
+    assert downwardsToLink == "../real/nested/file.txt";
+    return true;
+}
+
+#[test]
+f<bool> testPrettyFilePathAndLocation() {
+    const FilePath testDir = makeUniqueTestDir("spice-location-pretty-test");
+    const FilePath projectDir = testDir / "project";
+    createTestDirs(projectDir / "sub");
+    const FilePath mainFile = projectDir / "main.spice";
+    const FilePath libFile = projectDir / "lib.spice";
+    const FilePath subFile = projectDir / "sub" / "other.spice";
+    const FilePath outsideFile = testDir / "outside.spice";
+    writeTestFile(mainFile, "");
+    writeTestFile(libFile, "");
+    writeTestFile(subFile, "");
+    writeTestFile(outsideFile, "");
+
+    SourceManager sourceManager;
+    const FileId mainId = sourceManager.addString(String(mainFile.toString()), String(""));
+    const FileId lib = sourceManager.addString(String(libFile.toString()), String("\n    x"));
+    const FileId sub = sourceManager.addString(String(subFile.toString()), String(""));
+    const FileId outside = sourceManager.addString(String(outsideFile.toString()), String(""));
+    const FileId nameless = sourceManager.addString(String(""), String("x"));
+
+    // Without a root source file, the path is returned as is
+    const String rawLib = getPrettyFilePath(sourceManager, lib);
+    // The paths are made relative to the dir of the root source file, not to the root source file itself
+    sourceManager.setRootSourceFilePath(String(mainFile.toString()));
+    const String prettyMain = getPrettyFilePath(sourceManager, mainId);
+    const String prettyLib = getPrettyFilePath(sourceManager, lib);
+    const String prettySub = getPrettyFilePath(sourceManager, sub);
+    const String prettyOutside = getPrettyFilePath(sourceManager, outside);
+    // Line 2, column 5 of the lib file is the 'x' at offset 5
+    const Span libSpan = Span(lib, 5u, 6u);
+    const String prettyLibLocation = formatPrettyLocation(sourceManager, libSpan);
+    const String prettyNameless = formatPrettyLocation(sourceManager, Span(nameless, 0u, 1u));
+    const String lineAndColumn = formatLineAndColumn(sourceManager, libSpan);
+    const String prettyLine = formatPrettyLine(sourceManager, libSpan);
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(testDir);
+    assert rawLib == libFile.toString();
+    assert prettyMain == "./main.spice";
+    assert prettyLib == "./lib.spice";
+    assert prettySub == "./sub/other.spice";
+    assert prettyOutside == "../outside.spice";
+    assert prettyLibLocation == "./lib.spice:2:5";
+    // A source without a path has no prefix
+    assert prettyNameless == "1:1";
+    assert lineAndColumn == "L2C5" && prettyLine == "L2";
+    // The default CodeLoc of legacy had no path, line 0 and column 0
+    assert formatLineAndColumn(sourceManager, Span()) == "L0C0";
+    assert formatPrettyLine(sourceManager, Span()) == "L0";
+    assert formatPrettyLocation(sourceManager, Span()) == "0:0";
+    return true;
+}

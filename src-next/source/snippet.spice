@@ -1,0 +1,235 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/type/type-conversion";
+
+// Own imports
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+
+// Number of chars of context, that a snippet shows around the erroneous code
+const long SNIPPET_CONTEXT = 20l;
+
+// legacy: ast/ast-nodes.spice:305-307. Whether the given char can be part of an identifier or keyword. Bytes of multibyte UTF-8 characters are no identifier chars
+f<bool> isIdentifierChar(char c) {
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
+}
+
+// Get the text of the source code interval [start, stop] (both inclusive), clamped to the source code
+// legacy: ast/ast-nodes.spice:310-315
+f<String> getSourceText(const String& sourceCode, long start, long stop) {
+    const long size = cast<long>(sourceCode.getLength());
+    if stop >= size { stop = size - 1l; }
+    if start < 0l || start >= size || stop < start { return String(); }
+    return sourceCode.getSubstring(cast<unsigned long>(start), stop - start + 1l);
+}
+
+// Get the char at the given offset of the source code, or '\0' outside of it
+// legacy: ast/ast-nodes.spice:318-324
+f<char> getSourceChar(const String& sourceCode, long idx) {
+    const long size = cast<long>(sourceCode.getLength());
+    if idx < 0l || idx >= size { return '\0'; }
+    return sourceCode[cast<unsigned long>(idx)];
+}
+
+// Get the length of the interval [start, stop]
+// legacy: ast/ast-nodes.spice:327-329
+f<long> getIntervalLength(long start, long stop) {
+    return stop < start ? 0l : stop - start + 1l;
+}
+
+/**
+ * Get the snippet of a span for diagnostics: the source code line of the span with some context around it, and a marker below
+ * the code of the span. Of a span over several lines, only the first line is shown.
+ *
+ * The snippet is cut from the text that the SourceManager holds, where legacy `ASTNode.getErrorMessage` read the file from
+ * disk again for every snippet. For a source that the manager got from memory (stdin), there is a snippet, where legacy had
+ * none, because it could not read the file. The offsets are bytes, so the marker of a line with multibyte characters is
+ * misaligned, like in legacy.
+ *
+ * @param sourceManager Manager of the file the span lies in
+ * @param span Span to show. Without a file, or in a source without a path, the snippet is empty
+ * @return Snippet without a trailing newline, or an empty string for an invalid span
+ */
+// legacy: ast/ast-nodes.spice:339-420
+public f<String> getSnippet(const SourceManager& sourceManager, const Span& span) {
+    // Without a source interval (e.g. for nodes that were not created by the parser), there is no snippet to show
+    if !span.isValid() {
+        return String();
+    }
+    const SourceFile& file = sourceManager.getFile(span.file);
+    // Legacy had no snippet for a source without a path
+    if file.path.isEmpty() {
+        return String();
+    }
+    const String& sourceCode = file.text;
+    const long inputSize = cast<long>(sourceCode.getLength());
+    // The legacy interval ends at the last byte (inclusive), the span after it
+    const long sourceIntervalStart = cast<long>(span.start);
+    const long sourceIntervalStop = cast<long>(span.stop) - 1l;
+    long extStart = sourceIntervalStart;
+    long extStop = sourceIntervalStop;
+
+    // If we have a multi-line interval, only use the first line
+    const String nodeText = getSourceText(sourceCode, extStart, extStop);
+    const long newLineOffset = nodeText.find('\n');
+    if newLineOffset != -1l {
+        extStop = extStart + newLineOffset;
+    }
+    const long nodeEnd = extStop;
+
+    long markerIndentation = 0l;
+    while markerIndentation < SNIPPET_CONTEXT {
+        extStart--;
+        const String extText = getSourceText(sourceCode, extStart, extStop);
+        if extStart < 0l || extText.find('\n') != -1l {
+            extStart++;
+            break;
+        }
+        markerIndentation++;
+    }
+    for long suffixContext = 0l; suffixContext < SNIPPET_CONTEXT; suffixContext++ {
+        extStop++;
+        const String extText = getSourceText(sourceCode, extStart, extStop);
+        if extStop > inputSize || extText.find('\n') != -1l {
+            extStop--;
+            break;
+        }
+    }
+
+    // The context size is only a rough suggestion. Do not cut the context in the middle of an identifier or keyword
+    while extStart > 0l && isIdentifierChar(getSourceChar(sourceCode, extStart - 1l)) && isIdentifierChar(getSourceChar(sourceCode, extStart)) {
+        extStart--;
+        markerIndentation++;
+    }
+    while extStop + 1l < inputSize && isIdentifierChar(getSourceChar(sourceCode, extStop)) && isIdentifierChar(getSourceChar(sourceCode, extStop + 1l)) {
+        extStop++;
+    }
+
+    // Trim start
+    while getSourceChar(sourceCode, extStart) == ' ' {
+        extStart++;
+        markerIndentation--;
+    }
+
+    // Trim end
+    if getSourceChar(sourceCode, extStop) == '\n' {
+        extStop--;
+    }
+    while extStop > nodeEnd && getSourceChar(sourceCode, extStop) == ' ' {
+        extStop--;
+    }
+
+    const String lineNumberStr = toString(sourceManager.getLineAndColumn(span).line);
+    markerIndentation += cast<long>(lineNumberStr.getLength()) + 2l;
+
+    // Build the snippet
+    String snippet = lineNumberStr + "  " + getSourceText(sourceCode, extStart, extStop) + "\n";
+    for long i = 0l; i < markerIndentation; i++ {
+        snippet += ' ';
+    }
+    const long sourceIntervalLength = getIntervalLength(sourceIntervalStart, sourceIntervalStop);
+    const long extIntervalLength = getIntervalLength(extStart, extStop);
+    const long markerLength = sourceIntervalLength < extIntervalLength ? sourceIntervalLength : extIntervalLength;
+    for long i = 0l; i < markerLength; i++ {
+        snippet += '^';
+    }
+    return snippet;
+}
+
+// Build a manager with one in-memory file and the span of the first occurrence of `needle` in it
+f<Span> spanOf(SourceManager& sourceManager, const String& text, const string needle) {
+    const FileId file = sourceManager.addString(String("source.spice"), text);
+    const long start = text.find(needle);
+    assert start >= 0l;
+    return Span(file, cast<unsigned int>(start), cast<unsigned int>(start) + cast<unsigned int>(len(needle)));
+}
+
+#[test]
+f<bool> testSnippetOfAWordInALine() {
+    SourceManager sourceManager;
+    const String text = String("f<int> main() {\n    int a = 1;\n    dyn* dynPointer = &s;\n}\n");
+    const Span span = spanOf(sourceManager, text, "dyn*");
+    // Leading spaces are trimmed, and the marker sits below the span
+    assert getSnippet(sourceManager, span) == "3  dyn* dynPointer = &s;\n   ^^^^";
+    return true;
+}
+
+// The expected snippet was produced by the legacy compiler for this source (an undefined variable at 'anotherLongIdentifierName')
+#[test]
+f<bool> testSnippetKeepsContextAndDoesNotCutIdentifiers() {
+    SourceManager sourceManager;
+    const String text = String("f<int> main() {\n    int aVeryLongIdentifierNameThatNeedsContext = 1 + 2 + 3 + anotherLongIdentifierName + argument + andSomethingElseAtTheEnd;\n    return 0;\n}\n");
+    const Span span = spanOf(sourceManager, text, "anotherLongIdentifierName");
+    const String snippet = getSnippet(sourceManager, span);
+    assert snippet == "2  aVeryLongIdentifierNameThatNeedsContext = 1 + 2 + 3 + anotherLongIdentifierName + argument + andSomethingElseAtTheEnd\n" +
+        "                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOfAMultiLineSpanShowsTheFirstLine() {
+    SourceManager sourceManager;
+    const String text = String("if x {\n    foo();\n}\n");
+    const FileId file = sourceManager.addString(String("source.spice"), text);
+    const Span span = Span(file, 0u, cast<unsigned int>(text.getLength()) - 1u);
+    assert getSnippet(sourceManager, span) == "1  if x {\n   ^^^^^^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOfAnInvalidSpanIsEmpty() {
+    SourceManager sourceManager;
+    assert getSnippet(sourceManager, Span()).isEmpty();
+    return true;
+}
+
+#[test]
+f<bool> testSnippetAtTheStartOfTheFile() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("foo bar\nnext\n"), "foo");
+    assert getSnippet(sourceManager, span) == "1  foo bar\n   ^^^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOnTheLastLineWithoutTrailingNewline() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("a\nlet x = 1"), "x");
+    assert getSnippet(sourceManager, span) == "2  let x = 1\n       ^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetTrimsTrailingSpaces() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("x = 1;   \ny"), "1");
+    assert getSnippet(sourceManager, span) == "1  x = 1;\n       ^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOfASpanAtTheEndOfTheFileHasNoMarker() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String("source.spice"), String("ab"));
+    assert getSnippet(sourceManager, Span(file, 2u, 2u)) == "1  ab\n     ";
+    return true;
+}
+
+// The offsets are bytes, so the marker below a line with a multibyte character is one column too far right, like in legacy
+#[test]
+f<bool> testSnippetMarkerIsMisalignedBelowMultibyteCharacters() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("é = x;\n"), "x");
+    assert getSnippet(sourceManager, span) == "1  é = x;\n        ^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOfASourceWithoutPathIsEmpty() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String(""), String("x"));
+    assert getSnippet(sourceManager, Span(file, 0u, 1u)).isEmpty();
+    return true;
+}

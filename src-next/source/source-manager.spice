@@ -1,0 +1,321 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/file";
+import "std/io/filepath";
+import "std/type/types";
+
+// Own imports
+import "@/base/id-vec";
+import "@/base/test-util";
+import "@/source/source-file";
+import "@/source/span";
+
+/**
+ * Line and column of an offset. Both are 1-based, except the column of a '\n', see SourceManager.getLineAndColumn.
+ */
+public type LineAndColumn struct {
+    public unsigned long line
+    public unsigned long col
+}
+
+public p LineAndColumn.ctor(unsigned long line, unsigned long col) {
+    this.line = line;
+    this.col = col;
+}
+
+/**
+ * Owns the text of all source files of a compilation. Every file is read once, and spans refer to it by id and offset. It
+ * replaces the Reader of the legacy compiler, which consumed a file character by character and tracked line and column as it
+ * went, and the re-reading of the file for every snippet of a diagnostic. The SourceManager is append-only: a file id and the
+ * reference to its SourceFile stay valid until the manager is destructed, if no file is added meanwhile (an added file may move
+ * the storage of the others, so do not keep a reference across addFile).
+ */
+// legacy: reader/reader.spice:12-266 (Reader), reader/code-loc.spice:15-24 (root source file path)
+public type SourceManager struct {
+    IdVec<SourceFile> files
+    // Path of the root source file of the compilation. The pretty file paths are relative to its directory. Legacy kept this
+    // in the global ROOT_SOURCE_FILE_PATH, that the GlobalResourceManager set when it created the root source file. It stays
+    // empty as long as the driver did not set it
+    String rootSourceFilePath
+}
+
+/**
+ * Read a file into the manager. A path that was added before is not read again and yields the same id.
+ *
+ * Legacy aborts the compiler with `Source file at path '<path>' cannot be opened.` (IO_ERROR) in the ctor of the Reader. The
+ * source layer has no diagnostics, so it returns an error with a constant message. The driver builds the legacy text.
+ *
+ * @param path Path of the file
+ * @return Id of the file, or an error if the file cannot be opened
+ */
+// legacy: reader/reader.spice:30-45
+public f<Result<FileId>> SourceManager.addFile(const String& path) {
+    const FileId existing = this.findFile(path);
+    if isValid(existing) {
+        return ok(existing);
+    }
+    Result<String> read = readFile(path.getRaw());
+    if !read.isOk() {
+        return err<FileId>("Source file cannot be opened");
+    }
+    const String text = read.unwrap();
+    const FileId id = this.addString(path, text);
+    this.files.get(id).fromDisk = true;
+    return ok(id);
+}
+
+/**
+ * Add a source that is held in memory, e.g. code that was read from stdin. A string is never looked up by its path, so two
+ * strings with the same path are two files.
+ *
+ * @param path Path that diagnostics show for the source. May be empty
+ * @param text Text of the source
+ * @return Id of the file
+ */
+// legacy: reader/reader.spice:53-61
+public f<FileId> SourceManager.addString(const String& path, const String& text) {
+    SourceFile file;
+    file.path = path;
+    file.text = text;
+    file.lineStarts.pushBack(0u);
+    const unsigned long length = text.getLength();
+    assert length < cast<unsigned long>(UINT_MAX_VALUE); // Offsets have to fit into the 4 bytes of a Span
+    for unsigned long i = 0l; i < length; i++ {
+        if text[i] == '\n' {
+            file.lineStarts.pushBack(cast<unsigned int>(i + 1l));
+        }
+    }
+    return this.files.push(file);
+}
+
+/**
+ * @param path Path to look for
+ * @return Id of the file, that addFile read from this path, or the invalid id
+ */
+public const f<FileId> SourceManager.findFile(const String& path) {
+    for unsigned long i = 0l; i < this.files.size(); i++ {
+        const FileId id = makeFileId(cast<unsigned int>(i));
+        const SourceFile& file = this.files.get(id);
+        if file.fromDisk && file.path == path {
+            return id;
+        }
+    }
+    return noFileId();
+}
+
+public const f<SourceFile&> SourceManager.getFile(FileId id) {
+    return this.files.get(id);
+}
+
+public const f<unsigned long> SourceManager.getFileCount() {
+    return this.files.size();
+}
+
+/**
+ * Register the path of the root source file, which the pretty file paths are made relative to
+ *
+ * @param path Path of the root source file
+ */
+// legacy: reader/code-loc.spice:22-24
+public p SourceManager.setRootSourceFilePath(const String& path) {
+    this.rootSourceFilePath = path;
+}
+
+/**
+ * @return Path of the root source file, or an empty string, if the driver did not set it
+ */
+public const f<String> SourceManager.getRootSourceFilePath() {
+    return this.rootSourceFilePath;
+}
+
+/**
+ * Get the bytes that a span covers
+ *
+ * @param span Span of a valid file. A stop behind the end of the text is cut
+ * @return Text of the span
+ */
+// legacy: reader/reader.spice:176-179 (getSourceCode)
+public const f<String> SourceManager.getText(const Span& span) {
+    assert span.isValid();
+    const SourceFile& file = this.files.get(span.file);
+    const unsigned long length = file.text.getLength();
+    if cast<unsigned long>(span.start) >= length {
+        return String();
+    }
+    unsigned long stop = cast<unsigned long>(span.stop);
+    if stop > length {
+        stop = length;
+    }
+    return file.text.getSubstring(span.start, cast<long>(stop - cast<unsigned long>(span.start)));
+}
+
+/**
+ * Compute line and column of the byte at the offset, with the numbers that the Reader of the legacy compiler attached to the
+ * character:
+ * - Lines and columns start at 1. The column counts code points: every byte except a UTF-8 continuation byte (0b10xxxxxx),
+ *   up to and including the byte at the offset. There is no tab handling, and '\r' counts as a column.
+ * - A '\n' belongs to the next line at column 0, because the Reader switched the line before it handed out the character.
+ * - The offset behind the last byte stands for the end of the file, where the Reader returned '\0'. It counts as a column.
+ *
+ * @param file File that the offset lies in
+ * @param offset Byte offset, at most the length of the text
+ * @return Line and column
+ */
+// legacy: reader/reader.spice:127-147 (advance), reader/reader.spice:155-158 (isUtf8ContinuationByte)
+public const f<LineAndColumn> SourceManager.getLineAndColumn(FileId file, unsigned int offset) {
+    const SourceFile& source = this.files.get(file);
+    const unsigned long length = source.text.getLength();
+    assert cast<unsigned long>(offset) <= length;
+
+    // Find the last line that starts at or before the offset
+    unsigned long low = 0l;
+    unsigned long high = source.lineStarts.getSize();
+    while high - low > 1l {
+        const unsigned long mid = low + (high - low) / 2l;
+        if source.lineStarts.get(mid) <= offset {
+            low = mid;
+        } else {
+            high = mid;
+        }
+    }
+    if cast<unsigned long>(offset) < length && source.text[offset] == '\n' {
+        return LineAndColumn(low + 2l, 0l);
+    }
+    unsigned long col = 0l;
+    for unsigned long i = cast<unsigned long>(source.lineStarts.get(low)); i <= cast<unsigned long>(offset); i++ {
+        // The virtual character at the end of the file is '\0', which is no continuation byte
+        const int byteValue = i < length ? cast<int>(cast<byte>(source.text[i])) : 0;
+        if (byteValue & 0xC0) != 0x80 {
+            col++;
+        }
+    }
+    return LineAndColumn(low + 1l, col);
+}
+
+/**
+ * @param span Valid span
+ * @return Line and column of the first byte of the span
+ */
+public const f<LineAndColumn> SourceManager.getLineAndColumn(const Span& span) {
+    assert span.isValid();
+    return this.getLineAndColumn(span.file, span.start);
+}
+
+#[test]
+f<bool> testSourceManagerReadsFileContent() {
+    const FilePath testDir = makeUniqueTestDir("spice-source-manager-test");
+    createTestDirs(testDir);
+    const FilePath sourceFile = testDir / "source.spice";
+    const string content = "This is some test content\nLine 2\n\nLine 4";
+    writeTestFile(sourceFile, content);
+
+    SourceManager sourceManager;
+    const Result<FileId> added = sourceManager.addFile(String(sourceFile.toString()));
+    removeTestDir(testDir);
+    assert added.isOk();
+    const FileId file = added.unwrap();
+    const String text = sourceManager.getFile(file).text;
+    assert text == content;
+    // The position of the first characters, and of the end of the file
+    const LineAndColumn first = sourceManager.getLineAndColumn(file, 0u);
+    const LineAndColumn second = sourceManager.getLineAndColumn(file, 1u);
+    const LineAndColumn end = sourceManager.getLineAndColumn(file, cast<unsigned int>(text.getLength()));
+    assert first.line == 1l && first.col == 1l;
+    assert second.line == 1l && second.col == 2l;
+    assert end.line == 4l;
+    assert sourceManager.getText(Span(file, 0u, 4u)) == "This";
+    return true;
+}
+
+#[test]
+f<bool> testSourceManagerReadsMemoryContent() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String("memory.spice"), String("Line 1\nLine 2"));
+    const SourceFile& source = sourceManager.getFile(file);
+    assert source.path == "memory.spice" && source.text == "Line 1\nLine 2";
+    assert sourceManager.getLineAndColumn(file, 0u).col == 1l;
+    assert sourceManager.getLineAndColumn(file, 13u).line == 2l;
+    assert sourceManager.getText(Span(file, 7u, 13u)) == "Line 2";
+    // A stop behind the end is cut
+    assert sourceManager.getText(Span(file, 7u, 99u)) == "Line 2";
+    // An empty input has the end of the file at its first position
+    const FileId empty = sourceManager.addString(String("empty.spice"), String(""));
+    const LineAndColumn emptyEnd = sourceManager.getLineAndColumn(empty, 0u);
+    assert emptyEnd.line == 1l && emptyEnd.col == 1l;
+    assert sourceManager.getText(Span(empty, 0u, 0u)).isEmpty();
+    return true;
+}
+
+#[test]
+f<bool> testLineAndColumnOfNewlinesAndMultibyteCharacters() {
+    SourceManager sourceManager;
+    // 'é' has two bytes: 0xC3 0xA9. Offsets:  a0 b1 \n2 c3 é4,5 \n6 x7 EOF8
+    const FileId file = sourceManager.addString(String("utf8.spice"), String("ab\ncé\nx"));
+    assert sourceManager.getLineAndColumn(file, 0u).col == 1l;
+    assert sourceManager.getLineAndColumn(file, 1u).col == 2l;
+    // The newline belongs to the next line, at column 0
+    const LineAndColumn newline = sourceManager.getLineAndColumn(file, 2u);
+    assert newline.line == 2l && newline.col == 0l;
+    const LineAndColumn c = sourceManager.getLineAndColumn(file, 3u);
+    assert c.line == 2l && c.col == 1l;
+    // Only the lead byte of a multibyte character counts as a column
+    const LineAndColumn lead = sourceManager.getLineAndColumn(file, 4u);
+    const LineAndColumn continuation = sourceManager.getLineAndColumn(file, 5u);
+    assert lead.line == 2l && lead.col == 2l && continuation.line == 2l && continuation.col == 2l;
+    const LineAndColumn secondNewline = sourceManager.getLineAndColumn(file, 6u);
+    assert secondNewline.line == 3l && secondNewline.col == 0l;
+    const LineAndColumn x = sourceManager.getLineAndColumn(file, 7u);
+    assert x.line == 3l && x.col == 1l;
+    // The end of the file counts as a column, as the '\0' of the Reader did
+    const LineAndColumn end = sourceManager.getLineAndColumn(file, 8u);
+    assert end.line == 3l && end.col == 2l;
+    // A text that ends with a newline: the end of the file is the first column of an extra line
+    const FileId trailing = sourceManager.addString(String("trailing.spice"), String("a\n"));
+    const LineAndColumn trailingEnd = sourceManager.getLineAndColumn(trailing, 2u);
+    assert trailingEnd.line == 2l && trailingEnd.col == 1l;
+    return true;
+}
+
+#[test]
+f<bool> testAddFileReusesIdsAndReportsUnreadableFiles() {
+    const FilePath testDir = makeUniqueTestDir("spice-source-manager-reuse-test");
+    createTestDirs(testDir);
+    const FilePath sourceFile = testDir / "source.spice";
+    writeTestFile(sourceFile, "x");
+
+    SourceManager sourceManager;
+    const Result<FileId> first = sourceManager.addFile(String(sourceFile.toString()));
+    const Result<FileId> second = sourceManager.addFile(String(sourceFile.toString()));
+    const Result<FileId> missing = sourceManager.addFile(String((testDir / "missing.spice").toString()));
+    removeTestDir(testDir);
+    assert first.isOk() && second.isOk() && first.unwrap() == second.unwrap();
+    assert !missing.isOk();
+    assert sourceManager.getFileCount() == 1l;
+    // Strings are never looked up by their path
+    const FileId stringA = sourceManager.addString(String("memory.spice"), String("a"));
+    const FileId stringB = sourceManager.addString(String("memory.spice"), String("b"));
+    assert stringA != stringB && sourceManager.getFileCount() == 3l;
+    // Neither is a string found by addFile, so the path is read from disk
+    const Result<FileId> notFound = sourceManager.addFile(String("memory.spice"));
+    assert !notFound.isOk();
+    assert sourceManager.getRootSourceFilePath().isEmpty();
+    sourceManager.setRootSourceFilePath(String("main.spice"));
+    assert sourceManager.getRootSourceFilePath() == "main.spice";
+    return true;
+}
+
+#[test]
+f<bool> testCarriageReturnAndTabCountAsOneColumn() {
+    SourceManager sourceManager;
+    // Offsets: a0 \r1 \n2 \t3 b4
+    const FileId file = sourceManager.addString(String("crlf.spice"), String("a\r\n\tb"));
+    assert sourceManager.getLineAndColumn(file, 1u).col == 2l;
+    const LineAndColumn newline = sourceManager.getLineAndColumn(file, 2u);
+    assert newline.line == 2l && newline.col == 0l;
+    const LineAndColumn tab = sourceManager.getLineAndColumn(file, 3u);
+    const LineAndColumn b = sourceManager.getLineAndColumn(file, 4u);
+    assert tab.line == 2l && tab.col == 1l && b.col == 2l;
+    return true;
+}

@@ -6,6 +6,7 @@ import "std/data/vector";
 import "std/math/hash";
 import "std/time/time";
 import "std/type/type-conversion";
+import "std/type/types";
 
 // Own imports
 import "@/base/hash";
@@ -124,7 +125,7 @@ public f<Symbol> Interner.intern(string text) {
     // The string is new: copy it into the storage and register it
     const unsigned long length = getRawLength(text);
     // The length and the index of the symbol have to fit into 4 bytes, and index + 1 must not become the empty marker
-    assert length <= 4294967295ul && this.strings.size() < 4294967295ul;
+    assert length <= cast<unsigned long>(UINT_MAX_VALUE) && this.strings.size() < cast<unsigned long>(UINT_MAX_VALUE);
     const string stored = this.store(text, length);
     const Symbol symbol = this.strings.push(InternedString(stored, cast<unsigned int>(length), textHash));
     this.slots[idx] = symbol.index + 1u;
