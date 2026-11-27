@@ -172,6 +172,14 @@ class Budgets(unittest.TestCase):
     def test_whitespace_between_function_tokens(self):
         self.assertEqual(cl.function_lengths("f <int> big() {\n    return 1;\n}\n"), [(1, 3, "f <int> big()")])
 
+    def test_operator_functions_are_counted(self):
+        text = self.body("public f<bool> operator==(const Foo& a, const Foo& b)", 151)
+        self.assertEqual(len(cl.function_lengths(text)), 1)
+        text = self.body("f<bool> Foo.operator==(const Foo& other)", 151)
+        self.assertEqual(len(cl.function_lengths(text)), 1)
+        code, _ = run_check({"base/a.spice": text}, "--strict-budgets")
+        self.assertEqual(code, 1)
+
     def test_function_type_field_is_no_declaration(self):
         text = "type S struct {\n    f<int>() callback\n}\n\n" + self.body("p proc()", 150)
         self.assertEqual(cl.function_lengths(text), [(5, 150, "p proc()")])

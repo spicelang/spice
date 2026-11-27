@@ -153,7 +153,8 @@ def classify(a: str, b: str) -> list[str]:
 def first_diff_lines(a: str, b: str, limit: int = 8, context: int = 0) -> list[str]:
     """The first differing lines as a unified diff body, at most 'limit' lines"""
     diff = difflib.unified_diff(a.split("\n"), b.split("\n"), "legacy", "next", n=context, lineterm="")
-    return list(diff)[:limit + 2]
+    # Escape undecodable bytes (surrogates), so printing to a strict UTF-8 stdout works. The comparison stays unchanged
+    return [line.encode("utf-8", "backslashreplace").decode("utf-8") for line in list(diff)[:limit + 2]]
 
 
 def main() -> int:

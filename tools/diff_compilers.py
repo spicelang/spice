@@ -62,10 +62,10 @@ class Case:
     suite: str  # Suite name for tests, else the scope
     name: str  # Unique name, e.g. 'ParserTests.parser_foo'
     source: Path  # Absolute path of the main source file (docs: the markdown file the example is from)
-    text: str | None = None  # Source text of a generated case (docs examples), written unchanged per run
     args: tuple[str, ...] = ()  # Extra compiler args, e.g. from the '// TEST:' header
     cwd: Path | None = None  # Working dir of the compiler, None: a fresh dir per run
     execute: bool = False  # Run the compiled program and compare its output
+    text: str | None = None  # Source text of a generated case (docs examples), written unchanged per run
 
 
 @dataclass

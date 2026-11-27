@@ -110,7 +110,7 @@ IMPORT_REGEX = re.compile(r'^[ \t]*import\s*"([^"\n]+)"', re.MULTILINE)
 MODIFIERS = r"(?:[a-z]+\s+)*"
 FUNCTION_START = re.compile(rf"^[ \t]*{MODIFIERS}(?:(f)\s*<|p[ \t])", re.MULTILINE)
 # What follows the return type: the name of the function, e.g. 'Vector<T>.pushBack(' (a function type field has none)
-NAME_AND_PARAMS = re.compile(r"\s*[A-Za-z_][^(){};=]*\(")
+NAME_AND_PARAMS = re.compile(r"\s*(?:[A-Za-z_][^(){};=]*\.)?operator\s*[^\w\s()]+\(|\s*[A-Za-z_][^(){};=]*\(")
 
 
 @dataclass(frozen=True)
