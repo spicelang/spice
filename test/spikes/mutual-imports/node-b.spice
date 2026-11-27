@@ -1,0 +1,18 @@
+import "./node-a";
+
+public type NodeB struct {
+    public int value
+    public NodeA* partner
+}
+
+public f<int> NodeB.doubled() {
+    return this.value * 2;
+}
+
+public f<int> NodeB.sumWithPartner() {
+    return this.value + this.partner.value;
+}
+
+public f<int> NodeB.partnerSum() {
+    return this.partner.sumWithPartner();
+}

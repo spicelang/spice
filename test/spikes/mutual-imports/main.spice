@@ -1,0 +1,14 @@
+// Spike 5: one struct per file with mutual imports between those files (the pattern of sema/check)
+import "./node-a";
+import "./node-b";
+
+#[test]
+f<bool> testMutualImports() {
+    NodeA a;
+    NodeB b;
+    a.value = 3;
+    b.value = 4;
+    a.partner = &b;
+    b.partner = &a;
+    return a.sumWithPartner() == 7 && b.sumWithPartner() == 7 && a.partnerDouble() == 8 && b.partnerSum() == 7;
+}

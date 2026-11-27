@@ -1,0 +1,67 @@
+// Spike 2: generic IdVec<T> holding structs with heap fields (copy, move and destruct of the elements).
+// Finding: the struct and its ctors have to be 'public'. Without it, the instance of Vector<Node>.pushBack in vector.o
+// references Node::ctor(const Node&), but the symbol is not exported, which is a link error
+import "std/data/vector";
+
+type T dyn;
+
+type Id<T> struct {
+    unsigned int index
+}
+
+type IdVec<T> struct {
+    Vector<T> items
+}
+
+p IdVec.push(T&& value, Id<T>& out) {
+    out.index = cast<unsigned int>(this.items.getSize());
+    this.items.pushBack(value);
+}
+
+f<T&> IdVec.get(Id<T> id) {
+    return this.items.get(id.index);
+}
+
+f<unsigned long> IdVec.size() {
+    return this.items.getSize();
+}
+
+public type Node struct {
+    heap int* payload
+    int tag
+}
+
+p Node.allocPayload(int value) {
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<int>());
+        this.payload = cast<heap int*>(allocResult.unwrapAndMove());
+    }
+    *this.payload = value;
+}
+
+public p Node.ctor(int tag, int value) {
+    this.tag = tag;
+    this.allocPayload(value);
+}
+
+public p Node.ctor(const Node& other) {
+    this.tag = other.tag;
+    this.allocPayload(*other.payload);
+}
+
+#[test]
+f<bool> testIdVecWithHeapFields() {
+    IdVec<Node> nodes;
+    Id<Node> a;
+    Id<Node> b;
+    nodes.push(Node(1, 10), a);
+    nodes.push(Node(2, 20), b);
+    // Force the vector to reallocate a few times
+    for int i = 0; i < 100; i++ {
+        Id<Node> tmp;
+        nodes.push(Node(i + 3, i), tmp);
+    }
+    Node& first = nodes.get(a);
+    Node& second = nodes.get(b);
+    return nodes.size() == 102ul && first.tag == 1 && *first.payload == 10 && second.tag == 2 && *second.payload == 20;
+}

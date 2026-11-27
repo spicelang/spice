@@ -1,0 +1,27 @@
+// Spike 1 (plan section 7.3): phantom-typed generic ids. The type parameter is never used in the fields
+type T dyn;
+
+type Id<T> struct {
+    unsigned int index
+}
+
+type Decl struct { int a }
+type Sym struct { long b }
+
+f<Id<T>> makeId<T>(unsigned int index) {
+    Id<T> id;
+    id.index = index;
+    return id;
+}
+
+f<unsigned int> declIndex(Id<Decl> id) {
+    return id.index;
+}
+
+#[test]
+f<bool> testPhantomIdsKeepIndexAndSize() {
+    Id<Decl> d = makeId<Decl>(7u);
+    Id<Sym> s = makeId<Sym>(9u);
+    return d.index == 7u && s.index == 9u && declIndex(d) == 7u
+        && sizeof<Id<Decl>>() == 4l && sizeof<Id<Sym>>() == 4l;
+}
