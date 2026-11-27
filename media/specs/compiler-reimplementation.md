@@ -408,7 +408,18 @@ sub-component's façade. The exceptions are listed in this table:
 | `driver`              | everything                                                                                                                                                                                       |
 
 The table lives in `tools/check_layering.py`. That script checks every `import "@/…"` line and fails CI on a
-violation.
+violation. The file and function size budgets (10.2) are reported as warnings.
+
+The script reads the points the table leaves open like this:
+
+- Components of the same tier of the sema order (`collect`/`resolve`, `ops`/`overload`/`instantiate`/`consteval`,
+  `members`/`lifetime`) may import each other, and the `codegen/*` components may import each other.
+- `tools/format` may import `syntax` and the layers below it. `tools/lint` and `tools/viz` may additionally import
+  `modules` and the read-only sema views `sema/types`, `sema/model`, `sema/names` and `sema/sir`.
+- `sema/sir` may import `sema/types` and `sema/model`. Only `sema/check`, `sema/lower`, `sema/dump`, `sema/warnings`
+  and `codegen/*` may import it.
+- Imports from `@/spice_packages/` count like std imports. Files directly in `src-next/` belong to the driver layer.
+- The façade rule is not checked.
 
 ### 4.4 Core data model
 

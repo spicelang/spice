@@ -162,5 +162,27 @@ class HarnessTests(unittest.TestCase):
         self.assertTrue(diffs and all(not d["gating"] for d in diffs))
 
 
+
+class DocsSourceTest(unittest.TestCase):
+    def test_case_args_stay_positional(self):
+        import diff_compilers as dc
+        case = dc.Case("tests", "S", "S.x", Path("a.spice"), ("--flag",))
+        self.assertEqual(case.args, ("--flag",))
+        self.assertIsNone(case.text)
+
+    def test_undecodable_bytes_are_printable(self):
+        lines = irn.first_diff_lines("a\udcff", "b\udcfe")
+        "\n".join(lines).encode("utf-8")  # must not raise
+
+
+    def test_docs_example_is_written_unchanged(self):
+        import diff_compilers as dc
+        code = "// see https://example.org//path\nf<int> main() {\r\n    return 0;\n}\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            case = dc.Case("docs", "docs", "docs.x_1", Path(tmp) / "x.md", text=code)
+            source = dc.prepare_case_source(case, Path(tmp))
+            self.assertEqual(source.read_bytes().decode("utf-8"), code)
+
+
 if __name__ == "__main__":
     unittest.main()
