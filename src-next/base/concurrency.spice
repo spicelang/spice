@@ -1,0 +1,156 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// legacy: util/concurrency.spice. The symbol registry mutex (setActiveSymbolRegistryMutex, getSymbolRegistryMutex) is not
+// ported: it guards the lookup caches of the legacy managers, which the new back end does not share (plan 5.12).
+
+// Std imports
+import "std/os/recursive-mutex";
+import "std/os/thread-pool";
+import "std/data/unordered-map";
+
+/**
+ * Global switch that tells the process-wide caches of the compiler (type registry, function lookup cache, ...) whether
+ * compiler passes are currently executed on more than one thread.
+ *
+ * Those caches sit on the hottest paths of the single-threaded front end and middle end, where taking a lock for every
+ * access would be pure overhead. The back end on the other hand runs one pipeline per source file in parallel (see
+ * SourceFile.runBackEnd), and there the caches do need protection. ParallelSection flips this switch for exactly the
+ * time span in which worker threads are alive. It is only written while no worker thread is alive, so the creation and
+ * the joining of the worker threads order the accesses to it.
+ */
+// The only global of the base layer: a process-wide switch has to be one. It is written only while no worker thread is alive
+bool CONCURRENT_PASSES_RUNNING = false;
+
+/**
+ * RAII marker for a section of the compiler in which passes are executed on multiple threads.
+ *
+ * It has to be entered before the worker threads are handed any work and left only after all of them are joined again,
+ * so that every ConditionalLock taken on a worker thread actually locks.
+ */
+public type ParallelSection struct {
+    bool active = false
+}
+
+// legacy: util/concurrency.spice:29-32
+public p ParallelSection.ctor() {
+    this.active = true;
+    CONCURRENT_PASSES_RUNNING = true;
+}
+
+// legacy: util/concurrency.spice:34-38
+public p ParallelSection.dtor() {
+    if this.active {
+        CONCURRENT_PASSES_RUNNING = false;
+    }
+}
+
+/**
+ * Check if compiler passes are currently executed on more than one thread
+ *
+ * @return Concurrent passes running or not
+ */
+// legacy: util/concurrency.spice:46-48
+public f<bool> areConcurrentPassesRunning() {
+    return CONCURRENT_PASSES_RUNNING;
+}
+
+/**
+ * RAII lock that is only actually acquired while compiler passes run concurrently.
+ *
+ * It uses the std RecursiveMutex for the symbol registry, the type registry and the type name disambiguator, which is a
+ * superset of the plain mutex semantics.
+ *
+ * Outside of a ParallelSection this degrades to a load of a global plus a well-predicted branch, which keeps the
+ * single-threaded stages at their current speed.
+ */
+public type ConditionalLock struct {
+    RecursiveMutex* mutex = nil<RecursiveMutex*>
+}
+
+// legacy: util/concurrency.spice:61-66
+public p ConditionalLock.ctor(RecursiveMutex* mutex) {
+    if areConcurrentPassesRunning() {
+        this.mutex = mutex;
+        this.mutex.acquire();
+    }
+}
+
+// legacy: util/concurrency.spice:68-73
+public p ConditionalLock.dtor() {
+    if this.mutex != nil<RecursiveMutex*> {
+        this.mutex.release();
+        this.mutex = nil<RecursiveMutex*>;
+    }
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// legacy: util/concurrency.spice:134-151
+#[test]
+f<bool> testConditionalLockOnlyLocksInParallelSection() {
+    RecursiveMutex mutex;
+    assert !areConcurrentPassesRunning();
+
+    { // Outside of a parallel section the lock is a no-op
+        ConditionalLock lock = ConditionalLock(&mutex);
+        assert lock.mutex == nil<RecursiveMutex*>;
+    }
+
+    { // Inside a parallel section the mutex is held for the lifetime of the lock
+        ParallelSection _;
+        assert areConcurrentPassesRunning();
+        ConditionalLock lock = ConditionalLock(&mutex);
+        assert lock.mutex == &mutex;
+    }
+
+    assert !areConcurrentPassesRunning();
+    return true;
+}
+
+// Shared map and the mutex that guards it. Bundled, so that the thread routines below only have to capture a single pointer
+type GuardedSharedMap struct {
+    UnorderedMap<unsigned long, unsigned long>* sharedMap
+    RecursiveMutex* mutex
+}
+
+// Increment the counters of the given map from multiple threads. The lock is constructed in the lambda body, so this also
+// covers ctor calls in capturing lambdas, which must not capture the struct type itself
+p incrementConcurrently(GuardedSharedMap* guardedMap) {
+    ThreadPool pool = ThreadPool(4s);
+    for unsigned int i = 0; i < 4; i++ {
+        pool.enqueue(p() {
+            for unsigned long key = 0l; key < 10000l; key++ {
+                ConditionalLock _ = ConditionalLock(guardedMap.mutex);
+                UnorderedMap<unsigned long, unsigned long>* sharedMap = guardedMap.sharedMap;
+                unsigned long mapKey = key % 500l;
+                if sharedMap.contains(mapKey) {
+                    sharedMap.upsert(mapKey, sharedMap.get(mapKey) + 1l);
+                } else {
+                    sharedMap.upsert(mapKey, 1l);
+                }
+            }
+        });
+    }
+    Result<bool> started = pool.start();
+    assert started.isOk();
+    pool.join();
+}
+
+// legacy: util/concurrency.spice:177-192
+#[test]
+f<bool> testConditionalLockGuardsSharedMapUnderContention() {
+    UnorderedMap<unsigned long, unsigned long> sharedMap; // Stands in for the type registry / lookup caches
+    RecursiveMutex mutex;
+    {
+        ParallelSection _;
+        GuardedSharedMap guardedMap = GuardedSharedMap{&sharedMap, &mutex};
+        incrementConcurrently(&guardedMap);
+    }
+    assert !areConcurrentPassesRunning();
+
+    assert sharedMap.getSize() == 500l;
+    for unsigned long key = 0l; key < 500l; key++ {
+        assert sharedMap.get(key) == 4l * 20l;
+    }
+    return true;
+}

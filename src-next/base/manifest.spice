@@ -1,0 +1,375 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/file";
+import "std/io/filepath";
+import "std/os/filesystem";
+import "std/text/toml/toml-parser";
+import "std/text/toml/toml-value";
+import "std/type/type-conversion";
+
+// Own imports
+import "@/base/test-util";
+
+// legacy: util/manifest.spice. Only the generic reader is ported here. readLintConfig and readFormatConfig need the LintConfig
+// and the FormatConfig, so they are re-created in the lint and the format tool (phase 2 and 4), on top of this reader. The
+// legacy reader aborts with a CompilerError (INVALID_MANIFEST) in every error case. Base has no diagnostics, so this reader
+// records the message of the first error instead, and the tool turns it into the diagnostic with hasError() and getError().
+
+// Maximum for ManifestReader.readInteger, that means there is none
+public const long NO_UPPER_BOUND = -1l;
+
+/**
+ * Make the given path absolute by prepending the working dir, if it is relative, and normalize it lexically
+ *
+ * @param path Path to make absolute
+ * @return Absolute, lexically normal path
+ */
+// legacy: spice_packages/manifest/manifest-file.spice:45-51
+public f<FilePath> makeAbsolutePath(const FilePath& path) {
+    if path.isAbsolute() {
+        return path.lexicallyNormal();
+    }
+    const FilePath absolutePath = FilePath(getCurrentWorkingDir()) / path;
+    return absolutePath.lexicallyNormal();
+}
+
+/**
+ * Path of a manifest for messages, relative to the given base dir like the code locations of the compiler: './' for paths
+ * within the base dir, '../' for paths above it and the path as given, if there is no relative one (e.g. on another drive)
+ *
+ * @param path Path of the manifest
+ * @param baseDir Dir, that the path is printed relative to
+ * @return Path for messages
+ */
+// legacy: spice_packages/manifest/manifest-file.spice:98-109
+public f<String> manifestDisplayPath(const FilePath& path, const FilePath& baseDir) {
+    const FilePath relativePath = makeAbsolutePath(path).lexicallyRelative(makeAbsolutePath(baseDir));
+    const String relativePathStr = String(relativePath.toGenericString());
+    if relativePath.isEmpty() {
+        return String(path.toGenericString());
+    }
+    if relativePathStr.startsWith("../") {
+        return relativePathStr;
+    }
+    return "./" + relativePathStr;
+}
+
+/**
+ * Reads the values of a manifest (spice.toml) and records the first error in it. After an error, all reads fail, so a tool can
+ * read all values and look at the error once. The format of the manifest is specified by the manifest package. The tools of the
+ * compiler read the [lint] and [format] tables with it and leave the other tables to Spice Shaker.
+ */
+// legacy: util/manifest.spice:38-45
+public type ManifestReader struct {
+    FilePath path
+    String displayPath // Path of the manifest in error messages
+    String error       // Message of the first error with the display path, or empty
+}
+
+/**
+ * @param path Path of the manifest
+ * @param displayBaseDir Dir, that the path of the manifest is printed relative to in error messages
+ */
+// legacy: util/manifest.spice:47-58
+public p ManifestReader.ctor(const FilePath& path, const FilePath& displayBaseDir) {
+    this.path = path;
+    // Like the code locations of the compiler: './' for paths within the base dir and the absolute path, if there is no relative one
+    this.displayPath = manifestDisplayPath(path, displayBaseDir);
+}
+
+/**
+ * @return Whether a read failed
+ */
+public const f<bool> ManifestReader.hasError() {
+    return !this.error.isEmpty();
+}
+
+/**
+ * @return Message of the first error, in the form '<display path>: <message>', which the tool wraps into its INVALID_MANIFEST
+ *         diagnostic. Empty, if there was none
+ */
+public const f<String> ManifestReader.getError() {
+    return this.error;
+}
+
+/**
+ * @return Path of the manifest in error messages
+ */
+public const f<String> ManifestReader.getDisplayPath() {
+    return this.displayPath;
+}
+
+/**
+ * Read and parse the manifest
+ *
+ * @return Root table of the manifest, which the caller has to release with deleteTomlValue, or nil if it cannot be read or is no
+ *         valid TOML. The error is recorded then
+ */
+// legacy: util/manifest.spice:60-79
+public f<TomlValue*> ManifestReader.parse() {
+    Result<String> readResult = readFile(this.path.toString());
+    if !readResult.isOk() {
+        this.setError(String("The manifest cannot be read"));
+        return nil<TomlValue*>;
+    }
+    Result<TomlValue*> parseResult = parseToml(readResult.unwrap());
+    if !parseResult.isOk() {
+        this.setError(String("The manifest is no valid TOML: ") + parseResult.getErr().getMessage());
+        return nil<TomlValue*>;
+    }
+    return parseResult.unwrap();
+}
+
+/**
+ * Read a boolean
+ *
+ * @param value Value to read
+ * @param keyName Full name of the key, which errors refer to
+ * @param parsed Receives the boolean
+ * @return Success
+ */
+// legacy: util/manifest.spice:98-103
+public f<bool> ManifestReader.readBool(TomlValue* value, const String& keyName, bool& parsed) {
+    if this.hasError() {
+        return false;
+    }
+    if !value.isBool() {
+        this.setError("'" + keyName + "' has to be a boolean");
+        return false;
+    }
+    parsed = value.getBool();
+    return true;
+}
+
+/**
+ * Read one of the given strings. The error lists them in the given order, like "a", "b" or "c"
+ *
+ * @param value Value to read
+ * @param keyName Full name of the key, which errors refer to
+ * @param allowed Allowed strings, at least two
+ * @param parsed Receives the index of the string in allowed
+ * @return Success
+ */
+// legacy: util/manifest.spice:124-140. Legacy hard-coded the strings of the lint severity
+public f<bool> ManifestReader.readOneOf(TomlValue* value, const String& keyName, const Vector<String>& allowed, unsigned long& parsed) {
+    if this.hasError() {
+        return false;
+    }
+    if value.isString() {
+        for unsigned long i = 0l; i < allowed.getSize(); i++ {
+            if value.getString() == allowed.get(i) {
+                parsed = i;
+                return true;
+            }
+        }
+    }
+    String message = "'" + keyName + "' has to be one of ";
+    for unsigned long i = 0l; i < allowed.getSize(); i++ {
+        if i > 0l {
+            message += i == allowed.getSize() - 1l ? " or " : ", ";
+        }
+        message += "\"" + allowed.get(i) + "\"";
+    }
+    this.setError(message);
+    return false;
+}
+
+/**
+ * Read an integer within the given bounds
+ *
+ * @param value Value to read
+ * @param keyName Full name of the key, which errors refer to
+ * @param min Minimum value
+ * @param max Maximum value or NO_UPPER_BOUND
+ * @param parsed Receives the integer
+ * @return Success
+ */
+// legacy: util/manifest.spice:149-160
+public f<bool> ManifestReader.readInteger(TomlValue* value, const String& keyName, long min, long max, long& parsed) {
+    if this.hasError() {
+        return false;
+    }
+    if !value.isInteger() || value.getInteger() < min || (max != NO_UPPER_BOUND && value.getInteger() > max) {
+        String message = "'" + keyName + "' has to be an integer";
+        if max == NO_UPPER_BOUND {
+            message += " of at least " + toString(min);
+        } else {
+            message += " from " + toString(min) + " to " + toString(max);
+        }
+        this.setError(message);
+        return false;
+    }
+    parsed = value.getInteger();
+    return true;
+}
+
+/**
+ * Check that the given value is a table
+ *
+ * @param value Value to check
+ * @param keyName Full name of the key, which errors refer to
+ * @return Whether it is a table
+ */
+// legacy: util/manifest.spice:168-173
+public f<bool> ManifestReader.expectTable(TomlValue* value, const String& keyName) {
+    if this.hasError() {
+        return false;
+    }
+    if !value.isTable() {
+        this.setError("'" + keyName + "' has to be a table");
+        return false;
+    }
+    return true;
+}
+
+/**
+ * Record an error about an unknown key. The tools reject unknown keys, so that a typo does not silently fall back to the default
+ *
+ * @param keyName Full name of the key
+ */
+// legacy: util/manifest.spice:180-182
+public p ManifestReader.reportUnknownKey(const String& keyName) {
+    this.setError("Unknown key '" + keyName + "'");
+}
+
+/**
+ * Record an error about the manifest. Only the first one is kept
+ *
+ * @param message Error message without the path of the manifest
+ */
+// legacy: util/manifest.spice:189-194
+public p ManifestReader.setError(const String& message) {
+    if !this.hasError() {
+        this.error = this.displayPath + ": " + message;
+    }
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// Write a manifest to a fresh dir and parse it
+f<TomlValue*> parseTestManifest(ManifestReader& reader, const FilePath& dir, const string content) {
+    writeTestFile(dir / "spice.toml", content);
+    return reader.parse();
+}
+
+// legacy: util/manifest.spice:263-302. The lint and format parts need their configs. The display paths are the ones of the test
+#[test]
+f<bool> testManifestDisplayPath() {
+    const FilePath testDir = makeUniqueTestDir("spice-manifest-test");
+    const FilePath subDir = testDir / "src" / "sub";
+    createTestDirs(subDir);
+    const FilePath manifestPath = testDir / "spice.toml";
+    const String fromSubDir = manifestDisplayPath(manifestPath, subDir);
+    const String fromTestDir = manifestDisplayPath(manifestPath, testDir);
+    removeTestDir(testDir);
+    assert fromSubDir == "../../spice.toml";
+    assert fromTestDir == "./spice.toml";
+    return true;
+}
+
+// legacy: spice_packages/manifest/manifest-file.spice:170-171
+#[test]
+f<bool> testMakeAbsolutePath() {
+    assert makeAbsolutePath(FilePath("/main.spice")).toGenericString() == "/main.spice";
+    assert makeAbsolutePath(FilePath("/")).toGenericString() == "/";
+    assert makeAbsolutePath(FilePath("/a/b/../c")).toGenericString() == "/a/c";
+    // A relative path is resolved against the working dir
+    const FilePath resolved = makeAbsolutePath(FilePath("some/file.txt"));
+    assert resolved.isAbsolute() && String(resolved.toGenericString()).endsWith("/some/file.txt");
+    return true;
+}
+
+#[test]
+f<bool> testManifestReaderReadsValues() {
+    const FilePath dir = makeUniqueTestDir("spice-manifest-test");
+    ManifestReader reader = ManifestReader(dir / "spice.toml", dir);
+    TomlValue* root = parseTestManifest(reader, dir, "[lint.rules]\nnaming-convention = { enabled = false }\ntoo-many-parameters = { max = 3, severity = \"error\" }\n\n[format]\nindent-width = 2\n");
+    removeTestDir(dir);
+    assert root != nil<TomlValue*> && !reader.hasError();
+
+    TomlValue* format = root.getFieldOrNil("format");
+    assert format != nil<TomlValue*> && reader.expectTable(format, String("format"));
+    long indentWidth = 0l;
+    assert reader.readInteger(format.getFieldOrNil("indent-width"), String("format.indent-width"), 1l, 16l, indentWidth);
+    assert indentWidth == 2l;
+
+    TomlValue* rules = root.getFieldOrNil("lint").getFieldOrNil("rules");
+    assert rules.getTableSize() == 2l && rules.getTableKey(0l) == "naming-convention";
+    TomlValue* naming = rules.getTableValue(0l);
+    bool enabled = true;
+    assert reader.readBool(naming.getFieldOrNil("enabled"), String("lint.rules.naming-convention.enabled"), enabled) && !enabled;
+
+    TomlValue* tooMany = rules.getTableValue(1l);
+    long max = 0l;
+    assert reader.readInteger(tooMany.getFieldOrNil("max"), String("lint.rules.too-many-parameters.max"), 1l, NO_UPPER_BOUND, max) && max == 3l;
+    Vector<String> severities;
+    severities.pushBack(String("info"));
+    severities.pushBack(String("warning"));
+    severities.pushBack(String("error"));
+    unsigned long severity = 0l;
+    assert reader.readOneOf(tooMany.getFieldOrNil("severity"), String("lint.rules.too-many-parameters.severity"), severities, severity);
+    assert severity == 2l && !reader.hasError();
+    deleteTomlValue(root);
+    return true;
+}
+
+#[test]
+f<bool> testManifestReaderErrorMessagesStayTheSame() {
+    const FilePath dir = makeUniqueTestDir("spice-manifest-test");
+    ManifestReader reader = ManifestReader(dir / "spice.toml", dir);
+    TomlValue* root = parseTestManifest(reader, dir, "[format]\nindent-width = \"wide\"\nmax = 0\nflag = 1\nkind = \"x\"\n");
+    removeTestDir(dir);
+    assert root != nil<TomlValue*>;
+    TomlValue* format = root.getTableValue(0l);
+
+    // The messages are the ones of legacy, with the display path in front
+    long number = 0l;
+    assert !reader.readInteger(format.getFieldOrNil("indent-width"), String("format.indent-width"), 1l, 16l, number);
+    assert reader.getError() == "./spice.toml: 'format.indent-width' has to be an integer from 1 to 16";
+    // After an error all reads fail and the first message stays
+    assert !reader.readInteger(format.getFieldOrNil("max"), String("format.max"), 1l, NO_UPPER_BOUND, number);
+    assert reader.getError() == "./spice.toml: 'format.indent-width' has to be an integer from 1 to 16";
+
+    ManifestReader second = ManifestReader(dir / "spice.toml", dir);
+    assert !second.readInteger(format.getFieldOrNil("max"), String("format.max"), 1l, NO_UPPER_BOUND, number);
+    assert second.getError() == "./spice.toml: 'format.max' has to be an integer of at least 1";
+
+    ManifestReader third = ManifestReader(dir / "spice.toml", dir);
+    bool flag = false;
+    assert !third.readBool(format.getFieldOrNil("flag"), String("format.flag"), flag);
+    assert third.getError() == "./spice.toml: 'format.flag' has to be a boolean";
+
+    ManifestReader fourth = ManifestReader(dir / "spice.toml", dir);
+    Vector<String> severities;
+    severities.pushBack(String("info"));
+    severities.pushBack(String("warning"));
+    severities.pushBack(String("error"));
+    unsigned long index = 0l;
+    assert !fourth.readOneOf(format.getFieldOrNil("kind"), String("lint.severity"), severities, index);
+    assert fourth.getError() == "./spice.toml: 'lint.severity' has to be one of \"info\", \"warning\" or \"error\"";
+
+    ManifestReader fifth = ManifestReader(dir / "spice.toml", dir);
+    assert !fifth.expectTable(format.getFieldOrNil("flag"), String("format.flag"));
+    assert fifth.getError() == "./spice.toml: 'format.flag' has to be a table";
+    fifth = ManifestReader(dir / "spice.toml", dir);
+    fifth.reportUnknownKey(String("format.colour"));
+    assert fifth.getError() == "./spice.toml: Unknown key 'format.colour'";
+    deleteTomlValue(root);
+    return true;
+}
+
+#[test]
+f<bool> testManifestReaderReportsUnreadableAndInvalidManifests() {
+    const FilePath dir = makeUniqueTestDir("spice-manifest-test");
+    ManifestReader missing = ManifestReader(dir / "spice.toml", dir);
+    assert missing.parse() == nil<TomlValue*>;
+    assert missing.getError() == "./spice.toml: The manifest cannot be read";
+
+    ManifestReader invalid = ManifestReader(dir / "spice.toml", dir);
+    assert parseTestManifest(invalid, dir, "[unclosed\n") == nil<TomlValue*>;
+    removeTestDir(dir);
+    assert invalid.hasError() && invalid.getError().startsWith("./spice.toml: The manifest is no valid TOML: ");
+    return true;
+}

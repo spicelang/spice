@@ -1,0 +1,615 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/file";
+import "std/io/filepath";
+import "std/iterator/array-iterator";
+import "std/os/env";
+import "std/os/os";
+import "std/os/process";
+import "std/text/analysis";
+import "std/text/stringstream";
+
+// Own imports
+import "@/base/test-util";
+
+// legacy: util/system-util.spice. Only what needs std and nothing of the compiler is ported here. The rest moves to the layer
+// that owns the type it needs: findLinker, getOutputFileExtension and exportStdTPDEFlags need the CLI options and the target
+// (driver and link), findLinkerInvoker and findArchiver raise a LinkerError (link), getStdDir and the aborting variants of
+// exec() and run() raise a CompilerError (diag). The functions, that legacy aborts in, return a Result here.
+
+// OS part of the platform specific file suffix in freestanding mode, e.g. memory_rt_freestanding.spice
+public const string OS_SUFFIX_FREESTANDING = "freestanding";
+
+public type ExecResult struct {
+    public String output
+    public int exitCode
+}
+
+/**
+ * Execute an external program without involving a shell.
+ *
+ * Each argument is passed verbatim to the program (via std/os/process), so file paths and other arguments can never be
+ * interpreted as shell syntax. This is the safe variant that must be used for any command whose arguments are
+ * influenced by (untrusted) user input, e.g. the linker invocation.
+ *
+ * @param program Name or path of the program to execute (resolved against PATH if it is a bare name)
+ * @param args Arguments passed to the program (without argv[0], which is added automatically)
+ * @param redirectStdErrToStdOut Capture stderr into the returned output alongside stdout
+ * @return The captured output and the exit code, or an error if the program was not found or could not be started. The caller
+ *         adds the name of the program to the diagnostic
+ */
+// legacy: util/system-util.spice:47-56
+public f<Result<ExecResult>> exec(const String& program, const Vector<String>& args, bool redirectStdErrToStdOut = false) {
+    Result<ProcessResult> processResult = runProcessCaptured(program, args, redirectStdErrToStdOut);
+    if processResult.isErr() {
+        return err<ExecResult>(processResult.getErr());
+    }
+    const ProcessResult& process = processResult.unwrap();
+    return ok<ExecResult>(ExecResult{process.output, process.exitCode});
+}
+
+/**
+ * Execute an external binary, inheriting the parent's standard streams.
+ * Unlike exec(), this does not capture the child's output: its stdin, stdout and stderr are connected directly to ours,
+ * so the program behaves as if invoked from the terminal.
+ *
+ * @param executablePath Path to the executable to run
+ * @return Termination status (exit code and terminating signal) of the executed binary, or an error if it could not be started
+ */
+// legacy: util/system-util.spice:66-75
+public f<Result<ProcessStatus>> run(const String& executablePath) {
+    const Vector<String> noArgs;
+    return runProcessWithStatus(executablePath, noArgs);
+}
+
+/**
+ * Render a program invocation as a human-readable command string. Used for debug output and error messages only - the
+ * actual execution happens via an argument vector (no shell), so this rendering is never executed.
+ *
+ * @param program Program to execute
+ * @param args Arguments for the program
+ * @return Command string
+ */
+// legacy: util/system-util.spice:85-92
+public f<String> renderCommandForDisplay(const String& program, const Vector<String>& args) {
+    StringStream command;
+    command << program;
+    foreach const String& arg : args {
+        command << " " << arg;
+    }
+    return command.str();
+}
+
+/**
+ * Expand a linker flag that may contain environment-variable references ('$VAR' on Unix, '%VAR%' on Windows) or a
+ * backtick-quoted command substitution (e.g. "`pkg-config --cflags --libs libcurl`"), mirroring what a shell would have
+ * done for these flags. Bindings rely on both forms (see e.g. the linker flags of the llvm package and
+ * std/bindings/openssl/openssl.spice).
+ *
+ * Unlike a shell, only these two specific substitutions are recognized, and the backtick-quoted command is executed
+ * directly (argv-based, whitespace-split) rather than through a shell - no other shell metacharacters (';', '&&', pipes,
+ * redirects, quoting, globbing, ...) are interpreted, so this cannot be used to inject additional commands.
+ *
+ * A plain env-var reference can itself expand to several whitespace-separated flags (e.g. LLVM_INCLUDE_DIRS is set to
+ * "-I<dir1> -I<dir2>" by CMake/CI). Since there is no shell to word-split the expanded text, it is split explicitly, so
+ * each flag becomes its own argv entry.
+ *
+ * A pkg-config command substitution of a static link queries the static flags ('pkg-config --static'). Only those
+ * include the private dependencies of a library, that its static archive needs (e.g. zlib, zstd and jitterentropy for the
+ * libcrypto of some distributions), whereas a shared library brings them along itself.
+ *
+ * @param flag Raw linker flag, as configured via a 'core.[os.]linker.flag' attribute
+ * @param staticLinking Whether the flag is expanded for a static link
+ * @param failedCommand Receives the program, if it could not be started, or the whole command, if it exited with an error.
+ *                      The caller builds the diagnostic from it (legacy: IO_ERROR and LINKER_ERROR)
+ * @return One or more expanded flags (an expansion can result in several whitespace-separated flags), or an error if the
+ *         command of a command substitution failed
+ */
+// legacy: util/system-util.spice:116-175
+public f<Result<Vector<String>>> expandLinkerFlag(const String& flag, bool staticLinking, String& failedCommand) {
+    // Expand environment variable references within the flag ('$VAR' on Unix, '%VAR%' on Windows)
+    String expanded;
+    unsigned long i = 0l;
+    while i < flag.getLength() {
+        const char c = flag[i];
+        if isWindows() && c == '%' {
+            const long end = flag.find('%', i + 1l);
+            if end >= 0l {
+                const String varName = flag.getSubstring(i + 1l, cast<long>(cast<unsigned long>(end) - i - 1l));
+                Result<string> value = getEnv(varName.getRaw());
+                if value.isOk() {
+                    expanded += value.unwrap();
+                }
+                i = cast<unsigned long>(end) + 1l;
+                continue;
+            }
+        } else if !isWindows() && c == '$' {
+            unsigned long j = i + 1l;
+            while j < flag.getLength() && isAlphaNumUnderscore(flag[j]) {
+                j++;
+            }
+            if j > i + 1l {
+                const String varName = flag.getSubstring(i + 1l, cast<long>(j - i - 1l));
+                Result<string> value = getEnv(varName.getRaw());
+                if value.isOk() {
+                    expanded += value.unwrap();
+                }
+                i = j;
+                continue;
+            }
+        }
+        expanded += c;
+        i++;
+    }
+
+    // Backtick command substitution: recognized when the *entire* (env-expanded) flag is a single backtick-quoted command,
+    // matching existing std bindings usage. The command is split on whitespace and executed directly (no shell), so shell
+    // metacharacters inside the backticks are not interpreted.
+    if expanded.getLength() >= 2l && expanded[0l] == '`' && expanded[expanded.getLength() - 1l] == '`' {
+        const String innerCommand = expanded.getSubstring(1l, cast<long>(expanded.getLength() - 2l));
+        Vector<String> tokens = splitAtWhitespace(innerCommand);
+        if tokens.isEmpty() {
+            return ok<Vector<String>>(Vector<String>());
+        }
+        const String program = tokens.front();
+        const Vector<String> cmdArgs = getLinkerFlagCommandArgs(tokens, staticLinking);
+        const Result<ExecResult> cmdResult = exec(program, cmdArgs);
+        if cmdResult.isErr() {
+            failedCommand = program;
+            return err<Vector<String>>("Failed to execute the command of a linker flag");
+        }
+        if cmdResult.unwrap().exitCode != 0 {
+            failedCommand = innerCommand;
+            return err<Vector<String>>("Command substitution for linker flag failed");
+        }
+        expanded = cmdResult.unwrap().output;
+    }
+
+    // Word-split the (possibly command-substituted) text on whitespace, so an expansion that contains several flags (e.g. a
+    // multi-directory LLVM_INCLUDE_DIRS, or a pkg-config command's output) ends up as separate argv entries.
+    return ok<Vector<String>>(splitAtWhitespace(expanded));
+}
+
+/**
+ * Get the arguments for the command of a backtick-quoted linker flag, without the program itself
+ *
+ * @param tokens Whitespace-split command, starting with the program
+ * @param staticLinking Whether the flag is expanded for a static link
+ * @return Command arguments
+ */
+// legacy: util/system-util.spice:184-194
+public f<Vector<String>> getLinkerFlagCommandArgs(const Vector<String>& tokens, bool staticLinking) {
+    Vector<String> cmdArgs;
+    // A static link needs the private dependencies of the libraries as well
+    if staticLinking && tokens.front() == "pkg-config" {
+        cmdArgs.pushBack(String("--static"));
+    }
+    for unsigned long k = 1l; k < tokens.getSize(); k++ {
+        cmdArgs.pushBack(tokens.get(k));
+    }
+    return cmdArgs;
+}
+
+/**
+ * Split a string at whitespace, dropping empty parts
+ *
+ * @param input Input string
+ * @return Non-empty parts
+ */
+// legacy: util/system-util.spice:202-219
+public f<Vector<String>> splitAtWhitespace(const String& input) {
+    Vector<String> parts;
+    String current;
+    for unsigned long i = 0l; i < input.getLength(); i++ {
+        const char c = input[i];
+        if c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f' {
+            if !current.isEmpty() {
+                parts.pushBack(current);
+                current = String();
+            }
+        } else {
+            current += c;
+        }
+    }
+    if !current.isEmpty() {
+        parts.pushBack(current);
+    }
+    return parts;
+}
+
+/**
+ * Checks if a certain command is available on the computer
+ *
+ * @param cmd Command to search for
+ * @return Present or not
+ */
+// legacy: util/system-util.spice:228-232
+public f<bool> isCommandAvailable(const string cmd) {
+    // Look the program up on PATH without spawning a shell ('which'/'where')
+    const String programPath = findProgram(String(cmd));
+    return !programPath.isEmpty();
+}
+
+/**
+ * Retrieve the dir, where the standard library lives, without failing if it is not installed.
+ * An existing dir in SPICE_STD_DIR takes precedence over the std, that the Linux packages install to /usr/lib/spice/std.
+ *
+ * @return Std directory, or an empty path if the std was not found
+ */
+// legacy: util/system-util.spice:387-399
+public f<FilePath> findStdDir() {
+    // Check the candidates in locals: assigning the result variable twice would not destruct its first value
+    Result<string> value = getEnv("SPICE_STD_DIR");
+    if value.isOk() {
+        const FilePath envStdPath = FilePath(value.unwrap());
+        if envStdPath.exists() { return envStdPath; }
+    }
+    if isUnixBased() {
+        const FilePath installedStdPath = FilePath("/usr/lib/spice/std/");
+        if installedStdPath.exists() { return installedStdPath; }
+    }
+    return FilePath();
+}
+
+/**
+ * Retrieve the dir, where the std ships the static support libraries that Spice programs link against - currently only the
+ * vendored libbacktrace. Missing rather than found is a perfectly normal outcome, hence an empty path instead of a panic.
+ *
+ * @return Std runtime library directory, or an empty path if there is none
+ */
+// legacy: util/system-util.spice:459-468
+public f<FilePath> getStdRuntimeLibDir() {
+    const FilePath stdDir = findStdDir();
+    if stdDir.isEmpty() {
+        return FilePath();
+    }
+    result = stdDir / "runtime" / "lib";
+    if !result.exists() {
+        return FilePath();
+    }
+}
+
+/**
+ * Build the flags for the TPDE bindings (tpde package) from the TPDE headers and static libraries, that the Linux release
+ * packages ship with the std (std/bindings/tpde). Returns an empty string if the given std does not ship them.
+ *
+ * @param stdDir Std directory
+ * @return Value for the TPDE_FLAGS env var, or an empty string
+ */
+// legacy: util/system-util.spice:477-496
+public f<String> getStdTPDEFlags(const FilePath& stdDir) {
+    const FilePath tpdeDir = stdDir / "bindings" / "tpde";
+    const FilePath includeDir = tpdeDir / "include";
+    const FilePath libDir = tpdeDir / "lib";
+    FilePath headerPath = includeDir / "tpde-llvm" / "LLVMCompiler.hpp";
+    FilePath tpdeLlvmLibPath = libDir / "libtpde_llvm.a";
+    if !headerPath.exists() || !tpdeLlvmLibPath.exists() {
+        return String();
+    }
+    // The libraries reference each other, so they go into a group, that the linker rescans until all references are resolved
+    result = String("-I") + includeDir.toString() + " -Wl,--start-group";
+    foreach const string libName : ["libtpde_llvm.a", "libtpde.a", "libfadec.a", "libdisarm64.a", "libspdlog.a"] {
+        FilePath libPath = libDir / libName;
+        if libPath.exists() {
+            result += " ";
+            result += libPath.toString();
+        }
+    }
+    result += " -Wl,--end-group";
+}
+
+/**
+ * Resolve the platform specific variant of a source file. The candidates are checked in this order:
+ * 1. file_<os>_<arch>.spice, e.g. file_linux_x86_64.spice
+ * 2. file_<os>.spice, e.g. file_linux.spice
+ * 3. file_<arch>.spice, e.g. file_x86_64.spice
+ * 4. file.spice
+ * In freestanding mode, the OS part of the suffix is 'freestanding', so that freestanding variants of files can be shipped
+ * (e.g. file_freestanding.spice). Without an OS, it would be 'unknown' otherwise.
+ *
+ * @param osName OS part of the suffix: the OS of the target triple, or OS_SUFFIX_FREESTANDING in freestanding mode. The
+ *               caller derives it from the target, because base knows no target triples
+ * @param archName Arch part of the suffix: the arch of the target triple
+ * @param basePath Path of the source file without the '.spice' extension
+ * @param requestingFilePath Path of the requesting source file. A platform specific variant is never resolved to it, so
+ *                           that a variant can import the default file of the same name
+ * @param candidatePaths Receives all checked candidate paths, with descending priority
+ * @return Resolved source file path, or an empty path, if none of the candidates exists
+ */
+// legacy: util/system-util.spice:417-438
+public f<FilePath> resolvePlatformSpecificSourceFile(const String& osName, const String& archName, const FilePath& basePath, const FilePath& requestingFilePath, Vector<FilePath>& candidatePaths) {
+    // basePath never has a '.spice' extension, so getFileName() (not getBaseName(), which assumes an extension) is the
+    // bare stem to build the candidate file names from
+    const String stem = basePath.getFileName();
+    const FilePath parentDir = FilePath(basePath.getParentDir());
+    candidatePaths.pushBack(parentDir / (stem + "_" + osName + "_" + archName + ".spice"));
+    candidatePaths.pushBack(parentDir / (stem + "_" + osName + ".spice"));
+    candidatePaths.pushBack(parentDir / (stem + "_" + archName + ".spice"));
+    candidatePaths.pushBack(parentDir / (stem + ".spice"));
+
+    const unsigned long defaultPathIdx = candidatePaths.getSize() - 1l;
+    for unsigned long i = 0l; i < candidatePaths.getSize(); i++ {
+        const FilePath& candidatePath = candidatePaths.get(i);
+        if candidatePath.exists() && (i == defaultPathIdx || !requestingFilePath.equivalent(candidatePath)) {
+            return candidatePath;
+        }
+    }
+    return FilePath();
+}
+
+/**
+ * Retrieve the dir, where output binaries should go when installing them
+ *
+ * @return Installation directory
+ */
+// legacy: util/system-util.spice:584-592
+public f<FilePath> getSpiceBinDir() {
+    if isWindows() {                                             // LCOV_EXCL_LINE - coverage runs on Linux
+        Result<string> userprofile = getEnv("USERPROFILE");      // LCOV_EXCL_LINE - coverage runs on Linux
+        return FilePath(userprofile.unwrap()) / "spice" / "bin"; // LCOV_EXCL_LINE - coverage runs on Linux
+    } else if isUnixBased() {
+        return FilePath("/usr/local/bin");
+    } else {                                  // LCOV_EXCL_LINE
+        panic(Error("Unsupported platform")); // LCOV_EXCL_LINE
+    }                                         // LCOV_EXCL_LINE
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// legacy: util/system-util.spice:596-603. Without the Graphviz line: isGraphvizInstalled() belongs to the viz tool
+#[test]
+f<bool> testIsCommandAvailable() {
+    // Use a command, that always exists
+    assert isCommandAvailable(isWindows() ? "cmd" : "sh");
+    assert !isCommandAvailable("non-existing-command");
+    return true;
+}
+
+// The legacy tests testIsWildSupportedTarget and the Triple part of testResolvePlatformSpecificSourceFile need llvm::Triple.
+// They move with findLinker (link) and the target derivation (driver). New: the tests of exec(), run() and the renderer
+#[test]
+f<bool> testExecCapturesOutputAndExitCode() {
+    if isWindows() {
+        return true; // The commands of the test only exist on Unix
+    }
+    Vector<String> args;
+    args.pushBack(String("hello"));
+    const Result<ExecResult> echo = exec(String("echo"), args);
+    assert echo.isOk() && echo.unwrap().exitCode == 0 && echo.unwrap().output == "hello\n";
+
+    // A program that fails exits with its code instead of being an error
+    const Vector<String> noArgs;
+    const Result<ExecResult> failing = exec(String("false"), noArgs);
+    assert failing.isOk() && failing.unwrap().exitCode != 0;
+
+    // A program that does not exist is an error
+    assert exec(String("non-existing-command"), noArgs).isErr();
+    return true;
+}
+
+#[test]
+f<bool> testRunInheritsStreamsAndReportsStatus() {
+    if isWindows() {
+        return true; // The commands of the test only exist on Unix
+    }
+    const Result<ProcessStatus> status = run(String("true"));
+    assert status.isOk() && status.unwrap().exitCode == 0;
+    assert run(String("non-existing-command")).isErr();
+    return true;
+}
+
+#[test]
+f<bool> testRenderCommandForDisplay() {
+    Vector<String> args;
+    args.pushBack(String("-o"));
+    args.pushBack(String("out file"));
+    assert renderCommandForDisplay(String("clang"), args) == "clang -o out file";
+    assert renderCommandForDisplay(String("clang"), Vector<String>()) == "clang";
+    return true;
+}
+
+#[test]
+f<bool> testSplitAtWhitespace() {
+    const Vector<String> parts = splitAtWhitespace(String("  -la\t-lb\n\n-lc \r\v\f"));
+    assert parts.getSize() == 3l && parts.get(0l) == "-la" && parts.get(1l) == "-lb" && parts.get(2l) == "-lc";
+    assert splitAtWhitespace(String("")).isEmpty() && splitAtWhitespace(String(" \t ")).isEmpty();
+    return true;
+}
+
+// legacy: util/system-util.spice:619-646
+#[test]
+f<bool> testExpandLinkerFlag() {
+    String failedCommand;
+    // Plain flag
+    const Result<Vector<String>> plainResult = expandLinkerFlag(String("-lm"), false, failedCommand);
+    assert plainResult.isOk();
+    const Vector<String> plain = plainResult.unwrap();
+    assert plain.getSize() == 1l;
+    assert plain.get(0l) == "-lm";
+
+    // Single env var
+    assert setEnv("SPICE_TEST_LINKER_FLAG_VAR", "/opt/llvm/lib");
+    const String singleFlag = String(isWindows() ? "-L%SPICE_TEST_LINKER_FLAG_VAR%" : "-L$SPICE_TEST_LINKER_FLAG_VAR");
+    const Result<Vector<String>> singleResult = expandLinkerFlag(singleFlag, false, failedCommand);
+    assert singleResult.isOk();
+    const Vector<String> single = singleResult.unwrap();
+    assert single.getSize() == 1l;
+    assert single.get(0l) == "-L/opt/llvm/lib";
+
+    // An env var that expands to several whitespace-separated flags (e.g. LLVM_INCLUDE_DIRS, populated by CMake/CI with one
+    // '-I<dir>' per LLVM include directory) must be split into one argv entry per flag, since there is no shell here to
+    // word-split the expansion
+    assert setEnv("SPICE_TEST_LINKER_FLAG_MULTI", "-I/opt/llvm/include -I/opt/llvm/build/include");
+    const String multiFlag = String(isWindows() ? "%SPICE_TEST_LINKER_FLAG_MULTI%" : "$SPICE_TEST_LINKER_FLAG_MULTI");
+    const Result<Vector<String>> multiResult = expandLinkerFlag(multiFlag, false, failedCommand);
+    assert multiResult.isOk();
+    const Vector<String> multi = multiResult.unwrap();
+    assert multi.getSize() == 2l;
+    assert multi.get(0l) == "-I/opt/llvm/include";
+    assert multi.get(1l) == "-I/opt/llvm/build/include";
+    return true;
+}
+
+// New: the command substitution of a flag, which legacy did not test (it needs the Unix tools echo and false)
+#[test]
+f<bool> testExpandLinkerFlagWithCommandSubstitution() {
+    if isWindows() {
+        return true; // The commands of the test only exist on Unix
+    }
+    String failedCommand;
+    const Result<Vector<String>> echoResult = expandLinkerFlag(String("`echo -la -lb`"), false, failedCommand);
+    assert echoResult.isOk() && echoResult.unwrap().getSize() == 2l;
+    assert echoResult.unwrap().get(0l) == "-la" && echoResult.unwrap().get(1l) == "-lb";
+
+    // A command that exits with an error names itself
+    const Result<Vector<String>> failing = expandLinkerFlag(String("`false`"), false, failedCommand);
+    assert failing.isErr() && failedCommand == "false";
+
+    // A command that does not exist is reported with its program
+    const Result<Vector<String>> missing = expandLinkerFlag(String("`non-existing-command --x`"), false, failedCommand);
+    assert missing.isErr() && failedCommand == "non-existing-command";
+
+    // An empty command expands to no flags
+    const Result<Vector<String>> empty = expandLinkerFlag(String("`  `"), false, failedCommand);
+    assert empty.isOk() && empty.unwrap().isEmpty();
+    return true;
+}
+
+// legacy: util/system-util.spice:648-677
+#[test]
+f<bool> testGetLinkerFlagCommandArgs() {
+    Vector<String> pkgConfigTokens;
+    pkgConfigTokens.pushBack(String("pkg-config"));
+    pkgConfigTokens.pushBack(String("--cflags"));
+    pkgConfigTokens.pushBack(String("--libs"));
+    pkgConfigTokens.pushBack(String("openssl"));
+
+    // A dynamic link passes the arguments through
+    const Vector<String> dynamicArgs = getLinkerFlagCommandArgs(pkgConfigTokens, false);
+    assert dynamicArgs.getSize() == 3l;
+    assert dynamicArgs.get(0l) == "--cflags";
+    assert dynamicArgs.get(1l) == "--libs";
+    assert dynamicArgs.get(2l) == "openssl";
+
+    // A static link asks pkg-config for the static flags, that include the private dependencies
+    const Vector<String> staticArgs = getLinkerFlagCommandArgs(pkgConfigTokens, true);
+    assert staticArgs.getSize() == 4l;
+    assert staticArgs.get(0l) == "--static";
+    assert staticArgs.get(1l) == "--cflags";
+    assert staticArgs.get(2l) == "--libs";
+    assert staticArgs.get(3l) == "openssl";
+
+    // Other commands are passed through for a static link as well
+    Vector<String> otherTokens;
+    otherTokens.pushBack(String("llvm-config"));
+    otherTokens.pushBack(String("--libs"));
+    const Vector<String> otherArgs = getLinkerFlagCommandArgs(otherTokens, true);
+    assert otherArgs.getSize() == 1l;
+    assert otherArgs.get(0l) == "--libs";
+    return true;
+}
+
+// legacy: util/system-util.spice:679-700
+#[test]
+f<bool> testFindStdDirPrefersEnvVar() {
+    // Remember the original value, because the test runner points SPICE_STD_DIR to the std of the checkout
+    const Result<string> originalValue = getEnv("SPICE_STD_DIR");
+    const String originalStdDir = originalValue.isOk() ? String(originalValue.unwrap()) : String();
+
+    // An existing dir in SPICE_STD_DIR wins, even if a Spice package installed a std to /usr/lib/spice/std
+    const FilePath stdDir = makeUniqueTestDir("spice-test-std-dir");
+    assert setEnv("SPICE_STD_DIR", stdDir.toString());
+    const FilePath foundStdDir = findStdDir();
+
+    // A dir in SPICE_STD_DIR, that does not exist, is skipped
+    removeTestDir(stdDir);
+    const FilePath fallbackStdDir = findStdDir();
+
+    // Restore the original value before asserting, so that a failure does not affect the other tests
+    assert setEnv("SPICE_STD_DIR", originalStdDir.getRaw());
+    assert foundStdDir == stdDir;
+    assert fallbackStdDir != stdDir;
+    return true;
+}
+
+// legacy: util/system-util.spice:702-734
+#[test]
+f<bool> testGetStdTPDEFlags() {
+    // A std without the TPDE libraries and headers (e.g. a source checkout) yields no flags
+    const FilePath stdDir = makeUniqueTestDir("spice-test-std-tpde");
+    const FilePath tpdeDir = stdDir / "bindings" / "tpde";
+    const FilePath includeDir = tpdeDir / "include";
+    const FilePath headerDir = includeDir / "tpde-llvm";
+    const FilePath libDir = tpdeDir / "lib";
+    createTestDirs(headerDir);
+    createTestDirs(libDir);
+    const String flagsWithoutTpde = getStdTPDEFlags(stdDir);
+
+    // A std with the TPDE libraries and headers of a release package yields the include flag and the libraries, that exist,
+    // in link order and inside a linker group
+    const FilePath tpdeLlvmLibPath = libDir / "libtpde_llvm.a";
+    const FilePath tpdeLibPath = libDir / "libtpde.a";
+    const FilePath fadecLibPath = libDir / "libfadec.a";
+    writeTestFile(headerDir / "LLVMCompiler.hpp", "\n");
+    writeTestFile(tpdeLlvmLibPath, "\n");
+    writeTestFile(tpdeLibPath, "\n");
+    writeTestFile(fadecLibPath, "\n");
+    const String expected = String("-I") + includeDir.toString() + " -Wl,--start-group " + tpdeLlvmLibPath.toString() + " " + tpdeLibPath.toString() + " " + fadecLibPath.toString() + " -Wl,--end-group";
+    const String flags = getStdTPDEFlags(stdDir);
+
+    // Without the TPDE LLVM library, the bindings can't use TPDE at all
+    assert deleteFile(tpdeLlvmLibPath.toString());
+    const String flagsWithoutTpdeLlvm = getStdTPDEFlags(stdDir);
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(stdDir);
+    assert flagsWithoutTpde.isEmpty();
+    assert flags == expected;
+    assert flagsWithoutTpdeLlvm.isEmpty();
+    return true;
+}
+
+// Resolve the platform specific variant of the given source file for the given OS and arch name
+f<String> resolveTestSourceFile(const FilePath& basePath, const string osName, const string archName, const FilePath& requestingFilePath) {
+    Vector<FilePath> candidatePaths;
+    const FilePath resolvedPath = resolvePlatformSpecificSourceFile(String(osName), String(archName), basePath, requestingFilePath, candidatePaths);
+    assert candidatePaths.getSize() == 4l;
+    return resolvedPath.isEmpty() ? String() : resolvedPath.getFileName();
+}
+
+// legacy: util/system-util.spice:736-778. The targets are given as the OS and arch name the triples of legacy lead to
+#[test]
+f<bool> testResolvePlatformSpecificSourceFile() {
+    const FilePath dir = makeUniqueTestDir("spice-test-platform-specific-source");
+    const FilePath basePath = dir / "foo";
+    const FilePath noRequestingFile;
+    const String missing = resolveTestSourceFile(dir / "bar", "linux", "x86_64", noRequestingFile);
+    writeTestFile(dir / "foo.spice", "\n");
+    writeTestFile(dir / "foo_x86_64.spice", "\n");
+    writeTestFile(dir / "foo_linux_x86_64.spice", "\n");
+    writeTestFile(dir / "foo_freestanding.spice", "\n");
+    // The most specific variant wins
+    const String linuxX86_64 = resolveTestSourceFile(basePath, "linux", "x86_64", noRequestingFile);
+    const String linuxAArch64 = resolveTestSourceFile(basePath, "linux", "aarch64", noRequestingFile);
+    const String windowsX86_64 = resolveTestSourceFile(basePath, "windows", "x86_64", noRequestingFile);
+    // In freestanding mode, the OS part of the suffix is 'freestanding', also for a target with an OS
+    const String freestandingX86_64 = resolveTestSourceFile(basePath, OS_SUFFIX_FREESTANDING, "x86_64", noRequestingFile);
+    const String freestandingAArch64 = resolveTestSourceFile(basePath, OS_SUFFIX_FREESTANDING, "aarch64", noRequestingFile);
+    // A variant never resolves to the requesting file, but the default file does
+    const String fromVariant = resolveTestSourceFile(basePath, "linux", "x86_64", dir / "foo_linux_x86_64.spice");
+    const String fromDefault = resolveTestSourceFile(basePath, "linux", "aarch64", dir / "foo.spice");
+
+    // Clean up before asserting, so that a failure does not leave the files behind
+    removeTestDir(dir);
+    assert missing.isEmpty();
+    assert linuxX86_64 == "foo_linux_x86_64.spice";
+    assert linuxAArch64 == "foo.spice";
+    assert windowsX86_64 == "foo_x86_64.spice";
+    assert freestandingX86_64 == "foo_freestanding.spice";
+    assert freestandingAArch64 == "foo_freestanding.spice";
+    assert fromVariant == "foo_x86_64.spice";
+    assert fromDefault == "foo.spice";
+    return true;
+}
