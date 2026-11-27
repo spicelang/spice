@@ -1,0 +1,73 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+type T dyn;
+
+// Number of elements, that are stored inline before the vector spills into the heap
+public const unsigned int SMALL_VEC_INLINE_CAPACITY = 4u;
+
+/**
+ * Vector for the many tiny lists of the compiler (argument lists, template arguments, ...). The first four elements live
+ * inside the object, the rest in a heap vector. Meant for trivially copyable elements like ids, ints and pointers.
+ */
+public type SmallVec<T> struct {
+    T[4] inlineItems
+    Vector<T> overflow
+    unsigned int count = 0u
+}
+
+public p SmallVec.pushBack(const T& item) {
+    if this.count < SMALL_VEC_INLINE_CAPACITY {
+        this.inlineItems[this.count] = item;
+    } else {
+        this.overflow.pushBack(item);
+    }
+    this.count++;
+}
+
+public const f<T&> SmallVec.get(unsigned int index) {
+    assert index < this.count;
+    if index < SMALL_VEC_INLINE_CAPACITY {
+        return this.inlineItems[index];
+    }
+    return this.overflow.get(index - SMALL_VEC_INLINE_CAPACITY);
+}
+
+public const f<unsigned int> SmallVec.size() {
+    return this.count;
+}
+
+public const f<bool> SmallVec.isEmpty() {
+    return this.count == 0u;
+}
+
+public const f<bool> SmallVec.isInline() {
+    return this.count <= SMALL_VEC_INLINE_CAPACITY;
+}
+
+public p SmallVec.clear() {
+    this.overflow.clear();
+    this.count = 0u;
+}
+
+#[test]
+f<bool> testSmallVecInlineAndOverflow() {
+    SmallVec<int> values;
+    assert values.isEmpty();
+    for int i = 0; i < 4; i++ {
+        values.pushBack(i * 3);
+    }
+    assert values.size() == 4u && values.isInline();
+    for int i = 4; i < 20; i++ {
+        values.pushBack(i * 3);
+    }
+    assert values.size() == 20u && !values.isInline();
+    for unsigned int i = 0u; i < 20u; i++ {
+        assert values.get(i) == cast<int>(i) * 3;
+    }
+    values.clear();
+    assert values.isEmpty() && values.isInline();
+    return true;
+}

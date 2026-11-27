@@ -1,0 +1,50 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/math/hash";
+
+type T dyn;
+
+/**
+ * Final avalanche step of splitmix64. Spreads the entropy of the input over all bits
+ *
+ * @param hash Input value
+ * @return Mixed value
+ */
+// legacy: util/custom-hash-functions.spice, hashMix
+public f<Hash> hashMix(Hash hash) {
+    hash += 0x9e3779b97f4a7c15ul;
+    hash = (hash ^ (hash >> 30ul)) * 0xbf58476d1ce4e5b9ul;
+    hash = (hash ^ (hash >> 27ul)) * 0x94d049bb133111ebul;
+    hash ^= (hash >> 31ul);
+    return hash;
+}
+
+/**
+ * Hash the address of a pointer. The low bits are dropped, because allocations are aligned
+ *
+ * @param value Pointer to hash
+ * @return Hash of the address
+ */
+// legacy: util/custom-hash-functions.spice, hashPointer
+public f<Hash> hashPointer<T>(const T* value) {
+    unsafe {
+        return cast<Hash>(value) >> 3ul;
+    }
+}
+
+#[test]
+f<bool> testHashMixIsDeterministicAndSpreads() {
+    assert hashMix(1ul) == hashMix(1ul);
+    assert hashMix(1ul) != hashMix(2ul);
+    assert hashMix(0ul) != 0ul;
+    return true;
+}
+
+// Combining hashes is std's combineHashes() (std/math/hash). The legacy hashCombine64 is not ported, on purpose: where the hash
+// order is visible in a dump, the white-box refs of the new compiler differ (plan 8.6)
+#[test]
+f<bool> testCombineHashesDependsOnOrder() {
+    assert combineHashes(hashMix(1ul), hashMix(2ul)) != combineHashes(hashMix(2ul), hashMix(1ul));
+    return true;
+}

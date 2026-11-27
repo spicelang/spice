@@ -1,0 +1,99 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "@/base/id";
+
+type T dyn;
+
+/**
+ * Dense vector, indexed by an Id<T>. Element types need public ctors, dtors and members (spike of WP 1.1), because the
+ * std module instantiates the vector functions for them.
+ */
+public type IdVec<T> struct {
+    Vector<T> items
+}
+
+public p IdVec.ctor(unsigned long initialCapacity = 0ul) {
+    this.items = Vector<T>(initialCapacity);
+}
+
+/**
+ * Append a value and return its id
+ *
+ * @param value Value to store
+ * @return Id of the stored value
+ */
+public f<Id<T>> IdVec.push(const T& value) {
+    // The index has to fit into the 4 bytes of an id
+    assert this.items.getSize() <= 4294967295ul;
+    const unsigned int index = cast<unsigned int>(this.items.getSize());
+    this.items.pushBack(value);
+    return Id<T>(index);
+}
+
+public const f<T&> IdVec.get(Id<T> id) {
+    assert id.index < this.items.getSize();
+    return this.items.get(id.index);
+}
+
+public const f<bool> IdVec.contains(Id<T> id) {
+    return id.index < this.items.getSize();
+}
+
+public const f<unsigned long> IdVec.size() {
+    return this.items.getSize();
+}
+
+public const f<bool> IdVec.isEmpty() {
+    return this.items.isEmpty();
+}
+
+public p IdVec.reserve(unsigned long itemCount) {
+    this.items.reserve(itemCount);
+}
+
+public p IdVec.clear() {
+    this.items.clear();
+}
+
+public type Probe struct {
+    public heap int* payload
+    public int tag
+}
+
+public p Probe.ctor(int tag) {
+    this.tag = tag;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<int>());
+        this.payload = cast<heap int*>(allocResult.unwrapAndMove());
+    }
+    *this.payload = tag * 10;
+}
+
+public p Probe.ctor(const Probe& other) {
+    this.tag = other.tag;
+    unsafe {
+        Result<heap byte*> allocResult = sAlloc(sizeof<int>());
+        this.payload = cast<heap int*>(allocResult.unwrapAndMove());
+    }
+    *this.payload = *other.payload;
+}
+
+#[test]
+f<bool> testIdVecPushGetAndReallocation() {
+    IdVec<Probe> probes;
+    Id<Probe> first = probes.push(Probe(1));
+    for int i = 2; i < 100; i++ {
+        const Id<Probe> _ = probes.push(Probe(i));
+    }
+    Id<Probe> last = Id<Probe>(99u - 1u);
+    assert first.index == 0u;
+    assert probes.size() == 99ul;
+    assert probes.get(first).tag == 1 && *probes.get(first).payload == 10;
+    assert probes.get(last).tag == 99 && *probes.get(last).payload == 990;
+    assert probes.contains(last) && !probes.contains(Id<Probe>(99u));
+    return true;
+}

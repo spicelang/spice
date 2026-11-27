@@ -1,0 +1,126 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/unordered-map";
+
+// Own imports
+import "@/base/id";
+
+type K dyn;
+type V dyn;
+
+/**
+ * Hash map keyed by Id<K>. It wraps the std UnorderedMap<unsigned int, V> and keeps only the index of the id as key, because the
+ * std hash table cannot hash an Id<K> without growing it by a vtable pointer. The API takes typed ids, so the type checker
+ * still rejects the id of another kind (an Id<Sym> where an Id<Decl> is expected).
+ */
+public type IdMap<K, V> struct {
+    UnorderedMap<unsigned int, V> entries
+}
+
+/**
+ * @param initialCapacity Number of entries to pre-allocate space for. 0 allocates lazily on the first insertion
+ */
+public p IdMap.ctor(unsigned long initialCapacity = 0l) {
+    this.entries = UnorderedMap<unsigned int, V>(initialCapacity);
+}
+
+/**
+ * Insert the value for the id, or replace the value, which is stored for it already
+ *
+ * @param id Key
+ * @param value Value to store
+ */
+public p IdMap.upsert(Id<K> id, const V& value) {
+    this.entries.upsert(id.index, value);
+}
+
+/**
+ * Get the value stored for the id. Fails, if there is none
+ *
+ * @param id Key
+ * @return Reference to the stored value
+ */
+public const f<V&> IdMap.get(Id<K> id) {
+    return this.entries.get(id.index);
+}
+
+/**
+ * Get a copy of the value stored for the id
+ *
+ * @param id Key
+ * @return Value, or an error if there is none
+ */
+public f<Result<V>> IdMap.getSafe(Id<K> id) {
+    return this.entries.getSafe(id.index);
+}
+
+/**
+ * Remove the entry of the id. Does nothing, if there is none. Invalidates the references to the removed value
+ *
+ * @param id Key
+ */
+public p IdMap.remove(Id<K> id) {
+    this.entries.remove(id.index);
+}
+
+/**
+ * @param id Key
+ * @return Whether a value is stored for the id
+ */
+public const f<bool> IdMap.contains(Id<K> id) {
+    return this.entries.contains(id.index);
+}
+
+/**
+ * @return Number of stored entries
+ */
+public f<unsigned long> IdMap.getSize() {
+    return this.entries.getSize();
+}
+
+/**
+ * @return Whether the map holds no entries
+ */
+public const f<bool> IdMap.isEmpty() {
+    return this.entries.isEmpty();
+}
+
+/**
+ * Remove all entries. Invalidates all references to the stored values. A reference from get() otherwise stays valid, also
+ * when other ids are inserted, until its entry is removed
+ */
+public p IdMap.clear() {
+    this.entries.clear();
+}
+
+#[test]
+f<bool> testIdMapInsertLookupAndRemove() {
+    IdMap<int, int> map;
+    assert map.isEmpty();
+    map.upsert(Id<int>(7u), 70);
+    map.upsert(Id<int>(8u), 80);
+    assert map.getSize() == 2l && map.contains(Id<int>(7u)) && !map.contains(Id<int>(9u));
+    assert map.get(Id<int>(7u)) == 70 && map.get(Id<int>(8u)) == 80;
+    map.upsert(Id<int>(7u), 71);
+    assert map.getSize() == 2l && map.get(Id<int>(7u)) == 71;
+    assert map.getSafe(Id<int>(8u)).isOk() && !map.getSafe(Id<int>(9u)).isOk();
+    map.remove(Id<int>(7u));
+    assert map.getSize() == 1l && !map.contains(Id<int>(7u)) && map.contains(Id<int>(8u));
+    map.clear();
+    assert map.isEmpty();
+    return true;
+}
+
+#[test]
+f<bool> testIdMapGrowth() {
+    IdMap<long, long> map;
+    for unsigned int i = 0u; i < 5000u; i++ {
+        map.upsert(Id<long>(i), cast<long>(i) * 3l);
+    }
+    assert map.getSize() == 5000l;
+    for unsigned int i = 0u; i < 5000u; i++ {
+        assert map.get(Id<long>(i)) == cast<long>(i) * 3l;
+    }
+    return true;
+}

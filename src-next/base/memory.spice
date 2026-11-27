@@ -1,0 +1,33 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// legacy: util/memory.spice:1-18
+
+/**
+ * Source of raw memory blocks. allocate() transfers the ownership of a block to the caller, deallocate() takes it back and
+ * clears the passed pointer. A manager has to outlive everything that borrows it, e.g. an Arena.
+ */
+public type IMemoryManager interface {
+    public f<heap byte*> allocate(unsigned long);
+    public p deallocate(heap byte*&);
+}
+
+public type DefaultMemoryManager struct : IMemoryManager {}
+
+/**
+ * @param size Size of the block in bytes
+ * @return Owned block. Panics, if the allocation fails
+ */
+// legacy: util/memory.spice:10-14
+public f<heap byte*> DefaultMemoryManager.allocate(unsigned long size) {
+    Result<heap byte*> allocation = sAlloc(size);
+    // Take the block out of the result: the caller becomes its owner, so the result must not free it on the way out
+    return allocation.unwrapAndMove();
+}
+
+/**
+ * @param ptr Block to free, cleared afterwards
+ */
+// legacy: util/memory.spice:16-18
+public p DefaultMemoryManager.deallocate(heap byte*& ptr) {
+    sDealloc(ptr);
+}

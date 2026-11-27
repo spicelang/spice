@@ -1007,6 +1007,29 @@ Some idioms have to be confirmed against the stage0 compiler before they are use
 
 The results are recorded in this document. An idiom that stage0 does not support is replaced before phase 2 starts.
 
+**Split of WP 1.2.** WP 1.2 is too large for one PR (10.2), so it is delivered in three: **1.2a** `Id<T>`, `IdVec<T>`,
+`SmallVec<T>`, `Arena<T>`, `IMemoryManager`, hashing, the string helpers and the test helpers; **1.2b** the `Interner`;
+**1.2c** concurrency, `Timer`, process and file system helpers, the manifest reader and their tests.
+
+**Results (WP 1.2a).**
+
+- `Arena<T>` is typed: `reserve()` returns a `T*`, and the dtor destructs every object as `T`. The legacy `BlockAllocator<Base>`
+  destructed everything as `Base`, which made a pool of different node types leak members. The legacy test that mixed two
+  types in one allocator is ported as two arenas (`testArenaMixedAlignment`). The other three tests keep their facts.
+- `SmallVec<T>` keeps four elements inline and the rest in a heap `Vector<T>`. Spice has no value parameters for generics,
+  so the inline capacity is a constant. It is meant for trivially copyable elements.
+- `buildVersionInfo()` of `common-util` needs the `llvm` package, so it is not part of `base/strings`. It moves to the
+  driver layer (phase 3).
+- `Id<T>` cannot be a key of the std `UnorderedMap`: the table calls `hash()` from the std module, which cannot see an
+  overload of the compiler, and `IHashable` would add a vtable pointer to the 4-byte id. `IdMap<K, V>` wraps
+  `UnorderedMap<unsigned int, V>`, takes `Id<K>` and keys the table by the index, so mixed-up ids are still rejected. Hot-path
+  maps use it. The `Interner` of 1.2b brings its own open-addressing table.
+- `hashQualType` and the other hash functions that depend on legacy types are not ported. Of the generic ones, only `hashMix`
+  and `hashPointer` are. `hashCombine64` is not ported: the new compiler combines hashes with `combineHashes` of the std, to
+  reuse it. That changes the hash values, so a map order that shows up in a dump differs, which the white-box refs (8.6)
+  allow. `hash(Id<T>)` is new. `test-util` has no `#[test]` function of its own (the count of 1 in 8.5 is the helper
+  library), so it is ported as is. `SaveAndRestore` is not part of 1.2a.
+
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
 
