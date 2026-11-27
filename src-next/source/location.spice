@@ -18,11 +18,15 @@ import "@/source/span";
  * of the symbol table.
  *
  * @param sourceManager Manager of the file the span lies in
- * @param span Valid span
+ * @param span Span. An invalid span formats like the default CodeLoc of legacy
  * @return Location string
  */
 // legacy: reader/code-loc.spice:47-49 (toString), reader/code-loc.spice:148-150 (toPrettyLineAndColumn, which equals toString)
 public f<String> formatLineAndColumn(const SourceManager& sourceManager, const Span& span) {
+    // A span without a file stands for the default CodeLoc of legacy, which formatted as L0C0
+    if !span.isValid() {
+        return String("L0C0");
+    }
     const LineAndColumn lineAndColumn = sourceManager.getLineAndColumn(span);
     return "L" + toString(lineAndColumn.line) + "C" + toString(lineAndColumn.col);
 }
@@ -31,11 +35,14 @@ public f<String> formatLineAndColumn(const SourceManager& sourceManager, const S
  * Line of a span as `L<line>`, which the block names of the IR contain
  *
  * @param sourceManager Manager of the file the span lies in
- * @param span Valid span
+ * @param span Span. An invalid span formats like the default CodeLoc of legacy
  * @return Line string
  */
 // legacy: reader/code-loc.spice:141-143
 public f<String> formatPrettyLine(const SourceManager& sourceManager, const Span& span) {
+    if !span.isValid() {
+        return String("L0");
+    }
     return "L" + toString(sourceManager.getLineAndColumn(span).line);
 }
 
@@ -44,11 +51,15 @@ public f<String> formatPrettyLine(const SourceManager& sourceManager, const Span
  * that all diagnostics, lint findings and panic messages show.
  *
  * @param sourceManager Manager of the file the span lies in
- * @param span Valid span
+ * @param span Span. An invalid span formats like the default CodeLoc of legacy
  * @return Pretty location
  */
 // legacy: reader/code-loc.spice:56-60
 public f<String> formatPrettyLocation(const SourceManager& sourceManager, const Span& span) {
+    // The default CodeLoc has no path, line 0 and column 0
+    if !span.isValid() {
+        return String("0:0");
+    }
     const String filePath = getPrettyFilePath(sourceManager, span.file);
     const String prefix = filePath.isEmpty() ? String() : filePath + ":";
     const LineAndColumn lineAndColumn = sourceManager.getLineAndColumn(span);
@@ -236,5 +247,9 @@ f<bool> testPrettyFilePathAndLocation() {
     // A source without a path has no prefix
     assert prettyNameless == "1:1";
     assert lineAndColumn == "L2C5" && prettyLine == "L2";
+    // The default CodeLoc of legacy had no path, line 0 and column 0
+    assert formatLineAndColumn(sourceManager, Span()) == "L0C0";
+    assert formatPrettyLine(sourceManager, Span()) == "L0";
+    assert formatPrettyLocation(sourceManager, Span()) == "0:0";
     return true;
 }

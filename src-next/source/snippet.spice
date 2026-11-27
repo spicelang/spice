@@ -11,7 +11,7 @@ import "@/source/span";
 // Number of chars of context, that a snippet shows around the erroneous code
 const long SNIPPET_CONTEXT = 20l;
 
-// Whether the given char can be part of an identifier or keyword. Bytes of multibyte UTF-8 characters are no identifier chars
+// legacy: ast/ast-nodes.spice:305-307. Whether the given char can be part of an identifier or keyword. Bytes of multibyte UTF-8 characters are no identifier chars
 f<bool> isIdentifierChar(char c) {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_';
 }
@@ -49,7 +49,7 @@ f<long> getIntervalLength(long start, long stop) {
  * misaligned, like in legacy.
  *
  * @param sourceManager Manager of the file the span lies in
- * @param span Span to show. Without a file, the snippet is empty
+ * @param span Span to show. Without a file, or in a source without a path, the snippet is empty
  * @return Snippet without a trailing newline, or an empty string for an invalid span
  */
 // legacy: ast/ast-nodes.spice:339-420
@@ -59,6 +59,10 @@ public f<String> getSnippet(const SourceManager& sourceManager, const Span& span
         return String();
     }
     const SourceFile& file = sourceManager.getFile(span.file);
+    // Legacy had no snippet for a source without a path
+    if file.path.isEmpty() {
+        return String();
+    }
     const String& sourceCode = file.text;
     const long inputSize = cast<long>(sourceCode.getLength());
     // The legacy interval ends at the last byte (inclusive), the span after it
@@ -178,5 +182,54 @@ f<bool> testSnippetOfAMultiLineSpanShowsTheFirstLine() {
 f<bool> testSnippetOfAnInvalidSpanIsEmpty() {
     SourceManager sourceManager;
     assert getSnippet(sourceManager, Span()).isEmpty();
+    return true;
+}
+
+#[test]
+f<bool> testSnippetAtTheStartOfTheFile() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("foo bar\nnext\n"), "foo");
+    assert getSnippet(sourceManager, span) == "1  foo bar\n   ^^^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOnTheLastLineWithoutTrailingNewline() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("a\nlet x = 1"), "x");
+    assert getSnippet(sourceManager, span) == "2  let x = 1\n       ^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetTrimsTrailingSpaces() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("x = 1;   \ny"), "1");
+    assert getSnippet(sourceManager, span) == "1  x = 1;\n       ^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOfASpanAtTheEndOfTheFileHasNoMarker() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String("source.spice"), String("ab"));
+    assert getSnippet(sourceManager, Span(file, 2u, 2u)) == "1  ab\n     ";
+    return true;
+}
+
+// The offsets are bytes, so the marker below a line with a multibyte character is one column too far right, like in legacy
+#[test]
+f<bool> testSnippetMarkerIsMisalignedBelowMultibyteCharacters() {
+    SourceManager sourceManager;
+    const Span span = spanOf(sourceManager, String("é = x;\n"), "x");
+    assert getSnippet(sourceManager, span) == "1  é = x;\n        ^";
+    return true;
+}
+
+#[test]
+f<bool> testSnippetOfASourceWithoutPathIsEmpty() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String(""), String("x"));
+    assert getSnippet(sourceManager, Span(file, 0u, 1u)).isEmpty();
     return true;
 }

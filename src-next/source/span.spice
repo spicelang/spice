@@ -30,10 +30,11 @@ public p Span.ctor() {
  * @param stop Offset after the last byte
  */
 public p Span.ctor(FileId file, unsigned int start, unsigned int stop) {
-    assert start <= stop;
     this.file = file;
     this.start = start;
-    this.stop = stop;
+    // Legacy tolerates an interval that ends before its start, e.g. for a node that consumes no token (parser.spice:104: stop =
+    // end of the previous token - 1). It has the length 0, and so has the span
+    this.stop = stop < start ? start : stop;
 }
 
 /**
@@ -90,7 +91,7 @@ public f<Span> mergeSpans(const Span& first, const Span& second) {
     return Span(first.file, start, stop);
 }
 
-// Two spans are equal, if they cover the same bytes of the same file. This is stricter than `CodeLoc.operator==`, which compared
+// legacy: reader/code-loc.spice:172-174. Two spans are equal, if they cover the same bytes of the same file. This is stricter than `CodeLoc.operator==`, which compared
 // path, line and column only
 public f<bool> operator==(const Span& lhs, const Span& rhs) {
     return lhs.file == rhs.file && lhs.start == rhs.start && lhs.stop == rhs.stop;
@@ -117,5 +118,12 @@ f<bool> testSpanOrderAndMerge() {
     const Span merged = mergeSpans(a, b);
     assert merged == Span(file, 2u, 9u) && merged.length() == 7u;
     assert a != b && a == Span(file, 2u, 5u);
+    return true;
+}
+
+#[test]
+f<bool> testSpanThatEndsBeforeItsStartIsEmpty() {
+    const Span span = Span(makeFileId(0u), 7u, 3u);
+    assert span.start == 7u && span.stop == 7u && span.length() == 0u;
     return true;
 }

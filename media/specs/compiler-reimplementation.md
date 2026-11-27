@@ -1098,16 +1098,21 @@ The results are recorded in this document. An idiom that stage0 does not support
 
 - `source` has five files: `source-file` (`SourceFile`, `FileId`), `span` (`Span`), `source-manager` (`SourceManager`,
   `LineAndColumn`), `location` (the formatters and the pretty paths) and `snippet` (`getSnippet`). There is no `Reader`: the
-  `SourceManager` holds the text, and the lexer of phase 2 scans the buffer by offset.
+  `SourceManager` holds the text, and the lexer of phase 2 scans the buffer by offset. The `Reader` API (`peekChar`, `expect`,
+  `isEOF`, `getOffset`, `advance`) has no replacement in `source`; the lexer keeps its own cursor.
 - `Span { FileId file; unsigned int start; unsigned int stop }` is 12 bytes (asserted by a test). `stop` is the offset **after** the
-  last byte, where the `CodeLoc` interval held the offset of the last byte (inclusive). A default `Span` has the invalid file id
-  (`noFileId()`) and takes the place of the empty interval `-1 .. -2`: it has no snippet. `FileId` is an alias of `Id<SourceFile>`;
+  last byte, where the `CodeLoc` interval held the offset of the last byte (inclusive). A `Span` whose `stop` lies before its `start`
+  is clamped to the empty span, because legacy tolerates such an interval (a node that consumes no token, `parser.spice:104`). A
+  default `Span` has the invalid file id (`noFileId()`) and takes the place of the empty interval `-1 .. -2` and of the default
+  `CodeLoc`: it has no snippet and formats as `L0C0`, `L0` and `0:0`, like the default `CodeLoc`. A synthetic location such as the
+  `CodeLoc(1, 1, path)` of the IR generator for a nil node is `Span(file, 0, 0)`. `FileId` is an alias of `Id<SourceFile>`;
   an alias cannot be called, so `makeFileId` creates one. `isBefore` and `isAfter` compare the start offsets, which is the order of
   line and column within one file.
 - Line and column are computed from a line table by binary search. They keep the numbers of the legacy `Reader`: columns count code
   points (every byte except a UTF-8 continuation byte, up to and including the byte at the offset), `\r` counts as a column, there is
   no tab handling, a `\n` has the next line and column 0, and the offset behind the last byte is the end of the file, which counts as a
-  column. Tests cover all of it, with the ported tests of `reader` and `code-loc`.
+  column. Tests cover all of it (`\r`, tab, multibyte, newlines, the end of the file), with the ported tests of `reader` and
+  `code-loc`.
 - The formatters take the `SourceManager` and a `Span`: `formatLineAndColumn` (`toString` and `toPrettyLineAndColumn`, which are the
   same in legacy), `formatPrettyLine`, `formatPrettyLocation` (`toPrettyString`) and `getPrettyFilePath`. The global
   `ROOT_SOURCE_FILE_PATH` is the field `rootSourceFilePath` of the `SourceManager`, which the driver sets where
@@ -1115,10 +1120,11 @@ The results are recorded in this document. An idiom that stage0 does not support
 - `getSnippet` is `ASTNode.getErrorMessage` with the same steps, cut from the cached text. Its tests contain a snippet that the
   legacy compiler printed for the same source, and the `dyn*` snippet of the `typechecker` reference files. The quirks stay: byte
   offsets, so a marker below multibyte characters is misaligned, and a multi-line span loses its left context.
-- Intended differences: a source that the manager got from memory (stdin) has a snippet, where legacy had none, because it read the
-  file from disk again and could not find it. `SourceManager.addFile` returns an error with a constant message instead of the
+- Intended differences: a source that the manager got from memory has a snippet, where legacy had none, because it read the
+  file from disk again and could not find it. Only the formatter reads stdin (display name `<stdin>`), so this changes the
+  error output of `spice format` on stdin only. A source without a path has no snippet, as in legacy. `SourceManager.addFile` returns an error with a constant message instead of the
   `IO_ERROR` abort of the `Reader` ctor; the driver builds the text `Source file at path '<path>' cannot be opened.`. A path is read
-  once: `addFile` of a known path returns the known id. `CodeLoc.operator==` (path, line, column) is replaced by the `Span` comparison
+  once: `addFile` of a path that it read before returns the known id (a string added with `addString` is never found). `CodeLoc.operator==` (path, line, column) is replaced by the `Span` comparison
   (file and offsets). `isBefore` and `isAfter` of legacy compared only line and column.
 
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the

@@ -14,6 +14,7 @@ import "@/base/id";
 public type SourceFile struct {
     public String path // Path as it was passed to the SourceManager. Empty for a source without a path
     public String text // All bytes of the source, as they were read
+    public bool fromDisk = false // Read from a file, so addFile finds it by its path. A string is never found
     // Offset of the first byte of every line. Line n (1-based) starts at lineStarts[n - 1]. The first entry is always 0 and a
     // line starts after every '\n', also after the last byte
     public Vector<unsigned int> lineStarts

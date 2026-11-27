@@ -70,7 +70,9 @@ public f<Result<FileId>> SourceManager.addFile(const String& path) {
         text += c;
     }
     file.close();
-    return ok(this.addString(path, text));
+    const FileId id = this.addString(path, text);
+    this.files.get(id).fromDisk = true;
+    return ok(id);
 }
 
 /**
@@ -99,12 +101,13 @@ public f<FileId> SourceManager.addString(const String& path, const String& text)
 
 /**
  * @param path Path to look for
- * @return Id of the file, that was added with this path, or the invalid id
+ * @return Id of the file, that addFile read from this path, or the invalid id
  */
 public const f<FileId> SourceManager.findFile(const String& path) {
     for unsigned long i = 0l; i < this.files.size(); i++ {
         const FileId id = makeFileId(cast<unsigned int>(i));
-        if this.files.get(id).path == path {
+        const SourceFile& file = this.files.get(id);
+        if file.fromDisk && file.path == path {
             return id;
         }
     }
@@ -303,8 +306,25 @@ f<bool> testAddFileReusesIdsAndReportsUnreadableFiles() {
     const FileId stringA = sourceManager.addString(String("memory.spice"), String("a"));
     const FileId stringB = sourceManager.addString(String("memory.spice"), String("b"));
     assert stringA != stringB && sourceManager.getFileCount() == 3l;
+    // Neither is a string found by addFile, so the path is read from disk
+    const Result<FileId> notFound = sourceManager.addFile(String("memory.spice"));
+    assert !notFound.isOk();
     assert sourceManager.getRootSourceFilePath().isEmpty();
     sourceManager.setRootSourceFilePath(String("main.spice"));
     assert sourceManager.getRootSourceFilePath() == "main.spice";
+    return true;
+}
+
+#[test]
+f<bool> testCarriageReturnAndTabCountAsOneColumn() {
+    SourceManager sourceManager;
+    // Offsets: a0 \r1 \n2 \t3 b4
+    const FileId file = sourceManager.addString(String("crlf.spice"), String("a\r\n\tb"));
+    assert sourceManager.getLineAndColumn(file, 1u).col == 2l;
+    const LineAndColumn newline = sourceManager.getLineAndColumn(file, 2u);
+    assert newline.line == 2l && newline.col == 0l;
+    const LineAndColumn tab = sourceManager.getLineAndColumn(file, 3u);
+    const LineAndColumn b = sourceManager.getLineAndColumn(file, 4u);
+    assert tab.line == 2l && tab.col == 1l && b.col == 2l;
     return true;
 }
