@@ -39,6 +39,13 @@ public const f<T&> IdVec.get(Id<T> id) {
     return this.items.get(id.index);
 }
 
+/**
+ * @return Pointer to the first value, for hot loops that do their own bounds handling. Invalidated by push() and reserve()
+ */
+public const f<T*> IdVec.getDataPtr() {
+    return this.items.getDataPtr();
+}
+
 public const f<bool> IdVec.contains(Id<T> id) {
     return id.index < this.items.getSize();
 }
