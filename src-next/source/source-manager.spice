@@ -4,6 +4,7 @@
 import "std/data/vector";
 import "std/io/file";
 import "std/io/filepath";
+import "std/type/types";
 
 // Own imports
 import "@/base/id-vec";
@@ -80,7 +81,7 @@ public f<FileId> SourceManager.addString(const String& path, const String& text)
     file.text = text;
     file.lineStarts.pushBack(0u);
     const unsigned long length = text.getLength();
-    assert length < 4294967295ul; // Offsets have to fit into the 4 bytes of a Span
+    assert length < cast<unsigned long>(UINT_MAX_VALUE); // Offsets have to fit into the 4 bytes of a Span
     for unsigned long i = 0l; i < length; i++ {
         if text[i] == '\n' {
             file.lineStarts.pushBack(cast<unsigned int>(i + 1l));

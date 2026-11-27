@@ -2,6 +2,7 @@
 
 // Std imports
 import "std/data/vector";
+import "std/type/types";
 
 // Own imports
 import "@/base/id";
@@ -41,7 +42,7 @@ public inline f<FileId> makeFileId(unsigned int index) {
  * @return Invalid file id
  */
 public inline f<FileId> noFileId() {
-    return makeFileId(4294967295u);
+    return makeFileId(UINT_MAX_VALUE);
 }
 
 /**
@@ -51,5 +52,5 @@ public inline f<FileId> noFileId() {
  * @return Valid or not
  */
 public inline f<bool> isValid(const FileId& id) {
-    return id.index != 4294967295u;
+    return id.index != UINT_MAX_VALUE;
 }
