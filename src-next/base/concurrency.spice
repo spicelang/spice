@@ -143,12 +143,14 @@ f<bool> testParallelSectionsMayFollowEachOther() {
     return true;
 }
 
+// legacy: util/concurrency.spice:130-134
 // Shared map and the mutex that guards it. Bundled, so that the thread routines below only have to capture a single pointer
 type GuardedSharedMap struct {
     UnorderedMap<unsigned long, unsigned long>* sharedMap
     RecursiveMutex* mutex
 }
 
+// legacy: util/concurrency.spice:136-157
 // Increment the counters of the given map from multiple threads. The lock is constructed in the lambda body, so this also
 // covers ctor calls in capturing lambdas, which must not capture the struct type itself
 p incrementConcurrently(GuardedSharedMap* guardedMap) {
@@ -172,7 +174,7 @@ p incrementConcurrently(GuardedSharedMap* guardedMap) {
     pool.join();
 }
 
-// legacy: util/concurrency.spice:130-175
+// legacy: util/concurrency.spice:159-175
 #[test]
 f<bool> testConditionalLockGuardsSharedMapUnderContention() {
     UnorderedMap<unsigned long, unsigned long> sharedMap; // Stands in for the type registry / lookup caches
