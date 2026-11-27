@@ -1,0 +1,2409 @@
+{
+  "version": 1,
+  "metadata": {
+    "legacy": {
+      "path": "build/spice",
+      "commit": "41ee4a7b58743952fc95bdbb7a161654a0986434",
+      "stage0": "0.30.2",
+      "cpu": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+      "kernel": "6.18.44-fc-v880",
+      "runnerImage": "local",
+      "llvm": "23.x (Ubuntu apt llvm-23, not the pinned 23.1.6 source build of CI)"
+    }
+  },
+  "config": {
+    "suite": "full",
+    "thresholds": {
+      "compile/hello-world/O0-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/hello-world/O2-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/hello-world/O0-tpde": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/std-generics/O0-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/std-generics/O2-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/std-generics/O0-tpde": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/many-instantiations/O0-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/many-instantiations/O2-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/deep-imports/O0-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/deep-imports/O2-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/large-function/O0-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "compile/large-function/O2-llvm": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "runtime/binary-trees/O2": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "runtime/n-body/O2": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "runtime/fannkuch/O2": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "runtime/sieve/O2": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "runtime/hash-map/O2": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "runtime/string-builder/O2": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "runtime/regex/O2": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "self-compile/release": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      },
+      "self-compile-stage1/release": {
+        "instructions": 2.0,
+        "max-rss": 5.0,
+        "file-size": 3.0
+      }
+    },
+    "warnings": {
+      "percent": 10.0,
+      "min-delta-ms": 1.0,
+      "p-value": 0.01
+    },
+    "min-deltas": {
+      "max-rss": 1048576
+    }
+  },
+  "results": {
+    "legacy": {
+      "compile/hello-world/O0-llvm": {
+        "wall-time": {
+          "value": 49354365,
+          "lower_value": 48580235,
+          "upper_value": 52520980
+        },
+        "max-rss": {
+          "value": 41361408,
+          "lower_value": 41361408,
+          "upper_value": 41361408
+        },
+        "stage-lexer-and-parser": {
+          "value": 43,
+          "lower_value": 40,
+          "upper_value": 60
+        },
+        "stage-import-collector": {
+          "value": 1,
+          "lower_value": 0,
+          "upper_value": 1
+        },
+        "stage-symbol-table-builder": {
+          "value": 15,
+          "lower_value": 13,
+          "upper_value": 21
+        },
+        "stage-type-checker-pre": {
+          "value": 26,
+          "lower_value": 24,
+          "upper_value": 37
+        },
+        "stage-type-checker-post": {
+          "value": 18,
+          "lower_value": 16,
+          "upper_value": 26
+        },
+        "stage-ir-generator": {
+          "value": 135,
+          "lower_value": 124,
+          "upper_value": 269
+        },
+        "stage-ir-optimizer": {
+          "value": 158,
+          "lower_value": 115,
+          "upper_value": 187
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 1375,
+          "lower_value": 1243,
+          "upper_value": 2029
+        },
+        "count-source-files": {
+          "value": 1
+        },
+        "count-lines": {
+          "value": 5
+        },
+        "count-types": {
+          "value": 6
+        },
+        "count-type-checker-runs": {
+          "value": 1
+        },
+        "count-ir-functions": {
+          "value": 1
+        },
+        "count-ir-instructions": {
+          "value": 2
+        },
+        "instructions": {
+          "value": 10710311
+        }
+      },
+      "compile/hello-world/O2-llvm": {
+        "wall-time": {
+          "value": 51725820,
+          "lower_value": 46291659,
+          "upper_value": 61473320
+        },
+        "max-rss": {
+          "value": 45473792,
+          "lower_value": 45473792,
+          "upper_value": 45473792
+        },
+        "stage-lexer-and-parser": {
+          "value": 53,
+          "lower_value": 43,
+          "upper_value": 71
+        },
+        "stage-import-collector": {
+          "value": 1,
+          "lower_value": 1,
+          "upper_value": 2
+        },
+        "stage-symbol-table-builder": {
+          "value": 19,
+          "lower_value": 15,
+          "upper_value": 22
+        },
+        "stage-type-checker-pre": {
+          "value": 31,
+          "lower_value": 27,
+          "upper_value": 39
+        },
+        "stage-type-checker-post": {
+          "value": 25,
+          "lower_value": 18,
+          "upper_value": 26
+        },
+        "stage-ir-generator": {
+          "value": 172,
+          "lower_value": 127,
+          "upper_value": 202
+        },
+        "stage-ir-optimizer": {
+          "value": 1708,
+          "lower_value": 1259,
+          "upper_value": 1872
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 2647,
+          "lower_value": 1998,
+          "upper_value": 2826
+        },
+        "count-source-files": {
+          "value": 1
+        },
+        "count-lines": {
+          "value": 5
+        },
+        "count-types": {
+          "value": 6
+        },
+        "count-type-checker-runs": {
+          "value": 1
+        },
+        "count-ir-functions": {
+          "value": 1
+        },
+        "count-ir-instructions": {
+          "value": 2
+        },
+        "instructions": {
+          "value": 14173826
+        }
+      },
+      "compile/std-generics/O0-llvm": {
+        "wall-time": {
+          "value": 343432211,
+          "lower_value": 337988299,
+          "upper_value": 381476670
+        },
+        "max-rss": {
+          "value": 74121216,
+          "lower_value": 74121216,
+          "upper_value": 74121216
+        },
+        "stage-lexer-and-parser": {
+          "value": 21243,
+          "lower_value": 20203,
+          "upper_value": 25628
+        },
+        "stage-import-collector": {
+          "value": 3218,
+          "lower_value": 3091,
+          "upper_value": 3842
+        },
+        "stage-symbol-table-builder": {
+          "value": 5643,
+          "lower_value": 5348,
+          "upper_value": 6338
+        },
+        "stage-type-checker-pre": {
+          "value": 16983,
+          "lower_value": 15651,
+          "upper_value": 18732
+        },
+        "stage-type-checker-post": {
+          "value": 57114,
+          "lower_value": 51723,
+          "upper_value": 64500
+        },
+        "stage-ir-generator": {
+          "value": 41715,
+          "lower_value": 39940,
+          "upper_value": 50003
+        },
+        "stage-ir-optimizer": {
+          "value": 7433,
+          "lower_value": 6694,
+          "upper_value": 8640
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 100355,
+          "lower_value": 92014,
+          "upper_value": 123672
+        },
+        "count-source-files": {
+          "value": 30
+        },
+        "count-lines": {
+          "value": 8776
+        },
+        "count-types": {
+          "value": 1020
+        },
+        "count-type-checker-runs": {
+          "value": 55
+        },
+        "count-ir-functions": {
+          "value": 670
+        },
+        "count-ir-instructions": {
+          "value": 20459
+        },
+        "instructions": {
+          "value": 1444833875
+        }
+      },
+      "compile/std-generics/O2-llvm": {
+        "wall-time": {
+          "value": 1641333190,
+          "lower_value": 1553258547,
+          "upper_value": 1736266243
+        },
+        "max-rss": {
+          "value": 85409792,
+          "lower_value": 85409792,
+          "upper_value": 85409792
+        },
+        "stage-lexer-and-parser": {
+          "value": 21609,
+          "lower_value": 20392,
+          "upper_value": 31364
+        },
+        "stage-import-collector": {
+          "value": 3240,
+          "lower_value": 3086,
+          "upper_value": 5206
+        },
+        "stage-symbol-table-builder": {
+          "value": 5375,
+          "lower_value": 4917,
+          "upper_value": 8241
+        },
+        "stage-type-checker-pre": {
+          "value": 17447,
+          "lower_value": 15838,
+          "upper_value": 22333
+        },
+        "stage-type-checker-post": {
+          "value": 61588,
+          "lower_value": 52660,
+          "upper_value": 73408
+        },
+        "stage-ir-generator": {
+          "value": 50643,
+          "lower_value": 46585,
+          "upper_value": 54427
+        },
+        "stage-ir-optimizer": {
+          "value": 676486,
+          "lower_value": 633919,
+          "upper_value": 730742
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 693430,
+          "lower_value": 680561,
+          "upper_value": 731029
+        },
+        "count-source-files": {
+          "value": 30
+        },
+        "count-lines": {
+          "value": 8776
+        },
+        "count-types": {
+          "value": 1020
+        },
+        "count-type-checker-runs": {
+          "value": 55
+        },
+        "count-ir-functions": {
+          "value": 579
+        },
+        "count-ir-instructions": {
+          "value": 14886
+        },
+        "instructions": {
+          "value": 6264035884
+        }
+      },
+      "compile/many-instantiations/O0-llvm": {
+        "wall-time": {
+          "value": 562448710,
+          "lower_value": 505644770,
+          "upper_value": 687272976
+        },
+        "max-rss": {
+          "value": 99590144,
+          "lower_value": 99590144,
+          "upper_value": 99590144
+        },
+        "stage-lexer-and-parser": {
+          "value": 10406,
+          "lower_value": 9188,
+          "upper_value": 12056
+        },
+        "stage-import-collector": {
+          "value": 1247,
+          "lower_value": 1085,
+          "upper_value": 1341
+        },
+        "stage-symbol-table-builder": {
+          "value": 3263,
+          "lower_value": 2730,
+          "upper_value": 3430
+        },
+        "stage-type-checker-pre": {
+          "value": 7292,
+          "lower_value": 6511,
+          "upper_value": 9895
+        },
+        "stage-type-checker-post": {
+          "value": 111865,
+          "lower_value": 106387,
+          "upper_value": 149252
+        },
+        "stage-ir-generator": {
+          "value": 113477,
+          "lower_value": 101727,
+          "upper_value": 149480
+        },
+        "stage-ir-optimizer": {
+          "value": 10412,
+          "lower_value": 9708,
+          "upper_value": 20153
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 178689,
+          "lower_value": 161169,
+          "upper_value": 266336
+        },
+        "count-source-files": {
+          "value": 17
+        },
+        "count-lines": {
+          "value": 4393
+        },
+        "count-types": {
+          "value": 3177
+        },
+        "count-type-checker-runs": {
+          "value": 31
+        },
+        "count-ir-functions": {
+          "value": 2079
+        },
+        "count-ir-instructions": {
+          "value": 49205
+        },
+        "instructions": {
+          "value": 2950613989
+        }
+      },
+      "compile/many-instantiations/O2-llvm": {
+        "wall-time": {
+          "value": 2622979565,
+          "lower_value": 2543120039,
+          "upper_value": 2979447877
+        },
+        "max-rss": {
+          "value": 107732992,
+          "lower_value": 107732992,
+          "upper_value": 107732992
+        },
+        "stage-lexer-and-parser": {
+          "value": 10197,
+          "lower_value": 10025,
+          "upper_value": 13468
+        },
+        "stage-import-collector": {
+          "value": 1165,
+          "lower_value": 1081,
+          "upper_value": 1651
+        },
+        "stage-symbol-table-builder": {
+          "value": 3320,
+          "lower_value": 2854,
+          "upper_value": 4075
+        },
+        "stage-type-checker-pre": {
+          "value": 7014,
+          "lower_value": 6683,
+          "upper_value": 9483
+        },
+        "stage-type-checker-post": {
+          "value": 122894,
+          "lower_value": 111939,
+          "upper_value": 165995
+        },
+        "stage-ir-generator": {
+          "value": 113070,
+          "lower_value": 98435,
+          "upper_value": 138994
+        },
+        "stage-ir-optimizer": {
+          "value": 1020577,
+          "lower_value": 926169,
+          "upper_value": 1143825
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 1236057,
+          "lower_value": 1179937,
+          "upper_value": 1403341
+        },
+        "count-source-files": {
+          "value": 17
+        },
+        "count-lines": {
+          "value": 4393
+        },
+        "count-types": {
+          "value": 3177
+        },
+        "count-type-checker-runs": {
+          "value": 31
+        },
+        "count-ir-functions": {
+          "value": 1560
+        },
+        "count-ir-instructions": {
+          "value": 28676
+        },
+        "instructions": {
+          "value": 10304546901
+        }
+      },
+      "compile/deep-imports/O0-llvm": {
+        "wall-time": {
+          "value": 235062754,
+          "lower_value": 218836273,
+          "upper_value": 335340309
+        },
+        "max-rss": {
+          "value": 55468032,
+          "lower_value": 55468032,
+          "upper_value": 55468032
+        },
+        "stage-lexer-and-parser": {
+          "value": 4826,
+          "lower_value": 4117,
+          "upper_value": 6402
+        },
+        "stage-import-collector": {
+          "value": 7847,
+          "lower_value": 7211,
+          "upper_value": 10374
+        },
+        "stage-symbol-table-builder": {
+          "value": 1257,
+          "lower_value": 1036,
+          "upper_value": 1561
+        },
+        "stage-type-checker-pre": {
+          "value": 2941,
+          "lower_value": 2739,
+          "upper_value": 4054
+        },
+        "stage-type-checker-post": {
+          "value": 3472,
+          "lower_value": 3133,
+          "upper_value": 5005
+        },
+        "stage-ir-generator": {
+          "value": 15210,
+          "lower_value": 12694,
+          "upper_value": 20281
+        },
+        "stage-ir-optimizer": {
+          "value": 6078,
+          "lower_value": 4709,
+          "upper_value": 7741
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 114943,
+          "lower_value": 93546,
+          "upper_value": 152393
+        },
+        "count-source-files": {
+          "value": 101
+        },
+        "count-lines": {
+          "value": 1502
+        },
+        "count-types": {
+          "value": 310
+        },
+        "count-type-checker-runs": {
+          "value": 101
+        },
+        "count-ir-functions": {
+          "value": 201
+        },
+        "count-ir-instructions": {
+          "value": 2596
+        },
+        "instructions": {
+          "value": 603137492
+        }
+      },
+      "compile/deep-imports/O2-llvm": {
+        "wall-time": {
+          "value": 386190668,
+          "lower_value": 364464927,
+          "upper_value": 669767168
+        },
+        "max-rss": {
+          "value": 58986496,
+          "lower_value": 58986496,
+          "upper_value": 58986496
+        },
+        "stage-lexer-and-parser": {
+          "value": 6243,
+          "lower_value": 3955,
+          "upper_value": 9816
+        },
+        "stage-import-collector": {
+          "value": 9666,
+          "lower_value": 6550,
+          "upper_value": 15239
+        },
+        "stage-symbol-table-builder": {
+          "value": 1274,
+          "lower_value": 1219,
+          "upper_value": 2669
+        },
+        "stage-type-checker-pre": {
+          "value": 3398,
+          "lower_value": 2602,
+          "upper_value": 6096
+        },
+        "stage-type-checker-post": {
+          "value": 4861,
+          "lower_value": 3419,
+          "upper_value": 9151
+        },
+        "stage-ir-generator": {
+          "value": 16427,
+          "lower_value": 15513,
+          "upper_value": 32450
+        },
+        "stage-ir-optimizer": {
+          "value": 98715,
+          "lower_value": 93391,
+          "upper_value": 192718
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 168790,
+          "lower_value": 163081,
+          "upper_value": 330315
+        },
+        "count-source-files": {
+          "value": 101
+        },
+        "count-lines": {
+          "value": 1502
+        },
+        "count-types": {
+          "value": 310
+        },
+        "count-type-checker-runs": {
+          "value": 101
+        },
+        "count-ir-functions": {
+          "value": 201
+        },
+        "count-ir-instructions": {
+          "value": 801
+        },
+        "instructions": {
+          "value": 993636778
+        }
+      },
+      "compile/large-function/O0-llvm": {
+        "wall-time": {
+          "value": 260289032,
+          "lower_value": 257875196,
+          "upper_value": 272807964
+        },
+        "max-rss": {
+          "value": 94240768,
+          "lower_value": 94240768,
+          "upper_value": 94240768
+        },
+        "stage-lexer-and-parser": {
+          "value": 27682,
+          "lower_value": 26351,
+          "upper_value": 30215
+        },
+        "stage-import-collector": {
+          "value": 2,
+          "lower_value": 2,
+          "upper_value": 4
+        },
+        "stage-symbol-table-builder": {
+          "value": 12485,
+          "lower_value": 11686,
+          "upper_value": 13237
+        },
+        "stage-type-checker-pre": {
+          "value": 12365,
+          "lower_value": 11519,
+          "upper_value": 13642
+        },
+        "stage-type-checker-post": {
+          "value": 22165,
+          "lower_value": 20222,
+          "upper_value": 23063
+        },
+        "stage-ir-generator": {
+          "value": 28513,
+          "lower_value": 27159,
+          "upper_value": 31769
+        },
+        "stage-ir-optimizer": {
+          "value": 968,
+          "lower_value": 914,
+          "upper_value": 1088
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 62493,
+          "lower_value": 50927,
+          "upper_value": 64056
+        },
+        "count-source-files": {
+          "value": 1
+        },
+        "count-lines": {
+          "value": 7010
+        },
+        "count-types": {
+          "value": 10
+        },
+        "count-type-checker-runs": {
+          "value": 1
+        },
+        "count-ir-functions": {
+          "value": 2
+        },
+        "count-ir-instructions": {
+          "value": 37027
+        },
+        "instructions": {
+          "value": 908419722
+        }
+      },
+      "compile/large-function/O2-llvm": {
+        "wall-time": {
+          "value": 1223826881,
+          "lower_value": 1054262722,
+          "upper_value": 1343244764
+        },
+        "max-rss": {
+          "value": 87445504,
+          "lower_value": 87367680,
+          "upper_value": 87445504
+        },
+        "stage-lexer-and-parser": {
+          "value": 5005,
+          "lower_value": 4338,
+          "upper_value": 5227
+        },
+        "stage-import-collector": {
+          "value": 1,
+          "lower_value": 1,
+          "upper_value": 2
+        },
+        "stage-symbol-table-builder": {
+          "value": 1800,
+          "lower_value": 1684,
+          "upper_value": 1938
+        },
+        "stage-type-checker-pre": {
+          "value": 1864,
+          "lower_value": 1729,
+          "upper_value": 2613
+        },
+        "stage-type-checker-post": {
+          "value": 3479,
+          "lower_value": 3194,
+          "upper_value": 4433
+        },
+        "stage-ir-generator": {
+          "value": 4869,
+          "lower_value": 4564,
+          "upper_value": 5871
+        },
+        "stage-ir-optimizer": {
+          "value": 1069111,
+          "lower_value": 910604,
+          "upper_value": 1179439
+        },
+        "stage-bitcode-linker": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-lto-optimizer": {
+          "value": 0,
+          "lower_value": 0,
+          "upper_value": 0
+        },
+        "stage-object-emitter": {
+          "value": 83331,
+          "lower_value": 62752,
+          "upper_value": 119206
+        },
+        "count-source-files": {
+          "value": 1
+        },
+        "count-lines": {
+          "value": 1410
+        },
+        "count-types": {
+          "value": 10
+        },
+        "count-type-checker-runs": {
+          "value": 1
+        },
+        "count-ir-functions": {
+          "value": 1
+        },
+        "count-ir-instructions": {
+          "value": 2007
+        },
+        "instructions": {
+          "value": 8625968341
+        }
+      },
+      "runtime/binary-trees/O2": {
+        "file-size": {
+          "value": 198560
+        },
+        "wall-time": {
+          "value": 720931655,
+          "lower_value": 653980500,
+          "upper_value": 830272641
+        },
+        "max-rss": {
+          "value": 18710528,
+          "lower_value": 18710528,
+          "upper_value": 18722816
+        },
+        "instructions": {
+          "value": 175091943
+        }
+      },
+      "runtime/n-body/O2": {
+        "file-size": {
+          "value": 208512
+        },
+        "wall-time": {
+          "value": 591426766,
+          "lower_value": 515452325,
+          "upper_value": 619889274
+        },
+        "max-rss": {
+          "value": 1949696,
+          "lower_value": 1904640,
+          "upper_value": 1953792
+        },
+        "instructions": {
+          "value": 29613160
+        }
+      },
+      "runtime/fannkuch/O2": {
+        "file-size": {
+          "value": 198520
+        },
+        "wall-time": {
+          "value": 218591246,
+          "lower_value": 215195465,
+          "upper_value": 229891667
+        },
+        "max-rss": {
+          "value": 1998848,
+          "lower_value": 1998848,
+          "upper_value": 1998848
+        },
+        "instructions": {
+          "value": 9157239
+        }
+      },
+      "runtime/sieve/O2": {
+        "file-size": {
+          "value": 201384
+        },
+        "wall-time": {
+          "value": 601611631,
+          "lower_value": 568540458,
+          "upper_value": 656801520
+        },
+        "max-rss": {
+          "value": 51847168,
+          "lower_value": 51847168,
+          "upper_value": 51847168
+        },
+        "instructions": {
+          "value": 42658808
+        }
+      },
+      "runtime/hash-map/O2": {
+        "file-size": {
+          "value": 208544
+        },
+        "wall-time": {
+          "value": 810256562,
+          "lower_value": 653785567,
+          "upper_value": 898306924
+        },
+        "max-rss": {
+          "value": 152576000,
+          "lower_value": 152576000,
+          "upper_value": 152576000
+        },
+        "instructions": {
+          "value": 52744182
+        }
+      },
+      "runtime/string-builder/O2": {
+        "file-size": {
+          "value": 197880
+        },
+        "wall-time": {
+          "value": 305662067,
+          "lower_value": 239335229,
+          "upper_value": 394564315
+        },
+        "max-rss": {
+          "value": 52760576,
+          "lower_value": 52760576,
+          "upper_value": 52760576
+        },
+        "instructions": {
+          "value": 78947643
+        }
+      },
+      "runtime/regex/O2": {
+        "file-size": {
+          "value": 262464
+        },
+        "wall-time": {
+          "value": 677180211,
+          "lower_value": 611466760,
+          "upper_value": 716762419
+        },
+        "max-rss": {
+          "value": 5038080,
+          "lower_value": 5038080,
+          "upper_value": 5038080
+        },
+        "instructions": {
+          "value": 377670521
+        }
+      },
+      "self-compile/release": {
+        "wall-time": {
+          "value": 44194612778,
+          "lower_value": 43171415070,
+          "upper_value": 44785821379
+        },
+        "max-rss": {
+          "value": 659222528,
+          "lower_value": 659099648,
+          "upper_value": 659505152
+        },
+        "stage-lexer-and-parser": {
+          "value": 264831,
+          "lower_value": 232864,
+          "upper_value": 303634
+        },
+        "stage-import-collector": {
+          "value": 37430,
+          "lower_value": 33080,
+          "upper_value": 44510
+        },
+        "stage-symbol-table-builder": {
+          "value": 68605,
+          "lower_value": 58849,
+          "upper_value": 77085
+        },
+        "stage-type-checker-pre": {
+          "value": 214209,
+          "lower_value": 210409,
+          "upper_value": 217926
+        },
+        "stage-type-checker-post": {
+          "value": 2513738,
+          "lower_value": 2428378,
+          "upper_value": 2619914
+        },
+        "stage-ir-generator": {
+          "value": 1425803,
+          "lower_value": 1374598,
+          "upper_value": 1551833
+        },
+        "stage-ir-optimizer": {
+          "value": 8114790,
+          "lower_value": 7868844,
+          "upper_value": 8993437
+        },
+        "stage-bitcode-linker": {
+          "value": 2899353,
+          "lower_value": 2659655,
+          "upper_value": 2922855
+        },
+        "stage-lto-optimizer": {
+          "value": 12211261,
+          "lower_value": 11712977,
+          "upper_value": 12903063
+        },
+        "stage-object-emitter": {
+          "value": 14922250,
+          "lower_value": 13964755,
+          "upper_value": 15375435
+        },
+        "count-source-files": {
+          "value": 173
+        },
+        "count-lines": {
+          "value": 73444
+        },
+        "count-types": {
+          "value": 7320
+        },
+        "count-type-checker-runs": {
+          "value": 333
+        },
+        "count-ir-functions": {
+          "value": 6900
+        },
+        "count-ir-instructions": {
+          "value": 452822
+        },
+        "file-size": {
+          "value": 79987560
+        },
+        "instructions": {
+          "value": 165676397780
+        }
+      },
+      "self-compile-stage1/release": {
+        "wall-time": {
+          "value": 46171809359,
+          "lower_value": 45941071580,
+          "upper_value": 48088184602
+        },
+        "max-rss": {
+          "value": 659537920,
+          "lower_value": 659505152,
+          "upper_value": 659689472
+        },
+        "stage-lexer-and-parser": {
+          "value": 252381,
+          "lower_value": 235196,
+          "upper_value": 292179
+        },
+        "stage-import-collector": {
+          "value": 34400,
+          "lower_value": 33046,
+          "upper_value": 42599
+        },
+        "stage-symbol-table-builder": {
+          "value": 63331,
+          "lower_value": 55190,
+          "upper_value": 70171
+        },
+        "stage-type-checker-pre": {
+          "value": 250982,
+          "lower_value": 219548,
+          "upper_value": 269636
+        },
+        "stage-type-checker-post": {
+          "value": 2760408,
+          "lower_value": 2471745,
+          "upper_value": 3198196
+        },
+        "stage-ir-generator": {
+          "value": 1477417,
+          "lower_value": 1459979,
+          "upper_value": 1545704
+        },
+        "stage-ir-optimizer": {
+          "value": 8494816,
+          "lower_value": 8409258,
+          "upper_value": 8833980
+        },
+        "stage-bitcode-linker": {
+          "value": 2788469,
+          "lower_value": 2414478,
+          "upper_value": 3661291
+        },
+        "stage-lto-optimizer": {
+          "value": 12963953,
+          "lower_value": 12782632,
+          "upper_value": 13680375
+        },
+        "stage-object-emitter": {
+          "value": 15948794,
+          "lower_value": 14406968,
+          "upper_value": 16370876
+        },
+        "count-source-files": {
+          "value": 173
+        },
+        "count-lines": {
+          "value": 73444
+        },
+        "count-types": {
+          "value": 7320
+        },
+        "count-type-checker-runs": {
+          "value": 333
+        },
+        "count-ir-functions": {
+          "value": 6900
+        },
+        "count-ir-instructions": {
+          "value": 452822
+        },
+        "instructions": {
+          "value": 165760609840
+        }
+      }
+    }
+  },
+  "samples": {
+    "legacy": {
+      "compile/hello-world/O0-llvm": {
+        "wall-time": [
+          48580235,
+          49354365,
+          50426059,
+          48859313,
+          52520980
+        ],
+        "max-rss": [
+          41361408,
+          41361408,
+          41361408,
+          41361408,
+          41361408
+        ],
+        "stage-lexer-and-parser": [
+          40,
+          56,
+          43,
+          42,
+          60
+        ],
+        "stage-import-collector": [
+          1,
+          1,
+          0,
+          0,
+          1
+        ],
+        "stage-symbol-table-builder": [
+          13,
+          21,
+          15,
+          14,
+          20
+        ],
+        "stage-type-checker-pre": [
+          24,
+          37,
+          26,
+          24,
+          34
+        ],
+        "stage-type-checker-post": [
+          16,
+          26,
+          18,
+          17,
+          25
+        ],
+        "stage-ir-generator": [
+          127,
+          269,
+          124,
+          135,
+          184
+        ],
+        "stage-ir-optimizer": [
+          180,
+          153,
+          187,
+          115,
+          158
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          1329,
+          1953,
+          1375,
+          1243,
+          2029
+        ]
+      },
+      "compile/hello-world/O2-llvm": {
+        "wall-time": [
+          46291659,
+          46931034,
+          51725820,
+          61473320,
+          55973302
+        ],
+        "max-rss": [
+          45473792,
+          45473792,
+          45473792,
+          45473792,
+          45473792
+        ],
+        "stage-lexer-and-parser": [
+          47,
+          43,
+          71,
+          53,
+          61
+        ],
+        "stage-import-collector": [
+          1,
+          1,
+          2,
+          1,
+          1
+        ],
+        "stage-symbol-table-builder": [
+          17,
+          15,
+          22,
+          19,
+          21
+        ],
+        "stage-type-checker-pre": [
+          28,
+          27,
+          39,
+          31,
+          36
+        ],
+        "stage-type-checker-post": [
+          20,
+          18,
+          26,
+          25,
+          26
+        ],
+        "stage-ir-generator": [
+          137,
+          127,
+          172,
+          202,
+          190
+        ],
+        "stage-ir-optimizer": [
+          1321,
+          1259,
+          1872,
+          1708,
+          1866
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          1998,
+          1998,
+          2826,
+          2647,
+          2694
+        ]
+      },
+      "compile/std-generics/O0-llvm": {
+        "wall-time": [
+          342109620,
+          381476670,
+          343432211,
+          352205092,
+          337988299
+        ],
+        "max-rss": [
+          74121216,
+          74121216,
+          74121216,
+          74121216,
+          74121216
+        ],
+        "stage-lexer-and-parser": [
+          21218,
+          21243,
+          21277,
+          25628,
+          20203
+        ],
+        "stage-import-collector": [
+          3218,
+          3277,
+          3091,
+          3842,
+          3099
+        ],
+        "stage-symbol-table-builder": [
+          5643,
+          6338,
+          5437,
+          5808,
+          5348
+        ],
+        "stage-type-checker-pre": [
+          16983,
+          16151,
+          18123,
+          18732,
+          15651
+        ],
+        "stage-type-checker-post": [
+          54664,
+          57114,
+          64500,
+          60851,
+          51723
+        ],
+        "stage-ir-generator": [
+          43745,
+          50003,
+          40937,
+          39940,
+          41715
+        ],
+        "stage-ir-optimizer": [
+          7703,
+          8640,
+          7033,
+          6694,
+          7433
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          102462,
+          123672,
+          92014,
+          94097,
+          100355
+        ]
+      },
+      "compile/std-generics/O2-llvm": {
+        "wall-time": [
+          1553258547,
+          1736266243,
+          1590074370,
+          1641333190,
+          1682518849
+        ],
+        "max-rss": [
+          85409792,
+          85409792,
+          85409792,
+          85409792,
+          85409792
+        ],
+        "stage-lexer-and-parser": [
+          20392,
+          31364,
+          20993,
+          21609,
+          28545
+        ],
+        "stage-import-collector": [
+          3086,
+          5206,
+          3211,
+          3240,
+          4539
+        ],
+        "stage-symbol-table-builder": [
+          4917,
+          8241,
+          5375,
+          5207,
+          6691
+        ],
+        "stage-type-checker-pre": [
+          15838,
+          20953,
+          17447,
+          17097,
+          22333
+        ],
+        "stage-type-checker-post": [
+          52660,
+          57045,
+          61588,
+          63002,
+          73408
+        ],
+        "stage-ir-generator": [
+          46585,
+          54427,
+          48962,
+          50643,
+          53235
+        ],
+        "stage-ir-optimizer": [
+          633919,
+          730742,
+          651788,
+          676486,
+          695812
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          680561,
+          731029,
+          692771,
+          703019,
+          693430
+        ]
+      },
+      "compile/many-instantiations/O0-llvm": {
+        "wall-time": [
+          537858504,
+          562448710,
+          687272976,
+          505644770,
+          632561163
+        ],
+        "max-rss": [
+          99590144,
+          99590144,
+          99590144,
+          99590144,
+          99590144
+        ],
+        "stage-lexer-and-parser": [
+          11814,
+          9188,
+          10406,
+          9872,
+          12056
+        ],
+        "stage-import-collector": [
+          1340,
+          1085,
+          1247,
+          1133,
+          1341
+        ],
+        "stage-symbol-table-builder": [
+          3364,
+          2730,
+          3263,
+          2858,
+          3430
+        ],
+        "stage-type-checker-pre": [
+          7712,
+          6511,
+          7292,
+          6943,
+          9895
+        ],
+        "stage-type-checker-post": [
+          111865,
+          106387,
+          117037,
+          111225,
+          149252
+        ],
+        "stage-ir-generator": [
+          106957,
+          135647,
+          149480,
+          101727,
+          113477
+        ],
+        "stage-ir-optimizer": [
+          10309,
+          10412,
+          20153,
+          9708,
+          11453
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          177064,
+          178689,
+          266336,
+          161169,
+          199001
+        ]
+      },
+      "compile/many-instantiations/O2-llvm": {
+        "wall-time": [
+          2622979565,
+          2566142871,
+          2543120039,
+          2626965351,
+          2979447877
+        ],
+        "max-rss": [
+          107732992,
+          107732992,
+          107732992,
+          107732992,
+          107732992
+        ],
+        "stage-lexer-and-parser": [
+          10197,
+          10166,
+          10025,
+          10282,
+          13468
+        ],
+        "stage-import-collector": [
+          1152,
+          1275,
+          1081,
+          1165,
+          1651
+        ],
+        "stage-symbol-table-builder": [
+          2951,
+          3320,
+          2854,
+          3343,
+          4075
+        ],
+        "stage-type-checker-pre": [
+          6683,
+          7264,
+          6688,
+          7014,
+          9483
+        ],
+        "stage-type-checker-post": [
+          112499,
+          126417,
+          111939,
+          122894,
+          165995
+        ],
+        "stage-ir-generator": [
+          138994,
+          108119,
+          113070,
+          98435,
+          117356
+        ],
+        "stage-ir-optimizer": [
+          1009055,
+          1022462,
+          926169,
+          1020577,
+          1143825
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          1231076,
+          1179937,
+          1259424,
+          1236057,
+          1403341
+        ]
+      },
+      "compile/deep-imports/O0-llvm": {
+        "wall-time": [
+          238294530,
+          335340309,
+          230618138,
+          218836273,
+          235062754
+        ],
+        "max-rss": [
+          55468032,
+          55468032,
+          55468032,
+          55468032,
+          55468032
+        ],
+        "stage-lexer-and-parser": [
+          4826,
+          6402,
+          4130,
+          5017,
+          4117
+        ],
+        "stage-import-collector": [
+          7211,
+          10374,
+          7847,
+          8326,
+          7315
+        ],
+        "stage-symbol-table-builder": [
+          1249,
+          1561,
+          1257,
+          1338,
+          1036
+        ],
+        "stage-type-checker-pre": [
+          2739,
+          4054,
+          2830,
+          3359,
+          2941
+        ],
+        "stage-type-checker-post": [
+          3371,
+          5005,
+          3472,
+          3133,
+          3558
+        ],
+        "stage-ir-generator": [
+          14958,
+          20281,
+          15757,
+          12694,
+          15210
+        ],
+        "stage-ir-optimizer": [
+          6078,
+          6702,
+          5193,
+          4709,
+          7741
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          122812,
+          152393,
+          113176,
+          93546,
+          114943
+        ]
+      },
+      "compile/deep-imports/O2-llvm": {
+        "wall-time": [
+          364464927,
+          663565010,
+          376835006,
+          386190668,
+          669767168
+        ],
+        "max-rss": [
+          58986496,
+          58986496,
+          58986496,
+          58986496,
+          58986496
+        ],
+        "stage-lexer-and-parser": [
+          3955,
+          9816,
+          6446,
+          6243,
+          4955
+        ],
+        "stage-import-collector": [
+          6550,
+          15239,
+          11146,
+          9666,
+          8066
+        ],
+        "stage-symbol-table-builder": [
+          1242,
+          2669,
+          1219,
+          1720,
+          1274
+        ],
+        "stage-type-checker-pre": [
+          2602,
+          6096,
+          2738,
+          4098,
+          3398
+        ],
+        "stage-type-checker-post": [
+          3718,
+          9151,
+          3419,
+          5381,
+          4861
+        ],
+        "stage-ir-generator": [
+          16347,
+          29494,
+          15513,
+          16427,
+          32450
+        ],
+        "stage-ir-optimizer": [
+          96540,
+          192718,
+          93391,
+          98715,
+          190187
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          168573,
+          316220,
+          163081,
+          168790,
+          330315
+        ]
+      },
+      "compile/large-function/O0-llvm": {
+        "wall-time": [
+          258155859,
+          257875196,
+          260289032,
+          272807964,
+          266402944
+        ],
+        "max-rss": [
+          94240768,
+          94240768,
+          94240768,
+          94240768,
+          94240768
+        ],
+        "stage-lexer-and-parser": [
+          29078,
+          27574,
+          26351,
+          27682,
+          30215
+        ],
+        "stage-import-collector": [
+          3,
+          4,
+          2,
+          2,
+          2
+        ],
+        "stage-symbol-table-builder": [
+          13237,
+          11878,
+          11686,
+          12485,
+          13214
+        ],
+        "stage-type-checker-pre": [
+          12365,
+          11668,
+          11519,
+          13375,
+          13642
+        ],
+        "stage-type-checker-post": [
+          21888,
+          22499,
+          20222,
+          22165,
+          23063
+        ],
+        "stage-ir-generator": [
+          31769,
+          27896,
+          27159,
+          28513,
+          30272
+        ],
+        "stage-ir-optimizer": [
+          968,
+          1088,
+          914,
+          977,
+          961
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          63275,
+          64056,
+          50927,
+          61184,
+          62493
+        ]
+      },
+      "compile/large-function/O2-llvm": {
+        "wall-time": [
+          1311789755,
+          1343244764,
+          1054262722,
+          1192572821,
+          1223826881
+        ],
+        "max-rss": [
+          87445504,
+          87445504,
+          87367680,
+          87445504,
+          87445504
+        ],
+        "stage-lexer-and-parser": [
+          4338,
+          5227,
+          5122,
+          5005,
+          4820
+        ],
+        "stage-import-collector": [
+          2,
+          1,
+          1,
+          1,
+          1
+        ],
+        "stage-symbol-table-builder": [
+          1684,
+          1800,
+          1938,
+          1810,
+          1778
+        ],
+        "stage-type-checker-pre": [
+          1729,
+          1864,
+          1961,
+          2613,
+          1730
+        ],
+        "stage-type-checker-post": [
+          3194,
+          3479,
+          3565,
+          4433,
+          3218
+        ],
+        "stage-ir-generator": [
+          4564,
+          5712,
+          4869,
+          5871,
+          4694
+        ],
+        "stage-ir-optimizer": [
+          1084740,
+          1179439,
+          910604,
+          1043156,
+          1069111
+        ],
+        "stage-bitcode-linker": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-lto-optimizer": [
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "stage-object-emitter": [
+          119206,
+          87861,
+          72627,
+          62752,
+          83331
+        ]
+      },
+      "runtime/binary-trees/O2": {
+        "wall-time": [
+          830272641,
+          734699513,
+          720931655,
+          653980500,
+          716873321
+        ],
+        "max-rss": [
+          18722816,
+          18710528,
+          18710528,
+          18710528,
+          18710528
+        ]
+      },
+      "runtime/n-body/O2": {
+        "wall-time": [
+          619286077,
+          590797716,
+          515452325,
+          591426766,
+          619889274
+        ],
+        "max-rss": [
+          1904640,
+          1953792,
+          1949696,
+          1904640,
+          1953792
+        ]
+      },
+      "runtime/fannkuch/O2": {
+        "wall-time": [
+          225859520,
+          217514468,
+          218591246,
+          215195465,
+          229891667
+        ],
+        "max-rss": [
+          1998848,
+          1998848,
+          1998848,
+          1998848,
+          1998848
+        ]
+      },
+      "runtime/sieve/O2": {
+        "wall-time": [
+          568540458,
+          601611631,
+          602077501,
+          572265416,
+          656801520
+        ],
+        "max-rss": [
+          51847168,
+          51847168,
+          51847168,
+          51847168,
+          51847168
+        ]
+      },
+      "runtime/hash-map/O2": {
+        "wall-time": [
+          898306924,
+          828326333,
+          810256562,
+          809919562,
+          653785567
+        ],
+        "max-rss": [
+          152576000,
+          152576000,
+          152576000,
+          152576000,
+          152576000
+        ]
+      },
+      "runtime/string-builder/O2": {
+        "wall-time": [
+          239335229,
+          305662067,
+          394564315,
+          268352838,
+          330866777
+        ],
+        "max-rss": [
+          52760576,
+          52760576,
+          52760576,
+          52760576,
+          52760576
+        ]
+      },
+      "runtime/regex/O2": {
+        "wall-time": [
+          716762419,
+          653498248,
+          710433844,
+          611466760,
+          677180211
+        ],
+        "max-rss": [
+          5038080,
+          5038080,
+          5038080,
+          5038080,
+          5038080
+        ]
+      },
+      "self-compile/release": {
+        "wall-time": [
+          44194612778,
+          44307332464,
+          44145401860,
+          43171415070,
+          44785821379
+        ],
+        "max-rss": [
+          659222528,
+          659451904,
+          659185664,
+          659099648,
+          659505152
+        ],
+        "stage-lexer-and-parser": [
+          303634,
+          232864,
+          250557,
+          280601,
+          264831
+        ],
+        "stage-import-collector": [
+          44510,
+          33080,
+          37430,
+          38885,
+          37349
+        ],
+        "stage-symbol-table-builder": [
+          77085,
+          58849,
+          74492,
+          68605,
+          62106
+        ],
+        "stage-type-checker-pre": [
+          214209,
+          214470,
+          212811,
+          217926,
+          210409
+        ],
+        "stage-type-checker-post": [
+          2619914,
+          2513738,
+          2611078,
+          2428378,
+          2449257
+        ],
+        "stage-ir-generator": [
+          1551833,
+          1379840,
+          1425803,
+          1374598,
+          1448017
+        ],
+        "stage-ir-optimizer": [
+          8993437,
+          8114790,
+          7868844,
+          8358774,
+          8056247
+        ],
+        "stage-bitcode-linker": [
+          2805327,
+          2659655,
+          2922855,
+          2899749,
+          2899353
+        ],
+        "stage-lto-optimizer": [
+          11712977,
+          12685755,
+          12023646,
+          12211261,
+          12903063
+        ],
+        "stage-object-emitter": [
+          14282426,
+          14922250,
+          15375435,
+          13964755,
+          15017264
+        ]
+      },
+      "self-compile-stage1/release": {
+        "wall-time": [
+          46171809359,
+          45992178064,
+          47978775076,
+          48088184602,
+          45941071580
+        ],
+        "max-rss": [
+          659537920,
+          659517440,
+          659566592,
+          659505152,
+          659689472
+        ],
+        "stage-lexer-and-parser": [
+          269051,
+          235196,
+          252381,
+          292179,
+          237258
+        ],
+        "stage-import-collector": [
+          36709,
+          34400,
+          33720,
+          42599,
+          33046
+        ],
+        "stage-symbol-table-builder": [
+          63830,
+          58916,
+          63331,
+          70171,
+          55190
+        ],
+        "stage-type-checker-pre": [
+          262480,
+          249779,
+          219548,
+          250982,
+          269636
+        ],
+        "stage-type-checker-post": [
+          2831523,
+          2471745,
+          2760408,
+          3198196,
+          2672689
+        ],
+        "stage-ir-generator": [
+          1545704,
+          1468826,
+          1477417,
+          1479806,
+          1459979
+        ],
+        "stage-ir-optimizer": [
+          8774447,
+          8487769,
+          8494816,
+          8833980,
+          8409258
+        ],
+        "stage-bitcode-linker": [
+          3210206,
+          2414478,
+          2788469,
+          3661291,
+          2507134
+        ],
+        "stage-lto-optimizer": [
+          13183750,
+          12836002,
+          13680375,
+          12963953,
+          12782632
+        ],
+        "stage-object-emitter": [
+          14406968,
+          16279112,
+          16370876,
+          15695974,
+          15948794
+        ]
+      }
+    }
+  }
+}
