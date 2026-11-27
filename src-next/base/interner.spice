@@ -30,6 +30,11 @@ public type InternedString struct {
     public Hash hash
 }
 
+/**
+ * @param data Stored, NUL-terminated string
+ * @param length Length of the string without the terminator
+ * @param hash Hash of the string, as the interner computes it
+ */
 public p InternedString.ctor(string data, unsigned int length, Hash hash) {
     this.data = data;
     this.length = length;
@@ -46,7 +51,9 @@ public type Symbol alias Id<InternedString>;
  * until the interner is destructed, also when the table grows. The strings live in blocks of their own, NUL-terminated, so a
  * view is a plain string. The table is open addressing with linear probing over a power-of-two slot array, which holds
  * symbol index + 1 (0 is an empty slot). The hash of every string is kept, so growing needs no rehash of the bytes.
- * Not copyable: a copy would free the string blocks twice. Pass it by reference.
+ * A copy interns all strings of the original again, in the same order, so it holds the same symbols with views of its own. It is
+ * meant for tests, normally an interner is passed by reference. The interner owns a DefaultMemoryManager, so tests cannot count
+ * its allocations like they do for an Arena.
  */
 public type Interner struct {
     IdVec<InternedString> strings
@@ -57,10 +64,30 @@ public type Interner struct {
     unsigned long blockSize = 0l
 }
 
+/**
+ * Create an interner without strings
+ */
 public p Interner.ctor() {
     this.slots = Vector<unsigned int>(INITIAL_SLOT_COUNT, 0u);
 }
 
+/**
+ * Copy an interner. The strings are interned again in the order of the original, so each symbol of the original stands for the
+ * same string in the copy. The default copy would share the string blocks and free them twice
+ *
+ * @param other Interner to copy
+ */
+public p Interner.ctor(const Interner& other) {
+    this.slots = Vector<unsigned int>(INITIAL_SLOT_COUNT, 0u);
+    for unsigned int i = 0u; i < other.strings.size(); i++ {
+        const Symbol copied = this.intern(other.get(Symbol(i)));
+        assert copied.index == i;
+    }
+}
+
+/**
+ * Free the string blocks. All views of the interner are invalid afterwards
+ */
 public p Interner.dtor() {
     foreach byte* block : this.blocks {
         unsafe {
@@ -96,6 +123,8 @@ public f<Symbol> Interner.intern(string text) {
 
     // The string is new: copy it into the storage and register it
     const unsigned long length = getRawLength(text);
+    // The length and the index of the symbol have to fit into 4 bytes, and index + 1 must not become the empty marker
+    assert length <= 4294967295ul && this.strings.size() < 4294967295ul;
     const string stored = this.store(text, length);
     const Symbol symbol = this.strings.push(InternedString(stored, cast<unsigned int>(length), textHash));
     this.slots[idx] = symbol.index + 1u;
@@ -106,6 +135,12 @@ public f<Symbol> Interner.intern(string text) {
     return symbol;
 }
 
+/**
+ * Get the symbol of a string, creating it if the string is new. A String with an embedded NUL ends there
+ *
+ * @param text String to intern. The interner copies it
+ * @return Symbol of the string
+ */
 public f<Symbol> Interner.intern(const String& text) {
     return this.intern(text.getRaw());
 }
@@ -186,6 +221,13 @@ p Interner.grow() {
 
 // ─── tests ────────────────────────────────────────────────────────────────────
 
+// Address of a string view. Comparing two strings with == compares their contents, not their addresses
+f<unsigned long> addressOf(string view) {
+    unsafe {
+        return cast<unsigned long>(view);
+    }
+}
+
 f<String> makeName(unsigned long i) {
     return String("name-") + toString(i) + "-suffix";
 }
@@ -220,18 +262,20 @@ f<bool> testInternerViewsStayStableWhileGrowing() {
     Interner interner;
     const unsigned long count = 30000l;
     // Remember the views of the first strings. The table grows many times and the storage needs several blocks meanwhile
-    Vector<string> views;
+    Vector<unsigned long> viewAddresses;
     for unsigned long i = 0l; i < count; i++ {
         const Symbol symbol = interner.intern(makeName(i));
         assert symbol.index == cast<unsigned int>(i);
-        if i < 100l {
-            views.pushBack(interner.get(symbol));
+        // Views from many blocks: 30,000 names of about 20 bytes need several 64 KiB blocks
+        if i % 1000l == 0l {
+            viewAddresses.pushBack(addressOf(interner.get(symbol)));
         }
     }
     assert interner.getSize() == count;
-    for unsigned long i = 0l; i < 100l; i++ {
-        assert interner.get(Symbol(cast<unsigned int>(i))) == views.get(i);
-        assert String(views.get(i)) == makeName(i);
+    for unsigned long i = 0l; i < viewAddresses.getSize(); i++ {
+        const string view = interner.get(Symbol(cast<unsigned int>(i * 1000l)));
+        assert addressOf(view) == viewAddresses.get(i);
+        assert String(view) == makeName(i * 1000l);
     }
     // Interning the strings again finds the same symbols, and creates none
     for unsigned long i = 0l; i < count; i++ {
@@ -258,6 +302,46 @@ f<bool> testInternerStringLongerThanABlock() {
     return true;
 }
 
+#[test]
+f<bool> testInternerStringsAtTheBlockBoundaries() {
+    Interner interner;
+    // size == block size: the string and its terminator fill the first block exactly
+    String exactFit = String("");
+    for unsigned long i = 0l; i < STRING_BLOCK_SIZE - 1l; i++ {
+        exactFit += "a";
+    }
+    // length == block size: it does not fit with its terminator, so it gets a block of its own
+    String ownBlock = String("");
+    for unsigned long i = 0l; i < STRING_BLOCK_SIZE; i++ {
+        ownBlock += "b";
+    }
+    const Symbol first = interner.intern(exactFit);
+    const Symbol second = interner.intern(ownBlock);
+    const Symbol third = interner.intern("c");
+    assert interner.getLength(first) == STRING_BLOCK_SIZE - 1l && String(interner.get(first)) == exactFit;
+    assert interner.getLength(second) == STRING_BLOCK_SIZE && String(interner.get(second)) == ownBlock;
+    assert String(interner.get(third)) == "c";
+    assert interner.intern(exactFit) == first && interner.intern(ownBlock) == second;
+    return true;
+}
+
+#[test]
+f<bool> testInternerCopyKeepsSymbolsAndOwnsItsStrings() {
+    Interner original;
+    const Symbol a = original.intern("alpha");
+    const Symbol b = original.intern("beta");
+    {
+        Interner copy = original;
+        assert copy.getSize() == 2l && String(copy.get(a)) == "alpha" && String(copy.get(b)) == "beta";
+        assert addressOf(copy.get(a)) != addressOf(original.get(a));
+        assert copy.intern("beta") == b && copy.intern("gamma").index == 2u;
+        assert original.getSize() == 2l;
+    }
+    // The original is intact after the copy is gone
+    assert String(original.get(a)) == "alpha" && original.intern("alpha") == a;
+    return true;
+}
+
 // One run of the benchmark workload on a fresh interner. Returns the elapsed microseconds, the sum of the symbols is a checksum
 f<unsigned long> benchmarkInterner(const Vector<String>& names, unsigned long passes, unsigned long& checksum) {
     Interner interner;
@@ -271,7 +355,7 @@ f<unsigned long> benchmarkInterner(const Vector<String>& names, unsigned long pa
     return getCurrentMicros() - start;
 }
 
-// The same workload on a fresh UnorderedMap<String, unsigned int>, with one lookup per name like the interner
+// The same workload on a fresh UnorderedMap<String, unsigned int>, with one lookup per name on a hit like the interner
 f<unsigned long> benchmarkUnorderedMap(const Vector<String>& names, unsigned long passes, unsigned long& checksum) {
     UnorderedMap<String, unsigned int> map;
     checksum = 0l;

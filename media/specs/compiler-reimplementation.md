@@ -557,7 +557,7 @@ that matter for compatibility or performance. A complete file mapping is in
   - `Arena<T>`;
   - `Interner` (open addressing, `Symbol` ids, stable `const char*` views);
   - `IdVec<T>` and `SmallVec`;
-  - `hashCombine` and id hashing;
+  - `hashMix`, `hashPointer` and the `combineHashes` of the std; maps keyed by an id use `IdMap`;
   - `ConditionalLock` and `ParallelSection` (kept as they are);
   - `Timer`, process execution, file system helpers, the `spice.toml` reader.
 - **Replaces.** `util/block-allocator`, `util/memory`, `util/custom-hash-functions`, `util/lookup-cache` (the generic
@@ -1039,14 +1039,17 @@ The results are recorded in this document. An idiom that stage0 does not support
 - The table is open addressing with linear probing over a power-of-two slot array (symbol index + 1, 0 is empty), at most
   70 % full. Every string keeps its hash, so growing does not touch the bytes, and a probe compares the hash before it
   calls `strcmp`. The hash is `hashMix(hash(string))`: the FNV-1a of the std, mixed for its low bits.
-- The interner is not copyable (a copy would free the string blocks twice), so it is passed by reference.
+- A copy of an interner interns all strings of the original again, in the same order, so the symbols stay the same and the
+  copy owns its strings. The default copy would share the string blocks and free them twice (found in the review of 1.2b).
+  Normally an interner is passed by reference. It owns a `DefaultMemoryManager` instead of borrowing an `IMemoryManager`
+  like the `Arena`, so tests cannot count its allocations.
 - There is no interning of a string slice by length yet. The lexer (phase 2) either needs `intern(string, length)` or
   terminates the slice, which is decided there.
 - `hash(Id<T>)` of 1.2a is removed. Its overload made `hash` ambiguous in every file that imports `@/base/id` and
   `std/math/hash`, and no table could use it anyway (`IdMap` keys by the index).
 - Micro-benchmark (`testInternerBenchmarkAgainstUnorderedMap`, best of 3, 400,000 lookups of 20,000 names, one lookup per
-  name on both sides, `spice test -O2 src-next/main.spice`): the interner took 16.5-23.3 ms and the `UnorderedMap<String,
-  unsigned int>` 18.9-29.9 ms on a 4 vCPU Xeon at 2.1 GHz, so the interner is 8-25 % faster. The test prints the times
+  name on a hit on both sides, `spice test -O2 src-next/main.spice`): the interner took 16.5-23.3 ms and the `UnorderedMap<String,
+  unsigned int>` 18.9-29.9 ms on a 4 vCPU Xeon at 2.1 GHz, so the interner is faster in every run, by 2-25 %, which is within the noise of the machine. The test prints the times
   and asserts only that both sides compute the same result, because wall time is too noisy for an assertion in CI.
   The probe loop reads the slot and entry arrays through their data pointers: with the bounds-checked `Vector.get` and
   `IdVec.get` the interner was only on par with the map.

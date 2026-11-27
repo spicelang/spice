@@ -40,7 +40,7 @@ public const f<T&> IdVec.get(Id<T> id) {
 }
 
 /**
- * @return Pointer to the first value, for hot loops that do their own bounds handling. Invalidated by push() and reserve()
+ * @return Pointer to the first value, for hot loops that do their own bounds handling. Invalidated by push(), reserve() and clear()
  */
 public const f<T*> IdVec.getDataPtr() {
     return this.items.getDataPtr();
