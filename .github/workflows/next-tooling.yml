@@ -1,0 +1,44 @@
+name: Next tooling
+
+# Fast checks of the compiler re-implementation in src-next/ (media/specs/compiler-reimplementation.md, section 6.6 and 4.3).
+# They need no compiler: the generated files are up to date, the layering rules hold and the tool tests pass
+on:
+  push:
+    paths:
+      - src-next/**
+      - tools/gen/**
+      - tools/check_layering.py
+      - tools/test_check_layering.py
+      - .github/workflows/next-tooling.yml
+  pull_request:
+    paths:
+      - src-next/**
+      - tools/gen/**
+      - tools/check_layering.py
+      - tools/test_check_layering.py
+      - .github/workflows/next-tooling.yml
+  workflow_dispatch:
+
+jobs:
+  next-tooling:
+    name: Generators and layering
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check generated files
+        run: python tools/gen/generate.py --check
+
+      - name: Check layering
+        run: python tools/check_layering.py src-next
+
+      - name: Test the tools
+        run: |
+          python -m unittest tools/gen/test_generate.py
+          python -m unittest tools/test_check_layering.py
