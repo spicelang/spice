@@ -1,0 +1,51 @@
+// Spike 3: an interface with default methods, implemented by a generic struct (the shape of IAstVisitor and friends)
+type T int|long;
+
+type IVisitor interface {
+    f<long> visit(long);
+    f<long> visitAll(long);
+    p reset();
+}
+
+// Default methods
+f<long> IVisitor.visitAll(long n) {
+    long sum = 0l;
+    for long i = 0l; i < n; i++ {
+        sum += this.visit(i);
+    }
+    return sum;
+}
+
+p IVisitor.reset() {}
+
+type Counter<T> struct : IVisitor {
+    T step
+    long visits
+}
+
+p Counter.ctor(T step) {
+    this.step = step;
+    this.visits = 0l;
+}
+
+f<long> Counter.visit(long i) {
+    this.visits++;
+    return i * cast<long>(this.step);
+}
+
+p Counter.reset() {
+    this.visits = 0l;
+}
+
+#[test]
+f<bool> testDefaultMethodOnGenericStruct() {
+    Counter<int> intCounter = Counter<int>(2);
+    Counter<long> longCounter = Counter<long>(3l);
+    IVisitor* a = &intCounter;
+    IVisitor* b = &longCounter;
+    // sum(0..4) = 10
+    const bool first = a.visitAll(5l) == 20l && b.visitAll(5l) == 30l;
+    const bool counted = intCounter.visits == 5l && longCounter.visits == 5l;
+    a.reset();
+    return first && counted && intCounter.visits == 0l && longCounter.visits == 5l;
+}

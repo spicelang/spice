@@ -1,0 +1,20 @@
+// Spike 1, negative half: an Id<Sym> must NOT be accepted where an Id<Decl> is expected. Expected result: compile error
+type T dyn;
+
+type Id<T> struct {
+    unsigned int index
+}
+
+type Decl struct { int a }
+type Sym struct { long b }
+
+f<unsigned int> declIndex(Id<Decl> id) {
+    return id.index;
+}
+
+f<int> main() {
+    Id<Sym> s;
+    s.index = 1u;
+    printf("%d\n", declIndex(s));
+    return 0;
+}
