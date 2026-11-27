@@ -34,16 +34,14 @@ const string COLOR_CYAN = "\033[36m";
 public f<String> renderDiagnostic(const SourceManager& sourceManager, const Diagnostic& diagnostic) {
     const String prefix = getPrefix(diagnostic);
     const bool hasLocation = diagnostic.span.isValid();
-    String location;
-    if hasLocation {
-        location = formatPrettyLocation(sourceManager, diagnostic.span);
-    }
+    // An invalid span formats as 0:0, like the default CodeLoc of legacy
+    const String location = formatPrettyLocation(sourceManager, diagnostic.span);
     switch diagnostic.family {
         case DiagnosticFamily::LEXER: { return "[Error|Lexer] " + location + ": " + prefix + ": " + diagnostic.message; }
         case DiagnosticFamily::PARSER: { return "[Error|Parser] " + location + ": " + prefix + ": " + diagnostic.message; }
         case DiagnosticFamily::SEMANTIC: {
             // A semantic error without a node location (the span of the default CodeLoc) formats as 0:0
-            String text = "[Error|Semantic] " + (hasLocation ? location : String("0:0")) + ":\n" + prefix + ": " + diagnostic.message;
+            String text = "[Error|Semantic] " + location + ":\n" + prefix + ": " + diagnostic.message;
             if diagnostic.withSnippet {
                 const String snippet = getSnippet(sourceManager, diagnostic.span);
                 if !snippet.isEmpty() {
@@ -71,7 +69,7 @@ public f<String> renderDiagnostic(const SourceManager& sourceManager, const Diag
             } else if diagnostic.severity == Severity::ERROR {
                 label = String("Lint error");
             }
-            return "[" + label + "] " + (hasLocation ? location : String("0:0")) + ": " + prefix + ": " + diagnostic.message;
+            return "[" + label + "] " + location + ": " + prefix + ": " + diagnostic.message;
         }
         default: { panic(Error("Unknown diagnostic family")); }
     }

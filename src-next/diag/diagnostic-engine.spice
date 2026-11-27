@@ -19,7 +19,9 @@ public type ModuleDiagnostic struct {
     public Diagnostic diagnostic
 }
 
-public p ModuleDiagnostic.ctor() {}
+public p ModuleDiagnostic.ctor() {
+    this.module = noFileId();
+}
 
 public p ModuleDiagnostic.ctor(FileId module, const Diagnostic& diagnostic) {
     this.module = module;
@@ -33,15 +35,20 @@ public p ModuleDiagnostic.ctor(FileId module, const Diagnostic& diagnostic) {
  * Policies:
  * - Lexer, parser, CLI, compiler and linker errors are fatal. The legacy compiler aborted at the first one, so the first one is
  *   kept and the later ones are dropped.
+ * - A semantic error with `immediate` set is fatal like the errors above (legacy `abortWithSemanticError`).
  * - A hard semantic error is kept if it is the first one. The legacy compiler recorded it and aborted at the next checkpoint,
  *   so the pipeline stops at `mustStop()`, and the code between the report and the checkpoint still runs.
- * - A soft semantic error is collected per module and dropped, if the module has one at the same span start already. At
- *   `flushSoftErrors`, all soft errors of the module become one fatal `UNRESOLVED_SOFT_ERRORS` compiler error.
+ * - A soft semantic error is collected for the whole compilation, like the one `ErrorManager` of legacy, and dropped if there is
+ *   one at the same position already. At `flushSoftErrors`, all soft errors collected so far, also those of other modules, become
+ *   one fatal `UNRESOLVED_SOFT_ERRORS` compiler error.
  * - Warnings are collected per module, in the order of the reports. `collectWarnings` renders them without duplicates.
  * - Lint findings are collected per module and are not deduplicated.
  *
  * What stops the pipeline first, wins: a fatal error beats a hard error, because the legacy compiler printed a fatal error
  * right away and a hard error at the next checkpoint.
+ *
+ * The driver and the scheduler own what legacy decided per source file around the printing: no warnings and lint findings for
+ * std and package files or with `ignoreWarnings`, and the guard against visiting a module twice (circular imports).
  */
 // legacy: exception/error-manager.spice, source-file.spice:1275-1280 (checkForHardError), source-file.spice:1479-1489 (checkForSoftErrors),
 // source-file.spice:1509-1540 (collectAndPrintWarnings), source-file.spice:1550-1580 (collectAndPrintLintFindings)
@@ -70,7 +77,9 @@ public p DiagnosticEngine.ctor() {
 public p DiagnosticEngine.report(FileId module, const Diagnostic& diagnostic) {
     switch diagnostic.family {
         case DiagnosticFamily::SEMANTIC: {
-            if diagnostic.soft {
+            if diagnostic.immediate {
+                this.reportFatal(diagnostic);
+            } else if diagnostic.soft {
                 this.addSoftError(module, diagnostic);
             } else if !this.hardErrorReported {
                 this.hardErrorReported = true;
@@ -81,20 +90,26 @@ public p DiagnosticEngine.report(FileId module, const Diagnostic& diagnostic) {
         case DiagnosticFamily::LINT: { this.lintFindings.pushBack(ModuleDiagnostic(module, diagnostic)); }
         default: {
             // Lexer, parser, compiler, linker and CLI errors
-            if !this.fatalReported {
-                this.fatalReported = true;
-                this.fatal = diagnostic;
-            }
+            this.reportFatal(diagnostic);
         }
     }
 }
 
-// Collect a soft error, unless the module has one at the same position. The first one wins, also with another message
+// Keep the first fatal error. Legacy aborted at it, so no later one could occur
+// legacy: exception/fatal-error.spice (abortWithError)
+p DiagnosticEngine.reportFatal(const Diagnostic& diagnostic) {
+    if !this.fatalReported {
+        this.fatalReported = true;
+        this.fatal = diagnostic;
+    }
+}
+
+// Collect a soft error, unless there is one at the same position. The first one wins, also with another message
 // legacy: exception/error-manager.spice (addSoftError)
 p DiagnosticEngine.addSoftError(FileId module, const Diagnostic& diagnostic) {
     for unsigned long i = 0l; i < this.softErrors.getSize(); i++ {
         const ModuleDiagnostic& existing = this.softErrors.get(i);
-        if existing.module == module && existing.diagnostic.span.file == diagnostic.span.file && existing.diagnostic.span.start == diagnostic.span.start {
+        if existing.diagnostic.span.file == diagnostic.span.file && existing.diagnostic.span.start == diagnostic.span.start {
             return;
         }
     }
@@ -112,42 +127,32 @@ public const f<bool> DiagnosticEngine.mustStop() {
 }
 
 /**
- * Checkpoint for the soft errors of a module. If the module has soft errors and nothing stops the pipeline yet, they turn into
- * the fatal `UNRESOLVED_SOFT_ERRORS` error, in the order of the reports.
+ * Checkpoint for the soft errors. If there are any, all of them turn into the fatal `UNRESOLVED_SOFT_ERRORS` error, in the order
+ * of the reports. A hard error does not prevent that: legacy calls `checkForSoftErrors` also at places without a check for hard
+ * errors before (e.g. type-checker.spice:1804), and the scheduler does the `mustStop()` checkpoint where legacy has
+ * `checkForHardError`. Only an earlier fatal error stays, because legacy aborted at it.
  *
  * @param sourceManager Manager of the files, the soft errors are rendered when they are combined
- * @param module Module that completed
- * @return Whether the pipeline has to stop now
  */
 // legacy: source-file.spice:1479-1489
-public p DiagnosticEngine.flushSoftErrors(const SourceManager& sourceManager, FileId module) {
-    if this.mustStop() {
+public p DiagnosticEngine.flushSoftErrors(const SourceManager& sourceManager) {
+    if this.fatalReported {
         return;
     }
     String text = String("There are unresolved errors. Please fix them and recompile.");
-    bool found = false;
     for unsigned long i = 0l; i < this.softErrors.getSize(); i++ {
-        const ModuleDiagnostic& softError = this.softErrors.get(i);
-        if softError.module == module {
-            found = true;
-            text += "\n\n" + renderDiagnostic(sourceManager, softError.diagnostic);
-        }
+        text += "\n\n" + renderDiagnostic(sourceManager, this.softErrors.get(i).diagnostic);
     }
-    if found {
-        this.report(module, Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::UNRESOLVED_SOFT_ERRORS), Span(), text));
+    if !this.softErrors.isEmpty() {
+        this.reportFatal(Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::UNRESOLVED_SOFT_ERRORS), Span(), text));
     }
 }
 
 /**
- * @return Whether there are soft errors of the module that are not flushed
+ * @return Whether soft errors were collected
  */
-public const f<bool> DiagnosticEngine.hasSoftErrors(FileId module) {
-    for unsigned long i = 0l; i < this.softErrors.getSize(); i++ {
-        if this.softErrors.get(i).module == module {
-            return true;
-        }
-    }
-    return false;
+public const f<bool> DiagnosticEngine.hasSoftErrors() {
+    return !this.softErrors.isEmpty();
 }
 
 /**
@@ -167,14 +172,16 @@ public const f<String> DiagnosticEngine.renderStop(const SourceManager& sourceMa
 }
 
 /**
- * The warnings of a module as rendered texts, in the order of the reports. A text that occurs twice is returned once.
+ * The warnings of a module in the order of the reports. A warning whose text occurs twice is returned once. Print each with
+ * `renderDiagnosticLine`.
  *
  * @param sourceManager Manager of the files
  * @param module Module whose warnings are collected
- * @return Texts without color and line break
+ * @return Warnings without duplicates
  */
 // legacy: source-file.spice:1509-1540
-public const f<Vector<String>> DiagnosticEngine.collectWarnings(const SourceManager& sourceManager, FileId module) {
+public const f<Vector<Diagnostic>> DiagnosticEngine.collectWarnings(const SourceManager& sourceManager, FileId module) {
+    Vector<Diagnostic> collected;
     Vector<String> texts;
     for unsigned long i = 0l; i < this.warnings.getSize(); i++ {
         const ModuleDiagnostic& warning = this.warnings.get(i);
@@ -191,9 +198,27 @@ public const f<Vector<String>> DiagnosticEngine.collectWarnings(const SourceMana
         }
         if !printed {
             texts.pushBack(text);
+            collected.pushBack(warning.diagnostic);
         }
     }
-    return texts;
+    return collected;
+}
+
+/**
+ * The lint findings of a module in the order of the reports. They are not deduplicated.
+ *
+ * @param module Module whose findings are collected
+ * @return Findings
+ */
+// legacy: source-file.spice:1550-1580
+public const f<Vector<Diagnostic>> DiagnosticEngine.collectLintFindings(FileId module) {
+    Vector<Diagnostic> collected;
+    for unsigned long i = 0l; i < this.lintFindings.getSize(); i++ {
+        if this.lintFindings.get(i).module == module {
+            collected.pushBack(this.lintFindings.get(i).diagnostic);
+        }
+    }
+    return collected;
 }
 
 /**
@@ -236,40 +261,87 @@ f<bool> testFatalErrorsKeepTheFirst() {
 }
 
 #[test]
-f<bool> testSoftErrorsAreDeduplicatedAndFlushedPerModule() {
+f<bool> testSoftErrorsAreCollectedForAllModules() {
     SourceManager sourceManager;
     const FileId first = sourceManager.addString(String("source.spice"), String("aaa\nbbb\nccc\n"));
     const FileId second = sourceManager.addString(String("source1.spice"), String("xxx\n"));
     DiagnosticEngine engine;
     engine.report(first, makeTestError(first, 0u, 3u, "one", true));
-    // The same start offset, another message and end: dropped
+    // The same position, another message and end: dropped
     engine.report(first, makeTestError(first, 0u, 2u, "dropped", true));
     engine.report(first, makeTestError(first, 8u, 11u, "two", true));
+    // The same offset in another file is another position
     engine.report(second, makeTestError(second, 0u, 3u, "other module", true));
-    assert !engine.mustStop();
-    assert engine.hasSoftErrors(first) && engine.hasSoftErrors(second);
-    // A module without soft errors does not stop the pipeline
-    engine.flushSoftErrors(sourceManager, makeFileId(7u));
-    assert !engine.mustStop();
-    engine.flushSoftErrors(sourceManager, first);
+    assert !engine.mustStop() && engine.hasSoftErrors();
+    // Legacy has one ErrorManager: the checkpoint of the second module prints the soft errors of the first one as well
+    engine.flushSoftErrors(sourceManager);
     assert engine.mustStop();
     assert engine.renderStop(sourceManager) == "[Error|Compiler]:\nUnresolved soft errors: There are unresolved errors. Please fix them and recompile.\n\n" +
         "[Error|Semantic] source.spice:1:1:\nDuplicate symbol: one\n\n1  aaa\n   ^^^\n\n" +
-        "[Error|Semantic] source.spice:3:1:\nDuplicate symbol: two\n\n3  ccc\n   ^^^";
+        "[Error|Semantic] source.spice:3:1:\nDuplicate symbol: two\n\n3  ccc\n   ^^^\n\n" +
+        "[Error|Semantic] source1.spice:1:1:\nDuplicate symbol: other module\n\n1  xxx\n   ^^^";
     return true;
 }
 
 #[test]
-f<bool> testHardErrorBeatsSoftErrors() {
+f<bool> testFlushWithoutSoftErrorsDoesNotStop() {
+    SourceManager sourceManager;
+    DiagnosticEngine engine;
+    engine.flushSoftErrors(sourceManager);
+    assert !engine.mustStop() && !engine.hasSoftErrors();
+    return true;
+}
+
+#[test]
+f<bool> testSoftErrorsWinOverAHardErrorAtAFlush() {
     SourceManager sourceManager;
     const FileId file = sourceManager.addString(String("source.spice"), String("aaa\n"));
     DiagnosticEngine engine;
     engine.report(file, makeTestError(file, 0u, 3u, "soft", true));
     engine.report(file, makeTestError(file, 0u, 3u, "hard", false));
-    // The checkpoint of the hard error comes first, so the flush finds the pipeline stopped already
+    // Without a checkpoint for the hard error in between, legacy aborted with the soft errors (type-checker.spice:1804)
+    engine.flushSoftErrors(sourceManager);
+    assert engine.renderStop(sourceManager).startsWith("[Error|Compiler]:\nUnresolved soft errors:");
+    return true;
+}
+
+#[test]
+f<bool> testHardErrorBeatsSoftErrorsIfTheCheckpointComesFirst() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String("source.spice"), String("aaa\n"));
+    DiagnosticEngine engine;
+    engine.report(file, makeTestError(file, 0u, 3u, "soft", true));
+    engine.report(file, makeTestError(file, 0u, 3u, "hard", false));
+    // The scheduler stops at mustStop() and does not flush, as checkForHardError comes before checkForSoftErrors
     assert engine.mustStop();
-    engine.flushSoftErrors(sourceManager, file);
     assert engine.renderStop(sourceManager) == "[Error|Semantic] source.spice:1:1:\nDuplicate symbol: hard\n\n1  aaa\n   ^^^";
+    return true;
+}
+
+#[test]
+f<bool> testFatalErrorBeforeAFlushStays() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String("source.spice"), String("aaa\n"));
+    DiagnosticEngine engine;
+    engine.report(file, makeTestError(file, 0u, 3u, "soft", true));
+    engine.report(file, Diagnostic(DiagnosticFamily::CLI, 0u, Span(), String("fatal")));
+    engine.flushSoftErrors(sourceManager);
+    assert engine.renderStop(sourceManager) == "[Error|CLI] Incompatible options: fatal";
+    return true;
+}
+
+#[test]
+f<bool> testImmediateSemanticErrorIsFatal() {
+    SourceManager sourceManager;
+    const FileId file = sourceManager.addString(String("source.spice"), String("aaa\nbbb\n"));
+    DiagnosticEngine engine;
+    engine.report(file, makeTestError(file, 0u, 3u, "hard", false));
+    // legacy abortWithSemanticError prints right away, so it wins over the hard error that was recorded before
+    Diagnostic immediate = makeTestError(file, 4u, 7u, "immediate", false);
+    immediate.immediate = true;
+    engine.report(file, immediate);
+    engine.report(file, makeTestError(file, 0u, 3u, "later", false));
+    assert engine.renderStop(sourceManager) == "[Error|Semantic] source.spice:2:1:\nDuplicate symbol: immediate\n\n2  bbb\n   ^^^";
     return true;
 }
 
@@ -288,10 +360,10 @@ f<bool> testWarningsAreDeduplicatedPerModule() {
     engine.report(second, Diagnostic(DiagnosticFamily::WARNING, unusedImport, Span(second, 0u, 3u), String("a")));
     // Warnings never stop the pipeline
     assert !engine.mustStop();
-    const Vector<String> warnings = engine.collectWarnings(sourceManager, first);
+    const Vector<Diagnostic> warnings = engine.collectWarnings(sourceManager, first);
     assert warnings.getSize() == 2l;
-    assert warnings.get(0l) == "[Warning] source.spice:1:1: Unused import: a";
-    assert warnings.get(1l) == "[Warning] source.spice:2:1: Unused import: b";
+    assert renderDiagnosticLine(sourceManager, warnings.get(0l)) == "\033[33m[Warning] source.spice:1:1: Unused import: a\033[0m\n";
+    assert renderDiagnosticLine(sourceManager, warnings.get(1l)) == "\033[33m[Warning] source.spice:2:1: Unused import: b\033[0m\n";
     // Same message text in another module is another text
     assert engine.collectWarnings(sourceManager, second).getSize() == 1l;
     return true;
@@ -307,5 +379,7 @@ f<bool> testLintFindingsAreCountedBySeverity() {
     // Findings are not deduplicated and do not stop the pipeline
     assert engine.getLintErrorCount() == 2u;
     assert !engine.mustStop();
+    assert engine.collectLintFindings(file).getSize() == 3l;
+    assert engine.collectLintFindings(makeFileId(1u)).isEmpty();
     return true;
 }

@@ -45,6 +45,7 @@ public type Diagnostic struct {
     public String message // The text after the prefix, without the prefix
     public bool withSnippet = false // Show the source line below the message. Only semantic errors do
     public bool soft = false // Semantic errors only: a soft error does not stop the compilation right away, see DiagnosticEngine
+    public bool immediate = false // Semantic errors only: fatal at once like a lexer error, legacy abortWithSemanticError
     public String rule // Lint findings only: the id of the rule, which stands where the prefix stands in other diagnostics
 }
 
@@ -54,6 +55,7 @@ public p Diagnostic.ctor() {
     this.code = 0u;
     this.withSnippet = false;
     this.soft = false;
+    this.immediate = false;
 }
 
 /**
@@ -74,6 +76,7 @@ public p Diagnostic.ctor(DiagnosticFamily family, unsigned int code, const Span&
     this.message = message;
     this.withSnippet = family == DiagnosticFamily::SEMANTIC;
     this.soft = false;
+    this.immediate = false;
 }
 
 /**
@@ -92,6 +95,7 @@ public p Diagnostic.ctor(Severity severity, const String& rule, const Span& span
     this.message = message;
     this.withSnippet = false;
     this.soft = false;
+    this.immediate = false;
     this.rule = rule;
 }
 

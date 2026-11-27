@@ -579,14 +579,15 @@ that matter for compatibility or performance. A complete file mapping is in
 
 - **Responsibility.**
   - `Diagnostic { Severity, Family, code, Span, message, withSnippet }`, where `Family` is one of Lexer, Parser,
-    Semantic, Compiler, Linker, Cli, Warning or Lint. Two more fields carry what legacy kept in the class of a diagnostic: `soft` (semantic errors) and `rule`
-    (lint findings, which have the rule id where the others have the prefix).
+    Semantic, Compiler, Linker, Cli, Warning or Lint. Three more fields carry what legacy kept in the class of
+    a diagnostic: `soft` and `immediate` (semantic errors) and `rule` (lint findings, which have the rule id where the others
+    have the prefix).
   - `IDiagnosticSink`.
   - `DiagnosticEngine`, which implements the legacy policies:
     - lexer, parser, CLI and compiler errors are fatal;
     - for semantic errors the first hard error wins;
-    - soft errors are deduplicated by span start;
-    - soft errors are flushed per module at checkpoints into one `UNRESOLVED_SOFT_ERRORS` block;
+    - soft errors are collected for the whole compilation (legacy has one `ErrorManager`) and deduplicated by span start;
+    - at a checkpoint, all soft errors collected so far are flushed into one `UNRESOLVED_SOFT_ERRORS` block;
     - warnings are deduplicated per module.
   - Renderers for the exact legacy texts (`[Error|Semantic] <loc>:\n<prefix>: <message>\n\n<snippet>`, the colored
     `[Warning]` lines, lint findings).
@@ -938,7 +939,7 @@ Outputs must be below `src-next/` and start with the generated header. The CI jo
 |---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | `syntax/ast/ast.def`            | `ASTNodeKind`, node structs with typed child fields and child ranges, ctors, `accept`, `forEachChild`, kind names, `IAstVisitor` with defaults, the dot printer skeleton, the destruct switch |
 | `sema/sir/sir.def`              | `SirKind`, node structs, builders, `forEachChild`, the printer, verifier skeletons                                                         |
-| `diag/diagnostics.def`          | error and warning enums, prefixes, families, default severities                                                                             |
+| `diag/diagnostics.def`          | error and warning enums, their prefixes, the code counts and a test that visits every code                                                  |
 | `sema/ops/ops.def`              | the operator rule tables for sema (result kind and flags) and the `LoweringKind` mapping for codegen                                        |
 
 **Trade-off.** A generator is one more tool to maintain. In exchange, adding a language construct needs about four
@@ -1138,23 +1139,29 @@ The results are recorded in this document. An idiom that stage0 does not support
 - The catalog has 128 semantic codes, not 129 as the plan said before, and 1 lexer, 9 parser, 13 compiler, 5 linker, 13 CLI codes
   and 22 warnings. `tools/gen/extract_diagnostics_def.py` extracts `diagnostics.def` from the legacy enums and prefix tables once. The
   legacy compiler is frozen, so the definition is maintained by hand afterwards, and a unit test compares it with the legacy sources
-  (`--check`), so a legacy PR that adds a code cannot go unnoticed. `gen_diagnostics.py` writes one enum per family (codes are the
+  (`--check`), which the `next-tooling` workflow runs for pull requests that touch `src/exception/` or `compiler-warning.spice`
+  as well. Remove that test at the cutover. `gen_diagnostics.py` writes one enum per family (codes are the
   enum values of legacy, in the same order), the prefix function, the count and a unit test that visits every code.
-- `Diagnostic` has the fields of 5.3 plus `soft` and `rule`. A `Diagnostic` of a family with a catalog has `code`, the index of its
+- `Diagnostic` has the fields of 5.3 plus `soft`, `immediate` and `rule`. `immediate` makes a semantic error fatal at once, like
+  `abortWithSemanticError` (7 call sites in legacy), which beats a hard error that was recorded before. A `Diagnostic` of a family with a catalog has `code`, the index of its
   member. An invalid `Span` means that there is no location. `withSnippet` defaults to true for semantic errors only. There is no
   `IRError`, `ErrorManager` or `SoftError` any more: the engine holds the first fatal error, the first hard error and the lists.
 - Renderers. `renderDiagnostic` returns the legacy text without color and without the final line break. `renderDiagnosticLine` adds
   what `abortWithError` and `CompilerWarning.print` added: warnings are yellow, lint findings are info cyan, warning yellow and error
   red, errors are plain, and every line ends with `\n`. Warnings and lint findings go to **stdout**, like legacy (its doc comment says
   stderr). A semantic error without a location formats as `0:0`, as the default `CodeLoc` did.
-- `DiagnosticEngine`, keyed by the file id of the module. Fatal errors (lexer, parser, CLI, compiler, linker) keep the first one. A
+- `DiagnosticEngine`. Fatal errors (lexer, parser, CLI, compiler, linker, and an `immediate` semantic error) keep the first one. A
   hard semantic error is kept if it is the first, and a fatal error wins over a hard error, because legacy printed it at once and the
-  hard error at the next checkpoint. A soft error is dropped if the module has one with the same span start (legacy compared the
-  `CodeLoc` with line and column, which is the same position in a file). `flushSoftErrors` combines the soft errors of a module, in
-  report order, into the `UNRESOLVED_SOFT_ERRORS` compiler error with the legacy text. It does nothing if a fatal or hard error
-  exists, which is the order of `checkForHardError` before `checkForSoftErrors`. `collectWarnings` renders the warnings of a module in
-  report order and drops a text that it returned already (legacy: `warningMessage` equality per file). The engine takes the
-  `SourceManager` as an argument where it renders. It never prints and never exits.
+  hard error at the next checkpoint. Soft errors are global, like the one `ErrorManager` of legacy: a soft error is dropped if there is
+  one at the same position already (legacy compared the `CodeLoc` with path, line and column, which is the same position in a file).
+  `flushSoftErrors` combines all soft errors collected so far, of every module, in report order, into the `UNRESOLVED_SOFT_ERRORS`
+  compiler error with the legacy text. It bails out only for an earlier fatal error. A hard error does not stop it, because legacy
+  calls `checkForSoftErrors` also without a `checkForHardError` before (`type-checker.spice:1804`, `source-file.spice:1293`). Where
+  legacy checks for the hard error first, the scheduler calls `mustStop()` first. `collectWarnings` returns the warnings of a module in
+  report order and drops one whose text was returned already (legacy: `warningMessage` equality per file), to be printed with
+  `renderDiagnosticLine`. `collectLintFindings` returns the findings of a module. What stays with the driver and the scheduler: no
+  warnings and findings for std and package files or with `ignoreWarnings`, and the guard against visiting a module twice. The engine
+  takes the `SourceManager` as an argument where it renders. It never prints and never exits.
 - Lint findings are collected, never deduplicated, and counted by severity (`getLintErrorCount`), like `collectAndPrintLintFindings`.
 - Golden test: 50 cases (20 hard semantic, 12 with soft errors, 4 parser, 3 lexer, 3 CLI, 8 warning) sampled with a fixed seed by
   `tools/sample_diag_golden.py` into `test/fixtures/diag-golden.txt`. The test rebuilds each diagnostic from its reference file (family,
@@ -1270,7 +1277,8 @@ checkpoint becomes fatal as soon as a fatal or hard error exists.
 2. **Merge the name registries.** Dependencies first.
 3. **Resolve signatures, PRE order.** Dependencies first, then checkpoint per module.
 4. **Check bodies, POST order.** The root comes first. Dependencies are processed inside the round loop, as in
-   `runTypeCheckerPost`. There is a checkpoint after each module round, and a soft-error flush when a module completes.
+   `runTypeCheckerPost`. There is a checkpoint after each module round, and a soft-error flush when a module completes. The flush covers the soft errors of
+   all modules so far, not only those of the completed one.
 5. **Exported symbol collisions, allocator checks, the inference check.** Then checkpoint.
 6. **Warnings.** Printed at the end, dependencies first, deduplicated per module. The runner only compares those of the
    main file.

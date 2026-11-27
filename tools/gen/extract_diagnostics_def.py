@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """One-off extraction of src-next/diag/diagnostics.def from the enums and prefix tables of the legacy compiler (WP 1.4).
 
-The legacy compiler is frozen until the cutover, so the definition is extracted once and then maintained by hand. The script stays
+The legacy compiler is frozen until the cutover, so the definition is extracted once and then maintained by hand (an existing
+definition is only overwritten with --force). The script and its `--check`, which the unit tests of the tools run, stay
 to document where the entries come from, and to check that nothing was lost: `--check` fails if the legacy sources and the
 definition differ in the members, their order or their prefixes.
 
-    python tools/gen/extract_diagnostics_def.py            # (re)write src-next/diag/diagnostics.def
+    python tools/gen/extract_diagnostics_def.py --force    # overwrite src-next/diag/diagnostics.def
     python tools/gen/extract_diagnostics_def.py --check    # compare only
 """
 from __future__ import annotations
@@ -70,6 +71,7 @@ def render(entries: dict[str, tuple[str, list[tuple[str, str]]]]) -> str:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--check", action="store_true", help="only compare the legacy sources with the definition")
+    parser.add_argument("--force", action="store_true", help="overwrite an existing definition, also if it was edited by hand")
     parser.add_argument("--root", type=Path, default=REPO_ROOT)
     args = parser.parse_args(argv)
     content = render(extract(args.root))
@@ -79,6 +81,9 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{DEF_PATH} differs from the legacy sources", file=sys.stderr)
             return 1
         return 0
+    if path.exists() and not args.force:
+        print(f"{DEF_PATH} exists and is maintained by hand. Use --force to overwrite it", file=sys.stderr)
+        return 1
     path.write_text(content, encoding="utf-8")
     return 0
 

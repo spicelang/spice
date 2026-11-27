@@ -146,9 +146,9 @@ f<String> runGoldenCase(const String& kind, const String& dir) {
             const unsigned long prefixLength = String(getCompilerWarningTypePrefix(cast<CompilerWarningType>(code))).getLength() + 2l;
             engine.report(root, Diagnostic(DiagnosticFamily::WARNING, code, span, rest.getSubstring(prefixLength)));
         }
-        const Vector<String> warnings = engine.collectWarnings(sourceManager, root);
+        const Vector<Diagnostic> warnings = engine.collectWarnings(sourceManager, root);
         for unsigned long i = 0l; i < warnings.getSize(); i++ {
-            actual += warnings.get(i) + "\n";
+            actual += renderDiagnostic(sourceManager, warnings.get(i)) + "\n";
         }
     } else {
         Result<String> read = readFile((dir + "/exception.out").getRaw());
@@ -165,7 +165,7 @@ f<String> runGoldenCase(const String& kind, const String& dir) {
                 if separator < 0l { break; }
                 rest = rest.getSubstring(cast<unsigned long>(separator) + String(SOFT_SEPARATOR).getLength());
             }
-            engine.flushSoftErrors(sourceManager, root);
+            engine.flushSoftErrors(sourceManager);
         } else {
             engine.report(root, parseBlock(sourceManager, dir, expected, false));
         }
