@@ -1,0 +1,121 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Own imports
+import "@/source/source-file";
+
+/**
+ * A range of bytes of a source file. It replaces the 40-byte CodeLoc of the legacy compiler, which carried the path, line,
+ * column and the byte interval of a node and was copied into every token and node. Line and column are computed on demand by
+ * the SourceManager.
+ *
+ * `start` is the offset of the first byte and `stop` the offset after the last byte. The CodeLoc interval of the legacy
+ * compiler held the offset of the last byte (inclusive), so `stop` is that value plus one. A span of a single character that
+ * is missing, e.g. at the end of the file, is empty (`start == stop`).
+ */
+public type Span struct {
+    public FileId file = noFileId()
+    public unsigned int start = 0u
+    public unsigned int stop = 0u
+}
+
+public p Span.ctor() {
+    this.file = noFileId();
+    this.start = 0u;
+    this.stop = 0u;
+}
+
+/**
+ * @param file File that the span lies in
+ * @param start Offset of the first byte
+ * @param stop Offset after the last byte
+ */
+public p Span.ctor(FileId file, unsigned int start, unsigned int stop) {
+    assert start <= stop;
+    this.file = file;
+    this.start = start;
+    this.stop = stop;
+}
+
+/**
+ * Check if the span refers to a source file. Nodes that the parser did not create from tokens have no span. This is the
+ * counterpart to the empty interval of the CodeLoc (-1 .. -2), that suppressed the snippet in diagnostics.
+ *
+ * @return Valid or not
+ */
+public const f<bool> Span.isValid() {
+    return isValid(this.file);
+}
+
+/**
+ * @return Number of bytes of the span
+ */
+public const f<unsigned int> Span.length() {
+    return this.stop - this.start;
+}
+
+/**
+ * Check if this span begins before the other one. Like legacy `CodeLoc.isBefore`, the file is not compared, because the callers
+ * work on spans of the same file. Within one file, the order of the offsets is the order of line and column.
+ *
+ * @param other Other span
+ * @return Before or not
+ */
+// legacy: reader/code-loc.spice:158-160
+public const f<bool> Span.isBefore(const Span& other) {
+    return this.start < other.start;
+}
+
+/**
+ * Check if this span begins after the other one. The file is not compared, see isBefore.
+ *
+ * @param other Other span
+ * @return After or not
+ */
+// legacy: reader/code-loc.spice:168-170
+public const f<bool> Span.isAfter(const Span& other) {
+    return this.start > other.start;
+}
+
+/**
+ * Smallest span that covers both spans of the same file
+ *
+ * @param first First span
+ * @param second Second span
+ * @return Covering span
+ */
+public f<Span> mergeSpans(const Span& first, const Span& second) {
+    assert first.file == second.file;
+    const unsigned int start = first.start < second.start ? first.start : second.start;
+    const unsigned int stop = first.stop > second.stop ? first.stop : second.stop;
+    return Span(first.file, start, stop);
+}
+
+// Two spans are equal, if they cover the same bytes of the same file. This is stricter than `CodeLoc.operator==`, which compared
+// path, line and column only
+public f<bool> operator==(const Span& lhs, const Span& rhs) {
+    return lhs.file == rhs.file && lhs.start == rhs.start && lhs.stop == rhs.stop;
+}
+
+public f<bool> operator!=(const Span& lhs, const Span& rhs) {
+    return !(lhs == rhs);
+}
+
+#[test]
+f<bool> testSpanDefaultIsInvalidAndFits12Bytes() {
+    const Span span;
+    assert !span.isValid();
+    assert sizeof<Span>() == 12l;
+    return true;
+}
+
+#[test]
+f<bool> testSpanOrderAndMerge() {
+    const FileId file = makeFileId(0u);
+    const Span a = Span(file, 2u, 5u);
+    const Span b = Span(file, 4u, 9u);
+    assert a.isBefore(b) && b.isAfter(a) && !a.isAfter(b) && !a.isBefore(a);
+    const Span merged = mergeSpans(a, b);
+    assert merged == Span(file, 2u, 9u) && merged.length() == 7u;
+    assert a != b && a == Span(file, 2u, 5u);
+    return true;
+}

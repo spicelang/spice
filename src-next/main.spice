@@ -14,6 +14,10 @@ import "@/base/small-vec";
 import "@/base/strings";
 import "@/base/system";
 import "@/base/test-util";
+import "@/source/location";
+import "@/source/snippet";
+import "@/source/source-manager";
+import "@/source/span";
 
 /**
  * Entry point to the re-implementation of the Spice compiler. Only prints the version for now

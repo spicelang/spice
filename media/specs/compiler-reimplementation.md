@@ -1094,6 +1094,33 @@ The results are recorded in this document. An idiom that stage0 does not support
   best of 5, three runs: 48.6-51.9 ms against 48.7-51.9 ms, so within 0.5 %). The arena is a straight port, so it is on par, not faster. The
   measurement is a scratch project, because a test cannot import the legacy allocator. The interner gate was met in 1.2b.
 
+**Results (WP 1.3).**
+
+- `source` has five files: `source-file` (`SourceFile`, `FileId`), `span` (`Span`), `source-manager` (`SourceManager`,
+  `LineAndColumn`), `location` (the formatters and the pretty paths) and `snippet` (`getSnippet`). There is no `Reader`: the
+  `SourceManager` holds the text, and the lexer of phase 2 scans the buffer by offset.
+- `Span { FileId file; unsigned int start; unsigned int stop }` is 12 bytes (asserted by a test). `stop` is the offset **after** the
+  last byte, where the `CodeLoc` interval held the offset of the last byte (inclusive). A default `Span` has the invalid file id
+  (`noFileId()`) and takes the place of the empty interval `-1 .. -2`: it has no snippet. `FileId` is an alias of `Id<SourceFile>`;
+  an alias cannot be called, so `makeFileId` creates one. `isBefore` and `isAfter` compare the start offsets, which is the order of
+  line and column within one file.
+- Line and column are computed from a line table by binary search. They keep the numbers of the legacy `Reader`: columns count code
+  points (every byte except a UTF-8 continuation byte, up to and including the byte at the offset), `\r` counts as a column, there is
+  no tab handling, a `\n` has the next line and column 0, and the offset behind the last byte is the end of the file, which counts as a
+  column. Tests cover all of it, with the ported tests of `reader` and `code-loc`.
+- The formatters take the `SourceManager` and a `Span`: `formatLineAndColumn` (`toString` and `toPrettyLineAndColumn`, which are the
+  same in legacy), `formatPrettyLine`, `formatPrettyLocation` (`toPrettyString`) and `getPrettyFilePath`. The global
+  `ROOT_SOURCE_FILE_PATH` is the field `rootSourceFilePath` of the `SourceManager`, which the driver sets where
+  `GlobalResourceManager.createSourceFile` called `setRootSourceFilePath`.
+- `getSnippet` is `ASTNode.getErrorMessage` with the same steps, cut from the cached text. Its tests contain a snippet that the
+  legacy compiler printed for the same source, and the `dyn*` snippet of the `typechecker` reference files. The quirks stay: byte
+  offsets, so a marker below multibyte characters is misaligned, and a multi-line span loses its left context.
+- Intended differences: a source that the manager got from memory (stdin) has a snippet, where legacy had none, because it read the
+  file from disk again and could not find it. `SourceManager.addFile` returns an error with a constant message instead of the
+  `IO_ERROR` abort of the `Reader` ctor; the driver builds the text `Source file at path '<path>' cannot be opened.`. A path is read
+  once: `addFile` of a known path returns the known id. `CodeLoc.operator==` (path, line, column) is replaced by the `Span` comparison
+  (file and offsets). `isBefore` and `isAfter` of legacy compared only line and column.
+
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
 
