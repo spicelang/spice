@@ -18,6 +18,9 @@ public type IdMap<K, V> struct {
     UnorderedMap<unsigned int, V> entries
 }
 
+/**
+ * @param initialCapacity Number of entries to pre-allocate space for. 0 allocates lazily on the first insertion
+ */
 public p IdMap.ctor(unsigned long initialCapacity = 0l) {
     this.entries = UnorderedMap<unsigned int, V>(initialCapacity);
 }
@@ -52,22 +55,41 @@ public f<Result<V>> IdMap.getSafe(Id<K> id) {
     return this.entries.getSafe(id.index);
 }
 
+/**
+ * Remove the entry of the id. Does nothing, if there is none. Invalidates the references to the removed value
+ *
+ * @param id Key
+ */
 public p IdMap.remove(Id<K> id) {
     this.entries.remove(id.index);
 }
 
+/**
+ * @param id Key
+ * @return Whether a value is stored for the id
+ */
 public const f<bool> IdMap.contains(Id<K> id) {
     return this.entries.contains(id.index);
 }
 
+/**
+ * @return Number of stored entries
+ */
 public f<unsigned long> IdMap.getSize() {
     return this.entries.getSize();
 }
 
+/**
+ * @return Whether the map holds no entries
+ */
 public const f<bool> IdMap.isEmpty() {
     return this.entries.isEmpty();
 }
 
+/**
+ * Remove all entries. Invalidates all references to the stored values. A reference from get() otherwise stays valid, also
+ * when other ids are inserted, until its entry is removed
+ */
 public p IdMap.clear() {
     this.entries.clear();
 }
