@@ -4,61 +4,24 @@
 import "std/data/vector";
 import "std/io/file";
 import "std/io/filepath";
-import "std/os/filesystem";
 import "std/text/toml/toml-parser";
 import "std/text/toml/toml-value";
 import "std/type/type-conversion";
 
 // Own imports
 import "@/base/test-util";
+import "@/spice_packages/manifest/manifest-file";
 
 // legacy: util/manifest.spice. Only the generic reader is ported here. readLintConfig and readFormatConfig need the LintConfig
 // and the FormatConfig, so they are re-created in the lint and the format tool (phase 2 and 4), on top of this reader. The
 // legacy reader aborts with a CompilerError (INVALID_MANIFEST) in every error case. Base has no diagnostics, so this reader
 // records the message of the first error instead, and the tool turns it into the diagnostic with hasError() and getError().
+// The manifest package (src-next/spice.toml) finds the manifest of a source file and has manifestDisplayPath and makeAbsolutePath
 
 /**
  * Maximum for ManifestReader.readInteger, that means there is none. As in legacy, an upper bound of -1 is not possible
  */
 public const long NO_UPPER_BOUND = -1l;
-
-// The manifest package has functions of the same names (manifest-file). Base keeps its own copies, so that it needs no package. A file
-// that imports both has to import the package with an alias, and the copies are dropped when base starts to use the package
-/**
- * Make the given path absolute by prepending the working dir, if it is relative, and normalize it lexically
- *
- * @param path Path to make absolute
- * @return Absolute, lexically normal path
- */
-// legacy: spice_packages/manifest/manifest-file.spice:45-51
-public f<FilePath> makeAbsolutePath(const FilePath& path) {
-    if path.isAbsolute() {
-        return path.lexicallyNormal();
-    }
-    const FilePath absolutePath = FilePath(getCurrentWorkingDir()) / path;
-    return absolutePath.lexicallyNormal();
-}
-
-/**
- * Path of a manifest for messages, relative to the given base dir like the code locations of the compiler: './' for paths
- * within the base dir, '../' for paths above it and the path as given, if there is no relative one (e.g. on another drive)
- *
- * @param path Path of the manifest
- * @param baseDir Dir, that the path is printed relative to
- * @return Path for messages
- */
-// legacy: spice_packages/manifest/manifest-file.spice:98-108
-public f<String> manifestDisplayPath(const FilePath& path, const FilePath& baseDir) {
-    const FilePath relativePath = makeAbsolutePath(path).lexicallyRelative(makeAbsolutePath(baseDir));
-    const String relativePathStr = String(relativePath.toGenericString());
-    if relativePath.isEmpty() {
-        return String(path.toGenericString());
-    }
-    if relativePathStr.startsWith("../") {
-        return relativePathStr;
-    }
-    return "./" + relativePathStr;
-}
 
 /**
  * Reads the values of a manifest (spice.toml) and records the first error in it. After an error, all reads fail, so a tool can
@@ -279,18 +242,6 @@ f<bool> testManifestDisplayPath() {
     assert fromTestDir == "./spice.toml";
     assert readerFromSubDir.getDisplayPath() == "../../spice.toml";
     assert readerFromTestDir.getDisplayPath() == "./spice.toml";
-    return true;
-}
-
-// legacy: spice_packages/manifest/manifest-file.spice:162-173
-#[test]
-f<bool> testMakeAbsolutePath() {
-    assert makeAbsolutePath(FilePath("/main.spice")).toGenericString() == "/main.spice";
-    assert makeAbsolutePath(FilePath("/")).toGenericString() == "/";
-    assert makeAbsolutePath(FilePath("/a/b/../c")).toGenericString() == "/a/c";
-    // A relative path is resolved against the working dir
-    const FilePath resolved = makeAbsolutePath(FilePath("some/file.txt"));
-    assert resolved.isAbsolute() && String(resolved.toGenericString()).endsWith("/some/file.txt");
     return true;
 }
 

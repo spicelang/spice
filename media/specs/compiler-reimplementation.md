@@ -397,7 +397,7 @@ sub-component's façade. The exceptions are listed in this table:
 
 | Component             | May import                                                                                                                                                                                      |
 |-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `base`                | std only                                                                                                                                                                                         |
+| `base`                | std and packages                                                                                                                                                                                 |
 | `source`, `diag`      | `base`; `diag` also `source`                                                                                                                                                                      |
 | `syntax`              | `base`, `source`, `diag`                                                                                                                                                                          |
 | `modules`             | + `syntax`                                                                                                                                                                                       |
@@ -419,7 +419,8 @@ The script reads the points the table leaves open like this:
   `modules` and the read-only sema views `sema/types`, `sema/model`, `sema/names` and `sema/sir`.
 - `sema/sir` may import `sema/types` and `sema/model`. Only `sema/check`, `sema/lower`, `sema/dump`, `sema/warnings`
   and `codegen/*` may import it.
-- Imports from `@/spice_packages/` count like std imports. Files directly in `src-next/` belong to the driver layer.
+- Imports from `@/spice_packages/` count like std imports in every layer, `base` included (decision of WP 1.2c: `base/manifest` uses the
+  `manifest` package). Files directly in `src-next/` belong to the driver layer.
 - The façade rule is not checked.
 
 ### 4.4 Core data model
@@ -1076,13 +1077,16 @@ The results are recorded in this document. An idiom that stage0 does not support
   not be started (legacy: `IO_ERROR`), or the whole command, if it exited with an error (legacy: `LINKER_ERROR`). The driver builds the
   legacy texts from it.
 - `base/manifest`: the generic reader of `spice.toml`: `ManifestReader` (`parse`, `readBool`, `readInteger`, `readOneOf`, `expectTable`,
-  `reportUnknownKey`) and `manifestDisplayPath` and `makeAbsolutePath`, which legacy took from the `manifest` package (std only, so `base`
-  needs no package; the copies have the names of the package, so a file that imports both has to alias the package, and they go when `base`
-  starts to use the package). A nil value, e.g. of a missing key, is a mismatch of the type, as a wrong type is. The reader records the message of the first error instead of aborting, in the legacy text with the display path in
-  front, and every read fails after the first error. `readLintConfig` and `readFormatConfig` need `LintConfig` and `FormatConfig`, so the
-  lint and format tools re-create them on top of the reader. The legacy `testManifestConfig` needs both configs and `findManifest`, so it moves
-  with them. The reader tests cover the values, the exact messages (also those of `formatter/manifest-invalid` and
-  `linter/manifest-invalid`), an unreadable and an invalid manifest, and the display paths of the legacy test.
+  `reportUnknownKey`). It is the port of `util/manifest.spice`, which sits on top of the `manifest` package. `src-next` depends on the
+  package like `src` does (`src-next/spice.toml`, `src-next/spice.lock`, installed into `src-next/spice_packages` by `build.py`), and
+  `base/manifest` takes `manifestDisplayPath` and `makeAbsolutePath` from it instead of copying them. This needed a change of the
+  layering rule: `base` may import packages now (4.3). The reader records the message of the first error instead of aborting, in the
+  legacy text with the display path in front, and every read fails after the first error. A nil value, e.g. of a missing key, is a
+  mismatch of the type, as a wrong type is. `readLintConfig` and `readFormatConfig` need `LintConfig` and `FormatConfig`, so the lint
+  and format tools re-create them on top of the reader. The legacy `testManifestConfig` needs both configs and `findManifest`, so it
+  moves with them. The reader tests cover the values, the exact messages (also those of `formatter/manifest-invalid` and
+  `linter/manifest-invalid`), a missing key, an unreadable and an invalid manifest, and the display paths of the legacy test. The
+  builtin tests of the package (`manifest`, `manifest-file`, `semver`) run in the test build of `src-next` now, as they do for `src`.
 - Not ported to `base`, with the phase that owns them: `lookup-cache` (its hash-keyed pointer map and hit and miss counters are
   covered by `IdMap`, the statistics format of `cache-stats.out` has to be reproduced in `sema`), `compile-progress` (driver), and
   `compiler-warning` (diag).

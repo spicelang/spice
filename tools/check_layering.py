@@ -15,7 +15,7 @@ Decisions for points, that section 4.3 leaves open (keep in sync with the plan):
   * `codegen/*` components may import each other.
   * `tools/format` may import `syntax` and the layers below it. `tools/lint` and `tools/viz` may additionally import
     `modules` and the read-only sema views `sema/types`, `sema/model`, `sema/names` and `sema/sir`.
-  * Imports of `@/spice_packages/...` (Spice Shaker packages) count like std imports.
+  * Imports of `@/spice_packages/...` (Spice Shaker packages) count like std imports, in `base` as well.
   * The façade rule (imports across sub-components of a layer go through the façade) is not checked.
 
 Examples:
@@ -174,9 +174,7 @@ def check_imports(root: Path, files: list[Path]) -> list[Finding]:
                 findings.append(Finding(file, line_no, f'import "{match.group(1)}" leaves the source root'))
                 continue
             dep = component_of(target)
-            if dep is None:
-                if source == "base":
-                    findings.append(Finding(file, line_no, f'base may only import std, not "{match.group(1)}"'))
+            if dep is None:  # a package: counts like std in every layer, base included
                 continue
             if dep not in KNOWN_COMPONENTS:
                 findings.append(Finding(file, line_no, f'import "{match.group(1)}" targets an unknown component'))
