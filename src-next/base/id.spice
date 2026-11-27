@@ -1,11 +1,5 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
-// Std imports
-import "std/math/hash";
-
-// Own imports
-import "@/base/hash";
-
 type T dyn;
 
 /**
@@ -36,24 +30,12 @@ public f<bool> operator<<T>(const Id<T>& lhs, const Id<T>& rhs) {
     return lhs.index < rhs.index;
 }
 
-/**
- * Hash an id. The std hash table cannot resolve this overload (it calls hash() from the std module), and an IHashable base
- * would add a vtable pointer to the 4-byte id. Maps keyed by an id use IdMap, which keys the std table by the index.
- *
- * @param id Id to hash
- * @return Hash of the id
- */
-public f<Hash> hash<T>(const Id<T>& id) {
-    return hashMix(cast<Hash>(id.index));
-}
-
 #[test]
-f<bool> testIdEqualityOrderAndHash() {
+f<bool> testIdEqualityAndOrder() {
     const Id<int> a = Id<int>(3u);
     const Id<int> b = Id<int>(3u);
     const Id<int> c = Id<int>(4u);
     assert a == b && a != c && a < c && !(c < a);
-    assert hash(a) == hash(b) && hash(a) != hash(c);
     assert sizeof<Id<int>>() == 4l;
     return true;
 }

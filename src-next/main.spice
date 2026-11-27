@@ -6,6 +6,7 @@ import "@/base/hash";
 import "@/base/id";
 import "@/base/id-map";
 import "@/base/id-vec";
+import "@/base/interner";
 import "@/base/small-vec";
 import "@/base/strings";
 import "@/base/test-util";
