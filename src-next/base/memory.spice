@@ -1,0 +1,20 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// legacy: util/memory.spice:1-18
+
+public type IMemoryManager interface {
+    public f<heap byte*> allocate(unsigned long);
+    public p deallocate(heap byte*&);
+}
+
+public type DefaultMemoryManager struct : IMemoryManager {}
+
+public f<heap byte*> DefaultMemoryManager.allocate(unsigned long size) {
+    Result<heap byte*> allocation = sAlloc(size);
+    // Take the block out of the result: the caller becomes its owner, so the result must not free it on the way out
+    return allocation.unwrapAndMove();
+}
+
+public p DefaultMemoryManager.deallocate(heap byte*& ptr) {
+    sDealloc(ptr);
+}

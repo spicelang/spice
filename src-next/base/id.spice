@@ -1,0 +1,58 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/math/hash";
+
+// Own imports
+import "@/base/hash";
+
+type T dyn;
+
+/**
+ * Phantom-typed id. The type parameter is never stored, but the type checker rejects an Id<Sym> where an Id<Decl> is expected
+ * (spike of WP 1.1). Ids are dense indices into an IdVec<T> or another per-kind table. The index is 4 bytes wide.
+ */
+public type Id<T> struct {
+    public unsigned int index
+}
+
+public p Id.ctor() {
+    this.index = 0u;
+}
+
+public p Id.ctor(unsigned int index) {
+    this.index = index;
+}
+
+public f<bool> operator==<T>(const Id<T>& lhs, const Id<T>& rhs) {
+    return lhs.index == rhs.index;
+}
+
+public f<bool> operator!=<T>(const Id<T>& lhs, const Id<T>& rhs) {
+    return lhs.index != rhs.index;
+}
+
+public f<bool> operator<<T>(const Id<T>& lhs, const Id<T>& rhs) {
+    return lhs.index < rhs.index;
+}
+
+/**
+ * Hash an id, so that it can be used as a key of an UnorderedMap
+ *
+ * @param id Id to hash
+ * @return Hash of the id
+ */
+public f<Hash> hash<T>(const Id<T>& id) {
+    return hashMix(cast<Hash>(id.index));
+}
+
+#[test]
+f<bool> testIdEqualityOrderAndHash() {
+    const Id<int> a = Id<int>(3u);
+    const Id<int> b = Id<int>(3u);
+    const Id<int> c = Id<int>(4u);
+    assert a == b && a != c && a < c && !(c < a);
+    assert hash(a) == hash(b) && hash(a) != hash(c);
+    assert sizeof<Id<int>>() == 4l;
+    return true;
+}

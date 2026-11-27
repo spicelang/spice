@@ -1,0 +1,295 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/os/system";
+
+// Own imports
+import "@/base/memory";
+
+type T dyn;
+
+/**
+ * Typed bump allocator. Hands out stable storage for objects of type T from large blocks and destructs all of them, when the
+ * arena is destructed. Typed successor of BlockAllocator<Base>: there is no Base type, so the dtor destructs every object as
+ * the type it was reserved as.
+ */
+// legacy: util/block-allocator.spice:13-158
+public type Arena<T> struct {
+    IMemoryManager& memoryManager
+    // The heap qualifier is re-applied via a cast wherever a block is allocated, used or freed.
+    Vector<byte*> memoryBlocks
+    Vector<T*> allocatedObjects
+    unsigned long blockSize
+    unsigned long offsetInBlock = 0l
+}
+
+public p Arena.ctor(IMemoryManager& memoryManager, unsigned long blockSize = 0l) {
+    this.memoryManager = memoryManager;
+    this.blockSize = blockSize == 0l ? cast<unsigned long>(getPageSize()) : blockSize;
+    // We do not allow allocating objects that exceed the block size
+    assert sizeof<T>() <= this.blockSize;
+    // Allocate the first block
+    this.allocateNewBlock();
+}
+
+public p Arena.dtor() {
+    // Dereference, so that the destructor of the pointed-to object runs. A pointer type is trivially destructible
+    foreach T* ptr : this.allocatedObjects {
+        sDestruct(*ptr);
+    }
+    this.allocatedObjects.clear();
+
+    // Free all memory blocks
+    foreach byte* block : this.memoryBlocks {
+        unsafe {
+            this.memoryManager.deallocate(cast<heap byte*>(block));
+        }
+    }
+    this.memoryBlocks.clear();
+}
+
+/**
+ * Reserve uninitialized storage for one object of type T within the current block (allocating a new block if required). The
+ * caller has to construct the object in place (e.g. via __placement_new), so T does not need to be copyable.
+ *
+ * @return Pointer to the reserved storage
+ */
+public f<T*> Arena.reserve() {
+    // We do not allow allocating objects that exceed the block size
+    const unsigned long objSize = sizeof<T>();
+    assert objSize <= this.blockSize;
+    const unsigned long objAlign = alignof<T>();
+    assert objAlign > 0l && (objAlign & (objAlign - 1l)) == 0l;
+
+    // Place the object at the next address in the current block, that is aligned for T. If it does not fit, use a new block
+    unsigned long objOffset = this.getAlignedOffset(objAlign);
+    if objOffset + objSize > this.blockSize {
+        this.allocateNewBlock();
+        objOffset = this.getAlignedOffset(objAlign);
+        // The alignment of T exceeds, what the memory manager guarantees for the block, by more than the space left in the block
+        assert objOffset + objSize <= this.blockSize;
+    }
+
+    // Operate on a plain (non-heap) byte*: a named 'heap byte*' local would be freed again at scope exit
+    T* ptr;
+    unsafe {
+        byte* destAddr = this.memoryBlocks.back();
+        destAddr += objOffset;
+        ptr = cast<T*>(destAddr);
+    }
+
+    // Track the object, so that it gets destructed with the arena. Its address is stable already
+    this.allocatedObjects.pushBack(ptr);
+    this.offsetInBlock = objOffset + objSize;
+    return ptr;
+}
+
+/**
+ * Get the offset of the first address in the current block at or after the current offset, that is a multiple of the given
+ * alignment. The absolute address is aligned, so the alignment of the block itself does not matter.
+ *
+ * @param alignment Alignment in bytes, must be a power of two
+ * @return Aligned offset in the current block
+ */
+f<unsigned long> Arena.getAlignedOffset(unsigned long alignment) {
+    unsigned long blockAddr;
+    unsafe {
+        blockAddr = cast<unsigned long>(this.memoryBlocks.back());
+    }
+    const unsigned long addr = blockAddr + this.offsetInBlock;
+    const unsigned long alignedAddr = (addr + alignment - 1l) & ~(alignment - 1l);
+    return alignedAddr - blockAddr;
+}
+
+/**
+ * Hand the reserved objects over to the caller, which then has to destruct them. The memory blocks stay owned by the arena.
+ *
+ * @return Pointers to all objects, which were reserved via this arena
+ */
+public f<Vector<T*>> Arena.releaseObjects() {
+    Vector<T*> objects = this.allocatedObjects;
+    this.allocatedObjects.clear();
+    return objects;
+}
+
+/**
+ * @return Total number of bytes, which were allocated for memory blocks
+ */
+public const f<unsigned long> Arena.getTotalAllocatedSize() {
+    return this.memoryBlocks.getSize() * this.blockSize;
+}
+
+/**
+ * @return Number of objects, which were reserved via this arena
+ */
+public const f<unsigned long> Arena.getAllocationCount() {
+    return this.allocatedObjects.getSize();
+}
+
+p Arena.allocateNewBlock() {
+    // Reinterpret the block as a plain byte* right away. The block is freed manually in the dtor
+    byte* rawPtr;
+    unsafe {
+        rawPtr = cast<byte*>(this.memoryManager.allocate(this.blockSize));
+    }
+    if rawPtr == nil<byte*> {
+        panic(Error("Could not allocate memory block for Arena."));
+    }
+
+    // Store pointer and reset offset
+    this.memoryBlocks.pushBack(rawPtr);
+    this.offsetInBlock = 0l;
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+// Number of destructed dummy nodes. Spice only supports globals of primitive type, so the counter lives here
+unsigned long DESTRUCTED_DUMMY_NODES = 0l;
+
+type DummyNode struct {
+    unsigned long line
+    unsigned long col
+}
+
+public p DummyNode.ctor(unsigned long line, unsigned long col) {
+    this.line = line;
+    this.col = col;
+}
+
+public p DummyNode.dtor() {
+    unsafe {
+        DESTRUCTED_DUMMY_NODES++;
+    }
+}
+
+// Memory manager, that counts the allocated and deallocated blocks
+type CountingMemoryManager struct : IMemoryManager {
+    DefaultMemoryManager defaultMemoryManager
+    unsigned long allocations = 0l
+    unsigned long deallocations = 0l
+}
+
+public f<heap byte*> CountingMemoryManager.allocate(unsigned long size) {
+    this.allocations++;
+    return this.defaultMemoryManager.allocate(size);
+}
+
+public p CountingMemoryManager.deallocate(heap byte*& ptr) {
+    this.deallocations++;
+    this.defaultMemoryManager.deallocate(ptr);
+}
+
+// Allocate the given number of dummy nodes with an arena of the given block size and check that they are intact and
+// destructed together with the arena
+f<bool> allocateDummyNodes(unsigned long nodeCount, unsigned long blockSize, unsigned long nodesPerBlock) {
+    DESTRUCTED_DUMMY_NODES = 0l;
+    CountingMemoryManager memoryManager;
+    {
+        Arena<DummyNode> arena = Arena<DummyNode>(memoryManager, blockSize);
+
+        // Allocate nodes
+        Vector<DummyNode*> nodes;
+        for unsigned long i = 0l; i < nodeCount; i++ {
+            DummyNode* node = arena.reserve();
+            assert node != nil<DummyNode*>;
+            unsafe {
+                __placement_new<DummyNode>(node, i, 1l);
+            }
+            nodes.pushBack(node);
+        }
+
+        // Check that no node was overwritten by a later one
+        for unsigned long i = 0l; i < nodeCount; i++ {
+            DummyNode* node = nodes.get(i);
+            assert node.line == i;
+            assert node.col == 1l;
+        }
+
+        // Check if stats are correct
+        const unsigned long blockCount = (nodeCount + nodesPerBlock - 1l) / nodesPerBlock;
+        assert arena.getAllocationCount() == nodeCount;
+        assert arena.getTotalAllocatedSize() == blockCount * blockSize;
+        assert memoryManager.allocations == blockCount;
+        assert memoryManager.deallocations == 0l;
+
+        // The arena gets destructed here and with that, all allocated nodes should be destructed
+    }
+    assert DESTRUCTED_DUMMY_NODES == nodeCount;
+    assert memoryManager.deallocations == memoryManager.allocations;
+    return true;
+}
+
+#[test]
+f<bool> testArenaLarge() {
+    return allocateDummyNodes(100000l, sizeof<DummyNode>() * 5l, 5l);
+}
+
+#[test]
+f<bool> testArenaUnevenBlockSize() {
+    return allocateDummyNodes(1000l, sizeof<DummyNode>() * 9l / 2l, 4l);
+}
+
+#[test]
+f<bool> testArenaReleaseObjects() {
+    unsafe {
+        DESTRUCTED_DUMMY_NODES = 0l;
+    }
+    DefaultMemoryManager memoryManager;
+    Vector<DummyNode*> released;
+    {
+        Arena<DummyNode> arena = Arena<DummyNode>(memoryManager, sizeof<DummyNode>() * 2l);
+        for unsigned long i = 0l; i < 5l; i++ {
+            DummyNode* node = arena.reserve();
+            unsafe {
+                __placement_new<DummyNode>(node, i, 1l);
+            }
+        }
+        released = arena.releaseObjects();
+        assert released.getSize() == 5l;
+        assert arena.getAllocationCount() == 0l;
+        // The arena does not destruct released objects, the caller does
+        foreach DummyNode* node : released {
+            sDestruct(*node);
+        }
+    }
+    unsafe {
+        assert DESTRUCTED_DUMMY_NODES == 5l;
+    }
+    return true;
+}
+
+type SmallNode struct {
+    bool value
+}
+
+// The legacy test interleaved objects of two types in one allocator. A typed arena holds one type, so the alignment is
+// checked across blocks, whose size is not a multiple of the object size, and two arenas stay apart
+#[test]
+f<bool> testArenaMixedAlignment() {
+    DefaultMemoryManager memoryManager;
+    Arena<DummyNode> dummyArena = Arena<DummyNode>(memoryManager, sizeof<DummyNode>() * 2l + 1l);
+    Arena<SmallNode> smallArena = Arena<SmallNode>(memoryManager, 3l);
+    Vector<SmallNode*> smallNodes;
+    Vector<DummyNode*> dummyNodes;
+    for unsigned long i = 0l; i < 100l; i++ {
+        SmallNode* smallNode = smallArena.reserve();
+        smallNode.value = i % 3l == 0l;
+        smallNodes.pushBack(smallNode);
+
+        DummyNode* dummyNode = dummyArena.reserve();
+        unsafe {
+            assert cast<unsigned long>(dummyNode) % alignof<DummyNode>() == 0l;
+            __placement_new<DummyNode>(dummyNode, i, 2l);
+        }
+        dummyNodes.pushBack(dummyNode);
+    }
+    for unsigned long i = 0l; i < 100l; i++ {
+        assert smallNodes.get(i).value == (i % 3l == 0l);
+        assert dummyNodes.get(i).line == i;
+        assert dummyNodes.get(i).col == 2l;
+    }
+    assert dummyArena.getAllocationCount() == 100l;
+    assert smallArena.getAllocationCount() == 100l;
+    return true;
+}

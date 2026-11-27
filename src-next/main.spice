@@ -1,5 +1,14 @@
 // Copyright (c) 2021-2026 ChilliBits. All rights reserved.
 
+// Own imports. The imports pull the builtin tests of the base layer into the test build
+import "@/base/arena";
+import "@/base/hash";
+import "@/base/id";
+import "@/base/id-vec";
+import "@/base/small-vec";
+import "@/base/strings";
+import "@/base/test-util";
+
 /**
  * Entry point to the re-implementation of the Spice compiler. Only prints the version for now
  *

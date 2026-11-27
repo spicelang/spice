@@ -1,0 +1,82 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/text/json/json-value";
+
+// legacy: util/common-util.spice. buildVersionInfo() is not ported: it needs the llvm package, and base may only import
+// std. It moves to the driver layer.
+
+// External functions
+ext f<int> memcmp(string, string, unsigned long);
+
+/**
+ * Split the given haystack by the needle and return the last fragment
+ *
+ * @param haystack Input string
+ * @param needle String to search
+ * @return Last fragment
+ */
+public f<String> getLastFragment(const String& haystack, const string needle) {
+    const unsigned long index = haystack.rfind(needle);
+    return index != -1l ? haystack.getSubstring(index + getRawLength(needle)) : haystack;
+}
+
+/**
+ * Checks if the first string sorts lexicographically before the second one. This compares byte-wise.
+ *
+ * @param lhs First string
+ * @param rhs Second string
+ * @return Sorts before or not
+ */
+public f<bool> isStringLess(const String& lhs, const String& rhs) {
+    const unsigned long lhsLength = lhs.getLength();
+    const unsigned long rhsLength = rhs.getLength();
+    const unsigned long commonLength = lhsLength < rhsLength ? lhsLength : rhsLength;
+    if commonLength > 0l {
+        const int comparison = memcmp(lhs.getRaw(), rhs.getRaw(), commonLength);
+        if comparison != 0 {
+            return comparison < 0;
+        }
+    }
+    return lhsLength < rhsLength;
+}
+
+/**
+ * Add a field to a JSON object, keeping the fields sorted by key.
+ * The object takes ownership of the heap-allocated field value.
+ *
+ * @param object JSON object
+ * @param key Field key
+ * @param value Field value
+ */
+public p setJsonField(JsonValue* object, const String& key, JsonValue* value) {
+    const unsigned long size = object.getObjectSize();
+    unsigned long idx = 0l;
+    while idx < size && isStringLess(object.getObjectKey(idx), key) {
+        idx++;
+    }
+    assert idx == size || object.getObjectKey(idx) != key; // Overwriting fields is not supported
+    object.insertObjectField(idx, key, value);
+}
+
+// ─── tests ────────────────────────────────────────────────────────────────────
+
+#[test]
+f<bool> testGetLastFragment() {
+    assert getLastFragment(String("This is a test"), " ") == "test";
+    assert getLastFragment(String("This_is_a_test"), "_") == "test";
+    assert getLastFragment(String("This.is.a."), ".") == "";
+    assert getLastFragment(String("This is a test"), "This is a test ") == "This is a test";
+    return true;
+}
+
+#[test]
+f<bool> testIsStringLess() {
+    assert isStringLess(String("a"), String("b"));
+    assert !isStringLess(String("b"), String("a"));
+    assert !isStringLess(String("a"), String("a"));
+    assert isStringLess(String("ab"), String("abc")); // A prefix sorts first
+    assert isStringLess(String(""), String("a"));
+    assert isStringLess(String("Z"), String("a")); // Byte-wise, like std::string
+    return true;
+}

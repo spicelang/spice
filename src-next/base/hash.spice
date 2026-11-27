@@ -1,0 +1,65 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/math/hash";
+
+type T dyn;
+
+/**
+ * Final avalanche step of splitmix64. Spreads the entropy of the input over all bits
+ *
+ * @param hash Input value
+ * @return Mixed value
+ */
+// legacy: util/custom-hash-functions.spice, hashMix
+public f<Hash> hashMix(Hash hash) {
+    hash += 0x9e3779b97f4a7c15ul;
+    hash = (hash ^ (hash >> 30ul)) * 0xbf58476d1ce4e5b9ul;
+    hash = (hash ^ (hash >> 27ul)) * 0x94d049bb133111ebul;
+    hash ^= (hash >> 31ul);
+    return hash;
+}
+
+/**
+ * Combine a value into the running hash
+ *
+ * @param hash Running hash, updated in place
+ * @param value Value to combine
+ */
+// legacy: util/custom-hash-functions.spice, hashCombine64
+public p hashCombine64(Hash& hash, Hash value) {
+    hash ^= hashMix(value + 0x9e3779b97f4a7c15ul + (hash << 6ul) + (hash >> 2ul));
+}
+
+/**
+ * Hash the address of a pointer. The low bits are dropped, because allocations are aligned
+ *
+ * @param value Pointer to hash
+ * @return Hash of the address
+ */
+// legacy: util/custom-hash-functions.spice, hashPointer
+public f<Hash> hashPointer<T>(const T* value) {
+    unsafe {
+        return cast<Hash>(value) >> 3ul;
+    }
+}
+
+#[test]
+f<bool> testHashMixIsDeterministicAndSpreads() {
+    assert hashMix(1ul) == hashMix(1ul);
+    assert hashMix(1ul) != hashMix(2ul);
+    assert hashMix(0ul) != 0ul;
+    return true;
+}
+
+#[test]
+f<bool> testHashCombine64DependsOnOrder() {
+    Hash ab = 0ul;
+    hashCombine64(ab, 1ul);
+    hashCombine64(ab, 2ul);
+    Hash ba = 0ul;
+    hashCombine64(ba, 2ul);
+    hashCombine64(ba, 1ul);
+    assert ab != ba;
+    return true;
+}

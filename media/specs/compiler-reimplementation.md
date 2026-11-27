@@ -1007,6 +1007,23 @@ Some idioms have to be confirmed against the stage0 compiler before they are use
 
 The results are recorded in this document. An idiom that stage0 does not support is replaced before phase 2 starts.
 
+**Split of WP 1.2.** WP 1.2 is too large for one PR (10.2), so it is delivered in three: **1.2a** `Id<T>`, `IdVec<T>`,
+`SmallVec<T>`, `Arena<T>`, `IMemoryManager`, hashing, the string helpers and the test helpers; **1.2b** the `Interner`;
+**1.2c** concurrency, `Timer`, process and file system helpers, the manifest reader and their tests.
+
+**Results (WP 1.2a).**
+
+- `Arena<T>` is typed: `reserve()` returns a `T*`, and the dtor destructs every object as `T`. The legacy `BlockAllocator<Base>`
+  destructed everything as `Base`, which made a pool of different node types leak members. The legacy test that mixed two
+  types in one allocator is ported as two arenas (`testArenaMixedAlignment`). The other three tests keep their facts.
+- `SmallVec<T>` keeps four elements inline and the rest in a heap `Vector<T>`. Spice has no value parameters for generics,
+  so the inline capacity is a constant. It is meant for trivially copyable elements.
+- `buildVersionInfo()` of `common-util` needs the `llvm` package, so it is not part of `base/strings`. It moves to the
+  driver layer (phase 3).
+- `hashQualType` and the other hash functions that depend on legacy types are not ported. Only `hashMix`, `hashCombine64`
+  and `hashPointer` are generic. `hash(Id<T>)` is new. `test-util` has no `#[test]` function of its own (the count of 1 in
+  8.5 is the helper library), so it is ported as is. `SaveAndRestore` is not part of 1.2a.
+
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
 
