@@ -9,6 +9,7 @@ python benchmark/run-benchmarks.py run --compiler next=build/spice-next --suite 
 python - <<'PY'
 # merge the baseline and the next results into one file, then compare
 import json
+# Replace the path by build/benchmark-local-legacy.json for a baseline recorded on this machine
 base = json.load(open("benchmark/baselines/legacy-41ee4a7.json"))
 nxt = json.load(open("build/benchmark-next.json"))
 for key in ("metadata", "results", "samples"):
@@ -22,7 +23,7 @@ python benchmark/run-benchmarks.py compare build/benchmark-merged.json --baselin
 
 ```sh
 python build.py                                   # release build of the legacy compiler (-O3, LTO)
-python benchmark/run-benchmarks.py run --compiler legacy=build/spice --suite full
+python benchmark/run-benchmarks.py run --compiler legacy=build/spice --suite full -o build/benchmark-local-legacy.json
 ```
 
 - Commit: `41ee4a7` (`main` after WP 0.5), stage0 0.30.2.
@@ -30,7 +31,9 @@ python benchmark/run-benchmarks.py run --compiler legacy=build/spice --suite ful
 - The nightly `Benchmark` workflow uses the pinned LLVM 23.1.6 source build. **Instruction counts, sizes and peak memory
   usage differ slightly between the two LLVM builds. Wall times and stage times differ by machine.** Compare candidates
   only against a baseline of the same machine and LLVM build (re-record it with the command above), or against the
-  nightly Bencher history. The numbers below are the reference for orders of magnitude and for the ratios.
+  nightly Bencher history.
+  To re-record the baseline on another machine, write it to its own file (`-o build/benchmark-local-legacy.json`) and
+  merge that file instead of the checked-in one in the recipe above. The checked-in file stays the historical reference. The numbers below are the reference for orders of magnitude and for the ratios.
 - The self-compile benchmarks build the compiler sources with the release settings of `build.py`. The `-O0` self-compile
   of the budget table in section 6.5 is not part of the suite yet.
 
