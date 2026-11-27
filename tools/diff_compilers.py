@@ -48,6 +48,7 @@ import ir_normalize  # noqa: E402
 EXE_SUFFIX = ".exe" if os.name == "nt" else ""
 COMPILE_TIMEOUT = 900
 RUN_TIMEOUT = 60
+TIMEOUT_PREFIX = "<timeout after "
 OPT_LEVELS = ["0", "2"]
 ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
 SCOPES = ["all", "tests", "std", "compiler", "docs"]
@@ -60,7 +61,8 @@ class Case:
     scope: str  # 'tests', 'std', 'compiler' or 'docs'
     suite: str  # Suite name for tests, else the scope
     name: str  # Unique name, e.g. 'ParserTests.parser_foo'
-    source: Path  # Absolute path of the main source file
+    source: Path  # Absolute path of the main source file (docs: the markdown file the example is from)
+    text: str | None = None  # Source text of a generated case (docs examples), written unchanged per run
     args: tuple[str, ...] = ()  # Extra compiler args, e.g. from the '// TEST:' header
     cwd: Path | None = None  # Working dir of the compiler, None: a fresh dir per run
     execute: bool = False  # Run the compiled program and compare its output
@@ -146,7 +148,7 @@ def docs_cases() -> list[Case]:
                 continue
             name = f"docs.{docs.display_path(md_file).replace('/', '_')}_{example.line}"
             # The source is materialized per run, see prepare_case_source
-            cases.append(Case("docs", "docs", name, Path(example.code), execute=False))
+            cases.append(Case("docs", "docs", name, md_file, text=example.code, execute=False))
     return cases
 
 
@@ -189,7 +191,7 @@ def prepare_case_source(case: Case, case_dir: Path) -> Path:
         return source
     if case.scope == "docs":
         source = case_dir / "example.spice"
-        source.write_text(str(case.source), encoding="utf-8")
+        source.write_text(case.text or "", encoding="utf-8", newline="")
         return source
     return case.source
 
@@ -199,7 +201,7 @@ def run(cmd: list[str], cwd: Path, timeout: int) -> tuple[str, int]:
         proc = subprocess.run(cmd, cwd=cwd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                               timeout=timeout)
     except subprocess.TimeoutExpired as e:
-        return f"<timeout after {timeout}s>\n" + (e.output or b"").decode("utf-8", errors="replace"), 124
+        return f"{TIMEOUT_PREFIX}{timeout}s>\n" + (e.output or b"").decode("utf-8", errors="replace"), 124
     code = 128 - proc.returncode if proc.returncode < 0 else proc.returncode
     return proc.stdout.decode("utf-8", errors="surrogateescape").replace("\r\n", "\n"), code
 
@@ -220,11 +222,13 @@ def run_stage(compiler: Path, case: Case, source: Path, case_dir: Path, side: st
     args = ["build", "--test-mode", *case.args, "--output-container", "obj", *flags, "--output", str(out_dir / "object.o"),
             str(source)]
     output, code = run([str(compiler), *args], cwd, COMPILE_TIMEOUT)
+    if output.startswith(TIMEOUT_PREFIX):  # Two timeouts must not count as equal behavior
+        raise RuntimeError(f"{side} compiler timed out in stage {stage}")
     output = ANSI_ESCAPE.sub("", output).replace(str(out_dir), "<out>").replace(str(case_dir), "<case>")
     files = {}
     if dump_glob:
         for path in sorted(out_dir.glob(dump_glob)):
-            files[path.name] = path.read_text(encoding="utf-8", errors="surrogateescape")
+            files[path.name] = path.read_bytes().decode("utf-8", errors="surrogateescape")
     return StageRun(code, output, files)
 
 
@@ -234,7 +238,11 @@ def run_exec(compiler: Path, case: Case, source: Path, case_dir: Path, side: str
     exe = out_dir / f"source{EXE_SUFFIX}"
     output, code = run([str(compiler), "build", "--test-mode", *case.args, "--output", str(exe), str(source)],
                        case.cwd or out_dir, COMPILE_TIMEOUT)
-    if code != 0 or not exe.exists():
+    if output.startswith(TIMEOUT_PREFIX):
+        raise RuntimeError(f"{side} compiler timed out building the executable")
+    if code == 0 and not exe.exists():
+        raise RuntimeError(f"{side} compiler succeeded, but did not produce {exe.name}")
+    if code != 0:
         return code, "<compilation failed>\n" + ANSI_ESCAPE.sub("", output)
     return run([str(exe)], out_dir, RUN_TIMEOUT)[::-1]
 
@@ -385,6 +393,8 @@ def main() -> int:
     for compiler in (args.legacy, args.next):
         if not compiler.exists():
             sys.exit(f"Compiler not found: {compiler}")
+    if not stages:
+        sys.exit("No stages selected")
     if not cases:
         sys.exit("No cases selected")
     legacy, nxt = args.legacy.resolve(), args.next.resolve()

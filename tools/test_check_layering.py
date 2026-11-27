@@ -126,6 +126,18 @@ class ImportRules(unittest.TestCase):
         self.assertEqual(code, 0, out)
 
 
+    def test_import_split_over_lines(self):
+        code, out = run_check({"base/a.spice": 'import\n    "@/syntax/b";\n'})
+        self.assertEqual(code, 1, out)
+        self.assertRegex(out, r"a\.spice:1: ")
+
+    def test_imports_in_block_comments_are_ignored(self):
+        code, out = run_check({"base/a.spice": '/*\nimport "@/syntax/b";\n*/\nimport "@/syntax/c";\n'})
+        self.assertEqual(code, 1, out)
+        self.assertRegex(out, r"a\.spice:4: ")
+        self.assertNotIn("syntax/b", out)
+
+
 class Budgets(unittest.TestCase):
     def body(self, header: str, lines: int) -> str:
         return header + " {\n" + "    int x = 1;\n" * (lines - 2) + "}\n"
@@ -156,6 +168,15 @@ class Budgets(unittest.TestCase):
     def test_nested_generics_and_declarations_without_body(self):
         text = "ext f<int> puts(string s);\nf<Result<heap byte*>> alloc() {\n    if x {\n        return 1;\n    }\n}\n"
         self.assertEqual(cl.function_lengths(text), [(2, 5, "f<Result<heap byte*>> alloc()")])
+
+    def test_whitespace_between_function_tokens(self):
+        self.assertEqual(cl.function_lengths("f <int> big() {\n    return 1;\n}\n"), [(1, 3, "f <int> big()")])
+
+    def test_function_type_field_is_no_declaration(self):
+        text = "type S struct {\n    f<int>() callback\n}\n\n" + self.body("p proc()", 150)
+        self.assertEqual(cl.function_lengths(text), [(5, 150, "p proc()")])
+        code, out = run_check({"base/a.spice": text}, "--strict-budgets")
+        self.assertEqual(code, 0, out)
 
     def test_external_packages_are_skipped(self):
         code, out = run_check({"spice_packages/x/y.spice": "// c\n" * 2000})

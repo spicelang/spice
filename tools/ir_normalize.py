@@ -162,7 +162,7 @@ def main() -> int:
     parser.add_argument("b", type=Path)
     parser.add_argument("--limit", type=int, default=8, help="Max. number of differing lines to print")
     args = parser.parse_args()
-    a, b = args.a.read_text(encoding="utf-8"), args.b.read_text(encoding="utf-8")
+    a, b = (f.read_bytes().decode("utf-8", errors="surrogateescape") for f in (args.a, args.b))
     classes = classify(a, b)
     print(" + ".join(classes))
     if classes != [IDENTICAL]:

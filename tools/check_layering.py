@@ -105,9 +105,12 @@ KNOWN_COMPONENTS = {
     *(f"tools/{n}" for n in ["format", "lint", "viz"]),
 } - {"sema", "codegen", "tools"}
 
-IMPORT_REGEX = re.compile(r'^\s*import\s+"([^"]+)"')
+# An import statement may be split over several lines
+IMPORT_REGEX = re.compile(r'^[ \t]*import\s*"([^"\n]+)"', re.MULTILINE)
 MODIFIERS = r"(?:[a-z]+\s+)*"
-FUNCTION_START = re.compile(rf"^[ \t]*{MODIFIERS}(?:f<|p[ \t])", re.MULTILINE)
+FUNCTION_START = re.compile(rf"^[ \t]*{MODIFIERS}(?:(f)\s*<|p[ \t])", re.MULTILINE)
+# What follows the return type: the name of the function, e.g. 'Vector<T>.pushBack(' (a function type field has none)
+NAME_AND_PARAMS = re.compile(r"\s*[A-Za-z_][^(){};=]*\(")
 
 
 @dataclass(frozen=True)
@@ -161,10 +164,9 @@ def check_imports(root: Path, files: list[Path]) -> list[Finding]:
             findings.append(Finding(file, 1, f"'{rel.as_posix()}' is not part of a known component (section 4.3)"))
             continue
         allowed = allowed_imports(source)
-        for line_no, line in enumerate(file.read_text(encoding="utf-8").splitlines(), 1):
-            match = IMPORT_REGEX.match(line)
-            if not match:
-                continue
+        text = blank_comments_and_literals(file.read_text(encoding="utf-8"), keep_literals=True)
+        for match in IMPORT_REGEX.finditer(text):
+            line_no = text.count("\n", 0, match.start()) + 1
             target, is_source = resolve_import(match.group(1), rel)
             if not is_source:  # std import
                 continue
@@ -185,8 +187,9 @@ def check_imports(root: Path, files: list[Path]) -> list[Finding]:
     return findings
 
 
-def blank_comments_and_literals(text: str) -> str:
-    """Replaces comments and the content of string and char literals by spaces. Newlines stay, so line numbers are kept."""
+def blank_comments_and_literals(text: str, keep_literals: bool = False) -> str:
+    """Replaces comments and, unless keep_literals is set, the content of string and char literals by spaces. Newlines stay,
+    so line numbers are kept."""
     out: list[str] = []
     i, n = 0, len(text)
     while i < n:
@@ -206,7 +209,10 @@ def blank_comments_and_literals(text: str) -> str:
             while j < n and text[j] != c and text[j] != "\n":
                 j += 2 if text[j] == "\\" else 1
             j = min(j + 1, n)
-            out.append(c + "".join(ch if ch == "\n" else " " for ch in text[i + 1 : j - 1]) + (c if j - 1 > i else ""))
+            if keep_literals:
+                out.append(text[i:j])
+            else:
+                out.append(c + "".join(ch if ch == "\n" else " " for ch in text[i + 1 : j - 1]) + (c if j - 1 > i else ""))
             i = j
         else:
             out.append(c)
@@ -222,8 +228,15 @@ def function_lengths(text: str) -> list[tuple[int, int, str]]:
     for match in FUNCTION_START.finditer(clean):
         if match.start() < pos:  # inside the body of the previous match
             continue
-        depth = 0
         i = match.end()
+        if match.group(1):  # Skip the return type f<...>, it may contain nested generics
+            angle = 1
+            while i < len(clean) and angle:
+                angle += {"<": 1, ">": -1}.get(clean[i], 0)
+                i += 1
+        if not NAME_AND_PARAMS.match(clean, i):  # No named declaration, e.g. a function type field or a lambda
+            continue
+        depth = 0
         while i < len(clean):
             c = clean[i]
             if c in "(":
