@@ -19,7 +19,7 @@ public type SaveAndRestore<T> struct {
  * @param value Variable to guard. It has to outlive the guard
  * @param newValue Value to hold until the guard is destructed. May alias the variable
  */
-// legacy: util/save-and-restore.spice:17-22
+// legacy: util/save-and-restore.spice:16-21
 public p SaveAndRestore.ctor(T& value, const T& newValue) {
     this.value = value;
     this.oldValue = value;
@@ -31,7 +31,7 @@ public p SaveAndRestore.ctor(T& value, const T& newValue) {
 /**
  * Put the remembered value back
  */
-// legacy: util/save-and-restore.spice:24-26
+// legacy: util/save-and-restore.spice:23-25
 public p SaveAndRestore.dtor() {
     this.value = this.oldValue;
 }
@@ -40,10 +40,10 @@ public p SaveAndRestore.dtor() {
 f<bool> testSaveAndRestoreRestoresOnScopeExit() {
     int value = 1;
     {
-        SaveAndRestore<int> guard = SaveAndRestore<int>(value, 2);
+        SaveAndRestore<int> _ = SaveAndRestore<int>(value, 2);
         assert value == 2;
         {
-            SaveAndRestore<int> nested = SaveAndRestore<int>(value, 3);
+            SaveAndRestore<int> _ = SaveAndRestore<int>(value, 3);
             assert value == 3;
         }
         assert value == 2;
@@ -56,9 +56,21 @@ f<bool> testSaveAndRestoreRestoresOnScopeExit() {
 f<bool> testSaveAndRestoreAcceptsNewValueThatAliasesTheVariable() {
     int value = 5;
     {
-        SaveAndRestore<int> guard = SaveAndRestore<int>(value, value);
+        SaveAndRestore<int> _ = SaveAndRestore<int>(value, value);
         value = 9;
     }
     assert value == 5;
+    return true;
+}
+
+// The only user of the legacy compiler, the AST visualizer, saves a String
+#[test]
+f<bool> testSaveAndRestoreWorksForStrings() {
+    String text = String("outer");
+    {
+        SaveAndRestore<String> _ = SaveAndRestore<String>(text, String("inner"));
+        assert text == "inner";
+    }
+    assert text == "outer";
     return true;
 }

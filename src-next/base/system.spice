@@ -19,9 +19,14 @@ import "@/base/test-util";
 // (driver and link), findLinkerInvoker and findArchiver raise a LinkerError (link), getStdDir and the aborting variants of
 // exec() and run() raise a CompilerError (diag). The functions, that legacy aborts in, return a Result here.
 
-// OS part of the platform specific file suffix in freestanding mode, e.g. memory_rt_freestanding.spice
+/**
+ * OS part of the platform specific file suffix in freestanding mode, e.g. memory_rt_freestanding.spice
+ */
 public const string OS_SUFFIX_FREESTANDING = "freestanding";
 
+/**
+ * Result of an executed program: its captured output and its exit code
+ */
 public type ExecResult struct {
     public String output
     public int exitCode
@@ -198,7 +203,7 @@ public f<Vector<String>> getLinkerFlagCommandArgs(const Vector<String>& tokens, 
  * @param input Input string
  * @return Non-empty parts
  */
-// legacy: util/system-util.spice:202-219
+// legacy: util/system-util.spice:202-220
 public f<Vector<String>> splitAtWhitespace(const String& input) {
     Vector<String> parts;
     String current;
@@ -265,10 +270,13 @@ public f<FilePath> getStdRuntimeLibDir() {
     if stdDir.isEmpty() {
         return FilePath();
     }
-    result = stdDir / "runtime" / "lib";
-    if !result.exists() {
+    // A local instead of the result variable: returning another value after assigning it would leak the first one. Legacy leaked
+    // here, but nothing tested it
+    const FilePath runtimeLibDir = stdDir / "runtime" / "lib";
+    if !runtimeLibDir.exists() {
         return FilePath();
     }
+    return runtimeLibDir;
 }
 
 /**
@@ -344,7 +352,7 @@ public f<FilePath> resolvePlatformSpecificSourceFile(const String& osName, const
  *
  * @return Installation directory
  */
-// legacy: util/system-util.spice:584-592
+// legacy: util/system-util.spice:584-593
 public f<FilePath> getSpiceBinDir() {
     if isWindows() {                                             // LCOV_EXCL_LINE - coverage runs on Linux
         Result<string> userprofile = getEnv("USERPROFILE");      // LCOV_EXCL_LINE - coverage runs on Linux
@@ -418,7 +426,7 @@ f<bool> testSplitAtWhitespace() {
     return true;
 }
 
-// legacy: util/system-util.spice:619-646
+// legacy: util/system-util.spice:618-642
 #[test]
 f<bool> testExpandLinkerFlag() {
     String failedCommand;
@@ -449,6 +457,38 @@ f<bool> testExpandLinkerFlag() {
     assert multi.getSize() == 2l;
     assert multi.get(0l) == "-I/opt/llvm/include";
     assert multi.get(1l) == "-I/opt/llvm/build/include";
+    // There is no way to unset a variable in the std. Empty ones expand to nothing, like unset ones
+    assert setEnv("SPICE_TEST_LINKER_FLAG_VAR", "");
+    assert setEnv("SPICE_TEST_LINKER_FLAG_MULTI", "");
+    return true;
+}
+
+// New: the edge cases of the expansion, which legacy did not test
+#[test]
+f<bool> testExpandLinkerFlagEdgeCases() {
+    if isWindows() {
+        return true; // '$VAR' is the Unix form, and the commands only exist on Unix
+    }
+    String failedCommand;
+    // A '$' that no name follows stays as it is
+    const Result<Vector<String>> lone = expandLinkerFlag(String("-a$"), false, failedCommand);
+    assert lone.isOk() && lone.unwrap().getSize() == 1l && lone.unwrap().get(0l) == "-a$";
+    const Result<Vector<String>> dash = expandLinkerFlag(String("$-x"), false, failedCommand);
+    assert dash.isOk() && dash.unwrap().getSize() == 1l && dash.unwrap().get(0l) == "$-x";
+
+    // An unset variable expands to nothing
+    const Result<Vector<String>> unset = expandLinkerFlag(String("-L$SPICE_TEST_LINKER_FLAG_NEVER_SET"), false, failedCommand);
+    assert unset.isOk() && unset.unwrap().getSize() == 1l && unset.unwrap().get(0l) == "-L";
+
+    // A single backtick is no command
+    const Result<Vector<String>> backtick = expandLinkerFlag(String("`"), false, failedCommand);
+    assert backtick.isOk() && backtick.unwrap().getSize() == 1l && backtick.unwrap().get(0l) == "`";
+
+    // The command substitution applies to the text after the expansion of the variables
+    assert setEnv("SPICE_TEST_LINKER_FLAG_COMMAND", "`echo -lq`");
+    const Result<Vector<String>> fromVariable = expandLinkerFlag(String("$SPICE_TEST_LINKER_FLAG_COMMAND"), false, failedCommand);
+    assert setEnv("SPICE_TEST_LINKER_FLAG_COMMAND", "");
+    assert fromVariable.isOk() && fromVariable.unwrap().getSize() == 1l && fromVariable.unwrap().get(0l) == "-lq";
     return true;
 }
 
@@ -477,7 +517,7 @@ f<bool> testExpandLinkerFlagWithCommandSubstitution() {
     return true;
 }
 
-// legacy: util/system-util.spice:648-677
+// legacy: util/system-util.spice:644-675
 #[test]
 f<bool> testGetLinkerFlagCommandArgs() {
     Vector<String> pkgConfigTokens;
@@ -511,7 +551,7 @@ f<bool> testGetLinkerFlagCommandArgs() {
     return true;
 }
 
-// legacy: util/system-util.spice:679-700
+// legacy: util/system-util.spice:677-697
 #[test]
 f<bool> testFindStdDirPrefersEnvVar() {
     // Remember the original value, because the test runner points SPICE_STD_DIR to the std of the checkout
@@ -534,7 +574,7 @@ f<bool> testFindStdDirPrefersEnvVar() {
     return true;
 }
 
-// legacy: util/system-util.spice:702-734
+// legacy: util/system-util.spice:699-733
 #[test]
 f<bool> testGetStdTPDEFlags() {
     // A std without the TPDE libraries and headers (e.g. a source checkout) yields no flags
@@ -571,6 +611,39 @@ f<bool> testGetStdTPDEFlags() {
     return true;
 }
 
+// New: the dir of the std runtime libraries is only found, if it exists in the std dir
+#[test]
+f<bool> testGetStdRuntimeLibDir() {
+    // Remember the original value, because the test runner points SPICE_STD_DIR to the std of the checkout
+    const Result<string> originalValue = getEnv("SPICE_STD_DIR");
+    const String originalStdDir = originalValue.isOk() ? String(originalValue.unwrap()) : String();
+
+    const FilePath stdDir = makeUniqueTestDir("spice-test-std-runtime");
+    assert setEnv("SPICE_STD_DIR", stdDir.toString());
+    const FilePath withoutLibDir = getStdRuntimeLibDir();
+    createTestDirs(stdDir / "runtime" / "lib");
+    const FilePath withLibDir = getStdRuntimeLibDir();
+
+    // Restore the original value and clean up before asserting, so that a failure does not affect the other tests
+    assert setEnv("SPICE_STD_DIR", originalStdDir.getRaw());
+    const String expected = String((stdDir / "runtime" / "lib").toGenericString());
+    const String found = String(withLibDir.toGenericString());
+    removeTestDir(stdDir);
+    assert withoutLibDir.isEmpty();
+    assert found == expected;
+    return true;
+}
+
+// New: the dir for installed binaries
+#[test]
+f<bool> testGetSpiceBinDir() {
+    if isWindows() {
+        return true; // Depends on USERPROFILE
+    }
+    assert getSpiceBinDir().toGenericString() == "/usr/local/bin";
+    return true;
+}
+
 // Resolve the platform specific variant of the given source file for the given OS and arch name
 f<String> resolveTestSourceFile(const FilePath& basePath, const string osName, const string archName, const FilePath& requestingFilePath) {
     Vector<FilePath> candidatePaths;
@@ -579,7 +652,7 @@ f<String> resolveTestSourceFile(const FilePath& basePath, const string osName, c
     return resolvedPath.isEmpty() ? String() : resolvedPath.getFileName();
 }
 
-// legacy: util/system-util.spice:736-778. The targets are given as the OS and arch name the triples of legacy lead to
+// legacy: util/system-util.spice:735-778. The targets are given as the OS and arch name the triples of legacy lead to
 #[test]
 f<bool> testResolvePlatformSpecificSourceFile() {
     const FilePath dir = makeUniqueTestDir("spice-test-platform-specific-source");

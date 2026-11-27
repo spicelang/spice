@@ -1063,11 +1063,13 @@ The results are recorded in this document. An idiom that stage0 does not support
 - `Timer` is the std type `std/time/timer`, not a util of the compiler, so `base` has no code for it. `base` uses the std type.
 - `base/system`: the part of `util/system-util` that needs std and nothing of the compiler: `exec`, `run`, `renderCommandForDisplay`,
   `isCommandAvailable`, `splitAtWhitespace`, `getLinkerFlagCommandArgs`, `expandLinkerFlag`, `findStdDir`, `getStdRuntimeLibDir`,
-  `getStdTPDEFlags`, `getSpiceBinDir` and `resolvePlatformSpecificSourceFile`. The five tests that need no `llvm::Triple` are ported,
+  `getStdTPDEFlags`, `getSpiceBinDir` and `resolvePlatformSpecificSourceFile`. A test of `getStdRuntimeLibDir` (legacy had none) found a leak
+  in it: it returned another value after it had assigned the implicit result variable. The port uses a local, which changes no behavior. The five tests that need no `llvm::Triple` are ported,
   and the resolver test is ported with the OS and arch names that the triples lead to. The rest moves to the layer that owns what it
   needs: `findLinker`, `getOutputFileExtension`, `exportStdTPDEFlags` and `isWildSupportedTarget` (CLI options and target: link and
   driver), `findLinkerInvoker` and `findArchiver` (raise a `LinkerError`: link), `getStdDir` (raises a `CompilerError`: diag) and
-  `isGraphvizInstalled` (viz). The test `testIsWildSupportedTarget` moves with `isWildSupportedTarget`.
+  `isGraphvizInstalled` (viz), and `ExternalBinaryFinderResult` with the finders (link). The test `testIsWildSupportedTarget` moves with
+  `isWildSupportedTarget`.
 - Where legacy aborts with a diagnostic, base has none, so the functions return a `Result`. `Error` holds a `string` pointer and no
   copy of the message, so a message built at run time cannot travel in it. `exec` and `run` pass on the error of the std. `expandLinkerFlag`
   returns an error with a constant message and names the failing command in an out-parameter (`failedCommand`): the program, if it could
@@ -1075,7 +1077,8 @@ The results are recorded in this document. An idiom that stage0 does not support
   legacy texts from it.
 - `base/manifest`: the generic reader of `spice.toml`: `ManifestReader` (`parse`, `readBool`, `readInteger`, `readOneOf`, `expectTable`,
   `reportUnknownKey`) and `manifestDisplayPath` and `makeAbsolutePath`, which legacy took from the `manifest` package (std only, so `base`
-  needs no package). The reader records the message of the first error instead of aborting, in the legacy text with the display path in
+  needs no package; the copies have the names of the package, so a file that imports both has to alias the package, and they go when `base`
+  starts to use the package). A nil value, e.g. of a missing key, is a mismatch of the type, as a wrong type is. The reader records the message of the first error instead of aborting, in the legacy text with the display path in
   front, and every read fails after the first error. `readLintConfig` and `readFormatConfig` need `LintConfig` and `FormatConfig`, so the
   lint and format tools re-create them on top of the reader. The legacy `testManifestConfig` needs both configs and `findManifest`, so it moves
   with them. The reader tests cover the values, the exact messages (also those of `formatter/manifest-invalid` and

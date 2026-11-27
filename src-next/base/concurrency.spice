@@ -31,13 +31,19 @@ public type ParallelSection struct {
     bool active = false
 }
 
-// legacy: util/concurrency.spice:29-32
+/**
+ * Enter the section: the ConditionalLocks that are taken from now on lock
+ */
+// legacy: util/concurrency.spice:30-33
 public p ParallelSection.ctor() {
     this.active = true;
     CONCURRENT_PASSES_RUNNING = true;
 }
 
-// legacy: util/concurrency.spice:34-38
+/**
+ * Leave the section. Sections do not nest: the end of an inner one switches the locking off, while the outer one is still alive
+ */
+// legacy: util/concurrency.spice:35-39
 public p ParallelSection.dtor() {
     if this.active {
         CONCURRENT_PASSES_RUNNING = false;
@@ -67,7 +73,13 @@ public type ConditionalLock struct {
     RecursiveMutex* mutex = nil<RecursiveMutex*>
 }
 
-// legacy: util/concurrency.spice:61-66
+/**
+ * Lock the mutex, if compiler passes run concurrently at this moment. The decision is made here once: a lock that was created outside
+ * of a section never locks, also if a section starts later
+ *
+ * @param mutex Mutex to hold for the lifetime of the lock
+ */
+// legacy: util/concurrency.spice:63-68
 public p ConditionalLock.ctor(RecursiveMutex* mutex) {
     if areConcurrentPassesRunning() {
         this.mutex = mutex;
@@ -75,7 +87,10 @@ public p ConditionalLock.ctor(RecursiveMutex* mutex) {
     }
 }
 
-// legacy: util/concurrency.spice:68-73
+/**
+ * Release the mutex, if it was locked, also if the section ended meanwhile
+ */
+// legacy: util/concurrency.spice:70-75
 public p ConditionalLock.dtor() {
     if this.mutex != nil<RecursiveMutex*> {
         this.mutex.release();
@@ -85,7 +100,7 @@ public p ConditionalLock.dtor() {
 
 // ─── tests ────────────────────────────────────────────────────────────────────
 
-// legacy: util/concurrency.spice:134-151
+// legacy: util/concurrency.spice:110-128
 #[test]
 f<bool> testConditionalLockOnlyLocksInParallelSection() {
     RecursiveMutex mutex;
@@ -136,7 +151,7 @@ p incrementConcurrently(GuardedSharedMap* guardedMap) {
     pool.join();
 }
 
-// legacy: util/concurrency.spice:177-192
+// legacy: util/concurrency.spice:130-175
 #[test]
 f<bool> testConditionalLockGuardsSharedMapUnderContention() {
     UnorderedMap<unsigned long, unsigned long> sharedMap; // Stands in for the type registry / lookup caches

@@ -17,9 +17,13 @@ import "@/base/test-util";
 // legacy reader aborts with a CompilerError (INVALID_MANIFEST) in every error case. Base has no diagnostics, so this reader
 // records the message of the first error instead, and the tool turns it into the diagnostic with hasError() and getError().
 
-// Maximum for ManifestReader.readInteger, that means there is none
+/**
+ * Maximum for ManifestReader.readInteger, that means there is none. As in legacy, an upper bound of -1 is not possible
+ */
 public const long NO_UPPER_BOUND = -1l;
 
+// The manifest package has functions of the same names (manifest-file). Base keeps its own copies, so that it needs no package. A file
+// that imports both has to import the package with an alias, and the copies are dropped when base starts to use the package
 /**
  * Make the given path absolute by prepending the working dir, if it is relative, and normalize it lexically
  *
@@ -43,7 +47,7 @@ public f<FilePath> makeAbsolutePath(const FilePath& path) {
  * @param baseDir Dir, that the path is printed relative to
  * @return Path for messages
  */
-// legacy: spice_packages/manifest/manifest-file.spice:98-109
+// legacy: spice_packages/manifest/manifest-file.spice:98-108
 public f<String> manifestDisplayPath(const FilePath& path, const FilePath& baseDir) {
     const FilePath relativePath = makeAbsolutePath(path).lexicallyRelative(makeAbsolutePath(baseDir));
     const String relativePathStr = String(relativePath.toGenericString());
@@ -58,10 +62,12 @@ public f<String> manifestDisplayPath(const FilePath& path, const FilePath& baseD
 
 /**
  * Reads the values of a manifest (spice.toml) and records the first error in it. After an error, all reads fail, so a tool can
- * read all values and look at the error once. The format of the manifest is specified by the manifest package. The tools of the
+ * read all values and look at the error once. Unlike the legacy reader, a failed read does not abort: the caller has to check the
+ * result before it goes on with the value, e.g. before it iterates a table, that expectTable() rejected. A nil value, e.g. of a
+ * key that does not exist (TomlValue.getFieldOrNil), is a mismatch of the type, so it records the same error as a wrong type. The format of the manifest is specified by the manifest package. The tools of the
  * compiler read the [lint] and [format] tables with it and leave the other tables to Spice Shaker.
  */
-// legacy: util/manifest.spice:38-45
+// legacy: util/manifest.spice:47-50
 public type ManifestReader struct {
     FilePath path
     String displayPath // Path of the manifest in error messages
@@ -72,7 +78,7 @@ public type ManifestReader struct {
  * @param path Path of the manifest
  * @param displayBaseDir Dir, that the path of the manifest is printed relative to in error messages
  */
-// legacy: util/manifest.spice:47-58
+// legacy: util/manifest.spice:56-60
 public p ManifestReader.ctor(const FilePath& path, const FilePath& displayBaseDir) {
     this.path = path;
     // Like the code locations of the compiler: './' for paths within the base dir and the absolute path, if there is no relative one
@@ -105,10 +111,13 @@ public const f<String> ManifestReader.getDisplayPath() {
  * Read and parse the manifest
  *
  * @return Root table of the manifest, which the caller has to release with deleteTomlValue, or nil if it cannot be read or is no
- *         valid TOML. The error is recorded then
+ *         valid TOML. The error is recorded then. Nil as well, if an error was recorded before
  */
-// legacy: util/manifest.spice:60-79
+// legacy: util/manifest.spice:67-77
 public f<TomlValue*> ManifestReader.parse() {
+    if this.hasError() {
+        return nil<TomlValue*>;
+    }
     Result<String> readResult = readFile(this.path.toString());
     if !readResult.isOk() {
         this.setError(String("The manifest cannot be read"));
@@ -130,12 +139,12 @@ public f<TomlValue*> ManifestReader.parse() {
  * @param parsed Receives the boolean
  * @return Success
  */
-// legacy: util/manifest.spice:98-103
+// legacy: util/manifest.spice:101-112 (inline in readLintRulesTable) (inline in readLintRulesTable) (inline in readLintRulesTable)
 public f<bool> ManifestReader.readBool(TomlValue* value, const String& keyName, bool& parsed) {
     if this.hasError() {
         return false;
     }
-    if !value.isBool() {
+    if value == nil<TomlValue*> || !value.isBool() {
         this.setError("'" + keyName + "' has to be a boolean");
         return false;
     }
@@ -152,12 +161,12 @@ public f<bool> ManifestReader.readBool(TomlValue* value, const String& keyName, 
  * @param parsed Receives the index of the string in allowed
  * @return Success
  */
-// legacy: util/manifest.spice:124-140. Legacy hard-coded the strings of the lint severity
+// legacy: util/manifest.spice:124-138. Legacy hard-coded the strings of the lint severity
 public f<bool> ManifestReader.readOneOf(TomlValue* value, const String& keyName, const Vector<String>& allowed, unsigned long& parsed) {
     if this.hasError() {
         return false;
     }
-    if value.isString() {
+    if value != nil<TomlValue*> && value.isString() {
         for unsigned long i = 0l; i < allowed.getSize(); i++ {
             if value.getString() == allowed.get(i) {
                 parsed = i;
@@ -191,7 +200,7 @@ public f<bool> ManifestReader.readInteger(TomlValue* value, const String& keyNam
     if this.hasError() {
         return false;
     }
-    if !value.isInteger() || value.getInteger() < min || (max != NO_UPPER_BOUND && value.getInteger() > max) {
+    if value == nil<TomlValue*> || !value.isInteger() || value.getInteger() < min || (max != NO_UPPER_BOUND && value.getInteger() > max) {
         String message = "'" + keyName + "' has to be an integer";
         if max == NO_UPPER_BOUND {
             message += " of at least " + toString(min);
@@ -212,12 +221,12 @@ public f<bool> ManifestReader.readInteger(TomlValue* value, const String& keyNam
  * @param keyName Full name of the key, which errors refer to
  * @return Whether it is a table
  */
-// legacy: util/manifest.spice:168-173
+// legacy: util/manifest.spice:168-172
 public f<bool> ManifestReader.expectTable(TomlValue* value, const String& keyName) {
     if this.hasError() {
         return false;
     }
-    if !value.isTable() {
+    if value == nil<TomlValue*> || !value.isTable() {
         this.setError("'" + keyName + "' has to be a table");
         return false;
     }
@@ -239,7 +248,7 @@ public p ManifestReader.reportUnknownKey(const String& keyName) {
  *
  * @param message Error message without the path of the manifest
  */
-// legacy: util/manifest.spice:189-194
+// legacy: util/manifest.spice:190-194
 public p ManifestReader.setError(const String& message) {
     if !this.hasError() {
         this.error = this.displayPath + ": " + message;
@@ -263,13 +272,17 @@ f<bool> testManifestDisplayPath() {
     const FilePath manifestPath = testDir / "spice.toml";
     const String fromSubDir = manifestDisplayPath(manifestPath, subDir);
     const String fromTestDir = manifestDisplayPath(manifestPath, testDir);
+    const ManifestReader readerFromSubDir = ManifestReader(manifestPath, subDir);
+    const ManifestReader readerFromTestDir = ManifestReader(manifestPath, testDir);
     removeTestDir(testDir);
     assert fromSubDir == "../../spice.toml";
     assert fromTestDir == "./spice.toml";
+    assert readerFromSubDir.getDisplayPath() == "../../spice.toml";
+    assert readerFromTestDir.getDisplayPath() == "./spice.toml";
     return true;
 }
 
-// legacy: spice_packages/manifest/manifest-file.spice:170-171
+// legacy: spice_packages/manifest/manifest-file.spice:162-173
 #[test]
 f<bool> testMakeAbsolutePath() {
     assert makeAbsolutePath(FilePath("/main.spice")).toGenericString() == "/main.spice";
@@ -315,6 +328,15 @@ f<bool> testManifestReaderReadsValues() {
     return true;
 }
 
+// The allowed strings of the lint severity, the only enum of the manifest so far
+f<Vector<String>> severityNames() {
+    Vector<String> severities;
+    severities.pushBack(String("info"));
+    severities.pushBack(String("warning"));
+    severities.pushBack(String("error"));
+    return severities;
+}
+
 #[test]
 f<bool> testManifestReaderErrorMessagesStayTheSame() {
     const FilePath dir = makeUniqueTestDir("spice-manifest-test");
@@ -323,13 +345,11 @@ f<bool> testManifestReaderErrorMessagesStayTheSame() {
     removeTestDir(dir);
     assert root != nil<TomlValue*>;
     TomlValue* format = root.getTableValue(0l);
+    const Vector<String> severities = severityNames();
 
     // The messages are the ones of legacy, with the display path in front
     long number = 0l;
     assert !reader.readInteger(format.getFieldOrNil("indent-width"), String("format.indent-width"), 1l, 16l, number);
-    assert reader.getError() == "./spice.toml: 'format.indent-width' has to be an integer from 1 to 16";
-    // After an error all reads fail and the first message stays
-    assert !reader.readInteger(format.getFieldOrNil("max"), String("format.max"), 1l, NO_UPPER_BOUND, number);
     assert reader.getError() == "./spice.toml: 'format.indent-width' has to be an integer from 1 to 16";
 
     ManifestReader second = ManifestReader(dir / "spice.toml", dir);
@@ -342,10 +362,6 @@ f<bool> testManifestReaderErrorMessagesStayTheSame() {
     assert third.getError() == "./spice.toml: 'format.flag' has to be a boolean";
 
     ManifestReader fourth = ManifestReader(dir / "spice.toml", dir);
-    Vector<String> severities;
-    severities.pushBack(String("info"));
-    severities.pushBack(String("warning"));
-    severities.pushBack(String("error"));
     unsigned long index = 0l;
     assert !fourth.readOneOf(format.getFieldOrNil("kind"), String("lint.severity"), severities, index);
     assert fourth.getError() == "./spice.toml: 'lint.severity' has to be one of \"info\", \"warning\" or \"error\"";
@@ -353,10 +369,75 @@ f<bool> testManifestReaderErrorMessagesStayTheSame() {
     ManifestReader fifth = ManifestReader(dir / "spice.toml", dir);
     assert !fifth.expectTable(format.getFieldOrNil("flag"), String("format.flag"));
     assert fifth.getError() == "./spice.toml: 'format.flag' has to be a table";
-    fifth = ManifestReader(dir / "spice.toml", dir);
-    fifth.reportUnknownKey(String("format.colour"));
-    assert fifth.getError() == "./spice.toml: Unknown key 'format.colour'";
+
+    ManifestReader sixth = ManifestReader(dir / "spice.toml", dir);
+    sixth.reportUnknownKey(String("format.colour"));
+    assert sixth.getError() == "./spice.toml: Unknown key 'format.colour'";
     deleteTomlValue(root);
+    return true;
+}
+
+// A key that does not exist is nil, which has the same error as a value of the wrong type, and does not crash
+#[test]
+f<bool> testManifestReaderTreatsAMissingKeyAsAMismatch() {
+    const FilePath dir = makeUniqueTestDir("spice-manifest-test");
+    ManifestReader reader = ManifestReader(dir / "spice.toml", dir);
+    TomlValue* root = parseTestManifest(reader, dir, "[format]\nindent-width = 2\n");
+    removeTestDir(dir);
+    assert root != nil<TomlValue*>;
+    TomlValue* format = root.getTableValue(0l);
+    assert format.getFieldOrNil("missing") == nil<TomlValue*>;
+    const Vector<String> severities = severityNames();
+
+    long number = 0l;
+    ManifestReader integerReader = ManifestReader(dir / "spice.toml", dir);
+    assert !integerReader.readInteger(format.getFieldOrNil("missing"), String("format.missing"), 1l, 16l, number);
+    assert integerReader.getError() == "./spice.toml: 'format.missing' has to be an integer from 1 to 16";
+
+    bool flag = false;
+    ManifestReader boolReader = ManifestReader(dir / "spice.toml", dir);
+    assert !boolReader.readBool(format.getFieldOrNil("missing"), String("format.missing"), flag);
+    assert boolReader.getError() == "./spice.toml: 'format.missing' has to be a boolean";
+
+    unsigned long index = 0l;
+    ManifestReader enumReader = ManifestReader(dir / "spice.toml", dir);
+    assert !enumReader.readOneOf(format.getFieldOrNil("missing"), String("format.missing"), severities, index);
+    assert enumReader.getError().startsWith("./spice.toml: 'format.missing' has to be one of ");
+
+    ManifestReader tableReader = ManifestReader(dir / "spice.toml", dir);
+    assert !tableReader.expectTable(format.getFieldOrNil("missing"), String("format.missing"));
+    assert tableReader.getError() == "./spice.toml: 'format.missing' has to be a table";
+    deleteTomlValue(root);
+    return true;
+}
+
+// After the first error, every read fails and the message stays the first one
+#[test]
+f<bool> testManifestReaderKeepsTheFirstError() {
+    const FilePath dir = makeUniqueTestDir("spice-manifest-test");
+    ManifestReader reader = ManifestReader(dir / "spice.toml", dir);
+    TomlValue* root = parseTestManifest(reader, dir, "[format]\nindent-width = 2\nflag = true\n");
+    assert root != nil<TomlValue*>;
+    TomlValue* format = root.getTableValue(0l);
+    const Vector<String> severities = severityNames();
+    reader.reportUnknownKey(String("format.first"));
+    const String firstError = reader.getError();
+
+    // Reads of valid values fail, and leave the output alone
+    long number = 7l;
+    bool flag = false;
+    unsigned long index = 9l;
+    assert !reader.readInteger(format.getFieldOrNil("indent-width"), String("format.indent-width"), 1l, 16l, number) && number == 7l;
+    assert !reader.readBool(format.getFieldOrNil("flag"), String("format.flag"), flag) && !flag;
+    assert !reader.readOneOf(format.getFieldOrNil("indent-width"), String("format.x"), severities, index) && index == 9l;
+    assert !reader.expectTable(format, String("format"));
+    reader.reportUnknownKey(String("format.second"));
+    assert reader.hasError() && reader.getError() == firstError;
+    // A manifest, that was read fine, is not read again after an error
+    assert reader.parse() == nil<TomlValue*>;
+    assert reader.getError() == firstError;
+    deleteTomlValue(root);
+    removeTestDir(dir);
     return true;
 }
 
@@ -365,11 +446,13 @@ f<bool> testManifestReaderReportsUnreadableAndInvalidManifests() {
     const FilePath dir = makeUniqueTestDir("spice-manifest-test");
     ManifestReader missing = ManifestReader(dir / "spice.toml", dir);
     assert missing.parse() == nil<TomlValue*>;
-    assert missing.getError() == "./spice.toml: The manifest cannot be read";
+    const String missingError = missing.getError();
 
     ManifestReader invalid = ManifestReader(dir / "spice.toml", dir);
     assert parseTestManifest(invalid, dir, "[unclosed\n") == nil<TomlValue*>;
+    const String invalidError = invalid.getError();
     removeTestDir(dir);
-    assert invalid.hasError() && invalid.getError().startsWith("./spice.toml: The manifest is no valid TOML: ");
+    assert missingError == "./spice.toml: The manifest cannot be read";
+    assert invalidError.startsWith("./spice.toml: The manifest is no valid TOML: ");
     return true;
 }
