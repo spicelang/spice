@@ -1,0 +1,76 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Generic type defs
+type T dyn;
+
+/**
+ * RAII helper to save a value and restore it when the object of this class goes out of scope
+ *
+ * @tparam T Value type
+ */
+public type SaveAndRestore<T> struct {
+    T& value
+    T oldValue
+}
+
+/**
+ * Remember the current value and replace it
+ *
+ * @param value Variable to guard. It has to outlive the guard
+ * @param newValue Value to hold until the guard is destructed. May alias the variable
+ */
+// legacy: util/save-and-restore.spice:16-21
+public p SaveAndRestore.ctor(T& value, const T& newValue) {
+    this.value = value;
+    this.oldValue = value;
+    // The copy is needed, because newValue may alias value
+    T newValueCopy = newValue;
+    value = newValueCopy;
+}
+
+/**
+ * Put the remembered value back
+ */
+// legacy: util/save-and-restore.spice:23-25
+public p SaveAndRestore.dtor() {
+    this.value = this.oldValue;
+}
+
+#[test]
+f<bool> testSaveAndRestoreRestoresOnScopeExit() {
+    int value = 1;
+    {
+        SaveAndRestore<int> _ = SaveAndRestore<int>(value, 2);
+        assert value == 2;
+        {
+            SaveAndRestore<int> _ = SaveAndRestore<int>(value, 3);
+            assert value == 3;
+        }
+        assert value == 2;
+    }
+    assert value == 1;
+    return true;
+}
+
+#[test]
+f<bool> testSaveAndRestoreAcceptsNewValueThatAliasesTheVariable() {
+    int value = 5;
+    {
+        SaveAndRestore<int> _ = SaveAndRestore<int>(value, value);
+        value = 9;
+    }
+    assert value == 5;
+    return true;
+}
+
+// The only user of the legacy compiler, the AST visualizer, saves a String
+#[test]
+f<bool> testSaveAndRestoreWorksForStrings() {
+    String text = String("outer");
+    {
+        SaveAndRestore<String> _ = SaveAndRestore<String>(text, String("inner"));
+        assert text == "inner";
+    }
+    assert text == "outer";
+    return true;
+}

@@ -10,3 +10,6 @@ repository = "https://github.com/spicelang/spice"
 homepage = "https://www.spicelang.com"
 spice = ">=0.30.2"
 entry = "main.spice"
+
+[dependencies]
+manifest = "^0.1.1"

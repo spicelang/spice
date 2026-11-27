@@ -100,8 +100,9 @@ class ImportRules(unittest.TestCase):
     def test_std_and_packages(self):
         code, out = run_check({"base/a.spice": imp("std/io/file"), "syntax/b.spice": imp("@/spice_packages/x/y")})
         self.assertEqual(code, 0, out)
+        # A package counts like std in every layer, base included
         code, out = run_check({"base/a.spice": imp("@/spice_packages/x/y")})
-        self.assertEqual(code, 1, out)
+        self.assertEqual(code, 0, out)
 
     def test_relative_import(self):
         code, out = run_check({"base/a.spice": imp("../syntax/b")})
