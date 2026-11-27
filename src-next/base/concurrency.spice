@@ -32,20 +32,23 @@ public type ParallelSection struct {
 }
 
 /**
- * Enter the section: the ConditionalLocks that are taken from now on lock
+ * Enter the section: the ConditionalLocks that are taken from now on lock. Sections do not nest, so the switch must be off here.
+ * A nested section would most likely begin on a worker thread, but the switch is only written while no worker thread is alive
  */
-// legacy: util/concurrency.spice:30-33
+// legacy: util/concurrency.spice:30-33. New: the assertion, legacy let a nested section switch the locking off too early
 public p ParallelSection.ctor() {
+    assert !CONCURRENT_PASSES_RUNNING;
     this.active = true;
     CONCURRENT_PASSES_RUNNING = true;
 }
 
 /**
- * Leave the section. Sections do not nest: the end of an inner one switches the locking off, while the outer one is still alive
+ * Leave the section. The switch must still be on: nothing else may have switched it off meanwhile
  */
-// legacy: util/concurrency.spice:35-39
+// legacy: util/concurrency.spice:35-39. New: the assertion
 public p ParallelSection.dtor() {
     if this.active {
+        assert CONCURRENT_PASSES_RUNNING;
         CONCURRENT_PASSES_RUNNING = false;
     }
 }
@@ -118,6 +121,24 @@ f<bool> testConditionalLockOnlyLocksInParallelSection() {
         assert lock.mutex == &mutex;
     }
 
+    assert !areConcurrentPassesRunning();
+    return true;
+}
+
+// New: sections follow each other. The assertions of the section only reject a nested one, and a nested one cannot be tested, because
+// the failed assertion ends the process
+#[test]
+f<bool> testParallelSectionsMayFollowEachOther() {
+    assert !areConcurrentPassesRunning();
+    for int i = 0; i < 3; i++ {
+        ParallelSection _;
+        assert areConcurrentPassesRunning();
+    }
+    assert !areConcurrentPassesRunning();
+    {
+        ParallelSection _;
+        assert areConcurrentPassesRunning();
+    }
     assert !areConcurrentPassesRunning();
     return true;
 }

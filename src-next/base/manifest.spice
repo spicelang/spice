@@ -139,7 +139,7 @@ public f<TomlValue*> ManifestReader.parse() {
  * @param parsed Receives the boolean
  * @return Success
  */
-// legacy: util/manifest.spice:101-112 (inline in readLintRulesTable) (inline in readLintRulesTable) (inline in readLintRulesTable)
+// legacy: util/manifest.spice:101-112 (inline in readLintRulesTable)
 public f<bool> ManifestReader.readBool(TomlValue* value, const String& keyName, bool& parsed) {
     if this.hasError() {
         return false;
