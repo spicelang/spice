@@ -1,0 +1,171 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Own imports
+import "@/diag/codes";
+import "@/source/source-file";
+import "@/source/span";
+
+/**
+ * How serious a diagnostic is. Lexer, parser, semantic, compiler, linker and CLI errors are errors, a compiler warning is a
+ * warning. Lint findings use all three, see DiagnosticFamily.LINT.
+ */
+public type Severity enum {
+    INFO,
+    WARNING,
+    ERROR
+}
+
+/**
+ * The kind of a diagnostic. It selects the code catalog, the header of the rendered text and the policy of the engine.
+ * LEXER to CLI have a catalog in codes.spice, WARNING uses CompilerWarningType. A lint finding has no code, it carries the id
+ * of its rule instead.
+ */
+public type DiagnosticFamily enum {
+    LEXER,
+    PARSER,
+    SEMANTIC,
+    COMPILER,
+    LINKER,
+    CLI,
+    WARNING,
+    LINT
+}
+
+/**
+ * A message of the compiler as data. Components create diagnostics and give them to an IDiagnosticSink, they never print.
+ * The renderers in render.spice turn a diagnostic into the legacy text. It replaces the exception classes, the CompilerWarning
+ * and the LintFinding of the legacy compiler, which composed their texts in the constructor.
+ */
+// legacy: exception/*.spice, util/compiler-warning.spice, linter/lint-finding.spice
+public type Diagnostic struct {
+    public Severity severity = Severity::ERROR
+    public DiagnosticFamily family = DiagnosticFamily::COMPILER
+    public unsigned int code = 0u // Index in the catalog of the family. Unused for lint findings
+    public Span span // Where it happened. An invalid span means that there is no location
+    public String message // The text after the prefix, without the prefix
+    public bool withSnippet = false // Show the source line below the message. Only semantic errors do
+    public bool soft = false // Semantic errors only: a soft error does not stop the compilation right away, see DiagnosticEngine
+    public String rule // Lint findings only: the id of the rule, which stands where the prefix stands in other diagnostics
+}
+
+public p Diagnostic.ctor() {
+    this.severity = Severity::ERROR;
+    this.family = DiagnosticFamily::COMPILER;
+    this.code = 0u;
+    this.withSnippet = false;
+    this.soft = false;
+}
+
+/**
+ * Create the diagnostic of a catalog code. The severity, the snippet and the hardness follow the legacy classes: semantic
+ * errors are hard and have a snippet, all other errors have none, and warnings are warnings.
+ *
+ * @param family Family with a catalog (not LINT)
+ * @param code Index in the catalog of the family, e.g. `cast<unsigned int>(SemanticErrorType::DUPLICATE_SYMBOL)`
+ * @param span Location, or an invalid span if there is none
+ * @param message Text after the prefix
+ */
+public p Diagnostic.ctor(DiagnosticFamily family, unsigned int code, const Span& span, const String& message) {
+    assert family != DiagnosticFamily::LINT;
+    this.severity = family == DiagnosticFamily::WARNING ? Severity::WARNING : Severity::ERROR;
+    this.family = family;
+    this.code = code;
+    this.span = span;
+    this.message = message;
+    this.withSnippet = family == DiagnosticFamily::SEMANTIC;
+    this.soft = false;
+}
+
+/**
+ * Create a lint finding
+ *
+ * @param severity Severity of the finding: INFO, WARNING or ERROR
+ * @param rule Id of the rule, e.g. `naming-convention`
+ * @param span Location
+ * @param message Text after the rule id
+ */
+public p Diagnostic.ctor(Severity severity, const String& rule, const Span& span, const String& message) {
+    this.severity = severity;
+    this.family = DiagnosticFamily::LINT;
+    this.code = 0u;
+    this.span = span;
+    this.message = message;
+    this.withSnippet = false;
+    this.soft = false;
+    this.rule = rule;
+}
+
+/**
+ * @return Number of codes in the catalog of the family, 0 for LINT
+ */
+public f<unsigned int> getCodeCount(DiagnosticFamily family) {
+    switch family {
+        case DiagnosticFamily::LEXER: { return getLexerErrorTypeCount(); }
+        case DiagnosticFamily::PARSER: { return getParserErrorTypeCount(); }
+        case DiagnosticFamily::SEMANTIC: { return getSemanticErrorTypeCount(); }
+        case DiagnosticFamily::COMPILER: { return getCompilerErrorTypeCount(); }
+        case DiagnosticFamily::LINKER: { return getLinkerErrorTypeCount(); }
+        case DiagnosticFamily::CLI: { return getCliErrorTypeCount(); }
+        case DiagnosticFamily::WARNING: { return getCompilerWarningTypeCount(); }
+        case DiagnosticFamily::LINT: { return 0u; }
+        default: { panic(Error("Unknown diagnostic family")); }
+    }
+}
+
+/**
+ * The text before the message of a diagnostic: the prefix of its code, or the rule id of a lint finding.
+ *
+ * @param diagnostic Diagnostic with a code of its catalog
+ * @return Prefix
+ */
+public f<String> getPrefix(const Diagnostic& diagnostic) {
+    switch diagnostic.family {
+        case DiagnosticFamily::LEXER: { return String(getLexerErrorTypePrefix(cast<LexerErrorType>(diagnostic.code))); }
+        case DiagnosticFamily::PARSER: { return String(getParserErrorTypePrefix(cast<ParserErrorType>(diagnostic.code))); }
+        case DiagnosticFamily::SEMANTIC: { return String(getSemanticErrorTypePrefix(cast<SemanticErrorType>(diagnostic.code))); }
+        case DiagnosticFamily::COMPILER: { return String(getCompilerErrorTypePrefix(cast<CompilerErrorType>(diagnostic.code))); }
+        case DiagnosticFamily::LINKER: { return String(getLinkerErrorTypePrefix(cast<LinkerErrorType>(diagnostic.code))); }
+        case DiagnosticFamily::CLI: { return String(getCliErrorTypePrefix(cast<CliErrorType>(diagnostic.code))); }
+        case DiagnosticFamily::WARNING: { return String(getCompilerWarningTypePrefix(cast<CompilerWarningType>(diagnostic.code))); }
+        case DiagnosticFamily::LINT: { return diagnostic.rule; }
+        default: { panic(Error("Unknown diagnostic family")); }
+    }
+}
+
+/**
+ * Receiver of diagnostics. Every component of the pipeline reports to one, the DiagnosticEngine decides what happens with them.
+ * A language server can bring a sink that collects everything.
+ */
+public type IDiagnosticSink interface {
+    public p report(FileId, const Diagnostic&);
+}
+
+#[test]
+f<bool> testDiagnosticDefaults() {
+    const Span span = Span(makeFileId(0u), 3u, 5u);
+    const Diagnostic semantic = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::DUPLICATE_SYMBOL), span, String("x"));
+    assert semantic.severity == Severity::ERROR;
+    assert semantic.withSnippet && !semantic.soft;
+    const Diagnostic parser = Diagnostic(DiagnosticFamily::PARSER, 0u, span, String("x"));
+    assert !parser.withSnippet;
+    const Diagnostic warning = Diagnostic(DiagnosticFamily::WARNING, 0u, Span(), String("x"));
+    assert warning.severity == Severity::WARNING && !warning.span.isValid();
+    const Diagnostic lint = Diagnostic(Severity::INFO, String("naming-convention"), span, String("x"));
+    assert lint.family == DiagnosticFamily::LINT && getPrefix(lint) == "naming-convention";
+    assert getPrefix(semantic) == "Duplicate symbol";
+    return true;
+}
+
+#[test]
+f<bool> testCodeCounts() {
+    // The numbers of the legacy enums
+    assert getCodeCount(DiagnosticFamily::LEXER) == 1u;
+    assert getCodeCount(DiagnosticFamily::PARSER) == 9u;
+    assert getCodeCount(DiagnosticFamily::SEMANTIC) == 128u;
+    assert getCodeCount(DiagnosticFamily::COMPILER) == 13u;
+    assert getCodeCount(DiagnosticFamily::LINKER) == 5u;
+    assert getCodeCount(DiagnosticFamily::CLI) == 13u;
+    assert getCodeCount(DiagnosticFamily::WARNING) == 22u;
+    assert getCodeCount(DiagnosticFamily::LINT) == 0u;
+    return true;
+}

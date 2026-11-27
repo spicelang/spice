@@ -1,0 +1,212 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Own imports
+import "@/diag/codes";
+import "@/diag/diagnostic";
+import "@/source/location";
+import "@/source/snippet";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+
+// ANSI escape sequences of the colored output
+const string COLOR_RESET = "\033[0m";
+const string COLOR_RED = "\033[31m";
+const string COLOR_YELLOW = "\033[33m";
+const string COLOR_CYAN = "\033[36m";
+
+/**
+ * Render a diagnostic as the legacy compiler printed it, without color and without the final line break:
+ *
+ * - lexer and parser error: `[Error|Lexer] <loc>: <prefix>: <message>` on one line
+ * - semantic error: `[Error|Semantic] <loc>:\n<prefix>: <message>`, and `\n\n<snippet>` if there is one
+ * - compiler error: `[Error|Compiler]:\n<prefix>: <message>`, or `[Error|Compiler] <loc>:\n...` with a location
+ * - linker and CLI error: `[Error|Linker] <prefix>: <message>`, `[Error|CLI] <prefix>: <message>`
+ * - warning: `[Warning] <loc>: <prefix>: <message>`, or `[Warning] <prefix>: <message>` without a location
+ * - lint finding: `[Info|Lint|Lint error] <loc>: <rule>: <message>`
+ *
+ * @param sourceManager Manager of the files, the location and the snippet are taken from
+ * @param diagnostic Diagnostic to render
+ * @return Text of the diagnostic
+ */
+// legacy: exception/semantic-error.spice:141-158, exception/compiler-error.spice, exception/parser-error.spice, exception/lexer-error.spice,
+// exception/linker-error.spice, exception/cli-error.spice, util/compiler-warning.spice:45-65, linter/lint-finding.spice:33-37
+public f<String> renderDiagnostic(const SourceManager& sourceManager, const Diagnostic& diagnostic) {
+    const String prefix = getPrefix(diagnostic);
+    const bool hasLocation = diagnostic.span.isValid();
+    String location;
+    if hasLocation {
+        location = formatPrettyLocation(sourceManager, diagnostic.span);
+    }
+    switch diagnostic.family {
+        case DiagnosticFamily::LEXER: { return "[Error|Lexer] " + location + ": " + prefix + ": " + diagnostic.message; }
+        case DiagnosticFamily::PARSER: { return "[Error|Parser] " + location + ": " + prefix + ": " + diagnostic.message; }
+        case DiagnosticFamily::SEMANTIC: {
+            // A semantic error without a node location (the span of the default CodeLoc) formats as 0:0
+            String text = "[Error|Semantic] " + (hasLocation ? location : String("0:0")) + ":\n" + prefix + ": " + diagnostic.message;
+            if diagnostic.withSnippet {
+                const String snippet = getSnippet(sourceManager, diagnostic.span);
+                if !snippet.isEmpty() {
+                    text += "\n\n" + snippet;
+                }
+            }
+            return text;
+        }
+        case DiagnosticFamily::COMPILER: {
+            const String header = hasLocation ? "[Error|Compiler] " + location + ":" : String("[Error|Compiler]:");
+            return header + "\n" + prefix + ": " + diagnostic.message;
+        }
+        case DiagnosticFamily::LINKER: { return "[Error|Linker] " + prefix + ": " + diagnostic.message; }
+        case DiagnosticFamily::CLI: { return "[Error|CLI] " + prefix + ": " + diagnostic.message; }
+        case DiagnosticFamily::WARNING: {
+            if hasLocation {
+                return "[Warning] " + location + ": " + prefix + ": " + diagnostic.message;
+            }
+            return "[Warning] " + prefix + ": " + diagnostic.message;
+        }
+        case DiagnosticFamily::LINT: {
+            String label = String("Info");
+            if diagnostic.severity == Severity::WARNING {
+                label = String("Lint");
+            } else if diagnostic.severity == Severity::ERROR {
+                label = String("Lint error");
+            }
+            return "[" + label + "] " + (hasLocation ? location : String("0:0")) + ": " + prefix + ": " + diagnostic.message;
+        }
+        default: { panic(Error("Unknown diagnostic family")); }
+    }
+}
+
+/**
+ * Render a diagnostic as the compiler writes it to stdout: warnings in yellow, lint findings in the color of their severity
+ * (info cyan, warning yellow, error red), errors uncolored, followed by a line break. The output of a diagnostic is
+ * `printf("%s", renderDiagnosticLine(...))`, so a component that wants it on the terminal has the same bytes as legacy.
+ *
+ * @param sourceManager Manager of the files
+ * @param diagnostic Diagnostic to render
+ * @return Colored text with a trailing line break
+ */
+// legacy: util/compiler-warning.spice:67-71 (print), linter/lint-finding.spice:43-51 (print), exception/fatal-error.spice (abortWithError)
+public f<String> renderDiagnosticLine(const SourceManager& sourceManager, const Diagnostic& diagnostic) {
+    const String text = renderDiagnostic(sourceManager, diagnostic);
+    if diagnostic.family == DiagnosticFamily::WARNING {
+        return COLOR_YELLOW + text + COLOR_RESET + "\n";
+    }
+    if diagnostic.family == DiagnosticFamily::LINT {
+        String color = String(COLOR_CYAN);
+        if diagnostic.severity == Severity::WARNING {
+            color = String(COLOR_YELLOW);
+        } else if diagnostic.severity == Severity::ERROR {
+            color = String(COLOR_RED);
+        }
+        return color + text + COLOR_RESET + "\n";
+    }
+    return text + "\n";
+}
+
+// A source manager with one file named source.spice, as the test cases of the test suite have it
+f<FileId> addTestSource(SourceManager& sourceManager, const string text) {
+    return sourceManager.addString(String("source.spice"), String(text));
+}
+
+#[test]
+f<bool> testRenderSemanticError() {
+    SourceManager sourceManager;
+    const FileId file = addTestSource(sourceManager, "f<int> main() {\n    const int c = 1;\n    takeRef(c);\n}\n");
+    // 'takeRef(c)' is at line 3, column 5
+    const Span span = Span(file, 41u, 51u);
+    const Diagnostic error = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION), span,
+        String("Function/procedure 'takeRef(int)' could not be found"));
+    assert renderDiagnostic(sourceManager, error) == "[Error|Semantic] source.spice:3:5:\nReferenced undefined function: Function/procedure 'takeRef(int)' could not be found\n\n3  takeRef(c);\n   ^^^^^^^^^^";
+    assert renderDiagnosticLine(sourceManager, error) == renderDiagnostic(sourceManager, error) + "\n";
+    return true;
+}
+
+#[test]
+f<bool> testRenderSemanticErrorWithoutSnippet() {
+    SourceManager sourceManager;
+    const FileId file = addTestSource(sourceManager, "abc\n");
+    Diagnostic error = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::MISSING_MAIN_FUNCTION), Span(file, 0u, 3u), String("No main"));
+    error.withSnippet = false;
+    assert renderDiagnostic(sourceManager, error) == "[Error|Semantic] source.spice:1:1:\nSpice executables must contain a main function: No main";
+    // No location: the default CodeLoc formats as 0:0 and has no snippet
+    const Diagnostic noLocation = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::MISSING_MAIN_FUNCTION), Span(), String("No main"));
+    assert renderDiagnostic(sourceManager, noLocation) == "[Error|Semantic] 0:0:\nSpice executables must contain a main function: No main";
+    return true;
+}
+
+#[test]
+f<bool> testRenderOtherErrors() {
+    SourceManager sourceManager;
+    const FileId file = addTestSource(sourceManager, "line one\nline 'x\n");
+    const Span span = Span(file, 14u, 15u); // line 2, column 6
+    const Diagnostic lexer = Diagnostic(DiagnosticFamily::LEXER, 0u, span, String("token recognition error at: ''x"));
+    assert renderDiagnostic(sourceManager, lexer) == "[Error|Lexer] source.spice:2:6: Tokenizing failed: token recognition error at: ''x";
+    const Diagnostic parser = Diagnostic(DiagnosticFamily::PARSER, cast<unsigned int>(ParserErrorType::INVALID_STRING_LITERAL), span, String("Invalid escape sequence '/q'"));
+    assert renderDiagnostic(sourceManager, parser) == "[Error|Parser] source.spice:2:6: Invalid string literal: Invalid escape sequence '/q'";
+    const Diagnostic cli = Diagnostic(DiagnosticFamily::CLI, cast<unsigned int>(CliErrorType::INCOMPATIBLE_OPTIONS), Span(), String("Sanitizers are not supported in freestanding mode"));
+    assert renderDiagnostic(sourceManager, cli) == "[Error|CLI] Incompatible options: Sanitizers are not supported in freestanding mode";
+    const Diagnostic linker = Diagnostic(DiagnosticFamily::LINKER, cast<unsigned int>(LinkerErrorType::LINKER_NOT_FOUND), Span(), String("No linker"));
+    assert renderDiagnostic(sourceManager, linker) == "[Error|Linker] Linker not found: No linker";
+    // A compiler error has no location by default, and a header with the location if it has one
+    const Diagnostic compiler = Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::IO_ERROR), Span(), String("Cannot open"));
+    assert renderDiagnostic(sourceManager, compiler) == "[Error|Compiler]:\nI/O Error: Cannot open";
+    const Diagnostic located = Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::IO_ERROR), span, String("Cannot open"));
+    assert renderDiagnostic(sourceManager, located) == "[Error|Compiler] source.spice:2:6:\nI/O Error: Cannot open";
+    // Errors are not colored
+    assert renderDiagnosticLine(sourceManager, cli) == "[Error|CLI] Incompatible options: Sanitizers are not supported in freestanding mode\n";
+    return true;
+}
+
+#[test]
+f<bool> testRenderWarningsAndLintFindings() {
+    SourceManager sourceManager;
+    const FileId file = addTestSource(sourceManager, "type UnusedInterface interface {}\n");
+    const Span span = Span(file, 0u, 4u);
+    const Diagnostic warning = Diagnostic(DiagnosticFamily::WARNING, cast<unsigned int>(CompilerWarningType::UNUSED_INTERFACE), span, String("The interface 'UnusedInterface' is unused"));
+    assert renderDiagnostic(sourceManager, warning) == "[Warning] source.spice:1:1: Unused interface: The interface 'UnusedInterface' is unused";
+    assert renderDiagnosticLine(sourceManager, warning) == "\033[33m[Warning] source.spice:1:1: Unused interface: The interface 'UnusedInterface' is unused\033[0m\n";
+    // The backend warning has no location
+    const Diagnostic backend = Diagnostic(DiagnosticFamily::WARNING, cast<unsigned int>(CompilerWarningType::BACKEND_WARNING), Span(), String("x"));
+    assert renderDiagnostic(sourceManager, backend) == "[Warning] Backend warning: x";
+
+    const Diagnostic info = Diagnostic(Severity::INFO, String("some-rule"), span, String("Hint"));
+    const Diagnostic lint = Diagnostic(Severity::WARNING, String("naming-convention"), span, String("Struct name 'My_Point' should be PascalCase"));
+    const Diagnostic lintError = Diagnostic(Severity::ERROR, String("naming-convention"), span, String("Bad"));
+    assert renderDiagnostic(sourceManager, info) == "[Info] source.spice:1:1: some-rule: Hint";
+    assert renderDiagnostic(sourceManager, lint) == "[Lint] source.spice:1:1: naming-convention: Struct name 'My_Point' should be PascalCase";
+    assert renderDiagnostic(sourceManager, lintError) == "[Lint error] source.spice:1:1: naming-convention: Bad";
+    assert renderDiagnosticLine(sourceManager, info) == "\033[36m[Info] source.spice:1:1: some-rule: Hint\033[0m\n";
+    assert renderDiagnosticLine(sourceManager, lint) == "\033[33m[Lint] source.spice:1:1: naming-convention: Struct name 'My_Point' should be PascalCase\033[0m\n";
+    assert renderDiagnosticLine(sourceManager, lintError) == "\033[31m[Lint error] source.spice:1:1: naming-convention: Bad\033[0m\n";
+    return true;
+}
+
+// The text of a CLI error with the given code and message
+f<bool> hasMessage(const CliErrorType errorType, const string message, const string expectedMessage) {
+    const Diagnostic cliError = Diagnostic(DiagnosticFamily::CLI, cast<unsigned int>(errorType), Span(), String(message));
+    return renderDiagnostic(SourceManager(), cliError) == expectedMessage;
+}
+
+// Ported from exception/cli-error.spice:82-101 (testCliErrorMessages). The driver reports cli errors by exiting the process, which a
+// builtin test cannot observe. So the messages of the rejected cli arguments are checked here, at the level of the diagnostic
+#[test]
+f<bool> testCliErrorMessages() {
+    // Invalid enum values
+    assert hasMessage(CliErrorType::INVALID_BUILD_MODE, "unknown", "[Error|CLI] Invalid build mode: unknown");
+    assert hasMessage(CliErrorType::INVALID_SANITIZER, "unknown", "[Error|CLI] Invalid sanitizer: unknown");
+    assert hasMessage(CliErrorType::INVALID_OUTPUT_CONTAINER, "unknown", "[Error|CLI] Invalid output container: unknown");
+    assert hasMessage(CliErrorType::INVALID_BACKEND, "unknown", "[Error|CLI] Invalid backend: unknown");
+    assert hasMessage(CliErrorType::INVALID_DEBUG_INFO_LEVEL, "unknown", "[Error|CLI] Invalid debug info level: unknown");
+    assert hasMessage(CliErrorType::INVALID_RELOCATION_MODEL, "unknown", "[Error|CLI] Invalid relocation model: unknown");
+    assert hasMessage(CliErrorType::INVALID_CODE_MODEL, "unknown", "[Error|CLI] Invalid code model: unknown");
+    assert hasMessage(CliErrorType::INVALID_CPU_FEATURE, "'avx2'", "[Error|CLI] Invalid CPU feature: 'avx2'");
+
+    // Incompatible options and unsupported features
+    assert hasMessage(CliErrorType::INCOMPATIBLE_OPTIONS, "Cannot link statically if compiling shared library", "[Error|CLI] Incompatible options: Cannot link statically if compiling shared library");
+    assert hasMessage(CliErrorType::FEATURE_NOT_SUPPORTED_FOR_TARGET, "Memory sanitizer is only supported for Linux targets", "[Error|CLI] Feature is not supported for this target: Memory sanitizer is only supported for Linux targets");
+    assert hasMessage(CliErrorType::FEATURE_NOT_SUPPORTED_WHEN_DOCKERIZED, "message", "[Error|CLI] Feature not supported when dockerized: message");
+    assert hasMessage(CliErrorType::NON_ZERO_EXIT_CODE, "1", "[Error|CLI] Non-zero exit code: 1");
+    assert hasMessage(CliErrorType::TERMINATED_BY_SIGNAL, "11", "[Error|CLI] Terminated by signal: 11");
+    return true;
+}

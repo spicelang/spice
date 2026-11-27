@@ -197,7 +197,7 @@ But the mechanism prevents reuse by a language server or by unit tests, and prev
   is visible in the output.
 - The **parallel back end** and its determinism rules (`media/specs/parallel-backend.md`), including the serial linker
   input order.
-- The **diagnostic catalog**: the `SemanticErrorType` codes (129), the warning kinds (22), the message prefixes and
+- The **diagnostic catalog**: the `SemanticErrorType` codes (128), the warning kinds (22), the message prefixes and
   the rendering format.
 - The **test runner** (`test/run-tests.py`), which uses the compiler as a black-box process. The
   **benchmark suite** (`benchmark/run-benchmarks.py run --compiler NAME=PATH …`) can already compare several compilers.
@@ -579,7 +579,8 @@ that matter for compatibility or performance. A complete file mapping is in
 
 - **Responsibility.**
   - `Diagnostic { Severity, Family, code, Span, message, withSnippet }`, where `Family` is one of Lexer, Parser,
-    Semantic, Compiler, Linker, Cli, Warning or Lint.
+    Semantic, Compiler, Linker, Cli, Warning or Lint. Two more fields carry what legacy kept in the class of a diagnostic: `soft` (semantic errors) and `rule`
+    (lint findings, which have the rule id where the others have the prefix).
   - `IDiagnosticSink`.
   - `DiagnosticEngine`, which implements the legacy policies:
     - lexer, parser, CLI and compiler errors are fatal;
@@ -1128,6 +1129,41 @@ The results are recorded in this document. An idiom that stage0 does not support
   `IO_ERROR` abort of the `Reader` ctor; the driver builds the text `Source file at path '<path>' cannot be opened.`. A path is read
   once: `addFile` of a path that it read before returns the known id (a string added with `addString` is never found). `CodeLoc.operator==` (path, line, column) is replaced by the `Span` comparison
   (file and offsets). `isBefore` and `isAfter` of legacy compared only line and column.
+
+**Results (WP 1.4).**
+
+- `diag` has five files: `diagnostics.def` (the catalog) and its generated `codes.spice`, `diagnostic` (`Diagnostic`, `Severity`,
+  `DiagnosticFamily`, `IDiagnosticSink`, `getPrefix`), `render` (the renderers) and `diagnostic-engine` (`DiagnosticEngine`). The
+  golden test is `golden-test.spice`.
+- The catalog has 128 semantic codes, not 129 as the plan said before, and 1 lexer, 9 parser, 13 compiler, 5 linker, 13 CLI codes
+  and 22 warnings. `tools/gen/extract_diagnostics_def.py` extracts `diagnostics.def` from the legacy enums and prefix tables once. The
+  legacy compiler is frozen, so the definition is maintained by hand afterwards, and a unit test compares it with the legacy sources
+  (`--check`), so a legacy PR that adds a code cannot go unnoticed. `gen_diagnostics.py` writes one enum per family (codes are the
+  enum values of legacy, in the same order), the prefix function, the count and a unit test that visits every code.
+- `Diagnostic` has the fields of 5.3 plus `soft` and `rule`. A `Diagnostic` of a family with a catalog has `code`, the index of its
+  member. An invalid `Span` means that there is no location. `withSnippet` defaults to true for semantic errors only. There is no
+  `IRError`, `ErrorManager` or `SoftError` any more: the engine holds the first fatal error, the first hard error and the lists.
+- Renderers. `renderDiagnostic` returns the legacy text without color and without the final line break. `renderDiagnosticLine` adds
+  what `abortWithError` and `CompilerWarning.print` added: warnings are yellow, lint findings are info cyan, warning yellow and error
+  red, errors are plain, and every line ends with `\n`. Warnings and lint findings go to **stdout**, like legacy (its doc comment says
+  stderr). A semantic error without a location formats as `0:0`, as the default `CodeLoc` did.
+- `DiagnosticEngine`, keyed by the file id of the module. Fatal errors (lexer, parser, CLI, compiler, linker) keep the first one. A
+  hard semantic error is kept if it is the first, and a fatal error wins over a hard error, because legacy printed it at once and the
+  hard error at the next checkpoint. A soft error is dropped if the module has one with the same span start (legacy compared the
+  `CodeLoc` with line and column, which is the same position in a file). `flushSoftErrors` combines the soft errors of a module, in
+  report order, into the `UNRESOLVED_SOFT_ERRORS` compiler error with the legacy text. It does nothing if a fatal or hard error
+  exists, which is the order of `checkForHardError` before `checkForSoftErrors`. `collectWarnings` renders the warnings of a module in
+  report order and drops a text that it returned already (legacy: `warningMessage` equality per file). The engine takes the
+  `SourceManager` as an argument where it renders. It never prints and never exits.
+- Lint findings are collected, never deduplicated, and counted by severity (`getLintErrorCount`), like `collectAndPrintLintFindings`.
+- Golden test: 50 cases (20 hard semantic, 12 with soft errors, 4 parser, 3 lexer, 3 CLI, 8 warning) sampled with a fixed seed by
+  `tools/sample_diag_golden.py` into `test/fixtures/diag-golden.txt`. The test rebuilds each diagnostic from its reference file (family,
+  code from the prefix, location, marker length) and the sources next to it, runs it through the engine and compares the output with
+  the reference. All 50 match. The reference files contain `/` where the output has `\`, because the test runner normalizes the
+  separators, so the test does the same. The cases are plain ASCII, because the offset is built from the column by byte.
+- Ported builtin test: `testCliErrorMessages` of `exception/cli-error.spice` runs in `render.spice` with the same assertions.
+- Known limit: the legacy snippet is cut from the file on disk and the new one from the buffer of the `SourceManager`. They differ
+  only if the file changed during the compilation, or for a source that was read from memory (the deviation of WP 1.3).
 
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
