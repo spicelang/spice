@@ -55,21 +55,11 @@ public f<Result<FileId>> SourceManager.addFile(const String& path) {
     if isValid(existing) {
         return ok(existing);
     }
-    Result<File> opened = openFile(path, MODE_READ);
-    if !opened.isOk() {
+    Result<String> read = readFile(path.getRaw());
+    if !read.isOk() {
         return err<FileId>("Source file cannot be opened");
     }
-    File file = opened.unwrap();
-    String text;
-    // The std reports the end of the file only after a failed read, like Reader.isInputExhausted did
-    while true {
-        const char c = file.readChar();
-        if file.isEOF() {
-            break;
-        }
-        text += c;
-    }
-    file.close();
+    const String text = read.unwrap();
     const FileId id = this.addString(path, text);
     this.files.get(id).fromDisk = true;
     return ok(id);
