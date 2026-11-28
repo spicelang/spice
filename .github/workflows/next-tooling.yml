@@ -7,6 +7,8 @@ on:
     paths:
       - src-next/**
       - tools/gen/**
+      - src/exception/**
+      - src/util/compiler-warning.spice
       - tools/check_layering.py
       - tools/test_check_layering.py
       - .github/workflows/next-tooling.yml
@@ -14,6 +16,8 @@ on:
     paths:
       - src-next/**
       - tools/gen/**
+      - src/exception/**
+      - src/util/compiler-warning.spice
       - tools/check_layering.py
       - tools/test_check_layering.py
       - .github/workflows/next-tooling.yml
@@ -41,4 +45,5 @@ jobs:
       - name: Test the tools
         run: |
           python -m unittest tools/gen/test_generate.py
+          python -m unittest tools/gen/test_gen_diagnostics.py
           python -m unittest tools/test_check_layering.py

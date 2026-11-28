@@ -1,0 +1,208 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Golden test of the diagnostics renderer: 50 sampled cases of the test suite (test/fixtures/diag-golden.txt, written by
+// tools/sample_diag_golden.py) are rebuilt from their reference file, rendered by the engine again and compared with the
+// reference. The test parses the grammar that the script documents. It needs the working directory to be the repository root,
+// where the test runner and the CI start it.
+
+// Std imports
+import "std/data/vector";
+import "std/io/file";
+import "std/text/string-ext";
+import "std/type/types";
+
+// Own imports
+import "@/diag/codes";
+import "@/diag/diagnostic";
+import "@/diag/diagnostic-engine";
+import "@/diag/render";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+
+const string GOLDEN_LIST = "test/fixtures/diag-golden.txt";
+const string SOFT_HEADER = "[Error|Compiler]:\nUnresolved soft errors: There are unresolved errors. Please fix them and recompile.\n\n";
+const string SOFT_SEPARATOR = "\n\n[Error|Semantic] ";
+
+// Parse the decimal number that starts at the given index. The index is moved behind the digits
+f<unsigned long> parseNumber(const String& text, unsigned long& idx) {
+    unsigned long value = 0l;
+    while idx < text.getLength() && text[idx] >= '0' && text[idx] <= '9' {
+        value = value * 10l + cast<unsigned long>(cast<int>(text[idx]) - 48);
+        idx++;
+    }
+    return value;
+}
+
+// Find the code of the family whose prefix starts the text, followed by ': '. The longest prefix wins
+f<unsigned int> findCode(DiagnosticFamily family, const String& text) {
+    unsigned int best = UINT_MAX_VALUE;
+    unsigned long bestLength = 0l;
+    for unsigned int code = 0u; code < getCodeCount(family); code++ {
+        const String needle = getPrefix(makeDiagnostic(family, code, Span(), String())) + ": ";
+        if text.startsWith(needle.getRaw()) && needle.getLength() > bestLength {
+            best = code;
+            bestLength = needle.getLength();
+        }
+    }
+    assert best != UINT_MAX_VALUE;
+    return best;
+}
+
+// Add the file of a path like './source1.spice' of the case to the manager
+f<FileId> addCaseFile(SourceManager& sourceManager, const String& dir, const String& path) {
+    assert path.startsWith("./");
+    Result<FileId> added = sourceManager.addFile(dir + "/" + path.getSubstring(2l));
+    assert added.isOk();
+    return added.unwrap();
+}
+
+// Parse '<path>:<line>:<col>' at the index and build the span of the given length that starts there. The index is moved behind
+// the column
+f<Span> parseSpan(SourceManager& sourceManager, const String& dir, const String& text, unsigned long& idx, unsigned long length) {
+    const long pathEnd = text.find(':', idx);
+    assert pathEnd > 0l;
+    const FileId file = addCaseFile(sourceManager, dir, text.getSubstring(idx, pathEnd - cast<long>(idx)));
+    idx = cast<unsigned long>(pathEnd) + 1l;
+    const unsigned long line = parseNumber(text, idx);
+    assert text[idx] == ':';
+    idx++;
+    const unsigned long col = parseNumber(text, idx);
+    const unsigned int start = sourceManager.getFile(file).lineStarts.get(line - 1l) + cast<unsigned int>(col - 1l);
+    return Span(file, start, start + cast<unsigned int>(length));
+}
+
+// Rebuild the diagnostic of one block of a reference file
+f<Diagnostic> parseBlock(SourceManager& sourceManager, const String& dir, const String& block, bool soft) {
+    unsigned long idx = 0l;
+    if block.startsWith("[Error|Semantic] ") {
+        const Vector<String> lines = split(block, '\n');
+        // Header, message and optionally an empty line, the line of the snippet and the marker
+        assert lines.getSize() == 2l || lines.getSize() == 5l;
+        unsigned long carets = 0l;
+        if lines.getSize() == 5l {
+            const String& marker = lines.get(4l);
+            while carets < marker.getLength() && marker[carets] == ' ' { carets++; }
+            carets = marker.getLength() - carets;
+        }
+        idx = 17l;
+        const Span span = parseSpan(sourceManager, dir, lines.get(0l), idx, carets);
+        const unsigned int code = findCode(DiagnosticFamily::SEMANTIC, lines.get(1l));
+        const unsigned long prefixLength = String(getSemanticErrorTypePrefix(cast<SemanticErrorType>(code))).getLength() + 2l;
+        Diagnostic error = makeDiagnostic(DiagnosticFamily::SEMANTIC, code, span, lines.get(1l).getSubstring(prefixLength));
+        error.withSnippet = lines.getSize() == 5l;
+        error.soft = soft;
+        return error;
+    }
+    DiagnosticFamily family = DiagnosticFamily::LEXER;
+    if block.startsWith("[Error|Lexer] ") {
+        idx = 14l;
+    } else if block.startsWith("[Error|Parser] ") {
+        family = DiagnosticFamily::PARSER;
+        idx = 15l;
+    } else {
+        assert block.startsWith("[Error|CLI] ");
+        const String rest = block.getSubstring(12l);
+        const unsigned int code = findCode(DiagnosticFamily::CLI, rest);
+        return makeDiagnostic(DiagnosticFamily::CLI, code, Span(), rest.getSubstring(String(getCliErrorTypePrefix(cast<CliErrorType>(code))).getLength() + 2l));
+    }
+    const Span span = parseSpan(sourceManager, dir, block, idx, 1l);
+    assert block.getSubstring(idx, 2l) == ": ";
+    const String rest = block.getSubstring(idx + 2l);
+    const unsigned int code = findCode(family, rest);
+    return makeDiagnostic(family, code, span, rest.getSubstring(String(getPrefix(makeDiagnostic(family, code, Span(), String()))).getLength() + 2l));
+}
+
+// The test runner replaces the backslashes of an error message with slashes (test/run-tests.py, extract_error_message), so that
+// the reference files are the same on Windows. Warnings are compared as they are. The golden test does the same
+f<String> normalizeSeparators(const String& text) {
+    String normalized;
+    for unsigned long i = 0l; i < text.getLength(); i++ {
+        normalized += text[i] == '\\' ? '/' : text[i];
+    }
+    return normalized;
+}
+
+// Run one case. Returns an empty string if the rendered text equals the reference, otherwise a description of the difference
+f<String> runGoldenCase(const String& kind, const String& dir) {
+    SourceManager sourceManager;
+    sourceManager.setRootSourceFilePath(dir + "/source.spice");
+    const FileId root = addCaseFile(sourceManager, dir, String("./source.spice"));
+    DiagnosticEngine engine;
+    String expected;
+    String actual;
+    if kind == "warning" {
+        Result<String> read = readFile((dir + "/warning.out").getRaw());
+        if !read.isOk() { return String("cannot read warning.out"); }
+        expected = read.unwrap();
+        const Vector<String> lines = split(expected, '\n');
+        for unsigned long i = 0l; i < lines.getSize(); i++ {
+            const String& line = lines.get(i);
+            if line.isEmpty() { continue; }
+            unsigned long idx = 10l; // Behind '[Warning] '
+            const Span span = parseSpan(sourceManager, dir, line, idx, 1l);
+            const String rest = line.getSubstring(idx + 2l);
+            const unsigned int code = findCode(DiagnosticFamily::WARNING, rest);
+            const unsigned long prefixLength = String(getCompilerWarningTypePrefix(cast<CompilerWarningType>(code))).getLength() + 2l;
+            engine.report(root, makeDiagnostic(DiagnosticFamily::WARNING, code, span, rest.getSubstring(prefixLength)));
+        }
+        const Vector<Diagnostic> warnings = engine.collectWarnings(sourceManager, root);
+        for unsigned long i = 0l; i < warnings.getSize(); i++ {
+            actual += renderDiagnostic(sourceManager, warnings.get(i)) + "\n";
+        }
+    } else {
+        Result<String> read = readFile((dir + "/exception.out").getRaw());
+        if !read.isOk() { return String("cannot read exception.out"); }
+        expected = read.unwrap();
+        if expected.startsWith(SOFT_HEADER) {
+            String rest = expected.getSubstring(String(SOFT_HEADER).getLength());
+            bool first = true;
+            while true {
+                const long separator = rest.find(SOFT_SEPARATOR);
+                const String block = separator < 0l ? rest : rest.getSubstring(0l, separator);
+                engine.report(root, parseBlock(sourceManager, dir, first ? block : "[Error|Semantic] " + block, true));
+                first = false;
+                if separator < 0l { break; }
+                rest = rest.getSubstring(cast<unsigned long>(separator) + String(SOFT_SEPARATOR).getLength());
+            }
+            engine.flushSoftErrors(sourceManager);
+        } else {
+            engine.report(root, parseBlock(sourceManager, dir, expected, false));
+        }
+        if !engine.mustStop() { return String("the pipeline does not stop"); }
+        actual = engine.renderStop(sourceManager);
+    }
+    if kind != "warning" {
+        actual = normalizeSeparators(actual);
+    }
+    if actual == expected {
+        return String();
+    }
+    return "expected:\n" + expected + "\nactual:\n" + actual;
+}
+
+#[test]
+f<bool> testGoldenDiagnostics() {
+    Result<String> list = readFile(GOLDEN_LIST);
+    assert list.isOk(); // Run the test from the repository root
+    const Vector<String> entries = split(list.unwrap(), '\n');
+    unsigned long cases = 0l;
+    unsigned long failures = 0l;
+    for unsigned long i = 0l; i < entries.getSize(); i++ {
+        const String& entry = entries.get(i);
+        if entry.isEmpty() || entry[0] == '#' { continue; }
+        const long space = entry.find(' ');
+        assert space > 0l;
+        const String kind = entry.getSubstring(0l, space);
+        const String dir = entry.getSubstring(cast<unsigned long>(space) + 1l);
+        const String difference = runGoldenCase(kind, dir);
+        cases++;
+        if !difference.isEmpty() {
+            failures++;
+            printf("Golden case %s differs: %s\n", dir.getRaw(), difference.getRaw());
+        }
+    }
+    assert cases == 50l;
+    assert failures == 0l;
+    return true;
+}
