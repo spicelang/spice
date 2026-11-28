@@ -37,6 +37,12 @@ p LexResult.ctor(const string text) {
     this.stream = lex(this.sourceManager, this.file, this.engine);
 }
 
+// For a text with a NUL byte, which a C string cannot hold
+p LexResult.ctor(const String& text) {
+    this.file = this.sourceManager.addString(String("source.spice"), text);
+    this.stream = lex(this.sourceManager, this.file, this.engine);
+}
+
 f<TokenType> LexResult.typeAt(unsigned long index) {
     return this.stream.getTokens().get(index).tokenType;
 }
@@ -378,6 +384,20 @@ f<bool> testTokenStreamLookaheadSkipsComments() {
     return true;
 }
 
+// A comment at the start has the ordinal 0, like the first relevant token behind it
+#[test]
+f<bool> testTokenStreamStartsWithAComment() {
+    LexResult lexed = LexResult("/* c */ a b");
+    TokenStream& stream = lexed.stream;
+    assert stream.getToken().tokenType == TokenType::BLOCK_COMMENT;
+    assert stream.peekRelevantType(0l) == TokenType::IDENTIFIER;
+    assert stream.getPreviousRelevantToken().tokenType == TokenType::BLOCK_COMMENT;
+    stream.advance();
+    assert stream.getSpan().start == 8u && stream.getSpan().stop == 9u;
+    assert stream.getTokens().getSize() == 4l;
+    return true;
+}
+
 #[test]
 f<bool> testTokenStreamTokenTextAndSourceCode() {
     LexResult lexed = LexResult("assert a  +  /* x */ b == \"s\"; // end\n");
@@ -430,6 +450,41 @@ f<bool> testLexerErrorEndsTheTokensAtTheFirstError() {
     assert lexed.stream.getTokens().get(2l).span.start == 4u;
     // Only the first error is kept
     assert lexed.engine.fatal.span.start == 4u;
+    return true;
+}
+
+// Legacy handed the message on as a C string, so a NUL byte of the source cuts it
+#[test]
+f<bool> testLexerErrorMessageEndsAtANulByte() {
+    String unknown = String("a ");
+    unknown += '\0';
+    unknown += " b";
+    LexResult unknownLexed = LexResult(unknown);
+    assert unknownLexed.stream.failed;
+    assert unknownLexed.engine.renderStop(unknownLexed.sourceManager) == "[Error|Lexer] source.spice:1:3: Tokenizing failed: token recognition error at: '";
+    String literal = String("\"ab");
+    literal += '\0';
+    literal += "cd";
+    LexResult literalLexed = LexResult(literal);
+    assert literalLexed.stream.failed;
+    assert literalLexed.engine.renderStop(literalLexed.sourceManager) == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '\"ab'";
+    // The content of a char literal stops at the NUL, the closing quote stays
+    String chars = String("'");
+    chars += '\0';
+    chars += '\0';
+    chars += "'";
+    LexResult charsLexed = LexResult(chars);
+    assert charsLexed.engine.renderStop(charsLexed.sourceManager) == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '''";
+    return true;
+}
+
+// The span of an error runs from the start of the token to the offending byte
+#[test]
+f<bool> testLexerErrorSpan() {
+    LexResult lexed = LexResult("ab @");
+    assert lexed.engine.fatal.span.start == 3u && lexed.engine.fatal.span.stop == 4u;
+    LexResult literal = LexResult("x '\\q");
+    assert literal.engine.fatal.span.start == 2u && literal.engine.fatal.span.stop == 5u;
     return true;
 }
 
@@ -529,7 +584,8 @@ p checkTokensTile(const string path) {
 f<bool> testLexerTilesRealSources() {
     checkTokensTile("src-next/syntax/lexer/lexer.spice");
     checkTokensTile("src-next/diag/diagnostic-engine.spice");
-    checkTokensTile("src/typechecker/type-checker.spice");
+    checkTokensTile("src-next/syntax/ast/ast-store.spice");
+    checkTokensTile("src-next/source/source-manager.spice");
     checkTokensTile("std/data/vector.spice");
     checkTokensTile("std/text/analysis.spice");
     return true;

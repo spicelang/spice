@@ -85,9 +85,10 @@ inline f<bool> isUtf8ContinuationByte(char c) {
     return (cast<int>(cast<byte>(c)) & 0xC0) == 0x80;
 }
 
-// The bytes [start, stop) of the source as a string. Only for error messages
-f<String> Lexer.slice(unsigned int start, unsigned int stop) {
-    String text;
+// The bytes [start, stop) of the source behind a prefix, as a string. Only for error messages. It appends byte by byte, so `fail`
+// sees a NUL byte of the source
+f<String> Lexer.slice(const string prefix, unsigned int start, unsigned int stop) {
+    String text = String(prefix);
     for unsigned int i = start; i < stop; i++ {
         text += this.data[i];
     }
@@ -101,16 +102,40 @@ inline f<Token> Lexer.makeToken(TokenType tokenType, unsigned int start) {
     return Token(tokenType, Span(this.file, start, this.pos), start, this.pos);
 }
 
-// Remember the first error. The caller returns an INVALID token and everybody up to the token loop returns at once
+// Remember the first error. The caller returns an INVALID token and everybody up to the token loop returns at once.
+// The message is `token recognition error at: '<content>'`. Legacy built it by concatenating Strings, and the concatenation reads
+// the right operand as a C string, so a NUL byte of the source cuts the content there, but the closing quote is kept
 // legacy: lexer/lexer.spice:373-377 (throwLexerError)
-p Lexer.fail(unsigned int start, const String& message) {
+p Lexer.fail(unsigned int start, const String& content) {
+    String message = String("token recognition error at: '");
+    for unsigned long i = 0l; i < content.getLength() && content[i] != '\0'; i++ {
+        message += content[i];
+    }
+    message += '\'';
+    this.failWithMessage(start, message);
+}
+
+// The unknown char is appended as a char, so a NUL byte stays in the message. Legacy passed the message on as a C string
+// (`message.getRaw()`), so it ends at the NUL, behind the opening quote
+// legacy: lexer/lexer.spice:348-350
+p Lexer.failUnknownChar(unsigned int start, char unknownChar) {
+    if unknownChar == '\0' {
+        this.failWithMessage(start, String("token recognition error at: '"));
+        return;
+    }
+    String content;
+    content += unknownChar;
+    this.fail(start, content);
+}
+
+p Lexer.failWithMessage(unsigned int start, const String& message) {
     if this.failed {
         return;
     }
     this.failed = true;
     this.errorStart = start;
     this.errorStop = this.pos;
-    this.errorMessage = String("token recognition error at: '") + message + "'";
+    this.errorMessage = message;
 }
 
 /**
@@ -162,7 +187,7 @@ f<Token> Lexer.consumeToken(unsigned int start) {
     if operatorToken.tokenType != TokenType::INVALID {
         return operatorToken;
     }
-    this.fail(start, String(curChar));
+    this.failUnknownChar(start, curChar);
     return Token();
 }
 
@@ -351,7 +376,7 @@ f<Token> Lexer.consumeNumberLiteral(unsigned int start) {
                 this.advance(); // Consume sign
             }
             if !isDigit(this.getChar()) {
-                this.fail(start, this.slice(start, this.pos));
+                this.fail(start, this.slice("", start, this.pos));
                 return Token();
             }
             while isDigit(this.getChar()) {
@@ -448,7 +473,7 @@ f<Token> Lexer.failCharLiteral(unsigned int start) {
         this.consumeCodePoint();
     }
     // The message has two quotes in front of the content: one of the template and the opening one of the literal
-    this.fail(start, String("'") + this.slice(start + 1u, this.pos));
+    this.fail(start, this.slice("'", start + 1u, this.pos));
     return Token();
 }
 
@@ -463,7 +488,7 @@ f<Token> Lexer.consumeStringLiteral(unsigned int start) {
     while this.getChar() != '"' {
         // A string literal must be terminated in the same line
         if this.isEOF() || this.getChar() == '\n' {
-            this.fail(start, String("\"") + this.slice(contentStart, this.pos));
+            this.fail(start, this.slice("\"", contentStart, this.pos));
             return Token();
         }
         if this.getChar() == '\\' { // Escape sequence
