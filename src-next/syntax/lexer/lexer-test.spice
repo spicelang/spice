@@ -18,7 +18,7 @@ import "@/syntax/lexer/lexer";
 import "@/syntax/lexer/token";
 import "@/syntax/lexer/token-stream";
 
-// Tests of the lexer. The expectations come from the legacy lexer (src/lexer/lexer.spice), the five LexerTests of the test suite
+// Tests of the lexer. The expectations come from the legacy lexer (src/lexer/lexer.spice), the LexerTests of the test suite
 // and the quirks that the port has to keep. The error cases of the suite run in-process here, because the new binary has no
 // command that lexes a file yet. They join the ratchet once the binary has `--dump-ast` (WP 2.5).
 
@@ -309,26 +309,55 @@ f<bool> testLexerLineCommentAtTheEndOfTheInput() {
     return true;
 }
 
-// '/**/' is a doc comment that has not ended yet, and '**/' does not end a comment. The next '*/' does
+// '/**/' is an empty block comment, and a comment ends at its first '*/', also behind several '*' (legacy bug #1907)
 #[test]
-f<bool> testLexerBlockCommentQuirks() {
+f<bool> testLexerBlockCommentEnds() {
     LexResult empty = LexResult("/**/ a */ b");
-    assert empty.typeAt(0l) == TokenType::DOC_COMMENT && empty.textAt(0l) == "/**/ a */";
-    assert empty.typeAt(1l) == TokenType::IDENTIFIER && empty.textAt(1l) == "b";
+    assert empty.typeAt(0l) == TokenType::BLOCK_COMMENT && empty.textAt(0l) == "/**/";
+    assert empty.typeAt(1l) == TokenType::IDENTIFIER && empty.textAt(1l) == "a";
+    assert empty.typeAt(2l) == TokenType::MUL && empty.typeAt(3l) == TokenType::DIV;
 
-    LexResult doubleStar = LexResult("/* a **/ b */ c");
-    assert doubleStar.typeAt(0l) == TokenType::BLOCK_COMMENT && doubleStar.textAt(0l) == "/* a **/ b */";
-    assert doubleStar.typeAt(1l) == TokenType::IDENTIFIER && doubleStar.textAt(1l) == "c";
+    LexResult doubleStar = LexResult("/* a **/ b */");
+    assert doubleStar.typeAt(0l) == TokenType::BLOCK_COMMENT && doubleStar.textAt(0l) == "/* a **/";
+    assert doubleStar.typeAt(1l) == TokenType::IDENTIFIER && doubleStar.textAt(1l) == "b";
+
+    LexResult doc = LexResult("/*** doc ***/ /** doc **/ /** x */ /***/");
+    assert doc.typeAt(0l) == TokenType::DOC_COMMENT && doc.textAt(0l) == "/*** doc ***/";
+    assert doc.typeAt(1l) == TokenType::DOC_COMMENT && doc.textAt(1l) == "/** doc **/";
+    assert doc.typeAt(2l) == TokenType::DOC_COMMENT && doc.textAt(2l) == "/** x */";
+    assert doc.typeAt(3l) == TokenType::DOC_COMMENT && doc.textAt(3l) == "/***/";
+    assert doc.typeAt(4l) == TokenType::EOF;
     return true;
 }
 
-// An unterminated block comment ends at the end of the input without an error
+// A block or doc comment that is not closed before the end of the input is an error at its start (legacy bug #1908). The error
+// shows the opening delimiter. A '*' as the last byte is no assertion (legacy bug #1906)
 #[test]
 f<bool> testLexerUnterminatedBlockComment() {
-    LexResult lexed = LexResult("a /* never closed");
-    assert !lexed.stream.failed;
-    assert lexed.typeAt(1l) == TokenType::BLOCK_COMMENT && lexed.textAt(1l) == "/* never closed";
-    assert lexed.typeAt(2l) == TokenType::EOF;
+    assert lexError("a /* never closed") == "[Error|Lexer] source.spice:1:3: Tokenizing failed: token recognition error at: '/*'";
+    assert lexError("a\n/** doc\n * never closed\n") == "[Error|Lexer] source.spice:2:1: Tokenizing failed: token recognition error at: '/**'";
+    assert lexError("/* comment *") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '/*'";
+    assert lexError("/*") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '/*'";
+    assert lexError("/**") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '/**'";
+    return true;
+}
+
+// '..' needs a third '.', else it is an error and no assertion (legacy bug #1906)
+#[test]
+f<bool> testLexerTwoDotsAreAnError() {
+    assert lexError("a = 1..x;") == "[Error|Lexer] source.spice:1:6: Tokenizing failed: token recognition error at: '..'";
+    assert lexError("..") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '..'";
+    LexResult three = LexResult("1... 2 .. ");
+    assert three.stream.failed;
+    assert three.typeAt(1l) == TokenType::ELLIPSIS;
+    return true;
+}
+
+// A string that ends in a '\' at the end of the input is an error and no assertion (legacy bug #1906)
+#[test]
+f<bool> testLexerStringEndsInBackslash() {
+    assert lexError("\"abc\\") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '\"abc\\'";
+    assert lexError("x = \"\\") == "[Error|Lexer] source.spice:1:5: Tokenizing failed: token recognition error at: '\"\\'";
     return true;
 }
 
@@ -518,7 +547,7 @@ f<bool> testLexerStringLiteralErrors() {
     return true;
 }
 
-// The five cases of the LexerTests suite: the source and the expected output come from test/test-files/lexer. The runner of the
+// The error cases of the LexerTests suite: the source and the expected output come from test/test-files/lexer. The runner of the
 // suite checks the binary, this checks the lexer, the engine and the renderer with the same files. The builtin tests run in the
 // repository root
 f<String> readCase(const string name, const string file) {
@@ -544,11 +573,16 @@ p checkSuiteCase(const string name) {
 
 #[test]
 f<bool> testLexerSuiteCases() {
+    checkSuiteCase("error-block-comment-ends-in-star");
+    checkSuiteCase("error-block-comment-unterminated");
     checkSuiteCase("error-char-literal-empty");
     checkSuiteCase("error-char-literal-line-break");
     checkSuiteCase("error-char-literal-too-long");
     checkSuiteCase("error-char-literal-unterminated");
+    checkSuiteCase("error-doc-comment-unterminated");
+    checkSuiteCase("error-dots-without-third-dot");
     checkSuiteCase("error-lexing-error");
+    checkSuiteCase("error-string-ends-in-backslash");
     return true;
 }
 
