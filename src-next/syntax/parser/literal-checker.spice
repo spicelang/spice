@@ -143,7 +143,7 @@ public f<char> LiteralChecker.parseChar(const Token& token) {
 
     if input.getLength() >= 2l && input[0l] == '\\' { // Char literals with escape sequence
         unsigned long index = 0l;
-        const char escapedChar = this.parseEscapeSequence(token, index, ParserErrorType::INVALID_CHAR_LITERAL);
+        const char escapedChar = this.parseEscapeSequence(token, input, index, ParserErrorType::INVALID_CHAR_LITERAL);
         if index == input.getLength() {
             return escapedChar;
         }
@@ -167,7 +167,7 @@ public f<String> LiteralChecker.parseString(const Token& token) {
     unsigned long index = 0l;
     while index < length && !this.state.failed {
         if input[index] == '\\' {
-            output += this.parseEscapeSequence(token, index, ParserErrorType::INVALID_STRING_LITERAL);
+            output += this.parseEscapeSequence(token, input, index, ParserErrorType::INVALID_STRING_LITERAL);
         } else {
             output += input[index];
             index++;
@@ -182,13 +182,13 @@ public f<String> LiteralChecker.parseString(const Token& token) {
  * and hex escape sequences with exactly two digits like \x1B. Every other escape sequence is rejected
  *
  * @param token Char or string literal token
+ * @param input Text of the token, which the caller read once
  * @param index Index of the backslash in the token text. Gets advanced to the first char after the escape sequence
  * @param errorType Error type to report for invalid escape sequences
  * @return Char value of the escape sequence
  */
 // legacy: parser/parser.spice:2852-2926
-f<char> LiteralChecker.parseEscapeSequence(const Token& token, unsigned long& index, ParserErrorType errorType) {
-    const String input = this.state.tokenText(token);
+f<char> LiteralChecker.parseEscapeSequence(const Token& token, const String& input, unsigned long& index, ParserErrorType errorType) {
     const unsigned long length = input.getLength();
     const unsigned long startIndex = index;
     index++; // Skip the backslash
