@@ -140,7 +140,7 @@ public p DiagnosticEngine.flushSoftErrors(const SourceManager& sourceManager) {
         text << "\n\n" << renderDiagnostic(sourceManager, this.softErrors.get(i).diagnostic);
     }
     if !this.softErrors.isEmpty() {
-        this.reportFatal(Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::UNRESOLVED_SOFT_ERRORS), Span(), text.str()));
+        this.reportFatal(makeDiagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::UNRESOLVED_SOFT_ERRORS), Span(), text.str()));
     }
 }
 
@@ -233,7 +233,7 @@ public const f<unsigned int> DiagnosticEngine.getLintErrorCount() {
 
 // A semantic error of the given kind at the given span of a file
 f<Diagnostic> makeTestError(FileId file, unsigned int start, unsigned int stop, const string message, bool soft) {
-    Diagnostic error = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::DUPLICATE_SYMBOL), Span(file, start, stop), String(message));
+    Diagnostic error = makeDiagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::DUPLICATE_SYMBOL), Span(file, start, stop), String(message));
     error.soft = soft;
     return error;
 }
@@ -250,8 +250,8 @@ f<bool> testFatalErrorsKeepTheFirst() {
     assert engine.mustStop();
     assert engine.renderStop(sourceManager) == "[Error|Semantic] source.spice:1:1:\nDuplicate symbol: first\n\n1  abc\n   ^^^";
     // A fatal error that comes later beats the hard error, because legacy printed it right away
-    engine.report(file, Diagnostic(DiagnosticFamily::PARSER, 0u, Span(file, 4u, 5u), String("one")));
-    engine.report(file, Diagnostic(DiagnosticFamily::LEXER, 0u, Span(file, 0u, 1u), String("two")));
+    engine.report(file, makeDiagnostic(DiagnosticFamily::PARSER, 0u, Span(file, 4u, 5u), String("one")));
+    engine.report(file, makeDiagnostic(DiagnosticFamily::LEXER, 0u, Span(file, 0u, 1u), String("two")));
     assert engine.renderStop(sourceManager) == "[Error|Parser] source.spice:2:1: Parsing failed: one";
     return true;
 }
@@ -320,7 +320,7 @@ f<bool> testFatalErrorBeforeAFlushStays() {
     const FileId file = sourceManager.addString(String("source.spice"), String("aaa\n"));
     DiagnosticEngine engine;
     engine.report(file, makeTestError(file, 0u, 3u, "soft", true));
-    engine.report(file, Diagnostic(DiagnosticFamily::CLI, 0u, Span(), String("fatal")));
+    engine.report(file, makeDiagnostic(DiagnosticFamily::CLI, 0u, Span(), String("fatal")));
     engine.flushSoftErrors(sourceManager);
     assert engine.renderStop(sourceManager) == "[Error|CLI] Incompatible options: fatal";
     return true;
@@ -348,12 +348,12 @@ f<bool> testWarningsAreDeduplicatedPerModule() {
     const FileId second = sourceManager.addString(String("source1.spice"), String("aaa\n"));
     DiagnosticEngine engine;
     const unsigned int unusedImport = cast<unsigned int>(CompilerWarningType::UNUSED_IMPORT);
-    const Diagnostic a = Diagnostic(DiagnosticFamily::WARNING, unusedImport, Span(first, 0u, 3u), String("a"));
-    const Diagnostic b = Diagnostic(DiagnosticFamily::WARNING, unusedImport, Span(first, 4u, 7u), String("b"));
+    const Diagnostic a = makeDiagnostic(DiagnosticFamily::WARNING, unusedImport, Span(first, 0u, 3u), String("a"));
+    const Diagnostic b = makeDiagnostic(DiagnosticFamily::WARNING, unusedImport, Span(first, 4u, 7u), String("b"));
     engine.report(first, a);
     engine.report(first, b);
     engine.report(first, a);
-    engine.report(second, Diagnostic(DiagnosticFamily::WARNING, unusedImport, Span(second, 0u, 3u), String("a")));
+    engine.report(second, makeDiagnostic(DiagnosticFamily::WARNING, unusedImport, Span(second, 0u, 3u), String("a")));
     // Warnings never stop the pipeline
     assert !engine.mustStop();
     const Vector<Diagnostic> warnings = engine.collectWarnings(sourceManager, first);
@@ -369,9 +369,9 @@ f<bool> testWarningsAreDeduplicatedPerModule() {
 f<bool> testLintFindingsAreCountedBySeverity() {
     DiagnosticEngine engine;
     const FileId file = makeFileId(0u);
-    engine.report(file, Diagnostic(Severity::ERROR, String("rule"), Span(), String("x")));
-    engine.report(file, Diagnostic(Severity::ERROR, String("rule"), Span(), String("x")));
-    engine.report(file, Diagnostic(Severity::WARNING, String("rule"), Span(), String("y")));
+    engine.report(file, makeLintFinding(Severity::ERROR, String("rule"), Span(), String("x")));
+    engine.report(file, makeLintFinding(Severity::ERROR, String("rule"), Span(), String("x")));
+    engine.report(file, makeLintFinding(Severity::WARNING, String("rule"), Span(), String("y")));
     // Findings are not deduplicated and do not stop the pipeline
     assert engine.getLintErrorCount() == 2u;
     assert !engine.mustStop();

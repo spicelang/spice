@@ -61,15 +61,12 @@ public p Diagnostic.ctor() {}
  * @param code Index in the catalog of the family, e.g. `cast<unsigned int>(SemanticErrorType::DUPLICATE_SYMBOL)`
  * @param span Location, or an invalid span if there is none
  * @param message Text after the prefix
+ * @return Diagnostic
  */
-public p Diagnostic.ctor(DiagnosticFamily family, unsigned int code, const Span& span, const String& message) {
+public f<Diagnostic> makeDiagnostic(DiagnosticFamily family, unsigned int code, const Span& span, const String& message) {
     assert family != DiagnosticFamily::LINT;
-    this.severity = family == DiagnosticFamily::WARNING ? Severity::WARNING : Severity::ERROR;
-    this.family = family;
-    this.code = code;
-    this.span = span;
-    this.message = message;
-    this.withSnippet = family == DiagnosticFamily::SEMANTIC;
+    const Severity severity = family == DiagnosticFamily::WARNING ? Severity::WARNING : Severity::ERROR;
+    return Diagnostic{severity, family, code, span, message, family == DiagnosticFamily::SEMANTIC, false, false, String()};
 }
 
 /**
@@ -79,13 +76,10 @@ public p Diagnostic.ctor(DiagnosticFamily family, unsigned int code, const Span&
  * @param rule Id of the rule, e.g. `naming-convention`
  * @param span Location
  * @param message Text after the rule id
+ * @return Diagnostic
  */
-public p Diagnostic.ctor(Severity severity, const String& rule, const Span& span, const String& message) {
-    this.severity = severity;
-    this.family = DiagnosticFamily::LINT;
-    this.span = span;
-    this.message = message;
-    this.rule = rule;
+public f<Diagnostic> makeLintFinding(Severity severity, const String& rule, const Span& span, const String& message) {
+    return Diagnostic{severity, DiagnosticFamily::LINT, 0u, span, message, false, false, false, rule};
 }
 
 /**
@@ -136,14 +130,14 @@ public type IDiagnosticSink interface {
 #[test]
 f<bool> testDiagnosticDefaults() {
     const Span span = Span(makeFileId(0u), 3u, 5u);
-    const Diagnostic semantic = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::DUPLICATE_SYMBOL), span, String("x"));
+    const Diagnostic semantic = makeDiagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::DUPLICATE_SYMBOL), span, String("x"));
     assert semantic.severity == Severity::ERROR;
     assert semantic.withSnippet && !semantic.soft;
-    const Diagnostic parser = Diagnostic(DiagnosticFamily::PARSER, 0u, span, String("x"));
+    const Diagnostic parser = makeDiagnostic(DiagnosticFamily::PARSER, 0u, span, String("x"));
     assert !parser.withSnippet;
-    const Diagnostic warning = Diagnostic(DiagnosticFamily::WARNING, 0u, Span(), String("x"));
+    const Diagnostic warning = makeDiagnostic(DiagnosticFamily::WARNING, 0u, Span(), String("x"));
     assert warning.severity == Severity::WARNING && !warning.span.isValid();
-    const Diagnostic lint = Diagnostic(Severity::INFO, String("naming-convention"), span, String("x"));
+    const Diagnostic lint = makeLintFinding(Severity::INFO, String("naming-convention"), span, String("x"));
     assert lint.family == DiagnosticFamily::LINT && getPrefix(lint) == "naming-convention";
     assert getPrefix(semantic) == "Duplicate symbol";
     return true;

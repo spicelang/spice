@@ -39,7 +39,7 @@ f<unsigned int> findCode(DiagnosticFamily family, const String& text) {
     unsigned int best = UINT_MAX_VALUE;
     unsigned long bestLength = 0l;
     for unsigned int code = 0u; code < getCodeCount(family); code++ {
-        const String needle = getPrefix(Diagnostic(family, code, Span(), String())) + ": ";
+        const String needle = getPrefix(makeDiagnostic(family, code, Span(), String())) + ": ";
         if text.startsWith(needle.getRaw()) && needle.getLength() > bestLength {
             best = code;
             bestLength = needle.getLength();
@@ -89,7 +89,7 @@ f<Diagnostic> parseBlock(SourceManager& sourceManager, const String& dir, const 
         const Span span = parseSpan(sourceManager, dir, lines.get(0l), idx, carets);
         const unsigned int code = findCode(DiagnosticFamily::SEMANTIC, lines.get(1l));
         const unsigned long prefixLength = String(getSemanticErrorTypePrefix(cast<SemanticErrorType>(code))).getLength() + 2l;
-        Diagnostic error = Diagnostic(DiagnosticFamily::SEMANTIC, code, span, lines.get(1l).getSubstring(prefixLength));
+        Diagnostic error = makeDiagnostic(DiagnosticFamily::SEMANTIC, code, span, lines.get(1l).getSubstring(prefixLength));
         error.withSnippet = lines.getSize() == 5l;
         error.soft = soft;
         return error;
@@ -104,13 +104,13 @@ f<Diagnostic> parseBlock(SourceManager& sourceManager, const String& dir, const 
         assert block.startsWith("[Error|CLI] ");
         const String rest = block.getSubstring(12l);
         const unsigned int code = findCode(DiagnosticFamily::CLI, rest);
-        return Diagnostic(DiagnosticFamily::CLI, code, Span(), rest.getSubstring(String(getCliErrorTypePrefix(cast<CliErrorType>(code))).getLength() + 2l));
+        return makeDiagnostic(DiagnosticFamily::CLI, code, Span(), rest.getSubstring(String(getCliErrorTypePrefix(cast<CliErrorType>(code))).getLength() + 2l));
     }
     const Span span = parseSpan(sourceManager, dir, block, idx, 1l);
     assert block.getSubstring(idx, 2l) == ": ";
     const String rest = block.getSubstring(idx + 2l);
     const unsigned int code = findCode(family, rest);
-    return Diagnostic(family, code, span, rest.getSubstring(String(getPrefix(Diagnostic(family, code, Span(), String()))).getLength() + 2l));
+    return makeDiagnostic(family, code, span, rest.getSubstring(String(getPrefix(makeDiagnostic(family, code, Span(), String()))).getLength() + 2l));
 }
 
 // The test runner replaces the backslashes of an error message with slashes (test/run-tests.py, extract_error_message), so that
@@ -144,7 +144,7 @@ f<String> runGoldenCase(const String& kind, const String& dir) {
             const String rest = line.getSubstring(idx + 2l);
             const unsigned int code = findCode(DiagnosticFamily::WARNING, rest);
             const unsigned long prefixLength = String(getCompilerWarningTypePrefix(cast<CompilerWarningType>(code))).getLength() + 2l;
-            engine.report(root, Diagnostic(DiagnosticFamily::WARNING, code, span, rest.getSubstring(prefixLength)));
+            engine.report(root, makeDiagnostic(DiagnosticFamily::WARNING, code, span, rest.getSubstring(prefixLength)));
         }
         const Vector<Diagnostic> warnings = engine.collectWarnings(sourceManager, root);
         for unsigned long i = 0l; i < warnings.getSize(); i++ {

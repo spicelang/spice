@@ -113,7 +113,7 @@ f<bool> testRenderSemanticError() {
     const FileId file = addTestSource(sourceManager, "f<int> main() {\n    const int c = 1;\n    takeRef(c);\n}\n");
     // 'takeRef(c)' is at line 3, column 5
     const Span span = Span(file, 41u, 51u);
-    const Diagnostic error = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION), span,
+    const Diagnostic error = makeDiagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::REFERENCED_UNDEFINED_FUNCTION), span,
         String("Function/procedure 'takeRef(int)' could not be found"));
     assert renderDiagnostic(sourceManager, error) == "[Error|Semantic] source.spice:3:5:\nReferenced undefined function: Function/procedure 'takeRef(int)' could not be found\n\n3  takeRef(c);\n   ^^^^^^^^^^";
     assert renderDiagnosticLine(sourceManager, error) == renderDiagnostic(sourceManager, error) + "\n";
@@ -124,11 +124,11 @@ f<bool> testRenderSemanticError() {
 f<bool> testRenderSemanticErrorWithoutSnippet() {
     SourceManager sourceManager;
     const FileId file = addTestSource(sourceManager, "abc\n");
-    Diagnostic error = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::MISSING_MAIN_FUNCTION), Span(file, 0u, 3u), String("No main"));
+    Diagnostic error = makeDiagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::MISSING_MAIN_FUNCTION), Span(file, 0u, 3u), String("No main"));
     error.withSnippet = false;
     assert renderDiagnostic(sourceManager, error) == "[Error|Semantic] source.spice:1:1:\nSpice executables must contain a main function: No main";
     // No location: the default CodeLoc formats as 0:0 and has no snippet
-    const Diagnostic noLocation = Diagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::MISSING_MAIN_FUNCTION), Span(), String("No main"));
+    const Diagnostic noLocation = makeDiagnostic(DiagnosticFamily::SEMANTIC, cast<unsigned int>(SemanticErrorType::MISSING_MAIN_FUNCTION), Span(), String("No main"));
     assert renderDiagnostic(sourceManager, noLocation) == "[Error|Semantic] 0:0:\nSpice executables must contain a main function: No main";
     return true;
 }
@@ -138,18 +138,18 @@ f<bool> testRenderOtherErrors() {
     SourceManager sourceManager;
     const FileId file = addTestSource(sourceManager, "line one\nline 'x\n");
     const Span span = Span(file, 14u, 15u); // line 2, column 6
-    const Diagnostic lexer = Diagnostic(DiagnosticFamily::LEXER, 0u, span, String("token recognition error at: ''x"));
+    const Diagnostic lexer = makeDiagnostic(DiagnosticFamily::LEXER, 0u, span, String("token recognition error at: ''x"));
     assert renderDiagnostic(sourceManager, lexer) == "[Error|Lexer] source.spice:2:6: Tokenizing failed: token recognition error at: ''x";
-    const Diagnostic parser = Diagnostic(DiagnosticFamily::PARSER, cast<unsigned int>(ParserErrorType::INVALID_STRING_LITERAL), span, String("Invalid escape sequence '/q'"));
+    const Diagnostic parser = makeDiagnostic(DiagnosticFamily::PARSER, cast<unsigned int>(ParserErrorType::INVALID_STRING_LITERAL), span, String("Invalid escape sequence '/q'"));
     assert renderDiagnostic(sourceManager, parser) == "[Error|Parser] source.spice:2:6: Invalid string literal: Invalid escape sequence '/q'";
-    const Diagnostic cli = Diagnostic(DiagnosticFamily::CLI, cast<unsigned int>(CliErrorType::INCOMPATIBLE_OPTIONS), Span(), String("Sanitizers are not supported in freestanding mode"));
+    const Diagnostic cli = makeDiagnostic(DiagnosticFamily::CLI, cast<unsigned int>(CliErrorType::INCOMPATIBLE_OPTIONS), Span(), String("Sanitizers are not supported in freestanding mode"));
     assert renderDiagnostic(sourceManager, cli) == "[Error|CLI] Incompatible options: Sanitizers are not supported in freestanding mode";
-    const Diagnostic linker = Diagnostic(DiagnosticFamily::LINKER, cast<unsigned int>(LinkerErrorType::LINKER_NOT_FOUND), Span(), String("No linker"));
+    const Diagnostic linker = makeDiagnostic(DiagnosticFamily::LINKER, cast<unsigned int>(LinkerErrorType::LINKER_NOT_FOUND), Span(), String("No linker"));
     assert renderDiagnostic(sourceManager, linker) == "[Error|Linker] Linker not found: No linker";
     // A compiler error has no location by default, and a header with the location if it has one
-    const Diagnostic compiler = Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::IO_ERROR), Span(), String("Cannot open"));
+    const Diagnostic compiler = makeDiagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::IO_ERROR), Span(), String("Cannot open"));
     assert renderDiagnostic(sourceManager, compiler) == "[Error|Compiler]:\nI/O Error: Cannot open";
-    const Diagnostic located = Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::IO_ERROR), span, String("Cannot open"));
+    const Diagnostic located = makeDiagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::IO_ERROR), span, String("Cannot open"));
     assert renderDiagnostic(sourceManager, located) == "[Error|Compiler] source.spice:2:6:\nI/O Error: Cannot open";
     // Errors are not colored
     assert renderDiagnosticLine(sourceManager, cli) == "[Error|CLI] Incompatible options: Sanitizers are not supported in freestanding mode\n";
@@ -161,16 +161,16 @@ f<bool> testRenderWarningsAndLintFindings() {
     SourceManager sourceManager;
     const FileId file = addTestSource(sourceManager, "type UnusedInterface interface {}\n");
     const Span span = Span(file, 0u, 4u);
-    const Diagnostic warning = Diagnostic(DiagnosticFamily::WARNING, cast<unsigned int>(CompilerWarningType::UNUSED_INTERFACE), span, String("The interface 'UnusedInterface' is unused"));
+    const Diagnostic warning = makeDiagnostic(DiagnosticFamily::WARNING, cast<unsigned int>(CompilerWarningType::UNUSED_INTERFACE), span, String("The interface 'UnusedInterface' is unused"));
     assert renderDiagnostic(sourceManager, warning) == "[Warning] source.spice:1:1: Unused interface: The interface 'UnusedInterface' is unused";
     assert renderDiagnosticLine(sourceManager, warning) == "\033[33m[Warning] source.spice:1:1: Unused interface: The interface 'UnusedInterface' is unused\033[0m\n";
     // The backend warning has no location
-    const Diagnostic backend = Diagnostic(DiagnosticFamily::WARNING, cast<unsigned int>(CompilerWarningType::BACKEND_WARNING), Span(), String("x"));
+    const Diagnostic backend = makeDiagnostic(DiagnosticFamily::WARNING, cast<unsigned int>(CompilerWarningType::BACKEND_WARNING), Span(), String("x"));
     assert renderDiagnostic(sourceManager, backend) == "[Warning] Backend warning: x";
 
-    const Diagnostic info = Diagnostic(Severity::INFO, String("some-rule"), span, String("Hint"));
-    const Diagnostic lint = Diagnostic(Severity::WARNING, String("naming-convention"), span, String("Struct name 'My_Point' should be PascalCase"));
-    const Diagnostic lintError = Diagnostic(Severity::ERROR, String("naming-convention"), span, String("Bad"));
+    const Diagnostic info = makeLintFinding(Severity::INFO, String("some-rule"), span, String("Hint"));
+    const Diagnostic lint = makeLintFinding(Severity::WARNING, String("naming-convention"), span, String("Struct name 'My_Point' should be PascalCase"));
+    const Diagnostic lintError = makeLintFinding(Severity::ERROR, String("naming-convention"), span, String("Bad"));
     assert renderDiagnostic(sourceManager, info) == "[Info] source.spice:1:1: some-rule: Hint";
     assert renderDiagnostic(sourceManager, lint) == "[Lint] source.spice:1:1: naming-convention: Struct name 'My_Point' should be PascalCase";
     assert renderDiagnostic(sourceManager, lintError) == "[Lint error] source.spice:1:1: naming-convention: Bad";
@@ -182,7 +182,7 @@ f<bool> testRenderWarningsAndLintFindings() {
 
 // The text of a CLI error with the given code and message
 f<bool> hasMessage(const CliErrorType errorType, const string message, const string expectedMessage) {
-    const Diagnostic cliError = Diagnostic(DiagnosticFamily::CLI, cast<unsigned int>(errorType), Span(), String(message));
+    const Diagnostic cliError = makeDiagnostic(DiagnosticFamily::CLI, cast<unsigned int>(errorType), Span(), String(message));
     return renderDiagnostic(SourceManager(), cliError) == expectedMessage;
 }
 
