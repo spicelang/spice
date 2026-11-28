@@ -1,0 +1,672 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/text/analysis";
+import "std/text/format";
+
+// Own imports
+import "@/diag/codes";
+import "@/diag/diagnostic";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+import "@/syntax/lexer/token";
+import "@/syntax/lexer/token-stream";
+
+/**
+ * The scanner. It works on the bytes of the source file by offset, where the legacy lexer pulled the characters from a
+ * Reader, and it produces the same tokens, in the same order, with the same errors. The ported functions keep the order of
+ * their checks. Differences to legacy that are no behavior:
+ * - The text of a token is a range of the source instead of a copy, see `Token`.
+ * - The error is not thrown but remembered (`failed`, `errorStart`, `errorStop`, `errorMessage`), because the lexer layer
+ *   reports to the DiagnosticSink instead of aborting the process. After an error, every function returns at once.
+ * - An assertion of the legacy Reader (`advance` at the end of the input, `expect` of another char) is an assertion here.
+ *   Legacy crashes on these inputs, so they are reproduced and not turned into a diagnostic: `..` that is not followed by a
+ *   third '.', a string or block comment that ends in the middle of an escape or at a '*'.
+ */
+type Lexer struct {
+    string data
+    unsigned int length = 0u
+    unsigned int pos = 0u
+    FileId file = noFileId()
+    bool failed = false
+    unsigned int errorStart = 0u
+    unsigned int errorStop = 0u
+    String errorMessage
+}
+
+p Lexer.ctor(FileId file, const string data, unsigned int length) {
+    this.file = file;
+    this.data = data;
+    this.length = length;
+}
+
+// ---------------------------------------------- Reader replacement ----------------------------------------------
+
+// legacy: reader/reader.spice:65-69 (getChar), the char at the end of the input is '\0'
+inline f<char> Lexer.getChar() {
+    return this.pos < this.length ? this.data[this.pos] : '\0';
+}
+
+// legacy: reader/reader.spice:86-95 (peekChar)
+inline f<char> Lexer.peekChar() {
+    return this.pos + 1u < this.length ? this.data[this.pos + 1u] : '\0';
+}
+
+// legacy: reader/reader.spice:196-202 (isEOF)
+inline f<bool> Lexer.isEOF() {
+    return this.pos >= this.length;
+}
+
+// legacy: reader/reader.spice:127-147 (advance)
+inline p Lexer.advance() {
+    assert !this.isEOF();
+    this.pos++;
+}
+
+// legacy: reader/reader.spice:185-189 (expect)
+inline p Lexer.expect(char c) {
+    assert this.getChar() == c;
+    this.advance();
+}
+
+// legacy: lexer/lexer.spice:359-365
+inline f<bool> Lexer.consumeIf(char expected) {
+    if this.getChar() != expected {
+        return false;
+    }
+    this.advance();
+    return true;
+}
+
+// legacy: reader/reader.spice:155-158 (isUtf8ContinuationByte)
+inline f<bool> isUtf8ContinuationByte(char c) {
+    return (cast<int>(cast<byte>(c)) & 0xC0) == 0x80;
+}
+
+// The bytes [start, stop) of the source as a string. Only for error messages
+f<String> Lexer.slice(unsigned int start, unsigned int stop) {
+    String text;
+    for unsigned int i = start; i < stop; i++ {
+        text += this.data[i];
+    }
+    return text;
+}
+
+// ---------------------------------------------------- Tokens ----------------------------------------------------
+
+// A token whose text is the whole consumed range
+inline f<Token> Lexer.makeToken(TokenType tokenType, unsigned int start) {
+    return Token(tokenType, Span(this.file, start, this.pos), start, this.pos);
+}
+
+// Remember the first error. The caller returns an INVALID token and everybody up to the token loop returns at once
+// legacy: lexer/lexer.spice:373-377 (throwLexerError)
+p Lexer.fail(unsigned int start, const String& message) {
+    if this.failed {
+        return;
+    }
+    this.failed = true;
+    this.errorStart = start;
+    this.errorStop = this.pos;
+    this.errorMessage = String("token recognition error at: '") + message + "'";
+}
+
+/**
+ * Read the next token, skipping leading whitespace
+ *
+ * @return Token, or an INVALID token if there is an error
+ */
+// legacy: lexer/lexer.spice:177-192
+f<Token> Lexer.readRawToken() {
+    // Skip any whitespaces
+    while isWhitespace(this.getChar()) && !this.isEOF() {
+        this.advance();
+    }
+    return this.consumeToken(this.pos);
+}
+
+// legacy: lexer/lexer.spice:198-351
+f<Token> Lexer.consumeToken(unsigned int start) {
+    const char curChar = this.getChar();
+
+    // Check if EOF
+    if this.isEOF() {
+        return this.makeToken(TokenType::EOF, start);
+    }
+    // Check if identifier
+    if isAlpha(curChar) || curChar == '_' {
+        return this.consumeIdentifier(start, isUpper(curChar));
+    }
+    // Check if number
+    if isDigit(curChar) {
+        return this.consumeNumber(start);
+    }
+    // Check if char literal
+    if curChar == '\'' {
+        return this.consumeCharLiteral(start);
+    }
+    // Check if string literal
+    if curChar == '"' {
+        return this.consumeStringLiteral(start);
+    }
+    // Double literal without integer part, e.g. '.5'
+    if curChar == '.' && isDigit(this.peekChar()) {
+        return this.consumeNumberLiteral(start);
+    }
+
+    // Consume the first char of the operator and check for longer operators, starting with it
+    this.advance();
+    const Token operatorToken = this.consumeOperator(start, curChar);
+    if operatorToken.tokenType != TokenType::INVALID {
+        return operatorToken;
+    }
+    this.fail(start, String(curChar));
+    return Token();
+}
+
+// The part of consumeToken after the first char of the operator was consumed. INVALID if the char starts no token
+// legacy: lexer/lexer.spice:255-346
+f<Token> Lexer.consumeOperator(unsigned int start, char curChar) {
+    switch curChar {
+        case '{': { return this.makeToken(TokenType::LBRACE, start); }
+        case '}': { return this.makeToken(TokenType::RBRACE, start); }
+        case '(': { return this.makeToken(TokenType::LPAREN, start); }
+        case ')': { return this.makeToken(TokenType::RPAREN, start); }
+        case '[': { return this.makeToken(TokenType::LBRACKET, start); }
+        case ']': { return this.makeToken(TokenType::RBRACKET, start); }
+        case '~': { return this.makeToken(TokenType::BITWISE_NOT, start); }
+        case '?': { return this.makeToken(TokenType::QUESTION_MARK, start); }
+        case ';': { return this.makeToken(TokenType::SEMICOLON, start); }
+        case ',': { return this.makeToken(TokenType::COMMA, start); }
+        case '|': {
+            if this.consumeIf('|') { return this.makeToken(TokenType::LOGICAL_OR, start); }
+            if this.consumeIf('=') { return this.makeToken(TokenType::OR_EQUAL, start); }
+            return this.makeToken(TokenType::BITWISE_OR, start);
+        }
+        case '&': {
+            if this.consumeIf('&') { return this.makeToken(TokenType::LOGICAL_AND, start); }
+            if this.consumeIf('=') { return this.makeToken(TokenType::AND_EQUAL, start); }
+            return this.makeToken(TokenType::BITWISE_AND, start);
+        }
+        case '^': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::XOR_EQUAL, start); }
+            return this.makeToken(TokenType::BITWISE_XOR, start);
+        }
+        case '!': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::NOT_EQUAL, start); }
+            return this.makeToken(TokenType::NOT, start);
+        }
+        case '+': {
+            if this.consumeIf('+') { return this.makeToken(TokenType::PLUS_PLUS, start); }
+            if this.consumeIf('=') { return this.makeToken(TokenType::PLUS_EQUAL, start); }
+            return this.makeToken(TokenType::PLUS, start);
+        }
+        case '-': {
+            if this.consumeIf('-') { return this.makeToken(TokenType::MINUS_MINUS, start); }
+            if this.consumeIf('=') { return this.makeToken(TokenType::MINUS_EQUAL, start); }
+            if this.consumeIf('>') { return this.makeToken(TokenType::ARROW, start); }
+            return this.makeToken(TokenType::MINUS, start);
+        }
+        case '*': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::MUL_EQUAL, start); }
+            return this.makeToken(TokenType::MUL, start);
+        }
+        case '/': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::DIV_EQUAL, start); }
+            if this.getChar() == '/' { return this.consumeLineComment(start); }
+            if this.getChar() == '*' { return this.consumeBlockOrDocComment(start); }
+            return this.makeToken(TokenType::DIV, start);
+        }
+        case '%': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::REM_EQUAL, start); }
+            return this.makeToken(TokenType::REM, start);
+        }
+        case '=': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::EQUAL, start); }
+            return this.makeToken(TokenType::ASSIGN, start);
+        }
+        case '<': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::LESS_EQUAL, start); }
+            if this.consumeIf('<') {
+                if this.consumeIf('=') { return this.makeToken(TokenType::SHL_EQUAL, start); }
+                return this.makeToken(TokenType::SHL, start);
+            }
+            return this.makeToken(TokenType::LESS, start);
+        }
+        case '>': {
+            if this.consumeIf('=') { return this.makeToken(TokenType::GREATER_EQUAL, start); }
+            if this.consumeIf('>') {
+                if this.consumeIf('=') { return this.makeToken(TokenType::SHR_EQUAL, start); }
+                return this.makeToken(TokenType::SHR, start);
+            }
+            return this.makeToken(TokenType::GREATER, start);
+        }
+        case ':': {
+            if this.consumeIf(':') { return this.makeToken(TokenType::SCOPE_ACCESS, start); }
+            return this.makeToken(TokenType::COLON, start);
+        }
+        case '.': {
+            if this.consumeIf('.') {
+                this.expect('.'); // Consume third '.'
+                return this.makeToken(TokenType::ELLIPSIS, start);
+            }
+            return this.makeToken(TokenType::DOT, start);
+        }
+        case '#': {
+            if this.consumeIf('!') { return this.makeToken(TokenType::MOD_ATTR_PREAMBLE, start); }
+            return this.makeToken(TokenType::FCT_ATTR_PREAMBLE, start);
+        }
+    }
+    return Token();
+}
+
+// ---------------------------------------------------- Numbers ---------------------------------------------------
+
+/**
+ * Consume a number literal and its suffixes. The optional `u` stays part of the token text, so that the parser can detect it.
+ * The `s` and `l` suffixes select the token type and are not part of the text. A double has no suffixes.
+ */
+// legacy: lexer/lexer.spice:216-240
+f<Token> Lexer.consumeNumber(unsigned int start) {
+    Token literal = this.consumeNumberLiteral(start);
+    if this.failed || literal.tokenType == TokenType::DOUBLE_LIT {
+        return literal;
+    }
+
+    // Consume the optional unsigned suffix
+    if this.getChar() == 'u' {
+        this.advance(); // Consume 'u'
+        literal.textStop = this.pos;
+    }
+
+    // Patch token type if suffix is present and consume the suffix character
+    const char literalSuffix = this.getChar();
+    if literalSuffix == 's' {
+        literal.tokenType = TokenType::SHORT_LIT;
+        this.advance(); // Consume 's'
+    } else if literalSuffix == 'l' {
+        literal.tokenType = TokenType::LONG_LIT;
+        this.advance(); // Consume 'l'
+    }
+    literal.span = Span(this.file, start, this.pos);
+    return literal;
+}
+
+/**
+ * The legacy function also handled a leading '-', which no caller can reach: the lexer starts a number only at a digit or a
+ * '.', and the parser applies the sign. The branch is not ported.
+ */
+// legacy: lexer/lexer.spice:379-463
+f<Token> Lexer.consumeNumberLiteral(unsigned int start) {
+    // Check for different numeric literal formats
+    if this.getChar() == '0' { // Potentially a base-prefixed literal
+        this.advance(); // Consume '0'
+        // Peek the character after '0', which is the base of the number ('x', 'b', 'o' or 'd') if present
+        const char base = toLower(this.getChar());
+        if base == 'x' || base == 'h' || base == 'b' || base == 'o' || base == 'd' {
+            this.advance(); // Consume the base character
+            // Decide what to do, depending on the base
+            if base == 'x' || base == 'h' { // Hexadecimal number
+                while isHexDigit(this.getChar()) {
+                    this.advance();
+                }
+            } else if base == 'b' { // Binary number
+                while isBinDigit(this.getChar()) {
+                    this.advance();
+                }
+            } else if base == 'o' { // Octal number
+                while isOctDigit(this.getChar()) {
+                    this.advance();
+                }
+            } else { // Decimal number with explicit '0d' prefix
+                while isDigit(this.getChar()) {
+                    this.advance();
+                }
+            }
+            // The correct token type is set a layer above in the parsing functions for int, short, long, etc.
+            return this.makeToken(TokenType::INT_LIT, start);
+        }
+    }
+
+    // Decimal number (or the remainder of a decimal number with leading zero)
+    while isDigit(this.getChar()) {
+        this.advance();
+    }
+
+    // Check for a double literal: [0-9]*[.][0-9]+([eE][+-]?[0-9]+)?
+    if this.getChar() == '.' && isDigit(this.peekChar()) {
+        this.advance(); // Consume '.'
+        while isDigit(this.getChar()) {
+            this.advance();
+        }
+        // Check for optional exponent
+        const char exponentChar = this.getChar();
+        const char afterExponentChar = this.peekChar();
+        const bool hasExponentSign = afterExponentChar == '+' || afterExponentChar == '-';
+        if (exponentChar == 'e' || exponentChar == 'E') && (isDigit(afterExponentChar) || hasExponentSign) {
+            this.advance(); // Consume 'e' or 'E'
+            if hasExponentSign {
+                this.advance(); // Consume sign
+            }
+            if !isDigit(this.getChar()) {
+                this.fail(start, this.slice(start, this.pos));
+                return Token();
+            }
+            while isDigit(this.getChar()) {
+                this.advance();
+            }
+        }
+        return this.makeToken(TokenType::DOUBLE_LIT, start);
+    }
+
+    // The correct token type is set a layer above in the parsing functions for int, short, long, etc.
+    return this.makeToken(TokenType::INT_LIT, start);
+}
+
+// ------------------------------------------- Char and string literals -------------------------------------------
+
+/**
+ * Parse the following regex: '\'' (~['\\\r\n] | '\\' (. | EOF)) '\''. The text is the content between the quotes, with the
+ * escape sequences as written. The parser resolves them.
+ */
+// legacy: lexer/lexer.spice:465-497
+f<Token> Lexer.consumeCharLiteral(unsigned int start) {
+    this.expect('\''); // Consume '\''
+    // A char literal must not be empty and must be terminated in the same line
+    if this.getChar() == '\'' || this.isAtLineEnd() {
+        return this.failCharLiteral(start);
+    }
+    const unsigned int contentStart = this.pos;
+    if this.getChar() == '\\' { // Escape sequence
+        this.advance(); // Consume '\\'
+        if this.isEOF() {
+            return this.failCharLiteral(start);
+        }
+    }
+    const char firstChar = this.getChar();
+    this.consumeCodePoint(); // Consume (escaped) character
+    if this.pos - contentStart == 2u && this.data[contentStart] == '\\' {
+        // Consume the digits of hex (\xHH) and octal (\ooo) escape sequences. Their values are checked by the parser
+        if firstChar == 'x' {
+            this.consumeCharLiteralDigits(2u, true);
+        } else if isOctDigit(firstChar) {
+            this.consumeCharLiteralDigits(2u, false);
+        }
+    }
+    // A char literal must contain exactly one character or escape sequence
+    if this.getChar() != '\'' {
+        return this.failCharLiteral(start);
+    }
+    const unsigned int contentStop = this.pos;
+    this.expect('\''); // Consume '\''
+    return Token(TokenType::CHAR_LIT, Span(this.file, start, this.pos), contentStart, contentStop);
+}
+
+/**
+ * Consume up to the given number of hex or octal digits of an escape sequence in a char literal
+ *
+ * @param maxDigitCount Maximum number of digits to consume
+ * @param hex Consume hex digits or octal digits
+ */
+// legacy: lexer/lexer.spice:499-517 (consumeCharLiteralDigits)
+p Lexer.consumeCharLiteralDigits(unsigned int maxDigitCount, bool hex) {
+    unsigned int digitCount = 0u;
+    while digitCount < maxDigitCount && !this.isEOF() {
+        const char c = this.getChar();
+        if !(hex ? isHexDigit(c) : isOctDigit(c)) {
+            break;
+        }
+        this.advance();
+        digitCount++;
+    }
+}
+
+// Check if the scanner is at the end of the current line or of the input
+// legacy: lexer/lexer.spice:519-527 (isAtLineEnd)
+f<bool> Lexer.isAtLineEnd() {
+    return this.isEOF() || this.getChar() == '\n' || this.getChar() == '\r';
+}
+
+// Consume the current code point, which spans multiple bytes if it is a multibyte UTF-8 sequence
+// legacy: lexer/lexer.spice:529-539 (consumeCodePoint)
+p Lexer.consumeCodePoint() {
+    do {
+        this.advance();
+    } while !this.isEOF() && isUtf8ContinuationByte(this.getChar());
+}
+
+/**
+ * Fail for a malformed char literal. The message shows the content up to and including the offending character.
+ *
+ * @param start Offset of the opening quote
+ */
+// legacy: lexer/lexer.spice:541-554 (throwCharLiteralError)
+f<Token> Lexer.failCharLiteral(unsigned int start) {
+    if !this.isAtLineEnd() {
+        this.consumeCodePoint();
+    }
+    // The message has two quotes in front of the content: one of the template and the opening one of the literal
+    this.fail(start, String("'") + this.slice(start + 1u, this.pos));
+    return Token();
+}
+
+/**
+ * Parse the following regex: '"' (~["\\\r\n] | '\\' (. | EOF))* '"'. The text is the content between the quotes, with the escape
+ * sequences as written. The parser resolves them.
+ */
+// legacy: lexer/lexer.spice:556-579
+f<Token> Lexer.consumeStringLiteral(unsigned int start) {
+    this.expect('"'); // Consume '"'
+    const unsigned int contentStart = this.pos;
+    while this.getChar() != '"' {
+        // A string literal must be terminated in the same line
+        if this.isEOF() || this.getChar() == '\n' {
+            this.fail(start, String("\"") + this.slice(contentStart, this.pos));
+            return Token();
+        }
+        if this.getChar() == '\\' { // Escape sequence
+            this.advance(); // Consume '\\'
+            this.advance(); // Consume escaped character
+        } else { // Normal character
+            this.advance();
+        }
+    }
+    const unsigned int contentStop = this.pos;
+    this.expect('"'); // Consume '"'
+    return Token(TokenType::STRING_LIT, Span(this.file, start, this.pos), contentStart, contentStop);
+}
+
+// ---------------------------------------------- Identifiers, comments ----------------------------------------------
+
+// legacy: lexer/lexer.spice:581-596 (consumeKeywordOrIdentifier), lexer/lexer.spice:673-680 (consumeTypeIdentifier)
+f<Token> Lexer.consumeIdentifier(unsigned int start, bool upperCase) {
+    do {
+        this.advance();
+    } while isAlphaNum(this.getChar()) || this.getChar() == '_';
+
+    // Keywords keep their text as token text, so only the token type needs to be looked up
+    if upperCase {
+        return this.makeToken(TokenType::TYPE_IDENTIFIER, start);
+    }
+    return this.makeToken(this.getKeywordTokenType(start, this.pos - start), start);
+}
+
+// Check if the source at the offset continues with the keyword. The caller has checked the length
+inline f<bool> Lexer.isKeyword(unsigned int start, string keyword) {
+    unsigned int i = 0u;
+    while keyword[i] != '\0' {
+        if this.data[start + i] != keyword[i] {
+            return false;
+        }
+        i++;
+    }
+    return true;
+}
+
+/**
+ * Map an identifier to its keyword token type.
+ *
+ * @param start Offset of the identifier
+ * @param length Length of the identifier
+ * @return Token type of the keyword or IDENTIFIER, if the text is not a keyword
+ */
+// legacy: lexer/lexer.spice:598-671
+f<TokenType> Lexer.getKeywordTokenType(unsigned int start, unsigned int length) {
+    // Dispatch on the length first, so that an identifier is only compared against the keywords of the same length
+    switch length {
+        case 1u: {
+            if this.isKeyword(start, "f") { return TokenType::F; }
+            if this.isKeyword(start, "p") { return TokenType::P; }
+        }
+        case 2u: {
+            if this.isKeyword(start, "if") { return TokenType::IF; }
+            if this.isKeyword(start, "do") { return TokenType::DO; }
+            if this.isKeyword(start, "as") { return TokenType::AS; }
+        }
+        case 3u: {
+            if this.isKeyword(start, "int") { return TokenType::TYPE_INT; }
+            if this.isKeyword(start, "dyn") { return TokenType::TYPE_DYN; }
+            if this.isKeyword(start, "for") { return TokenType::FOR; }
+            if this.isKeyword(start, "nil") { return TokenType::NIL; }
+            if this.isKeyword(start, "ext") { return TokenType::EXT; }
+        }
+        case 4u: {
+            if this.isKeyword(start, "long") { return TokenType::TYPE_LONG; }
+            if this.isKeyword(start, "byte") { return TokenType::TYPE_BYTE; }
+            if this.isKeyword(start, "char") { return TokenType::TYPE_CHAR; }
+            if this.isKeyword(start, "bool") { return TokenType::TYPE_BOOL; }
+            if this.isKeyword(start, "heap") { return TokenType::HEAP; }
+            if this.isKeyword(start, "else") { return TokenType::ELSE; }
+            if this.isKeyword(start, "case") { return TokenType::CASE; }
+            if this.isKeyword(start, "type") { return TokenType::TYPE; }
+            if this.isKeyword(start, "enum") { return TokenType::ENUM; }
+            if this.isKeyword(start, "main") { return TokenType::MAIN; }
+            if this.isKeyword(start, "cast") { return TokenType::CAST; }
+            if this.isKeyword(start, "true") { return TokenType::TRUE; }
+        }
+        case 5u: {
+            if this.isKeyword(start, "short") { return TokenType::TYPE_SHORT; }
+            if this.isKeyword(start, "const") { return TokenType::CONST; }
+            if this.isKeyword(start, "while") { return TokenType::WHILE; }
+            if this.isKeyword(start, "break") { return TokenType::BREAK; }
+            if this.isKeyword(start, "union") { return TokenType::UNION; }
+            if this.isKeyword(start, "alias") { return TokenType::ALIAS; }
+            if this.isKeyword(start, "false") { return TokenType::FALSE; }
+        }
+        case 6u: {
+            if this.isKeyword(start, "double") { return TokenType::TYPE_DOUBLE; }
+            if this.isKeyword(start, "string") { return TokenType::TYPE_STRING; }
+            if this.isKeyword(start, "signed") { return TokenType::SIGNED; }
+            if this.isKeyword(start, "inline") { return TokenType::INLINE; }
+            if this.isKeyword(start, "public") { return TokenType::PUBLIC; }
+            if this.isKeyword(start, "switch") { return TokenType::SWITCH; }
+            if this.isKeyword(start, "assert") { return TokenType::ASSERT; }
+            if this.isKeyword(start, "import") { return TokenType::IMPORT; }
+            if this.isKeyword(start, "return") { return TokenType::RETURN; }
+            if this.isKeyword(start, "struct") { return TokenType::STRUCT; }
+            if this.isKeyword(start, "unsafe") { return TokenType::UNSAFE; }
+        }
+        case 7u: {
+            if this.isKeyword(start, "compose") { return TokenType::COMPOSE; }
+            if this.isKeyword(start, "default") { return TokenType::DEFAULT; }
+            if this.isKeyword(start, "foreach") { return TokenType::FOREACH; }
+        }
+        case 8u: {
+            if this.isKeyword(start, "unsigned") { return TokenType::UNSIGNED; }
+            if this.isKeyword(start, "continue") { return TokenType::CONTINUE; }
+            if this.isKeyword(start, "operator") { return TokenType::OPERATOR; }
+        }
+        case 9u: {
+            if this.isKeyword(start, "interface") { return TokenType::INTERFACE; }
+        }
+        case 11u: {
+            if this.isKeyword(start, "fallthrough") { return TokenType::FALLTHROUGH; }
+        }
+    }
+    return TokenType::IDENTIFIER;
+}
+
+// The first '/' is consumed by the caller. The line break that ends the comment is consumed, but it is no part of the text
+// legacy: lexer/lexer.spice:682-698
+f<Token> Lexer.consumeLineComment(unsigned int start) {
+    this.expect('/'); // Consume second '/' (first '/' is consumed by the caller)
+
+    unsigned int textStop = this.pos;
+    while !this.isEOF() {
+        // Check for comment end
+        if this.getChar() == '\n' {
+            textStop = this.pos;
+            this.advance(); // Consume '\n'
+            return Token(TokenType::LINE_COMMENT, Span(this.file, start, this.pos), start, textStop);
+        }
+        this.advance();
+        textStop = this.pos;
+    }
+    return Token(TokenType::LINE_COMMENT, Span(this.file, start, this.pos), start, textStop);
+}
+
+/**
+ * The first '/' is consumed by the caller. Ported with its quirks, which the parser tests do not cover: `/**\/` is a doc
+ * comment that goes on after the '/', `**\/` does not end a comment, an unterminated comment ends at the end of the input
+ * without an error, and a '*' at the very end of the input is an assertion.
+ */
+// legacy: lexer/lexer.spice:700-729
+f<Token> Lexer.consumeBlockOrDocComment(unsigned int start) {
+    this.expect('*'); // Consume '*' ('/' is consumed by the caller)
+
+    // Check if doc comment
+    bool isDocComment = false;
+    if this.getChar() == '*' {
+        isDocComment = true;
+        this.advance(); // Consume '*'
+    }
+
+    while !this.isEOF() {
+        // Check for comment end
+        if this.getChar() == '*' {
+            this.advance(); // Consume '*'
+            if this.getChar() == '/' {
+                this.advance(); // Consume '/'
+                break;
+            }
+        }
+        this.advance();
+    }
+
+    return this.makeToken(isDocComment ? TokenType::DOC_COMMENT : TokenType::BLOCK_COMMENT, start);
+}
+
+// ----------------------------------------------------- Entry -----------------------------------------------------
+
+/**
+ * Tokenize a whole source file up front, so that lookahead is an O(1) index operation. The first error is reported to the sink
+ * and ends the tokenizing, like legacy, which aborted at the first lexer error. The stream then ends with an EOF token at the
+ * location of the error, and `failed` is set. The caller must not parse it.
+ *
+ * @param sourceManager Manager that holds the file
+ * @param file File to tokenize
+ * @param sink Receiver of the lexer error
+ * @return Token stream, terminated by one EOF token
+ */
+// legacy: lexer/lexer.spice:28-70 (the constructors, tokenize)
+public f<TokenStream> lex(const SourceManager& sourceManager, FileId file, IDiagnosticSink& sink) {
+    const SourceFile& source = sourceManager.getFile(file);
+    Lexer lexer = Lexer(file, source.text.getRaw(), cast<unsigned int>(source.text.getLength()));
+    Vector<Token> tokens;
+    while true {
+        const Token token = lexer.readRawToken();
+        if lexer.failed {
+            const Span errorSpan = Span(file, lexer.errorStart, lexer.errorStop);
+            sink.report(file, makeDiagnostic(DiagnosticFamily::LEXER, cast<unsigned int>(LexerErrorType::TOKENIZING_FAILED), errorSpan, lexer.errorMessage));
+            tokens.pushBack(Token(TokenType::EOF, Span(file, lexer.errorStart, lexer.errorStart), lexer.errorStart, lexer.errorStart));
+            return TokenStream(file, tokens, true);
+        }
+        tokens.pushBack(token);
+        if token.tokenType == TokenType::EOF {
+            break;
+        }
+    }
+    return TokenStream(file, tokens, false);
+}

@@ -1210,6 +1210,40 @@ The results are recorded in this document. An idiom that stage0 does not support
 - Open for the parser: `FCT_NAME` holds the mangled operator name of legacy (`op.less`, ...). WP 2.3 decides where the mangling
   happens; the node keeps the name as a `Symbol` for now.
 
+**Results (WP 2.2).**
+
+- `syntax/lexer` has `token` (`TokenType`, `Token`), `token-stream` (`TokenStream`) and `lexer` (the scanner and `lex()`), plus `lexer-test`.
+  `TokenType` keeps the legacy names and values (0 to 109). `lex(sourceManager, file, sink)` tokenizes the whole file up front and returns
+  a `TokenStream` with the legacy lookahead API (`peekRelevantType`, `getToken`, `getPreviousRelevantToken`, `advance`, `getTokenIndex`,
+  `getTokenText`, `getSourceCode`). The stream holds no pointer to the source, so the functions that return text take the `SourceManager`.
+- Decision of the open question of 1.3: **no interning in the lexer.** A `Token` is `{ tokenType, span, textStart, textStop }` (24 bytes)
+  and its text is a range of the source. The legacy text of every token kind is a contiguous range of the source: the whole token, but
+  for integer literals (digits and an optional `u`, without the `s` and `l` suffixes), char and string literals (between the quotes,
+  escapes as written) and line comments (without the line break). `EOF` has an empty range, and `getText` returns the legacy text
+  `EOF`. So the lexer allocates nothing per token, and the parser interns an identifier once, when it builds the node that needs a `Symbol`.
+- `span.stop` is the legacy `endOffset`, so the span of a line comment covers its line break and the span of `1ul` covers the suffix.
+- The first error is reported to the sink (family LEXER, `TOKENIZING_FAILED`, the span from the start of the token to the offending
+  byte) and ends the tokenizing. The stream then ends with an EOF token at the start of the token, and `failed` is set. The legacy
+  `abortWithError` ended the process. The text and the location are the same, so the renderer prints the legacy line.
+- The legacy `Reader` assertions are assertions here, because legacy crashes on these inputs and the plan reproduces legacy first (D1):
+  `..` that no third `.` follows (`..x`), a string that ends in a `\` at the end of the input, and a block comment that ends in a `*`
+  at the end of the input. They are legacy bugs, not yet filed as issues. Quirks that are reproduced and deserve an issue before a fix:
+  `/**/` starts a doc comment that goes on after its `/`, `**/` does not end a block comment, an unterminated block comment ends at the end
+  of the input without an error, a `\r` is allowed inside a string, and `\` followed by a line break continues a string.
+- The dead branch for a leading `-` in `consumeNumberLiteral` is not ported (the lexer never starts a number at a `-`).
+- Verification. The builtin tests (`lexer-test`: keywords, operators, numbers, literals, comments, quirks, stream, errors, the five
+  LexerTests cases rendered in-process, and the tiling of real source files) pass, also under ASan. The differential check ran the
+  legacy lexer and the new one over the 1,486 `.spice` files of the repository (std, compiler sources, test cases, docs examples): all
+  1,481 token streams are identical in kind, offsets and text, and the 5 files with a lexer error give the same message and
+  location. 9,000 random inputs built from the nasty fragments (odd comments, suffixes, escapes, UTF-8, stray bytes) agree in 3,799
+  streams, 4,870 errors and 331 crashes of both lexers. This was done with scratch programs (a token dump per lexer), which are not in the repository: the
+  lexer has no CLI yet, and the AST dump of WP 2.5 takes over the corpus check.
+- The five LexerTests cases are **not in the ratchet yet.** The runner drives the binary with `build`, and `spice-next` has no command
+  that lexes a file until `--dump-ast` (WP 2.5). The exit gate of phase 2 puts LexerTests into the ratchet.
+- Performance. Lexing `src/typechecker/type-checker.spice` (414 KB, 52,000 tokens) 200 times, release build, with the file read in
+  every iteration: 1.2 s for the new lexer against 3.0 s for the legacy one (about 2.4x). The 1.3x gate of phase 2 is measured on the parse
+  as a whole in WP 2.5.
+
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
 
