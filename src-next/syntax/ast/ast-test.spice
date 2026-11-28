@@ -2,10 +2,12 @@
 
 // Std imports
 import "std/data/vector";
+import "std/type/types";
 
 // Own imports
 import "@/source/source-file";
 import "@/source/source-manager";
+import "@/base/interner";
 import "@/source/span";
 import "@/syntax/ast/ast-children";
 import "@/syntax/ast/ast-enums";
@@ -143,5 +145,29 @@ f<bool> testDotOutputMatchesTheLegacyFormat() {
         + " L2C1_MainFctDefNode -> L2C8_StmtLstNode;\n";
     const String actual = printAstDot(tree.store, tree.sourceManager, tree.entry);
     assert actual == expected;
+    return true;
+}
+
+#[test]
+f<bool> testReservedIdsKeepTheOrderOfTheRuleStart() {
+    AstStore store;
+    // The parser reserves the id of a node when its rule starts, so that the parent gets a smaller id than its children
+    const NodeId parentId = store.reserveNode();
+    const NodeId childId = store.addStmtLst(StmtLstNode(), Span());
+    MainFctDefNode parent = MainFctDefNode();
+    parent.header.id = parentId;
+    parent.body = childId;
+    const NodeId added = store.addMainFctDef(parent, Span());
+    assert added == parentId && parentId.index < childId.index;
+    assert store.getKind(parentId) == AstNodeKind::MAIN_FCT_DEF && store.getMainFctDef(parentId).body == childId;
+    assert store.getNodeCount() == 2u;
+    return true;
+}
+
+#[test]
+f<bool> testFieldDefaultsOfTheDefinition() {
+    assert noSymbol().index == UINT_MAX_VALUE && noSymbol() == noSymbol();
+    assert BreakStmtNode().breakTimes == 1 && ContinueStmtNode().continueTimes == 1;
+    assert !isNodeId(FctCallNode().receiverExpr) && FctCallNode().nameFragments.isEmpty();
     return true;
 }

@@ -35,6 +35,7 @@ class Member:
     name: str
     type: str  # the Spice type of a field, or the allowed kinds of a child, e.g. "ASSIGN_EXPR|TERNARY_EXPR"
     optional: bool = False
+    default: str | None = None  # Spice expression of the initial value of a field, instead of the default of its type
 
 
 @dataclass
@@ -110,6 +111,10 @@ def parse(text: str) -> Definition:
         form, _, rest = line.strip().partition(" ")
         name, sep, type_ = rest.partition(":")
         name, type_ = name.strip(), type_.strip()
+        default = None
+        if form == "field" and " = " in type_:
+            type_, _, default = type_.partition(" = ")
+            type_, default = type_.strip(), default.strip()
         optional = name.endswith("?")
         name = name.rstrip("?")
         if form not in ("child", "list", "field") or not sep or not type_ or not name.isidentifier() or name in KEYWORDS:
@@ -118,7 +123,7 @@ def parse(text: str) -> Definition:
             fail(number, "only a child can be optional")
         if any(m.name == name for m in d.nodes[-1].members) or name == "header":
             fail(number, f"member '{name}' is defined twice")
-        d.nodes[-1].members.append(Member(form, name, type_, optional))
+        d.nodes[-1].members.append(Member(form, name, type_, optional, default))
     validate(d)
     return d
 
@@ -131,7 +136,7 @@ def validate(d: Definition) -> None:
         for m in n.members:
             if m.form != "field":
                 for k in m.type.split("|"):
-                    if k not in kinds:
+                    if k not in kinds and k != "EXPR":
                         raise SystemExit(f"error: {DEF_PATH}: {n.kind}.{m.name} refers to the unknown kind '{k}'")
             elif not (m.type in SCALARS or m.type in enums or m.type in structs or m.type.startswith(("SmallVec<", "Vector<"))):
                 raise SystemExit(f"error: {DEF_PATH}: {n.kind}.{m.name} has the unsupported type '{m.type}'")
@@ -206,7 +211,7 @@ def emit_nodes(d: Definition, group: str) -> str:
             elif m.form == "list":
                 out.append(f"    this.{m.name} = ChildRange();")
             elif not m.type.startswith(("SmallVec<", "Vector<")):
-                out.append(f"    this.{m.name} = {default_of(d, m.type)};")
+                out.append(f"    this.{m.name} = {m.default or default_of(d, m.type)};")
         out += ["}", ""]
     return "\n".join(out).rstrip("\n") + "\n"
 
@@ -229,13 +234,21 @@ def emit_store(d: Definition) -> str:
             "    return ChildRange(start, cast<unsigned int>(items.getSize()));", "}", "",
             "public const f<NodeId> AstStore.getChild(const ChildRange& range, unsigned int i) {", "    assert i < range.count;",
             "    return this.childArray.get(range.start + i);", "}", "",
-            "f<NodeId> AstStore.registerNode(AstNodeKind kind, unsigned int index) {",
+            "/**", " * Reserve the id of a node, before the node exists. The parser reserves it when a rule starts and passes it in the header of the",
+            " * node it adds later, so a node gets a smaller id than its descendants, like the ids of legacy (`Parser.createNode`)", " */",
+            "public f<NodeId> AstStore.reserveNode() {",
             "    const NodeId id = makeNodeId(cast<unsigned int>(this.nodes.size()));",
-            "    const Id<AstNode> _ = this.nodes.push(AstNode(kind, index));", "    return id;", "}", ""]
+            "    const Id<AstNode> _ = this.nodes.push(AstNode());", "    return id;", "}", "",
+            "// Complete the reserved id of the node, or take the next id if the node has none",
+            "f<NodeId> AstStore.claimNode(NodeId reserved, AstNodeKind kind, unsigned int index) {",
+            "    if !isNodeId(reserved) {", "        const NodeId id = makeNodeId(cast<unsigned int>(this.nodes.size()));",
+            "        const Id<AstNode> _ = this.nodes.push(AstNode(kind, index));", "        return id;", "    }",
+            "    assert this.nodes.get(reserved).kind == AstNodeKind::INVALID;", "    AstNode* entry = &this.nodes.get(reserved);", "    entry.kind = kind;", "    entry.index = index;",
+            "    return reserved;", "}", ""]
     for n in d.nodes:
-        out += [f"// Add a {n.kind} node. The header is completed here: the id and the span",
+        out += [f"// Add a {n.kind} node. The header is completed here: the id, unless it was reserved, and the span",
                 f"public f<NodeId> AstStore.add{n.name}({n.struct} node, const Span& span) {{",
-                f"    const NodeId id = this.registerNode(AstNodeKind::{n.kind}, cast<unsigned int>(this.{n.var}.size()));",
+                f"    const NodeId id = this.claimNode(node.header.id, AstNodeKind::{n.kind}, cast<unsigned int>(this.{n.var}.size()));",
                 "    node.header.id = id;", "    node.header.span = span;", f"    const Id<{n.struct}> _ = this.{n.var}.push(node);",
                 "    return id;", "}",
                 f"public const f<{n.struct}&> AstStore.get{n.name}(NodeId id) {{",
@@ -280,12 +293,13 @@ def emit_children(d: Definition) -> str:
         else:
             out += [f"p collect{n.name}Children(const AstStore& store, NodeId id, Vector<NodeId>& out) {{}}", ""]
     out += [
-            "/**", " * Header of a node", " *", " * @param store Store of the node", " * @param id Id of the node", " * @return Pointer to the header, valid until a node of the same kind is added",
-            " */", "public f<AstHeader*> getHeader(const AstStore& store, NodeId id) {", "    switch store.getKind(id) {"]
+            "/**", " * Header of a node", " *", " * @param store Store of the node", " * @param id Id of the node", " * @return Pointer to the header, valid until a node is added",
+            " */", "public f<const AstHeader*> getHeader(const AstStore& store, NodeId id) {", "    switch store.getKind(id) {"]
     out += [f"        case AstNodeKind::{n.kind}: {{ return &store.get{n.name}(id).header; }}" for n in d.nodes]
     out += ["        default: { panic(Error(\"Unknown AST node kind\")); }", "    }", "}", "",
             "/**", " * Set the parent of a node. The parser does it when it attaches a node to its parent", " */",
-            "public p setParent(const AstStore& store, NodeId child, NodeId parent) {", "    getHeader(store, child).parent = parent;", "}", "",
+            "public p setParent(AstStore& store, NodeId child, NodeId parent) {",
+            "    // The store is not const here, so the header may be changed", "    AstHeader* header = cast<AstHeader*>(getHeader(store, child));", "    header.parent = parent;", "}", "",
             "/**", " * Append the children of a node to `out`, in the order of `children` in the legacy AST. A missing optional child is skipped", " *",
             " * @param store Store of the node", " * @param id Id of the node", " * @param out Vector to append the ids to", " */",
             "public p collectChildren(const AstStore& store, NodeId id, Vector<NodeId>& out) {", "    switch store.getKind(id) {"]

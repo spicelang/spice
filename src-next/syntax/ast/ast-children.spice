@@ -469,9 +469,9 @@ p collectFunctionDataTypeChildren(const AstStore& store, NodeId id, Vector<NodeI
  *
  * @param store Store of the node
  * @param id Id of the node
- * @return Pointer to the header, valid until a node of the same kind is added
+ * @return Pointer to the header, valid until a node is added
  */
-public f<AstHeader*> getHeader(const AstStore& store, NodeId id) {
+public f<const AstHeader*> getHeader(const AstStore& store, NodeId id) {
     switch store.getKind(id) {
         case AstNodeKind::ENTRY: { return &store.getEntry(id).header; }
         case AstNodeKind::CONSTANT: { return &store.getConstant(id).header; }
@@ -558,8 +558,10 @@ public f<AstHeader*> getHeader(const AstStore& store, NodeId id) {
 /**
  * Set the parent of a node. The parser does it when it attaches a node to its parent
  */
-public p setParent(const AstStore& store, NodeId child, NodeId parent) {
-    getHeader(store, child).parent = parent;
+public p setParent(AstStore& store, NodeId child, NodeId parent) {
+    // The store is not const here, so the header may be changed
+    AstHeader* header = cast<AstHeader*>(getHeader(store, child));
+    header.parent = parent;
 }
 
 /**

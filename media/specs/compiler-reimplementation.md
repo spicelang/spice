@@ -937,7 +937,7 @@ Outputs must be below `src-next/` and start with the generated header. The CI jo
 
 | Definition                      | Generates                                                                                                                                   |
 |---------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| `syntax/ast/ast.def`            | `ASTNodeKind`, node structs with typed child fields and child ranges, ctors, `accept`, `forEachChild`, kind names, `IAstVisitor` with defaults, the dot printer skeleton, the destruct switch |
+| `syntax/ast/ast.def`            | `AstNodeKind` and its names, node structs with typed child fields and child ranges, `AstStore` (`add<Kind>`, `get<Kind>`), `collectChildren`, `acceptAstNode`, `IAstVisitor` with defaults. The dot printer is written by hand; there is no destruct switch (WP 2.1) |
 | `sema/sir/sir.def`              | `SirKind`, node structs, builders, `forEachChild`, the printer, verifier skeletons                                                         |
 | `diag/diagnostics.def`          | error and warning enums, their prefixes, the code counts and a test that visits every code                                                  |
 | `sema/ops/ops.def`              | the operator rule tables for sema (result kind and flags) and the `LoweringKind` mapping for codegen                                        |
@@ -1180,7 +1180,9 @@ The results are recorded in this document. An idiom that stage0 does not support
   order of the legacy `ASTNodeKind`, which `test_gen_ast.py` checks against the legacy source until the cutover.
 - Storage (decision of the WP): one struct per kind with `AstHeader` (`kind`, `id`, `span`, `parent`), a `NodeId` per child, a
   `ChildRange` per list and the syntactic fields. `AstStore` holds one `IdVec` per kind, a node table (`NodeId` to kind and index)
-  and the child array. `NodeId` is the index in the node table, so it is dense per module in creation order. Structs have no methods
+  and the child array. `NodeId` is the index in the node table, so it is dense per module. A node that is added gets the next id,
+  unless `reserveNode()` reserved one before: the parser reserves the id when a rule starts and passes it in `header.id`, so a node has a
+  smaller id than its descendants, as the legacy `createNode` does (it matters for the anonymous symbol names and `isDeclaredAfter`). Structs have no methods
   besides the ctor, so the file rule of 3.2 does not matter. The structs are stored by value, so there is no destruct switch: the
   `IdVec` of a kind runs the dtors of its nodes.
 - The children of a node are visited in the order of their declaration in `ast.def`. That is the order of `children` in the legacy
@@ -1188,7 +1190,9 @@ The results are recorded in this document. An idiom that stage0 does not support
   definitions) and the attribute of a lambda last, as legacy does. Binary levels have a `list operands`, and the operators are in `opQueue`.
 - Semantic fields of the legacy nodes are not in the nodes (scopes, entries, symbol types, type ids, manifestations, compile time
   values, `unreachable`, the `switchStmts` side list). Flags that only say that a child exists are dropped (`hasValue` of a field,
-  `isElseIf`, `hasDefaultBranch`, `isShortened`, ...). Fragment lists of names are not stored, only the joined name as a `Symbol`.
+  `isElseIf`, `hasDefaultBranch`, `isShortened`, `ENUM_ITEM.hasValue` (the span of the value says it), ...). `breakTimes` and
+  `continueTimes` default to 1 like legacy. The kinds after a child in `ast.def` are documentation, and `EXPR` stands for any expression kind,
+  because a slot can hold a lower level that legacy returns unwrapped. Names keep both the joined `Symbol` and the `nameFragments` that sema reads.
   Texts of literals are taken from the span. `ALIAS_DEF.dataTypeString` and `ASSERT_STMT.expressionString` are the text of the span of
   a child. The legacy fields that nothing sets (`PostfixUnaryExpr.atomicExpr`, `AssignExpr.ternaryExpr`, `ExtDecl.hasReturnType`) are gone.
   `ENUM_ITEM` keeps `hasValue` and the span of the value, which sema decodes. `CONSTANT` keeps the sign, because legacy folds `-1` into the constant.

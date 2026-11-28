@@ -30,8 +30,8 @@ public p ConstantNode.ctor() {
  */
 public type AssignExprNode struct {
     public AstHeader header
-    public NodeId lhs // TERNARY_EXPR or ASSIGN_EXPR
-    public NodeId rhs // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId lhs // EXPR
+    public NodeId rhs // EXPR
     public AssignOp op
 }
 
@@ -47,9 +47,9 @@ public p AssignExprNode.ctor() {
  */
 public type TernaryExprNode struct {
     public AstHeader header
-    public NodeId condition // LOGICAL_OR_EXPR
-    public NodeId trueExpr // ASSIGN_EXPR or TERNARY_EXPR (optional)
-    public NodeId falseExpr // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId condition // EXPR
+    public NodeId trueExpr // EXPR (optional)
+    public NodeId falseExpr // EXPR
 }
 
 public p TernaryExprNode.ctor() {
@@ -64,7 +64,7 @@ public p TernaryExprNode.ctor() {
  */
 public type LogicalOrExprNode struct {
     public AstHeader header
-    public ChildRange operands // LOGICAL_AND_EXPR
+    public ChildRange operands // EXPR
 }
 
 public p LogicalOrExprNode.ctor() {
@@ -77,7 +77,7 @@ public p LogicalOrExprNode.ctor() {
  */
 public type LogicalAndExprNode struct {
     public AstHeader header
-    public ChildRange operands // BITWISE_OR_EXPR
+    public ChildRange operands // EXPR
 }
 
 public p LogicalAndExprNode.ctor() {
@@ -90,7 +90,7 @@ public p LogicalAndExprNode.ctor() {
  */
 public type BitwiseOrExprNode struct {
     public AstHeader header
-    public ChildRange operands // BITWISE_XOR_EXPR
+    public ChildRange operands // EXPR
 }
 
 public p BitwiseOrExprNode.ctor() {
@@ -103,7 +103,7 @@ public p BitwiseOrExprNode.ctor() {
  */
 public type BitwiseXorExprNode struct {
     public AstHeader header
-    public ChildRange operands // BITWISE_AND_EXPR
+    public ChildRange operands // EXPR
 }
 
 public p BitwiseXorExprNode.ctor() {
@@ -116,7 +116,7 @@ public p BitwiseXorExprNode.ctor() {
  */
 public type BitwiseAndExprNode struct {
     public AstHeader header
-    public ChildRange operands // EQUALITY_EXPR
+    public ChildRange operands // EXPR
 }
 
 public p BitwiseAndExprNode.ctor() {
@@ -129,7 +129,7 @@ public p BitwiseAndExprNode.ctor() {
  */
 public type EqualityExprNode struct {
     public AstHeader header
-    public ChildRange operands // RELATIONAL_EXPR
+    public ChildRange operands // EXPR
     public EqualityOp op
 }
 
@@ -144,7 +144,7 @@ public p EqualityExprNode.ctor() {
  */
 public type RelationalExprNode struct {
     public AstHeader header
-    public ChildRange operands // SHIFT_EXPR
+    public ChildRange operands // EXPR
     public RelationalOp op
 }
 
@@ -159,7 +159,7 @@ public p RelationalExprNode.ctor() {
  */
 public type ShiftExprNode struct {
     public AstHeader header
-    public ChildRange operands // ADDITIVE_EXPR
+    public ChildRange operands // EXPR
     public SmallVec<ShiftOp> opQueue
 }
 
@@ -173,7 +173,7 @@ public p ShiftExprNode.ctor() {
  */
 public type AdditiveExprNode struct {
     public AstHeader header
-    public ChildRange operands // MULTIPLICATIVE_EXPR
+    public ChildRange operands // EXPR
     public SmallVec<AdditiveOp> opQueue
 }
 
@@ -187,7 +187,7 @@ public p AdditiveExprNode.ctor() {
  */
 public type MultiplicativeExprNode struct {
     public AstHeader header
-    public ChildRange operands // CAST_EXPR
+    public ChildRange operands // EXPR
     public SmallVec<MultiplicativeOp> opQueue
 }
 
@@ -202,7 +202,7 @@ public p MultiplicativeExprNode.ctor() {
 public type CastExprNode struct {
     public AstHeader header
     public NodeId dataType // DATA_TYPE
-    public NodeId assignExpr // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId assignExpr // EXPR
 }
 
 public p CastExprNode.ctor() {
@@ -216,7 +216,7 @@ public p CastExprNode.ctor() {
  */
 public type PrefixUnaryExprNode struct {
     public AstHeader header
-    public NodeId operand // PREFIX_UNARY_EXPR or POSTFIX_UNARY_EXPR or ATOMIC_EXPR
+    public NodeId operand // EXPR
     public PrefixUnaryOp op
 }
 
@@ -231,8 +231,8 @@ public p PrefixUnaryExprNode.ctor() {
  */
 public type PostfixUnaryExprNode struct {
     public AstHeader header
-    public NodeId operand // POSTFIX_UNARY_EXPR or ATOMIC_EXPR
-    public NodeId subscriptIndexExpr // ASSIGN_EXPR or TERNARY_EXPR (optional)
+    public NodeId operand // EXPR
+    public NodeId subscriptIndexExpr // EXPR (optional)
     public PostfixUnaryOp op
     public Symbol identifier
 }
@@ -251,9 +251,10 @@ public p PostfixUnaryExprNode.ctor() {
 public type AtomicExprNode struct {
     public AstHeader header
     public NodeId constant // CONSTANT (optional)
-    public NodeId assignExpr // ASSIGN_EXPR or TERNARY_EXPR (optional)
+    public NodeId assignExpr // EXPR (optional)
     public NodeId value // VALUE (optional)
     public Symbol fqIdentifier
+    public SmallVec<Symbol> nameFragments
 }
 
 public p AtomicExprNode.ctor() {
@@ -294,11 +295,12 @@ public p ValueNode.ctor() {
  */
 public type FctCallNode struct {
     public AstHeader header
-    public NodeId receiverExpr // POSTFIX_UNARY_EXPR or ATOMIC_EXPR (optional)
-    public NodeId calleeExpr // POSTFIX_UNARY_EXPR or ATOMIC_EXPR (optional)
+    public NodeId receiverExpr // EXPR (optional)
+    public NodeId calleeExpr // EXPR (optional)
     public NodeId templateTypeLst // TYPE_LST (optional)
     public NodeId argLst // ARG_LST (optional)
     public Symbol fqFunctionName
+    public SmallVec<Symbol> nameFragments
 }
 
 public p FctCallNode.ctor() {
@@ -331,6 +333,7 @@ public type StructInstantiationNode struct {
     public NodeId templateTypeLst // TYPE_LST (optional)
     public NodeId fieldLst // ARG_LST (optional)
     public Symbol fqStructName
+    public SmallVec<Symbol> nameFragments
 }
 
 public p StructInstantiationNode.ctor() {
@@ -382,7 +385,7 @@ public p LambdaProcNode.ctor() {
 public type LambdaExprNode struct {
     public AstHeader header
     public NodeId paramLst // PARAM_LST (optional)
-    public NodeId body // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId body // EXPR
 }
 
 public p LambdaExprNode.ctor() {

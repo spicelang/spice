@@ -27,8 +27,8 @@ public p UnsafeBlockNode.ctor() {
 public type ForLoopNode struct {
     public AstHeader header
     public NodeId initDecl // DECL_STMT
-    public NodeId condAssign // ASSIGN_EXPR or TERNARY_EXPR
-    public NodeId incAssign // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId condAssign // EXPR
+    public NodeId incAssign // EXPR
     public NodeId body // STMT_LST
 }
 
@@ -47,7 +47,7 @@ public type ForeachLoopNode struct {
     public AstHeader header
     public NodeId idxVarDecl // DECL_STMT (optional)
     public NodeId itemVarDecl // DECL_STMT
-    public NodeId iteratorAssign // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId iteratorAssign // EXPR
     public NodeId body // STMT_LST
 }
 
@@ -64,7 +64,7 @@ public p ForeachLoopNode.ctor() {
  */
 public type WhileLoopNode struct {
     public AstHeader header
-    public NodeId condition // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId condition // EXPR
     public NodeId body // STMT_LST
 }
 
@@ -80,7 +80,7 @@ public p WhileLoopNode.ctor() {
 public type DoWhileLoopNode struct {
     public AstHeader header
     public NodeId body // STMT_LST
-    public NodeId condition // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId condition // EXPR
 }
 
 public p DoWhileLoopNode.ctor() {
@@ -94,7 +94,7 @@ public p DoWhileLoopNode.ctor() {
  */
 public type IfStmtNode struct {
     public AstHeader header
-    public NodeId condition // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId condition // EXPR
     public NodeId thenBody // STMT_LST
     public NodeId elseStmt // ELSE_STMT (optional)
 }
@@ -126,7 +126,7 @@ public p ElseStmtNode.ctor() {
  */
 public type SwitchStmtNode struct {
     public AstHeader header
-    public NodeId assignExpr // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId assignExpr // EXPR
     public ChildRange caseBranches // CASE_BRANCH
     public NodeId defaultBranch // DEFAULT_BRANCH (optional)
 }
@@ -200,7 +200,7 @@ public p StmtLstNode.ctor() {
 public type DeclStmtNode struct {
     public AstHeader header
     public NodeId dataType // DATA_TYPE
-    public NodeId assignExpr // ASSIGN_EXPR or TERNARY_EXPR (optional)
+    public NodeId assignExpr // EXPR (optional)
     public Symbol varName
     public bool isFctParam
     public bool isForEachItem
@@ -220,7 +220,7 @@ public p DeclStmtNode.ctor() {
  */
 public type ExprStmtNode struct {
     public AstHeader header
-    public NodeId expr // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId expr // EXPR
 }
 
 public p ExprStmtNode.ctor() {
@@ -233,7 +233,7 @@ public p ExprStmtNode.ctor() {
  */
 public type ReturnStmtNode struct {
     public AstHeader header
-    public NodeId assignExpr // ASSIGN_EXPR or TERNARY_EXPR (optional)
+    public NodeId assignExpr // EXPR (optional)
 }
 
 public p ReturnStmtNode.ctor() {
@@ -251,7 +251,7 @@ public type BreakStmtNode struct {
 
 public p BreakStmtNode.ctor() {
     this.header = AstHeader(AstNodeKind::BREAK_STMT);
-    this.breakTimes = 0;
+    this.breakTimes = 1;
 }
 
 /**
@@ -264,7 +264,7 @@ public type ContinueStmtNode struct {
 
 public p ContinueStmtNode.ctor() {
     this.header = AstHeader(AstNodeKind::CONTINUE_STMT);
-    this.continueTimes = 0;
+    this.continueTimes = 1;
 }
 
 /**
@@ -283,7 +283,7 @@ public p FallthroughStmtNode.ctor() {
  */
 public type AssertStmtNode struct {
     public AstHeader header
-    public NodeId assignExpr // ASSIGN_EXPR or TERNARY_EXPR
+    public NodeId assignExpr // EXPR
 }
 
 public p AssertStmtNode.ctor() {

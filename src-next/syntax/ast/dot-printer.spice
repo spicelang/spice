@@ -31,7 +31,7 @@ public p AstDotPrinter.ctor(const AstStore* store, const SourceManager* sourceMa
 
 // legacy: visualizer/ast-visualizer.spice:30-69 (buildNode)
 p AstDotPrinter.printNode(NodeId id, const String& parentNodeId) {
-    const AstHeader* header = getHeader(*this.store, id);
+    const const AstHeader* header = getHeader(*this.store, id);
     // The id is the location and the node name. Nodes of the same kind that start at the same location, e.g. `a.b().c`, get a
     // suffix that counts from 2
     const String name = String(getAstNodeKindName(header.kind));

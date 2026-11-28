@@ -15,6 +15,7 @@ public type CustomDataTypeNode struct {
     public AstHeader header
     public NodeId templateTypeLst // TYPE_LST (optional)
     public Symbol fqTypeName
+    public SmallVec<Symbol> nameFragments
 }
 
 public p CustomDataTypeNode.ctor() {

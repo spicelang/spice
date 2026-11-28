@@ -20,6 +20,7 @@ node FIRST misc
   list items: SECOND_KIND|FIRST
   field op: Op
   field flag: bool
+  field count: int = 1
 node SECOND_KIND stmt
 """
 
@@ -67,6 +68,7 @@ class GenAstTest(unittest.TestCase):
         self.assertIn("public NodeId inner // SECOND_KIND (optional)", nodes)
         self.assertIn("public ChildRange items // SECOND_KIND or FIRST", nodes)
         self.assertIn("this.op = Op::OP_A;", nodes)
+        self.assertIn("this.count = 1;", gen.emit_nodes(gen.parse(GOOD), "misc"))
         self.assertIn("this.inner = noNodeId();", nodes)
         self.assertIn("public f<NodeId> AstStore.addSecondKind(", files["src-next/syntax/ast/ast-store.spice"])
         self.assertIn("pushChildRange(store, out, node.items);", files["src-next/syntax/ast/ast-children.spice"])

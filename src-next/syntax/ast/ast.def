@@ -7,7 +7,11 @@
 #                                      The group (misc, decl, stmt, expr, type) selects the generated file nodes-<group>.spice.
 #     child <name>[?]: <KIND>[|<KIND>] a single child. '?' marks an optional child, which is the invalid NodeId if it is missing
 #     list <name>: <KIND>[|<KIND>]     a list of children. They are stored as a range of the child array of the AstStore
-#     field <name>: <Spice type>       a syntactic fact that is not a child. Names are interned Symbols
+#     field <name>: <Spice type> [= <value>]  a syntactic fact that is not a child. Names are interned Symbols
+#
+# The kinds after a child are documentation of what the parser creates, and the generator checks only that they exist. EXPR stands for
+# any expression kind (the CONSTANT to LAMBDA_EXPR of the expression nodes), because the parse functions of legacy return the lower
+# level unwrapped when there is no operator, so a slot can hold any lower kind.
 #
 # The children of a node are visited in the order of their declaration. That is the order of `children` in the legacy AST,
 # which the dot output and the visitors depend on. Legacy regroups the children of ENTRY and moves the attribute child of the
@@ -62,6 +66,7 @@ node QUALIFIER_LST misc
 node CUSTOM_DATA_TYPE type
   child templateTypeLst?: TYPE_LST
   field fqTypeName: Symbol
+  field nameFragments: SmallVec<Symbol>
 
 node BASE_DATA_TYPE type
   child customDataType?: CUSTOM_DATA_TYPE
@@ -91,6 +96,7 @@ node FCT_NAME decl
   field name: Symbol
   field structName: Symbol
   field fqName: Symbol
+  field nameFragments: SmallVec<Symbol>
 
 node FCT_DEF decl
   child attrs?: TOP_LEVEL_DEF_ATTR
@@ -167,26 +173,26 @@ node UNSAFE_BLOCK stmt
 
 node FOR_LOOP stmt
   child initDecl: DECL_STMT
-  child condAssign: ASSIGN_EXPR|TERNARY_EXPR
-  child incAssign: ASSIGN_EXPR|TERNARY_EXPR
+  child condAssign: EXPR
+  child incAssign: EXPR
   child body: STMT_LST
 
 node FOREACH_LOOP stmt
   child idxVarDecl?: DECL_STMT
   child itemVarDecl: DECL_STMT
-  child iteratorAssign: ASSIGN_EXPR|TERNARY_EXPR
+  child iteratorAssign: EXPR
   child body: STMT_LST
 
 node WHILE_LOOP stmt
-  child condition: ASSIGN_EXPR|TERNARY_EXPR
+  child condition: EXPR
   child body: STMT_LST
 
 node DO_WHILE_LOOP stmt
   child body: STMT_LST
-  child condition: ASSIGN_EXPR|TERNARY_EXPR
+  child condition: EXPR
 
 node IF_STMT stmt
-  child condition: ASSIGN_EXPR|TERNARY_EXPR
+  child condition: EXPR
   child thenBody: STMT_LST
   child elseStmt?: ELSE_STMT
 
@@ -195,7 +201,7 @@ node ELSE_STMT stmt
   child body?: STMT_LST
 
 node SWITCH_STMT stmt
-  child assignExpr: ASSIGN_EXPR|TERNARY_EXPR
+  child assignExpr: EXPR
   list caseBranches: CASE_BRANCH
   child defaultBranch?: DEFAULT_BRANCH
 
@@ -222,7 +228,7 @@ node TYPE_ALTS_LST type
 
 node DECL_STMT stmt
   child dataType: DATA_TYPE
-  child assignExpr?: ASSIGN_EXPR|TERNARY_EXPR
+  child assignExpr?: EXPR
   field varName: Symbol
   field isFctParam: bool
   field isForEachItem: bool
@@ -231,11 +237,10 @@ node PARAM_LST misc
   list params: DECL_STMT
 
 node ARG_LST misc
-  list args: ASSIGN_EXPR|TERNARY_EXPR
+  list args: EXPR
 
 node ENUM_ITEM decl
   field itemName: Symbol
-  field hasValue: bool
   field valueSpan: Span
 
 node ENUM_ITEM_LST decl
@@ -243,7 +248,7 @@ node ENUM_ITEM_LST decl
 
 node FIELD decl
   child dataType: DATA_TYPE
-  child defaultValue?: TERNARY_EXPR
+  child defaultValue?: EXPR
   field fieldName: Symbol
 
 node SIGNATURE decl
@@ -255,7 +260,7 @@ node SIGNATURE decl
   field signatureType: SignatureType
 
 node EXPR_STMT stmt
-  child expr: ASSIGN_EXPR|TERNARY_EXPR
+  child expr: EXPR
 
 node MOD_ATTR misc
   child attrLst: ATTR_LST
@@ -269,85 +274,87 @@ node LAMBDA_ATTR misc
 node CASE_CONSTANT misc
   child constant?: CONSTANT
   field fqIdentifier: Symbol
+  field nameFragments: SmallVec<Symbol>
 
 node RETURN_STMT stmt
-  child assignExpr?: ASSIGN_EXPR|TERNARY_EXPR
+  child assignExpr?: EXPR
 
 node BREAK_STMT stmt
-  field breakTimes: int
+  field breakTimes: int = 1
 
 node CONTINUE_STMT stmt
-  field continueTimes: int
+  field continueTimes: int = 1
 
 node FALLTHROUGH_STMT stmt
 
 node ASSERT_STMT stmt
-  child assignExpr: ASSIGN_EXPR|TERNARY_EXPR
+  child assignExpr: EXPR
 
 node ASSIGN_EXPR expr
-  child lhs: TERNARY_EXPR|ASSIGN_EXPR
-  child rhs: ASSIGN_EXPR|TERNARY_EXPR
+  child lhs: EXPR
+  child rhs: EXPR
   field op: AssignOp
 
 node TERNARY_EXPR expr
-  child condition: LOGICAL_OR_EXPR
-  child trueExpr?: ASSIGN_EXPR|TERNARY_EXPR
-  child falseExpr: ASSIGN_EXPR|TERNARY_EXPR
+  child condition: EXPR
+  child trueExpr?: EXPR
+  child falseExpr: EXPR
 
 node LOGICAL_OR_EXPR expr
-  list operands: LOGICAL_AND_EXPR
+  list operands: EXPR
 
 node LOGICAL_AND_EXPR expr
-  list operands: BITWISE_OR_EXPR
+  list operands: EXPR
 
 node BITWISE_OR_EXPR expr
-  list operands: BITWISE_XOR_EXPR
+  list operands: EXPR
 
 node BITWISE_XOR_EXPR expr
-  list operands: BITWISE_AND_EXPR
+  list operands: EXPR
 
 node BITWISE_AND_EXPR expr
-  list operands: EQUALITY_EXPR
+  list operands: EXPR
 
 node EQUALITY_EXPR expr
-  list operands: RELATIONAL_EXPR
+  list operands: EXPR
   field op: EqualityOp
 
 node RELATIONAL_EXPR expr
-  list operands: SHIFT_EXPR
+  list operands: EXPR
   field op: RelationalOp
 
 node SHIFT_EXPR expr
-  list operands: ADDITIVE_EXPR
+  list operands: EXPR
   field opQueue: SmallVec<ShiftOp>
 
 node ADDITIVE_EXPR expr
-  list operands: MULTIPLICATIVE_EXPR
+  list operands: EXPR
   field opQueue: SmallVec<AdditiveOp>
 
 node MULTIPLICATIVE_EXPR expr
-  list operands: CAST_EXPR
+  list operands: EXPR
   field opQueue: SmallVec<MultiplicativeOp>
 
 node CAST_EXPR expr
   child dataType: DATA_TYPE
-  child assignExpr: ASSIGN_EXPR|TERNARY_EXPR
+  child assignExpr: EXPR
 
 node PREFIX_UNARY_EXPR expr
-  child operand: PREFIX_UNARY_EXPR|POSTFIX_UNARY_EXPR|ATOMIC_EXPR
+  child operand: EXPR
   field op: PrefixUnaryOp
 
 node POSTFIX_UNARY_EXPR expr
-  child operand: POSTFIX_UNARY_EXPR|ATOMIC_EXPR
-  child subscriptIndexExpr?: ASSIGN_EXPR|TERNARY_EXPR
+  child operand: EXPR
+  child subscriptIndexExpr?: EXPR
   field op: PostfixUnaryOp
   field identifier: Symbol
 
 node ATOMIC_EXPR expr
   child constant?: CONSTANT
-  child assignExpr?: ASSIGN_EXPR|TERNARY_EXPR
+  child assignExpr?: EXPR
   child value?: VALUE
   field fqIdentifier: Symbol
+  field nameFragments: SmallVec<Symbol>
 
 node VALUE expr
   child fctCall?: FCT_CALL
@@ -359,11 +366,12 @@ node VALUE expr
   child nilType?: DATA_TYPE
 
 node FCT_CALL expr
-  child receiverExpr?: POSTFIX_UNARY_EXPR|ATOMIC_EXPR
-  child calleeExpr?: POSTFIX_UNARY_EXPR|ATOMIC_EXPR
+  child receiverExpr?: EXPR
+  child calleeExpr?: EXPR
   child templateTypeLst?: TYPE_LST
   child argLst?: ARG_LST
   field fqFunctionName: Symbol
+  field nameFragments: SmallVec<Symbol>
 
 node ARRAY_INITIALIZATION expr
   child itemLst?: ARG_LST
@@ -372,6 +380,7 @@ node STRUCT_INSTANTIATION expr
   child templateTypeLst?: TYPE_LST
   child fieldLst?: ARG_LST
   field fqStructName: Symbol
+  field nameFragments: SmallVec<Symbol>
 
 node LAMBDA_FUNC expr
   child returnType: DATA_TYPE
@@ -386,7 +395,7 @@ node LAMBDA_PROC expr
 
 node LAMBDA_EXPR expr
   child paramLst?: PARAM_LST
-  child body: ASSIGN_EXPR|TERNARY_EXPR
+  child body: EXPR
 
 node FUNCTION_DATA_TYPE type
   child returnType?: DATA_TYPE

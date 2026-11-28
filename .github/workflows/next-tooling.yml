@@ -46,4 +46,5 @@ jobs:
         run: |
           python -m unittest tools/gen/test_generate.py
           python -m unittest tools/gen/test_gen_diagnostics.py
+          python -m unittest tools/gen/test_gen_ast.py
           python -m unittest tools/test_check_layering.py

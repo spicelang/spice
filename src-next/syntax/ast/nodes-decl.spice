@@ -33,6 +33,7 @@ public type FctNameNode struct {
     public Symbol name
     public Symbol structName
     public Symbol fqName
+    public SmallVec<Symbol> nameFragments
 }
 
 public p FctNameNode.ctor() {
@@ -265,14 +266,12 @@ public p ImportDefNode.ctor() {
 public type EnumItemNode struct {
     public AstHeader header
     public Symbol itemName
-    public bool hasValue
     public Span valueSpan
 }
 
 public p EnumItemNode.ctor() {
     this.header = AstHeader(AstNodeKind::ENUM_ITEM);
     this.itemName = noSymbol();
-    this.hasValue = false;
     this.valueSpan = Span();
 }
 
@@ -295,7 +294,7 @@ public p EnumItemLstNode.ctor() {
 public type FieldNode struct {
     public AstHeader header
     public NodeId dataType // DATA_TYPE
-    public NodeId defaultValue // TERNARY_EXPR (optional)
+    public NodeId defaultValue // EXPR (optional)
     public Symbol fieldName
 }
 

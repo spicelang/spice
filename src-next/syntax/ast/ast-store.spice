@@ -127,15 +127,33 @@ public const f<NodeId> AstStore.getChild(const ChildRange& range, unsigned int i
     return this.childArray.get(range.start + i);
 }
 
-f<NodeId> AstStore.registerNode(AstNodeKind kind, unsigned int index) {
+/**
+ * Reserve the id of a node, before the node exists. The parser reserves it when a rule starts and passes it in the header of the
+ * node it adds later, so a node gets a smaller id than its descendants, like the ids of legacy (`Parser.createNode`)
+ */
+public f<NodeId> AstStore.reserveNode() {
     const NodeId id = makeNodeId(cast<unsigned int>(this.nodes.size()));
-    const Id<AstNode> _ = this.nodes.push(AstNode(kind, index));
+    const Id<AstNode> _ = this.nodes.push(AstNode());
     return id;
 }
 
-// Add a ENTRY node. The header is completed here: the id and the span
+// Complete the reserved id of the node, or take the next id if the node has none
+f<NodeId> AstStore.claimNode(NodeId reserved, AstNodeKind kind, unsigned int index) {
+    if !isNodeId(reserved) {
+        const NodeId id = makeNodeId(cast<unsigned int>(this.nodes.size()));
+        const Id<AstNode> _ = this.nodes.push(AstNode(kind, index));
+        return id;
+    }
+    assert this.nodes.get(reserved).kind == AstNodeKind::INVALID;
+    AstNode* entry = &this.nodes.get(reserved);
+    entry.kind = kind;
+    entry.index = index;
+    return reserved;
+}
+
+// Add a ENTRY node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addEntry(EntryNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ENTRY, cast<unsigned int>(this.entryNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ENTRY, cast<unsigned int>(this.entryNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<EntryNode> _ = this.entryNodes.push(node);
@@ -146,9 +164,9 @@ public const f<EntryNode&> AstStore.getEntry(NodeId id) {
     return this.entryNodes.get(Id<EntryNode>(this.nodes.get(id).index));
 }
 
-// Add a CONSTANT node. The header is completed here: the id and the span
+// Add a CONSTANT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addConstant(ConstantNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::CONSTANT, cast<unsigned int>(this.constantNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::CONSTANT, cast<unsigned int>(this.constantNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ConstantNode> _ = this.constantNodes.push(node);
@@ -159,9 +177,9 @@ public const f<ConstantNode&> AstStore.getConstant(NodeId id) {
     return this.constantNodes.get(Id<ConstantNode>(this.nodes.get(id).index));
 }
 
-// Add a ATTR node. The header is completed here: the id and the span
+// Add a ATTR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAttr(AttrNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ATTR, cast<unsigned int>(this.attrNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ATTR, cast<unsigned int>(this.attrNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AttrNode> _ = this.attrNodes.push(node);
@@ -172,9 +190,9 @@ public const f<AttrNode&> AstStore.getAttr(NodeId id) {
     return this.attrNodes.get(Id<AttrNode>(this.nodes.get(id).index));
 }
 
-// Add a ATTR_LST node. The header is completed here: the id and the span
+// Add a ATTR_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAttrLst(AttrLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ATTR_LST, cast<unsigned int>(this.attrLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ATTR_LST, cast<unsigned int>(this.attrLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AttrLstNode> _ = this.attrLstNodes.push(node);
@@ -185,9 +203,9 @@ public const f<AttrLstNode&> AstStore.getAttrLst(NodeId id) {
     return this.attrLstNodes.get(Id<AttrLstNode>(this.nodes.get(id).index));
 }
 
-// Add a QUALIFIER node. The header is completed here: the id and the span
+// Add a QUALIFIER node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addQualifier(QualifierNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::QUALIFIER, cast<unsigned int>(this.qualifierNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::QUALIFIER, cast<unsigned int>(this.qualifierNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<QualifierNode> _ = this.qualifierNodes.push(node);
@@ -198,9 +216,9 @@ public const f<QualifierNode&> AstStore.getQualifier(NodeId id) {
     return this.qualifierNodes.get(Id<QualifierNode>(this.nodes.get(id).index));
 }
 
-// Add a QUALIFIER_LST node. The header is completed here: the id and the span
+// Add a QUALIFIER_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addQualifierLst(QualifierLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::QUALIFIER_LST, cast<unsigned int>(this.qualifierLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::QUALIFIER_LST, cast<unsigned int>(this.qualifierLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<QualifierLstNode> _ = this.qualifierLstNodes.push(node);
@@ -211,9 +229,9 @@ public const f<QualifierLstNode&> AstStore.getQualifierLst(NodeId id) {
     return this.qualifierLstNodes.get(Id<QualifierLstNode>(this.nodes.get(id).index));
 }
 
-// Add a CUSTOM_DATA_TYPE node. The header is completed here: the id and the span
+// Add a CUSTOM_DATA_TYPE node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addCustomDataType(CustomDataTypeNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::CUSTOM_DATA_TYPE, cast<unsigned int>(this.customDataTypeNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::CUSTOM_DATA_TYPE, cast<unsigned int>(this.customDataTypeNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<CustomDataTypeNode> _ = this.customDataTypeNodes.push(node);
@@ -224,9 +242,9 @@ public const f<CustomDataTypeNode&> AstStore.getCustomDataType(NodeId id) {
     return this.customDataTypeNodes.get(Id<CustomDataTypeNode>(this.nodes.get(id).index));
 }
 
-// Add a BASE_DATA_TYPE node. The header is completed here: the id and the span
+// Add a BASE_DATA_TYPE node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addBaseDataType(BaseDataTypeNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::BASE_DATA_TYPE, cast<unsigned int>(this.baseDataTypeNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::BASE_DATA_TYPE, cast<unsigned int>(this.baseDataTypeNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<BaseDataTypeNode> _ = this.baseDataTypeNodes.push(node);
@@ -237,9 +255,9 @@ public const f<BaseDataTypeNode&> AstStore.getBaseDataType(NodeId id) {
     return this.baseDataTypeNodes.get(Id<BaseDataTypeNode>(this.nodes.get(id).index));
 }
 
-// Add a DATA_TYPE node. The header is completed here: the id and the span
+// Add a DATA_TYPE node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addDataType(DataTypeNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::DATA_TYPE, cast<unsigned int>(this.dataTypeNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::DATA_TYPE, cast<unsigned int>(this.dataTypeNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<DataTypeNode> _ = this.dataTypeNodes.push(node);
@@ -250,9 +268,9 @@ public const f<DataTypeNode&> AstStore.getDataType(NodeId id) {
     return this.dataTypeNodes.get(Id<DataTypeNode>(this.nodes.get(id).index));
 }
 
-// Add a TYPE_LST node. The header is completed here: the id and the span
+// Add a TYPE_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addTypeLst(TypeLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::TYPE_LST, cast<unsigned int>(this.typeLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::TYPE_LST, cast<unsigned int>(this.typeLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<TypeLstNode> _ = this.typeLstNodes.push(node);
@@ -263,9 +281,9 @@ public const f<TypeLstNode&> AstStore.getTypeLst(NodeId id) {
     return this.typeLstNodes.get(Id<TypeLstNode>(this.nodes.get(id).index));
 }
 
-// Add a MAIN_FCT_DEF node. The header is completed here: the id and the span
+// Add a MAIN_FCT_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addMainFctDef(MainFctDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::MAIN_FCT_DEF, cast<unsigned int>(this.mainFctDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::MAIN_FCT_DEF, cast<unsigned int>(this.mainFctDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<MainFctDefNode> _ = this.mainFctDefNodes.push(node);
@@ -276,9 +294,9 @@ public const f<MainFctDefNode&> AstStore.getMainFctDef(NodeId id) {
     return this.mainFctDefNodes.get(Id<MainFctDefNode>(this.nodes.get(id).index));
 }
 
-// Add a FCT_NAME node. The header is completed here: the id and the span
+// Add a FCT_NAME node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addFctName(FctNameNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FCT_NAME, cast<unsigned int>(this.fctNameNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FCT_NAME, cast<unsigned int>(this.fctNameNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<FctNameNode> _ = this.fctNameNodes.push(node);
@@ -289,9 +307,9 @@ public const f<FctNameNode&> AstStore.getFctName(NodeId id) {
     return this.fctNameNodes.get(Id<FctNameNode>(this.nodes.get(id).index));
 }
 
-// Add a FCT_DEF node. The header is completed here: the id and the span
+// Add a FCT_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addFctDef(FctDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FCT_DEF, cast<unsigned int>(this.fctDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FCT_DEF, cast<unsigned int>(this.fctDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<FctDefNode> _ = this.fctDefNodes.push(node);
@@ -302,9 +320,9 @@ public const f<FctDefNode&> AstStore.getFctDef(NodeId id) {
     return this.fctDefNodes.get(Id<FctDefNode>(this.nodes.get(id).index));
 }
 
-// Add a PROC_DEF node. The header is completed here: the id and the span
+// Add a PROC_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addProcDef(ProcDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::PROC_DEF, cast<unsigned int>(this.procDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::PROC_DEF, cast<unsigned int>(this.procDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ProcDefNode> _ = this.procDefNodes.push(node);
@@ -315,9 +333,9 @@ public const f<ProcDefNode&> AstStore.getProcDef(NodeId id) {
     return this.procDefNodes.get(Id<ProcDefNode>(this.nodes.get(id).index));
 }
 
-// Add a STRUCT_DEF node. The header is completed here: the id and the span
+// Add a STRUCT_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addStructDef(StructDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::STRUCT_DEF, cast<unsigned int>(this.structDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::STRUCT_DEF, cast<unsigned int>(this.structDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<StructDefNode> _ = this.structDefNodes.push(node);
@@ -328,9 +346,9 @@ public const f<StructDefNode&> AstStore.getStructDef(NodeId id) {
     return this.structDefNodes.get(Id<StructDefNode>(this.nodes.get(id).index));
 }
 
-// Add a INTERFACE_DEF node. The header is completed here: the id and the span
+// Add a INTERFACE_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addInterfaceDef(InterfaceDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::INTERFACE_DEF, cast<unsigned int>(this.interfaceDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::INTERFACE_DEF, cast<unsigned int>(this.interfaceDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<InterfaceDefNode> _ = this.interfaceDefNodes.push(node);
@@ -341,9 +359,9 @@ public const f<InterfaceDefNode&> AstStore.getInterfaceDef(NodeId id) {
     return this.interfaceDefNodes.get(Id<InterfaceDefNode>(this.nodes.get(id).index));
 }
 
-// Add a UNION_DEF node. The header is completed here: the id and the span
+// Add a UNION_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addUnionDef(UnionDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::UNION_DEF, cast<unsigned int>(this.unionDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::UNION_DEF, cast<unsigned int>(this.unionDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<UnionDefNode> _ = this.unionDefNodes.push(node);
@@ -354,9 +372,9 @@ public const f<UnionDefNode&> AstStore.getUnionDef(NodeId id) {
     return this.unionDefNodes.get(Id<UnionDefNode>(this.nodes.get(id).index));
 }
 
-// Add a ENUM_DEF node. The header is completed here: the id and the span
+// Add a ENUM_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addEnumDef(EnumDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ENUM_DEF, cast<unsigned int>(this.enumDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ENUM_DEF, cast<unsigned int>(this.enumDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<EnumDefNode> _ = this.enumDefNodes.push(node);
@@ -367,9 +385,9 @@ public const f<EnumDefNode&> AstStore.getEnumDef(NodeId id) {
     return this.enumDefNodes.get(Id<EnumDefNode>(this.nodes.get(id).index));
 }
 
-// Add a GENERIC_TYPE_DEF node. The header is completed here: the id and the span
+// Add a GENERIC_TYPE_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addGenericTypeDef(GenericTypeDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::GENERIC_TYPE_DEF, cast<unsigned int>(this.genericTypeDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::GENERIC_TYPE_DEF, cast<unsigned int>(this.genericTypeDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<GenericTypeDefNode> _ = this.genericTypeDefNodes.push(node);
@@ -380,9 +398,9 @@ public const f<GenericTypeDefNode&> AstStore.getGenericTypeDef(NodeId id) {
     return this.genericTypeDefNodes.get(Id<GenericTypeDefNode>(this.nodes.get(id).index));
 }
 
-// Add a ALIAS_DEF node. The header is completed here: the id and the span
+// Add a ALIAS_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAliasDef(AliasDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ALIAS_DEF, cast<unsigned int>(this.aliasDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ALIAS_DEF, cast<unsigned int>(this.aliasDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AliasDefNode> _ = this.aliasDefNodes.push(node);
@@ -393,9 +411,9 @@ public const f<AliasDefNode&> AstStore.getAliasDef(NodeId id) {
     return this.aliasDefNodes.get(Id<AliasDefNode>(this.nodes.get(id).index));
 }
 
-// Add a GLOBAL_VAR_DEF node. The header is completed here: the id and the span
+// Add a GLOBAL_VAR_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addGlobalVarDef(GlobalVarDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::GLOBAL_VAR_DEF, cast<unsigned int>(this.globalVarDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::GLOBAL_VAR_DEF, cast<unsigned int>(this.globalVarDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<GlobalVarDefNode> _ = this.globalVarDefNodes.push(node);
@@ -406,9 +424,9 @@ public const f<GlobalVarDefNode&> AstStore.getGlobalVarDef(NodeId id) {
     return this.globalVarDefNodes.get(Id<GlobalVarDefNode>(this.nodes.get(id).index));
 }
 
-// Add a EXT_DECL node. The header is completed here: the id and the span
+// Add a EXT_DECL node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addExtDecl(ExtDeclNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::EXT_DECL, cast<unsigned int>(this.extDeclNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::EXT_DECL, cast<unsigned int>(this.extDeclNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ExtDeclNode> _ = this.extDeclNodes.push(node);
@@ -419,9 +437,9 @@ public const f<ExtDeclNode&> AstStore.getExtDecl(NodeId id) {
     return this.extDeclNodes.get(Id<ExtDeclNode>(this.nodes.get(id).index));
 }
 
-// Add a IMPORT_DEF node. The header is completed here: the id and the span
+// Add a IMPORT_DEF node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addImportDef(ImportDefNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::IMPORT_DEF, cast<unsigned int>(this.importDefNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::IMPORT_DEF, cast<unsigned int>(this.importDefNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ImportDefNode> _ = this.importDefNodes.push(node);
@@ -432,9 +450,9 @@ public const f<ImportDefNode&> AstStore.getImportDef(NodeId id) {
     return this.importDefNodes.get(Id<ImportDefNode>(this.nodes.get(id).index));
 }
 
-// Add a UNSAFE_BLOCK node. The header is completed here: the id and the span
+// Add a UNSAFE_BLOCK node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addUnsafeBlock(UnsafeBlockNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::UNSAFE_BLOCK, cast<unsigned int>(this.unsafeBlockNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::UNSAFE_BLOCK, cast<unsigned int>(this.unsafeBlockNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<UnsafeBlockNode> _ = this.unsafeBlockNodes.push(node);
@@ -445,9 +463,9 @@ public const f<UnsafeBlockNode&> AstStore.getUnsafeBlock(NodeId id) {
     return this.unsafeBlockNodes.get(Id<UnsafeBlockNode>(this.nodes.get(id).index));
 }
 
-// Add a FOR_LOOP node. The header is completed here: the id and the span
+// Add a FOR_LOOP node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addForLoop(ForLoopNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FOR_LOOP, cast<unsigned int>(this.forLoopNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FOR_LOOP, cast<unsigned int>(this.forLoopNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ForLoopNode> _ = this.forLoopNodes.push(node);
@@ -458,9 +476,9 @@ public const f<ForLoopNode&> AstStore.getForLoop(NodeId id) {
     return this.forLoopNodes.get(Id<ForLoopNode>(this.nodes.get(id).index));
 }
 
-// Add a FOREACH_LOOP node. The header is completed here: the id and the span
+// Add a FOREACH_LOOP node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addForeachLoop(ForeachLoopNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FOREACH_LOOP, cast<unsigned int>(this.foreachLoopNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FOREACH_LOOP, cast<unsigned int>(this.foreachLoopNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ForeachLoopNode> _ = this.foreachLoopNodes.push(node);
@@ -471,9 +489,9 @@ public const f<ForeachLoopNode&> AstStore.getForeachLoop(NodeId id) {
     return this.foreachLoopNodes.get(Id<ForeachLoopNode>(this.nodes.get(id).index));
 }
 
-// Add a WHILE_LOOP node. The header is completed here: the id and the span
+// Add a WHILE_LOOP node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addWhileLoop(WhileLoopNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::WHILE_LOOP, cast<unsigned int>(this.whileLoopNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::WHILE_LOOP, cast<unsigned int>(this.whileLoopNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<WhileLoopNode> _ = this.whileLoopNodes.push(node);
@@ -484,9 +502,9 @@ public const f<WhileLoopNode&> AstStore.getWhileLoop(NodeId id) {
     return this.whileLoopNodes.get(Id<WhileLoopNode>(this.nodes.get(id).index));
 }
 
-// Add a DO_WHILE_LOOP node. The header is completed here: the id and the span
+// Add a DO_WHILE_LOOP node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addDoWhileLoop(DoWhileLoopNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::DO_WHILE_LOOP, cast<unsigned int>(this.doWhileLoopNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::DO_WHILE_LOOP, cast<unsigned int>(this.doWhileLoopNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<DoWhileLoopNode> _ = this.doWhileLoopNodes.push(node);
@@ -497,9 +515,9 @@ public const f<DoWhileLoopNode&> AstStore.getDoWhileLoop(NodeId id) {
     return this.doWhileLoopNodes.get(Id<DoWhileLoopNode>(this.nodes.get(id).index));
 }
 
-// Add a IF_STMT node. The header is completed here: the id and the span
+// Add a IF_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addIfStmt(IfStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::IF_STMT, cast<unsigned int>(this.ifStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::IF_STMT, cast<unsigned int>(this.ifStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<IfStmtNode> _ = this.ifStmtNodes.push(node);
@@ -510,9 +528,9 @@ public const f<IfStmtNode&> AstStore.getIfStmt(NodeId id) {
     return this.ifStmtNodes.get(Id<IfStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a ELSE_STMT node. The header is completed here: the id and the span
+// Add a ELSE_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addElseStmt(ElseStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ELSE_STMT, cast<unsigned int>(this.elseStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ELSE_STMT, cast<unsigned int>(this.elseStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ElseStmtNode> _ = this.elseStmtNodes.push(node);
@@ -523,9 +541,9 @@ public const f<ElseStmtNode&> AstStore.getElseStmt(NodeId id) {
     return this.elseStmtNodes.get(Id<ElseStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a SWITCH_STMT node. The header is completed here: the id and the span
+// Add a SWITCH_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addSwitchStmt(SwitchStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::SWITCH_STMT, cast<unsigned int>(this.switchStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::SWITCH_STMT, cast<unsigned int>(this.switchStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<SwitchStmtNode> _ = this.switchStmtNodes.push(node);
@@ -536,9 +554,9 @@ public const f<SwitchStmtNode&> AstStore.getSwitchStmt(NodeId id) {
     return this.switchStmtNodes.get(Id<SwitchStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a CASE_BRANCH node. The header is completed here: the id and the span
+// Add a CASE_BRANCH node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addCaseBranch(CaseBranchNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::CASE_BRANCH, cast<unsigned int>(this.caseBranchNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::CASE_BRANCH, cast<unsigned int>(this.caseBranchNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<CaseBranchNode> _ = this.caseBranchNodes.push(node);
@@ -549,9 +567,9 @@ public const f<CaseBranchNode&> AstStore.getCaseBranch(NodeId id) {
     return this.caseBranchNodes.get(Id<CaseBranchNode>(this.nodes.get(id).index));
 }
 
-// Add a DEFAULT_BRANCH node. The header is completed here: the id and the span
+// Add a DEFAULT_BRANCH node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addDefaultBranch(DefaultBranchNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::DEFAULT_BRANCH, cast<unsigned int>(this.defaultBranchNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::DEFAULT_BRANCH, cast<unsigned int>(this.defaultBranchNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<DefaultBranchNode> _ = this.defaultBranchNodes.push(node);
@@ -562,9 +580,9 @@ public const f<DefaultBranchNode&> AstStore.getDefaultBranch(NodeId id) {
     return this.defaultBranchNodes.get(Id<DefaultBranchNode>(this.nodes.get(id).index));
 }
 
-// Add a ANONYMOUS_BLOCK_STMT node. The header is completed here: the id and the span
+// Add a ANONYMOUS_BLOCK_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAnonymousBlockStmt(AnonymousBlockStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ANONYMOUS_BLOCK_STMT, cast<unsigned int>(this.anonymousBlockStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ANONYMOUS_BLOCK_STMT, cast<unsigned int>(this.anonymousBlockStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AnonymousBlockStmtNode> _ = this.anonymousBlockStmtNodes.push(node);
@@ -575,9 +593,9 @@ public const f<AnonymousBlockStmtNode&> AstStore.getAnonymousBlockStmt(NodeId id
     return this.anonymousBlockStmtNodes.get(Id<AnonymousBlockStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a STMT_LST node. The header is completed here: the id and the span
+// Add a STMT_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addStmtLst(StmtLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::STMT_LST, cast<unsigned int>(this.stmtLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::STMT_LST, cast<unsigned int>(this.stmtLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<StmtLstNode> _ = this.stmtLstNodes.push(node);
@@ -588,9 +606,9 @@ public const f<StmtLstNode&> AstStore.getStmtLst(NodeId id) {
     return this.stmtLstNodes.get(Id<StmtLstNode>(this.nodes.get(id).index));
 }
 
-// Add a TYPE_LST_WITH_ELLIPSIS node. The header is completed here: the id and the span
+// Add a TYPE_LST_WITH_ELLIPSIS node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addTypeLstWithEllipsis(TypeLstWithEllipsisNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::TYPE_LST_WITH_ELLIPSIS, cast<unsigned int>(this.typeLstWithEllipsisNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::TYPE_LST_WITH_ELLIPSIS, cast<unsigned int>(this.typeLstWithEllipsisNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<TypeLstWithEllipsisNode> _ = this.typeLstWithEllipsisNodes.push(node);
@@ -601,9 +619,9 @@ public const f<TypeLstWithEllipsisNode&> AstStore.getTypeLstWithEllipsis(NodeId 
     return this.typeLstWithEllipsisNodes.get(Id<TypeLstWithEllipsisNode>(this.nodes.get(id).index));
 }
 
-// Add a TYPE_ALTS_LST node. The header is completed here: the id and the span
+// Add a TYPE_ALTS_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addTypeAltsLst(TypeAltsLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::TYPE_ALTS_LST, cast<unsigned int>(this.typeAltsLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::TYPE_ALTS_LST, cast<unsigned int>(this.typeAltsLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<TypeAltsLstNode> _ = this.typeAltsLstNodes.push(node);
@@ -614,9 +632,9 @@ public const f<TypeAltsLstNode&> AstStore.getTypeAltsLst(NodeId id) {
     return this.typeAltsLstNodes.get(Id<TypeAltsLstNode>(this.nodes.get(id).index));
 }
 
-// Add a DECL_STMT node. The header is completed here: the id and the span
+// Add a DECL_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addDeclStmt(DeclStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::DECL_STMT, cast<unsigned int>(this.declStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::DECL_STMT, cast<unsigned int>(this.declStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<DeclStmtNode> _ = this.declStmtNodes.push(node);
@@ -627,9 +645,9 @@ public const f<DeclStmtNode&> AstStore.getDeclStmt(NodeId id) {
     return this.declStmtNodes.get(Id<DeclStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a PARAM_LST node. The header is completed here: the id and the span
+// Add a PARAM_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addParamLst(ParamLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::PARAM_LST, cast<unsigned int>(this.paramLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::PARAM_LST, cast<unsigned int>(this.paramLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ParamLstNode> _ = this.paramLstNodes.push(node);
@@ -640,9 +658,9 @@ public const f<ParamLstNode&> AstStore.getParamLst(NodeId id) {
     return this.paramLstNodes.get(Id<ParamLstNode>(this.nodes.get(id).index));
 }
 
-// Add a ARG_LST node. The header is completed here: the id and the span
+// Add a ARG_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addArgLst(ArgLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ARG_LST, cast<unsigned int>(this.argLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ARG_LST, cast<unsigned int>(this.argLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ArgLstNode> _ = this.argLstNodes.push(node);
@@ -653,9 +671,9 @@ public const f<ArgLstNode&> AstStore.getArgLst(NodeId id) {
     return this.argLstNodes.get(Id<ArgLstNode>(this.nodes.get(id).index));
 }
 
-// Add a ENUM_ITEM node. The header is completed here: the id and the span
+// Add a ENUM_ITEM node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addEnumItem(EnumItemNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ENUM_ITEM, cast<unsigned int>(this.enumItemNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ENUM_ITEM, cast<unsigned int>(this.enumItemNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<EnumItemNode> _ = this.enumItemNodes.push(node);
@@ -666,9 +684,9 @@ public const f<EnumItemNode&> AstStore.getEnumItem(NodeId id) {
     return this.enumItemNodes.get(Id<EnumItemNode>(this.nodes.get(id).index));
 }
 
-// Add a ENUM_ITEM_LST node. The header is completed here: the id and the span
+// Add a ENUM_ITEM_LST node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addEnumItemLst(EnumItemLstNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ENUM_ITEM_LST, cast<unsigned int>(this.enumItemLstNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ENUM_ITEM_LST, cast<unsigned int>(this.enumItemLstNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<EnumItemLstNode> _ = this.enumItemLstNodes.push(node);
@@ -679,9 +697,9 @@ public const f<EnumItemLstNode&> AstStore.getEnumItemLst(NodeId id) {
     return this.enumItemLstNodes.get(Id<EnumItemLstNode>(this.nodes.get(id).index));
 }
 
-// Add a FIELD node. The header is completed here: the id and the span
+// Add a FIELD node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addField(FieldNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FIELD, cast<unsigned int>(this.fieldNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FIELD, cast<unsigned int>(this.fieldNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<FieldNode> _ = this.fieldNodes.push(node);
@@ -692,9 +710,9 @@ public const f<FieldNode&> AstStore.getField(NodeId id) {
     return this.fieldNodes.get(Id<FieldNode>(this.nodes.get(id).index));
 }
 
-// Add a SIGNATURE node. The header is completed here: the id and the span
+// Add a SIGNATURE node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addSignature(SignatureNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::SIGNATURE, cast<unsigned int>(this.signatureNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::SIGNATURE, cast<unsigned int>(this.signatureNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<SignatureNode> _ = this.signatureNodes.push(node);
@@ -705,9 +723,9 @@ public const f<SignatureNode&> AstStore.getSignature(NodeId id) {
     return this.signatureNodes.get(Id<SignatureNode>(this.nodes.get(id).index));
 }
 
-// Add a EXPR_STMT node. The header is completed here: the id and the span
+// Add a EXPR_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addExprStmt(ExprStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::EXPR_STMT, cast<unsigned int>(this.exprStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::EXPR_STMT, cast<unsigned int>(this.exprStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ExprStmtNode> _ = this.exprStmtNodes.push(node);
@@ -718,9 +736,9 @@ public const f<ExprStmtNode&> AstStore.getExprStmt(NodeId id) {
     return this.exprStmtNodes.get(Id<ExprStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a MOD_ATTR node. The header is completed here: the id and the span
+// Add a MOD_ATTR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addModAttr(ModAttrNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::MOD_ATTR, cast<unsigned int>(this.modAttrNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::MOD_ATTR, cast<unsigned int>(this.modAttrNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ModAttrNode> _ = this.modAttrNodes.push(node);
@@ -731,9 +749,9 @@ public const f<ModAttrNode&> AstStore.getModAttr(NodeId id) {
     return this.modAttrNodes.get(Id<ModAttrNode>(this.nodes.get(id).index));
 }
 
-// Add a TOP_LEVEL_DEF_ATTR node. The header is completed here: the id and the span
+// Add a TOP_LEVEL_DEF_ATTR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addTopLevelDefAttr(TopLevelDefAttrNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::TOP_LEVEL_DEF_ATTR, cast<unsigned int>(this.topLevelDefAttrNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::TOP_LEVEL_DEF_ATTR, cast<unsigned int>(this.topLevelDefAttrNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<TopLevelDefAttrNode> _ = this.topLevelDefAttrNodes.push(node);
@@ -744,9 +762,9 @@ public const f<TopLevelDefAttrNode&> AstStore.getTopLevelDefAttr(NodeId id) {
     return this.topLevelDefAttrNodes.get(Id<TopLevelDefAttrNode>(this.nodes.get(id).index));
 }
 
-// Add a LAMBDA_ATTR node. The header is completed here: the id and the span
+// Add a LAMBDA_ATTR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addLambdaAttr(LambdaAttrNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::LAMBDA_ATTR, cast<unsigned int>(this.lambdaAttrNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::LAMBDA_ATTR, cast<unsigned int>(this.lambdaAttrNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<LambdaAttrNode> _ = this.lambdaAttrNodes.push(node);
@@ -757,9 +775,9 @@ public const f<LambdaAttrNode&> AstStore.getLambdaAttr(NodeId id) {
     return this.lambdaAttrNodes.get(Id<LambdaAttrNode>(this.nodes.get(id).index));
 }
 
-// Add a CASE_CONSTANT node. The header is completed here: the id and the span
+// Add a CASE_CONSTANT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addCaseConstant(CaseConstantNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::CASE_CONSTANT, cast<unsigned int>(this.caseConstantNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::CASE_CONSTANT, cast<unsigned int>(this.caseConstantNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<CaseConstantNode> _ = this.caseConstantNodes.push(node);
@@ -770,9 +788,9 @@ public const f<CaseConstantNode&> AstStore.getCaseConstant(NodeId id) {
     return this.caseConstantNodes.get(Id<CaseConstantNode>(this.nodes.get(id).index));
 }
 
-// Add a RETURN_STMT node. The header is completed here: the id and the span
+// Add a RETURN_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addReturnStmt(ReturnStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::RETURN_STMT, cast<unsigned int>(this.returnStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::RETURN_STMT, cast<unsigned int>(this.returnStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ReturnStmtNode> _ = this.returnStmtNodes.push(node);
@@ -783,9 +801,9 @@ public const f<ReturnStmtNode&> AstStore.getReturnStmt(NodeId id) {
     return this.returnStmtNodes.get(Id<ReturnStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a BREAK_STMT node. The header is completed here: the id and the span
+// Add a BREAK_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addBreakStmt(BreakStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::BREAK_STMT, cast<unsigned int>(this.breakStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::BREAK_STMT, cast<unsigned int>(this.breakStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<BreakStmtNode> _ = this.breakStmtNodes.push(node);
@@ -796,9 +814,9 @@ public const f<BreakStmtNode&> AstStore.getBreakStmt(NodeId id) {
     return this.breakStmtNodes.get(Id<BreakStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a CONTINUE_STMT node. The header is completed here: the id and the span
+// Add a CONTINUE_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addContinueStmt(ContinueStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::CONTINUE_STMT, cast<unsigned int>(this.continueStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::CONTINUE_STMT, cast<unsigned int>(this.continueStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ContinueStmtNode> _ = this.continueStmtNodes.push(node);
@@ -809,9 +827,9 @@ public const f<ContinueStmtNode&> AstStore.getContinueStmt(NodeId id) {
     return this.continueStmtNodes.get(Id<ContinueStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a FALLTHROUGH_STMT node. The header is completed here: the id and the span
+// Add a FALLTHROUGH_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addFallthroughStmt(FallthroughStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FALLTHROUGH_STMT, cast<unsigned int>(this.fallthroughStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FALLTHROUGH_STMT, cast<unsigned int>(this.fallthroughStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<FallthroughStmtNode> _ = this.fallthroughStmtNodes.push(node);
@@ -822,9 +840,9 @@ public const f<FallthroughStmtNode&> AstStore.getFallthroughStmt(NodeId id) {
     return this.fallthroughStmtNodes.get(Id<FallthroughStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a ASSERT_STMT node. The header is completed here: the id and the span
+// Add a ASSERT_STMT node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAssertStmt(AssertStmtNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ASSERT_STMT, cast<unsigned int>(this.assertStmtNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ASSERT_STMT, cast<unsigned int>(this.assertStmtNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AssertStmtNode> _ = this.assertStmtNodes.push(node);
@@ -835,9 +853,9 @@ public const f<AssertStmtNode&> AstStore.getAssertStmt(NodeId id) {
     return this.assertStmtNodes.get(Id<AssertStmtNode>(this.nodes.get(id).index));
 }
 
-// Add a ASSIGN_EXPR node. The header is completed here: the id and the span
+// Add a ASSIGN_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAssignExpr(AssignExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ASSIGN_EXPR, cast<unsigned int>(this.assignExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ASSIGN_EXPR, cast<unsigned int>(this.assignExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AssignExprNode> _ = this.assignExprNodes.push(node);
@@ -848,9 +866,9 @@ public const f<AssignExprNode&> AstStore.getAssignExpr(NodeId id) {
     return this.assignExprNodes.get(Id<AssignExprNode>(this.nodes.get(id).index));
 }
 
-// Add a TERNARY_EXPR node. The header is completed here: the id and the span
+// Add a TERNARY_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addTernaryExpr(TernaryExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::TERNARY_EXPR, cast<unsigned int>(this.ternaryExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::TERNARY_EXPR, cast<unsigned int>(this.ternaryExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<TernaryExprNode> _ = this.ternaryExprNodes.push(node);
@@ -861,9 +879,9 @@ public const f<TernaryExprNode&> AstStore.getTernaryExpr(NodeId id) {
     return this.ternaryExprNodes.get(Id<TernaryExprNode>(this.nodes.get(id).index));
 }
 
-// Add a LOGICAL_OR_EXPR node. The header is completed here: the id and the span
+// Add a LOGICAL_OR_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addLogicalOrExpr(LogicalOrExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::LOGICAL_OR_EXPR, cast<unsigned int>(this.logicalOrExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::LOGICAL_OR_EXPR, cast<unsigned int>(this.logicalOrExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<LogicalOrExprNode> _ = this.logicalOrExprNodes.push(node);
@@ -874,9 +892,9 @@ public const f<LogicalOrExprNode&> AstStore.getLogicalOrExpr(NodeId id) {
     return this.logicalOrExprNodes.get(Id<LogicalOrExprNode>(this.nodes.get(id).index));
 }
 
-// Add a LOGICAL_AND_EXPR node. The header is completed here: the id and the span
+// Add a LOGICAL_AND_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addLogicalAndExpr(LogicalAndExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::LOGICAL_AND_EXPR, cast<unsigned int>(this.logicalAndExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::LOGICAL_AND_EXPR, cast<unsigned int>(this.logicalAndExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<LogicalAndExprNode> _ = this.logicalAndExprNodes.push(node);
@@ -887,9 +905,9 @@ public const f<LogicalAndExprNode&> AstStore.getLogicalAndExpr(NodeId id) {
     return this.logicalAndExprNodes.get(Id<LogicalAndExprNode>(this.nodes.get(id).index));
 }
 
-// Add a BITWISE_OR_EXPR node. The header is completed here: the id and the span
+// Add a BITWISE_OR_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addBitwiseOrExpr(BitwiseOrExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::BITWISE_OR_EXPR, cast<unsigned int>(this.bitwiseOrExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::BITWISE_OR_EXPR, cast<unsigned int>(this.bitwiseOrExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<BitwiseOrExprNode> _ = this.bitwiseOrExprNodes.push(node);
@@ -900,9 +918,9 @@ public const f<BitwiseOrExprNode&> AstStore.getBitwiseOrExpr(NodeId id) {
     return this.bitwiseOrExprNodes.get(Id<BitwiseOrExprNode>(this.nodes.get(id).index));
 }
 
-// Add a BITWISE_XOR_EXPR node. The header is completed here: the id and the span
+// Add a BITWISE_XOR_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addBitwiseXorExpr(BitwiseXorExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::BITWISE_XOR_EXPR, cast<unsigned int>(this.bitwiseXorExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::BITWISE_XOR_EXPR, cast<unsigned int>(this.bitwiseXorExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<BitwiseXorExprNode> _ = this.bitwiseXorExprNodes.push(node);
@@ -913,9 +931,9 @@ public const f<BitwiseXorExprNode&> AstStore.getBitwiseXorExpr(NodeId id) {
     return this.bitwiseXorExprNodes.get(Id<BitwiseXorExprNode>(this.nodes.get(id).index));
 }
 
-// Add a BITWISE_AND_EXPR node. The header is completed here: the id and the span
+// Add a BITWISE_AND_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addBitwiseAndExpr(BitwiseAndExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::BITWISE_AND_EXPR, cast<unsigned int>(this.bitwiseAndExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::BITWISE_AND_EXPR, cast<unsigned int>(this.bitwiseAndExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<BitwiseAndExprNode> _ = this.bitwiseAndExprNodes.push(node);
@@ -926,9 +944,9 @@ public const f<BitwiseAndExprNode&> AstStore.getBitwiseAndExpr(NodeId id) {
     return this.bitwiseAndExprNodes.get(Id<BitwiseAndExprNode>(this.nodes.get(id).index));
 }
 
-// Add a EQUALITY_EXPR node. The header is completed here: the id and the span
+// Add a EQUALITY_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addEqualityExpr(EqualityExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::EQUALITY_EXPR, cast<unsigned int>(this.equalityExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::EQUALITY_EXPR, cast<unsigned int>(this.equalityExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<EqualityExprNode> _ = this.equalityExprNodes.push(node);
@@ -939,9 +957,9 @@ public const f<EqualityExprNode&> AstStore.getEqualityExpr(NodeId id) {
     return this.equalityExprNodes.get(Id<EqualityExprNode>(this.nodes.get(id).index));
 }
 
-// Add a RELATIONAL_EXPR node. The header is completed here: the id and the span
+// Add a RELATIONAL_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addRelationalExpr(RelationalExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::RELATIONAL_EXPR, cast<unsigned int>(this.relationalExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::RELATIONAL_EXPR, cast<unsigned int>(this.relationalExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<RelationalExprNode> _ = this.relationalExprNodes.push(node);
@@ -952,9 +970,9 @@ public const f<RelationalExprNode&> AstStore.getRelationalExpr(NodeId id) {
     return this.relationalExprNodes.get(Id<RelationalExprNode>(this.nodes.get(id).index));
 }
 
-// Add a SHIFT_EXPR node. The header is completed here: the id and the span
+// Add a SHIFT_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addShiftExpr(ShiftExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::SHIFT_EXPR, cast<unsigned int>(this.shiftExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::SHIFT_EXPR, cast<unsigned int>(this.shiftExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ShiftExprNode> _ = this.shiftExprNodes.push(node);
@@ -965,9 +983,9 @@ public const f<ShiftExprNode&> AstStore.getShiftExpr(NodeId id) {
     return this.shiftExprNodes.get(Id<ShiftExprNode>(this.nodes.get(id).index));
 }
 
-// Add a ADDITIVE_EXPR node. The header is completed here: the id and the span
+// Add a ADDITIVE_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAdditiveExpr(AdditiveExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ADDITIVE_EXPR, cast<unsigned int>(this.additiveExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ADDITIVE_EXPR, cast<unsigned int>(this.additiveExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AdditiveExprNode> _ = this.additiveExprNodes.push(node);
@@ -978,9 +996,9 @@ public const f<AdditiveExprNode&> AstStore.getAdditiveExpr(NodeId id) {
     return this.additiveExprNodes.get(Id<AdditiveExprNode>(this.nodes.get(id).index));
 }
 
-// Add a MULTIPLICATIVE_EXPR node. The header is completed here: the id and the span
+// Add a MULTIPLICATIVE_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addMultiplicativeExpr(MultiplicativeExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::MULTIPLICATIVE_EXPR, cast<unsigned int>(this.multiplicativeExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::MULTIPLICATIVE_EXPR, cast<unsigned int>(this.multiplicativeExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<MultiplicativeExprNode> _ = this.multiplicativeExprNodes.push(node);
@@ -991,9 +1009,9 @@ public const f<MultiplicativeExprNode&> AstStore.getMultiplicativeExpr(NodeId id
     return this.multiplicativeExprNodes.get(Id<MultiplicativeExprNode>(this.nodes.get(id).index));
 }
 
-// Add a CAST_EXPR node. The header is completed here: the id and the span
+// Add a CAST_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addCastExpr(CastExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::CAST_EXPR, cast<unsigned int>(this.castExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::CAST_EXPR, cast<unsigned int>(this.castExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<CastExprNode> _ = this.castExprNodes.push(node);
@@ -1004,9 +1022,9 @@ public const f<CastExprNode&> AstStore.getCastExpr(NodeId id) {
     return this.castExprNodes.get(Id<CastExprNode>(this.nodes.get(id).index));
 }
 
-// Add a PREFIX_UNARY_EXPR node. The header is completed here: the id and the span
+// Add a PREFIX_UNARY_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addPrefixUnaryExpr(PrefixUnaryExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::PREFIX_UNARY_EXPR, cast<unsigned int>(this.prefixUnaryExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::PREFIX_UNARY_EXPR, cast<unsigned int>(this.prefixUnaryExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<PrefixUnaryExprNode> _ = this.prefixUnaryExprNodes.push(node);
@@ -1017,9 +1035,9 @@ public const f<PrefixUnaryExprNode&> AstStore.getPrefixUnaryExpr(NodeId id) {
     return this.prefixUnaryExprNodes.get(Id<PrefixUnaryExprNode>(this.nodes.get(id).index));
 }
 
-// Add a POSTFIX_UNARY_EXPR node. The header is completed here: the id and the span
+// Add a POSTFIX_UNARY_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addPostfixUnaryExpr(PostfixUnaryExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::POSTFIX_UNARY_EXPR, cast<unsigned int>(this.postfixUnaryExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::POSTFIX_UNARY_EXPR, cast<unsigned int>(this.postfixUnaryExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<PostfixUnaryExprNode> _ = this.postfixUnaryExprNodes.push(node);
@@ -1030,9 +1048,9 @@ public const f<PostfixUnaryExprNode&> AstStore.getPostfixUnaryExpr(NodeId id) {
     return this.postfixUnaryExprNodes.get(Id<PostfixUnaryExprNode>(this.nodes.get(id).index));
 }
 
-// Add a ATOMIC_EXPR node. The header is completed here: the id and the span
+// Add a ATOMIC_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addAtomicExpr(AtomicExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ATOMIC_EXPR, cast<unsigned int>(this.atomicExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ATOMIC_EXPR, cast<unsigned int>(this.atomicExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<AtomicExprNode> _ = this.atomicExprNodes.push(node);
@@ -1043,9 +1061,9 @@ public const f<AtomicExprNode&> AstStore.getAtomicExpr(NodeId id) {
     return this.atomicExprNodes.get(Id<AtomicExprNode>(this.nodes.get(id).index));
 }
 
-// Add a VALUE node. The header is completed here: the id and the span
+// Add a VALUE node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addValue(ValueNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::VALUE, cast<unsigned int>(this.valueNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::VALUE, cast<unsigned int>(this.valueNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ValueNode> _ = this.valueNodes.push(node);
@@ -1056,9 +1074,9 @@ public const f<ValueNode&> AstStore.getValue(NodeId id) {
     return this.valueNodes.get(Id<ValueNode>(this.nodes.get(id).index));
 }
 
-// Add a FCT_CALL node. The header is completed here: the id and the span
+// Add a FCT_CALL node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addFctCall(FctCallNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FCT_CALL, cast<unsigned int>(this.fctCallNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FCT_CALL, cast<unsigned int>(this.fctCallNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<FctCallNode> _ = this.fctCallNodes.push(node);
@@ -1069,9 +1087,9 @@ public const f<FctCallNode&> AstStore.getFctCall(NodeId id) {
     return this.fctCallNodes.get(Id<FctCallNode>(this.nodes.get(id).index));
 }
 
-// Add a ARRAY_INITIALIZATION node. The header is completed here: the id and the span
+// Add a ARRAY_INITIALIZATION node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addArrayInitialization(ArrayInitializationNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::ARRAY_INITIALIZATION, cast<unsigned int>(this.arrayInitializationNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::ARRAY_INITIALIZATION, cast<unsigned int>(this.arrayInitializationNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<ArrayInitializationNode> _ = this.arrayInitializationNodes.push(node);
@@ -1082,9 +1100,9 @@ public const f<ArrayInitializationNode&> AstStore.getArrayInitialization(NodeId 
     return this.arrayInitializationNodes.get(Id<ArrayInitializationNode>(this.nodes.get(id).index));
 }
 
-// Add a STRUCT_INSTANTIATION node. The header is completed here: the id and the span
+// Add a STRUCT_INSTANTIATION node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addStructInstantiation(StructInstantiationNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::STRUCT_INSTANTIATION, cast<unsigned int>(this.structInstantiationNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::STRUCT_INSTANTIATION, cast<unsigned int>(this.structInstantiationNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<StructInstantiationNode> _ = this.structInstantiationNodes.push(node);
@@ -1095,9 +1113,9 @@ public const f<StructInstantiationNode&> AstStore.getStructInstantiation(NodeId 
     return this.structInstantiationNodes.get(Id<StructInstantiationNode>(this.nodes.get(id).index));
 }
 
-// Add a LAMBDA_FUNC node. The header is completed here: the id and the span
+// Add a LAMBDA_FUNC node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addLambdaFunc(LambdaFuncNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::LAMBDA_FUNC, cast<unsigned int>(this.lambdaFuncNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::LAMBDA_FUNC, cast<unsigned int>(this.lambdaFuncNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<LambdaFuncNode> _ = this.lambdaFuncNodes.push(node);
@@ -1108,9 +1126,9 @@ public const f<LambdaFuncNode&> AstStore.getLambdaFunc(NodeId id) {
     return this.lambdaFuncNodes.get(Id<LambdaFuncNode>(this.nodes.get(id).index));
 }
 
-// Add a LAMBDA_PROC node. The header is completed here: the id and the span
+// Add a LAMBDA_PROC node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addLambdaProc(LambdaProcNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::LAMBDA_PROC, cast<unsigned int>(this.lambdaProcNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::LAMBDA_PROC, cast<unsigned int>(this.lambdaProcNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<LambdaProcNode> _ = this.lambdaProcNodes.push(node);
@@ -1121,9 +1139,9 @@ public const f<LambdaProcNode&> AstStore.getLambdaProc(NodeId id) {
     return this.lambdaProcNodes.get(Id<LambdaProcNode>(this.nodes.get(id).index));
 }
 
-// Add a LAMBDA_EXPR node. The header is completed here: the id and the span
+// Add a LAMBDA_EXPR node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addLambdaExpr(LambdaExprNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::LAMBDA_EXPR, cast<unsigned int>(this.lambdaExprNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::LAMBDA_EXPR, cast<unsigned int>(this.lambdaExprNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<LambdaExprNode> _ = this.lambdaExprNodes.push(node);
@@ -1134,9 +1152,9 @@ public const f<LambdaExprNode&> AstStore.getLambdaExpr(NodeId id) {
     return this.lambdaExprNodes.get(Id<LambdaExprNode>(this.nodes.get(id).index));
 }
 
-// Add a FUNCTION_DATA_TYPE node. The header is completed here: the id and the span
+// Add a FUNCTION_DATA_TYPE node. The header is completed here: the id, unless it was reserved, and the span
 public f<NodeId> AstStore.addFunctionDataType(FunctionDataTypeNode node, const Span& span) {
-    const NodeId id = this.registerNode(AstNodeKind::FUNCTION_DATA_TYPE, cast<unsigned int>(this.functionDataTypeNodes.size()));
+    const NodeId id = this.claimNode(node.header.id, AstNodeKind::FUNCTION_DATA_TYPE, cast<unsigned int>(this.functionDataTypeNodes.size()));
     node.header.id = id;
     node.header.span = span;
     const Id<FunctionDataTypeNode> _ = this.functionDataTypeNodes.push(node);
