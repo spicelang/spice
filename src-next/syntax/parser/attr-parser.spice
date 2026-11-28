@@ -1,0 +1,135 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "@/diag/codes";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/ast/nodes-misc";
+import "@/syntax/lexer/token";
+import "@/syntax/parser/expr-parser";
+import "@/syntax/parser/parser-state";
+
+/**
+ * Parser of the module, top-level and lambda attributes. The target of an attribute (module, function, struct, lambda, ...)
+ * is not stored in the node, sema takes it from the kind of the owner.
+ */
+// legacy: parser/parser.spice:1666-1760
+public type AttrParser struct {
+    ParserState* state = nil<ParserState*>
+    ExprParser* exprs = nil<ExprParser*>
+}
+
+public p AttrParser.ctor() {}
+
+public p AttrParser.ctor(ParserState* state, ExprParser* exprs) {
+    this.state = state;
+    this.exprs = exprs;
+}
+
+/**
+ * modAttr: MOD_ATTR_PREAMBLE LBRACKET attrLst RBRACKET
+ *
+ * @return MOD_ATTR
+ */
+// legacy: parser/parser.spice:1666-1680
+public f<NodeId> AttrParser.parseModAttr() {
+    const unsigned int start = this.state.startOffset();
+    ModAttrNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::MOD_ATTR_PREAMBLE);
+    this.state.expect(TokenType::LBRACKET);
+    node.attrLst = this.parseAttrLst();
+    this.state.expect(TokenType::RBRACKET);
+    return this.state.store.addModAttr(node, this.state.finishSpan(start));
+}
+
+/**
+ * topLevelDefAttr: FCT_ATTR_PREAMBLE LBRACKET attrLst RBRACKET
+ *
+ * @return TOP_LEVEL_DEF_ATTR
+ */
+// legacy: parser/parser.spice:1682-1696
+public f<NodeId> AttrParser.parseTopLevelDefAttr() {
+    const unsigned int start = this.state.startOffset();
+    TopLevelDefAttrNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::FCT_ATTR_PREAMBLE);
+    this.state.expect(TokenType::LBRACKET);
+    node.attrLst = this.parseAttrLst();
+    this.state.expect(TokenType::RBRACKET);
+    return this.state.store.addTopLevelDefAttr(node, this.state.finishSpan(start));
+}
+
+/**
+ * lambdaAttr: LBRACKET LBRACKET attrLst RBRACKET RBRACKET
+ *
+ * @return LAMBDA_ATTR
+ */
+// legacy: parser/parser.spice:1698-1713
+public f<NodeId> AttrParser.parseLambdaAttr() {
+    const unsigned int start = this.state.startOffset();
+    LambdaAttrNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::LBRACKET);
+    this.state.expect(TokenType::LBRACKET);
+    node.attrLst = this.parseAttrLst();
+    this.state.expect(TokenType::RBRACKET);
+    this.state.expect(TokenType::RBRACKET);
+    return this.state.store.addLambdaAttr(node, this.state.finishSpan(start));
+}
+
+/**
+ * attrLst: attr (COMMA attr)*
+ *
+ * @return ATTR_LST
+ */
+// legacy: parser/parser.spice:1715-1724
+f<NodeId> AttrParser.parseAttrLst() {
+    const unsigned int start = this.state.startOffset();
+    AttrLstNode node;
+    node.header.id = this.state.store.reserveNode();
+    Vector<NodeId> attributes;
+    attributes.pushBack(this.parseAttr());
+    while this.state.consumeIf(TokenType::COMMA) && !this.state.failed {
+        attributes.pushBack(this.parseAttr());
+    }
+    node.attributes = this.state.store.addChildren(attributes);
+    return this.state.store.addAttrLst(node, this.state.finishSpan(start));
+}
+
+/**
+ * attr: IDENTIFIER (DOT IDENTIFIER)* (ASSIGN constant)?
+ * The value has to be a string, an int or a bool. The type of the value is the type of its constant.
+ *
+ * @return ATTR
+ */
+// legacy: parser/parser.spice:1726-1760
+f<NodeId> AttrParser.parseAttr() {
+    const unsigned int start = this.state.startOffset();
+    AttrNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    // Parse the attribute name. The parts are no subject of the keyword checks
+    String key = this.state.currentText();
+    this.state.expect(TokenType::IDENTIFIER);
+    while this.state.consumeIf(TokenType::DOT) && !this.state.failed {
+        key += ".";
+        key += this.state.currentText();
+        this.state.expect(TokenType::IDENTIFIER);
+    }
+    node.key = this.state.intern(key);
+
+    // Parse the attribute value
+    if this.state.consumeIf(TokenType::ASSIGN) {
+        const TokenType valueToken = this.state.stream.getToken().tokenType;
+        if valueToken != TokenType::STRING_LIT && valueToken != TokenType::INT_LIT && valueToken != TokenType::TRUE && valueToken != TokenType::FALSE {
+            this.state.fail(ParserErrorType::INVALID_ATTR_VALUE_TYPE, this.state.stream.getSpan(), String("Invalid attribute value type"));
+            return this.state.store.addAttr(node, this.state.finishSpan(start));
+        }
+        node.constant = this.exprs.parseConstant();
+    }
+    return this.state.store.addAttr(node, this.state.finishSpan(start));
+}

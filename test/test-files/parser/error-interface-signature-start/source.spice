@@ -1,0 +1,5 @@
+type I interface {
+    5;
+}
+
+f<int> main() {}

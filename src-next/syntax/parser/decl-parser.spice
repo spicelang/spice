@@ -1,0 +1,724 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "@/base/interner";
+import "@/base/small-vec";
+import "@/syntax/ast/ast-enums";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/ast/nodes-decl";
+import "@/syntax/ast/nodes-misc";
+import "@/syntax/lexer/token";
+import "@/syntax/parser/attr-parser";
+import "@/syntax/parser/expr-parser";
+import "@/syntax/parser/literal-checker";
+import "@/syntax/parser/lookahead";
+import "@/syntax/parser/parser-state";
+import "@/syntax/parser/stmt-parser";
+import "@/syntax/parser/type-parser";
+
+// The mangled names of the overloadable operators. The node keeps the names of legacy (decision of WP 2.3)
+// legacy: ast/ast-nodes.spice:39-63
+const string OP_FCT_PLUS = "op.plus";
+const string OP_FCT_MINUS = "op.minus";
+const string OP_FCT_MUL = "op.mul";
+const string OP_FCT_DIV = "op.div";
+const string OP_FCT_EQUAL = "op.equal";
+const string OP_FCT_NOT_EQUAL = "op.notequal";
+const string OP_FCT_LESS = "op.less";
+const string OP_FCT_GREATER = "op.greater";
+const string OP_FCT_LESS_EQUAL = "op.lessequal";
+const string OP_FCT_GREATER_EQUAL = "op.greaterequal";
+const string OP_FCT_SHL = "op.shl";
+const string OP_FCT_SHR = "op.shr";
+const string OP_FCT_BITWISE_AND = "op.bitwiseand";
+const string OP_FCT_BITWISE_OR = "op.bitwiseor";
+const string OP_FCT_BITWISE_XOR = "op.bitwisexor";
+const string OP_FCT_BITWISE_NOT = "op.bitwisenot";
+const string OP_FCT_PLUS_EQUAL = "op.plusequal";
+const string OP_FCT_MINUS_EQUAL = "op.minusequal";
+const string OP_FCT_MUL_EQUAL = "op.mulequal";
+const string OP_FCT_DIV_EQUAL = "op.divequal";
+const string OP_FCT_POSTFIX_PLUS_PLUS = "op.plusplus.post";
+const string OP_FCT_POSTFIX_MINUS_MINUS = "op.minusminus.post";
+const string OP_FCT_SUBSCRIPT = "op.subscript";
+const string OP_FCT_ASSIGN = "op.assign";
+
+/**
+ * Parser of the module level: the entry, the imports and the top-level definitions (functions, procedures, structs, interfaces,
+ * unions, enums, aliases, generic types, global variables and external declarations)
+ *
+ * Legacy hands out the type id of a struct, interface, union, enum and alias while it parses them, and applies the attribute
+ * `core.compiler.fixedTypeId`. The syntax layer does neither, `sema/collect` assigns the ids in the same order (parse order).
+ */
+// legacy: parser/parser.spice:543-1156
+public type DeclParser struct {
+    ParserState* state = nil<ParserState*>
+    Lookahead* lookahead = nil<Lookahead*>
+    LiteralChecker* literals = nil<LiteralChecker*>
+    TypeParser* types = nil<TypeParser*>
+    AttrParser* attrs = nil<AttrParser*>
+    StmtParser* stmts = nil<StmtParser*>
+    ExprParser* exprs = nil<ExprParser*>
+}
+
+public p DeclParser.ctor() {}
+
+public p DeclParser.ctor(ParserState* state, Lookahead* lookahead, LiteralChecker* literals, TypeParser* types, AttrParser* attrs, StmtParser* stmts, ExprParser* exprs) {
+    this.state = state;
+    this.lookahead = lookahead;
+    this.literals = literals;
+    this.types = types;
+    this.attrs = attrs;
+    this.stmts = stmts;
+    this.exprs = exprs;
+}
+
+/**
+ * entry: (modAttr | importDef | topLevelDef)* EOF
+ * The node has three separate lists, so legacy's regrouping of its children (`groupEntryChildren`) is not needed.
+ *
+ * @return ENTRY
+ */
+// legacy: parser/parser.spice:543-585
+public f<NodeId> DeclParser.parseEntry() {
+    const unsigned int start = this.state.startOffset();
+    EntryNode node;
+    node.header.id = this.state.store.reserveNode();
+    Vector<NodeId> modAttrs;
+    Vector<NodeId> importDefs;
+    Vector<NodeId> topLevelDefs;
+    while !this.state.currentTokenIs(TokenType::EOF) && !this.state.failed {
+        this.parseTopLevelDef(modAttrs, importDefs, topLevelDefs);
+    }
+    node.modAttrs = this.state.store.addChildren(modAttrs);
+    node.importDefs = this.state.store.addChildren(importDefs);
+    node.topLevelDefs = this.state.store.addChildren(topLevelDefs);
+    return this.state.store.addEntry(node, this.state.finishSpan(start));
+}
+
+/**
+ * Decide which definition starts at the current token with a probe, and parse it. The probe skips an attribute and the
+ * qualifiers and looks at the token behind them. Everything that is not recognized is parsed as a global variable, which
+ * reports the error.
+ */
+// legacy: parser/parser.spice:598-663
+p DeclParser.parseTopLevelDef(Vector<NodeId>& modAttrs, Vector<NodeId>& importDefs, Vector<NodeId>& topLevelDefs) {
+    if this.state.currentTokenIs(TokenType::MOD_ATTR_PREAMBLE) {
+        modAttrs.pushBack(this.attrs.parseModAttr());
+        return;
+    }
+    if this.state.currentTokenIs(TokenType::IMPORT) {
+        importDefs.pushBack(this.parseImportDef());
+        return;
+    }
+
+    // Look past the attribute and the qualifiers. A result of -1 (an attribute that is not closed) is not checked, like in legacy
+    long offset = 0l;
+    if this.state.tokenAt(0l) == TokenType::FCT_ATTR_PREAMBLE {
+        offset++;
+        if this.state.tokenAt(offset) == TokenType::LBRACKET {
+            offset = this.lookahead.matchBalancedGroup(offset, TokenType::LBRACKET, TokenType::RBRACKET);
+        }
+    }
+    while isQualifierType(this.state.tokenAt(offset)) {
+        offset++;
+    }
+
+    const TokenType discriminator = this.state.tokenAt(offset);
+    if discriminator == TokenType::EXT {
+        topLevelDefs.pushBack(this.parseExtDecl());
+    } else if discriminator == TokenType::P {
+        topLevelDefs.pushBack(this.parseProcDef());
+    } else if discriminator == TokenType::F {
+        const bool isMain = this.state.tokenAt(offset + 1l) == TokenType::LESS && this.state.tokenAt(offset + 2l) == TokenType::TYPE_INT &&
+            this.state.tokenAt(offset + 3l) == TokenType::GREATER && this.state.tokenAt(offset + 4l) == TokenType::MAIN;
+        if isMain {
+            topLevelDefs.pushBack(this.parseMainFctDef());
+        } else {
+            topLevelDefs.pushBack(this.parseFctDef());
+        }
+    } else if discriminator == TokenType::TYPE {
+        // The keyword is behind the name and an optional template type list
+        long keywordOffset = offset + 2l;
+        TokenType after = this.state.tokenAt(keywordOffset);
+        if after == TokenType::LESS {
+            keywordOffset = this.lookahead.matchAngleGroup(keywordOffset);
+            after = keywordOffset < 0l ? TokenType::INVALID : this.state.tokenAt(keywordOffset);
+        }
+        if after == TokenType::ENUM {
+            topLevelDefs.pushBack(this.parseEnumDef());
+        } else if after == TokenType::ALIAS {
+            topLevelDefs.pushBack(this.parseAliasDef());
+        } else if after == TokenType::INTERFACE {
+            topLevelDefs.pushBack(this.parseInterfaceDef());
+        } else if after == TokenType::STRUCT {
+            topLevelDefs.pushBack(this.parseStructDef());
+        } else if after == TokenType::UNION {
+            topLevelDefs.pushBack(this.parseUnionDef());
+        } else {
+            topLevelDefs.pushBack(this.parseGenericTypeDef());
+        }
+    } else {
+        topLevelDefs.pushBack(this.parseGlobalVarDef());
+    }
+}
+
+/**
+ * mainFctDef: topLevelDefAttr? F LESS TYPE_INT GREATER MAIN LPAREN paramLst? RPAREN stmtLst
+ *
+ * @return MAIN_FCT_DEF
+ */
+// legacy: parser/parser.spice:665-691
+f<NodeId> DeclParser.parseMainFctDef() {
+    const unsigned int start = this.state.startOffset();
+    MainFctDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        node.attrs = this.attrs.parseTopLevelDefAttr();
+    }
+    this.state.expect(TokenType::F);
+    this.state.expect(TokenType::LESS);
+    this.state.expect(TokenType::TYPE_INT);
+    this.state.consumeGenericClose();
+    this.state.expect(TokenType::MAIN);
+    node.paramLst = this.stmts.parseParenthesizedParamLst();
+    node.body = this.stmts.parseStmtLst();
+    return this.state.store.addMainFctDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * fctDef: topLevelDefAttr? qualifierLst? F LESS dataType GREATER fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst
+ *
+ * @return FCT_DEF
+ */
+// legacy: parser/parser.spice:693-732
+f<NodeId> DeclParser.parseFctDef() {
+    const unsigned int start = this.state.startOffset();
+    FctDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        node.attrs = this.attrs.parseTopLevelDefAttr();
+    }
+    if !this.state.currentTokenIs(TokenType::F) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    this.state.expect(TokenType::F);
+    this.state.expect(TokenType::LESS);
+    node.returnType = this.types.parseDataType();
+    if !this.state.failed {
+        this.state.store.getDataType(node.returnType).isReturnType = true;
+    }
+    this.state.consumeGenericClose();
+    node.name = this.parseFctName();
+    node.isMethod = this.state.store.getFctName(node.name).nameFragments.size() > 1u;
+    if this.state.isGenericOpenAhead() {
+        this.state.consumeGenericOpen();
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+    node.paramLst = this.stmts.parseParenthesizedParamLst();
+    node.body = this.stmts.parseStmtLst();
+    return this.state.store.addFctDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * procDef: topLevelDefAttr? qualifierLst? P fctName (LESS typeLst GREATER)? LPAREN paramLst? RPAREN stmtLst
+ *
+ * @return PROC_DEF
+ */
+// legacy: parser/parser.spice:734-771
+f<NodeId> DeclParser.parseProcDef() {
+    const unsigned int start = this.state.startOffset();
+    ProcDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        node.attrs = this.attrs.parseTopLevelDefAttr();
+    }
+    if !this.state.currentTokenIs(TokenType::P) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    this.state.expect(TokenType::P);
+    node.name = this.parseFctName();
+    node.isMethod = this.state.store.getFctName(node.name).nameFragments.size() > 1u;
+    if this.state.isGenericOpenAhead() {
+        this.state.consumeGenericOpen();
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+    node.paramLst = this.stmts.parseParenthesizedParamLst();
+    node.body = this.stmts.parseStmtLst();
+    return this.state.store.addProcDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * fctName: OPERATOR overloadableOp | (TYPE_IDENTIFIER DOT)? IDENTIFIER
+ *
+ * @return FCT_NAME
+ */
+// legacy: parser/parser.spice:773-803
+f<NodeId> DeclParser.parseFctName() {
+    const unsigned int start = this.state.startOffset();
+    FctNameNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.consumeIf(TokenType::OPERATOR) {
+        const Symbol opName = this.state.intern(this.parseOverloadableOp());
+        node.name = opName;
+        node.fqName = opName;
+        node.structName = this.state.intern(String());
+        node.nameFragments.pushBack(opName);
+    } else {
+        String structName;
+        if this.state.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
+            structName = this.state.getIdentifier(true);
+            node.nameFragments.pushBack(this.state.intern(structName));
+            this.state.expect(TokenType::TYPE_IDENTIFIER);
+            this.state.expect(TokenType::DOT);
+        }
+        const String name = this.state.getIdentifier(false);
+        node.nameFragments.pushBack(this.state.intern(name));
+        this.state.expect(TokenType::IDENTIFIER);
+        node.structName = this.state.intern(structName);
+        node.name = this.state.intern(name);
+        node.fqName = this.state.intern(structName.isEmpty() ? name : structName + String(".") + name);
+    }
+    return this.state.store.addFctName(node, this.state.finishSpan(start));
+}
+
+/**
+ * overloadableOp: PLUS | MINUS | MUL | DIV | EQUAL | NOT_EQUAL | LESS | GREATER | LESS_EQUAL | GREATER_EQUAL | SHL | SHR |
+ * BITWISE_AND | BITWISE_OR | BITWISE_XOR | BITWISE_NOT | PLUS_EQUAL | MINUS_EQUAL | MUL_EQUAL | DIV_EQUAL | PLUS_PLUS |
+ * MINUS_MINUS | LBRACKET RBRACKET | ASSIGN
+ * The lexer merges '<<' and '>>' into single tokens. Legacy swallows a token that is no operator and returns an empty name.
+ *
+ * @return The mangled name of the operator function
+ */
+// legacy: parser/parser.spice:810-856
+f<String> DeclParser.parseOverloadableOp() {
+    const TokenType tokenType = this.state.stream.getToken().tokenType;
+
+    // Subscript operator '[]'
+    if this.state.consumeIf(TokenType::LBRACKET) {
+        this.state.expect(TokenType::RBRACKET);
+        return String(OP_FCT_SUBSCRIPT);
+    }
+
+    // All remaining overloadable operators are a single token
+    this.state.advance();
+    switch tokenType {
+        case TokenType::PLUS: { return String(OP_FCT_PLUS); }
+        case TokenType::MINUS: { return String(OP_FCT_MINUS); }
+        case TokenType::MUL: { return String(OP_FCT_MUL); }
+        case TokenType::DIV: { return String(OP_FCT_DIV); }
+        case TokenType::EQUAL: { return String(OP_FCT_EQUAL); }
+        case TokenType::NOT_EQUAL: { return String(OP_FCT_NOT_EQUAL); }
+        case TokenType::LESS: { return String(OP_FCT_LESS); }
+        case TokenType::GREATER: { return String(OP_FCT_GREATER); }
+        case TokenType::LESS_EQUAL: { return String(OP_FCT_LESS_EQUAL); }
+        case TokenType::GREATER_EQUAL: { return String(OP_FCT_GREATER_EQUAL); }
+        case TokenType::SHL: {
+            // '<<' is the shift left operator, if the parameter list or a template type list follows. Otherwise, it is the less
+            // operator, followed by the opening '<' of a template type list (e.g. 'operator<<T>(...)'), which stays pending
+            const TokenType nextTokenType = this.state.stream.getToken().tokenType;
+            if nextTokenType == TokenType::LPAREN || nextTokenType == TokenType::LESS {
+                return String(OP_FCT_SHL);
+            }
+            this.state.pendingLess = true;
+            return String(OP_FCT_LESS);
+        }
+        case TokenType::SHR: { return String(OP_FCT_SHR); }
+        case TokenType::BITWISE_AND: { return String(OP_FCT_BITWISE_AND); }
+        case TokenType::BITWISE_OR: { return String(OP_FCT_BITWISE_OR); }
+        case TokenType::BITWISE_XOR: { return String(OP_FCT_BITWISE_XOR); }
+        case TokenType::BITWISE_NOT: { return String(OP_FCT_BITWISE_NOT); }
+        case TokenType::PLUS_EQUAL: { return String(OP_FCT_PLUS_EQUAL); }
+        case TokenType::MINUS_EQUAL: { return String(OP_FCT_MINUS_EQUAL); }
+        case TokenType::MUL_EQUAL: { return String(OP_FCT_MUL_EQUAL); }
+        case TokenType::DIV_EQUAL: { return String(OP_FCT_DIV_EQUAL); }
+        case TokenType::PLUS_PLUS: { return String(OP_FCT_POSTFIX_PLUS_PLUS); }
+        case TokenType::MINUS_MINUS: { return String(OP_FCT_POSTFIX_MINUS_MINUS); }
+        case TokenType::ASSIGN: { return String(OP_FCT_ASSIGN); }
+    }
+    return String();
+}
+
+/**
+ * structDef: topLevelDefAttr? qualifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? STRUCT (COLON typeLst)? LBRACE field* RBRACE
+ * The body has no end-of-file check: at the end of the file the error comes from the data type of the next field.
+ *
+ * @return STRUCT_DEF
+ */
+// legacy: parser/parser.spice:890-936
+f<NodeId> DeclParser.parseStructDef() {
+    const unsigned int start = this.state.startOffset();
+    StructDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        node.attrs = this.attrs.parseTopLevelDefAttr();
+    }
+    if !this.state.currentTokenIs(TokenType::TYPE) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    this.state.expect(TokenType::TYPE);
+    node.structName = this.state.intern(this.state.getIdentifier(true));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    if this.state.currentTokenIs(TokenType::LESS) {
+        this.state.expect(TokenType::LESS);
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+    this.state.expect(TokenType::STRUCT);
+    if this.state.currentTokenIs(TokenType::COLON) {
+        this.state.expect(TokenType::COLON);
+        node.interfaceTypeLst = this.types.parseTypeLst();
+    }
+    this.state.expect(TokenType::LBRACE);
+    Vector<NodeId> fields;
+    while !this.state.currentTokenIs(TokenType::RBRACE) && !this.state.failed {
+        fields.pushBack(this.parseField());
+    }
+    node.fields = this.state.store.addChildren(fields);
+    this.state.expect(TokenType::RBRACE);
+    return this.state.store.addStructDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * interfaceDef: topLevelDefAttr? qualifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? INTERFACE LBRACE signature* RBRACE
+ *
+ * @return INTERFACE_DEF
+ */
+// legacy: parser/parser.spice:938-977
+f<NodeId> DeclParser.parseInterfaceDef() {
+    const unsigned int start = this.state.startOffset();
+    InterfaceDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        node.attrs = this.attrs.parseTopLevelDefAttr();
+    }
+    if !this.state.currentTokenIs(TokenType::TYPE) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    this.state.expect(TokenType::TYPE);
+    node.interfaceName = this.state.intern(this.state.getIdentifier(true));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    if this.state.currentTokenIs(TokenType::LESS) {
+        this.state.expect(TokenType::LESS);
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+    this.state.expect(TokenType::INTERFACE);
+    this.state.expect(TokenType::LBRACE);
+    Vector<NodeId> signatures;
+    while !this.state.currentTokenIs(TokenType::RBRACE) && !this.state.currentTokenIs(TokenType::EOF) && !this.state.failed {
+        signatures.pushBack(this.parseSignature());
+    }
+    node.signatures = this.state.store.addChildren(signatures);
+    this.state.expect(TokenType::RBRACE);
+    return this.state.store.addInterfaceDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * unionDef: topLevelDefAttr? qualifierLst? TYPE TYPE_IDENTIFIER (LESS typeLst GREATER)? UNION LBRACE field* RBRACE
+ *
+ * @return UNION_DEF
+ */
+// legacy: parser/parser.spice:979-1018
+f<NodeId> DeclParser.parseUnionDef() {
+    const unsigned int start = this.state.startOffset();
+    UnionDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        node.attrs = this.attrs.parseTopLevelDefAttr();
+    }
+    if !this.state.currentTokenIs(TokenType::TYPE) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    this.state.expect(TokenType::TYPE);
+    node.unionName = this.state.intern(this.state.getIdentifier(true));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    if this.state.currentTokenIs(TokenType::LESS) {
+        this.state.expect(TokenType::LESS);
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+    this.state.expect(TokenType::UNION);
+    this.state.expect(TokenType::LBRACE);
+    Vector<NodeId> fields;
+    while !this.state.currentTokenIs(TokenType::RBRACE) && !this.state.failed {
+        fields.pushBack(this.parseField());
+    }
+    node.fields = this.state.store.addChildren(fields);
+    this.state.expect(TokenType::RBRACE);
+    return this.state.store.addUnionDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * enumDef: qualifierLst? TYPE TYPE_IDENTIFIER ENUM LBRACE enumItemLst RBRACE
+ * No attribute is parsed, the lookahead of the dispatch skipped it.
+ *
+ * @return ENUM_DEF
+ */
+// legacy: parser/parser.spice:1020-1045
+f<NodeId> DeclParser.parseEnumDef() {
+    const unsigned int start = this.state.startOffset();
+    EnumDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if !this.state.currentTokenIs(TokenType::TYPE) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    this.state.expect(TokenType::TYPE);
+    node.enumName = this.state.intern(this.state.getIdentifier(true));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    this.state.expect(TokenType::ENUM);
+    this.state.expect(TokenType::LBRACE);
+    node.itemLst = this.parseEnumItemLst();
+    this.state.expect(TokenType::RBRACE);
+    return this.state.store.addEnumDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * genericTypeDef: TYPE TYPE_IDENTIFIER typeAltsLst SEMICOLON
+ *
+ * @return GENERIC_TYPE_DEF
+ */
+// legacy: parser/parser.spice:1047-1057
+f<NodeId> DeclParser.parseGenericTypeDef() {
+    const unsigned int start = this.state.startOffset();
+    GenericTypeDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    this.state.expect(TokenType::TYPE);
+    node.typeName = this.state.intern(this.state.getIdentifier(true));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    node.typeAltsLst = this.types.parseTypeAltsLst();
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addGenericTypeDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * aliasDef: qualifierLst? TYPE TYPE_IDENTIFIER ALIAS dataType SEMICOLON
+ * The text of the data type is the text of the span of its node.
+ *
+ * @return ALIAS_DEF
+ */
+// legacy: parser/parser.spice:1059-1078
+f<NodeId> DeclParser.parseAliasDef() {
+    const unsigned int start = this.state.startOffset();
+    AliasDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if !this.state.currentTokenIs(TokenType::TYPE) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    this.state.expect(TokenType::TYPE);
+    node.aliasName = this.state.intern(this.state.getIdentifier(true));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    this.state.expect(TokenType::ALIAS);
+    node.dataType = this.types.parseDataType();
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addAliasDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * globalVarDef: dataType TYPE_IDENTIFIER (ASSIGN constant)? SEMICOLON
+ *
+ * @return GLOBAL_VAR_DEF
+ */
+// legacy: parser/parser.spice:1080-1097
+f<NodeId> DeclParser.parseGlobalVarDef() {
+    const unsigned int start = this.state.startOffset();
+    GlobalVarDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    node.dataType = this.types.parseDataType();
+    if !this.state.failed {
+        this.state.store.getDataType(node.dataType).isGlobalType = true;
+    }
+    node.varName = this.state.intern(this.state.getIdentifier(true));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    if this.state.consumeIf(TokenType::ASSIGN) {
+        node.constant = this.exprs.parseConstant();
+    }
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addGlobalVarDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * extDecl: topLevelDefAttr? EXT (F LESS dataType GREATER | P) (IDENTIFIER | TYPE_IDENTIFIER) LPAREN typeLstWithEllipsis? RPAREN SEMICOLON
+ *
+ * @return EXT_DECL
+ */
+// legacy: parser/parser.spice:1099-1136
+f<NodeId> DeclParser.parseExtDecl() {
+    const unsigned int start = this.state.startOffset();
+    ExtDeclNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.currentTokenIs(TokenType::FCT_ATTR_PREAMBLE) {
+        node.attrs = this.attrs.parseTopLevelDefAttr();
+    }
+    this.state.expect(TokenType::EXT);
+    if this.state.consumeIf(TokenType::F) {
+        this.state.expect(TokenType::LESS);
+        node.returnType = this.types.parseDataType();
+        if !this.state.failed {
+            this.state.store.getDataType(node.returnType).isReturnType = true;
+        }
+        this.state.consumeGenericClose();
+    } else {
+        this.state.expect(TokenType::P);
+    }
+    // The name is only checked for reserved keywords, also if it is a type identifier
+    node.extFunctionName = this.state.intern(this.state.getIdentifier(false));
+    if !this.state.consumeIf(TokenType::IDENTIFIER) {
+        this.state.expect(TokenType::TYPE_IDENTIFIER);
+    }
+    this.state.expect(TokenType::LPAREN);
+    if !this.state.currentTokenIs(TokenType::RPAREN) {
+        node.argTypeLst = this.types.parseTypeLstWithEllipsis();
+    }
+    this.state.expect(TokenType::RPAREN);
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addExtDecl(node, this.state.finishSpan(start));
+}
+
+/**
+ * importDef: IMPORT STRING_LIT (AS IDENTIFIER)? SEMICOLON
+ * The path is the text of the token, without the quotes and without the processing of escape sequences.
+ *
+ * @return IMPORT_DEF
+ */
+// legacy: parser/parser.spice:1138-1156
+f<NodeId> DeclParser.parseImportDef() {
+    const unsigned int start = this.state.startOffset();
+    ImportDefNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    this.state.expect(TokenType::IMPORT);
+    const String path = this.state.currentText();
+    node.importPath = this.state.intern(path);
+    this.state.expect(TokenType::STRING_LIT);
+    if this.state.consumeIf(TokenType::AS) {
+        node.importName = this.state.intern(this.state.getIdentifier(false));
+        this.state.expect(TokenType::IDENTIFIER);
+    } else {
+        node.importName = node.importPath;
+    }
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addImportDef(node, this.state.finishSpan(start));
+}
+
+/**
+ * enumItemLst: enumItem (COMMA enumItem)*
+ *
+ * @return ENUM_ITEM_LST
+ */
+// legacy: parser/parser.spice:1485-1494
+f<NodeId> DeclParser.parseEnumItemLst() {
+    const unsigned int start = this.state.startOffset();
+    EnumItemLstNode node;
+    node.header.id = this.state.store.reserveNode();
+    Vector<NodeId> items;
+    items.pushBack(this.parseEnumItem());
+    while this.state.consumeIf(TokenType::COMMA) && !this.state.failed {
+        items.pushBack(this.parseEnumItem());
+    }
+    node.items = this.state.store.addChildren(items);
+    return this.state.store.addEnumItemLst(node, this.state.finishSpan(start));
+}
+
+/**
+ * enumItem: TYPE_IDENTIFIER (ASSIGN INT_LIT)?
+ * Legacy checks the value of the current token before it checks that this is an integer literal, so the checks of the value come
+ * first. The value itself is decoded by sema.
+ *
+ * @return ENUM_ITEM
+ */
+// legacy: parser/parser.spice:1496-1508
+f<NodeId> DeclParser.parseEnumItem() {
+    const unsigned int start = this.state.startOffset();
+    EnumItemNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    node.itemName = this.state.intern(this.state.getIdentifier(false));
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    if this.state.consumeIf(TokenType::ASSIGN) {
+        node.valueSpan = this.state.stream.getSpan();
+        const long _ = this.literals.parseNumeric(this.state.stream.getToken(), false, 32u);
+        this.state.expect(TokenType::INT_LIT);
+    }
+    return this.state.store.addEnumItem(node, this.state.finishSpan(start));
+}
+
+/**
+ * field: dataType IDENTIFIER (ASSIGN ternaryExpr)?
+ * The data type and all its template types are marked as field types.
+ *
+ * @return FIELD
+ */
+// legacy: parser/parser.spice:1510-1525
+f<NodeId> DeclParser.parseField() {
+    const unsigned int start = this.state.startOffset();
+    FieldNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    this.state.isParsingFieldType = true;
+    node.dataType = this.types.parseDataType();
+    this.state.isParsingFieldType = false;
+    node.fieldName = this.state.intern(this.state.getIdentifier(false));
+    this.state.expect(TokenType::IDENTIFIER);
+    if this.state.consumeIf(TokenType::ASSIGN) {
+        node.defaultValue = this.exprs.parseTernaryExpr();
+    }
+    return this.state.store.addField(node, this.state.finishSpan(start));
+}
+
+/**
+ * signature: qualifierLst? (F LESS dataType GREATER | P) IDENTIFIER (LESS typeLst GREATER)? LPAREN paramTypeLst? RPAREN SEMICOLON
+ * Unlike a function definition, the return type is not marked as a return type.
+ *
+ * @return SIGNATURE
+ */
+// legacy: parser/parser.spice:1527-1571
+f<NodeId> DeclParser.parseSignature() {
+    const unsigned int start = this.state.startOffset();
+    SignatureNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if !this.state.currentTokenIs(TokenType::F) && !this.state.currentTokenIs(TokenType::P) {
+        node.qualifierLst = this.types.parseQualifierLst();
+    }
+    if this.state.consumeIf(TokenType::F) {
+        this.state.expect(TokenType::LESS);
+        node.signatureType = SignatureType::TYPE_FUNCTION;
+        node.returnType = this.types.parseDataType();
+        this.state.consumeGenericClose();
+    } else {
+        this.state.expect(TokenType::P);
+        node.signatureType = SignatureType::TYPE_PROCEDURE;
+    }
+    node.methodName = this.state.intern(this.state.getIdentifier(false));
+    this.state.expect(TokenType::IDENTIFIER);
+    if this.state.consumeIf(TokenType::LESS) {
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+    this.state.expect(TokenType::LPAREN);
+    if !this.state.currentTokenIs(TokenType::RPAREN) {
+        node.paramTypeLst = this.types.parseParamTypeLst();
+    }
+    this.state.expect(TokenType::RPAREN);
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addSignature(node, this.state.finishSpan(start));
+}

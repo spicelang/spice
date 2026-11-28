@@ -1,0 +1,264 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/text/analysis";
+import "std/text/format";
+import "std/type/types";
+
+// Own imports
+import "@/diag/codes";
+import "@/syntax/lexer/token";
+import "@/syntax/parser/parser-state";
+
+/**
+ * The literal checks of the parser. Legacy decodes a literal while it parses it and reports a malformed one as a parser error,
+ * so the error family and the timing stay. The nodes of the new AST keep no value, because `syntax/literal` (WP 2.4) decodes the
+ * literals for sema. Until then the decoders run here only to validate, and the decoded value is dropped.
+ */
+// legacy: parser/parser.spice:2700-2935 (parseNumeric, parseChar, parseString, parseEscapeSequence)
+public type LiteralChecker struct {
+    ParserState* state = nil<ParserState*>
+}
+
+public p LiteralChecker.ctor() {}
+
+public p LiteralChecker.ctor(ParserState* state) {
+    this.state = state;
+}
+
+/**
+ * Parse an integer literal token (INT_LIT, SHORT_LIT or LONG_LIT) and check it against the limits of the target type
+ *
+ * @param token Literal token. Its text contains the optional unsigned suffix 'u', but not the 's' / 'l' suffixes
+ * @param isNegative Whether the literal is preceded by a minus sign
+ * @param bitWidth Bit width of the target type (16, 32 or 64)
+ * @return Parsed number
+ */
+// legacy: parser/parser.spice:2707-2793
+public f<long> LiteralChecker.parseNumeric(const Token& token, bool isNegative, unsigned int bitWidth) {
+    String input = this.state.tokenText(token);
+
+    // Set to signed if the input string does not end with 'u'
+    const bool isUnsigned = input.endsWith("u");
+    if isUnsigned {
+        input = input.getSubstring(0ul, cast<long>(input.getLength()) - 1l);
+    }
+
+    // Detect the base
+    int base = 10;
+    String digits = input;
+    if input.getLength() >= 2l && input[0l] == '0' {
+        const char baseChar = toLower(input[1l]);
+        if baseChar == 'd' {
+            digits = input.getSubstring(2ul);
+        } else if baseChar == 'b' {
+            base = 2;
+            digits = input.getSubstring(2ul);
+        } else if baseChar == 'h' || baseChar == 'x' {
+            base = 16;
+            digits = input.getSubstring(2ul);
+        } else if baseChar == 'o' {
+            base = 8;
+            digits = input.getSubstring(2ul);
+        }
+    }
+    // A base prefix must be followed by at least one digit
+    if digits.isEmpty() {
+        this.state.fail(ParserErrorType::INVALID_INT_LITERAL, token.span, String("Missing digits after the base prefix '") + input + String("'"));
+        return 0l;
+    }
+
+    // Parse the magnitude as unsigned, so that values like 2^63 (the absolute value of the min long) fit. Values above the max
+    // unsigned long are out of range for every target type
+    const unsigned long unsignedBase = cast<unsigned long>(base);
+    unsigned long magnitude = 0ul;
+    for unsigned long i = 0ul; i < digits.getLength(); i++ {
+        const char digitChar = toLower(digits[i]);
+        unsigned long digitValue = unsignedBase; // Invalid digit
+        if isDigit(digitChar) {
+            digitValue = cast<unsigned long>(cast<int>(digitChar) - cast<int>('0'));
+        } else if digitChar >= 'a' && digitChar <= 'f' {
+            digitValue = cast<unsigned long>(cast<int>(digitChar) - cast<int>('a') + 10);
+        }
+        if digitValue >= unsignedBase {
+            break; // Stop at the first invalid digit, like strtoull
+        }
+        if magnitude > (ULONG_MAX_VALUE - digitValue) / unsignedBase {
+            this.state.fail(ParserErrorType::NUMBER_OUT_OF_RANGE, token.span, String("The provided number is out of range"));
+            return 0l;
+        }
+        magnitude = magnitude * unsignedBase + digitValue;
+    }
+
+    // Check the limits of the target type
+    if bitWidth == 64u {
+        const unsigned long maxNegMagnitude = 9223372036854775808ul; // 2^63
+        if isNegative {
+            if magnitude > maxNegMagnitude {
+                this.state.fail(ParserErrorType::NUMBER_OUT_OF_RANGE, token.span, String("The provided number is out of range"));
+                return 0l;
+            }
+            if magnitude == maxNegMagnitude {
+                return -9223372036854775807l - 1l; // Min long
+            }
+            const long positiveNumber = cast<long>(magnitude);
+            return -positiveNumber;
+        }
+        if !isUnsigned && magnitude > maxNegMagnitude - 1ul {
+            this.state.fail(ParserErrorType::NUMBER_OUT_OF_RANGE, token.span, String("The provided number is out of range"));
+            return 0l;
+        }
+        return cast<long>(magnitude);
+    }
+    const long signedUpperLimit = (1l << cast<long>(bitWidth - 1u)) - 1l;
+    const long upperLimit = isUnsigned ? (1l << cast<long>(bitWidth)) - 1l : signedUpperLimit;
+    const long lowerLimit = isUnsigned ? 0l : -signedUpperLimit - 1l;
+    if magnitude > cast<unsigned long>(upperLimit) + 1ul {
+        this.state.fail(ParserErrorType::NUMBER_OUT_OF_RANGE, token.span, String("The provided number is out of range"));
+        return 0l;
+    }
+    long number = cast<long>(magnitude);
+    if isNegative {
+        number = -number;
+    }
+    if number < lowerLimit || number > upperLimit {
+        this.state.fail(ParserErrorType::NUMBER_OUT_OF_RANGE, token.span, String("The provided number is out of range"));
+        return 0l;
+    }
+    return number;
+}
+
+/**
+ * Parse a char literal token. The lexer keeps escape sequences as is, so they are resolved here
+ *
+ * @param token Char literal token, without the surrounding quotes
+ * @return Char value
+ */
+// legacy: parser/parser.spice:2801-2818
+public f<char> LiteralChecker.parseChar(const Token& token) {
+    const String input = this.state.tokenText(token);
+    if input.getLength() == 1l { // Normal char literals
+        return input[0l];
+    }
+
+    if input.getLength() >= 2l && input[0l] == '\\' { // Char literals with escape sequence
+        unsigned long index = 0l;
+        const char escapedChar = this.parseEscapeSequence(token, input, index, ParserErrorType::INVALID_CHAR_LITERAL);
+        if index == input.getLength() {
+            return escapedChar;
+        }
+    }
+
+    this.state.fail(ParserErrorType::INVALID_CHAR_LITERAL, token.span, String("Invalid char literal '") + input + String("'"));
+    return '\0';
+}
+
+/**
+ * Parse a string literal token and resolve its escape sequences. The lexer already strips the surrounding quotes.
+ *
+ * @param token String literal token, without the surrounding quotes
+ * @return String value
+ */
+// legacy: parser/parser.spice:2826-2840
+public f<String> LiteralChecker.parseString(const Token& token) {
+    const String input = this.state.tokenText(token);
+    const unsigned long length = input.getLength();
+    String output;
+    unsigned long index = 0l;
+    while index < length && !this.state.failed {
+        if input[index] == '\\' {
+            output += this.parseEscapeSequence(token, input, index, ParserErrorType::INVALID_STRING_LITERAL);
+        } else {
+            output += input[index];
+            index++;
+        }
+    }
+    return output;
+}
+
+/**
+ * Resolve the escape sequence, that starts at the given index of a char or string literal. Supported are the simple escape
+ * sequences \a, \b, \f, \n, \r, \t, \v, \\, \?, \' and \", octal escape sequences with one to three digits like \0 or \033
+ * and hex escape sequences with exactly two digits like \x1B. Every other escape sequence is rejected
+ *
+ * @param token Char or string literal token
+ * @param input Text of the token, which the caller read once
+ * @param index Index of the backslash in the token text. Gets advanced to the first char after the escape sequence
+ * @param errorType Error type to report for invalid escape sequences
+ * @return Char value of the escape sequence
+ */
+// legacy: parser/parser.spice:2852-2926
+f<char> LiteralChecker.parseEscapeSequence(const Token& token, const String& input, unsigned long& index, ParserErrorType errorType) {
+    const unsigned long length = input.getLength();
+    const unsigned long startIndex = index;
+    index++; // Skip the backslash
+
+    if index < length {
+        const char escapedChar = input[index];
+        index++; // Skip the escaped char
+        switch escapedChar {
+            case 'a': { return cast<char>(7); } // Bell
+            case 'b': { return '\b'; }
+            case 'f': { return '\f'; }
+            case 'n': { return '\n'; }
+            case 'r': { return '\r'; }
+            case 't': { return '\t'; }
+            case 'v': { return '\v'; }
+            case '\\': { return '\\'; }
+            case '?': { return '?'; }
+            case '\'': { return '\''; }
+            case '"': { return '"'; }
+        }
+
+        if escapedChar == 'x' { // Hex escape sequence with exactly two digits
+            int value = 0;
+            unsigned long digitCount = 0l;
+            while digitCount < 2l && index < length && isHexDigit(input[index]) {
+                const char digitChar = toLower(input[index]);
+                if isDigit(digitChar) {
+                    value = value << 4 | (cast<int>(digitChar) - cast<int>('0'));
+                } else {
+                    value = value << 4 | (cast<int>(digitChar) - cast<int>('a') + 10);
+                }
+                digitCount++;
+                index++;
+            }
+            if digitCount == 2l {
+                return cast<char>(value);
+            }
+            const String sequence = input.getSubstring(startIndex, cast<long>(index - startIndex));
+            this.state.fail(errorType, token.span, String("Invalid escape sequence '") + sequence + String("', expected two hex digits after '\\x'"));
+            return '\0';
+        }
+
+        if isOctDigit(escapedChar) { // Octal escape sequence with one to three digits
+            int value = cast<int>(escapedChar) - cast<int>('0');
+            unsigned long digitCount = 1l;
+            while digitCount < 3l && index < length && isOctDigit(input[index]) {
+                value = value << 3 | (cast<int>(input[index]) - cast<int>('0'));
+                digitCount++;
+                index++;
+            }
+            if value <= 0xFF {
+                return cast<char>(value);
+            }
+            const String sequence = input.getSubstring(startIndex, cast<long>(index - startIndex));
+            this.state.fail(errorType, token.span, String("Octal escape sequence '") + sequence + String("' is out of range"));
+            return '\0';
+        }
+
+        if escapedChar == '\n' || escapedChar == '\r' {
+            this.state.fail(errorType, token.span, String("Line breaks must not be escaped"));
+            return '\0';
+        }
+
+        // Include the whole code point in the error message, if the escaped char is a multibyte UTF-8 sequence
+        while index < length && (cast<int>(cast<byte>(input[index])) & 0xC0) == 0x80 {
+            index++;
+        }
+    }
+
+    const String sequence = input.getSubstring(startIndex, cast<long>(index - startIndex));
+    this.state.fail(errorType, token.span, String("Invalid escape sequence '") + sequence + String("'"));
+    return '\0';
+}

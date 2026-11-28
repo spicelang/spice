@@ -1259,6 +1259,48 @@ The results are recorded in this document. An idiom that stage0 does not support
   every iteration: 1.2 s for the new lexer against 3.0 s for the legacy one (about 2.4x). The 1.3x gate of phase 2 is measured on the parse
   as a whole in WP 2.5.
 
+**Results (WP 2.3).**
+
+- `syntax/parser` has `parser-state` (`ParserState`: the cursor with the splitting of `>>` and `<<`, `expect`, `consumeIf`, the identifier checks,
+  the error and the spans), `lookahead` (the probes, ported unchanged), `type-parser`, `expr-parser`, `stmt-parser`, `attr-parser`,
+  `decl-parser`, `literal-checker`, `parser` (`parse()`) and `parser-test`. The parsers are one struct per file. They hold pointers to the shared
+  `ParserState` and to each other (mutual imports, spike 5), and `parse()` wires them. `parse(sourceManager, stream, interner, store, sink,
+  checkReservedTypeNames)` returns the id of the `ENTRY` node, or no node if the lexer or the parser reported an error. The 14 binary precedence
+  functions are one loop (`ExprParser.parseBinaryLevel`) over the ten levels, with the same node kinds, operand lists and operator queues.
+- **Split of the WP.** The WP is not split. It adds about 3,400 lines without the tests, which is more than the 1,500 lines of 10.2. The decision
+  was made for this WP, because the parser is one cycle of mutually recursive rules that cannot be reviewed in parts.
+- **Errors.** The first error is reported to the sink and sets `failed`; the cursor then moves to the EOF token, and all later errors are
+  dropped. The loops check `failed`, and `parseAssignExpr`, `parseTernaryExpr`, `parseDataType` and `parseStmtLst` return no node once it is set, because a rule
+  that sees EOF would otherwise recurse (`new::foo();` found that). The messages end at the first NUL byte of the source, because legacy passed
+  them on as C strings.
+- **Nodes.** Nodes are built bottom-up. A rule reserves its id when it starts, so a node has a smaller id than its descendants, and a node
+  that wraps its first operand (binary levels, ternary, assignment, postfix operators, calls on an expression) reserves its id after that operand,
+  like `createNodeWrappingLastChild`. Sema can order declarations by id, as it does today. The parent links are set by one pass after the parse (`linkParents`),
+  because a node does not know its parent when it is built. `Span.stop` is exclusive, so the legacy `endOffset - 1` is gone. A statement ends before
+  its `;`, except `assert` and `do ... while`, whose `;` is part of the node.
+- **Decisions.** (1) `FCT_NAME` keeps the mangled operator names of legacy (`op.plus`, ..., `op.less` for `operator<<T>`), so the AST dump stays identical
+  and sema reads the same names. (2) The literal checks stay in the parser (`LiteralChecker`, the code of `parseNumeric`, `parseChar`, `parseString` and
+  `parseEscapeSequence`), but their values are dropped: `CONSTANT` keeps the type, `isUnsigned` and `isNegative`, `ENUM_ITEM` the span of its value.
+  WP 2.4 moves the decoders to `syntax/literal` and the parser calls them to validate. (3) The type ids and the attribute `core.compiler.fixedTypeId` are not
+  handled. `sema/collect` has to number the structs, interfaces, unions, enums and aliases of a file in the order of the source, and the files in parse order.
+  (4) `attr.target`, `ALIAS_DEF.dataTypeString`, `ASSERT_STMT.expressionString` and the `switchStmts` list are not kept (the first three come from the kind of the
+  owner and from the spans, sema builds the list itself).
+- **Legacy quirks that the port reproduces** (each has a test): `operator foo` swallows `foo` and gives an empty name; `a == b == c` and `a < b < c` fail at the second
+  operator; the branches of a ternary are logical-or expressions; `&&x` and `-cast<int>(x)` are errors; the array size is read with a plain `toInt`, so `[0x10]` is 0; an enum
+  item value is checked as a number before it is checked to be an `INT_LIT`; a struct or union body without `}` reports the error of the next field, an interface body
+  `Unexpected token 'EOF'`; `inline f<int> main()` is dispatched as `main` and then fails at `inline`; an attribute that is not closed gives the offset -1 to the
+  probe, which wraps around like the unsigned arithmetic of legacy; `type X<T> enum` and `type X<T> alias` fail at the `<`.
+- **Deviation (to be filed).** `parseQualifier` of legacy ends in `assert false` when a signature of an interface starts with a token that is neither `f` nor `p` nor a qualifier
+  (`type I interface { 5; }`). The new parser reports `Unexpected token '5'` at the token. Legacy crashes, so there is no output to keep, and the entry is in the deviations log. The case `ParserTests.parser_errorInterfaceSignatureStart` is `next-only`.
+- **Verification.** (a) The 24 ParserTests cases give the legacy message and location, in-process (`parser-test`) and compared with the legacy binary. (b) The 1,479 `.spice`
+  files of the repository (std, compiler sources, test cases, docs examples): the dot output of 1,473 is identical to `--dump-ast` of legacy, or the error is. The 6 other files
+  are the lexer cases that #1906 to #1908 changed in both lexers; the legacy binary of this container was built before that fix and cannot be rebuilt here (the LLVM headers are missing), so
+  these 6 were not compared. (c) About 17,000 mutants of corpus files (one to four edits: delete, duplicate, insert, replace, swap or truncate a token, with fragments like
+  `<`, `>>`, `#[`, `new`, `operator`) gave no difference apart from the unterminated comments of the old lexer. (d) The 24 tests of `parser-test` pass, also under ASan (the leaks that it reports
+  are in the manifest tests of WP 1.2c). Every expectation of these tests about a message or a tree was run through the legacy binary. (b) and (c) used scratch programs
+  (a dumper of the new parser and a comparison script), which are not in the repository: the new binary has no command that parses a file until `--dump-ast` (WP 2.5), which takes over.
+- The 24 ParserTests cases are **not in the ratchet yet**, for the reason of the LexerTests cases (WP 2.2). The exit gate of phase 2 puts them in. The parse throughput (1.3x) is measured in WP 2.5.
+
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
 

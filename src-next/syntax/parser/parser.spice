@@ -1,0 +1,88 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "@/base/interner";
+import "@/diag/diagnostic";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/syntax/ast/ast-children";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/lexer/lexer";
+import "@/syntax/lexer/token-stream";
+import "@/syntax/parser/attr-parser";
+import "@/syntax/parser/decl-parser";
+import "@/syntax/parser/expr-parser";
+import "@/syntax/parser/literal-checker";
+import "@/syntax/parser/lookahead";
+import "@/syntax/parser/parser-state";
+import "@/syntax/parser/stmt-parser";
+import "@/syntax/parser/type-parser";
+
+/**
+ * Parse the tokens of a file into an AST. The nodes go into the store, and the id of the ENTRY node is the result. The first
+ * error is reported to the sink and ends the parse, like the legacy parser ended the process, and the result is then no node.
+ * A stream that the lexer could not finish is not parsed, because the lexer already reported its error.
+ *
+ * @param sourceManager Manager that holds the source of the stream
+ * @param stream Tokens of the file
+ * @param interner Interner for the names in the nodes
+ * @param store Store that receives the nodes
+ * @param sink Receiver of the parser error
+ * @param checkReservedTypeNames Whether the reserved type names are rejected as type names (not in std files)
+ * @return Id of the ENTRY node, or no node if the file has a lexer or parser error
+ */
+// legacy: parser/parser.spice:543-559 (parse)
+public f<NodeId> parse(const SourceManager& sourceManager, TokenStream& stream, Interner& interner, AstStore& store, IDiagnosticSink& sink, bool checkReservedTypeNames) {
+    if stream.failed {
+        return noNodeId();
+    }
+    ParserState state = ParserState(&stream, &sourceManager, &store, &interner, &sink, checkReservedTypeNames);
+    Lookahead lookahead = Lookahead(&state);
+    LiteralChecker literals = LiteralChecker(&state);
+    TypeParser types = TypeParser(&state);
+    ExprParser exprs;
+    StmtParser stmts;
+    AttrParser attrs;
+    DeclParser decls;
+    // The expression, statement and attribute parsers use each other, so the pointers are set after all of them exist
+    exprs = ExprParser(&state, &lookahead, &literals, &types, &attrs, &stmts);
+    stmts = StmtParser(&state, &lookahead, &types, &exprs);
+    attrs = AttrParser(&state, &exprs);
+    decls = DeclParser(&state, &lookahead, &literals, &types, &attrs, &stmts, &exprs);
+
+    const NodeId entry = decls.parseEntry();
+    if state.failed {
+        return noNodeId();
+    }
+    linkParents(store, entry);
+    return entry;
+}
+
+/**
+ * Set the parent of every node of the tree below the root. The nodes are built bottom-up, so a node does not know its parent
+ * when it is created. The root keeps no parent.
+ *
+ * @param store Store of the tree
+ * @param root Id of the root node
+ */
+// legacy: parser/parser.spice:66-94 (createNode attached the node to its parent while it was created)
+p linkParents(AstStore& store, NodeId root) {
+    Vector<NodeId> pending;
+    pending.pushBack(root);
+    Vector<NodeId> children;
+    while !pending.isEmpty() {
+        const NodeId parent = pending.get(pending.getSize() - 1l);
+        pending.popBack();
+        children.clear();
+        collectChildren(store, parent, children);
+        for unsigned long i = 0l; i < children.getSize(); i++ {
+            const NodeId child = children.get(i);
+            setParent(store, child, parent);
+            pending.pushBack(child);
+        }
+    }
+}

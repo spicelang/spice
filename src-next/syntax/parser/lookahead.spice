@@ -1,0 +1,320 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Own imports
+import "@/syntax/lexer/token";
+import "@/syntax/parser/parser-state";
+
+// legacy: parser/parser.spice:240-244
+public f<bool> isQualifierType(TokenType t) {
+    return t == TokenType::CONST || t == TokenType::SIGNED || t == TokenType::UNSIGNED || t == TokenType::INLINE ||
+        t == TokenType::PUBLIC || t == TokenType::HEAP || t == TokenType::COMPOSE;
+}
+
+// legacy: parser/parser.spice:246-250
+public f<bool> isBaseDataTypeKeyword(TokenType t) {
+    return t == TokenType::TYPE_DOUBLE || t == TokenType::TYPE_INT || t == TokenType::TYPE_SHORT || t == TokenType::TYPE_LONG ||
+        t == TokenType::TYPE_BYTE || t == TokenType::TYPE_CHAR || t == TokenType::TYPE_STRING || t == TokenType::TYPE_BOOL ||
+        t == TokenType::TYPE_DYN;
+}
+
+// legacy: parser/parser.spice:252-256
+public f<bool> isConstantStart(TokenType t) {
+    return t == TokenType::DOUBLE_LIT || t == TokenType::INT_LIT || t == TokenType::SHORT_LIT || t == TokenType::LONG_LIT ||
+        t == TokenType::CHAR_LIT || t == TokenType::STRING_LIT || t == TokenType::TRUE || t == TokenType::FALSE;
+}
+
+// legacy: parser/parser.spice:258-263
+public f<bool> isAssignOp(TokenType t) {
+    return t == TokenType::ASSIGN || t == TokenType::PLUS_EQUAL || t == TokenType::MINUS_EQUAL || t == TokenType::MUL_EQUAL ||
+        t == TokenType::DIV_EQUAL || t == TokenType::REM_EQUAL || t == TokenType::SHL_EQUAL || t == TokenType::SHR_EQUAL ||
+        t == TokenType::AND_EQUAL || t == TokenType::OR_EQUAL || t == TokenType::XOR_EQUAL;
+}
+
+// legacy: parser/parser.spice:331-346
+public f<bool> isTypeLstToken(TokenType t) {
+    if isQualifierType(t) || isBaseDataTypeKeyword(t) {
+        return true;
+    }
+    return t == TokenType::IDENTIFIER || t == TokenType::TYPE_IDENTIFIER || t == TokenType::SCOPE_ACCESS || t == TokenType::COMMA ||
+        t == TokenType::LESS || t == TokenType::GREATER || t == TokenType::SHL || t == TokenType::SHR || t == TokenType::MUL ||
+        t == TokenType::BITWISE_AND || t == TokenType::LBRACKET || t == TokenType::RBRACKET || t == TokenType::INT_LIT ||
+        t == TokenType::F || t == TokenType::P || t == TokenType::LPAREN || t == TokenType::RPAREN;
+}
+
+// legacy: parser/parser.spice:514-526
+public f<bool> isStmtStartKeyword(TokenType t) {
+    return t == TokenType::RETURN || t == TokenType::IF || t == TokenType::FOR || t == TokenType::FOREACH || t == TokenType::WHILE ||
+        t == TokenType::DO || t == TokenType::SWITCH || t == TokenType::CASE || t == TokenType::DEFAULT || t == TokenType::BREAK ||
+        t == TokenType::CONTINUE || t == TokenType::FALLTHROUGH || t == TokenType::ASSERT || t == TokenType::UNSAFE ||
+        isQualifierType(t) || isBaseDataTypeKeyword(t);
+}
+
+// legacy: parser/parser.spice:529-535
+public f<bool> isStmtStartToken(TokenType t) {
+    return isStmtStartKeyword(t) || isConstantStart(t) || t == TokenType::IDENTIFIER || t == TokenType::TYPE_IDENTIFIER ||
+        t == TokenType::NIL || t == TokenType::CAST || t == TokenType::F || t == TokenType::P || t == TokenType::EOF;
+}
+
+/**
+ * The speculative probes of the parser. They only look at the relevant tokens ahead of the cursor and never consume anything or
+ * report an error. A probe returns the offset behind the construct, or -1 if the tokens do not match. The offsets are counted
+ * in relevant tokens from the current token.
+ *
+ * The probes see the token stream as the lexer made it. They know nothing of a split `>>` or `<<` of the cursor.
+ */
+// legacy: parser/parser.spice:240-541 (the probes, unchanged)
+public type Lookahead struct {
+    ParserState* state = nil<ParserState*>
+}
+
+public p Lookahead.ctor() {}
+
+public p Lookahead.ctor(ParserState* state) {
+    this.state = state;
+}
+
+// legacy: parser/parser.spice:266-273
+public f<bool> Lookahead.isNegativeNumericConstantAhead() {
+    if !this.state.currentTokenIs(TokenType::MINUS) {
+        return false;
+    }
+    const TokenType next = this.state.tokenAt(1l);
+    return next == TokenType::DOUBLE_LIT || next == TokenType::INT_LIT || next == TokenType::SHORT_LIT || next == TokenType::LONG_LIT;
+}
+
+/**
+ * Match a balanced `<` ... `>` group of type tokens. The first token is assumed to be the `<` and is not verified.
+ *
+ * @param startOffset Offset of the `<`
+ * @return Offset behind the group, or -1
+ */
+// legacy: parser/parser.spice:277-306
+public f<long> Lookahead.matchAngleGroup(long startOffset) {
+    long offset = startOffset;
+    long depth = 0l;
+    long parenDepth = 0l;
+    while true {
+        const TokenType t = this.state.tokenAt(offset);
+        const bool isRValueRefInParamTypes = t == TokenType::LOGICAL_AND && parenDepth > 0l;
+        if !isTypeLstToken(t) && !isRValueRefInParamTypes {
+            return -1l;
+        }
+        if t == TokenType::LPAREN {
+            parenDepth++;
+        } else if t == TokenType::RPAREN {
+            parenDepth--;
+        } else if t == TokenType::LESS {
+            depth++;
+        } else if t == TokenType::SHL {
+            depth += 2l;
+        } else if t == TokenType::GREATER {
+            depth--;
+        } else if t == TokenType::SHR {
+            depth -= 2l;
+        }
+        offset++;
+        if depth <= 0l {
+            return offset;
+        }
+    }
+    return -1l;
+}
+
+/**
+ * Match a balanced group of two token types. The first token is assumed to be the opening one and is not verified.
+ *
+ * @param startOffset Offset of the opening token
+ * @param open Opening token type
+ * @param close Closing token type
+ * @return Offset behind the group, or -1 if the file ends first
+ */
+// legacy: parser/parser.spice:349-366
+public f<long> Lookahead.matchBalancedGroup(long startOffset, TokenType open, TokenType close) {
+    long offset = startOffset;
+    long depth = 0l;
+    while true {
+        const TokenType t = this.state.tokenAt(offset);
+        if t == TokenType::EOF {
+            return -1l;
+        }
+        if t == open {
+            depth++;
+        } else if t == close {
+            depth--;
+        }
+        offset++;
+        if depth <= 0l {
+            return offset;
+        }
+    }
+    return -1l;
+}
+
+/**
+ * Match a data type: qualifiers, a base type or a custom type with an optional template list, and the pointer, reference and
+ * array suffixes.
+ *
+ * @param startOffset Offset of the first token
+ * @return Offset behind the data type, or -1
+ */
+// legacy: parser/parser.spice:369-414
+public f<long> Lookahead.matchDataType(long startOffset) {
+    long offset = startOffset;
+    while isQualifierType(this.state.tokenAt(offset)) {
+        offset++;
+    }
+    const TokenType base = this.state.tokenAt(offset);
+    if isBaseDataTypeKeyword(base) {
+        offset++;
+    } else if base == TokenType::F || base == TokenType::P {
+        offset++;
+        if this.state.tokenAt(offset) == TokenType::LESS {
+            offset = this.matchAngleGroup(offset);
+            if offset < 0l {
+                return -1l;
+            }
+        }
+        if this.state.tokenAt(offset) != TokenType::LPAREN {
+            return -1l;
+        }
+        offset = this.matchBalancedGroup(offset, TokenType::LPAREN, TokenType::RPAREN);
+        if offset < 0l {
+            return -1l;
+        }
+    } else if base == TokenType::IDENTIFIER || base == TokenType::TYPE_IDENTIFIER {
+        while this.state.tokenAt(offset) == TokenType::IDENTIFIER && this.state.tokenAt(offset + 1l) == TokenType::SCOPE_ACCESS {
+            offset += 2l;
+        }
+        if this.state.tokenAt(offset) != TokenType::TYPE_IDENTIFIER {
+            return -1l;
+        }
+        offset++;
+        if this.state.tokenAt(offset) == TokenType::LESS {
+            offset = this.matchAngleGroup(offset);
+            if offset < 0l {
+                return -1l;
+            }
+        }
+    } else {
+        return -1l;
+    }
+    while true {
+        const TokenType t = this.state.tokenAt(offset);
+        if t == TokenType::MUL || t == TokenType::BITWISE_AND || t == TokenType::LOGICAL_AND {
+            offset++;
+        } else if t == TokenType::LBRACKET {
+            offset = this.matchBalancedGroup(offset, TokenType::LBRACKET, TokenType::RBRACKET);
+            if offset < 0l {
+                return -1l;
+            }
+        } else {
+            break;
+        }
+    }
+    return offset;
+}
+
+// legacy: parser/parser.spice:417-420
+public f<bool> Lookahead.isDeclStmtAhead() {
+    const long afterType = this.matchDataType(0l);
+    return afterType >= 0l && this.state.tokenAt(afterType) == TokenType::IDENTIFIER;
+}
+
+// legacy: parser/parser.spice:423-438
+public f<long> Lookahead.matchFctCallPath() {
+    long offset = 0l;
+    while this.state.tokenAt(offset) == TokenType::IDENTIFIER && this.state.tokenAt(offset + 1l) == TokenType::SCOPE_ACCESS {
+        offset += 2l;
+    }
+    while this.state.tokenAt(offset) == TokenType::IDENTIFIER && this.state.tokenAt(offset + 1l) == TokenType::DOT {
+        offset += 2l;
+    }
+    const TokenType name = this.state.tokenAt(offset);
+    if name != TokenType::IDENTIFIER && name != TokenType::TYPE_IDENTIFIER {
+        return -1l;
+    }
+    offset++;
+    if this.state.tokenAt(offset) == TokenType::LESS {
+        offset = this.matchAngleGroup(offset);
+    }
+    return offset;
+}
+
+// legacy: parser/parser.spice:441-452
+public f<long> Lookahead.matchStructPath() {
+    long offset = 0l;
+    while this.state.tokenAt(offset) == TokenType::IDENTIFIER && this.state.tokenAt(offset + 1l) == TokenType::SCOPE_ACCESS {
+        offset += 2l;
+    }
+    if this.state.tokenAt(offset) != TokenType::TYPE_IDENTIFIER {
+        return -1l;
+    }
+    offset++;
+    if this.state.tokenAt(offset) == TokenType::LESS {
+        offset = this.matchAngleGroup(offset);
+    }
+    return offset;
+}
+
+// legacy: parser/parser.spice:454-457
+public f<bool> Lookahead.isFctCallAhead() {
+    const long offset = this.matchFctCallPath();
+    return offset >= 0l && this.state.tokenAt(offset) == TokenType::LPAREN;
+}
+
+// legacy: parser/parser.spice:461-469
+public f<bool> Lookahead.isMethodCallOnExprAhead() {
+    if this.state.tokenAt(0l) != TokenType::DOT || this.state.tokenAt(1l) != TokenType::IDENTIFIER {
+        return false;
+    }
+    long offset = 2l;
+    if this.state.tokenAt(offset) == TokenType::LESS {
+        offset = this.matchAngleGroup(offset);
+        if offset < 0l {
+            return false;
+        }
+    }
+    return this.state.tokenAt(offset) == TokenType::LPAREN;
+}
+
+// legacy: parser/parser.spice:473-511
+public f<bool> Lookahead.isStructInstantiationAhead() {
+    const long lbraceOffset = this.matchStructPath();
+    if lbraceOffset < 0l || this.state.tokenAt(lbraceOffset) != TokenType::LBRACE {
+        return false;
+    }
+    const TokenType first = this.state.tokenAt(lbraceOffset + 1l);
+    if isStmtStartKeyword(first) || first == TokenType::LBRACE {
+        return false;
+    }
+    long offset = lbraceOffset;
+    long depth = 0l;
+    while true {
+        const TokenType t = this.state.tokenAt(offset);
+        if t == TokenType::EOF {
+            return false;
+        }
+        if t == TokenType::LBRACE {
+            depth++;
+        } else if t == TokenType::RBRACE {
+            depth--;
+        } else if t == TokenType::SEMICOLON && depth == 1l {
+            return false;
+        }
+        offset++;
+        if depth == 0l {
+            break;
+        }
+    }
+    if offset == lbraceOffset + 2l {
+        const TokenType after = this.state.tokenAt(offset);
+        return after != TokenType::ELSE && !isStmtStartToken(after);
+    }
+    return true;
+}
+
+// legacy: parser/parser.spice:538-541
+public f<bool> Lookahead.isLambdaExprAhead() {
+    const long offset = this.matchBalancedGroup(0l, TokenType::LPAREN, TokenType::RPAREN);
+    return offset >= 0l && this.state.tokenAt(offset) == TokenType::ARROW;
+}
