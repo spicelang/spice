@@ -1,0 +1,4 @@
+f<int> main() {
+    int a = 1..x;
+    return 0;
+}

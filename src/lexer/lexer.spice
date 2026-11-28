@@ -334,7 +334,11 @@ f<Token> Lexer.consumeToken() {
         }
         case '.': {
             if this.consumeIf('.') {
-                this.reader.expect('.'); // Consume third '.'
+                // Two dots are no token, so a third one has to follow
+                if this.reader.getChar() != '.' {
+                    this.throwLexerError(codeLoc, "token recognition error at: '..'");
+                }
+                this.reader.advance(); // Consume third '.'
                 return Token(TokenType::ELLIPSIS, "...", codeLoc);
             }
             return Token(TokenType::DOT, ".", codeLoc);
@@ -567,6 +571,10 @@ f<Token> Lexer.consumeStringLiteral(const CodeLoc& codeLoc) {
             // Keep the escape sequence as is. It gets resolved by the parser
             stringStr += '\\';
             this.reader.advance(); // Consume '\\'
+            if this.reader.isEOF() {
+                const String message = "token recognition error at: '\"" + stringStr + "'";
+                this.throwLexerError(codeLoc, message.getRaw());
+            }
             stringStr += this.reader.getChar();
             this.reader.advance(); // Consume escaped character
         } else { // Normal character
@@ -701,28 +709,33 @@ f<Token> Lexer.consumeBlockOrDocComment(const CodeLoc& codeLoc) {
     this.reader.expect('*'); // Consume '*' ('/' is consumed by the caller)
     String comment = String("/*");
 
-    // Check if doc comment
+    // Check if doc comment. '/**/' is an empty block comment
     bool isDocComment = false;
-    if this.reader.getChar() == '*' {
+    if this.reader.getChar() == '*' && this.reader.peekChar() != '/' {
         isDocComment = true;
         this.reader.advance(); // Consume '*'
         comment += '*';
     }
 
+    // Consume the comment up to its end '*/'
+    bool isTerminated = false;
     while !this.reader.isEOF() {
-        // Check for comment end
-        if this.reader.getChar() == '*' {
+        if this.reader.getChar() == '*' && this.reader.peekChar() == '/' {
             this.reader.advance(); // Consume '*'
-            comment += '*';
-            if this.reader.getChar() == '/' {
-                this.reader.advance(); // Consume '/'
-                comment += '/';
-                break;
-            }
+            this.reader.advance(); // Consume '/'
+            comment += "*/";
+            isTerminated = true;
+            break;
         }
 
         comment += this.reader.getChar();
         this.reader.advance();
+    }
+
+    // A comment must be closed before the end of the input
+    if !isTerminated {
+        const String message = String("token recognition error at: '") + (isDocComment ? "/**" : "/*") + "'";
+        this.throwLexerError(codeLoc, message.getRaw());
     }
 
     return Token(isDocComment ? TokenType::DOC_COMMENT : TokenType::BLOCK_COMMENT, comment, codeLoc);

@@ -1,0 +1,9 @@
+// The comments below end at their first '*/'
+/**/
+/* a **/
+/*** doc ***/
+/** doc **/
+
+f<int> main() {
+    /**/ return 0; /* x **/
+}

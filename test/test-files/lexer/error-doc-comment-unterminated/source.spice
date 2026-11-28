@@ -1,0 +1,5 @@
+f<int> main() {
+    return 0;
+}
+/** doc comment
+ * never closed

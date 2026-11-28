@@ -1227,13 +1227,16 @@ The results are recorded in this document. An idiom that stage0 does not support
 - The first error is reported to the sink (family LEXER, `TOKENIZING_FAILED`, the span from the start of the token to the offending
   byte) and ends the tokenizing. The stream then ends with an EOF token at the start of the token, and `failed` is set. The legacy
   `abortWithError` ended the process. The text and the location are the same, so the renderer prints the legacy line.
-- The legacy `Reader` assertions are assertions here, because legacy crashes on these inputs and the plan reproduces legacy first (D1):
-  `..` that no third `.` follows (`..x`), a string that ends in a `\` at the end of the input, and a block comment that ends in a `*`
-  at the end of the input. They are legacy bug [#1906](https://github.com/spicelang/spice/issues/1906). The other reproduced quirks are
-  [#1907](https://github.com/spicelang/spice/issues/1907) (`/**/` starts a doc comment that goes on after its `/`, and `**/` does not
-  end a block comment) and [#1908](https://github.com/spicelang/spice/issues/1908) (an unterminated block comment ends at the end of
-  the input without an error). Their fixes are entries of the deviations log. The lexer accepts `\` followed by a line break inside a string, but the
-  parser then rejects it (`Line breaks must not be escaped`), so that case is no bug.
+- Three legacy lexer bugs were found while porting. [#1906](https://github.com/spicelang/spice/issues/1906): `..` that no third `.`
+  follows (`..x`), a string that ends in a `\` at the end of the input and a block comment that ends in a `*` at the end of the
+  input made the legacy `Reader` fail an assertion. [#1907](https://github.com/spicelang/spice/issues/1907): `/**/` started a doc
+  comment that went on after its `/`, and `**/` did not end a block comment. [#1908](https://github.com/spicelang/spice/issues/1908): an
+  unterminated block comment ended at the end of the input without an error. The port first reproduced them (D1). They are fixed in
+  **both** compilers, in the same change, so the parity holds and the deviations log has no `-next` variants for them: the legacy
+  lexer gets the fix with new LexerTests cases (port log entry), and `syntax/lexer` the same code. `..` that no third `.` follows, a
+  string that ends in a `\` and a comment that is not closed are lexer errors (`token recognition error at: '..'`, `'"abc\'`,
+  and `'/*'` or `'/**'` at the start of the comment). No file of the corpus changes its tokens. The lexer accepts `\` followed
+  by a line break inside a string, but the parser then rejects it (`Line breaks must not be escaped`), so that case is no bug.
 - A NUL byte in the source changes the legacy message, because legacy built it with `String` concatenations that read their
   right operand as a C string, and passed it on with `getRaw()`. The content of a string, char or number error ends at the NUL
   and the closing quote is kept (`'\"ab'`), and the message of an unknown NUL byte ends behind the opening quote. The port

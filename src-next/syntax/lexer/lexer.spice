@@ -21,9 +21,9 @@ import "@/syntax/lexer/token-stream";
  * - The text of a token is a range of the source instead of a copy, see `Token`.
  * - The error is not thrown but remembered (`failed`, `errorStart`, `errorStop`, `errorMessage`), because the lexer layer
  *   reports to the DiagnosticSink instead of aborting the process. After an error, every function returns at once.
- * - An assertion of the legacy Reader (`advance` at the end of the input, `expect` of another char) is an assertion here.
- *   Legacy crashes on these inputs, so they are reproduced and not turned into a diagnostic: `..` that is not followed by a
- *   third '.', a string or block comment that ends in the middle of an escape or at a '*'.
+ * - The assertions of the legacy Reader (`advance` at the end of the input, `expect` of another char) are internal invariants
+ *   here. No input reaches them: the legacy lexer reached them with `..` that no third '.' follows, with a string or a block
+ *   comment that ends in the middle of an escape or at a '*', and these are lexer errors in both compilers (#1906).
  */
 type Lexer struct {
     string data
@@ -184,7 +184,7 @@ f<Token> Lexer.consumeToken(unsigned int start) {
     // Consume the first char of the operator and check for longer operators, starting with it
     this.advance();
     const Token operatorToken = this.consumeOperator(start, curChar);
-    if operatorToken.tokenType != TokenType::INVALID {
+    if operatorToken.tokenType != TokenType::INVALID || this.failed {
         return operatorToken;
     }
     this.failUnknownChar(start, curChar);
@@ -274,7 +274,12 @@ f<Token> Lexer.consumeOperator(unsigned int start, char curChar) {
         }
         case '.': {
             if this.consumeIf('.') {
-                this.expect('.'); // Consume third '.'
+                // Two dots are no token, so a third one has to follow
+                if this.getChar() != '.' {
+                    this.fail(start, String(".."));
+                    return Token();
+                }
+                this.advance(); // Consume third '.'
                 return this.makeToken(TokenType::ELLIPSIS, start);
             }
             return this.makeToken(TokenType::DOT, start);
@@ -493,6 +498,10 @@ f<Token> Lexer.consumeStringLiteral(unsigned int start) {
         }
         if this.getChar() == '\\' { // Escape sequence
             this.advance(); // Consume '\\'
+            if this.isEOF() {
+                this.fail(start, this.slice("\"", contentStart, this.pos));
+                return Token();
+            }
             this.advance(); // Consume escaped character
         } else { // Normal character
             this.advance();
@@ -632,35 +641,31 @@ f<Token> Lexer.consumeLineComment(unsigned int start) {
     return Token(TokenType::LINE_COMMENT, Span(this.file, start, this.pos), start, textStop);
 }
 
-/**
- * The first '/' is consumed by the caller. Ported with its quirks, which the parser tests do not cover: `/**\/` is a doc
- * comment that goes on after the '/', `**\/` does not end a comment, an unterminated comment ends at the end of the input
- * without an error, and a '*' at the very end of the input is an assertion.
- */
-// legacy: lexer/lexer.spice:700-729
+// The first '/' is consumed by the caller. '/**/' is an empty block comment, and a comment ends at its first '*/'. A comment that
+// is not closed before the end of the input is an error at its start, which shows only the opening delimiter
+// legacy: lexer/lexer.spice:700-729. The legacy lexer got the same fix (#1906, #1907, #1908)
 f<Token> Lexer.consumeBlockOrDocComment(unsigned int start) {
     this.expect('*'); // Consume '*' ('/' is consumed by the caller)
 
     // Check if doc comment
     bool isDocComment = false;
-    if this.getChar() == '*' {
+    if this.getChar() == '*' && this.peekChar() != '/' {
         isDocComment = true;
         this.advance(); // Consume '*'
     }
 
+    // Consume the comment up to its end '*/'
     while !this.isEOF() {
-        // Check for comment end
-        if this.getChar() == '*' {
+        if this.getChar() == '*' && this.peekChar() == '/' {
             this.advance(); // Consume '*'
-            if this.getChar() == '/' {
-                this.advance(); // Consume '/'
-                break;
-            }
+            this.advance(); // Consume '/'
+            return this.makeToken(isDocComment ? TokenType::DOC_COMMENT : TokenType::BLOCK_COMMENT, start);
         }
         this.advance();
     }
 
-    return this.makeToken(isDocComment ? TokenType::DOC_COMMENT : TokenType::BLOCK_COMMENT, start);
+    this.fail(start, String(isDocComment ? "/**" : "/*"));
+    return Token();
 }
 
 // ----------------------------------------------------- Entry -----------------------------------------------------

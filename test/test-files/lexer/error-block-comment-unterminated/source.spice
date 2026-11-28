@@ -1,0 +1,4 @@
+f<int> main() {
+    return 0;
+}
+/* never closed

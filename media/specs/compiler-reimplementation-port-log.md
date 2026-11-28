@@ -46,4 +46,4 @@ The work package that ports the component ports the entry and sets the status to
 
 | Commit | PR | Summary | Behavior change | New component | Status | Ported in |
 |--------|----|---------|-----------------|---------------|--------|-----------|
-|        |    | (none since the fork point) |             |               |        |           |
+| (this change) | | Fix the legacy lexer bugs #1906, #1907 and #1908 | `..` without a third `.`, a string that ends in a `\` and a block comment that ends in a `*` at the end of the input are lexer errors instead of failed assertions. `/**/` is an empty block comment and `**/` ends a block comment. An unterminated block or doc comment is the lexer error ``token recognition error at: '/*'`` (``'/**'`` for a doc comment) at its start. New LexerTests cases | `syntax/lexer` | `ported` | the follow-up of WP 2.2 (same change set) |
