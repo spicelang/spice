@@ -1,0 +1,592 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/file";
+import "std/type/type-conversion";
+import "std/type/types";
+
+// Own imports
+import "@/diag/codes";
+import "@/diag/diagnostic";
+import "@/diag/diagnostic-engine";
+import "@/diag/render";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+import "@/syntax/lexer/lexer";
+import "@/syntax/lexer/token";
+import "@/syntax/lexer/token-stream";
+
+// Tests of the lexer. The expectations come from the legacy lexer (src/lexer/lexer.spice), the five LexerTests of the test suite
+// and the quirks that the port has to keep. The error cases of the suite run in-process here, because the new binary has no
+// command that lexes a file yet. They join the ratchet once the binary has `--dump-ast` (WP 2.5).
+
+/**
+ * Everything a test needs to lex a text
+ */
+type LexResult struct {
+    SourceManager sourceManager
+    DiagnosticEngine engine
+    FileId file
+    TokenStream stream
+}
+
+p LexResult.ctor(const string text) {
+    this.file = this.sourceManager.addString(String("source.spice"), String(text));
+    this.stream = lex(this.sourceManager, this.file, this.engine);
+}
+
+// For a text with a NUL byte, which a C string cannot hold
+p LexResult.ctor(const String& text) {
+    this.file = this.sourceManager.addString(String("source.spice"), text);
+    this.stream = lex(this.sourceManager, this.file, this.engine);
+}
+
+f<TokenType> LexResult.typeAt(unsigned long index) {
+    return this.stream.getTokens().get(index).tokenType;
+}
+
+f<String> LexResult.textAt(unsigned long index) {
+    return this.stream.getText(this.sourceManager, this.stream.getTokens().get(index));
+}
+
+f<unsigned long> LexResult.count() {
+    return this.stream.getTokens().getSize();
+}
+
+// The types of all tokens joined to a string of their numeric values, to compare a whole stream at once
+f<String> LexResult.typeList() {
+    String list;
+    for unsigned long i = 0l; i < this.count(); i++ {
+        if i > 0l {
+            list += " ";
+        }
+        list += toString(cast<int>(this.typeAt(i)));
+    }
+    return list;
+}
+
+f<String> typeNumber(TokenType tokenType) {
+    return toString(cast<int>(tokenType));
+}
+
+// ------------------------------------------------ Keywords and names ------------------------------------------------
+
+#[test]
+f<bool> testLexerKeywords() {
+    const string[48] words = ["double", "int", "short", "long", "byte", "char", "string", "bool", "dyn", "const", "signed", "unsigned", "inline",
+        "public", "heap", "compose", "f", "p", "if", "else", "switch", "case", "default", "assert", "for", "foreach", "do", "while", "import",
+        "break", "continue", "fallthrough", "return", "as", "struct", "interface", "union", "type", "enum", "operator", "alias", "unsafe",
+        "nil", "main", "ext", "cast", "true", "false"];
+    // The keyword tokens have the values 1 to 48 in this order
+    for int i = 0; i < 48; i++ {
+        LexResult lexed = LexResult(words[i]);
+        assert lexed.count() == 2l;
+        assert cast<int>(lexed.typeAt(0l)) == i + 1;
+        assert lexed.textAt(0l) == words[i];
+        assert lexed.typeAt(1l) == TokenType::EOF;
+    }
+    return true;
+}
+
+#[test]
+f<bool> testLexerIdentifiers() {
+    LexResult lexed = LexResult("ifs Int _if f1 _Foo foo_Bar9 ints Fn String");
+    assert lexed.typeList() == typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::TYPE_IDENTIFIER) + " " +
+        typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::IDENTIFIER) + " " +
+        typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::TYPE_IDENTIFIER) + " " +
+        typeNumber(TokenType::TYPE_IDENTIFIER) + " " + typeNumber(TokenType::EOF);
+    assert lexed.textAt(0l) == "ifs";
+    assert lexed.textAt(4l) == "_Foo"; // Underscore is not upper case
+    assert lexed.textAt(8l) == "String"; // 'string' is a keyword, 'String' is not
+    return true;
+}
+
+// ----------------------------------------------------- Operators -----------------------------------------------------
+
+#[test]
+f<bool> testLexerOperators() {
+    LexResult lexed = LexResult("{ } ( ) [ ] ~ ? ; , || |= | && &= & ^= ^ != ! ++ += + -- -= -> - *= * /= / %= % == = <= <<= << < >= >>= >> > :: : ... . #! #");
+    const TokenType[50] expected = [TokenType::LBRACE, TokenType::RBRACE, TokenType::LPAREN, TokenType::RPAREN, TokenType::LBRACKET,
+        TokenType::RBRACKET, TokenType::BITWISE_NOT, TokenType::QUESTION_MARK, TokenType::SEMICOLON, TokenType::COMMA,
+        TokenType::LOGICAL_OR, TokenType::OR_EQUAL, TokenType::BITWISE_OR, TokenType::LOGICAL_AND, TokenType::AND_EQUAL,
+        TokenType::BITWISE_AND, TokenType::XOR_EQUAL, TokenType::BITWISE_XOR, TokenType::NOT_EQUAL, TokenType::NOT,
+        TokenType::PLUS_PLUS, TokenType::PLUS_EQUAL, TokenType::PLUS, TokenType::MINUS_MINUS, TokenType::MINUS_EQUAL,
+        TokenType::ARROW, TokenType::MINUS, TokenType::MUL_EQUAL, TokenType::MUL, TokenType::DIV_EQUAL, TokenType::DIV,
+        TokenType::REM_EQUAL, TokenType::REM, TokenType::EQUAL, TokenType::ASSIGN, TokenType::LESS_EQUAL, TokenType::SHL_EQUAL,
+        TokenType::SHL, TokenType::LESS, TokenType::GREATER_EQUAL, TokenType::SHR_EQUAL, TokenType::SHR, TokenType::GREATER,
+        TokenType::SCOPE_ACCESS, TokenType::COLON, TokenType::ELLIPSIS, TokenType::DOT, TokenType::MOD_ATTR_PREAMBLE,
+        TokenType::FCT_ATTR_PREAMBLE, TokenType::EOF];
+    assert lexed.count() == 50l;
+    for unsigned long i = 0l; i < 50l; i++ {
+        assert lexed.typeAt(i) == expected[i];
+    }
+    return true;
+}
+
+// The lexer always merges '>>' and '<<'. The parser splits them for generics
+#[test]
+f<bool> testLexerMergesShiftOperatorsWithoutSpaces() {
+    LexResult lexed = LexResult("Vector<Vector<int>> a;a>>=1;b<<=2;1-2;a->b");
+    assert lexed.typeList() == typeNumber(TokenType::TYPE_IDENTIFIER) + " " + typeNumber(TokenType::LESS) + " " +
+        typeNumber(TokenType::TYPE_IDENTIFIER) + " " + typeNumber(TokenType::LESS) + " " + typeNumber(TokenType::TYPE_INT) + " " +
+        typeNumber(TokenType::SHR) + " " + typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::SEMICOLON) + " " +
+        typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::SHR_EQUAL) + " " + typeNumber(TokenType::INT_LIT) + " " +
+        typeNumber(TokenType::SEMICOLON) + " " + typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::SHL_EQUAL) + " " +
+        typeNumber(TokenType::INT_LIT) + " " + typeNumber(TokenType::SEMICOLON) + " " + typeNumber(TokenType::INT_LIT) + " " +
+        typeNumber(TokenType::MINUS) + " " + typeNumber(TokenType::INT_LIT) + " " + typeNumber(TokenType::SEMICOLON) + " " +
+        typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::ARROW) + " " + typeNumber(TokenType::IDENTIFIER) + " " +
+        typeNumber(TokenType::EOF);
+    return true;
+}
+
+// ------------------------------------------------------ Numbers ------------------------------------------------------
+
+#[test]
+f<bool> testLexerNumberLiterals() {
+    LexResult lexed = LexResult("0 42 0x1F 0XaB 0hFF 0b101 0B1 0o17 0d99 007 1u 1ul 1s 1l 1us 5su 0x1d");
+    // Base prefix with its case, digits and 'u' are the text. The 's' and 'l' suffixes are not
+    assert lexed.typeAt(0l) == TokenType::INT_LIT && lexed.textAt(0l) == "0";
+    assert lexed.typeAt(1l) == TokenType::INT_LIT && lexed.textAt(1l) == "42";
+    assert lexed.typeAt(2l) == TokenType::INT_LIT && lexed.textAt(2l) == "0x1F";
+    assert lexed.typeAt(3l) == TokenType::INT_LIT && lexed.textAt(3l) == "0XaB";
+    assert lexed.typeAt(4l) == TokenType::INT_LIT && lexed.textAt(4l) == "0hFF";
+    assert lexed.typeAt(5l) == TokenType::INT_LIT && lexed.textAt(5l) == "0b101";
+    assert lexed.typeAt(6l) == TokenType::INT_LIT && lexed.textAt(6l) == "0B1";
+    assert lexed.typeAt(7l) == TokenType::INT_LIT && lexed.textAt(7l) == "0o17";
+    assert lexed.typeAt(8l) == TokenType::INT_LIT && lexed.textAt(8l) == "0d99";
+    assert lexed.typeAt(9l) == TokenType::INT_LIT && lexed.textAt(9l) == "007";
+    assert lexed.typeAt(10l) == TokenType::INT_LIT && lexed.textAt(10l) == "1u";
+    assert lexed.typeAt(11l) == TokenType::LONG_LIT && lexed.textAt(11l) == "1u";
+    assert lexed.typeAt(12l) == TokenType::SHORT_LIT && lexed.textAt(12l) == "1";
+    assert lexed.typeAt(13l) == TokenType::LONG_LIT && lexed.textAt(13l) == "1";
+    assert lexed.typeAt(14l) == TokenType::SHORT_LIT && lexed.textAt(14l) == "1u";
+    // The 'u' is only looked for before the 's' and 'l', so '5su' is a short literal and an identifier
+    assert lexed.typeAt(15l) == TokenType::SHORT_LIT && lexed.textAt(15l) == "5";
+    assert lexed.typeAt(16l) == TokenType::IDENTIFIER && lexed.textAt(16l) == "u";
+    // 'd' is a hex digit, so it belongs to the literal
+    assert lexed.typeAt(17l) == TokenType::INT_LIT && lexed.textAt(17l) == "0x1d";
+    assert lexed.typeAt(18l) == TokenType::EOF && lexed.count() == 19l;
+    // The span covers the suffix
+    assert lexed.stream.getTokens().get(11l).span.length() == 3u;
+    return true;
+}
+
+#[test]
+f<bool> testLexerBasePrefixWithoutDigitsIsAccepted() {
+    // The parser reports the missing digits, not the lexer
+    LexResult lexed = LexResult("0x 0b;");
+    assert !lexed.stream.failed;
+    assert lexed.typeAt(0l) == TokenType::INT_LIT && lexed.textAt(0l) == "0x";
+    assert lexed.typeAt(1l) == TokenType::INT_LIT && lexed.textAt(1l) == "0b";
+    assert lexed.typeAt(2l) == TokenType::SEMICOLON;
+    return true;
+}
+
+#[test]
+f<bool> testLexerDoubleLiterals() {
+    LexResult lexed = LexResult("1.5 0.25 .5 3.14e10 2.0E+3 1.5e-7 1.e");
+    assert lexed.typeAt(0l) == TokenType::DOUBLE_LIT && lexed.textAt(0l) == "1.5";
+    assert lexed.typeAt(1l) == TokenType::DOUBLE_LIT && lexed.textAt(1l) == "0.25";
+    assert lexed.typeAt(2l) == TokenType::DOUBLE_LIT && lexed.textAt(2l) == ".5";
+    assert lexed.typeAt(3l) == TokenType::DOUBLE_LIT && lexed.textAt(3l) == "3.14e10";
+    assert lexed.typeAt(4l) == TokenType::DOUBLE_LIT && lexed.textAt(4l) == "2.0E+3";
+    assert lexed.typeAt(5l) == TokenType::DOUBLE_LIT && lexed.textAt(5l) == "1.5e-7";
+    // A '.' that no digit follows is no part of the number
+    assert lexed.typeAt(6l) == TokenType::INT_LIT && lexed.textAt(6l) == "1";
+    assert lexed.typeAt(7l) == TokenType::DOT;
+    assert lexed.typeAt(8l) == TokenType::IDENTIFIER && lexed.textAt(8l) == "e";
+    return true;
+}
+
+#[test]
+f<bool> testLexerDoubleHasNoSuffixes() {
+    LexResult lexed = LexResult("1.5u 1.5s 1.5l");
+    assert lexed.typeAt(0l) == TokenType::DOUBLE_LIT && lexed.textAt(0l) == "1.5";
+    assert lexed.typeAt(1l) == TokenType::IDENTIFIER && lexed.textAt(1l) == "u";
+    assert lexed.typeAt(2l) == TokenType::DOUBLE_LIT;
+    assert lexed.typeAt(3l) == TokenType::IDENTIFIER && lexed.textAt(3l) == "s";
+    assert lexed.typeAt(4l) == TokenType::DOUBLE_LIT;
+    assert lexed.typeAt(5l) == TokenType::IDENTIFIER && lexed.textAt(5l) == "l";
+    return true;
+}
+
+// 'e' that is no exponent stays an identifier
+#[test]
+f<bool> testLexerDoubleExponentNeedsDigitOrSign() {
+    LexResult lexed = LexResult("1.5e 1.5ex");
+    assert lexed.typeAt(0l) == TokenType::DOUBLE_LIT && lexed.textAt(0l) == "1.5";
+    assert lexed.typeAt(1l) == TokenType::IDENTIFIER && lexed.textAt(1l) == "e";
+    assert lexed.typeAt(2l) == TokenType::DOUBLE_LIT;
+    assert lexed.typeAt(3l) == TokenType::IDENTIFIER && lexed.textAt(3l) == "ex";
+    return true;
+}
+
+// The sign belongs to the parser: "-1" is MINUS and INT_LIT
+#[test]
+f<bool> testLexerNeverLexesANegativeNumber() {
+    LexResult lexed = LexResult("-1 -0x2 -1.5");
+    assert lexed.typeAt(0l) == TokenType::MINUS && lexed.typeAt(1l) == TokenType::INT_LIT;
+    assert lexed.typeAt(2l) == TokenType::MINUS && lexed.textAt(3l) == "0x2";
+    assert lexed.typeAt(4l) == TokenType::MINUS && lexed.typeAt(5l) == TokenType::DOUBLE_LIT;
+    return true;
+}
+
+// ---------------------------------------------- Char and string literals ----------------------------------------------
+
+#[test]
+f<bool> testLexerCharLiterals() {
+    LexResult lexed = LexResult("'a' '\\n' '\\x41' '\\x4' '\\101' '\\7' '\\'' '\\\\' 'ä' '\\ä' '\\x4G'");
+    assert lexed.typeAt(0l) == TokenType::CHAR_LIT && lexed.textAt(0l) == "a";
+    assert lexed.typeAt(1l) == TokenType::CHAR_LIT && lexed.textAt(1l) == "\\n"; // Escapes are kept as written
+    assert lexed.typeAt(2l) == TokenType::CHAR_LIT && lexed.textAt(2l) == "\\x41";
+    assert lexed.typeAt(3l) == TokenType::CHAR_LIT && lexed.textAt(3l) == "\\x4";
+    assert lexed.typeAt(4l) == TokenType::CHAR_LIT && lexed.textAt(4l) == "\\101";
+    assert lexed.typeAt(5l) == TokenType::CHAR_LIT && lexed.textAt(5l) == "\\7";
+    assert lexed.typeAt(6l) == TokenType::CHAR_LIT && lexed.textAt(6l) == "\\'";
+    assert lexed.typeAt(7l) == TokenType::CHAR_LIT && lexed.textAt(7l) == "\\\\";
+    assert lexed.typeAt(8l) == TokenType::CHAR_LIT && lexed.textAt(8l) == "ä"; // One code point, two bytes
+    assert lexed.typeAt(9l) == TokenType::CHAR_LIT && lexed.textAt(9l) == "\\ä";
+    // The lexer takes at most two digits of an escape. '\x4G' ends at the 'G', where the literal has to end
+    assert lexed.stream.failed;
+    return true;
+}
+
+#[test]
+f<bool> testLexerCharLiteralSpanCoversTheQuotes() {
+    LexResult lexed = LexResult("x = 'a';");
+    const Token& token = lexed.stream.getTokens().get(2l);
+    assert token.span.start == 4u && token.span.stop == 7u;
+    assert token.textStart == 5u && token.textStop == 6u;
+    return true;
+}
+
+#[test]
+f<bool> testLexerStringLiterals() {
+    LexResult lexed = LexResult("\"\" \"abc\" \"a\\\"b\" \"tab\\t\" \"ü\\\\\" \"// not a comment\"");
+    assert lexed.typeAt(0l) == TokenType::STRING_LIT && lexed.textAt(0l) == "";
+    assert lexed.typeAt(1l) == TokenType::STRING_LIT && lexed.textAt(1l) == "abc";
+    assert lexed.typeAt(2l) == TokenType::STRING_LIT && lexed.textAt(2l) == "a\\\"b";
+    assert lexed.typeAt(3l) == TokenType::STRING_LIT && lexed.textAt(3l) == "tab\\t";
+    assert lexed.typeAt(4l) == TokenType::STRING_LIT && lexed.textAt(4l) == "ü\\\\";
+    assert lexed.typeAt(5l) == TokenType::STRING_LIT && lexed.textAt(5l) == "// not a comment";
+    assert lexed.count() == 7l;
+    return true;
+}
+
+// A '\r' ends a char literal, but not a string. An escaped line break is part of the string. Both are legacy behavior
+#[test]
+f<bool> testLexerStringQuirks() {
+    LexResult lexed = LexResult("\"a\rb\" \"c\\\nd\"");
+    assert !lexed.stream.failed;
+    assert lexed.typeAt(0l) == TokenType::STRING_LIT && lexed.textAt(0l) == "a\rb";
+    assert lexed.typeAt(1l) == TokenType::STRING_LIT && lexed.textAt(1l) == "c\\\nd";
+    return true;
+}
+
+// -------------------------------------------------------- Comments --------------------------------------------------------
+
+#[test]
+f<bool> testLexerComments() {
+    LexResult lexed = LexResult("a // line\nb /* block */ c /** doc */ d");
+    assert lexed.typeList() == typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::LINE_COMMENT) + " " +
+        typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::BLOCK_COMMENT) + " " + typeNumber(TokenType::IDENTIFIER) + " " +
+        typeNumber(TokenType::DOC_COMMENT) + " " + typeNumber(TokenType::IDENTIFIER) + " " + typeNumber(TokenType::EOF);
+    // The text has the delimiters. A line comment has not the line break, but consumes it, so the span covers it
+    assert lexed.textAt(1l) == "// line";
+    assert lexed.stream.getTokens().get(1l).span.start == 2u && lexed.stream.getTokens().get(1l).span.stop == 10u;
+    assert lexed.textAt(3l) == "/* block */";
+    assert lexed.textAt(5l) == "/** doc */";
+    return true;
+}
+
+#[test]
+f<bool> testLexerLineCommentAtTheEndOfTheInput() {
+    LexResult lexed = LexResult("// no line break");
+    assert lexed.typeAt(0l) == TokenType::LINE_COMMENT && lexed.textAt(0l) == "// no line break";
+    assert lexed.typeAt(1l) == TokenType::EOF && lexed.count() == 2l;
+    return true;
+}
+
+// '/**/' is a doc comment that has not ended yet, and '**/' does not end a comment. The next '*/' does
+#[test]
+f<bool> testLexerBlockCommentQuirks() {
+    LexResult empty = LexResult("/**/ a */ b");
+    assert empty.typeAt(0l) == TokenType::DOC_COMMENT && empty.textAt(0l) == "/**/ a */";
+    assert empty.typeAt(1l) == TokenType::IDENTIFIER && empty.textAt(1l) == "b";
+
+    LexResult doubleStar = LexResult("/* a **/ b */ c");
+    assert doubleStar.typeAt(0l) == TokenType::BLOCK_COMMENT && doubleStar.textAt(0l) == "/* a **/ b */";
+    assert doubleStar.typeAt(1l) == TokenType::IDENTIFIER && doubleStar.textAt(1l) == "c";
+    return true;
+}
+
+// An unterminated block comment ends at the end of the input without an error
+#[test]
+f<bool> testLexerUnterminatedBlockComment() {
+    LexResult lexed = LexResult("a /* never closed");
+    assert !lexed.stream.failed;
+    assert lexed.typeAt(1l) == TokenType::BLOCK_COMMENT && lexed.textAt(1l) == "/* never closed";
+    assert lexed.typeAt(2l) == TokenType::EOF;
+    return true;
+}
+
+// ----------------------------------------------- Positions and the stream -----------------------------------------------
+
+#[test]
+f<bool> testLexerSpans() {
+    LexResult lexed = LexResult("  f<int> main()  \n{\n}\n");
+    const Vector<Token>& tokens = lexed.stream.getTokens();
+    // The span starts behind the whitespace, and EOF is empty and at the end of the input
+    assert tokens.get(0l).span.start == 2u && tokens.get(0l).span.stop == 3u;
+    assert tokens.get(1l).span.start == 3u && tokens.get(1l).span.stop == 4u;
+    assert tokens.get(2l).span.start == 4u && tokens.get(2l).span.stop == 7u;
+    const Token& eof = tokens.get(tokens.getSize() - 1l);
+    assert eof.tokenType == TokenType::EOF && eof.span.start == 22u && eof.span.stop == 22u;
+    assert lexed.textAt(tokens.getSize() - 1l) == "EOF";
+    assert tokens.get(0l).span.file == lexed.file;
+    return true;
+}
+
+#[test]
+f<bool> testLexerEmptyInput() {
+    LexResult lexed = LexResult("");
+    assert lexed.count() == 1l && lexed.typeAt(0l) == TokenType::EOF;
+    LexResult whitespace = LexResult(" \t\r\n ");
+    assert whitespace.count() == 1l && whitespace.typeAt(0l) == TokenType::EOF;
+    return true;
+}
+
+#[test]
+f<bool> testTokenStreamLookaheadSkipsComments() {
+    LexResult lexed = LexResult("a /* c1 */ b // c2\n c");
+    TokenStream& stream = lexed.stream;
+    // Tokens: a, comment, b, comment, c, EOF
+    assert stream.peekRelevantType(0l) == TokenType::IDENTIFIER;
+    assert stream.peekRelevantType(1l) == TokenType::IDENTIFIER;
+    assert stream.peekRelevantType(2l) == TokenType::IDENTIFIER;
+    assert stream.peekRelevantType(3l) == TokenType::EOF;
+    assert stream.peekRelevantType(10l) == TokenType::EOF; // Clamped to the last token
+    assert stream.getPreviousRelevantToken().tokenType == TokenType::IDENTIFIER; // Nothing before: the current token itself
+    assert stream.getTokenIndex() == 0l;
+    stream.advance();
+    assert stream.getToken().tokenType == TokenType::BLOCK_COMMENT;
+    stream.advance();
+    assert stream.getTokenIndex() == 2l;
+    assert lexed.stream.getText(lexed.sourceManager, stream.getPreviousRelevantToken()) == "a";
+    stream.advance();
+    stream.advance();
+    stream.advance();
+    assert stream.getToken().tokenType == TokenType::EOF;
+    stream.advance(); // Stays at EOF
+    assert stream.getToken().tokenType == TokenType::EOF && stream.getTokenIndex() == 5l;
+    return true;
+}
+
+// A comment at the start has the ordinal 0, like the first relevant token behind it
+#[test]
+f<bool> testTokenStreamStartsWithAComment() {
+    LexResult lexed = LexResult("/* c */ a b");
+    TokenStream& stream = lexed.stream;
+    assert stream.getToken().tokenType == TokenType::BLOCK_COMMENT;
+    assert stream.peekRelevantType(0l) == TokenType::IDENTIFIER;
+    assert stream.getPreviousRelevantToken().tokenType == TokenType::BLOCK_COMMENT;
+    stream.advance();
+    assert stream.getSpan().start == 8u && stream.getSpan().stop == 9u;
+    assert stream.getTokens().getSize() == 4l;
+    return true;
+}
+
+#[test]
+f<bool> testTokenStreamTokenTextAndSourceCode() {
+    LexResult lexed = LexResult("assert a  +  /* x */ b == \"s\"; // end\n");
+    const TokenStream& stream = lexed.stream;
+    // Texts without whitespace and comments. A string literal has no quotes in its text
+    assert stream.getTokenText(lexed.sourceManager, 1l, 7l) == "a+b==s";
+    // The source code covers the first to the last token, trailing comments are cut
+    assert stream.getSourceCode(lexed.sourceManager, 1l, 5l) == "a  +  /* x */ b";
+    assert stream.getSourceCode(lexed.sourceManager, 1l, 6l) == "a  +  /* x */ b ==";
+    assert stream.getSourceCode(lexed.sourceManager, 3l, 4l).isEmpty();
+    assert stream.getSourceCode(lexed.sourceManager, 2l, 2l).isEmpty();
+    return true;
+}
+
+// -------------------------------------------------------- Errors --------------------------------------------------------
+
+// Lex the text and return the rendered lexer error
+f<String> lexError(const string text) {
+    LexResult lexed = LexResult(text);
+    assert lexed.stream.failed;
+    assert lexed.engine.mustStop();
+    // The stream ends with one EOF token at the error
+    assert lexed.typeAt(lexed.count() - 1l) == TokenType::EOF;
+    return lexed.engine.renderStop(lexed.sourceManager);
+}
+
+#[test]
+f<bool> testLexerUnknownCharacter() {
+    assert lexError("a @ b") == "[Error|Lexer] source.spice:1:3: Tokenizing failed: token recognition error at: '@'";
+    assert lexError("x\n  $") == "[Error|Lexer] source.spice:2:3: Tokenizing failed: token recognition error at: '$'";
+    assert lexError("`") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '`'";
+    assert lexError("\\") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '\\'";
+    return true;
+}
+
+// Only the first byte of a multibyte character is shown, like in legacy
+#[test]
+f<bool> testLexerUnknownMultibyteCharacterShowsOneByte() {
+    LexResult lexed = LexResult("ä");
+    assert lexed.stream.failed;
+    assert lexed.engine.fatal.message.getLength() == String("token recognition error at: ''").getLength() + 1l;
+    return true;
+}
+
+#[test]
+f<bool> testLexerErrorEndsTheTokensAtTheFirstError() {
+    LexResult lexed = LexResult("a b @ c $");
+    assert lexed.count() == 3l;
+    assert lexed.typeAt(0l) == TokenType::IDENTIFIER && lexed.typeAt(1l) == TokenType::IDENTIFIER && lexed.typeAt(2l) == TokenType::EOF;
+    assert lexed.stream.getTokens().get(2l).span.start == 4u;
+    // Only the first error is kept
+    assert lexed.engine.fatal.span.start == 4u;
+    return true;
+}
+
+// Legacy handed the message on as a C string, so a NUL byte of the source cuts it
+#[test]
+f<bool> testLexerErrorMessageEndsAtANulByte() {
+    String unknown = String("a ");
+    unknown += '\0';
+    unknown += " b";
+    LexResult unknownLexed = LexResult(unknown);
+    assert unknownLexed.stream.failed;
+    assert unknownLexed.engine.renderStop(unknownLexed.sourceManager) == "[Error|Lexer] source.spice:1:3: Tokenizing failed: token recognition error at: '";
+    String literal = String("\"ab");
+    literal += '\0';
+    literal += "cd";
+    LexResult literalLexed = LexResult(literal);
+    assert literalLexed.stream.failed;
+    assert literalLexed.engine.renderStop(literalLexed.sourceManager) == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '\"ab'";
+    // The content of a char literal stops at the NUL, the closing quote stays
+    String chars = String("'");
+    chars += '\0';
+    chars += '\0';
+    chars += "'";
+    LexResult charsLexed = LexResult(chars);
+    assert charsLexed.engine.renderStop(charsLexed.sourceManager) == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '''";
+    return true;
+}
+
+// The span of an error runs from the start of the token to the offending byte
+#[test]
+f<bool> testLexerErrorSpan() {
+    LexResult lexed = LexResult("ab @");
+    assert lexed.engine.fatal.span.start == 3u && lexed.engine.fatal.span.stop == 4u;
+    LexResult literal = LexResult("x '\\q");
+    assert literal.engine.fatal.span.start == 2u && literal.engine.fatal.span.stop == 5u;
+    return true;
+}
+
+#[test]
+f<bool> testLexerNumberExponentErrors() {
+    assert lexError("1.5e+") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '1.5e+'";
+    assert lexError("x = .5E-;") == "[Error|Lexer] source.spice:1:5: Tokenizing failed: token recognition error at: '.5E-'";
+    assert lexError("2.0e+x") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '2.0e+'";
+    return true;
+}
+
+#[test]
+f<bool> testLexerCharLiteralErrors() {
+    // The message shows the literal up to and including the offending character
+    assert lexError("''") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: ''''";
+    assert lexError("'\nx'") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '''";
+    assert lexError("'\r") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '''";
+    assert lexError("'ab'") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: ''ab'";
+    assert lexError("'x") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: ''x'";
+    assert lexError("'\\") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: ''\\'";
+    assert lexError("'\\x41z'") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: ''\\x41z'";
+    assert lexError("'ää'") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: ''ää'";
+    return true;
+}
+
+#[test]
+f<bool> testLexerStringLiteralErrors() {
+    assert lexError("\"test") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '\"test'";
+    assert lexError("a = \"line\nbreak\"") == "[Error|Lexer] source.spice:1:5: Tokenizing failed: token recognition error at: '\"line'";
+    assert lexError("\"esc\\\"") == "[Error|Lexer] source.spice:1:1: Tokenizing failed: token recognition error at: '\"esc\\\"'";
+    return true;
+}
+
+// The five cases of the LexerTests suite: the source and the expected output come from test/test-files/lexer. The runner of the
+// suite checks the binary, this checks the lexer, the engine and the renderer with the same files. The builtin tests run in the
+// repository root
+f<String> readCase(const string name, const string file) {
+    Result<String> text = readFile((String("test/test-files/lexer/") + name + "/" + file).getRaw());
+    assert text.isOk();
+    return text.unwrap();
+}
+
+p checkSuiteCase(const string name) {
+    SourceManager sourceManager;
+    sourceManager.setRootSourceFilePath(String("./source.spice"));
+    const FileId file = sourceManager.addString(String("./source.spice"), readCase(name, "source.spice"));
+    DiagnosticEngine engine;
+    const TokenStream stream = lex(sourceManager, file, engine);
+    assert stream.failed;
+    String expected = readCase(name, "exception.out");
+    // The reference files may end with a line break, the renderer does not add one
+    while expected.getLength() > 0l && expected[expected.getLength() - 1l] == '\n' {
+        expected = expected.getSubstring(0l, cast<long>(expected.getLength()) - 1l);
+    }
+    assert engine.renderStop(sourceManager) == expected;
+}
+
+#[test]
+f<bool> testLexerSuiteCases() {
+    checkSuiteCase("error-char-literal-empty");
+    checkSuiteCase("error-char-literal-line-break");
+    checkSuiteCase("error-char-literal-too-long");
+    checkSuiteCase("error-char-literal-unterminated");
+    checkSuiteCase("error-lexing-error");
+    return true;
+}
+
+// -------------------------------------------------- Real source files --------------------------------------------------
+
+// Lex a file of the repository and check, that the tokens tile the file: they are in order, never overlap, only whitespace
+// lies between them, and the text of every token lies inside its span
+p checkTokensTile(const string path) {
+    SourceManager sourceManager;
+    Result<FileId> added = sourceManager.addFile(String(path));
+    assert added.isOk();
+    DiagnosticEngine engine;
+    const TokenStream stream = lex(sourceManager, added.unwrap(), engine);
+    assert !stream.failed;
+    const String& text = sourceManager.getFile(added.unwrap()).text;
+    const Vector<Token>& tokens = stream.getTokens();
+    unsigned int end = 0u;
+    for unsigned long i = 0l; i < tokens.getSize(); i++ {
+        const Token& token = tokens.get(i);
+        assert token.span.start >= end;
+        for unsigned int j = end; j < token.span.start; j++ {
+            assert text[j] == ' ' || text[j] == '\t' || text[j] == '\n' || text[j] == '\r';
+        }
+        assert token.textStart >= token.span.start && token.textStop <= token.span.stop && token.textStart <= token.textStop;
+        assert token.tokenType != TokenType::INVALID;
+        end = token.span.stop;
+    }
+    assert tokens.get(tokens.getSize() - 1l).tokenType == TokenType::EOF;
+    assert cast<unsigned long>(end) == text.getLength();
+}
+
+#[test]
+f<bool> testLexerTilesRealSources() {
+    checkTokensTile("src-next/syntax/lexer/lexer.spice");
+    checkTokensTile("src-next/diag/diagnostic-engine.spice");
+    checkTokensTile("src-next/syntax/ast/ast-store.spice");
+    checkTokensTile("src-next/source/source-manager.spice");
+    checkTokensTile("std/data/vector.spice");
+    checkTokensTile("std/text/analysis.spice");
+    return true;
+}

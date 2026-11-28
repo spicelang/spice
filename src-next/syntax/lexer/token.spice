@@ -1,0 +1,177 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Own imports
+import "@/source/span";
+
+/**
+ * Kind of a token. The values are those of the legacy compiler, so dumps and tests can compare them.
+ */
+// legacy: lexer/token.spice:7-122
+public type TokenType enum {
+    INVALID = 0,
+    // Keyword tokens
+    TYPE_DOUBLE = 1,
+    TYPE_INT = 2,
+    TYPE_SHORT = 3,
+    TYPE_LONG = 4,
+    TYPE_BYTE = 5,
+    TYPE_CHAR = 6,
+    TYPE_STRING = 7,
+    TYPE_BOOL = 8,
+    TYPE_DYN = 9,
+    CONST = 10,
+    SIGNED = 11,
+    UNSIGNED = 12,
+    INLINE = 13,
+    PUBLIC = 14,
+    HEAP = 15,
+    COMPOSE = 16,
+    F = 17,
+    P = 18,
+    IF = 19,
+    ELSE = 20,
+    SWITCH = 21,
+    CASE = 22,
+    DEFAULT = 23,
+    ASSERT = 24,
+    FOR = 25,
+    FOREACH = 26,
+    DO = 27,
+    WHILE = 28,
+    IMPORT = 29,
+    BREAK = 30,
+    CONTINUE = 31,
+    FALLTHROUGH = 32,
+    RETURN = 33,
+    AS = 34,
+    STRUCT = 35,
+    INTERFACE = 36,
+    UNION = 37,
+    TYPE = 38,
+    ENUM = 39,
+    OPERATOR = 40,
+    ALIAS = 41,
+    UNSAFE = 42,
+    NIL = 43,
+    MAIN = 44,
+    EXT = 45,
+    CAST = 46,
+    TRUE = 47,
+    FALSE = 48,
+    // Operator tokens
+    LBRACE = 49,
+    RBRACE = 50,
+    LPAREN = 51,
+    RPAREN = 52,
+    LBRACKET = 53,
+    RBRACKET = 54,
+    LOGICAL_OR = 55,
+    LOGICAL_AND = 56,
+    BITWISE_OR = 57,
+    BITWISE_XOR = 58,
+    BITWISE_AND = 59,
+    PLUS_PLUS = 60,
+    MINUS_MINUS = 61,
+    PLUS_EQUAL = 62,
+    MINUS_EQUAL = 63,
+    MUL_EQUAL = 64,
+    DIV_EQUAL = 65,
+    REM_EQUAL = 66,
+    SHL_EQUAL = 67,
+    SHR_EQUAL = 68,
+    AND_EQUAL = 69,
+    OR_EQUAL = 70,
+    XOR_EQUAL = 71,
+    PLUS = 72,
+    MINUS = 73,
+    MUL = 74,
+    DIV = 75,
+    REM = 76,
+    NOT = 77,
+    BITWISE_NOT = 78,
+    GREATER = 79,
+    LESS = 80,
+    GREATER_EQUAL = 81,
+    LESS_EQUAL = 82,
+    SHL = 83,
+    SHR = 84,
+    EQUAL = 85,
+    NOT_EQUAL = 86,
+    ASSIGN = 87,
+    QUESTION_MARK = 88,
+    SEMICOLON = 89,
+    COLON = 90,
+    COMMA = 91,
+    DOT = 92,
+    ARROW = 93,
+    SCOPE_ACCESS = 94,
+    ELLIPSIS = 95,
+    FCT_ATTR_PREAMBLE = 96,
+    MOD_ATTR_PREAMBLE = 97,
+    // Regex tokens
+    DOUBLE_LIT = 98,
+    INT_LIT = 99,
+    SHORT_LIT = 100,
+    LONG_LIT = 101,
+    CHAR_LIT = 102,
+    STRING_LIT = 103,
+    IDENTIFIER = 104,
+    TYPE_IDENTIFIER = 105,
+    // Skipped tokens
+    DOC_COMMENT = 106,
+    BLOCK_COMMENT = 107,
+    LINE_COMMENT = 108,
+    EOF = 109
+}
+
+/**
+ * A token of the source text. It does not own its text: the text is the range `[textStart, textStop)` of the source file, so the
+ * lexer allocates no strings. The range is the whole token for most kinds. It differs for:
+ * - integer literals: the base prefix and the digits, plus a `u` if present. The `s` and `l` suffixes are not part of it, they
+ *   only select SHORT_LIT and LONG_LIT
+ * - char and string literals: the content between the quotes, with its escape sequences as written
+ * - line comments: without the line break that ends them
+ * - EOF: empty. Use `getTokenText` of the stream to get the legacy text `EOF`
+ *
+ * The span covers all consumed bytes, so `span.stop` is the offset behind the last byte (the legacy `endOffset`).
+ */
+// legacy: lexer/token.spice:124-144
+public type Token struct {
+    public TokenType tokenType = TokenType::INVALID
+    public Span span
+    public unsigned int textStart = 0u
+    public unsigned int textStop = 0u
+}
+
+public p Token.ctor() {}
+
+/**
+ * @param tokenType Kind of the token
+ * @param span Span of all bytes of the token
+ * @param textStart Offset of the first byte of the text
+ * @param textStop Offset behind the last byte of the text
+ */
+public p Token.ctor(TokenType tokenType, const Span& span, unsigned int textStart, unsigned int textStop) {
+    this.tokenType = tokenType;
+    this.span = span;
+    this.textStart = textStart;
+    this.textStop = textStop;
+}
+
+/**
+ * @return Span of the text of the token, see the type
+ */
+public const f<Span> Token.getTextSpan() {
+    return Span(this.span.file, this.textStart, this.textStop);
+}
+
+/**
+ * Comments are part of the token stream, but the parser skips them
+ *
+ * @param tokenType Kind to check
+ * @return Whether the kind is a line, block or doc comment
+ */
+// legacy: lexer/lexer.spice:77-79
+public inline f<bool> isIgnoredTokenType(TokenType tokenType) {
+    return tokenType == TokenType::LINE_COMMENT || tokenType == TokenType::BLOCK_COMMENT || tokenType == TokenType::DOC_COMMENT;
+}

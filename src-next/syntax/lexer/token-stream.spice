@@ -1,0 +1,179 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+import "@/syntax/lexer/token";
+
+/**
+ * The fully materialized tokens of one source file, terminated by a single EOF token, with a cursor for the parser. Comments are
+ * part of the stream. The comment-free lookahead index gives the parser O(1) lookahead over the relevant (non-comment) tokens:
+ * `relevantIndices` lists the positions of all relevant tokens, and `relevantOrdinal[i]` is the ordinal of the relevant token at
+ * position i, which is the ordinal of the next relevant token if the token at i is a comment.
+ *
+ * The stream holds no pointer to the source. The functions that return text take the SourceManager.
+ */
+// legacy: lexer/lexer.spice:14-26 (fields), lexer/lexer.spice:44-70 (tokenize, the lookahead index)
+public type TokenStream struct {
+    public FileId file = noFileId()
+    public bool failed = false // A lexer error was reported. The stream ends with an EOF token at the error position
+    Vector<Token> tokens
+    unsigned long curIdx = 0l
+    Vector<unsigned long> relevantIndices
+    Vector<unsigned long> relevantOrdinal
+}
+
+public p TokenStream.ctor() {}
+
+/**
+ * Take over the tokens of a lexer and build the lookahead index
+ *
+ * @param file File that the tokens belong to
+ * @param tokens All tokens, terminated by an EOF token
+ * @param failed Whether lexing stopped at an error
+ */
+public p TokenStream.ctor(FileId file, const Vector<Token>& tokens, bool failed) {
+    this.file = file;
+    this.tokens = tokens;
+    this.failed = failed;
+    const unsigned long tokenCount = this.tokens.getSize();
+    unsigned long ordinal = 0l;
+    for unsigned long i = 0l; i < tokenCount; i++ {
+        this.relevantOrdinal.pushBack(ordinal);
+        if !isIgnoredTokenType(this.tokens.get(i).tokenType) {
+            this.relevantIndices.pushBack(i);
+            ordinal++;
+        }
+    }
+}
+
+/**
+ * Return the token type of the k-th relevant (non-comment) token at or after the current one, where k=0 is the current token.
+ *
+ * @param k Zero-based relevant-token lookahead distance
+ * @return The token type at that position (EOF when looking past the end)
+ */
+// legacy: lexer/lexer.spice:83-90
+public const f<TokenType> TokenStream.peekRelevantType(unsigned long k) {
+    unsigned long ord = this.relevantOrdinal.get(this.curIdx) + k;
+    const unsigned long lastOrd = this.relevantIndices.getSize() - 1l;
+    if ord > lastOrd {
+        ord = lastOrd;
+    }
+    return this.tokens.get(this.relevantIndices.get(ord)).tokenType;
+}
+
+// legacy: lexer/lexer.spice:92-94
+public const f<const Token&> TokenStream.getToken() {
+    return this.tokens.get(this.curIdx);
+}
+
+/**
+ * Get the whole token stream, including the comment tokens and the terminating EOF token
+ *
+ * @return All tokens
+ */
+// legacy: lexer/lexer.spice:96-103
+public const f<const Vector<Token>&> TokenStream.getTokens() {
+    return this.tokens;
+}
+
+/**
+ * Get the last relevant (non-comment) token before the current one, e.g. the last token of a node, that was just parsed.
+ *
+ * @return Previous relevant token or the current token, if there is none
+ */
+// legacy: lexer/lexer.spice:105-116
+public const f<const Token&> TokenStream.getPreviousRelevantToken() {
+    const unsigned long ordinal = this.relevantOrdinal.get(this.curIdx);
+    if ordinal == 0l {
+        return this.tokens.get(this.curIdx);
+    }
+    return this.tokens.get(this.relevantIndices.get(ordinal - 1l));
+}
+
+// Stops at the terminating EOF token, so that getToken() keeps returning EOF once the end is reached
+// legacy: lexer/lexer.spice:118-123
+public p TokenStream.advance() {
+    if this.curIdx + 1l < this.tokens.getSize() {
+        this.curIdx++;
+    }
+}
+
+/**
+ * @return Index of the current token within the stream
+ */
+// legacy: lexer/lexer.spice:125-132
+public const f<unsigned long> TokenStream.getTokenIndex() {
+    return this.curIdx;
+}
+
+/**
+ * Get the text of a token. The EOF token has the text `EOF`, like in legacy.
+ *
+ * @param sourceManager Manager that holds the source of the stream
+ * @param token Token of this stream
+ * @return Text of the token
+ */
+public const f<String> TokenStream.getText(const SourceManager& sourceManager, const Token& token) {
+    if token.tokenType == TokenType::EOF {
+        return String("EOF");
+    }
+    return sourceManager.getText(token.getTextSpan());
+}
+
+/**
+ * Concatenate the texts of all relevant (non-comment) tokens in the index range [startIdx, endIdx), without whitespace.
+ *
+ * @param sourceManager Manager that holds the source of the stream
+ * @param startIdx Index of the first token
+ * @param endIdx Index after the last token
+ * @return Concatenated token text
+ */
+// legacy: lexer/lexer.spice:134-150
+public const f<String> TokenStream.getTokenText(const SourceManager& sourceManager, unsigned long startIdx, unsigned long endIdx) {
+    String text;
+    for unsigned long i = startIdx; i < endIdx; i++ {
+        const Token& token = this.tokens.get(i);
+        if !isIgnoredTokenType(token.tokenType) {
+            text += this.getText(sourceManager, token);
+        }
+    }
+    return text;
+}
+
+/**
+ * Get the source code, that is covered by the relevant (non-comment) tokens in the index range [startIdx, endIdx).
+ *
+ * @param sourceManager Manager that holds the source of the stream
+ * @param startIdx Index of the first token
+ * @param endIdx Index after the last token
+ * @return Source code snippet
+ */
+// legacy: lexer/lexer.spice:152-170
+public const f<String> TokenStream.getSourceCode(const SourceManager& sourceManager, unsigned long startIdx, unsigned long endIdx) {
+    // Skip trailing comment tokens
+    while endIdx > startIdx && isIgnoredTokenType(this.tokens.get(endIdx - 1l).tokenType) {
+        endIdx--;
+    }
+    if endIdx <= startIdx {
+        return String();
+    }
+    const Token& firstToken = this.tokens.get(startIdx);
+    const Token& lastToken = this.tokens.get(endIdx - 1l);
+    return sourceManager.getText(Span(this.file, firstToken.span.start, lastToken.span.stop));
+}
+
+/**
+ * Get the span of the current token, which the legacy lexer exposed as the code location of the current token
+ *
+ * @return Span of the current token
+ */
+// legacy: lexer/lexer.spice:194-196
+public const f<Span> TokenStream.getSpan() {
+    return this.getToken().span;
+}

@@ -604,10 +604,12 @@ that matter for compatibility or performance. A complete file mapping is in
   - Works on the `SourceManager` buffer. A token is `{TokenType kind, Span span}`; the text is sliced on demand, there
     is no `String` per token.
   - Keyword lookup uses a switch on the length followed by a comparison, as today.
-  - Comments stay in a side array of trivia tokens for the formatter. The parser reads the comment-free index, as
-    today.
-  - `>>` and `<<` keep their legacy treatment: the parser splits them. The splitting moves into one helper,
-    `TokenCursor`.
+  - Comments stay in the token stream, as today, and the parser reads the comment-free index. A separate side array of
+    trivia tokens was not built in WP 2.2: the formatter (WP 2.6) can take the comments from the stream.
+  - `>>` and `<<` keep their legacy treatment: the lexer always merges them and the parser splits them. The splitting moves
+    into one helper, `TokenCursor`, that WP 2.3 writes. The lexer has no such helper.
+  - A `Token` has two more fields than `{kind, span}`: the range of its text, because the text of a literal or a comment
+    differs from its span (see the results of WP 2.2).
 - **Parser.**
   - The same grammar functions, split by area into separate structs and files that share a `ParserState` struct (one
     struct per file is the language constraint): `decl-parser`, `stmt-parser`, `expr-parser`, `type-parser`,
@@ -1209,6 +1211,50 @@ The results are recorded in this document. An idiom that stage0 does not support
   caller reaches through the interface.
 - Open for the parser: `FCT_NAME` holds the mangled operator name of legacy (`op.less`, ...). WP 2.3 decides where the mangling
   happens; the node keeps the name as a `Symbol` for now.
+
+**Results (WP 2.2).**
+
+- `syntax/lexer` has `token` (`TokenType`, `Token`), `token-stream` (`TokenStream`) and `lexer` (the scanner and `lex()`), plus `lexer-test`.
+  `TokenType` keeps the legacy names and values (0 to 109). `lex(sourceManager, file, sink)` tokenizes the whole file up front and returns
+  a `TokenStream` with the legacy lookahead API (`peekRelevantType`, `getToken`, `getPreviousRelevantToken`, `advance`, `getTokenIndex`,
+  `getTokenText`, `getSourceCode`). The stream holds no pointer to the source, so the functions that return text take the `SourceManager`.
+- Decision of the open question of 1.3: **no interning in the lexer.** A `Token` is `{ tokenType, span, textStart, textStop }` (24 bytes)
+  and its text is a range of the source. The legacy text of every token kind is a contiguous range of the source: the whole token, but
+  for integer literals (digits and an optional `u`, without the `s` and `l` suffixes), char and string literals (between the quotes,
+  escapes as written) and line comments (without the line break). `EOF` has an empty range, and `getText` returns the legacy text
+  `EOF`. So the lexer allocates nothing per token, and the parser interns an identifier once, when it builds the node that needs a `Symbol`.
+- `span.stop` is the legacy `endOffset`, so the span of a line comment covers its line break and the span of `1ul` covers the suffix.
+- The first error is reported to the sink (family LEXER, `TOKENIZING_FAILED`, the span from the start of the token to the offending
+  byte) and ends the tokenizing. The stream then ends with an EOF token at the start of the token, and `failed` is set. The legacy
+  `abortWithError` ended the process. The text and the location are the same, so the renderer prints the legacy line.
+- The legacy `Reader` assertions are assertions here, because legacy crashes on these inputs and the plan reproduces legacy first (D1):
+  `..` that no third `.` follows (`..x`), a string that ends in a `\` at the end of the input, and a block comment that ends in a `*`
+  at the end of the input. They are legacy bug [#1906](https://github.com/spicelang/spice/issues/1906). The other reproduced quirks are
+  [#1907](https://github.com/spicelang/spice/issues/1907) (`/**/` starts a doc comment that goes on after its `/`, and `**/` does not
+  end a block comment) and [#1908](https://github.com/spicelang/spice/issues/1908) (an unterminated block comment ends at the end of
+  the input without an error). Their fixes are entries of the deviations log. The lexer accepts `\` followed by a line break inside a string, but the
+  parser then rejects it (`Line breaks must not be escaped`), so that case is no bug.
+- A NUL byte in the source changes the legacy message, because legacy built it with `String` concatenations that read their
+  right operand as a C string, and passed it on with `getRaw()`. The content of a string, char or number error ends at the NUL
+  and the closing quote is kept (`'\"ab'`), and the message of an unknown NUL byte ends behind the opening quote. The port
+  reproduces both (found by the review and the fuzz run with NUL fragments).
+- Tests that read files of the repository (`lexer-test`: the `exception.out` files of the five cases, and the tiling of
+  `std` and `src-next` sources) need the repository root as working directory, like the golden test of `diag`. The cases of
+  `test/test-files/lexer` stay in place at the cutover, only `src/` is replaced.
+- The dead branch for a leading `-` in `consumeNumberLiteral` is not ported (the lexer never starts a number at a `-`).
+- Verification. The builtin tests (`lexer-test`: keywords, operators, numbers, literals, comments, quirks, stream, errors, the five
+  LexerTests cases rendered in-process, and the tiling of real source files) pass, also under ASan. The differential check ran the
+  legacy lexer and the new one over the 1,486 `.spice` files of the repository (std, compiler sources, test cases, docs examples): all
+  1,481 token streams are identical in kind, offsets and text, and the 5 files with a lexer error give the same message and
+  location. 9,000 random inputs built from the nasty fragments (odd comments, suffixes, escapes, UTF-8, stray bytes) agree in 3,799
+  streams, 4,870 errors and 331 crashes of both lexers, and so do 12,000 more that also contain NUL bytes (4,993 streams, 6,598
+  errors, 409 crashes). This was done with scratch programs (a token dump per lexer), which are not in the repository: the
+  lexer has no CLI yet, and the AST dump of WP 2.5 takes over the corpus check.
+- The five LexerTests cases are **not in the ratchet yet.** The runner drives the binary with `build`, and `spice-next` has no command
+  that lexes a file until `--dump-ast` (WP 2.5). The exit gate of phase 2 puts LexerTests into the ratchet.
+- Performance. Lexing `src/typechecker/type-checker.spice` (414 KB, 52,000 tokens) 200 times, release build, with the file read in
+  every iteration: 1.2 s for the new lexer against 3.0 s for the legacy one (about 2.4x). The 1.3x gate of phase 2 is measured on the parse
+  as a whole in WP 2.5.
 
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
