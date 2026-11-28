@@ -1,0 +1,403 @@
+# Definition of the AST of the compiler re-implementation (media/specs/compiler-reimplementation.md, sections 4.4 and 6.6).
+# tools/gen/gen_ast.py generates the node kinds, the node structs, the AstStore, the visitor and the kind names from it.
+#
+#   enum <Name>: <MEMBER> ...          syntactic enum of a field. The members are used unchanged
+#   node <KIND> <group>                a node kind. The node name is the CamelCase form of the kind, e.g. FOR_LOOP -> ForLoop.
+#                                      The order of the nodes is the order of the legacy ASTNodeKind (INVALID is added in front).
+#                                      The group (misc, decl, stmt, expr, type) selects the generated file nodes-<group>.spice.
+#     child <name>[?]: <KIND>[|<KIND>] a single child. '?' marks an optional child, which is the invalid NodeId if it is missing
+#     list <name>: <KIND>[|<KIND>]     a list of children. They are stored as a range of the child array of the AstStore
+#     field <name>: <Spice type> [= <value>]  a syntactic fact that is not a child. Names are interned Symbols
+#
+# The kinds after a child are documentation of what the parser creates, and the generator checks only that they exist. EXPR stands for
+# any expression kind (the CONSTANT to LAMBDA_EXPR of the expression nodes), because the parse functions of legacy return the lower
+# level unwrapped when there is no operator, so a slot can hold any lower kind.
+#
+# The children of a node are visited in the order of their declaration. That is the order of `children` in the legacy AST,
+# which the dot output and the visitors depend on. Legacy regroups the children of ENTRY and moves the attribute child of the
+# lambdas to the end, and so does this order. Semantic fields of the legacy nodes (scopes, entries, symbol types, type ids,
+# manifestations, compile time values) are not part of the AST. Flags that only say whether a child exists are dropped.
+
+import "std/data/vector"
+import "@/base/small-vec"
+import "@/base/interner"
+import "@/source/span"
+
+enum QualifierType: NONE CONST SIGNED UNSIGNED INLINE PUBLIC HEAP COMPOSE
+enum BaseDataTypeType: TYPE_NONE TYPE_DOUBLE TYPE_INT TYPE_SHORT TYPE_LONG TYPE_BYTE TYPE_CHAR TYPE_STRING TYPE_BOOL TYPE_DYN TYPE_CUSTOM TYPE_FUNCTION
+enum TypeModifierType: TYPE_PTR TYPE_REF TYPE_RVALUE_REF TYPE_ARRAY
+enum SignatureType: TYPE_NONE TYPE_FUNCTION TYPE_PROCEDURE
+enum AssignOp: OP_NONE OP_ASSIGN OP_PLUS_EQUAL OP_MINUS_EQUAL OP_MUL_EQUAL OP_DIV_EQUAL OP_REM_EQUAL OP_SHL_EQUAL OP_SHR_EQUAL OP_AND_EQUAL OP_OR_EQUAL OP_XOR_EQUAL
+enum EqualityOp: OP_NONE OP_EQUAL OP_NOT_EQUAL
+enum RelationalOp: OP_NONE OP_LESS OP_GREATER OP_LESS_EQUAL OP_GREATER_EQUAL
+enum ShiftOp: OP_SHIFT_LEFT OP_SHIFT_RIGHT
+enum AdditiveOp: OP_PLUS OP_MINUS
+enum MultiplicativeOp: OP_MUL OP_DIV OP_REM
+enum PrefixUnaryOp: OP_NONE OP_MINUS OP_PLUS_PLUS OP_MINUS_MINUS OP_NOT OP_BITWISE_NOT OP_DEREFERENCE OP_ADDRESS_OF
+enum PostfixUnaryOp: OP_NONE OP_SUBSCRIPT OP_MEMBER_ACCESS OP_PLUS_PLUS OP_MINUS_MINUS OP_ERR_PROPAGATION
+enum PrimitiveValueType: TYPE_NONE TYPE_DOUBLE TYPE_INT TYPE_SHORT TYPE_LONG TYPE_CHAR TYPE_STRING TYPE_BOOL
+
+# One type modifier of a data type: pointer, reference, rvalue reference or array, with the hardcoded size of an array
+struct TypeModifier: TypeModifierType kind, bool hasSize, unsigned int hardcodedSize, Symbol sizeVarName
+
+node ENTRY misc
+  list modAttrs: MOD_ATTR
+  list importDefs: IMPORT_DEF
+  list topLevelDefs: MAIN_FCT_DEF|FCT_DEF|PROC_DEF|STRUCT_DEF|INTERFACE_DEF|UNION_DEF|ENUM_DEF|GENERIC_TYPE_DEF|ALIAS_DEF|GLOBAL_VAR_DEF|EXT_DECL
+
+node CONSTANT expr
+  field primitiveValueType: PrimitiveValueType
+  field isUnsigned: bool
+  field isNegative: bool
+
+node ATTR misc
+  child constant?: CONSTANT
+  field key: Symbol
+
+node ATTR_LST misc
+  list attributes: ATTR
+
+node QUALIFIER misc
+  field qualifierType: QualifierType
+
+node QUALIFIER_LST misc
+  list qualifiers: QUALIFIER
+
+node CUSTOM_DATA_TYPE type
+  child templateTypeLst?: TYPE_LST
+  field fqTypeName: Symbol
+  field nameFragments: SmallVec<Symbol>
+
+node BASE_DATA_TYPE type
+  child customDataType?: CUSTOM_DATA_TYPE
+  child functionDataType?: FUNCTION_DATA_TYPE
+  field baseType: BaseDataTypeType
+
+node DATA_TYPE type
+  child qualifierLst?: QUALIFIER_LST
+  child baseDataType: BASE_DATA_TYPE
+  field tmQueue: SmallVec<TypeModifier>
+  field isParamType: bool
+  field isGlobalType: bool
+  field isFieldType: bool
+  field isReturnType: bool
+
+node TYPE_LST type
+  list dataTypes: DATA_TYPE
+  field paramNames: SmallVec<Symbol>
+  field paramSpans: Vector<Span>
+
+node MAIN_FCT_DEF decl
+  child attrs?: TOP_LEVEL_DEF_ATTR
+  child paramLst?: PARAM_LST
+  child body: STMT_LST
+
+node FCT_NAME decl
+  field name: Symbol
+  field structName: Symbol
+  field fqName: Symbol
+  field nameFragments: SmallVec<Symbol>
+
+node FCT_DEF decl
+  child attrs?: TOP_LEVEL_DEF_ATTR
+  child qualifierLst?: QUALIFIER_LST
+  child returnType: DATA_TYPE
+  child name: FCT_NAME
+  child templateTypeLst?: TYPE_LST
+  child paramLst?: PARAM_LST
+  child body: STMT_LST
+  field isMethod: bool
+
+node PROC_DEF decl
+  child attrs?: TOP_LEVEL_DEF_ATTR
+  child qualifierLst?: QUALIFIER_LST
+  child name: FCT_NAME
+  child templateTypeLst?: TYPE_LST
+  child paramLst?: PARAM_LST
+  child body: STMT_LST
+  field isMethod: bool
+
+node STRUCT_DEF decl
+  child attrs?: TOP_LEVEL_DEF_ATTR
+  child qualifierLst?: QUALIFIER_LST
+  child templateTypeLst?: TYPE_LST
+  child interfaceTypeLst?: TYPE_LST
+  list fields: FIELD
+  field structName: Symbol
+
+node INTERFACE_DEF decl
+  child attrs?: TOP_LEVEL_DEF_ATTR
+  child qualifierLst?: QUALIFIER_LST
+  child templateTypeLst?: TYPE_LST
+  list signatures: SIGNATURE
+  field interfaceName: Symbol
+
+node UNION_DEF decl
+  child attrs?: TOP_LEVEL_DEF_ATTR
+  child qualifierLst?: QUALIFIER_LST
+  child templateTypeLst?: TYPE_LST
+  list fields: FIELD
+  field unionName: Symbol
+
+node ENUM_DEF decl
+  child qualifierLst?: QUALIFIER_LST
+  child itemLst: ENUM_ITEM_LST
+  field enumName: Symbol
+
+node GENERIC_TYPE_DEF decl
+  child typeAltsLst: TYPE_ALTS_LST
+  field typeName: Symbol
+
+node ALIAS_DEF decl
+  child qualifierLst?: QUALIFIER_LST
+  child dataType: DATA_TYPE
+  field aliasName: Symbol
+
+node GLOBAL_VAR_DEF decl
+  child dataType: DATA_TYPE
+  child constant?: CONSTANT
+  field varName: Symbol
+
+node EXT_DECL decl
+  child attrs?: TOP_LEVEL_DEF_ATTR
+  child returnType?: DATA_TYPE
+  child argTypeLst?: TYPE_LST_WITH_ELLIPSIS
+  field extFunctionName: Symbol
+
+node IMPORT_DEF decl
+  field importPath: Symbol
+  field importName: Symbol
+
+node UNSAFE_BLOCK stmt
+  child body: STMT_LST
+
+node FOR_LOOP stmt
+  child initDecl: DECL_STMT
+  child condAssign: EXPR
+  child incAssign: EXPR
+  child body: STMT_LST
+
+node FOREACH_LOOP stmt
+  child idxVarDecl?: DECL_STMT
+  child itemVarDecl: DECL_STMT
+  child iteratorAssign: EXPR
+  child body: STMT_LST
+
+node WHILE_LOOP stmt
+  child condition: EXPR
+  child body: STMT_LST
+
+node DO_WHILE_LOOP stmt
+  child body: STMT_LST
+  child condition: EXPR
+
+node IF_STMT stmt
+  child condition: EXPR
+  child thenBody: STMT_LST
+  child elseStmt?: ELSE_STMT
+
+node ELSE_STMT stmt
+  child ifStmt?: IF_STMT
+  child body?: STMT_LST
+
+node SWITCH_STMT stmt
+  child assignExpr: EXPR
+  list caseBranches: CASE_BRANCH
+  child defaultBranch?: DEFAULT_BRANCH
+
+node CASE_BRANCH stmt
+  list caseConstants: CASE_CONSTANT
+  child body: STMT_LST
+
+node DEFAULT_BRANCH stmt
+  child body: STMT_LST
+
+node ANONYMOUS_BLOCK_STMT stmt
+  child body: STMT_LST
+
+node STMT_LST stmt
+  list statements: DECL_STMT|EXPR_STMT|RETURN_STMT|BREAK_STMT|CONTINUE_STMT|FALLTHROUGH_STMT|ASSERT_STMT|UNSAFE_BLOCK|FOR_LOOP|FOREACH_LOOP|WHILE_LOOP|DO_WHILE_LOOP|IF_STMT|SWITCH_STMT|ANONYMOUS_BLOCK_STMT
+  field closingBraceSpan: Span
+
+node TYPE_LST_WITH_ELLIPSIS type
+  child typeLst: TYPE_LST
+  field hasEllipsis: bool
+
+node TYPE_ALTS_LST type
+  list dataTypes: DATA_TYPE
+
+node DECL_STMT stmt
+  child dataType: DATA_TYPE
+  child assignExpr?: EXPR
+  field varName: Symbol
+  field isFctParam: bool
+  field isForEachItem: bool
+
+node PARAM_LST misc
+  list params: DECL_STMT
+
+node ARG_LST misc
+  list args: EXPR
+
+node ENUM_ITEM decl
+  field itemName: Symbol
+  field valueSpan: Span
+
+node ENUM_ITEM_LST decl
+  list items: ENUM_ITEM
+
+node FIELD decl
+  child dataType: DATA_TYPE
+  child defaultValue?: EXPR
+  field fieldName: Symbol
+
+node SIGNATURE decl
+  child qualifierLst?: QUALIFIER_LST
+  child returnType?: DATA_TYPE
+  child templateTypeLst?: TYPE_LST
+  child paramTypeLst?: TYPE_LST
+  field methodName: Symbol
+  field signatureType: SignatureType
+
+node EXPR_STMT stmt
+  child expr: EXPR
+
+node MOD_ATTR misc
+  child attrLst: ATTR_LST
+
+node TOP_LEVEL_DEF_ATTR misc
+  child attrLst: ATTR_LST
+
+node LAMBDA_ATTR misc
+  child attrLst: ATTR_LST
+
+node CASE_CONSTANT misc
+  child constant?: CONSTANT
+  field fqIdentifier: Symbol
+  field nameFragments: SmallVec<Symbol>
+
+node RETURN_STMT stmt
+  child assignExpr?: EXPR
+
+node BREAK_STMT stmt
+  field breakTimes: int = 1
+
+node CONTINUE_STMT stmt
+  field continueTimes: int = 1
+
+node FALLTHROUGH_STMT stmt
+
+node ASSERT_STMT stmt
+  child assignExpr: EXPR
+
+node ASSIGN_EXPR expr
+  child lhs: EXPR
+  child rhs: EXPR
+  field op: AssignOp
+
+node TERNARY_EXPR expr
+  child condition: EXPR
+  child trueExpr?: EXPR
+  child falseExpr: EXPR
+
+node LOGICAL_OR_EXPR expr
+  list operands: EXPR
+
+node LOGICAL_AND_EXPR expr
+  list operands: EXPR
+
+node BITWISE_OR_EXPR expr
+  list operands: EXPR
+
+node BITWISE_XOR_EXPR expr
+  list operands: EXPR
+
+node BITWISE_AND_EXPR expr
+  list operands: EXPR
+
+node EQUALITY_EXPR expr
+  list operands: EXPR
+  field op: EqualityOp
+
+node RELATIONAL_EXPR expr
+  list operands: EXPR
+  field op: RelationalOp
+
+node SHIFT_EXPR expr
+  list operands: EXPR
+  field opQueue: SmallVec<ShiftOp>
+
+node ADDITIVE_EXPR expr
+  list operands: EXPR
+  field opQueue: SmallVec<AdditiveOp>
+
+node MULTIPLICATIVE_EXPR expr
+  list operands: EXPR
+  field opQueue: SmallVec<MultiplicativeOp>
+
+node CAST_EXPR expr
+  child dataType: DATA_TYPE
+  child assignExpr: EXPR
+
+node PREFIX_UNARY_EXPR expr
+  child operand: EXPR
+  field op: PrefixUnaryOp
+
+node POSTFIX_UNARY_EXPR expr
+  child operand: EXPR
+  child subscriptIndexExpr?: EXPR
+  field op: PostfixUnaryOp
+  field identifier: Symbol
+
+node ATOMIC_EXPR expr
+  child constant?: CONSTANT
+  child assignExpr?: EXPR
+  child value?: VALUE
+  field fqIdentifier: Symbol
+  field nameFragments: SmallVec<Symbol>
+
+node VALUE expr
+  child fctCall?: FCT_CALL
+  child arrayInitialization?: ARRAY_INITIALIZATION
+  child structInstantiation?: STRUCT_INSTANTIATION
+  child lambdaFunc?: LAMBDA_FUNC
+  child lambdaProc?: LAMBDA_PROC
+  child lambdaExpr?: LAMBDA_EXPR
+  child nilType?: DATA_TYPE
+
+node FCT_CALL expr
+  child receiverExpr?: EXPR
+  child calleeExpr?: EXPR
+  child templateTypeLst?: TYPE_LST
+  child argLst?: ARG_LST
+  field fqFunctionName: Symbol
+  field nameFragments: SmallVec<Symbol>
+
+node ARRAY_INITIALIZATION expr
+  child itemLst?: ARG_LST
+
+node STRUCT_INSTANTIATION expr
+  child templateTypeLst?: TYPE_LST
+  child fieldLst?: ARG_LST
+  field fqStructName: Symbol
+  field nameFragments: SmallVec<Symbol>
+
+node LAMBDA_FUNC expr
+  child returnType: DATA_TYPE
+  child paramLst?: PARAM_LST
+  child body: STMT_LST
+  child lambdaAttr?: LAMBDA_ATTR
+
+node LAMBDA_PROC expr
+  child paramLst?: PARAM_LST
+  child body: STMT_LST
+  child lambdaAttr?: LAMBDA_ATTR
+
+node LAMBDA_EXPR expr
+  child paramLst?: PARAM_LST
+  child body: EXPR
+
+node FUNCTION_DATA_TYPE type
+  child returnType?: DATA_TYPE
+  child paramTypeLst?: TYPE_LST
+  field isFunction: bool

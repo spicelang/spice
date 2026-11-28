@@ -1,0 +1,111 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/type/types";
+
+// Own imports
+import "@/base/id";
+import "@/base/interner";
+import "@/source/span";
+import "@/syntax/ast/ast-enums";
+
+/**
+ * Entry of the node table of an AstStore. It tells where the node of a NodeId lives: the kind selects the per-kind vector and
+ * the index the element in it. A NodeId is the index of the entry, so ids are dense per module and follow the creation order.
+ */
+public type AstNode struct {
+    public AstNodeKind kind = AstNodeKind::INVALID
+    public unsigned int index = 0u
+}
+
+public p AstNode.ctor() {
+    this.kind = AstNodeKind::INVALID;
+    this.index = 0u;
+}
+
+public p AstNode.ctor(AstNodeKind kind, unsigned int index) {
+    this.kind = kind;
+    this.index = index;
+}
+
+/**
+ * Id of a node within the AstStore of its module
+ */
+public type NodeId alias Id<AstNode>;
+
+/**
+ * Create the id of a node. The alias cannot be used as a constructor
+ *
+ * @param index Index of the node within the node table of its AstStore
+ * @return Node id
+ */
+public inline f<NodeId> makeNodeId(unsigned int index) {
+    return Id<AstNode>(index);
+}
+
+/**
+ * @return Id that refers to no node, e.g. the id of a missing optional child or the parent of the root
+ */
+public inline f<NodeId> noNodeId() {
+    return makeNodeId(UINT_MAX_VALUE);
+}
+
+/**
+ * @param id Node id
+ * @return Whether the id refers to a node
+ */
+public inline f<bool> isNodeId(NodeId id) {
+    return id.index != UINT_MAX_VALUE;
+}
+
+/**
+ * Range of the child array of an AstStore. The children of a list field of a node (statements, operands, ...) lie next to each
+ * other in that array, so the node stores only these two numbers instead of a heap-allocated vector.
+ */
+public type ChildRange struct {
+    public unsigned int start = 0u
+    public unsigned int count = 0u
+}
+
+public p ChildRange.ctor() {
+    this.start = 0u;
+    this.count = 0u;
+}
+
+public p ChildRange.ctor(unsigned int start, unsigned int count) {
+    this.start = start;
+    this.count = count;
+}
+
+/**
+ * Header of every node: `{kind, id, span, parent}` (plan section 4.4). The AstStore sets the id and the parent.
+ */
+public type AstHeader struct {
+    public AstNodeKind kind = AstNodeKind::INVALID
+    public NodeId id = noNodeId()
+    public Span span
+    public NodeId parent = noNodeId()
+}
+
+public p AstHeader.ctor() {
+    this.kind = AstNodeKind::INVALID;
+    this.id = noNodeId();
+    this.parent = noNodeId();
+}
+
+public p AstHeader.ctor(AstNodeKind kind) {
+    this.kind = kind;
+    this.id = noNodeId();
+    this.parent = noNodeId();
+}
+
+#[test]
+f<bool> testNodeIdsAndRanges() {
+    assert sizeof<NodeId>() == 4l && sizeof<Symbol>() == 4l;
+    assert !isNodeId(noNodeId()) && isNodeId(makeNodeId(0u));
+    const ChildRange range = ChildRange(3u, 2u);
+    assert range.start == 3u && range.count == 2u;
+    const AstHeader header = AstHeader(AstNodeKind::ENTRY);
+    assert header.kind == AstNodeKind::ENTRY && !isNodeId(header.id) && !isNodeId(header.parent);
+    return true;
+}
