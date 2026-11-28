@@ -49,14 +49,9 @@ public type Diagnostic struct {
     public String rule // Lint findings only: the id of the rule, which stands where the prefix stands in other diagnostics
 }
 
-public p Diagnostic.ctor() {
-    this.severity = Severity::ERROR;
-    this.family = DiagnosticFamily::COMPILER;
-    this.code = 0u;
-    this.withSnippet = false;
-    this.soft = false;
-    this.immediate = false;
-}
+// Empty on purpose, the fields have their defaults. Without an explicit ctor, stage0 0.30.2 builds a default ctor that crashes
+// at run time for this struct (a segfault in unrelated tests), so it must exist
+public p Diagnostic.ctor() {}
 
 /**
  * Create the diagnostic of a catalog code. The severity, the snippet and the hardness follow the legacy classes: semantic
@@ -75,8 +70,6 @@ public p Diagnostic.ctor(DiagnosticFamily family, unsigned int code, const Span&
     this.span = span;
     this.message = message;
     this.withSnippet = family == DiagnosticFamily::SEMANTIC;
-    this.soft = false;
-    this.immediate = false;
 }
 
 /**
@@ -90,12 +83,8 @@ public p Diagnostic.ctor(DiagnosticFamily family, unsigned int code, const Span&
 public p Diagnostic.ctor(Severity severity, const String& rule, const Span& span, const String& message) {
     this.severity = severity;
     this.family = DiagnosticFamily::LINT;
-    this.code = 0u;
     this.span = span;
     this.message = message;
-    this.withSnippet = false;
-    this.soft = false;
-    this.immediate = false;
     this.rule = rule;
 }
 

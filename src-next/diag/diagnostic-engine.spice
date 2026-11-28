@@ -2,6 +2,7 @@
 
 // Std imports
 import "std/data/vector";
+import "std/text/stringstream";
 
 // Own imports
 import "@/diag/codes";
@@ -15,12 +16,8 @@ import "@/source/span";
  * A diagnostic with the module it was reported for. A module is identified by the id of its source file.
  */
 public type ModuleDiagnostic struct {
-    public FileId module
+    public FileId module = noFileId()
     public Diagnostic diagnostic
-}
-
-public p ModuleDiagnostic.ctor() {
-    this.module = noFileId();
 }
 
 public p ModuleDiagnostic.ctor(FileId module, const Diagnostic& diagnostic) {
@@ -62,10 +59,8 @@ public type DiagnosticEngine struct : IDiagnosticSink {
     Vector<ModuleDiagnostic> lintFindings
 }
 
-public p DiagnosticEngine.ctor() {
-    this.fatalReported = false;
-    this.hardErrorReported = false;
-}
+// A struct that implements an interface has to have a ctor. All fields have their defaults
+public p DiagnosticEngine.ctor() {}
 
 /**
  * Report a diagnostic. The family, the severity and the `soft` flag select the policy, see the type.
@@ -139,12 +134,13 @@ public p DiagnosticEngine.flushSoftErrors(const SourceManager& sourceManager) {
     if this.fatalReported {
         return;
     }
-    String text = String("There are unresolved errors. Please fix them and recompile.");
+    StringStream text;
+    text << "There are unresolved errors. Please fix them and recompile.";
     for unsigned long i = 0l; i < this.softErrors.getSize(); i++ {
-        text += "\n\n" + renderDiagnostic(sourceManager, this.softErrors.get(i).diagnostic);
+        text << "\n\n" << renderDiagnostic(sourceManager, this.softErrors.get(i).diagnostic);
     }
     if !this.softErrors.isEmpty() {
-        this.reportFatal(Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::UNRESOLVED_SOFT_ERRORS), Span(), text));
+        this.reportFatal(Diagnostic(DiagnosticFamily::COMPILER, cast<unsigned int>(CompilerErrorType::UNRESOLVED_SOFT_ERRORS), Span(), text.str()));
     }
 }
 
