@@ -1,0 +1,69 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/unordered-set";
+import "std/data/vector";
+import "std/type/type-conversion";
+
+// Own imports
+import "@/source/location";
+import "@/source/source-manager";
+import "@/syntax/ast/ast-children";
+import "@/syntax/ast/ast-enums";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+
+/**
+ * Prints the AST as the body of a dot graph, in the format of the legacy ASTVisualizer. The driver adds the preamble
+ * (`digraph {`, `rankdir`, `label`) and the closing brace, like SourceFile.runASTVisualizer.
+ */
+public type AstDotPrinter struct {
+    const AstStore* store
+    const SourceManager* sourceManager
+    UnorderedSet<String> usedNodeIds
+    String dot
+}
+
+public p AstDotPrinter.ctor(const AstStore* store, const SourceManager* sourceManager) {
+    this.store = store;
+    this.sourceManager = sourceManager;
+}
+
+// legacy: visualizer/ast-visualizer.spice:30-69 (buildNode)
+p AstDotPrinter.printNode(NodeId id, const String& parentNodeId) {
+    const AstHeader* header = getHeader(*this.store, id);
+    // The id is the location and the node name. Nodes of the same kind that start at the same location, e.g. `a.b().c`, get a
+    // suffix that counts from 2
+    const String name = String(getAstNodeKindName(header.kind));
+    const String baseNodeId = formatLineAndColumn(*this.sourceManager, header.span) + "_" + name;
+    String nodeId = baseNodeId;
+    unsigned long suffix = 2l;
+    while this.usedNodeIds.contains(nodeId) {
+        nodeId = baseNodeId + "_" + toString(suffix);
+        suffix++;
+    }
+    this.usedNodeIds.insert(nodeId);
+    // Every line carries one leading space, because the legacy visualizer prefixes the code of every child with one
+    this.dot += " " + nodeId + " [color=\"lightgreen\",label=\"" + name + "\"];\n";
+    if !parentNodeId.isEmpty() {
+        this.dot += " " + parentNodeId + " -> " + nodeId + ";\n";
+    }
+    // The children are visited in the order of `children` in the legacy AST
+    Vector<NodeId> children;
+    collectChildren(*this.store, id, children);
+    foreach NodeId child : children {
+        this.printNode(child, nodeId);
+    }
+}
+
+/**
+ * @param store Store of the node
+ * @param sourceManager Source manager that knows the file of the spans
+ * @param root Id of the root node, normally the ENTRY of a module
+ * @return Nodes and edges of the tree, one per line, in pre-order
+ */
+public f<String> printAstDot(const AstStore& store, const SourceManager& sourceManager, NodeId root) {
+    AstDotPrinter printer = AstDotPrinter(&store, &sourceManager);
+    printer.printNode(root, String(""));
+    return printer.dot;
+}

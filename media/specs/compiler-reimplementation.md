@@ -1172,6 +1172,40 @@ The results are recorded in this document. An idiom that stage0 does not support
 - Known limit: the legacy snippet is cut from the file on disk and the new one from the buffer of the `SourceManager`. They differ
   only if the file changed during the compilation, or for a source that was read from memory (the deviation of WP 1.3).
 
+**Results (WP 2.1).**
+
+- `syntax/ast` has `ast.def` and its generated files: `ast-enums` (the 13 syntactic enums, `TypeModifier`, `AstNodeKind`, the kind names),
+  `nodes-<group>` (the structs, five files by group), `ast-store`, `ast-children` and `ast-visitor`. `ast-node` (`AstNode`, `NodeId`,
+  `ChildRange`, `AstHeader`) and `dot-printer` are written by hand. `tools/gen/gen_ast.py` is the generator. The 78 kinds are in the
+  order of the legacy `ASTNodeKind`, which `test_gen_ast.py` checks against the legacy source until the cutover.
+- Storage (decision of the WP): one struct per kind with `AstHeader` (`kind`, `id`, `span`, `parent`), a `NodeId` per child, a
+  `ChildRange` per list and the syntactic fields. `AstStore` holds one `IdVec` per kind, a node table (`NodeId` to kind and index)
+  and the child array. `NodeId` is the index in the node table, so it is dense per module in creation order. Structs have no methods
+  besides the ctor, so the file rule of 3.2 does not matter. The structs are stored by value, so there is no destruct switch: the
+  `IdVec` of a kind runs the dtors of its nodes.
+- The children of a node are visited in the order of their declaration in `ast.def`. That is the order of `children` in the legacy
+  AST, so the dot output keeps it: the parser (WP 2.3) has to attach the children of `ENTRY` regrouped (module attributes, imports,
+  definitions) and the attribute of a lambda last, as legacy does. Binary levels have a `list operands`, and the operators are in `opQueue`.
+- Semantic fields of the legacy nodes are not in the nodes (scopes, entries, symbol types, type ids, manifestations, compile time
+  values, `unreachable`, the `switchStmts` side list). Flags that only say that a child exists are dropped (`hasValue` of a field,
+  `isElseIf`, `hasDefaultBranch`, `isShortened`, ...). Fragment lists of names are not stored, only the joined name as a `Symbol`.
+  Texts of literals are taken from the span. `ALIAS_DEF.dataTypeString` and `ASSERT_STMT.expressionString` are the text of the span of
+  a child. The legacy fields that nothing sets (`PostfixUnaryExpr.atomicExpr`, `AssignExpr.ternaryExpr`, `ExtDecl.hasReturnType`) are gone.
+  `ENUM_ITEM` keeps `hasValue` and the span of the value, which sema decodes. `CONSTANT` keeps the sign, because legacy folds `-1` into the constant.
+- `IAstVisitor` has `visit`, `visitChildren` and one `visit<Name>` per kind. The names follow the kind without exception, so
+  `TOP_LEVEL_DEF_ATTR` is `visitTopLevelDefAttr` (legacy: `visitTopLevelDefinitionAttr`). The methods return nothing, because only
+  tools use the visitor and the passes dispatch with `switch` (`acceptAstNode` is that switch). `collectChildren` replaces
+  `forEachChild`: it appends to a vector, because callbacks are structs.
+- The dot printer (`printAstDot`) prints the body of the graph in the legacy format: the node id is `L<line>C<col>_<Name>Node` with the
+  `_2`, `_3` suffix, one leading space per line. The driver adds the preamble and the closing brace. A hand-built tree tests it. The
+  corpus comparison belongs to WP 2.5.
+- Stage0 findings: (1) `SmallVec<T>` with a `T` that has a field initializer that is not a constant (`Span`) crashes the IR
+  generator with "Constant fall-through" (the default value of the inline array). `TYPE_LST.paramSpans` is a `Vector<Span>` for that
+  reason. (2) The methods of an interface have to be declared `public` inside the interface, and so do the implementing methods that a
+  caller reaches through the interface.
+- Open for the parser: `FCT_NAME` holds the mangled operator name of legacy (`op.less`, ...). WP 2.3 decides where the mangling
+  happens; the node keeps the name as a `Symbol` for now.
+
 **Results (WP 1.1).** The spike programs are in `test/spikes/` (see its README). They ran against stage0 0.30.2, the
 timings with `-O2` on a 4 vCPU Xeon at 2.1 GHz, so only the ratios count.
 

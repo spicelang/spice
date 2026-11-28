@@ -1,0 +1,147 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+import "@/syntax/ast/ast-children";
+import "@/syntax/ast/ast-enums";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/ast/ast-visitor";
+import "@/syntax/ast/dot-printer";
+import "@/syntax/ast/nodes-decl";
+import "@/syntax/ast/nodes-expr";
+import "@/syntax/ast/nodes-misc";
+import "@/syntax/ast/nodes-stmt";
+
+// Tests of the hand-written parts of the AST: the child order, the visitor and the dot printer. The generated parts have tests
+// of their own. A real parser takes over the construction of the trees in WP 2.3.
+
+/**
+ * Builds the tree of `main() {\n}\n` plus two imports at the start: ENTRY(importDefs: [a, b], topLevelDefs: [MAIN_FCT_DEF(STMT_LST)])
+ */
+type TestTree struct {
+    AstStore store
+    SourceManager sourceManager
+    NodeId entry
+    NodeId firstImport
+    NodeId secondImport
+    NodeId mainFctDef
+    NodeId body
+}
+
+p TestTree.ctor() {
+    const FileId file = this.sourceManager.addString(String("test.spice"), String("import \"a\";\nmain() {\n}\n"));
+    this.body = this.store.addStmtLst(StmtLstNode(), Span(file, 19u, 23u));
+    MainFctDefNode mainNode = MainFctDefNode();
+    mainNode.body = this.body;
+    this.mainFctDef = this.store.addMainFctDef(mainNode, Span(file, 12u, 23u));
+    // Two imports of the same kind that start at the same location
+    this.firstImport = this.store.addImportDef(ImportDefNode(), Span(file, 0u, 11u));
+    this.secondImport = this.store.addImportDef(ImportDefNode(), Span(file, 0u, 11u));
+    Vector<NodeId> imports;
+    imports.pushBack(this.firstImport);
+    imports.pushBack(this.secondImport);
+    Vector<NodeId> defs;
+    defs.pushBack(this.mainFctDef);
+    EntryNode entryNode = EntryNode();
+    entryNode.importDefs = this.store.addChildren(imports);
+    entryNode.topLevelDefs = this.store.addChildren(defs);
+    this.entry = this.store.addEntry(entryNode, Span(file, 0u, 23u));
+    setParent(this.store, this.firstImport, this.entry);
+    setParent(this.store, this.secondImport, this.entry);
+    setParent(this.store, this.mainFctDef, this.entry);
+    setParent(this.store, this.body, this.mainFctDef);
+}
+
+#[test]
+f<bool> testCollectChildrenSkipsMissingOptionalsAndKeepsOrder() {
+    TestTree tree;
+    Vector<NodeId> children;
+    collectChildren(tree.store, tree.entry, children);
+    assert children.getSize() == 3ul;
+    assert children.get(0) == tree.firstImport && children.get(1) == tree.secondImport && children.get(2) == tree.mainFctDef;
+    // MAIN_FCT_DEF has the optional attrs and paramLst, which are missing here
+    Vector<NodeId> mainChildren;
+    collectChildren(tree.store, tree.mainFctDef, mainChildren);
+    assert mainChildren.getSize() == 1ul && mainChildren.get(0) == tree.body;
+    assert getHeader(tree.store, tree.body).parent == tree.mainFctDef && !isNodeId(getHeader(tree.store, tree.entry).parent);
+    return true;
+}
+
+#[test]
+f<bool> testListChildrenFollowTheChildArray() {
+    TestTree tree;
+    LogicalOrExprNode orNode = LogicalOrExprNode();
+    Vector<NodeId> operands;
+    operands.pushBack(tree.body);
+    operands.pushBack(tree.entry);
+    operands.pushBack(tree.mainFctDef);
+    orNode.operands = tree.store.addChildren(operands);
+    const NodeId orId = tree.store.addLogicalOrExpr(orNode, Span());
+    assert tree.store.getLogicalOrExpr(orId).operands.count == 3u;
+    assert tree.store.getChild(tree.store.getLogicalOrExpr(orId).operands, 1u) == tree.entry;
+    Vector<NodeId> children;
+    collectChildren(tree.store, orId, children);
+    assert children.getSize() == 3ul && children.get(2) == tree.mainFctDef;
+    return true;
+}
+
+// Counts the visited nodes per kind of interest. It overrides one method and relies on the defaults for the rest
+public type CountingVisitor struct : IAstVisitor {
+    const AstStore* store
+    unsigned int visited
+    unsigned int stmtLists
+}
+
+public p CountingVisitor.ctor(const AstStore* store) {
+    this.store = store;
+    this.visited = 0u;
+    this.stmtLists = 0u;
+}
+
+public f<const AstStore*> CountingVisitor.getAstStore() {
+    return this.store;
+}
+
+public p CountingVisitor.visit(NodeId id) {
+    this.visited++;
+    acceptAstNode(*this.store, id, this);
+}
+
+public p CountingVisitor.visitStmtLst(NodeId id) {
+    this.stmtLists++;
+    this.visitChildren(id);
+}
+
+#[test]
+f<bool> testVisitorDefaultsTraverseTheWholeTree() {
+    TestTree tree;
+    CountingVisitor visitor = CountingVisitor(&tree.store);
+    IAstVisitor* base = &visitor;
+    base.visit(tree.entry);
+    // entry, two imports, the main function and its body
+    assert visitor.visited == 5u && visitor.stmtLists == 1u;
+    return true;
+}
+
+#[test]
+f<bool> testDotOutputMatchesTheLegacyFormat() {
+    TestTree tree;
+    const String expected = String(" L1C1_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];\n")
+        + " L1C1_ImportDefNode [color=\"lightgreen\",label=\"ImportDefNode\"];\n"
+        + " L1C1_EntryNode -> L1C1_ImportDefNode;\n"
+        + " L1C1_ImportDefNode_2 [color=\"lightgreen\",label=\"ImportDefNode\"];\n"
+        + " L1C1_EntryNode -> L1C1_ImportDefNode_2;\n"
+        + " L2C1_MainFctDefNode [color=\"lightgreen\",label=\"MainFctDefNode\"];\n"
+        + " L1C1_EntryNode -> L2C1_MainFctDefNode;\n"
+        + " L2C8_StmtLstNode [color=\"lightgreen\",label=\"StmtLstNode\"];\n"
+        + " L2C1_MainFctDefNode -> L2C8_StmtLstNode;\n";
+    const String actual = printAstDot(tree.store, tree.sourceManager, tree.entry);
+    assert actual == expected;
+    return true;
+}

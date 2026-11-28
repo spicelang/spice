@@ -48,6 +48,13 @@ public p InternedString.ctor(string data, unsigned int length, Hash hash) {
 public type Symbol alias Id<InternedString>;
 
 /**
+ * @return Symbol that stands for no string, e.g. for an unnamed parameter. No interned string has it
+ */
+public inline f<Symbol> noSymbol() {
+    return Id<InternedString>(UINT_MAX_VALUE);
+}
+
+/**
  * Maps strings to dense Symbol ids and back. Append-only: a symbol stays valid and its string view stays at the same address
  * until the interner is destructed, also when the table grows. The strings live in blocks of their own, NUL-terminated, so a
  * view is a plain string. The table is open addressing with linear probing over a power-of-two slot array, which holds
