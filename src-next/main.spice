@@ -35,6 +35,16 @@ import "@/syntax/lexer/lexer";
 import "@/syntax/lexer/lexer-test";
 import "@/syntax/lexer/token";
 import "@/syntax/lexer/token-stream";
+import "@/syntax/parser/attr-parser";
+import "@/syntax/parser/decl-parser";
+import "@/syntax/parser/expr-parser";
+import "@/syntax/parser/literal-checker";
+import "@/syntax/parser/lookahead";
+import "@/syntax/parser/parser";
+import "@/syntax/parser/parser-state";
+import "@/syntax/parser/parser-test";
+import "@/syntax/parser/stmt-parser";
+import "@/syntax/parser/type-parser";
 
 /**
  * Entry point to the re-implementation of the Spice compiler. Only prints the version for now

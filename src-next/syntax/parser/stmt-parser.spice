@@ -1,0 +1,459 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/type/type-conversion";
+
+// Own imports
+import "@/base/small-vec";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/ast/nodes-decl";
+import "@/syntax/ast/nodes-misc";
+import "@/syntax/ast/nodes-stmt";
+import "@/syntax/lexer/token";
+import "@/syntax/parser/expr-parser";
+import "@/syntax/parser/lookahead";
+import "@/syntax/parser/parser-state";
+import "@/syntax/parser/type-parser";
+
+/**
+ * Parser of the statements, the blocks, the declarations of variables and the parameter lists
+ */
+// legacy: parser/parser.spice:1158-1379 (blocks and control flow), 1457-1472 (paramLst), 1575-1615 (stmt, declStmt), 1762-1855
+public type StmtParser struct {
+    ParserState* state = nil<ParserState*>
+    Lookahead* lookahead = nil<Lookahead*>
+    TypeParser* types = nil<TypeParser*>
+    ExprParser* exprs = nil<ExprParser*>
+}
+
+public p StmtParser.ctor() {}
+
+public p StmtParser.ctor(ParserState* state, Lookahead* lookahead, TypeParser* types, ExprParser* exprs) {
+    this.state = state;
+    this.lookahead = lookahead;
+    this.types = types;
+    this.exprs = exprs;
+}
+
+/**
+ * stmtLst: LBRACE (stmt | forLoop | foreachLoop | whileLoop | doWhileLoop | ifStmt | switchStmt | assertStmt | unsafeBlock |
+ * anonymousBlockStmt)* RBRACE
+ *
+ * @return STMT_LST
+ */
+// legacy: parser/parser.spice:1347-1378
+public f<NodeId> StmtParser.parseStmtLst() {
+    if this.state.failed {
+        return noNodeId(); // After an error the rules only unwind, the nodes are not used
+    }
+    const unsigned int start = this.state.startOffset();
+    StmtLstNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    this.state.expect(TokenType::LBRACE);
+    Vector<NodeId> statements;
+    while !this.state.currentTokenIs(TokenType::RBRACE) && !this.state.currentTokenIs(TokenType::EOF) && !this.state.failed {
+        const TokenType t = this.state.stream.getToken().tokenType;
+        if t == TokenType::FOR {
+            statements.pushBack(this.parseForLoop());
+        } else if t == TokenType::FOREACH {
+            statements.pushBack(this.parseForeachLoop());
+        } else if t == TokenType::WHILE {
+            statements.pushBack(this.parseWhileLoop());
+        } else if t == TokenType::DO {
+            statements.pushBack(this.parseDoWhileLoop());
+        } else if t == TokenType::IF {
+            statements.pushBack(this.parseIfStmt());
+        } else if t == TokenType::SWITCH {
+            statements.pushBack(this.parseSwitchStmt());
+        } else if t == TokenType::ASSERT {
+            statements.pushBack(this.parseAssertStmt());
+        } else if t == TokenType::UNSAFE {
+            statements.pushBack(this.parseUnsafeBlock());
+        } else if t == TokenType::LBRACE {
+            statements.pushBack(this.parseAnonymousBlockStmt());
+        } else {
+            statements.pushBack(this.parseStmt());
+        }
+    }
+    node.statements = this.state.store.addChildren(statements);
+    node.closingBraceSpan = this.state.stream.getSpan();
+    this.state.expect(TokenType::RBRACE);
+    return this.state.store.addStmtLst(node, this.state.finishSpan(start));
+}
+
+/**
+ * stmt: (returnStmt | breakStmt | continueStmt | fallthroughStmt | declStmt | exprStmt) SEMICOLON
+ * The semicolon is not part of the span of the statement.
+ *
+ * @return Statement node
+ */
+// legacy: parser/parser.spice:1575-1597
+f<NodeId> StmtParser.parseStmt() {
+    NodeId stmt = noNodeId();
+    if this.state.currentTokenIs(TokenType::RETURN) {
+        stmt = this.parseReturnStmt();
+    } else if this.state.currentTokenIs(TokenType::BREAK) {
+        stmt = this.parseBreakStmt();
+    } else if this.state.currentTokenIs(TokenType::CONTINUE) {
+        stmt = this.parseContinueStmt();
+    } else if this.state.currentTokenIs(TokenType::FALLTHROUGH) {
+        stmt = this.parseFallthroughStmt();
+    } else if this.lookahead.isDeclStmtAhead() {
+        stmt = this.parseDeclStmt();
+    } else {
+        const unsigned int start = this.state.startOffset();
+        ExprStmtNode node;
+        node.header.id = this.state.store.reserveNode();
+        node.expr = this.exprs.parseAssignExpr();
+        stmt = this.state.store.addExprStmt(node, this.state.finishSpan(start));
+    }
+    this.state.expect(TokenType::SEMICOLON);
+    return stmt;
+}
+
+/**
+ * declStmt: dataType IDENTIFIER (ASSIGN assignExpr)?
+ *
+ * @return DECL_STMT
+ */
+// legacy: parser/parser.spice:1599-1615
+public f<NodeId> StmtParser.parseDeclStmt() {
+    const unsigned int start = this.state.startOffset();
+    DeclStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    node.dataType = this.types.parseDataType();
+    node.varName = this.state.intern(this.state.getIdentifier(false));
+    this.state.expect(TokenType::IDENTIFIER);
+    if this.state.consumeIf(TokenType::ASSIGN) {
+        node.assignExpr = this.exprs.parseAssignExpr();
+    }
+    return this.state.store.addDeclStmt(node, this.state.finishSpan(start));
+}
+
+/**
+ * Parse an optional paramLst, enclosed in parentheses
+ *
+ * @return PARAM_LST, or no node if the parentheses are empty
+ */
+// legacy: parser/parser.spice:859-867
+public f<NodeId> StmtParser.parseParenthesizedParamLst() {
+    this.state.expect(TokenType::LPAREN);
+    NodeId paramLst = noNodeId();
+    if !this.state.currentTokenIs(TokenType::RPAREN) {
+        paramLst = this.parseParamLst();
+    }
+    this.state.expect(TokenType::RPAREN);
+    return paramLst;
+}
+
+/**
+ * paramLst: declStmt (COMMA declStmt)*
+ *
+ * @return PARAM_LST
+ */
+// legacy: parser/parser.spice:1457-1472
+f<NodeId> StmtParser.parseParamLst() {
+    const unsigned int start = this.state.startOffset();
+    ParamLstNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    Vector<NodeId> params;
+    params.pushBack(this.parseDeclStmt());
+    while this.state.consumeIf(TokenType::COMMA) && !this.state.failed {
+        params.pushBack(this.parseDeclStmt());
+    }
+    node.params = this.state.store.addChildren(params);
+
+    // Mark each declaration as a function parameter
+    for unsigned long i = 0l; i < params.getSize() && !this.state.failed; i++ {
+        DeclStmtNode& param = this.state.store.getDeclStmt(params.get(i));
+        param.isFctParam = true;
+        this.state.store.getDataType(param.dataType).isParamType = true;
+    }
+    return this.state.store.addParamLst(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1158-1166
+f<NodeId> StmtParser.parseUnsafeBlock() {
+    const unsigned int start = this.state.startOffset();
+    UnsafeBlockNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::UNSAFE);
+    node.body = this.parseStmtLst();
+    return this.state.store.addUnsafeBlock(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1168-1185
+f<NodeId> StmtParser.parseForLoop() {
+    const unsigned int start = this.state.startOffset();
+    ForLoopNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::FOR);
+
+    // Parse the head
+    if this.state.consumeIf(TokenType::LPAREN) {
+        this.parseForHead(node);
+        this.state.expect(TokenType::RPAREN);
+    } else {
+        this.parseForHead(node);
+    }
+    node.body = this.parseStmtLst();
+    return this.state.store.addForLoop(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1187-1193
+p StmtParser.parseForHead(ForLoopNode& node) {
+    node.initDecl = this.parseDeclStmt();
+    this.state.expect(TokenType::SEMICOLON);
+    node.condAssign = this.exprs.parseAssignExpr();
+    this.state.expect(TokenType::SEMICOLON);
+    node.incAssign = this.exprs.parseAssignExpr();
+}
+
+// legacy: parser/parser.spice:1195-1212
+f<NodeId> StmtParser.parseForeachLoop() {
+    const unsigned int start = this.state.startOffset();
+    ForeachLoopNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::FOREACH);
+
+    // Parse the head
+    if this.state.consumeIf(TokenType::LPAREN) {
+        this.parseForeachHead(node);
+        this.state.expect(TokenType::RPAREN);
+    } else {
+        this.parseForeachHead(node);
+    }
+    node.body = this.parseStmtLst();
+    return this.state.store.addForeachLoop(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1214-1226
+p StmtParser.parseForeachHead(ForeachLoopNode& node) {
+    NodeId itemVarDecl = this.parseDeclStmt();
+    if this.state.currentTokenIs(TokenType::COMMA) {
+        // Two declarations given: the first is the index, the second is the item
+        node.idxVarDecl = itemVarDecl;
+        this.state.expect(TokenType::COMMA);
+        itemVarDecl = this.parseDeclStmt();
+    }
+    node.itemVarDecl = itemVarDecl;
+    if !this.state.failed {
+        this.state.store.getDeclStmt(itemVarDecl).isForEachItem = true;
+    }
+    this.state.expect(TokenType::COLON);
+    node.iteratorAssign = this.exprs.parseAssignExpr();
+}
+
+// legacy: parser/parser.spice:1228-1240
+f<NodeId> StmtParser.parseWhileLoop() {
+    const unsigned int start = this.state.startOffset();
+    WhileLoopNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::WHILE);
+    node.condition = this.exprs.parseAssignExpr();
+    node.body = this.parseStmtLst();
+    return this.state.store.addWhileLoop(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1242-1256
+f<NodeId> StmtParser.parseDoWhileLoop() {
+    const unsigned int start = this.state.startOffset();
+    DoWhileLoopNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::DO);
+    node.body = this.parseStmtLst();
+    this.state.expect(TokenType::WHILE);
+    node.condition = this.exprs.parseAssignExpr();
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addDoWhileLoop(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1258-1275
+f<NodeId> StmtParser.parseIfStmt() {
+    const unsigned int start = this.state.startOffset();
+    IfStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::IF);
+    node.condition = this.exprs.parseAssignExpr();
+    node.thenBody = this.parseStmtLst();
+    if this.state.currentTokenIs(TokenType::ELSE) {
+        node.elseStmt = this.parseElseStmt();
+    }
+    return this.state.store.addIfStmt(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1277-1290
+f<NodeId> StmtParser.parseElseStmt() {
+    const unsigned int start = this.state.startOffset();
+    ElseStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::ELSE);
+    if this.state.currentTokenIs(TokenType::IF) { // Else if
+        node.ifStmt = this.parseIfStmt();
+    } else { // Else
+        node.body = this.parseStmtLst();
+    }
+    return this.state.store.addElseStmt(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1292-1311
+f<NodeId> StmtParser.parseSwitchStmt() {
+    const unsigned int start = this.state.startOffset();
+    SwitchStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::SWITCH);
+    node.assignExpr = this.exprs.parseAssignExpr();
+    this.state.expect(TokenType::LBRACE);
+    Vector<NodeId> caseBranches;
+    while this.state.currentTokenIs(TokenType::CASE) && !this.state.failed {
+        caseBranches.pushBack(this.parseCaseBranch());
+    }
+    node.caseBranches = this.state.store.addChildren(caseBranches);
+    if this.state.currentTokenIs(TokenType::DEFAULT) {
+        node.defaultBranch = this.parseDefaultBranch();
+    }
+    this.state.expect(TokenType::RBRACE);
+    return this.state.store.addSwitchStmt(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1313-1325
+f<NodeId> StmtParser.parseCaseBranch() {
+    const unsigned int start = this.state.startOffset();
+    CaseBranchNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::CASE);
+    Vector<NodeId> caseConstants;
+    caseConstants.pushBack(this.parseCaseConstant());
+    while this.state.consumeIf(TokenType::COMMA) && !this.state.failed {
+        caseConstants.pushBack(this.parseCaseConstant());
+    }
+    node.caseConstants = this.state.store.addChildren(caseConstants);
+    this.state.expect(TokenType::COLON);
+    node.body = this.parseStmtLst();
+    return this.state.store.addCaseBranch(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1327-1335
+f<NodeId> StmtParser.parseDefaultBranch() {
+    const unsigned int start = this.state.startOffset();
+    DefaultBranchNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::DEFAULT);
+    this.state.expect(TokenType::COLON);
+    node.body = this.parseStmtLst();
+    return this.state.store.addDefaultBranch(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1337-1343
+f<NodeId> StmtParser.parseAnonymousBlockStmt() {
+    const unsigned int start = this.state.startOffset();
+    AnonymousBlockStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    node.body = this.parseStmtLst();
+    return this.state.store.addAnonymousBlockStmt(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1762-1794
+f<NodeId> StmtParser.parseCaseConstant() {
+    const unsigned int start = this.state.startOffset();
+    CaseConstantNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    const TokenType cur = this.state.stream.getToken().tokenType;
+    if cur == TokenType::IDENTIFIER || cur == TokenType::TYPE_IDENTIFIER {
+        String fqIdentifier;
+        // Optional (IDENTIFIER SCOPE_ACCESS) prefix
+        if this.state.currentTokenIs(TokenType::IDENTIFIER) {
+            const String fragment = this.state.getIdentifier(false);
+            node.nameFragments.pushBack(this.state.intern(fragment));
+            fqIdentifier += fragment;
+            fqIdentifier += "::";
+            this.state.expect(TokenType::IDENTIFIER);
+            this.state.expect(TokenType::SCOPE_ACCESS);
+        }
+        const String typeFragment = this.state.getIdentifier(false);
+        node.nameFragments.pushBack(this.state.intern(typeFragment));
+        fqIdentifier += typeFragment;
+        this.state.expect(TokenType::TYPE_IDENTIFIER);
+        while this.state.consumeIf(TokenType::SCOPE_ACCESS) && !this.state.failed {
+            const String fragment = this.state.getIdentifier(false);
+            node.nameFragments.pushBack(this.state.intern(fragment));
+            fqIdentifier += "::";
+            fqIdentifier += fragment;
+            this.state.expect(TokenType::TYPE_IDENTIFIER);
+        }
+        node.fqIdentifier = this.state.intern(fqIdentifier);
+    } else {
+        node.constant = this.exprs.parseConstant();
+    }
+    return this.state.store.addCaseConstant(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1796-1806
+f<NodeId> StmtParser.parseReturnStmt() {
+    const unsigned int start = this.state.startOffset();
+    ReturnStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::RETURN);
+    if !this.state.currentTokenIs(TokenType::SEMICOLON) {
+        node.assignExpr = this.exprs.parseAssignExpr();
+    }
+    return this.state.store.addReturnStmt(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1808-1819
+f<NodeId> StmtParser.parseBreakStmt() {
+    const unsigned int start = this.state.startOffset();
+    BreakStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::BREAK);
+    if this.state.currentTokenIs(TokenType::INT_LIT) {
+        node.breakTimes = toInt(this.state.currentText().getRaw());
+        this.state.expect(TokenType::INT_LIT);
+    }
+    return this.state.store.addBreakStmt(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1821-1832
+f<NodeId> StmtParser.parseContinueStmt() {
+    const unsigned int start = this.state.startOffset();
+    ContinueStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::CONTINUE);
+    if this.state.currentTokenIs(TokenType::INT_LIT) {
+        node.continueTimes = toInt(this.state.currentText().getRaw());
+        this.state.expect(TokenType::INT_LIT);
+    }
+    return this.state.store.addContinueStmt(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1834-1840
+f<NodeId> StmtParser.parseFallthroughStmt() {
+    const unsigned int start = this.state.startOffset();
+    FallthroughStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::FALLTHROUGH);
+    return this.state.store.addFallthroughStmt(node, this.state.finishSpan(start));
+}
+
+/**
+ * assertStmt: ASSERT assignExpr SEMICOLON
+ * The text of the expression is the text of the span of its node.
+ *
+ * @return ASSERT_STMT
+ */
+// legacy: parser/parser.spice:1842-1852
+f<NodeId> StmtParser.parseAssertStmt() {
+    const unsigned int start = this.state.startOffset();
+    AssertStmtNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::ASSERT);
+    node.assignExpr = this.exprs.parseAssignExpr();
+    this.state.expect(TokenType::SEMICOLON);
+    return this.state.store.addAssertStmt(node, this.state.finishSpan(start));
+}

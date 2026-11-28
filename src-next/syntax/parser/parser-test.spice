@@ -1,0 +1,620 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/io/file";
+import "std/type/types";
+
+// Own imports
+import "@/base/interner";
+import "@/diag/diagnostic-engine";
+import "@/diag/render";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/syntax/ast/ast-children";
+import "@/syntax/ast/ast-enums";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/ast/dot-printer";
+import "@/syntax/lexer/lexer";
+import "@/syntax/lexer/token";
+import "@/syntax/lexer/token-stream";
+import "@/syntax/parser/lookahead";
+import "@/syntax/parser/parser";
+import "@/syntax/parser/parser-state";
+
+// Tests of the parser. The expectations come from the legacy parser (src/parser/parser.spice): every text of these tests was run
+// through both compilers and gave the same tree or the same message. The ParserTests suite runs in-process here, because the new
+// binary has no command that parses a file yet. The suite joins the ratchet once the binary has `--dump-ast` (WP 2.5).
+
+/**
+ * Everything a test needs to parse a text
+ */
+type ParseRun struct {
+    SourceManager sourceManager
+    DiagnosticEngine engine
+    Interner interner
+    AstStore store
+    FileId file
+    TokenStream stream
+    NodeId root
+}
+
+p ParseRun.ctor(const string text) {
+    this.init(String(text), true);
+}
+
+p ParseRun.ctor(const String& text, bool checkReservedTypeNames) {
+    this.init(text, checkReservedTypeNames);
+}
+
+p ParseRun.init(const String& text, bool checkReservedTypeNames) {
+    this.sourceManager.setRootSourceFilePath(String("./source.spice"));
+    this.file = this.sourceManager.addString(String("./source.spice"), text);
+    this.stream = lex(this.sourceManager, this.file, this.engine);
+    this.root = parse(this.sourceManager, this.stream, this.interner, this.store, this.engine, checkReservedTypeNames);
+}
+
+f<bool> ParseRun.ok() {
+    return isNodeId(this.root);
+}
+
+f<String> ParseRun.error() {
+    return this.engine.renderStop(this.sourceManager);
+}
+
+// The ids of all nodes of a kind, in the order of their ids
+f<Vector<NodeId>> ParseRun.nodesOf(AstNodeKind kind) {
+    Vector<NodeId> ids;
+    for unsigned int i = 0u; i < this.store.getNodeCount(); i++ {
+        const NodeId id = makeNodeId(i);
+        if this.store.getKind(id) == kind {
+            ids.pushBack(id);
+        }
+    }
+    return ids;
+}
+
+// The text that the span of a node covers
+f<String> ParseRun.textOf(NodeId id) {
+    return this.sourceManager.getText(getHeader(this.store, id).span);
+}
+
+f<String> parseError(const string text) {
+    ParseRun run = ParseRun(text);
+    assert !run.ok();
+    return run.error();
+}
+
+// -------------------------------------------------- Structure --------------------------------------------------
+
+#[test]
+f<bool> testParserEmptyFileAndEntryLists() {
+    ParseRun empty = ParseRun("");
+    assert empty.ok() && empty.store.getKind(empty.root) == AstNodeKind::ENTRY;
+    assert empty.store.getEntry(empty.root).topLevelDefs.count == 0u;
+
+    ParseRun run = ParseRun("#![core.a=true]\nimport \"std/x\" as y;\nf<int> main() {}\nimport \"std/z\";\n#![core.b=5]\n");
+    assert run.ok();
+    const EntryNode& entry = run.store.getEntry(run.root);
+    assert entry.modAttrs.count == 2u && entry.importDefs.count == 2u && entry.topLevelDefs.count == 1u;
+    const ImportDefNode& first = run.store.getImportDef(run.store.getChild(entry.importDefs, 0u));
+    assert String(run.interner.get(first.importPath)) == "std/x" && String(run.interner.get(first.importName)) == "y";
+    // Without an alias, the name is the path
+    const ImportDefNode& second = run.store.getImportDef(run.store.getChild(entry.importDefs, 1u));
+    assert second.importName == second.importPath;
+    return true;
+}
+
+#[test]
+f<bool> testParserBinaryLevels() {
+    ParseRun run = ParseRun("f<int> main() { int x = 1 + 2 * 3 - 4; x = a << 1 >> 2; }");
+    assert run.ok();
+    // `1 + 2 * 3 - 4`: an additive expression with three operands and the operators + and -, the second operand is a product
+    const Vector<NodeId> additive = run.nodesOf(AstNodeKind::ADDITIVE_EXPR);
+    assert additive.getSize() == 1l;
+    const AdditiveExprNode& sum = run.store.getAdditiveExpr(additive.get(0l));
+    assert sum.operands.count == 3u && sum.opQueue.size() == 2u;
+    assert sum.opQueue.get(0u) == AdditiveOp::OP_PLUS && sum.opQueue.get(1u) == AdditiveOp::OP_MINUS;
+    assert run.store.getKind(run.store.getChild(sum.operands, 1u)) == AstNodeKind::MULTIPLICATIVE_EXPR;
+    // The operands without an operator are not wrapped, so the first operand of the sum is an atomic expression
+    assert run.store.getKind(run.store.getChild(sum.operands, 0u)) == AstNodeKind::ATOMIC_EXPR;
+    // `a << 1 >> 2` is one shift expression with two operators
+    const Vector<NodeId> shifts = run.nodesOf(AstNodeKind::SHIFT_EXPR);
+    assert shifts.getSize() == 1l;
+    const ShiftExprNode& shift = run.store.getShiftExpr(shifts.get(0l));
+    assert shift.operands.count == 3u && shift.opQueue.get(0u) == ShiftOp::OP_SHIFT_LEFT && shift.opQueue.get(1u) == ShiftOp::OP_SHIFT_RIGHT;
+    const Vector<NodeId> assigns = run.nodesOf(AstNodeKind::ASSIGN_EXPR);
+    assert assigns.getSize() == 1l && run.store.getAssignExpr(assigns.get(0l)).op == AssignOp::OP_ASSIGN;
+    return true;
+}
+
+#[test]
+f<bool> testParserEqualityAndRelationalTakeOneOperator() {
+    // Equality and relational levels do not loop, so a second operator is left for the caller, which expects the semicolon
+    assert parseError("f<int> main() { a == b == c; }") == "[Error|Parser] ./source.spice:1:24: Parsing failed: Unexpected token '=='";
+    assert parseError("f<int> main() { a < b < c; }") == "[Error|Parser] ./source.spice:1:23: Parsing failed: Unexpected token '<'";
+    ParseRun run = ParseRun("f<int> main() { a == b; a != b; a <= b; a >= b; a > b; }");
+    assert run.ok();
+    const Vector<NodeId> equalities = run.nodesOf(AstNodeKind::EQUALITY_EXPR);
+    assert equalities.getSize() == 2l;
+    assert run.store.getEqualityExpr(equalities.get(0l)).op == EqualityOp::OP_EQUAL;
+    assert run.store.getEqualityExpr(equalities.get(1l)).op == EqualityOp::OP_NOT_EQUAL;
+    assert run.nodesOf(AstNodeKind::RELATIONAL_EXPR).getSize() == 3l;
+    return true;
+}
+
+#[test]
+f<bool> testParserTernaryAndAssignment() {
+    ParseRun run = ParseRun("f<int> main() { x = a ?: b; y = a ? b : c; z += 1; }");
+    assert run.ok();
+    const Vector<NodeId> ternaries = run.nodesOf(AstNodeKind::TERNARY_EXPR);
+    assert ternaries.getSize() == 2l;
+    // The shortened form has no true branch
+    assert !isNodeId(run.store.getTernaryExpr(ternaries.get(0l)).trueExpr);
+    assert isNodeId(run.store.getTernaryExpr(ternaries.get(1l)).trueExpr);
+    const Vector<NodeId> assigns = run.nodesOf(AstNodeKind::ASSIGN_EXPR);
+    assert assigns.getSize() == 3l && run.store.getAssignExpr(assigns.get(2l)).op == AssignOp::OP_PLUS_EQUAL;
+    // The branches are logical-or expressions, so a nested ternary without parentheses is left for the caller
+    assert parseError("f<int> main() { y = a ? b : c ? d : e; }") == "[Error|Parser] ./source.spice:1:31: Parsing failed: Unexpected token '?'";
+    return true;
+}
+
+#[test]
+f<bool> testParserNegativeConstantsAndPrefixOperators() {
+    ParseRun run = ParseRun("f<int> main() { x = -5; y = - z; w = *ptr; v = &q; u = !t; }");
+    assert run.ok();
+    // A minus sign in front of a number belongs to the constant, in front of anything else it is a prefix operator
+    const Vector<NodeId> constants = run.nodesOf(AstNodeKind::CONSTANT);
+    assert constants.getSize() == 1l && run.store.getConstant(constants.get(0l)).isNegative;
+    assert run.textOf(constants.get(0l)) == "-5";
+    const Vector<NodeId> prefixes = run.nodesOf(AstNodeKind::PREFIX_UNARY_EXPR);
+    assert prefixes.getSize() == 4l;
+    assert run.store.getPrefixUnaryExpr(prefixes.get(0l)).op == PrefixUnaryOp::OP_MINUS;
+    assert run.store.getPrefixUnaryExpr(prefixes.get(1l)).op == PrefixUnaryOp::OP_DEREFERENCE;
+    assert run.store.getPrefixUnaryExpr(prefixes.get(2l)).op == PrefixUnaryOp::OP_ADDRESS_OF;
+    assert run.store.getPrefixUnaryExpr(prefixes.get(3l)).op == PrefixUnaryOp::OP_NOT;
+    // Legacy quirks: `&&x` is no double address-of and a cast cannot be negated
+    assert parseError("f<int> main() { return &&x; }") == "[Error|Parser] ./source.spice:1:24: Parsing failed: Unexpected token '&&'";
+    assert parseError("f<int> main() { -cast<int>(x); }") == "[Error|Parser] ./source.spice:1:18: Parsing failed: Unexpected token 'cast'";
+    return true;
+}
+
+#[test]
+f<bool> testParserPostfixCallsAndLambdas() {
+    ParseRun run = ParseRun("f<int> main() { a.b[1](2).c<int>(3)++; x = f<int>(int a) { return a; }; y = p() { }; z = (int a) -> a; }");
+    assert run.ok();
+    // `.b`, `[1]` and `++` wrap the expression before them. The calls `(2)` and `.c<int>(3)` are call nodes
+    const Vector<NodeId> postfixes = run.nodesOf(AstNodeKind::POSTFIX_UNARY_EXPR);
+    assert postfixes.getSize() == 3l;
+    assert run.store.getPostfixUnaryExpr(postfixes.get(0l)).op == PostfixUnaryOp::OP_MEMBER_ACCESS;
+    assert run.store.getPostfixUnaryExpr(postfixes.get(1l)).op == PostfixUnaryOp::OP_SUBSCRIPT;
+    assert run.store.getPostfixUnaryExpr(postfixes.get(2l)).op == PostfixUnaryOp::OP_PLUS_PLUS;
+    const Vector<NodeId> fctCalls = run.nodesOf(AstNodeKind::FCT_CALL);
+    assert fctCalls.getSize() == 2l;
+    // The call of an expression keeps the expression as callee, the method call on an expression as receiver
+    assert isNodeId(run.store.getFctCall(fctCalls.get(0l)).calleeExpr) && !isNodeId(run.store.getFctCall(fctCalls.get(0l)).receiverExpr);
+    assert isNodeId(run.store.getFctCall(fctCalls.get(1l)).receiverExpr) && isNodeId(run.store.getFctCall(fctCalls.get(1l)).templateTypeLst);
+    assert run.nodesOf(AstNodeKind::LAMBDA_FUNC).getSize() == 1l && run.nodesOf(AstNodeKind::LAMBDA_PROC).getSize() == 1l;
+    assert run.nodesOf(AstNodeKind::LAMBDA_EXPR).getSize() == 1l;
+    return true;
+}
+
+#[test]
+f<bool> testParserDeclarations() {
+    ParseRun run = ParseRun("type S<T> struct : I { public int a = 5\n T b }\ntype I interface { f<int> m(int a, int); p n(); }\ntype U union { int a\n double b }\ntype E enum { A, B = 0x10, C }\ntype P alias int*;\ntype G dyn | int | string;\nconst int N = -5;\next f<int> puts(string, ...);\nf<int> S.get<T>() {}\np operator+(int a) {}\n");
+    assert run.ok();
+    const EntryNode& entry = run.store.getEntry(run.root);
+    assert entry.topLevelDefs.count == 10u;
+    const StructDefNode& structDef = run.store.getStructDef(run.store.getChild(entry.topLevelDefs, 0u));
+    assert String(run.interner.get(structDef.structName)) == "S" && structDef.fields.count == 2u;
+    assert isNodeId(structDef.templateTypeLst) && isNodeId(structDef.interfaceTypeLst) && !isNodeId(structDef.attrs);
+    // The data types of the fields are field types
+    const Vector<NodeId> fields = run.nodesOf(AstNodeKind::FIELD);
+    assert fields.getSize() == 4l;
+    assert run.store.getDataType(run.store.getField(fields.get(0l)).dataType).isFieldType;
+    const InterfaceDefNode& interfaceDef = run.store.getInterfaceDef(run.store.getChild(entry.topLevelDefs, 1u));
+    assert interfaceDef.signatures.count == 2u;
+    const SignatureNode& method = run.store.getSignature(run.store.getChild(interfaceDef.signatures, 0u));
+    assert method.signatureType == SignatureType::TYPE_FUNCTION && method.paramTypeLst.index != noNodeId().index;
+    // The names of the parameters of a signature are optional, an unnamed one has the empty name
+    const TypeLstNode& params = run.store.getTypeLst(method.paramTypeLst);
+    assert params.dataTypes.count == 2u && String(run.interner.get(params.paramNames.get(0u))) == "a" && String(run.interner.get(params.paramNames.get(1u))) == "";
+    const Vector<NodeId> enumItems = run.nodesOf(AstNodeKind::ENUM_ITEM);
+    assert enumItems.getSize() == 3l && run.store.getEnumItem(enumItems.get(1l)).valueSpan.isValid() && !run.store.getEnumItem(enumItems.get(0l)).valueSpan.isValid();
+    assert run.textOf(run.store.getEnumItem(enumItems.get(1l)).header.id) == "B = 0x10";
+    // Return types are marked, global variables too
+    const Vector<NodeId> fctDefs = run.nodesOf(AstNodeKind::FCT_DEF);
+    assert fctDefs.getSize() == 1l && run.store.getFctDef(fctDefs.get(0l)).isMethod;
+    assert run.store.getDataType(run.store.getFctDef(fctDefs.get(0l)).returnType).isReturnType;
+    const Vector<NodeId> globals = run.nodesOf(AstNodeKind::GLOBAL_VAR_DEF);
+    assert globals.getSize() == 1l && run.store.getDataType(run.store.getGlobalVarDef(globals.get(0l)).dataType).isGlobalType;
+    return true;
+}
+
+#[test]
+f<bool> testParserOperatorFunctions() {
+    // The operator names are mangled like in legacy
+    ParseRun run = ParseRun("p operator+(int a) {} f<int> operator[](int i) {} f<int> operator<<(int i) {} p operator==(int a) {}");
+    assert run.ok();
+    const Vector<NodeId> names = run.nodesOf(AstNodeKind::FCT_NAME);
+    assert names.getSize() == 4l;
+    assert String(run.interner.get(run.store.getFctName(names.get(0l)).name)) == "op.plus";
+    assert String(run.interner.get(run.store.getFctName(names.get(1l)).name)) == "op.subscript";
+    assert String(run.interner.get(run.store.getFctName(names.get(2l)).name)) == "op.shl";
+    assert String(run.interner.get(run.store.getFctName(names.get(3l)).name)) == "op.equal";
+    // `operator<<T>` is `operator<` with a template list, because the token behind `<<` is neither `(` nor `<`
+    ParseRun lessWithTemplates = ParseRun("p operator<<T>(int a) {}");
+    assert lessWithTemplates.ok();
+    const Vector<NodeId> lessNames = lessWithTemplates.nodesOf(AstNodeKind::FCT_NAME);
+    assert String(lessWithTemplates.interner.get(lessWithTemplates.store.getFctName(lessNames.get(0l)).name)) == "op.less";
+    assert isNodeId(lessWithTemplates.store.getProcDef(lessWithTemplates.nodesOf(AstNodeKind::PROC_DEF).get(0l)).templateTypeLst);
+    // A token behind `operator` that is no operator is swallowed, as in legacy
+    ParseRun swallowed = ParseRun("p operator foo() {}");
+    assert swallowed.ok();
+    assert String(swallowed.interner.get(swallowed.store.getFctName(swallowed.nodesOf(AstNodeKind::FCT_NAME).get(0l)).name)) == "";
+    return true;
+}
+
+#[test]
+f<bool> testParserSplitsShiftTokensInTypeLists() {
+    ParseRun run = ParseRun("f<int> main() { Vector<Vector<int>>& v = w; foo<Vector<int>>(x); }");
+    assert run.ok();
+    // The `&` behind `>>` belongs to the outer type, the inner type has no modifier
+    const Vector<NodeId> dataTypes = run.nodesOf(AstNodeKind::DATA_TYPE);
+    assert dataTypes.getSize() == 5l;
+    assert run.store.getDataType(dataTypes.get(0l)).tmQueue.size() == 1u;
+    assert run.store.getDataType(dataTypes.get(0l)).tmQueue.get(0u).kind == TypeModifierType::TYPE_REF;
+    assert run.store.getDataType(dataTypes.get(1l)).tmQueue.size() == 0u;
+    // A `>>` that is not a pair of closing brackets stays a shift
+    ParseRun shift = ParseRun("f<int> main() { x = a >> b; }");
+    assert shift.ok() && shift.nodesOf(AstNodeKind::SHIFT_EXPR).getSize() == 1l;
+    return true;
+}
+
+#[test]
+f<bool> testParserDataTypes() {
+    ParseRun run = ParseRun("type F alias f<int>(int, string);\ntype H alias p();\nf<int> main() { const unsigned long* a; int[5] b; string[N] c; double& d; int&& e; a::B<int>*[] ff; }");
+    assert run.ok();
+    const Vector<NodeId> dataTypes = run.nodesOf(AstNodeKind::DATA_TYPE);
+    // Arrays: a hard-coded size and a size name
+    bool sawSize = false;
+    bool sawName = false;
+    for unsigned long i = 0l; i < dataTypes.getSize(); i++ {
+        const DataTypeNode& dataType = run.store.getDataType(dataTypes.get(i));
+        for unsigned int j = 0u; j < dataType.tmQueue.size(); j++ {
+            const TypeModifier& modifier = dataType.tmQueue.get(j);
+            if modifier.kind == TypeModifierType::TYPE_ARRAY && modifier.hasSize && modifier.hardcodedSize == 5u {
+                sawSize = true;
+            }
+            if modifier.kind == TypeModifierType::TYPE_ARRAY && modifier.hasSize && modifier.sizeVarName.index != noSymbol().index && String(run.interner.get(modifier.sizeVarName)) == "N" {
+                sawName = true;
+            }
+        }
+    }
+    assert sawSize && sawName;
+    assert run.nodesOf(AstNodeKind::FUNCTION_DATA_TYPE).getSize() == 2l;
+    // The array size is read with a plain toInt in legacy: a hexadecimal size is 0
+    ParseRun hex = ParseRun("f<int> main() { int[0x10] a; }");
+    assert hex.ok() && hex.store.getDataType(hex.nodesOf(AstNodeKind::DATA_TYPE).get(0l)).tmQueue.get(0u).hardcodedSize == 0u;
+    return true;
+}
+
+#[test]
+f<bool> testParserStatements() {
+    ParseRun run = ParseRun("f<int> main() {\n    foreach int i, int x : items { continue 2; }\n    for int i = 0; i < 5; i++ { break; }\n    do { fallthrough; } while true;\n    if a { } else if b { } else { }\n    switch x { case A::B, C: { } default: { } }\n    assert x == 5;\n    unsafe { }\n    { }\n    return;\n}\n");
+    assert run.ok();
+    assert run.nodesOf(AstNodeKind::FOREACH_LOOP).getSize() == 1l && run.nodesOf(AstNodeKind::FOR_LOOP).getSize() == 1l;
+    const Vector<NodeId> foreachLoops = run.nodesOf(AstNodeKind::FOREACH_LOOP);
+    const ForeachLoopNode& foreachLoop = run.store.getForeachLoop(foreachLoops.get(0l));
+    assert isNodeId(foreachLoop.idxVarDecl) && run.store.getDeclStmt(foreachLoop.itemVarDecl).isForEachItem;
+    assert !run.store.getDeclStmt(foreachLoop.idxVarDecl).isForEachItem;
+    assert run.store.getContinueStmt(run.nodesOf(AstNodeKind::CONTINUE_STMT).get(0l)).continueTimes == 2;
+    assert run.store.getBreakStmt(run.nodesOf(AstNodeKind::BREAK_STMT).get(0l)).breakTimes == 1;
+    assert run.nodesOf(AstNodeKind::IF_STMT).getSize() == 2l && run.nodesOf(AstNodeKind::ELSE_STMT).getSize() == 2l;
+    const Vector<NodeId> cases = run.nodesOf(AstNodeKind::CASE_CONSTANT);
+    assert cases.getSize() == 2l && run.store.getCaseConstant(cases.get(0l)).nameFragments.size() == 2u;
+    assert run.nodesOf(AstNodeKind::DEFAULT_BRANCH).getSize() == 1l && run.nodesOf(AstNodeKind::ANONYMOUS_BLOCK_STMT).getSize() == 1l;
+    return true;
+}
+
+#[test]
+f<bool> testParserSpansAndClosingBrace() {
+    ParseRun run = ParseRun("f<int> main() { return 1; assert true; x = 5; }");
+    assert run.ok();
+    // The semicolon is no part of the span of a statement, but of the span of an assert statement
+    assert run.textOf(run.nodesOf(AstNodeKind::RETURN_STMT).get(0l)) == "return 1";
+    assert run.textOf(run.nodesOf(AstNodeKind::ASSERT_STMT).get(0l)) == "assert true;";
+    assert run.textOf(run.nodesOf(AstNodeKind::EXPR_STMT).get(0l)) == "x = 5";
+    assert run.textOf(run.nodesOf(AstNodeKind::MAIN_FCT_DEF).get(0l)) == "f<int> main() { return 1; assert true; x = 5; }";
+    // The closing brace of a statement list
+    const StmtLstNode& body = run.store.getStmtLst(run.nodesOf(AstNodeKind::STMT_LST).get(0l));
+    assert run.sourceManager.getText(body.closingBraceSpan) == "}";
+    // A wrapping node starts where its first operand starts
+    ParseRun sum = ParseRun("f<int> main() { x = foo + bar * 2; }");
+    assert sum.ok();
+    assert sum.textOf(sum.nodesOf(AstNodeKind::ADDITIVE_EXPR).get(0l)) == "foo + bar * 2";
+    assert sum.textOf(sum.nodesOf(AstNodeKind::ASSIGN_EXPR).get(0l)) == "x = foo + bar * 2";
+    return true;
+}
+
+#[test]
+f<bool> testParserIdsFollowTheOrderOfLegacy() {
+    // A node has a smaller id than its descendants, and a node that wraps its first operand gets its id behind that operand
+    ParseRun run = ParseRun("f<int> main() { a + b; }");
+    assert run.ok();
+    const NodeId mainFct = run.nodesOf(AstNodeKind::MAIN_FCT_DEF).get(0l);
+    const NodeId sum = run.nodesOf(AstNodeKind::ADDITIVE_EXPR).get(0l);
+    const Vector<NodeId> atoms = run.nodesOf(AstNodeKind::ATOMIC_EXPR);
+    assert atoms.getSize() == 2l;
+    assert run.root.index == 0u && mainFct.index == 1u;
+    assert atoms.get(0l).index < sum.index && sum.index < atoms.get(1l).index;
+    return true;
+}
+
+#[test]
+f<bool> testParserLinksParents() {
+    ParseRun run = ParseRun("f<int> main() { int x = foo(1, 2) + 3; if x { return x; } }");
+    assert run.ok();
+    assert !isNodeId(getHeader(run.store, run.root).parent);
+    unsigned int visited = 0u;
+    Vector<NodeId> pending;
+    pending.pushBack(run.root);
+    while !pending.isEmpty() {
+        const NodeId id = pending.get(pending.getSize() - 1l);
+        pending.popBack();
+        visited++;
+        Vector<NodeId> children;
+        collectChildren(run.store, id, children);
+        for unsigned long i = 0l; i < children.getSize(); i++ {
+            assert getHeader(run.store, children.get(i)).parent == id;
+            pending.pushBack(children.get(i));
+        }
+    }
+    // Every node of the store is part of the tree
+    assert visited == run.store.getNodeCount();
+    return true;
+}
+
+#[test]
+f<bool> testParserDotOutputMatchesLegacy() {
+    // The output of `spice build --dump-ast` of legacy for this text, without the preamble
+    ParseRun run = ParseRun("f<int> main() {\n    int x = 1 + 2 * 3;\n    return x;\n}\n");
+    assert run.ok();
+    const String dot = printAstDot(run.store, run.sourceManager, run.root);
+    assert dot.contains(" L1C1_EntryNode [color=\"lightgreen\",label=\"EntryNode\"];\n L1C1_MainFctDefNode [color=\"lightgreen\",label=\"MainFctDefNode\"];\n L1C1_EntryNode -> L1C1_MainFctDefNode;\n");
+    assert dot.contains(" L2C13_AdditiveExprNode -> L2C17_MultiplicativeExprNode;\n");
+    assert dot.contains(" L3C5_ReturnStmtNode -> L3C12_AtomicExprNode;\n");
+    return true;
+}
+
+// -------------------------------------------------- Lookahead --------------------------------------------------
+
+/**
+ * A token stream and a parser state to run the probes on
+ */
+type ProbeRun struct {
+    SourceManager sourceManager
+    DiagnosticEngine engine
+    Interner interner
+    AstStore store
+    TokenStream stream
+    ParserState state
+    Lookahead lookahead
+}
+
+p ProbeRun.ctor(const string text) {
+    const FileId file = this.sourceManager.addString(String("probe.spice"), String(text));
+    this.stream = lex(this.sourceManager, file, this.engine);
+    this.state = ParserState(&this.stream, &this.sourceManager, &this.store, &this.interner, &this.engine, true);
+    this.lookahead = Lookahead(&this.state);
+}
+
+#[test]
+f<bool> testLookaheadAngleGroups() {
+    ProbeRun simple = ProbeRun("<int, string> x");
+    assert simple.lookahead.matchAngleGroup(0l) == 5l;
+    // A `>>` closes two levels
+    ProbeRun nested = ProbeRun("<int, Vector<int>> x");
+    assert nested.lookahead.matchAngleGroup(0l) == 7l;
+    // `a < b && c > d` is no type list, because the `&&` is not a type token. In a parameter list it is an rvalue reference
+    ProbeRun logical = ProbeRun("<a && c> d");
+    assert logical.lookahead.matchAngleGroup(0l) == -1l;
+    ProbeRun rvalueRef = ProbeRun("<f(int&&)> d");
+    assert rvalueRef.lookahead.matchAngleGroup(0l) == 7l;
+    // A token that is no type token stops the group
+    ProbeRun stopped = ProbeRun("<int; x>");
+    assert stopped.lookahead.matchAngleGroup(0l) == -1l;
+    return true;
+}
+
+#[test]
+f<bool> testLookaheadDataTypesAndCalls() {
+    ProbeRun declStmt = ProbeRun("const a::B<int>*[3] x = 1;");
+    assert declStmt.lookahead.isDeclStmtAhead();
+    ProbeRun expression = ProbeRun("x = 1;");
+    assert !expression.lookahead.isDeclStmtAhead();
+    ProbeRun fctType = ProbeRun("f<int>(int, string) g;");
+    assert fctType.lookahead.isDeclStmtAhead();
+    ProbeRun call = ProbeRun("a::b.c<int>(1)");
+    assert call.lookahead.isFctCallAhead();
+    ProbeRun variable = ProbeRun("a::b.c + 1");
+    assert !variable.lookahead.isFctCallAhead();
+    ProbeRun method = ProbeRun(".foo<int>(1)");
+    assert method.lookahead.isMethodCallOnExprAhead();
+    ProbeRun member = ProbeRun(".foo + 1");
+    assert !member.lookahead.isMethodCallOnExprAhead();
+    ProbeRun lambda = ProbeRun("(int a, int b) -> a");
+    assert lambda.lookahead.isLambdaExprAhead();
+    ProbeRun parenthesized = ProbeRun("(a + b) * 2");
+    assert !parenthesized.lookahead.isLambdaExprAhead();
+    return true;
+}
+
+#[test]
+f<bool> testLookaheadStructInstantiation() {
+    ProbeRun fields = ProbeRun("Point{1, 2}");
+    assert fields.lookahead.isStructInstantiationAhead();
+    ProbeRun scoped = ProbeRun("a::Point<int>{1}");
+    assert scoped.lookahead.isStructInstantiationAhead();
+    // A statement list has semicolons on its top level, a statement keyword can not start a field list
+    ProbeRun block = ProbeRun("Point{ x = 1; }");
+    assert !block.lookahead.isStructInstantiationAhead();
+    ProbeRun keyword = ProbeRun("Point{ return 1; }");
+    assert !keyword.lookahead.isStructInstantiationAhead();
+    // Empty braces: a struct instantiation only if the expression goes on, not if a statement or else follows
+    ProbeRun emptyInstance = ProbeRun("Point{};");
+    assert emptyInstance.lookahead.isStructInstantiationAhead();
+    ProbeRun emptyBeforeElse = ProbeRun("MAX {} else {}");
+    assert !emptyBeforeElse.lookahead.isStructInstantiationAhead();
+    ProbeRun emptyBeforeStmt = ProbeRun("MAX {} return 1;");
+    assert !emptyBeforeStmt.lookahead.isStructInstantiationAhead();
+    return true;
+}
+
+#[test]
+f<bool> testParserCursorSplitsGenericTokens() {
+    ProbeRun run = ProbeRun("a >> b");
+    // The stream has the merged token. The cursor takes the first `>` of it and remembers the second
+    run.state.advance();
+    assert run.state.currentTokenIs(TokenType::SHR);
+    run.state.consumeGenericClose();
+    assert run.state.pendingGreaters == 1u && run.state.currentTokenIs(TokenType::IDENTIFIER);
+    run.state.consumeGenericClose();
+    assert run.state.pendingGreaters == 0u && run.state.currentTokenIs(TokenType::IDENTIFIER) && !run.state.failed;
+    // A single `>` is consumed like any token
+    ProbeRun single = ProbeRun("> b");
+    single.state.consumeGenericClose();
+    assert single.state.currentTokenIs(TokenType::IDENTIFIER);
+    // The cursor skips comments
+    ProbeRun comments = ProbeRun("/* a */ x // b\n y");
+    assert comments.state.currentTokenIs(TokenType::IDENTIFIER);
+    comments.state.advance();
+    assert comments.state.currentTokenIs(TokenType::IDENTIFIER) && !comments.state.currentTokenIs(TokenType::EOF);
+    return true;
+}
+
+// -------------------------------------------------- Errors --------------------------------------------------
+
+#[test]
+f<bool> testParserErrors() {
+    assert parseError("f<int> main() { x = ; }") == "[Error|Parser] ./source.spice:1:21: Parsing failed: Unexpected token ';'";
+    assert parseError("#[ f<int> main() {}") == "[Error|Parser] ./source.spice:1:1: Parsing failed: Unexpected token '#'";
+    assert parseError("inline f<int> main() {}") == "[Error|Parser] ./source.spice:1:1: Parsing failed: Unexpected token 'inline'";
+    // Enums, aliases and generic type definitions have no template list or attribute
+    assert parseError("type X<T> enum { A }") == "[Error|Parser] ./source.spice:1:7: Parsing failed: Unexpected token '<'";
+    assert parseError("type A<T> alias int;") == "[Error|Parser] ./source.spice:1:7: Parsing failed: Unexpected token '<'";
+    // The body of a struct has no end-of-file check, so the error comes from the next field
+    assert parseError("type S struct { int x;") == "[Error|Parser] ./source.spice:1:22: Parsing failed: Unexpected token ';'";
+    // The enum item value is checked as a number before it is checked to be one
+    assert parseError("type E enum { A = foo }") == "[Error|Parser] ./source.spice:1:19: Parsing failed: Unexpected token 'foo'";
+    assert parseError("type E enum { A = 0x }") == "[Error|Parser] ./source.spice:1:19: Invalid integer literal: Missing digits after the base prefix '0x'";
+    // Literals
+    assert parseError("f<int> main() { string s = \"a\\q\"; }") == "[Error|Parser] ./source.spice:1:28: Invalid string literal: Invalid escape sequence '\\q'";
+    assert parseError("f<int> main() { int x = 1; long y = 9223372036854775808; }") == "[Error|Parser] ./source.spice:1:37: Number is out of range: The provided number is out of range";
+    // Only the first error is reported
+    ParseRun twice = ParseRun("f<int> main() { x = ; y = ; }");
+    assert !twice.ok() && twice.engine.renderStop(twice.sourceManager) == "[Error|Parser] ./source.spice:1:21: Parsing failed: Unexpected token ';'";
+    // A file that the lexer could not finish is not parsed
+    ParseRun lexError = ParseRun("f<int> main() { \"abc");
+    assert !lexError.ok() && lexError.stream.failed;
+    assert lexError.error().startsWith("[Error|Lexer]");
+    return true;
+}
+
+#[test]
+f<bool> testParserReservedNames() {
+    assert parseError("f<int> main() {\n    int new = 1;\n}") == "[Error|Parser] ./source.spice:2:9: Usage of reserved keyword: 'new' is a reserved keyword. Please use another name instead";
+    assert parseError("f<int> main() {\n    new::foo();\n}") == "[Error|Parser] ./source.spice:2:5: Usage of reserved keyword: 'new' is a reserved keyword. Please use another name instead";
+    assert parseError("type Result struct {}") == "[Error|Parser] ./source.spice:1:6: Usage of reserved typename: 'Result' is a reserved type name. Please use another one instead";
+    // The reserved type names are allowed in std files
+    ParseRun std = ParseRun(String("type Result struct {}"), false);
+    assert std.ok();
+    return true;
+}
+
+#[test]
+f<bool> testParserLegacyCrashIsAnError() {
+    // Legacy: an assertion fails in `parseQualifier`, when a token that starts neither a function nor a procedure is found
+    // where a signature of an interface should start. The new parser reports the token (deviations log)
+    assert parseError("type I interface {\n    5;\n}\nf<int> main() {}") == "[Error|Parser] ./source.spice:2:5: Parsing failed: Unexpected token '5'";
+    return true;
+}
+
+// -------------------------------------------------- Suite cases and real sources --------------------------------------------------
+
+// The cases of the ParserTests suite: the source and the expected output come from test/test-files/parser. The runner of the suite
+// checks the binary, this checks the parser, the engine and the renderer with the same files. The builtin tests run in the
+// repository root
+f<String> readCase(const string name, const string file) {
+    Result<String> text = readFile((String("test/test-files/parser/") + name + "/" + file).getRaw());
+    assert text.isOk();
+    return text.unwrap();
+}
+
+p checkSuiteCase(const string name) {
+    ParseRun run = ParseRun(readCase(name, "source.spice"), true);
+    assert !run.ok();
+    String expected = readCase(name, "exception.out");
+    // The reference files may end with a line break, the renderer does not add one
+    while expected.getLength() > 0l && expected[expected.getLength() - 1l] == '\n' {
+        expected = expected.getSubstring(0l, cast<long>(expected.getLength()) - 1l);
+    }
+    // The test runner normalizes path separators in the output of the compiler, so the reference files have a '/' for every '\'
+    const String rendered = run.error();
+    String normalized;
+    for unsigned long i = 0l; i < rendered.getLength(); i++ {
+        normalized += rendered[i] == '\\' ? '/' : rendered[i];
+    }
+    assert normalized == expected;
+}
+
+#[test]
+f<bool> testParserSuiteCases() {
+    checkSuiteCase("error-case-constant-invalid");
+    checkSuiteCase("error-enum-item-value-missing-digits");
+    checkSuiteCase("error-escaped-line-break-string");
+    checkSuiteCase("error-extraneous-input");
+    checkSuiteCase("error-global-var-invalid-initializer");
+    checkSuiteCase("error-global-var-nil-initializer");
+    checkSuiteCase("error-int-literal-missing-digits");
+    checkSuiteCase("error-int-out-of-range");
+    checkSuiteCase("error-interface-signature-start"); // next-only, see the deviations log
+    checkSuiteCase("error-invalid-char-literal");
+    checkSuiteCase("error-invalid-char-literal-multibyte");
+    checkSuiteCase("error-invalid-escape-sequence-string");
+    checkSuiteCase("error-invalid-hex-escape-sequence-char");
+    checkSuiteCase("error-invalid-hex-escape-sequence-string");
+    checkSuiteCase("error-long-literal-missing-digits");
+    checkSuiteCase("error-octal-escape-sequence-out-of-range-char");
+    checkSuiteCase("error-octal-escape-sequence-out-of-range-string");
+    checkSuiteCase("error-parsing-error");
+    checkSuiteCase("error-reserved-keyword-as-identifier");
+    checkSuiteCase("error-reserved-keyword-in-name-prefix");
+    checkSuiteCase("error-reserved-typename-as-type-identifier");
+    checkSuiteCase("error-short-literal-missing-digits");
+    checkSuiteCase("error-signed-and-unsigned");
+    checkSuiteCase("error-ulong-out-of-range");
+    checkSuiteCase("error-wrong-attribute-value-type");
+    return true;
+}
+
+// Parse a file of the repository. The files are valid programs. The std may use the reserved type names
+p checkParsesRealSource(const string path, bool isStd) {
+    Result<String> text = readFile(path);
+    assert text.isOk();
+    ParseRun run = ParseRun(text.unwrap(), !isStd);
+    assert run.ok();
+    assert run.store.getKind(run.root) == AstNodeKind::ENTRY && run.store.getNodeCount() > 10u;
+}
+
+#[test]
+f<bool> testParserParsesRealSources() {
+    checkParsesRealSource("src-next/syntax/parser/expr-parser.spice", false);
+    checkParsesRealSource("src-next/syntax/lexer/lexer.spice", false);
+    checkParsesRealSource("src-next/syntax/ast/ast-store.spice", false);
+    checkParsesRealSource("src/parser/parser.spice", false);
+    checkParsesRealSource("std/data/vector.spice", true);
+    checkParsesRealSource("std/text/analysis.spice", true);
+    return true;
+}

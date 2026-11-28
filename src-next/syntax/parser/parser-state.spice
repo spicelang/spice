@@ -1,0 +1,267 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/type/type-conversion";
+
+// Own imports
+import "@/base/interner";
+import "@/base/small-vec";
+import "@/diag/codes";
+import "@/diag/diagnostic";
+import "@/source/source-file";
+import "@/source/source-manager";
+import "@/source/span";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/lexer/token";
+import "@/syntax/lexer/token-stream";
+
+/**
+ * The state that all parser structs share: the token cursor with the splitting of `>>` and `<<`, the AstStore that receives the
+ * nodes, the diagnostic sink and the helpers of the rules (expect, consumeIf, identifiers, spans). The grammar rules live in the
+ * parser structs (decl, stmt, expr, type, attr), one struct per file, and each of them holds a pointer to this state.
+ *
+ * Every parser error is fatal, as in legacy (`throwParserError` ended the process). Without exceptions, the first error is
+ * reported to the sink and sets `failed`, and the cursor moves to the EOF token, so that every loop of the rules ends. All
+ * later errors are swallowed, because legacy never got that far. The nodes of a failed parse are not meaningful.
+ */
+// legacy: parser/parser.spice:43-64 (fields), :148-234 (cursor), :309-328 (getIdentifier)
+public type ParserState struct {
+    public TokenStream* stream = nil<TokenStream*>
+    public const SourceManager* sourceManager = nil<const SourceManager*>
+    public AstStore* store = nil<AstStore*>
+    public Interner* interner = nil<Interner*>
+    public IDiagnosticSink* sink = nil<IDiagnosticSink*>
+    public bool checkReservedTypeNames = true // false for std files and the formatter (legacy: `sourceFile == nil || isStdFile`)
+    public bool failed = false
+    public bool pendingLess = false // A `<<` was split by the operator name parsing, the second `<` is still to be consumed
+    public unsigned int pendingGreaters = 0u // A `>>` was split by consumeGenericClose, the second `>` is still to be consumed
+    public bool isParsingFieldType = false // Data types are parsed for a struct or union field
+}
+
+public p ParserState.ctor() {}
+
+/**
+ * @param stream Tokens of the file. The cursor skips the leading comments
+ * @param sourceManager Manager that holds the source of the stream
+ * @param store Store that receives the nodes
+ * @param interner Interner for the names in the nodes
+ * @param sink Receiver of the first parser error
+ * @param checkReservedTypeNames Whether the reserved type names are rejected as type names (not in std files)
+ */
+public p ParserState.ctor(TokenStream* stream, const SourceManager* sourceManager, AstStore* store, Interner* interner, IDiagnosticSink* sink, bool checkReservedTypeNames) {
+    this.stream = stream;
+    this.sourceManager = sourceManager;
+    this.store = store;
+    this.interner = interner;
+    this.sink = sink;
+    this.checkReservedTypeNames = checkReservedTypeNames;
+    this.skipIgnoredTokens();
+}
+
+// legacy: parser/parser.spice:167-171
+p ParserState.skipIgnoredTokens() {
+    while isIgnoredTokenType(this.stream.getToken().tokenType) {
+        this.stream.advance();
+    }
+}
+
+// legacy: parser/parser.spice:174-177
+public p ParserState.advance() {
+    this.stream.advance();
+    this.skipIgnoredTokens();
+}
+
+// legacy: parser/parser.spice:148-150
+public f<bool> ParserState.currentTokenIs(TokenType tokenType) {
+    return this.stream.getToken().tokenType == tokenType;
+}
+
+/**
+ * Get the type of the relevant token at an offset from the current token. A negative offset wraps around like the unsigned
+ * arithmetic of legacy does (an unterminated attribute leads to offset -1, see `Lookahead.matchBalancedGroup`).
+ *
+ * @param offset Number of relevant tokens ahead
+ * @return Type of that token, EOF behind the end
+ */
+// legacy: parser/parser.spice:201-203
+public f<TokenType> ParserState.tokenAt(long offset) {
+    return this.stream.peekRelevantType(cast<unsigned long>(offset));
+}
+
+// legacy: parser/parser.spice:190-196
+public f<bool> ParserState.consumeIf(TokenType tokenType) {
+    if this.currentTokenIs(tokenType) {
+        this.advance();
+        return true;
+    }
+    return false;
+}
+
+// legacy: parser/parser.spice:180-187
+public p ParserState.expect(TokenType tokenType) {
+    if !this.currentTokenIs(tokenType) {
+        this.failUnexpectedToken();
+        return;
+    }
+    this.advance();
+}
+
+/**
+ * Report `Unexpected token '<text>'` at the current token
+ */
+public p ParserState.failUnexpectedToken() {
+    const Token token = this.stream.getToken();
+    this.fail(ParserErrorType::PARSING_FAILED, token.span, String("Unexpected token '") + this.tokenText(token) + String("'"));
+}
+
+/**
+ * Report a parser error and stop the parse. Only the first error is reported.
+ *
+ * @param code Code of the error
+ * @param span Location of the error
+ * @param message Text after the prefix
+ */
+// legacy: parser/parser.spice:2935-2939 (throwParserError)
+public p ParserState.fail(ParserErrorType code, const Span& span, const String& message) {
+    if this.failed {
+        return;
+    }
+    this.failed = true;
+    // Legacy passed the message on as a C string, so it ends at the first NUL byte of the source
+    String text = message;
+    for unsigned long i = 0l; i < message.getLength(); i++ {
+        if message[i] == '\0' {
+            text = message.getSubstring(0ul, cast<long>(i));
+            break;
+        }
+    }
+    this.sink.report(this.stream.file, makeDiagnostic(DiagnosticFamily::PARSER, cast<unsigned int>(code), span, text));
+    // End all loops of the rules
+    while this.stream.getToken().tokenType != TokenType::EOF {
+        this.stream.advance();
+    }
+}
+
+/**
+ * @param token Token of the stream
+ * @return Text of the token, `EOF` for the end of the file
+ */
+public f<String> ParserState.tokenText(const Token& token) {
+    return this.stream.getText(*this.sourceManager, token);
+}
+
+/**
+ * @return Text of the current token
+ */
+public f<String> ParserState.currentText() {
+    return this.tokenText(this.stream.getToken());
+}
+
+public f<Symbol> ParserState.intern(const String& text) {
+    return this.interner.intern(text);
+}
+
+// legacy: parser/parser.spice:206-208
+public f<bool> ParserState.isGenericOpenAhead() {
+    return this.pendingLess || this.currentTokenIs(TokenType::LESS);
+}
+
+// legacy: parser/parser.spice:211-217
+public p ParserState.consumeGenericOpen() {
+    if this.pendingLess {
+        this.pendingLess = false;
+        return;
+    }
+    this.expect(TokenType::LESS);
+}
+
+/**
+ * Consume the `>` that closes a type list. A `>>` token closes two lists: the first call consumes the token and remembers the
+ * second `>`, the second call only takes the remembered one.
+ */
+// legacy: parser/parser.spice:221-234
+public p ParserState.consumeGenericClose() {
+    if this.pendingGreaters > 0u {
+        this.pendingGreaters--;
+        return;
+    }
+    if this.currentTokenIs(TokenType::SHR) {
+        this.pendingGreaters = 1u;
+        this.advance();
+        return;
+    }
+    this.expect(TokenType::GREATER);
+}
+
+/**
+ * Start offset of a node that starts at the current token
+ */
+public f<unsigned int> ParserState.startOffset() {
+    return this.stream.getToken().span.start;
+}
+
+/**
+ * Span of a node from its start offset up to the end of the last relevant token that was consumed
+ *
+ * @param start Start offset of the node
+ * @return Span of the node
+ */
+// legacy: parser/parser.spice:96-106 (concludeNode: `previousRelevantToken.endOffset - 1`, here the stop is exclusive)
+public f<Span> ParserState.finishSpan(unsigned int start) {
+    const Token prev = this.stream.getPreviousRelevantToken();
+    unsigned int stop = prev.span.stop;
+    if stop < start {
+        stop = start; // A node that consumed no token has an empty span (legacy: parser.spice:104 tolerates it)
+    }
+    return Span(this.stream.file, start, stop);
+}
+
+/**
+ * Check a name that is about to be consumed. It does not consume the token. The reserved keyword check comes first, then the
+ * check of the reserved type names, which is skipped for std files.
+ *
+ * @param isTypeIdentifier Whether a type identifier is expected
+ * @return Text of the current token
+ */
+// legacy: parser/parser.spice:309-328
+public f<String> ParserState.getIdentifier(bool isTypeIdentifier) {
+    const Token token = this.stream.getToken();
+    const String identifier = this.tokenText(token);
+    if isReservedKeyword(identifier) {
+        this.fail(ParserErrorType::RESERVED_KEYWORD, token.span, String("'") + identifier + String("' is a reserved keyword. Please use another name instead"));
+    } else if isTypeIdentifier && this.checkReservedTypeNames && isReservedTypeName(identifier) {
+        this.fail(ParserErrorType::RESERVED_TYPENAME, token.span, String("'") + identifier + String("' is a reserved type name. Please use another one instead"));
+    }
+    return identifier;
+}
+
+// legacy: parser/parser.spice:33-35
+public f<bool> isReservedKeyword(const String& identifier) {
+    return identifier == "new" || identifier == "stash" || identifier == "pick" || identifier == "sync" || identifier == "class";
+}
+
+// legacy: symboltablebuilder/qual-type.spice:44-47. The names are syntactic here, so they are not imported from sema
+public f<bool> isReservedTypeName(const String& identifier) {
+    return identifier == "String" || identifier == "Result" || identifier == "Error" || identifier == "TypeInfo" || identifier == "IIterator" || identifier == "ArrayIterator";
+}
+
+/**
+ * Parse a prefix of a qualified name: `(IDENTIFIER separator)*`. Each fragment is checked like an identifier.
+ *
+ * @param separatorType Token type of the separator (`::` or `.`)
+ * @param separator Text of the separator in the joined name
+ * @param fragments Receives the fragments
+ * @param fqName Receives the joined name, with the separator behind each fragment
+ */
+// legacy: parser/parser.spice:870-879
+public p ParserState.parseNamePrefix(TokenType separatorType, string separator, SmallVec<Symbol>& fragments, String& fqName) {
+    while this.currentTokenIs(TokenType::IDENTIFIER) && this.tokenAt(1l) == separatorType && !this.failed {
+        const String fragment = this.getIdentifier(false);
+        fragments.pushBack(this.intern(fragment));
+        fqName += fragment;
+        fqName += separator;
+        this.expect(TokenType::IDENTIFIER);
+        this.expect(separatorType);
+    }
+}

@@ -1,0 +1,728 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+
+// Own imports
+import "@/base/interner";
+import "@/base/small-vec";
+import "@/syntax/ast/ast-enums";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/ast/nodes-expr";
+import "@/syntax/ast/nodes-misc";
+import "@/syntax/lexer/token";
+import "@/syntax/parser/attr-parser";
+import "@/syntax/parser/literal-checker";
+import "@/syntax/parser/lookahead";
+import "@/syntax/parser/parser-state";
+import "@/syntax/parser/stmt-parser";
+import "@/syntax/parser/type-parser";
+
+// The binary precedence levels from the lowest to the highest. The operand of the highest level is the cast expression
+const unsigned int LEVEL_LOGICAL_OR = 0u;
+const unsigned int LEVEL_LOGICAL_AND = 1u;
+const unsigned int LEVEL_BITWISE_OR = 2u;
+const unsigned int LEVEL_BITWISE_XOR = 3u;
+const unsigned int LEVEL_BITWISE_AND = 4u;
+const unsigned int LEVEL_EQUALITY = 5u;
+const unsigned int LEVEL_RELATIONAL = 6u;
+const unsigned int LEVEL_SHIFT = 7u;
+const unsigned int LEVEL_ADDITIVE = 8u;
+const unsigned int LEVEL_MULTIPLICATIVE = 9u;
+const unsigned int LEVEL_CAST = 10u;
+
+/**
+ * Parser of the expressions: the assignment and ternary expression, the binary levels (one loop driven by a precedence table
+ * instead of ten functions), the unary levels, the atomic expressions, calls, instantiations, lambdas and constants.
+ *
+ * A level without an operator returns its first operand unwrapped, so the slot of a node can hold any expression kind. The
+ * nodes are built bottom-up: a node that wraps its first operand reserves its id after that operand was parsed, which is the
+ * order of legacy (`createNodeWrappingLastChild`), and its span starts where the first operand starts.
+ */
+// legacy: parser/parser.spice:1858-2552
+public type ExprParser struct {
+    ParserState* state = nil<ParserState*>
+    Lookahead* lookahead = nil<Lookahead*>
+    LiteralChecker* literals = nil<LiteralChecker*>
+    TypeParser* types = nil<TypeParser*>
+    AttrParser* attrs = nil<AttrParser*>
+    StmtParser* stmts = nil<StmtParser*>
+}
+
+public p ExprParser.ctor() {}
+
+public p ExprParser.ctor(ParserState* state, Lookahead* lookahead, LiteralChecker* literals, TypeParser* types, AttrParser* attrs, StmtParser* stmts) {
+    this.state = state;
+    this.lookahead = lookahead;
+    this.literals = literals;
+    this.types = types;
+    this.attrs = attrs;
+    this.stmts = stmts;
+}
+
+/**
+ * assignExpr: prefixUnaryExpr assignOp assignExpr | ternaryExpr
+ * A valid assignment lhs (prefixUnaryExpr) is also a valid ternaryExpr, so a ternaryExpr is parsed first and only treated as an
+ * assignment if an assignment operator follows.
+ *
+ * @return Expression node
+ */
+// legacy: parser/parser.spice:1857-1876
+public f<NodeId> ExprParser.parseAssignExpr() {
+    if this.state.failed {
+        return noNodeId(); // After an error the rules only unwind, the nodes are not used
+    }
+    const unsigned int start = this.state.startOffset();
+    const NodeId lhs = this.parseTernaryExpr();
+
+    // Pass-through if this is no assignment
+    if !isAssignOp(this.state.stream.getToken().tokenType) {
+        return lhs;
+    }
+
+    AssignExprNode node;
+    node.header.id = this.state.store.reserveNode();
+    node.lhs = lhs;
+    node.op = this.parseAssignOp();
+    node.rhs = this.parseAssignExpr();
+    return this.state.store.addAssignExpr(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1879-1896
+f<AssignOp> ExprParser.parseAssignOp() {
+    const TokenType tokenType = this.state.stream.getToken().tokenType;
+    this.state.advance();
+    switch tokenType {
+        case TokenType::ASSIGN: { return AssignOp::OP_ASSIGN; }
+        case TokenType::PLUS_EQUAL: { return AssignOp::OP_PLUS_EQUAL; }
+        case TokenType::MINUS_EQUAL: { return AssignOp::OP_MINUS_EQUAL; }
+        case TokenType::MUL_EQUAL: { return AssignOp::OP_MUL_EQUAL; }
+        case TokenType::DIV_EQUAL: { return AssignOp::OP_DIV_EQUAL; }
+        case TokenType::REM_EQUAL: { return AssignOp::OP_REM_EQUAL; }
+        case TokenType::SHL_EQUAL: { return AssignOp::OP_SHL_EQUAL; }
+        case TokenType::SHR_EQUAL: { return AssignOp::OP_SHR_EQUAL; }
+        case TokenType::AND_EQUAL: { return AssignOp::OP_AND_EQUAL; }
+        case TokenType::OR_EQUAL: { return AssignOp::OP_OR_EQUAL; }
+        case TokenType::XOR_EQUAL: { return AssignOp::OP_XOR_EQUAL; }
+    }
+    return AssignOp::OP_NONE;
+}
+
+/**
+ * ternaryExpr: logicalOrExpr (QUESTION_MARK logicalOrExpr? COLON logicalOrExpr)?
+ * The branches are logical-or expressions, so a nested ternary needs parentheses.
+ *
+ * @return Expression node
+ */
+// legacy: parser/parser.spice:1899-1923
+public f<NodeId> ExprParser.parseTernaryExpr() {
+    if this.state.failed {
+        return noNodeId();
+    }
+    const unsigned int start = this.state.startOffset();
+    const NodeId condition = this.parseBinaryLevel(LEVEL_LOGICAL_OR);
+
+    // Pass-through if this is no ternary
+    if !this.state.currentTokenIs(TokenType::QUESTION_MARK) {
+        return condition;
+    }
+
+    TernaryExprNode node;
+    node.header.id = this.state.store.reserveNode();
+    node.condition = condition;
+
+    // The true branch is omitted in the shortened form (COND ?: FALSE_EXPR)
+    this.state.expect(TokenType::QUESTION_MARK);
+    if this.state.consumeIf(TokenType::COLON) {
+        node.falseExpr = this.parseBinaryLevel(LEVEL_LOGICAL_OR);
+    } else {
+        node.trueExpr = this.parseBinaryLevel(LEVEL_LOGICAL_OR);
+        this.state.expect(TokenType::COLON);
+        node.falseExpr = this.parseBinaryLevel(LEVEL_LOGICAL_OR);
+    }
+    return this.state.store.addTernaryExpr(node, this.state.finishSpan(start));
+}
+
+/**
+ * Index of the operator of a binary level that a token type stands for, or -1 if it is no operator of that level. The logical
+ * and bitwise levels have one operator that the node does not store.
+ */
+f<int> ExprParser.operatorIndex(unsigned int level, TokenType t) {
+    if level == LEVEL_LOGICAL_OR { return t == TokenType::LOGICAL_OR ? 0 : -1; }
+    if level == LEVEL_LOGICAL_AND { return t == TokenType::LOGICAL_AND ? 0 : -1; }
+    if level == LEVEL_BITWISE_OR { return t == TokenType::BITWISE_OR ? 0 : -1; }
+    if level == LEVEL_BITWISE_XOR { return t == TokenType::BITWISE_XOR ? 0 : -1; }
+    if level == LEVEL_BITWISE_AND { return t == TokenType::BITWISE_AND ? 0 : -1; }
+    if level == LEVEL_EQUALITY {
+        if t == TokenType::EQUAL { return 0; }
+        return t == TokenType::NOT_EQUAL ? 1 : -1;
+    }
+    if level == LEVEL_RELATIONAL {
+        if t == TokenType::LESS { return 0; }
+        if t == TokenType::GREATER { return 1; }
+        if t == TokenType::LESS_EQUAL { return 2; }
+        return t == TokenType::GREATER_EQUAL ? 3 : -1;
+    }
+    if level == LEVEL_SHIFT {
+        if t == TokenType::SHL { return 0; }
+        return t == TokenType::SHR ? 1 : -1;
+    }
+    if level == LEVEL_ADDITIVE {
+        if t == TokenType::PLUS { return 0; }
+        return t == TokenType::MINUS ? 1 : -1;
+    }
+    // LEVEL_MULTIPLICATIVE
+    if t == TokenType::MUL { return 0; }
+    if t == TokenType::DIV { return 1; }
+    return t == TokenType::REM ? 2 : -1;
+}
+
+/**
+ * Parse a binary level, which is one of the legacy functions `parseLogicalOrExpr` to `parseMultiplicativeExpr`. The equality and
+ * the relational level take one operator, the others any number. A level without operator returns its first operand.
+ *
+ * @param level Precedence level
+ * @return Expression node
+ */
+// legacy: parser/parser.spice:1928-2193 (the ten binary levels)
+f<NodeId> ExprParser.parseBinaryLevel(unsigned int level) {
+    if level == LEVEL_CAST {
+        return this.parseCastExpr();
+    }
+    const unsigned int start = this.state.startOffset();
+    const NodeId firstOperand = this.parseBinaryLevel(level + 1u);
+
+    // Pass-through if there is only one operand
+    if this.operatorIndex(level, this.state.stream.getToken().tokenType) < 0 {
+        return firstOperand;
+    }
+
+    const NodeId id = this.state.store.reserveNode();
+    Vector<NodeId> operands;
+    operands.pushBack(firstOperand);
+    Vector<int> operators;
+    const bool single = level == LEVEL_EQUALITY || level == LEVEL_RELATIONAL;
+    while !this.state.failed {
+        const int opIdx = this.operatorIndex(level, this.state.stream.getToken().tokenType);
+        if opIdx < 0 {
+            break;
+        }
+        operators.pushBack(opIdx);
+        this.state.advance();
+        operands.pushBack(this.parseBinaryLevel(level + 1u));
+        if single {
+            break;
+        }
+    }
+    return this.addBinaryNode(level, id, operands, operators, start);
+}
+
+// Create the node of a binary level from its operands and operator indices
+f<NodeId> ExprParser.addBinaryNode(unsigned int level, NodeId id, const Vector<NodeId>& operands, const Vector<int>& operators, unsigned int start) {
+    const ChildRange range = this.state.store.addChildren(operands);
+    const Span span = this.state.finishSpan(start);
+    if level == LEVEL_LOGICAL_OR {
+        LogicalOrExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        return this.state.store.addLogicalOrExpr(node, span);
+    } else if level == LEVEL_LOGICAL_AND {
+        LogicalAndExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        return this.state.store.addLogicalAndExpr(node, span);
+    } else if level == LEVEL_BITWISE_OR {
+        BitwiseOrExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        return this.state.store.addBitwiseOrExpr(node, span);
+    } else if level == LEVEL_BITWISE_XOR {
+        BitwiseXorExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        return this.state.store.addBitwiseXorExpr(node, span);
+    } else if level == LEVEL_BITWISE_AND {
+        BitwiseAndExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        return this.state.store.addBitwiseAndExpr(node, span);
+    } else if level == LEVEL_EQUALITY {
+        EqualityExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        node.op = operators.get(0l) == 0 ? EqualityOp::OP_EQUAL : EqualityOp::OP_NOT_EQUAL;
+        return this.state.store.addEqualityExpr(node, span);
+    } else if level == LEVEL_RELATIONAL {
+        RelationalExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        const int opIdx = operators.get(0l);
+        if opIdx == 0 {
+            node.op = RelationalOp::OP_LESS;
+        } else if opIdx == 1 {
+            node.op = RelationalOp::OP_GREATER;
+        } else if opIdx == 2 {
+            node.op = RelationalOp::OP_LESS_EQUAL;
+        } else {
+            node.op = RelationalOp::OP_GREATER_EQUAL;
+        }
+        return this.state.store.addRelationalExpr(node, span);
+    } else if level == LEVEL_SHIFT {
+        ShiftExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        for unsigned long i = 0l; i < operators.getSize(); i++ {
+            node.opQueue.pushBack(operators.get(i) == 0 ? ShiftOp::OP_SHIFT_LEFT : ShiftOp::OP_SHIFT_RIGHT);
+        }
+        return this.state.store.addShiftExpr(node, span);
+    } else if level == LEVEL_ADDITIVE {
+        AdditiveExprNode node;
+        node.header.id = id;
+        node.operands = range;
+        for unsigned long i = 0l; i < operators.getSize(); i++ {
+            node.opQueue.pushBack(operators.get(i) == 0 ? AdditiveOp::OP_PLUS : AdditiveOp::OP_MINUS);
+        }
+        return this.state.store.addAdditiveExpr(node, span);
+    }
+    MultiplicativeExprNode node;
+    node.header.id = id;
+    node.operands = range;
+    for unsigned long i = 0l; i < operators.getSize(); i++ {
+        const int opIdx = operators.get(i);
+        if opIdx == 0 {
+            node.opQueue.pushBack(MultiplicativeOp::OP_MUL);
+        } else if opIdx == 1 {
+            node.opQueue.pushBack(MultiplicativeOp::OP_DIV);
+        } else {
+            node.opQueue.pushBack(MultiplicativeOp::OP_REM);
+        }
+    }
+    return this.state.store.addMultiplicativeExpr(node, span);
+}
+
+/**
+ * castExpr: prefixUnaryExpr | CAST LESS dataType GREATER LPAREN assignExpr RPAREN
+ *
+ * @return Expression node
+ */
+// legacy: parser/parser.spice:2175-2193
+f<NodeId> ExprParser.parseCastExpr() {
+    // Pass-through if this is no cast
+    if !this.state.currentTokenIs(TokenType::CAST) {
+        return this.parsePrefixUnaryExpr();
+    }
+
+    const unsigned int start = this.state.startOffset();
+    CastExprNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::CAST);
+    this.state.expect(TokenType::LESS);
+    node.dataType = this.types.parseDataType();
+    this.state.consumeGenericClose();
+    this.state.expect(TokenType::LPAREN);
+    node.assignExpr = this.parseAssignExpr();
+    this.state.expect(TokenType::RPAREN);
+    return this.state.store.addCastExpr(node, this.state.finishSpan(start));
+}
+
+/**
+ * prefixUnaryExpr: postfixUnaryExpr | (MINUS | PLUS_PLUS | MINUS_MINUS | NOT | BITWISE_NOT | MUL | BITWISE_AND) prefixUnaryExpr
+ * A minus sign directly in front of a numeric literal belongs to the constant.
+ *
+ * @return Expression node
+ */
+// legacy: parser/parser.spice:2196-2223
+f<NodeId> ExprParser.parsePrefixUnaryExpr() {
+    const TokenType t = this.state.stream.getToken().tokenType;
+    const bool isPrefixOp = t == TokenType::MINUS || t == TokenType::PLUS_PLUS || t == TokenType::MINUS_MINUS || t == TokenType::NOT ||
+                            t == TokenType::BITWISE_NOT || t == TokenType::MUL || t == TokenType::BITWISE_AND;
+    if !isPrefixOp || this.lookahead.isNegativeNumericConstantAhead() {
+        return this.parsePostfixUnaryExpr();
+    }
+
+    const unsigned int start = this.state.startOffset();
+    PrefixUnaryExprNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.advance();
+    switch t {
+        case TokenType::MINUS: { node.op = PrefixUnaryOp::OP_MINUS; }
+        case TokenType::PLUS_PLUS: { node.op = PrefixUnaryOp::OP_PLUS_PLUS; }
+        case TokenType::MINUS_MINUS: { node.op = PrefixUnaryOp::OP_MINUS_MINUS; }
+        case TokenType::NOT: { node.op = PrefixUnaryOp::OP_NOT; }
+        case TokenType::BITWISE_NOT: { node.op = PrefixUnaryOp::OP_BITWISE_NOT; }
+        case TokenType::MUL: { node.op = PrefixUnaryOp::OP_DEREFERENCE; }
+        case TokenType::BITWISE_AND: { node.op = PrefixUnaryOp::OP_ADDRESS_OF; }
+    }
+    node.operand = this.parsePrefixUnaryExpr();
+    return this.state.store.addPrefixUnaryExpr(node, this.state.finishSpan(start));
+}
+
+/**
+ * postfixUnaryExpr: atomicExpr (LBRACKET assignExpr RBRACKET | DOT IDENTIFIER (LESS typeLst GREATER)? LPAREN argLst? RPAREN |
+ * DOT IDENTIFIER | LPAREN argLst? RPAREN | PLUS_PLUS | MINUS_MINUS | NOT)*
+ * The rule is left-recursive, so each postfix operator wraps the expression parsed so far into a new node.
+ *
+ * @return Expression node
+ */
+// legacy: parser/parser.spice:2227-2263
+f<NodeId> ExprParser.parsePostfixUnaryExpr() {
+    const unsigned int start = this.state.startOffset();
+    NodeId expr = this.parseAtomicExpr();
+
+    while !this.state.failed {
+        const TokenType t = this.state.stream.getToken().tokenType;
+        if t != TokenType::LBRACKET && t != TokenType::DOT && t != TokenType::LPAREN && t != TokenType::PLUS_PLUS &&
+           t != TokenType::MINUS_MINUS && t != TokenType::NOT {
+            break;
+        }
+
+        // Calls on the result of the expression parsed so far, e.g. 'getObj().method()' or 'getFct()()'
+        if t == TokenType::LPAREN || this.lookahead.isMethodCallOnExprAhead() {
+            expr = this.parseExprBasedFctCall(expr, start);
+            continue;
+        }
+
+        PostfixUnaryExprNode node;
+        node.header.id = this.state.store.reserveNode();
+        node.operand = expr;
+        if this.state.consumeIf(TokenType::LBRACKET) {
+            node.op = PostfixUnaryOp::OP_SUBSCRIPT;
+            node.subscriptIndexExpr = this.parseAssignExpr();
+            this.state.expect(TokenType::RBRACKET);
+        } else if this.state.consumeIf(TokenType::DOT) {
+            node.op = PostfixUnaryOp::OP_MEMBER_ACCESS;
+            node.identifier = this.state.intern(this.state.getIdentifier(false));
+            this.state.expect(TokenType::IDENTIFIER);
+        } else if this.state.consumeIf(TokenType::PLUS_PLUS) {
+            node.op = PostfixUnaryOp::OP_PLUS_PLUS;
+        } else if this.state.consumeIf(TokenType::MINUS_MINUS) {
+            node.op = PostfixUnaryOp::OP_MINUS_MINUS;
+        } else {
+            this.state.expect(TokenType::NOT);
+            node.op = PostfixUnaryOp::OP_ERR_PROPAGATION;
+        }
+        expr = this.state.store.addPostfixUnaryExpr(node, this.state.finishSpan(start));
+    }
+    return expr;
+}
+
+// Call on the result of the given expression, which is either a method call 'expr.method<T>(args)' or a call of the expression
+// itself 'expr(args)'. The call node wraps the expression parsed so far.
+// legacy: parser/parser.spice:2267-2284
+f<NodeId> ExprParser.parseExprBasedFctCall(NodeId expr, unsigned int start) {
+    FctCallNode node;
+    node.header.id = this.state.store.reserveNode();
+    if this.state.consumeIf(TokenType::DOT) {
+        // Method call on the result of the expression
+        node.receiverExpr = expr;
+        const String methodName = this.state.getIdentifier(false);
+        this.state.expect(TokenType::IDENTIFIER);
+        const Symbol methodSymbol = this.state.intern(methodName);
+        node.nameFragments.pushBack(methodSymbol);
+        node.fqFunctionName = methodSymbol;
+    } else {
+        // Call of the result of the expression, which is a function pointer
+        node.calleeExpr = expr;
+    }
+    this.parseFctCallTemplateTypesAndArgs(node);
+    return this.state.store.addFctCall(node, this.state.finishSpan(start));
+}
+
+/**
+ * atomicExpr: constant | value | (IDENTIFIER | TYPE_IDENTIFIER) (SCOPE_ACCESS (IDENTIFIER | TYPE_IDENTIFIER))* | LPAREN assignExpr RPAREN
+ *
+ * @return ATOMIC_EXPR
+ */
+// legacy: parser/parser.spice:2287-2318
+f<NodeId> ExprParser.parseAtomicExpr() {
+    const unsigned int start = this.state.startOffset();
+    AtomicExprNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    const TokenType cur = this.state.stream.getToken().tokenType;
+    if isConstantStart(cur) || this.lookahead.isNegativeNumericConstantAhead() {
+        node.constant = this.parseConstant();
+    } else if cur == TokenType::LPAREN && !this.lookahead.isLambdaExprAhead() {
+        this.state.expect(TokenType::LPAREN);
+        node.assignExpr = this.parseAssignExpr();
+        this.state.expect(TokenType::RPAREN);
+    } else if (cur == TokenType::IDENTIFIER || cur == TokenType::TYPE_IDENTIFIER) && !this.lookahead.isFctCallAhead() && !this.lookahead.isStructInstantiationAhead() {
+        // Plain (scoped) variable or constant access
+        const String firstFragment = this.state.getIdentifier(false);
+        String fqIdentifier = firstFragment;
+        node.nameFragments.pushBack(this.state.intern(firstFragment));
+        this.state.advance();
+        while this.state.consumeIf(TokenType::SCOPE_ACCESS) && !this.state.failed {
+            const String fragment = this.state.getIdentifier(false);
+            if !this.state.consumeIf(TokenType::TYPE_IDENTIFIER) {
+                this.state.expect(TokenType::IDENTIFIER);
+            }
+            node.nameFragments.pushBack(this.state.intern(fragment));
+            fqIdentifier += "::";
+            fqIdentifier += fragment;
+        }
+        node.fqIdentifier = this.state.intern(fqIdentifier);
+    } else {
+        node.value = this.parseValue();
+    }
+    return this.state.store.addAtomicExpr(node, this.state.finishSpan(start));
+}
+
+/**
+ * value: fctCall | arrayInitialization | structInstantiation | lambdaFunc | lambdaProc | lambdaExpr | NIL LESS dataType GREATER
+ *
+ * @return VALUE
+ */
+// legacy: parser/parser.spice:2321-2344
+f<NodeId> ExprParser.parseValue() {
+    const unsigned int start = this.state.startOffset();
+    ValueNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    if this.state.consumeIf(TokenType::NIL) {
+        this.state.expect(TokenType::LESS);
+        node.nilType = this.types.parseDataType();
+        this.state.consumeGenericClose();
+    } else if this.state.currentTokenIs(TokenType::LBRACKET) {
+        node.arrayInitialization = this.parseArrayInitialization();
+    } else if this.state.currentTokenIs(TokenType::F) {
+        node.lambdaFunc = this.parseLambdaFunc();
+    } else if this.state.currentTokenIs(TokenType::P) {
+        node.lambdaProc = this.parseLambdaProc();
+    } else if this.state.currentTokenIs(TokenType::LPAREN) {
+        node.lambdaExpr = this.parseLambdaExpr();
+    } else if this.lookahead.isStructInstantiationAhead() {
+        node.structInstantiation = this.parseStructInstantiation();
+    } else {
+        node.fctCall = this.parseFctCall();
+    }
+    return this.state.store.addValue(node, this.state.finishSpan(start));
+}
+
+/**
+ * constant: MINUS? (DOUBLE_LIT | INT_LIT | SHORT_LIT | LONG_LIT) | CHAR_LIT | STRING_LIT | TRUE | FALSE
+ * The literal is validated here, like legacy does. Sema decodes it later (`syntax/literal`).
+ *
+ * @return CONSTANT
+ */
+// legacy: parser/parser.spice:2347-2399
+public f<NodeId> ExprParser.parseConstant() {
+    const unsigned int start = this.state.startOffset();
+    ConstantNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    // Detect an optional leading minus sign for numeric literals
+    const bool isNegative = this.state.consumeIf(TokenType::MINUS);
+    node.isNegative = isNegative;
+
+    const Token token = this.state.stream.getToken();
+    if this.state.currentTokenIs(TokenType::DOUBLE_LIT) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_DOUBLE;
+        this.state.expect(TokenType::DOUBLE_LIT);
+    } else if this.state.currentTokenIs(TokenType::INT_LIT) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_INT;
+        node.isUnsigned = this.state.tokenText(token).endsWith("u");
+        const long _ = this.literals.parseNumeric(token, isNegative, 32u);
+        this.state.expect(TokenType::INT_LIT);
+    } else if this.state.currentTokenIs(TokenType::SHORT_LIT) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_SHORT;
+        node.isUnsigned = this.state.tokenText(token).endsWith("u");
+        const long _ = this.literals.parseNumeric(token, isNegative, 16u);
+        this.state.expect(TokenType::SHORT_LIT);
+    } else if this.state.currentTokenIs(TokenType::LONG_LIT) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_LONG;
+        node.isUnsigned = this.state.tokenText(token).endsWith("u");
+        const long _ = this.literals.parseNumeric(token, isNegative, 64u);
+        this.state.expect(TokenType::LONG_LIT);
+    } else if this.state.currentTokenIs(TokenType::CHAR_LIT) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_CHAR;
+        const char _ = this.literals.parseChar(token);
+        this.state.expect(TokenType::CHAR_LIT);
+    } else if this.state.currentTokenIs(TokenType::STRING_LIT) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_STRING;
+        const String _ = this.literals.parseString(token);
+        this.state.expect(TokenType::STRING_LIT);
+    } else if this.state.currentTokenIs(TokenType::TRUE) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_BOOL;
+        this.state.expect(TokenType::TRUE);
+    } else if this.state.currentTokenIs(TokenType::FALSE) {
+        node.primitiveValueType = PrimitiveValueType::TYPE_BOOL;
+        this.state.expect(TokenType::FALSE);
+    } else {
+        this.state.failUnexpectedToken();
+    }
+    return this.state.store.addConstant(node, this.state.finishSpan(start));
+}
+
+/**
+ * fctCall: (IDENTIFIER SCOPE_ACCESS)* (IDENTIFIER DOT)* (IDENTIFIER | TYPE_IDENTIFIER) (LESS typeLst GREATER)? LPAREN argLst? RPAREN
+ *
+ * @return FCT_CALL
+ */
+// legacy: parser/parser.spice:2402-2421
+f<NodeId> ExprParser.parseFctCall() {
+    const unsigned int start = this.state.startOffset();
+    FctCallNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    // Scope prefix: (IDENTIFIER SCOPE_ACCESS)*, then member prefix: (IDENTIFIER DOT)*
+    String fqFunctionName;
+    this.state.parseNamePrefix(TokenType::SCOPE_ACCESS, "::", node.nameFragments, fqFunctionName);
+    this.state.parseNamePrefix(TokenType::DOT, ".", node.nameFragments, fqFunctionName);
+    // Final name segment. It is not checked for reserved keywords
+    const String fragment = this.state.currentText();
+    node.nameFragments.pushBack(this.state.intern(fragment));
+    fqFunctionName += fragment;
+    if !this.state.consumeIf(TokenType::TYPE_IDENTIFIER) {
+        this.state.expect(TokenType::IDENTIFIER);
+    }
+    node.fqFunctionName = this.state.intern(fqFunctionName);
+    this.parseFctCallTemplateTypesAndArgs(node);
+    return this.state.store.addFctCall(node, this.state.finishSpan(start));
+}
+
+// Template type list and argument list of a function call: (LESS typeLst GREATER)? LPAREN argLst? RPAREN
+// legacy: parser/parser.spice:2424-2438
+p ExprParser.parseFctCallTemplateTypesAndArgs(FctCallNode& node) {
+    if this.state.consumeIf(TokenType::LESS) {
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+    this.state.expect(TokenType::LPAREN);
+    if !this.state.currentTokenIs(TokenType::RPAREN) {
+        node.argLst = this.parseArgLst();
+    }
+    this.state.expect(TokenType::RPAREN);
+}
+
+/**
+ * argLst: assignExpr (COMMA assignExpr)*
+ *
+ * @return ARG_LST
+ */
+// legacy: parser/parser.spice:1474-1483
+public f<NodeId> ExprParser.parseArgLst() {
+    const unsigned int start = this.state.startOffset();
+    ArgLstNode node;
+    node.header.id = this.state.store.reserveNode();
+    Vector<NodeId> args;
+    args.pushBack(this.parseAssignExpr());
+    while this.state.consumeIf(TokenType::COMMA) && !this.state.failed {
+        args.pushBack(this.parseAssignExpr());
+    }
+    node.args = this.state.store.addChildren(args);
+    return this.state.store.addArgLst(node, this.state.finishSpan(start));
+}
+
+/**
+ * arrayInitialization: LBRACKET argLst? RBRACKET
+ *
+ * @return ARRAY_INITIALIZATION
+ */
+// legacy: parser/parser.spice:2441-2451
+f<NodeId> ExprParser.parseArrayInitialization() {
+    const unsigned int start = this.state.startOffset();
+    ArrayInitializationNode node;
+    node.header.id = this.state.store.reserveNode();
+    this.state.expect(TokenType::LBRACKET);
+    if !this.state.currentTokenIs(TokenType::RBRACKET) {
+        node.itemLst = this.parseArgLst();
+    }
+    this.state.expect(TokenType::RBRACKET);
+    return this.state.store.addArrayInitialization(node, this.state.finishSpan(start));
+}
+
+/**
+ * structInstantiation: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)? LBRACE argLst? RBRACE
+ *
+ * @return STRUCT_INSTANTIATION
+ */
+// legacy: parser/parser.spice:2454-2479
+f<NodeId> ExprParser.parseStructInstantiation() {
+    const unsigned int start = this.state.startOffset();
+    StructInstantiationNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    // Scope prefix: (IDENTIFIER SCOPE_ACCESS)*
+    String fqStructName;
+    this.state.parseNamePrefix(TokenType::SCOPE_ACCESS, "::", node.nameFragments, fqStructName);
+    const String structName = this.state.currentText();
+    node.nameFragments.pushBack(this.state.intern(structName));
+    fqStructName += structName;
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    node.fqStructName = this.state.intern(fqStructName);
+
+    if this.state.consumeIf(TokenType::LESS) {
+        node.templateTypeLst = this.types.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+
+    this.state.expect(TokenType::LBRACE);
+    if !this.state.currentTokenIs(TokenType::RBRACE) {
+        node.fieldLst = this.parseArgLst();
+    }
+    this.state.expect(TokenType::RBRACE);
+    return this.state.store.addStructInstantiation(node, this.state.finishSpan(start));
+}
+
+/**
+ * lambdaFunc: F LESS dataType GREATER LPAREN paramLst? RPAREN lambdaAttr? stmtLst
+ * The attribute is parsed before the body, and the node lists it behind the body (the order of `ast.def`).
+ *
+ * @return LAMBDA_FUNC
+ */
+// legacy: parser/parser.spice:2482-2509
+f<NodeId> ExprParser.parseLambdaFunc() {
+    const unsigned int start = this.state.startOffset();
+    LambdaFuncNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    this.state.expect(TokenType::F);
+    this.state.expect(TokenType::LESS);
+    node.returnType = this.types.parseDataType();
+    this.state.consumeGenericClose();
+    node.paramLst = this.stmts.parseParenthesizedParamLst();
+    if this.state.currentTokenIs(TokenType::LBRACKET) {
+        node.lambdaAttr = this.attrs.parseLambdaAttr();
+    }
+    node.body = this.stmts.parseStmtLst();
+    return this.state.store.addLambdaFunc(node, this.state.finishSpan(start));
+}
+
+/**
+ * lambdaProc: P LPAREN paramLst? RPAREN lambdaAttr? stmtLst
+ *
+ * @return LAMBDA_PROC
+ */
+// legacy: parser/parser.spice:2512-2536
+f<NodeId> ExprParser.parseLambdaProc() {
+    const unsigned int start = this.state.startOffset();
+    LambdaProcNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    this.state.expect(TokenType::P);
+    node.paramLst = this.stmts.parseParenthesizedParamLst();
+    if this.state.currentTokenIs(TokenType::LBRACKET) {
+        node.lambdaAttr = this.attrs.parseLambdaAttr();
+    }
+    node.body = this.stmts.parseStmtLst();
+    return this.state.store.addLambdaProc(node, this.state.finishSpan(start));
+}
+
+/**
+ * lambdaExpr: LPAREN paramLst? RPAREN ARROW assignExpr
+ *
+ * @return LAMBDA_EXPR
+ */
+// legacy: parser/parser.spice:2539-2551
+f<NodeId> ExprParser.parseLambdaExpr() {
+    const unsigned int start = this.state.startOffset();
+    LambdaExprNode node;
+    node.header.id = this.state.store.reserveNode();
+
+    node.paramLst = this.stmts.parseParenthesizedParamLst();
+    this.state.expect(TokenType::ARROW);
+    node.body = this.parseAssignExpr();
+    return this.state.store.addLambdaExpr(node, this.state.finishSpan(start));
+}

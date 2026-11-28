@@ -1,0 +1,406 @@
+// Copyright (c) 2021-2026 ChilliBits. All rights reserved.
+
+// Std imports
+import "std/data/vector";
+import "std/type/type-conversion";
+
+// Own imports
+import "@/base/interner";
+import "@/base/small-vec";
+import "@/diag/codes";
+import "@/syntax/ast/ast-enums";
+import "@/syntax/ast/ast-node";
+import "@/syntax/ast/ast-store";
+import "@/syntax/ast/nodes-misc";
+import "@/syntax/ast/nodes-type";
+import "@/syntax/lexer/token";
+import "@/syntax/parser/lookahead";
+import "@/syntax/parser/parser-state";
+
+/**
+ * Parser of the qualifiers, the data types and the type lists
+ */
+// legacy: parser/parser.spice:1380-1455 (type lists), 1617-1664 (qualifiers), 2554-2700 (data types)
+public type TypeParser struct {
+    ParserState* state = nil<ParserState*>
+}
+
+public p TypeParser.ctor() {}
+
+public p TypeParser.ctor(ParserState* state) {
+    this.state = state;
+}
+
+/**
+ * qualifierLst: (CONST | SIGNED | UNSIGNED | INLINE | PUBLIC | HEAP | COMPOSE)+
+ *
+ * @return QUALIFIER_LST
+ */
+// legacy: parser/parser.spice:1617-1640
+public f<NodeId> TypeParser.parseQualifierLst() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    Vector<NodeId> qualifiers;
+    do {
+        qualifiers.pushBack(this.parseQualifier());
+    } while isQualifierType(this.state.stream.getToken().tokenType) && !this.state.failed;
+
+    // Check whether the combination is invalid: both signed and unsigned
+    bool seenSignedOrUnsigned = false;
+    for unsigned long i = 0l; i < qualifiers.getSize(); i++ {
+        const QualifierType qualifierType = this.state.store.getQualifier(qualifiers.get(i)).qualifierType;
+        if qualifierType != QualifierType::SIGNED && qualifierType != QualifierType::UNSIGNED {
+            continue;
+        }
+        if seenSignedOrUnsigned {
+            this.state.fail(ParserErrorType::INVALID_QUALIFIER_COMBINATION, this.state.store.getQualifier(qualifiers.get(i)).header.span, String("A variable can not be signed and unsigned"));
+        }
+        seenSignedOrUnsigned = true;
+    }
+
+    QualifierLstNode node;
+    node.header.id = id;
+    node.qualifiers = this.state.store.addChildren(qualifiers);
+    return this.state.store.addQualifierLst(node, this.state.finishSpan(start));
+}
+
+// legacy: parser/parser.spice:1642-1664
+f<NodeId> TypeParser.parseQualifier() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    QualifierNode node;
+    node.header.id = id;
+    if this.state.consumeIf(TokenType::CONST) {
+        node.qualifierType = QualifierType::CONST;
+    } else if this.state.consumeIf(TokenType::SIGNED) {
+        node.qualifierType = QualifierType::SIGNED;
+    } else if this.state.consumeIf(TokenType::UNSIGNED) {
+        node.qualifierType = QualifierType::UNSIGNED;
+    } else if this.state.consumeIf(TokenType::INLINE) {
+        node.qualifierType = QualifierType::INLINE;
+    } else if this.state.consumeIf(TokenType::PUBLIC) {
+        node.qualifierType = QualifierType::PUBLIC;
+    } else if this.state.consumeIf(TokenType::HEAP) {
+        node.qualifierType = QualifierType::HEAP;
+    } else if this.state.consumeIf(TokenType::COMPOSE) {
+        node.qualifierType = QualifierType::COMPOSE;
+    } else {
+        // Legacy: `assert false`, a crash instead of a diagnostic. A stray token where a signature starts (e.g. in an interface
+        // body) reaches it. The new parser reports the token (see the deviations log)
+        this.state.failUnexpectedToken();
+    }
+    return this.state.store.addQualifier(node, this.state.finishSpan(start));
+}
+
+/**
+ * dataType: qualifierLst? baseDataType (MUL | BITWISE_AND | LOGICAL_AND | LBRACKET (INT_LIT | TYPE_IDENTIFIER)? RBRACKET)*
+ *
+ * @return DATA_TYPE
+ */
+// legacy: parser/parser.spice:2554-2598
+public f<NodeId> TypeParser.parseDataType() {
+    if this.state.failed {
+        return noNodeId(); // After an error the rules only unwind, the nodes are not used
+    }
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    DataTypeNode node;
+    node.header.id = id;
+    node.isFieldType = this.state.isParsingFieldType;
+
+    if isQualifierType(this.state.stream.getToken().tokenType) {
+        node.qualifierLst = this.parseQualifierLst();
+    }
+    node.baseDataType = this.parseBaseDataType();
+
+    // Parse the type modifiers. If a '>' of a split '>>' token is still pending, it closes the enclosing generic list first,
+    // so the following modifiers belong to the enclosing data type (e.g. the '&' in 'Vector<Vector<int>>&')
+    while this.state.pendingGreaters == 0u && !this.state.failed {
+        if this.state.currentTokenIs(TokenType::MUL) { // Pointer
+            this.state.expect(TokenType::MUL);
+            node.tmQueue.pushBack(TypeModifier(TypeModifierType::TYPE_PTR, false, 0u, noSymbol()));
+        } else if this.state.currentTokenIs(TokenType::BITWISE_AND) { // Reference
+            this.state.expect(TokenType::BITWISE_AND);
+            node.tmQueue.pushBack(TypeModifier(TypeModifierType::TYPE_REF, false, 0u, noSymbol()));
+        } else if this.state.currentTokenIs(TokenType::LOGICAL_AND) { // Rvalue reference. The lexer reads '&&' as one token
+            this.state.expect(TokenType::LOGICAL_AND);
+            node.tmQueue.pushBack(TypeModifier(TypeModifierType::TYPE_RVALUE_REF, false, 0u, noSymbol()));
+        } else if this.state.currentTokenIs(TokenType::LBRACKET) { // Array
+            this.state.expect(TokenType::LBRACKET);
+            bool hasSize = false;
+            unsigned int hardcodedSize = 0u;
+            Symbol sizeVarName = noSymbol();
+            if this.state.currentTokenIs(TokenType::INT_LIT) {
+                hasSize = true;
+                // Legacy reads the size with a plain toInt, without base or range check (`[0x10]` gives 0)
+                const String sizeStr = this.state.currentText();
+                hardcodedSize = cast<unsigned int>(toInt(sizeStr.getRaw()));
+                this.state.expect(TokenType::INT_LIT);
+            } else if this.state.currentTokenIs(TokenType::TYPE_IDENTIFIER) {
+                hasSize = true;
+                sizeVarName = this.state.intern(this.state.getIdentifier(true));
+                this.state.expect(TokenType::TYPE_IDENTIFIER);
+            }
+            this.state.expect(TokenType::RBRACKET);
+            node.tmQueue.pushBack(TypeModifier(TypeModifierType::TYPE_ARRAY, hasSize, hardcodedSize, sizeVarName));
+        } else {
+            break;
+        }
+    }
+
+    return this.state.store.addDataType(node, this.state.finishSpan(start));
+}
+
+/**
+ * baseDataType: TYPE_DOUBLE | TYPE_INT | TYPE_SHORT | TYPE_LONG | TYPE_BYTE | TYPE_CHAR | TYPE_STRING | TYPE_BOOL | TYPE_DYN |
+ * customDataType | functionDataType
+ *
+ * @return BASE_DATA_TYPE
+ */
+// legacy: parser/parser.spice:2601-2641
+f<NodeId> TypeParser.parseBaseDataType() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    BaseDataTypeNode node;
+    node.header.id = id;
+
+    const TokenType tokenType = this.state.stream.getToken().tokenType;
+    if tokenType == TokenType::TYPE_DOUBLE {
+        node.baseType = BaseDataTypeType::TYPE_DOUBLE;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_INT {
+        node.baseType = BaseDataTypeType::TYPE_INT;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_SHORT {
+        node.baseType = BaseDataTypeType::TYPE_SHORT;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_LONG {
+        node.baseType = BaseDataTypeType::TYPE_LONG;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_BYTE {
+        node.baseType = BaseDataTypeType::TYPE_BYTE;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_CHAR {
+        node.baseType = BaseDataTypeType::TYPE_CHAR;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_STRING {
+        node.baseType = BaseDataTypeType::TYPE_STRING;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_BOOL {
+        node.baseType = BaseDataTypeType::TYPE_BOOL;
+        this.state.advance();
+    } else if tokenType == TokenType::TYPE_DYN {
+        node.baseType = BaseDataTypeType::TYPE_DYN;
+        this.state.advance();
+    } else if tokenType == TokenType::F || tokenType == TokenType::P {
+        node.baseType = BaseDataTypeType::TYPE_FUNCTION;
+        node.functionDataType = this.parseFunctionDataType();
+    } else {
+        node.baseType = BaseDataTypeType::TYPE_CUSTOM;
+        node.customDataType = this.parseCustomDataType();
+    }
+
+    return this.state.store.addBaseDataType(node, this.state.finishSpan(start));
+}
+
+/**
+ * customDataType: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER (LESS typeLst GREATER)?
+ *
+ * @return CUSTOM_DATA_TYPE
+ */
+// legacy: parser/parser.spice:2644-2663
+f<NodeId> TypeParser.parseCustomDataType() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    CustomDataTypeNode node;
+    node.header.id = id;
+
+    // Parse the type name: (IDENTIFIER SCOPE_ACCESS)* TYPE_IDENTIFIER. The type name itself is no subject of the keyword checks
+    String fqTypeName;
+    this.state.parseNamePrefix(TokenType::SCOPE_ACCESS, "::", node.nameFragments, fqTypeName);
+    const String typeName = this.state.currentText();
+    node.nameFragments.pushBack(this.state.intern(typeName));
+    fqTypeName += typeName;
+    this.state.expect(TokenType::TYPE_IDENTIFIER);
+    node.fqTypeName = this.state.intern(fqTypeName);
+
+    // Parse the template type list
+    if this.state.consumeIf(TokenType::LESS) {
+        node.templateTypeLst = this.parseTypeLst();
+        this.state.consumeGenericClose();
+    }
+
+    return this.state.store.addCustomDataType(node, this.state.finishSpan(start));
+}
+
+/**
+ * functionDataType: (F LESS dataType GREATER | P) LPAREN typeLst? RPAREN
+ *
+ * @return FUNCTION_DATA_TYPE
+ */
+// legacy: parser/parser.spice:2666-2695
+f<NodeId> TypeParser.parseFunctionDataType() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    FunctionDataTypeNode node;
+    node.header.id = id;
+
+    // Field types are only propagated to template types, not to the param and return types of function types
+    const bool wasParsingFieldType = this.state.isParsingFieldType;
+    this.state.isParsingFieldType = false;
+
+    if this.state.consumeIf(TokenType::F) {
+        this.state.expect(TokenType::LESS);
+        node.isFunction = true;
+        node.returnType = this.parseDataType();
+        this.state.consumeGenericClose();
+    } else {
+        this.state.expect(TokenType::P);
+    }
+
+    // Parse the param types
+    this.state.expect(TokenType::LPAREN);
+    if !this.state.currentTokenIs(TokenType::RPAREN) {
+        node.paramTypeLst = this.parseTypeLst();
+        this.markParamTypes(node.paramTypeLst);
+    }
+    this.state.expect(TokenType::RPAREN);
+
+    this.state.isParsingFieldType = wasParsingFieldType;
+
+    return this.state.store.addFunctionDataType(node, this.state.finishSpan(start));
+}
+
+// Mark the data types of a type list as parameter types
+p TypeParser.markParamTypes(NodeId typeLst) {
+    if !isNodeId(typeLst) || this.state.failed {
+        return;
+    }
+    const ChildRange range = this.state.store.getTypeLst(typeLst).dataTypes;
+    for unsigned int i = 0u; i < range.count; i++ {
+        this.state.store.getDataType(this.state.store.getChild(range, i)).isParamType = true;
+    }
+}
+
+/**
+ * typeLst: dataType (COMMA dataType)*
+ *
+ * @return TYPE_LST
+ */
+// legacy: parser/parser.spice:1380-1389
+public f<NodeId> TypeParser.parseTypeLst() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    TypeLstNode node;
+    node.header.id = id;
+
+    Vector<NodeId> dataTypes;
+    dataTypes.pushBack(this.parseDataType());
+    while this.state.consumeIf(TokenType::COMMA) && !this.state.failed {
+        dataTypes.pushBack(this.parseDataType());
+    }
+    node.dataTypes = this.state.store.addChildren(dataTypes);
+
+    return this.state.store.addTypeLst(node, this.state.finishSpan(start));
+}
+
+/**
+ * typeLstWithEllipsis: paramTypeLst (COMMA ELLIPSIS)?
+ *
+ * @return TYPE_LST_WITH_ELLIPSIS
+ */
+// legacy: parser/parser.spice:1392-1411
+public f<NodeId> TypeParser.parseTypeLstWithEllipsis() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    TypeLstWithEllipsisNode node;
+    node.header.id = id;
+
+    // Parse the param types. A comma, that is followed by an ellipsis, does not belong to the type list
+    const NodeId typeLstId = this.state.store.reserveNode();
+    const unsigned int typeLstStart = this.state.startOffset();
+    TypeLstNode typeLst;
+    typeLst.header.id = typeLstId;
+    Vector<NodeId> dataTypes;
+    this.parseParamType(typeLst, dataTypes);
+    while this.state.currentTokenIs(TokenType::COMMA) && this.state.tokenAt(1l) != TokenType::ELLIPSIS && !this.state.failed {
+        this.state.expect(TokenType::COMMA);
+        this.parseParamType(typeLst, dataTypes);
+    }
+    typeLst.dataTypes = this.state.store.addChildren(dataTypes);
+    node.typeLst = this.state.store.addTypeLst(typeLst, this.state.finishSpan(typeLstStart));
+
+    // Parse the optional ellipsis
+    if this.state.consumeIf(TokenType::COMMA) {
+        this.state.expect(TokenType::ELLIPSIS);
+        node.hasEllipsis = true;
+    }
+
+    return this.state.store.addTypeLstWithEllipsis(node, this.state.finishSpan(start));
+}
+
+/**
+ * paramTypeLst: dataType IDENTIFIER? (COMMA dataType IDENTIFIER?)*
+ *
+ * @return TYPE_LST
+ */
+// legacy: parser/parser.spice:1414-1423
+public f<NodeId> TypeParser.parseParamTypeLst() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    TypeLstNode node;
+    node.header.id = id;
+
+    Vector<NodeId> dataTypes;
+    this.parseParamType(node, dataTypes);
+    while this.state.consumeIf(TokenType::COMMA) && !this.state.failed {
+        this.parseParamType(node, dataTypes);
+    }
+    node.dataTypes = this.state.store.addChildren(dataTypes);
+
+    return this.state.store.addTypeLst(node, this.state.finishSpan(start));
+}
+
+// Parse the data type of a parameter in a signature or an external declaration, followed by its optional name
+// legacy: parser/parser.spice:1426-1444
+p TypeParser.parseParamType(TypeLstNode& typeLst, Vector<NodeId>& dataTypes) {
+    const unsigned int paramStart = this.state.startOffset();
+    const NodeId paramDataType = this.parseDataType();
+    if !this.state.failed {
+        this.state.store.getDataType(paramDataType).isParamType = true;
+    }
+    dataTypes.pushBack(paramDataType);
+
+    // Parse the optional parameter name. An unnamed parameter gets an empty name
+    Symbol paramName = this.state.intern(String());
+    if this.state.currentTokenIs(TokenType::IDENTIFIER) {
+        paramName = this.state.intern(this.state.getIdentifier(false));
+        this.state.expect(TokenType::IDENTIFIER);
+    }
+    typeLst.paramNames.pushBack(paramName);
+
+    // The parameter ends with its name or, if unnamed, with its data type
+    typeLst.paramSpans.pushBack(this.state.finishSpan(paramStart));
+}
+
+/**
+ * typeAltsLst: dataType (BITWISE_OR dataType)*
+ *
+ * @return TYPE_ALTS_LST
+ */
+// legacy: parser/parser.spice:1446-1455
+public f<NodeId> TypeParser.parseTypeAltsLst() {
+    const NodeId id = this.state.store.reserveNode();
+    const unsigned int start = this.state.startOffset();
+    TypeAltsLstNode node;
+    node.header.id = id;
+
+    Vector<NodeId> dataTypes;
+    dataTypes.pushBack(this.parseDataType());
+    while this.state.consumeIf(TokenType::BITWISE_OR) && !this.state.failed {
+        dataTypes.pushBack(this.parseDataType());
+    }
+    node.dataTypes = this.state.store.addChildren(dataTypes);
+
+    return this.state.store.addTypeAltsLst(node, this.state.finishSpan(start));
+}
