@@ -940,7 +940,8 @@ def exec_builtin_tests(result: TestResult) -> None:
         executable_path = build_compiler_sources(compiler, OPTS.work_dir / "compiler-tests", "spice-tests", True)
     except RuntimeError as error:
         result.fail(f"Could not build the builtin tests of the compiler sources: {error}")
-    output, exit_code, _ = run_process([str(executable_path)])
+    # Builtin tests open fixtures relative to the repository root (e.g. test/fixtures/diag-golden.txt), wherever the runner was started
+    output, exit_code, _ = run_process([str(executable_path)], cwd=ROOT_DIR)
     if OPTS.verbose:
         print(f"Builtin tests output:\n{output}")
     result.expect(not contains_sanitizer_report(output), f"Sanitizer report:\n{output}")
