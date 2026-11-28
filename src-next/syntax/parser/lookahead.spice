@@ -7,27 +7,27 @@ import "@/syntax/parser/parser-state";
 // legacy: parser/parser.spice:240-244
 public f<bool> isQualifierType(TokenType t) {
     return t == TokenType::CONST || t == TokenType::SIGNED || t == TokenType::UNSIGNED || t == TokenType::INLINE ||
-           t == TokenType::PUBLIC || t == TokenType::HEAP || t == TokenType::COMPOSE;
+        t == TokenType::PUBLIC || t == TokenType::HEAP || t == TokenType::COMPOSE;
 }
 
 // legacy: parser/parser.spice:246-250
 public f<bool> isBaseDataTypeKeyword(TokenType t) {
     return t == TokenType::TYPE_DOUBLE || t == TokenType::TYPE_INT || t == TokenType::TYPE_SHORT || t == TokenType::TYPE_LONG ||
-           t == TokenType::TYPE_BYTE || t == TokenType::TYPE_CHAR || t == TokenType::TYPE_STRING || t == TokenType::TYPE_BOOL ||
-           t == TokenType::TYPE_DYN;
+        t == TokenType::TYPE_BYTE || t == TokenType::TYPE_CHAR || t == TokenType::TYPE_STRING || t == TokenType::TYPE_BOOL ||
+        t == TokenType::TYPE_DYN;
 }
 
 // legacy: parser/parser.spice:252-256
 public f<bool> isConstantStart(TokenType t) {
     return t == TokenType::DOUBLE_LIT || t == TokenType::INT_LIT || t == TokenType::SHORT_LIT || t == TokenType::LONG_LIT ||
-           t == TokenType::CHAR_LIT || t == TokenType::STRING_LIT || t == TokenType::TRUE || t == TokenType::FALSE;
+        t == TokenType::CHAR_LIT || t == TokenType::STRING_LIT || t == TokenType::TRUE || t == TokenType::FALSE;
 }
 
 // legacy: parser/parser.spice:258-263
 public f<bool> isAssignOp(TokenType t) {
     return t == TokenType::ASSIGN || t == TokenType::PLUS_EQUAL || t == TokenType::MINUS_EQUAL || t == TokenType::MUL_EQUAL ||
-           t == TokenType::DIV_EQUAL || t == TokenType::REM_EQUAL || t == TokenType::SHL_EQUAL || t == TokenType::SHR_EQUAL ||
-           t == TokenType::AND_EQUAL || t == TokenType::OR_EQUAL || t == TokenType::XOR_EQUAL;
+        t == TokenType::DIV_EQUAL || t == TokenType::REM_EQUAL || t == TokenType::SHL_EQUAL || t == TokenType::SHR_EQUAL ||
+        t == TokenType::AND_EQUAL || t == TokenType::OR_EQUAL || t == TokenType::XOR_EQUAL;
 }
 
 // legacy: parser/parser.spice:331-346
@@ -36,23 +36,23 @@ public f<bool> isTypeLstToken(TokenType t) {
         return true;
     }
     return t == TokenType::IDENTIFIER || t == TokenType::TYPE_IDENTIFIER || t == TokenType::SCOPE_ACCESS || t == TokenType::COMMA ||
-           t == TokenType::LESS || t == TokenType::GREATER || t == TokenType::SHL || t == TokenType::SHR || t == TokenType::MUL ||
-           t == TokenType::BITWISE_AND || t == TokenType::LBRACKET || t == TokenType::RBRACKET || t == TokenType::INT_LIT ||
-           t == TokenType::F || t == TokenType::P || t == TokenType::LPAREN || t == TokenType::RPAREN;
+        t == TokenType::LESS || t == TokenType::GREATER || t == TokenType::SHL || t == TokenType::SHR || t == TokenType::MUL ||
+        t == TokenType::BITWISE_AND || t == TokenType::LBRACKET || t == TokenType::RBRACKET || t == TokenType::INT_LIT ||
+        t == TokenType::F || t == TokenType::P || t == TokenType::LPAREN || t == TokenType::RPAREN;
 }
 
 // legacy: parser/parser.spice:514-526
 public f<bool> isStmtStartKeyword(TokenType t) {
     return t == TokenType::RETURN || t == TokenType::IF || t == TokenType::FOR || t == TokenType::FOREACH || t == TokenType::WHILE ||
-           t == TokenType::DO || t == TokenType::SWITCH || t == TokenType::CASE || t == TokenType::DEFAULT || t == TokenType::BREAK ||
-           t == TokenType::CONTINUE || t == TokenType::FALLTHROUGH || t == TokenType::ASSERT || t == TokenType::UNSAFE ||
-           isQualifierType(t) || isBaseDataTypeKeyword(t);
+        t == TokenType::DO || t == TokenType::SWITCH || t == TokenType::CASE || t == TokenType::DEFAULT || t == TokenType::BREAK ||
+        t == TokenType::CONTINUE || t == TokenType::FALLTHROUGH || t == TokenType::ASSERT || t == TokenType::UNSAFE ||
+        isQualifierType(t) || isBaseDataTypeKeyword(t);
 }
 
 // legacy: parser/parser.spice:529-535
 public f<bool> isStmtStartToken(TokenType t) {
     return isStmtStartKeyword(t) || isConstantStart(t) || t == TokenType::IDENTIFIER || t == TokenType::TYPE_IDENTIFIER ||
-           t == TokenType::NIL || t == TokenType::CAST || t == TokenType::F || t == TokenType::P || t == TokenType::EOF;
+        t == TokenType::NIL || t == TokenType::CAST || t == TokenType::F || t == TokenType::P || t == TokenType::EOF;
 }
 
 /**

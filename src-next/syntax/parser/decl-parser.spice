@@ -135,7 +135,7 @@ p DeclParser.parseTopLevelDef(Vector<NodeId>& modAttrs, Vector<NodeId>& importDe
         topLevelDefs.pushBack(this.parseProcDef());
     } else if discriminator == TokenType::F {
         const bool isMain = this.state.tokenAt(offset + 1l) == TokenType::LESS && this.state.tokenAt(offset + 2l) == TokenType::TYPE_INT &&
-                            this.state.tokenAt(offset + 3l) == TokenType::GREATER && this.state.tokenAt(offset + 4l) == TokenType::MAIN;
+            this.state.tokenAt(offset + 3l) == TokenType::GREATER && this.state.tokenAt(offset + 4l) == TokenType::MAIN;
         if isMain {
             topLevelDefs.pushBack(this.parseMainFctDef());
         } else {

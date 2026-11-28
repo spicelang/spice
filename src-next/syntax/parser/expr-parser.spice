@@ -336,7 +336,7 @@ f<NodeId> ExprParser.parseCastExpr() {
 f<NodeId> ExprParser.parsePrefixUnaryExpr() {
     const TokenType t = this.state.stream.getToken().tokenType;
     const bool isPrefixOp = t == TokenType::MINUS || t == TokenType::PLUS_PLUS || t == TokenType::MINUS_MINUS || t == TokenType::NOT ||
-                            t == TokenType::BITWISE_NOT || t == TokenType::MUL || t == TokenType::BITWISE_AND;
+        t == TokenType::BITWISE_NOT || t == TokenType::MUL || t == TokenType::BITWISE_AND;
     if !isPrefixOp || this.lookahead.isNegativeNumericConstantAhead() {
         return this.parsePostfixUnaryExpr();
     }
@@ -373,7 +373,7 @@ f<NodeId> ExprParser.parsePostfixUnaryExpr() {
     while !this.state.failed {
         const TokenType t = this.state.stream.getToken().tokenType;
         if t != TokenType::LBRACKET && t != TokenType::DOT && t != TokenType::LPAREN && t != TokenType::PLUS_PLUS &&
-           t != TokenType::MINUS_MINUS && t != TokenType::NOT {
+            t != TokenType::MINUS_MINUS && t != TokenType::NOT {
             break;
         }
 
