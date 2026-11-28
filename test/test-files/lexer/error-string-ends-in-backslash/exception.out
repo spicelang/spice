@@ -1,1 +1,1 @@
-[Error|Lexer] ./source.spice:2:16: Tokenizing failed: token recognition error at: '"abc\'
+[Error|Lexer] ./source.spice:2:16: Tokenizing failed: token recognition error at: '"abc/'

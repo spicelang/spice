@@ -568,7 +568,13 @@ p checkSuiteCase(const string name) {
     while expected.getLength() > 0l && expected[expected.getLength() - 1l] == '\n' {
         expected = expected.getSubstring(0l, cast<long>(expected.getLength()) - 1l);
     }
-    assert engine.renderStop(sourceManager) == expected;
+    // The test runner normalizes path separators in the output of the compiler, so the reference files have a '/' for every '\'
+    const String rendered = engine.renderStop(sourceManager);
+    String normalized;
+    for unsigned long i = 0l; i < rendered.getLength(); i++ {
+        normalized += rendered[i] == '\\' ? '/' : rendered[i];
+    }
+    assert normalized == expected;
 }
 
 #[test]
