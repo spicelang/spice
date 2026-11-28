@@ -5,10 +5,10 @@ exception test/test-files/common/error-cli-tpde-code-model-large
 exception test/test-files/lexer/error-char-literal-too-long
 exception test/test-files/lexer/error-char-literal-unterminated
 exception test/test-files/lexer/error-lexing-error
-exception test/test-files/parser/error-escaped-line-break-string
-exception test/test-files/parser/error-int-out-of-range
-exception test/test-files/parser/error-octal-escape-sequence-out-of-range-char
-exception test/test-files/parser/error-ulong-out-of-range
+exception test/test-files/parser/error-extraneous-input
+exception test/test-files/parser/error-invalid-char-literal
+exception test/test-files/parser/error-octal-escape-sequence-out-of-range-string
+exception test/test-files/parser/error-wrong-attribute-value-type
 exception test/test-files/symboltablebuilder/attributes/error-non-existing-attribute
 exception test/test-files/symboltablebuilder/globals/error-global-var-decl-twice
 exception test/test-files/symboltablebuilder/procedures/error-duplicate-procedure-def

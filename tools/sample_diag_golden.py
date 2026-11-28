@@ -41,14 +41,20 @@ QUOTAS = [("hard", 20), ("soft", 12), ("parser", 4), ("lexer", 3), ("cli", 3), (
 
 
 def sources_ok(case: Path, path: str, line: int, col: int) -> bool:
-    source = case / Path(path).name
+    # The golden test resolves './<name>' next to the reference file, so nothing else qualifies, e.g. '../shared/x.spice'
+    if not re.fullmatch(r"\./[^/]+", path):
+        return False
+    source = case / path[2:]
     if not source.is_file():
         return False
     data = source.read_bytes()
     if any(b > 127 for b in data) or b"\r" in data:
         return False
     lines = data.split(b"\n")
-    return 1 <= line <= len(lines) and 1 <= col <= len(lines[line - 1]) + 1
+    if not 1 <= line <= len(lines):
+        return False
+    # A column is a byte of the line. Only the last line, which no '\n' ends, has the position behind its last byte (end of file)
+    return 1 <= col <= len(lines[line - 1]) + (1 if line == len(lines) else 0)
 
 
 def semantic_ok(case: Path, block: str) -> bool:

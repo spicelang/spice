@@ -113,8 +113,8 @@ f<Diagnostic> parseBlock(SourceManager& sourceManager, const String& dir, const 
     return Diagnostic(family, code, span, rest.getSubstring(String(getPrefix(Diagnostic(family, code, Span(), String()))).getLength() + 2l));
 }
 
-// The test runner replaces the backslashes of the output with slashes (test/run-tests.py, extract_error_message), so that the
-// reference files are the same on Windows. The golden test compares the same text
+// The test runner replaces the backslashes of an error message with slashes (test/run-tests.py, extract_error_message), so that
+// the reference files are the same on Windows. Warnings are compared as they are. The golden test does the same
 f<String> normalizeSeparators(const String& text) {
     String normalized;
     for unsigned long i = 0l; i < text.getLength(); i++ {
@@ -172,7 +172,9 @@ f<String> runGoldenCase(const String& kind, const String& dir) {
         if !engine.mustStop() { return String("the pipeline does not stop"); }
         actual = engine.renderStop(sourceManager);
     }
-    actual = normalizeSeparators(actual);
+    if kind != "warning" {
+        actual = normalizeSeparators(actual);
+    }
     if actual == expected {
         return String();
     }
