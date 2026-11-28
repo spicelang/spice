@@ -1229,9 +1229,11 @@ The results are recorded in this document. An idiom that stage0 does not support
   `abortWithError` ended the process. The text and the location are the same, so the renderer prints the legacy line.
 - The legacy `Reader` assertions are assertions here, because legacy crashes on these inputs and the plan reproduces legacy first (D1):
   `..` that no third `.` follows (`..x`), a string that ends in a `\` at the end of the input, and a block comment that ends in a `*`
-  at the end of the input. They are legacy bugs, not yet filed as issues. Quirks that are reproduced and deserve an issue before a fix:
-  `/**/` starts a doc comment that goes on after its `/`, `**/` does not end a block comment, an unterminated block comment ends at the end
-  of the input without an error, a `\r` is allowed inside a string, and `\` followed by a line break continues a string.
+  at the end of the input. They are legacy bug [#1906](https://github.com/spicelang/spice/issues/1906). The other reproduced quirks are
+  [#1907](https://github.com/spicelang/spice/issues/1907) (`/**/` starts a doc comment that goes on after its `/`, and `**/` does not
+  end a block comment) and [#1908](https://github.com/spicelang/spice/issues/1908) (an unterminated block comment ends at the end of
+  the input without an error). Their fixes are entries of the deviations log. The lexer accepts `\` followed by a line break inside a string, but the
+  parser then rejects it (`Line breaks must not be escaped`), so that case is no bug.
 - A NUL byte in the source changes the legacy message, because legacy built it with `String` concatenations that read their
   right operand as a C string, and passed it on with `getRaw()`. The content of a string, char or number error ends at the NUL
   and the closing quote is kept (`'\"ab'`), and the message of an unknown NUL byte ends behind the opening quote. The port
